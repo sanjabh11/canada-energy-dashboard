@@ -1,0 +1,49 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Carbon-Emissions-t1",
+      "title": "Add LLM endpoint for emissions planner",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "unit_tests": ["Test LLM response shape"],
+        "integration_tests": ["Test endpoint with sample data"],
+        "acceptance_criteria": ["Endpoint returns narrative for emissions scenarios"]
+      }
+    },
+    {
+      "task_id": "PBI-Carbon-Emissions-t2",
+      "title": "Update UI for emissions planner",
+      "type": "ui",
+      "status": "Proposed",
+      "files": ["src/components/EmissionsPlanner.tsx"],
+      "test_plan": {
+        "ui_tests": ["Test component renders emissions data"],
+        "acceptance_criteria": ["UI shows planner interface with LLM narratives"]
+      }
+    },
+    {
+      "task_id": "PBI-Carbon-Emissions-t3",
+      "title": "Integrate with emissions datasets",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["src/lib/dataStreamers.ts"],
+      "test_plan": {
+        "integration_tests": ["Test data streaming for emissions"],
+        "acceptance_criteria": ["Streamer fetches emissions data from HF/Kaggle"]
+      }
+    },
+    {
+      "task_id": "PBI-Carbon-Emissions-t4",
+      "title": "Test endpoint and UI",
+      "type": "test",
+      "status": "Proposed",
+      "files": [],
+      "test_plan": {
+        "end_to_end_tests": ["Run full flow from data to UI"],
+        "acceptance_criteria": ["All components work together for emissions planning"]
+      }
+    }
+  ]
+}

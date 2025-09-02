@@ -1,0 +1,15 @@
+{
+  "task_id": "PBI-LLM-Gemini-T0",
+  "title": "Update tasks_index.json with new tasks T6 and T7",
+  "type": "doc",
+  "status": "InProgress",
+  "files": [
+    "docs/delivery/PBI-LLM-Gemini/tasks_index.json"
+  ],
+  "test_plan": {
+    "steps": [
+      "Open tasks_index.json and verify T6 and T7 are present with correct titles and statuses."
+    ]
+  },
+  "status_history": []
+}

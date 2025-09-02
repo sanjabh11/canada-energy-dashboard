@@ -1,0 +1,20 @@
+{
+  "task_id": "PBI-LLM-Gemini-T11",
+  "title": "Docs: Update README and .env.example for LLM endpoints and UI panels",
+  "type": "doc",
+  "status": "InProgress",
+  "files": [
+    "README.md",
+    ".env.example"
+  ],
+  "test_plan": {
+    "steps": [
+      "Open README.md and verify LLM UI Panels usage section exists with run instructions and expected responses.",
+      "Confirm .env.example lists VITE_SUPABASE_EDGE_BASE and server-side LLM envs.",
+      "Spin dev server and see LLM Insights panels render without console errors."
+    ]
+  },
+  "status_history": [
+    { "ts": "2025-08-31T13:54:52+05:30", "from": "Proposed", "to": "InProgress", "by": "ai_agent" }
+  ]
+}

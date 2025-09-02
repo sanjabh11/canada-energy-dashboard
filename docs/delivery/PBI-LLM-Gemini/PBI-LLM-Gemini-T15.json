@@ -1,0 +1,19 @@
+{
+  "task_id": "PBI-LLM-Gemini-T15",
+  "title": "Scheduling & Archival: periodic reports + history storage and retrieval",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "supabase/functions/llm/index.ts",
+    "supabase/migrations/20250831_llm_reports.sql"
+  ],
+  "test_plan": {
+    "steps": [
+      "Apply migration (Supabase): create table public.llm_reports",
+      "Invoke transition-report with {archive:true}; verify row appears in llm_reports",
+      "GET history endpoint to list recent reports",
+      "Run cloud tests"
+    ]
+  },
+  "status_history": [{"ts": "2025-08-31T14:09:05+05:30", "status": "InProgress"}]
+}

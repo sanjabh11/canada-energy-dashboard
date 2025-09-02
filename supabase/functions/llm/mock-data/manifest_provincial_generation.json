@@ -1,0 +1,8 @@
+{
+  "dataset": "kaggle/provincial_generation",
+  "schema": ["date", "province", "generation_mwh", "source"],
+  "sampleRows": [],
+  "license": "CC-BY-4.0",
+  "last_updated": "2025-08-01T00:00:00Z",
+  "estimatedRows": 100000
+}

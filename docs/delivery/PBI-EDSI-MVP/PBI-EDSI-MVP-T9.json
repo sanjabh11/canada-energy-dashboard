@@ -1,0 +1,17 @@
+{
+  "task_id": "PBI-EDSI-MVP-T9",
+  "title": "Env example + README update",
+  "type": "doc",
+  "status": "InProgress",
+  "files": [
+    ".env.example",
+    "README.md"
+  ],
+  "test_plan": {
+    "steps": [
+      "Create .env from example and run dev",
+      "Set VITE_USE_STREAMING_DATASETS and validate behavior"
+    ]
+  },
+  "status_history": []
+}

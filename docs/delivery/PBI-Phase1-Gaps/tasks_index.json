@@ -1,0 +1,235 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Phase1-Gaps-T1",
+      "title": "Create PBI for Phase 1 Implementation",
+      "type": "doc",
+      "status": "Done",
+      "files": ["docs/delivery/PBI-Phase1-Gaps/prd.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T2",
+      "title": "For #1: Design /api/v2/analytics-insight endpoint",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T3",
+      "title": "For #1: Implement RAG logic",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T4",
+      "title": "For #1: Add WebSocket /ws/analytics/live-insights",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T5",
+      "title": "For #1: Enhance UI with Insights panel",
+      "type": "ui",
+      "status": "InProgress",
+      "files": ["src/components/RealTimeDashboard.tsx"],
+      "test_plan": {
+        "unit": [
+          "Render test: Insights card renders with loading state, then summary text after mock fetch resolves.",
+          "Fallback test: when server returns minimal payload, component still shows summary and at least one source.",
+          "Abort test: unmount during in-flight request does not set state (no console error)."
+        ],
+        "integration": [
+          "Edge POST to llm/analytics-insight returns 200 and JSON with {dataset,result} envelope; UI displays summary, key_findings/policy_implications if present, and citations count.",
+          "CORS headers present on response (Access-Control-Allow-Origin matches app origin)."
+        ],
+        "manual": [
+          "Open dashboard, verify Insights shows within 3s, lists top 3 findings, and shows at least 1 citation with last_updated date."
+        ]
+      },
+      "status_history": [
+        { "status": "InProgress", "at": "2025-09-02T00:00:00.000Z" }
+      ]
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T6",
+      "title": "For #1: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T7",
+      "title": "For #1: Deploy and update gap_analy.md",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T8",
+      "title": "For #7: Create Supabase tables for mineral_supply",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/migrations/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T9",
+      "title": "For #7: Implement scraping for minerals data",
+      "type": "code",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T10",
+      "title": "For #7: Create endpoints /api/v2/minerals/supply-status and /api/v2/minerals/risk-assessment",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T11",
+      "title": "For #7: AI integration with Gemini",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T12",
+      "title": "For #7: UI dashboard with maps, alerts",
+      "type": "ui",
+      "status": "Pending",
+      "files": ["src/components/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T13",
+      "title": "For #7: WebSocket for price alerts",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T14",
+      "title": "For #7: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T15",
+      "title": "For #7: Update gap_analy.md",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T16",
+      "title": "For #10: Create Supabase tables for compliance_rules",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/migrations/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T17",
+      "title": "For #10: Implement rule engine for compliance checks",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T18",
+      "title": "For #10: Create endpoints /api/v2/compliance/project-status and /ws/compliance/alerts",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T19",
+      "title": "For #10: AI for remediation summaries",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T20",
+      "title": "For #10: UI compliance dashboards",
+      "type": "ui",
+      "status": "Pending",
+      "files": ["src/components/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T21",
+      "title": "For #10: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T22",
+      "title": "For #10: Update gap_analy.md",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T23",
+      "title": "Run cloud health and endpoint tests",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase1-Gaps-T24",
+      "title": "Final update to gap_analy.md for all Phase 1",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "task_id": "PBI-EDSI-MVP-T13",
+  "title": "Edge helpers: propagate AbortError without retrying alternate endpoints",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/lib/edge.ts",
+    "docs/delivery/PBI-EDSI-MVP/tasks_index.json"
+  ],
+  "test_plan": {
+    "steps": [
+      "Trigger an abort during an edge request; verify helper throws AbortError immediately without trying alternate candidates.",
+      "Verify normal non-abort failures still iterate candidates and eventually throw last error."
+    ]
+  },
+  "status_history": []
+}

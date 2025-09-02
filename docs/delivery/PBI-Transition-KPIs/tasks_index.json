@@ -1,0 +1,50 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Transition-KPIs-t1",
+      "title": "Add KPI computations to transition-report",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "unit_tests": ["Test KPI calculations"],
+        "integration_tests": ["Test endpoint with KPIs"],
+        "acceptance_criteria": ["Endpoint returns KPI data"]
+      }
+    },
+    {
+      "task_id": "PBI-Transition-KPIs-t2",
+      "title": "Add scheduled archival",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "integration_tests": ["Test archival scheduling"],
+        "acceptance_criteria": ["Reports are archived weekly"]
+      }
+    },
+    {
+      "task_id": "PBI-Transition-KPIs-t3",
+      "title": "Extend RAG provenance",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "unit_tests": ["Test provenance depth"],
+        "integration_tests": ["Test RAG with deeper provenance"],
+        "acceptance_criteria": ["Provenance is deeper"]
+      }
+    },
+    {
+      "task_id": "PBI-Transition-KPIs-t4",
+      "title": "Test endpoint and archival",
+      "type": "test",
+      "status": "Proposed",
+      "files": [],
+      "test_plan": {
+        "end_to_end_tests": ["Run full flow with KPIs"],
+        "acceptance_criteria": ["All components work together"]
+      }
+    }
+  ]
+}

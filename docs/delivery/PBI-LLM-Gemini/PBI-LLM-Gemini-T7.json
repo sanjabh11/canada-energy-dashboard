@@ -1,0 +1,18 @@
+{
+  "task_id": "PBI-LLM-Gemini-T7",
+  "title": "Endpoint: data-quality (LLM summary of data quality logs)",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "supabase/functions/llm/index.ts",
+    "tests/test_llm_endpoints.js"
+  ],
+  "test_plan": {
+    "steps": [
+      "Serve function: supabase functions serve llm --no-verify-jwt",
+      "POST /data-quality returns JSON with summary, issues[], recommendations[], confidence, sources",
+      "Headers include X-RateLimit-*; safety refusal on blacklisted content"
+    ]
+  },
+  "status_history": []
+}

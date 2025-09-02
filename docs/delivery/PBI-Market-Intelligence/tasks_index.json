@@ -1,0 +1,49 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Market-Intelligence-t1",
+      "title": "Add LLM endpoint for market brief",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "unit_tests": ["Test LLM response shape"],
+        "integration_tests": ["Test endpoint with market data"],
+        "acceptance_criteria": ["Endpoint returns market briefings"]
+      }
+    },
+    {
+      "task_id": "PBI-Market-Intelligence-t2",
+      "title": "Update UI for market intelligence",
+      "type": "ui",
+      "status": "Proposed",
+      "files": ["src/components/MarketIntelligence.tsx"],
+      "test_plan": {
+        "ui_tests": ["Test component renders market data"],
+        "acceptance_criteria": ["UI shows intelligence interface with LLM briefings"]
+      }
+    },
+    {
+      "task_id": "PBI-Market-Intelligence-t3",
+      "title": "Integrate with market datasets and Perplexity",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["src/lib/dataStreamers.ts"],
+      "test_plan": {
+        "integration_tests": ["Test data streaming for market data and news"],
+        "acceptance_criteria": ["Streamer fetches market data and RAG from Perplexity"]
+      }
+    },
+    {
+      "task_id": "PBI-Market-Intelligence-t4",
+      "title": "Test endpoint and UI",
+      "type": "test",
+      "status": "Proposed",
+      "files": [],
+      "test_plan": {
+        "end_to_end_tests": ["Run full flow from data to UI"],
+        "acceptance_criteria": ["All components work together for market intelligence"]
+      }
+    }
+  ]
+}

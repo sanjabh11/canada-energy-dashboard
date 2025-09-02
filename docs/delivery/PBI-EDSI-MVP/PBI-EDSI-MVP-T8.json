@@ -1,0 +1,16 @@
+{
+  "task_id": "PBI-EDSI-MVP-T8",
+  "title": "AbortController in RealTimeDashboard",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/components/RealTimeDashboard.tsx"
+  ],
+  "test_plan": {
+    "steps": [
+      "Trigger multiple refreshes rapidly and ensure only latest applies",
+      "No console errors from overlapping fetches"
+    ]
+  },
+  "status_history": []
+}

@@ -1,0 +1,49 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Community-Planning-t1",
+      "title": "Add LLM endpoint for community plan",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {
+        "unit_tests": ["Test LLM response shape"],
+        "integration_tests": ["Test endpoint with local data"],
+        "acceptance_criteria": ["Endpoint returns draft community plans"]
+      }
+    },
+    {
+      "task_id": "PBI-Community-Planning-t2",
+      "title": "Update UI for community planning",
+      "type": "ui",
+      "status": "Proposed",
+      "files": ["src/components/CommunityPlanner.tsx"],
+      "test_plan": {
+        "ui_tests": ["Test component renders plan drafts"],
+        "acceptance_criteria": ["UI shows planning interface with LLM drafts"]
+      }
+    },
+    {
+      "task_id": "PBI-Community-Planning-t3",
+      "title": "Integrate with local data and manifest",
+      "type": "code",
+      "status": "Proposed",
+      "files": ["src/lib/dataStreamers.ts"],
+      "test_plan": {
+        "integration_tests": ["Test data streaming for local data"],
+        "acceptance_criteria": ["Streamer fetches local data for planning"]
+      }
+    },
+    {
+      "task_id": "PBI-Community-Planning-t4",
+      "title": "Test endpoint and UI",
+      "type": "test",
+      "status": "Proposed",
+      "files": [],
+      "test_plan": {
+        "end_to_end_tests": ["Run full flow from data to UI"],
+        "acceptance_criteria": ["All components work together for community planning"]
+      }
+    }
+  ]
+}

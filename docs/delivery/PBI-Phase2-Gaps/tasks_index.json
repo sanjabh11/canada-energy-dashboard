@@ -1,0 +1,220 @@
+{
+  "tasks": [
+    {
+      "task_id": "PBI-Phase2-Gaps-T1",
+      "title": "Create PBI for Phase 2 Implementation",
+      "type": "doc",
+      "status": "Done",
+      "files": ["docs/delivery/PBI-Phase2-Gaps/prd.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T2",
+      "title": "For #4: Create Supabase tables for investment_projects, esg_data",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/migrations/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T3",
+      "title": "For #4: Implement NPV/IRR calculations",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T4",
+      "title": "For #4: Endpoints /api/v2/investment/project-analysis /api/v2/investment/portfolio-optimization",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T5",
+      "title": "For #4: AI integration for risk summaries",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T6",
+      "title": "For #4: UI investment cards",
+      "type": "ui",
+      "status": "Pending",
+      "files": ["src/components/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T7",
+      "title": "For #4: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T8",
+      "title": "For #4: Update gap_analy.md to 5/5",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T9",
+      "title": "For #8: Create Supabase tables for resilience_assets, climate_projections",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/migrations/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T10",
+      "title": "For #8: Implement resilience scoring algorithm",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T11",
+      "title": "For #8: Endpoints /api/v2/resilience/vulnerability-map /api/v2/resilience/adaptation-plan",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T12",
+      "title": "For #8: AI for adaptation roadmaps",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T13",
+      "title": "For #8: UI map overlays",
+      "type": "ui",
+      "status": "Pending",
+      "files": ["src/components/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T14",
+      "title": "For #8: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T15",
+      "title": "For #8: Update gap_analy.md to 5/5",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T16",
+      "title": "For #11: Create Supabase tables for innovations",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/migrations/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T17",
+      "title": "For #11: Implement TRL evaluation",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T18",
+      "title": "For #11: Endpoints /api/v2/innovation/technology-readiness /api/v2/innovation/market-opportunities",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T19",
+      "title": "For #11: AI for commercialization steps",
+      "type": "code",
+      "status": "Pending",
+      "files": ["supabase/functions/llm/index.ts"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T20",
+      "title": "For #11: UI innovation search",
+      "type": "ui",
+      "status": "Pending",
+      "files": ["src/components/"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T21",
+      "title": "For #11: Testing",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T22",
+      "title": "For #11: Update gap_analy.md to 5/5",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T23",
+      "title": "Overall: Run cloud health and endpoint tests",
+      "type": "test",
+      "status": "Pending",
+      "files": [],
+      "test_plan": {},
+      "status_history": []
+    },
+    {
+      "task_id": "PBI-Phase2-Gaps-T24",
+      "title": "Overall: Final update to gap_analy.md for all Phase 2",
+      "type": "code",
+      "status": "Pending",
+      "files": ["gap_analy.md"],
+      "test_plan": {},
+      "status_history": []
+    }
+  ]
+}

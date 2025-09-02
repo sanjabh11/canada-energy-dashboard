@@ -1,0 +1,23 @@
+{
+  "task_id": "PBI-EDSI-MVP-T15",
+  "title": "Eliminate sample data fallbacks in client streamers; require real backend streaming or surface an error state",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/lib/dataStreamers.ts",
+    "src/lib/dataManager.ts"
+  ],
+  "test_plan": {
+    "steps": [
+      "Set VITE_USE_STREAMING_DATASETS=true and valid VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY in .env",
+      "Run the app and open Network inspector: verify no requests to /data/*_sample.json",
+      "Temporarily break streaming (e.g., wrong key) and reload: UI should surface error state; status for datasets becomes 'error' without loading any mock data",
+      "Restore correct config: streaming resumes; data loads from Supabase Edge endpoints only",
+      "Optional: clear IndexedDB cache and verify behavior remains correct"
+    ]
+  },
+  "status_history": [
+    { "ts": "2025-08-31T16:24:47+05:30", "status": "Proposed" },
+    { "ts": "2025-08-31T16:24:47+05:30", "status": "InProgress" }
+  ]
+}

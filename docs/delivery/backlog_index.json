@@ -1,0 +1,46 @@
+{
+  "pbis": [
+    {
+      "id": "PBI-EDSI-MVP",
+      "title": "Energy Data Streaming Integration MVP",
+      "status": "InProgress",
+      "path": "docs/delivery/PBI-EDSI-MVP/"
+    },
+    {
+      "id": "PBI-LLM-Gemini",
+      "title": "LLM Orchestration and Chart Explainer (Phase A)",
+      "status": "Proposed",
+      "path": "docs/delivery/PBI-LLM-Gemini/"
+    },
+    {
+      "id": "PBI-Carbon-Emissions",
+      "title": "Carbon Emissions Tracking & Planner",
+      "status": "Agreed",
+      "path": "docs/delivery/PBI-Carbon-Emissions/"
+    },
+    {
+      "id": "PBI-Market-Intelligence",
+      "title": "Energy Market Intelligence Platform",
+      "status": "Agreed",
+      "path": "docs/delivery/PBI-Market-Intelligence/"
+    },
+    {
+      "id": "PBI-Community-Planning",
+      "title": "Community Energy Planning Assistant",
+      "status": "Agreed",
+      "path": "docs/delivery/PBI-Community-Planning/"
+    },
+    {
+      "id": "PBI-Data-Quality-Depth",
+      "title": "Data Integration & Quality Assurance Depth",
+      "status": "Agreed",
+      "path": "docs/delivery/PBI-Data-Quality-Depth/"
+    },
+    {
+      "id": "PBI-Transition-KPIs",
+      "title": "Transition Progress Tracker: KPI Dashboards + Scheduled Archival",
+      "status": "Agreed",
+      "path": "docs/delivery/PBI-Transition-KPIs/"
+    }
+  ]
+}

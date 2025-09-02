@@ -1,0 +1,18 @@
+{
+  "task_id": "PBI-EDSI-MVP-T7",
+  "title": "IndexedDB cache module + integration",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/lib/cache.ts",
+    "src/lib/dataManager.ts"
+  ],
+  "test_plan": {
+    "steps": [
+      "Load data with streaming on and verify cache writes",
+      "Disable network/stream and verify cached data hydrates",
+      "Verify UI shows Fallback when using cache"
+    ]
+  },
+  "status_history": []
+}

@@ -1,0 +1,22 @@
+{
+  "task_id": "PBI-EDSI-MVP-T14",
+  "title": "HF streamer: add nested endpoint candidates",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/lib/dataStreamers.ts",
+    "docs/delivery/PBI-EDSI-MVP/tasks_index.json"
+  ],
+  "test_plan": {
+    "steps": [
+      "Run pnpm exec tsc -b to ensure types pass",
+      "With streaming ON and valid envs, verify HF dataset streams and UI shows Source: Stream",
+      "Verify dashed and nested endpoint variants both work",
+      "With aborts, confirm no fallback/caching on AbortError"
+    ]
+  },
+  "status_history": [
+    { "status": "Proposed", "timestamp": "2025-08-27T08:34:26+05:30" },
+    { "status": "InProgress", "timestamp": "2025-08-27T08:34:26+05:30" }
+  ]
+}

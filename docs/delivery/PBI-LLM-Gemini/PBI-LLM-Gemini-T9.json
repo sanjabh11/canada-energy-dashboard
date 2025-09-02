@@ -1,0 +1,23 @@
+{
+  "task_id": "PBI-LLM-Gemini-T9",
+  "title": "UI Panel: Transition Report (wire to llm/transition-report with citations & download)",
+  "type": "ui",
+  "status": "InProgress",
+  "files": [
+    "src/components/TransitionReportPanel.tsx",
+    "src/lib/llmClient.ts",
+    "src/lib/edge.ts",
+    "src/lib/constants.ts",
+    "src/components/RealTimeDashboard.tsx"
+  ],
+  "test_plan": {
+    "steps": [
+      "Render TransitionReportPanel with datasetPath + timeframe -> shows loading, results, citations, and export",
+      "POST to /llm/transition-report succeeds and UI displays summary, key_findings, policy_implications, confidence, sources",
+      "AbortController cancels in-flight request on rerender or unmount"
+    ]
+  },
+  "status_history": [
+    { "timestamp": "2025-08-31T13:02:04+05:30", "status": "InProgress", "note": "Started aligning UI (TransitionReportPanel) and client types to server schema; added sources rendering and JSON unwrap." }
+  ]
+}
