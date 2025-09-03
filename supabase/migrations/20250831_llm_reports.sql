@@ -18,12 +18,12 @@ create index if not exists llm_reports_dataset_idx on public.llm_reports (datase
 alter table public.llm_reports enable row level security;
 
 -- Allow reads to anon (adjust as needed)
-create policy if not exists llm_reports_read_policy on public.llm_reports
+create policy llm_reports_read_policy on public.llm_reports
   for select
   using (true);
 
 -- Only service role can insert (edge function uses service key)
-create policy if not exists llm_reports_insert_policy on public.llm_reports
+create policy llm_reports_insert_policy on public.llm_reports
   for insert
   to service_role
   with check (true);

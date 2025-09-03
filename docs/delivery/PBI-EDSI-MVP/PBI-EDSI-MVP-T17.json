@@ -1,0 +1,20 @@
+{
+  "task_id": "PBI-EDSI-MVP-T17",
+  "title": "Stabilize SSE streaming + WebSocket guards; fix Investment blank state",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    "src/lib/data/streamingService.ts",
+    "src/hooks/useStreamingData.ts",
+    "src/hooks/useWebSocket.ts"
+  ],
+  "test_plan": {
+    "steps": [
+      "With VITE_ENABLE_LIVE_STREAMING=false and VITE_ENABLE_WEBSOCKET=false, load app: Investment tab should render using fallback without blank states; no WebSocket connection attempts.",
+      "Set VITE_ENABLE_LIVE_STREAMING=true with valid VITE_SUPABASE_URL, leave WebSocket disabled: SSE should connect or fallback after retries without overwriting handlers; Investment shows live or fallback accordingly.",
+      "Temporarily point a dataset to a non-existent endpoint to simulate 404; verify retries then fallback without permanent loading state.",
+      "Enable VITE_ENABLE_WEBSOCKET=true with an echo server (optional): WebSocket hooks connect; disable again to confirm hooks suppress connection attempts."
+    ]
+  },
+  "status_history": []
+}

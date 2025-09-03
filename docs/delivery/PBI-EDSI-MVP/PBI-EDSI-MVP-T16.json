@@ -1,0 +1,21 @@
+{
+  "task_id": "PBI-EDSI-MVP-T16",
+  "title": "Env hardening: client/server separation, protect .env, and docs",
+  "type": "code",
+  "status": "InProgress",
+  "files": [
+    ".env",
+    ".gitignore",
+    "README.md",
+    "docs/delivery/PBI-EDSI-MVP/tasks_index.json"
+  ],
+  "test_plan": {
+    "steps": [
+      "Ensure .env contains only client-side Vite variables; server secrets commented/removed.",
+      "Confirm .gitignore ignores .env and Git marks it assume-unchanged.",
+      "Run type-check: pnpm exec tsc -b (if deps installed) and app dev without throwing edge config error when streaming off.",
+      "With streaming on and valid Supabase client env, edge helpers construct base URL and do not fail fast."
+    ]
+  },
+  "status_history": []
+}

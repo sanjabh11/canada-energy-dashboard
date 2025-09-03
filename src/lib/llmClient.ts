@@ -159,3 +159,32 @@ export async function getCommunityPlan(
   const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
   return payload as CommunityPlanResponse;
 }
+
+export interface GridOptimizationResponse {
+  summary: string;
+  recommendations: Array<{
+    id: string;
+    type: string;
+    priority: string;
+    description: string;
+    expectedImpact: number;
+    implementationTime: number;
+    confidence: number;
+  }>;
+  confidence?: string | number;
+  sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
+}
+
+export async function getGridOptimizationRecommendations(
+  datasetPath: string,
+  timeframe: string,
+  options: EdgeFetchOptions = {}
+): Promise<GridOptimizationResponse> {
+  const { json } = await fetchEdgePostJson(
+    [ENDPOINTS.LLM.GRID_OPTIMIZATION],
+    { datasetPath, timeframe },
+    options
+  );
+  const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
+  return payload as GridOptimizationResponse;
+}

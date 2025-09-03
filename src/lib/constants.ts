@@ -13,7 +13,8 @@ export const ENDPOINTS = {
     HISTORY: 'llm/history',
     EMISSIONS_PLANNER: 'llm/emissions-planner',
     MARKET_BRIEF: 'llm/market-brief',
-    COMMUNITY_PLAN: 'llm/community-plan'
+    COMMUNITY_PLAN: 'llm/community-plan',
+    GRID_OPTIMIZATION: 'llm/grid-optimization'
   },
   STREAM: {
     MANIFEST_DASHED: (dataset: string) => `manifest-${dataset}`,

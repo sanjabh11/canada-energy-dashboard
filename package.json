@@ -12,6 +12,7 @@
     "cloud:deploy": "supabase functions deploy llm --project-ref qnymbecjgeaoxsfphrti",
     "cloud:health": "node tests/cloud_health.mjs",
     "cloud:test": "node tests/test_llm_endpoints.js",
+    "test:phase4": "node tests/test_phase4_components.js",
     "cloud:all": "npm run cloud:deploy && npm run cloud:health && npm run cloud:test"
   },
   "dependencies": {

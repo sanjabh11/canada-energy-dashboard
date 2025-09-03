@@ -70,6 +70,11 @@ VITE_DEBUG_LOGS=false
 - `VITE_USE_STREAMING_DATASETS`: set to `true` to enable streaming via Supabase Edge Functions; `false` uses local fallback JSON.
 - `VITE_DEBUG_LOGS`: set to `true` to enable verbose console logs for debugging (e.g., connection status and abort handling). Default `false`.
 
+### Security: Client vs Server secrets
+- Client `.env` (Vite) must only contain variables prefixed with `VITE_`. These are exposed to the browser.
+- Server-side secrets (no `VITE_` prefix), such as `LLM_*`, `SUPABASE_SERVICE_ROLE_KEY`, and `GEMINI_*`, should be set in Supabase Functions Environment (Project → Configuration → Functions → Environment), not in the client `.env`.
+- Ensure `.gitignore` includes `.env` and consider `git update-index --assume-unchanged .env` locally to avoid accidental commits.
+
 ## Commands
 
 - Install deps: `pnpm install`

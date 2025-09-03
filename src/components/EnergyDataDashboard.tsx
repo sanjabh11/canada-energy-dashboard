@@ -20,7 +20,14 @@ import { DataTable } from './DataTable';
 import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
 import { RealTimeDashboard } from './RealTimeDashboard';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown } from 'lucide-react';
+import { InvestmentCards } from './InvestmentCards';
+import { ResilienceMap } from './ResilienceMap';
+import { InnovationSearch } from './InnovationSearch';
+import { IndigenousDashboard } from './IndigenousDashboard';
+import { StakeholderDashboard } from './StakeholderDashboard';
+import GridOptimizationDashboard from './GridOptimizationDashboard';
+import SecurityDashboard from './SecurityDashboard';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock } from 'lucide-react';
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
 const DEBUG_LOGS: boolean = ((import.meta as any).env?.VITE_DEBUG_LOGS === 'true');
@@ -61,7 +68,14 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
     { id: 'Trends', label: 'Trends', icon: TrendingUp },
-    { id: 'Education', label: 'Education', icon: GraduationCap }
+    { id: 'Education', label: 'Education', icon: GraduationCap },
+    { id: 'Investment', label: 'Investment', icon: TrendingUp },
+    { id: 'Resilience', label: 'Resilience', icon: Shield },
+    { id: 'Innovation', label: 'Innovation', icon: Zap },
+    { id: 'Indigenous', label: 'Indigenous', icon: Shield },
+    { id: 'Stakeholders', label: 'Stakeholders', icon: Zap },
+    { id: 'GridOptimization', label: 'Grid Ops', icon: Activity },
+    { id: 'Security', label: 'Security', icon: Lock }
   ];
 
   // Load connection statuses
@@ -665,16 +679,91 @@ export const EnergyDataDashboard: React.FC = () => {
                   return null;
                 })()}
               </div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-2">{activeTab}</h2>
-              <p className="text-slate-600 mb-6">
-                Content for this section is being developed.
-              </p>
-              <button
-                onClick={() => setActiveTab('Dashboard')}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-              >
-                Go to Dashboard
-              </button>
+              {/* Trends Tab */}
+              {activeTab === 'Trends' && (
+                <div className="space-y-8">
+                  <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-2xl p-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <TrendingUp className="h-8 w-8" />
+                          <h1 className="text-3xl font-bold">TREND ANALYSIS & PREDICTIVE INSIGHTS</h1>
+                        </div>
+                        <p className="text-lg opacity-90">Advanced analytics and forecasting models for energy market trends</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">2.3% ↑</div>
+                        <div className="text-sm opacity-90">Monthly Growth</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+                      <h3 className="text-lg font-semibold text-slate-800 mb-4">Market Trends</h3>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600">Energy Prices</span>
+                          <span className="text-sm font-medium text-green-600">+5.2%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-slate-600">Demand Growth</span>
+                          <span className="text-sm font-medium text-blue-600">+3.8%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Education Tab */}
+              {activeTab === 'Education' && (
+                <div className="space-y-8">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl p-8">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="flex items-center space-x-3 mb-2">
+                          <GraduationCap className="h-8 w-8" />
+                          <h1 className="text-3xl font-bold">EDUCATION & LEARNING RESOURCES</h1>
+                        </div>
+                        <p className="text-lg opacity-90">Comprehensive resources for understanding energy systems and analytics</p>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-bold">50+</div>
+                        <div className="text-sm opacity-90">Learning Modules</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Phase 2 Components */}
+              {activeTab === 'Investment' && <InvestmentCards />}
+              {activeTab === 'Resilience' && <ResilienceMap />}
+              {activeTab === 'Innovation' && <InnovationSearch />}
+
+              {/* Phase 3 Components */}
+              {activeTab === 'Indigenous' && <IndigenousDashboard />}
+              {activeTab === 'Stakeholders' && <StakeholderDashboard />}
+
+              {/* Phase 4 Components */}
+              {activeTab === 'GridOptimization' && <GridOptimizationDashboard />}
+              {activeTab === 'Security' && <SecurityDashboard />}
+
+              {/* Fallback for undefined tabs */}
+              {!['Investment', 'Resilience', 'Innovation', 'GridOptimization', 'Security'].includes(activeTab) && (
+                <>
+                  <h2 className="text-2xl font-bold text-slate-800 mb-2">{activeTab}</h2>
+                  <p className="text-slate-600 mb-6">
+                    Content for this section is being developed.
+                  </p>
+                  <button
+                    onClick={() => setActiveTab('Dashboard')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    Go to Dashboard
+                  </button>
+                </>
+              )}
             </div>
           </div>
         )}

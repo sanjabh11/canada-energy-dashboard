@@ -7,6 +7,8 @@
     { "task_id": "PBI-EDSI-MVP-T11", "title": "Edge helper fail-fast guard (env not configured)", "status": "InProgress" },
     { "task_id": "PBI-EDSI-MVP-T12", "title": "Fix abort propagation to prevent fallback on cancel ('Step is still running')", "status": "InProgress" },
     { "task_id": "PBI-EDSI-MVP-T13", "title": "Edge helpers: propagate AbortError without retrying alternate endpoints", "status": "InProgress" },
-    { "task_id": "PBI-EDSI-MVP-T14", "title": "HF streamer: add nested endpoint candidates", "status": "InProgress" }
+    { "task_id": "PBI-EDSI-MVP-T14", "title": "HF streamer: add nested endpoint candidates", "status": "InProgress" },
+    { "task_id": "PBI-EDSI-MVP-T16", "title": "Env hardening: client/server separation, protect .env, and docs", "status": "InProgress" },
+    { "task_id": "PBI-EDSI-MVP-T17", "title": "Stabilize SSE streaming + WebSocket guards; fix Investment blank state", "status": "InProgress" }
   ]
 }
