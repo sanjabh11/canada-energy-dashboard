@@ -28,6 +28,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock } from 'lucide-react';
+import { HelpButton } from './HelpButton';
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
 const DEBUG_LOGS: boolean = ((import.meta as any).env?.VITE_DEBUG_LOGS === 'true');
@@ -63,12 +64,18 @@ export const EnergyDataDashboard: React.FC = () => {
   const [maxRows, setMaxRows] = useState(5000);
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
 
+  // Handle case where users might have 'Education' tab saved or bookmarked
+  useEffect(() => {
+    if (activeTab === 'Education') {
+      setActiveTab('Dashboard'); // Redirect to Dashboard
+    }
+  }, []);
+
   const navigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
     { id: 'Trends', label: 'Trends', icon: TrendingUp },
-    { id: 'Education', label: 'Education', icon: GraduationCap },
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
@@ -209,7 +216,7 @@ export const EnergyDataDashboard: React.FC = () => {
   const activeStatus = connectionStatuses.find(s => s.dataset === activeDatasetInfo.name);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-900">
       {/* Header */}
       <header className="bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -218,10 +225,11 @@ export const EnergyDataDashboard: React.FC = () => {
               <div className="bg-blue-700 p-3 rounded-xl">
                 <Zap className="h-8 w-8" />
               </div>
-              <div>
+              <div className="flex items-center space-x-3">
                 <h1 className="text-2xl font-bold">Canadian Energy Information Portal</h1>
-                <p className="text-blue-200 text-sm font-medium">Real-time • Resilient Architecture</p>
+                <HelpButton id="tab.home" />
               </div>
+              <p className="text-slate-300 text-sm font-medium">Real-time • Resilient Architecture</p>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -277,12 +285,13 @@ export const EnergyDataDashboard: React.FC = () => {
             {/* Welcome Section */}
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
               <div className="text-center max-w-4xl mx-auto">
-                <div className="flex justify-center mb-4">
-                  <div className="bg-blue-500 p-4 rounded-full">
-                    <Zap className="h-12 w-12 text-white" />
+                  <div className="flex items-center justify-center mb-4">
+                    <div className="bg-cyan-600 p-4 rounded-full">
+                      <Zap className="h-12 w-12 text-white" />
+                    </div>
+                    <HelpButton id="tab.home" className="ml-2" />
                   </div>
-                </div>
-                <h1 className="text-4xl font-bold text-slate-800 mb-4">Canadian Energy Information Portal</h1>
+                  <h1 className="text-4xl font-bold text-slate-800 mb-4">Canadian Energy Information Portal</h1>
                 <p className="text-xl text-slate-600 mb-6">
                   Real-time streaming architecture for comprehensive energy data analytics across Canada
                 </p>
@@ -361,11 +370,11 @@ export const EnergyDataDashboard: React.FC = () => {
                   <span className="font-medium text-slate-700">Trend Analysis</span>
                 </button>
                 <button
-                  onClick={() => setActiveTab('Education')}
-                  className="flex items-center space-x-3 p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+                  onClick={() => setActiveTab('Dashboard')}
+                  className="flex items-center space-x-3 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
                 >
-                  <GraduationCap className="h-6 w-6 text-orange-600" />
-                  <span className="font-medium text-slate-700">Learn More</span>
+                  <Activity className="h-6 w-6 text-emerald-600" />
+                  <span className="font-medium text-slate-700">Get Started</span>
                 </button>
               </div>
             </div>

@@ -1,2 +1,4 @@
 node_modules
 .env
+# Ignore nested clone
+canada-energy-dashboard/
