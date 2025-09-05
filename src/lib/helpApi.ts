@@ -1,6 +1,7 @@
 // src/lib/helpApi.ts
-// Client-side helpers for interacting with the /api/help endpoints
+// Client-side helpers for interacting with the Help Edge Function endpoints
 // Provides typed interfaces and error handling
+import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 
 export interface HelpManifestItem {
   id: string;
@@ -20,7 +21,13 @@ export interface HelpContent {
  * This populates quick tooltips without loading full content
  */
 export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
-  const response = await fetch('/api/help/manifest');
+  const base = getEdgeBaseUrl();
+  // The Supabase Edge Function is named `help`. It expects paths under `/api/help/*` inside the function.
+  // So the full URL is: `${base}/help/api/help/manifest`
+  const url = base ? `${base}/help/api/help/manifest` : '/api/help/manifest';
+  const response = await fetch(url, {
+    headers: getEdgeHeaders()
+  });
 
   if (!response.ok) {
     console.error('Failed to fetch help manifest:', response.status);
@@ -36,7 +43,11 @@ export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
  * Returns parsed HTML for easy rendering
  */
 export async function fetchHelpById(id: string): Promise<HelpContent | null> {
-  const response = await fetch(`/api/help/${encodeURIComponent(id)}`);
+  const base = getEdgeBaseUrl();
+  const url = base ? `${base}/help/api/help/${encodeURIComponent(id)}` : `/api/help/${encodeURIComponent(id)}`;
+  const response = await fetch(url, {
+    headers: getEdgeHeaders()
+  });
 
   if (!response.ok) {
     if (response.status === 404) {

@@ -44,6 +44,18 @@
         "end_to_end_tests": ["Run full flow from data to UI"],
         "acceptance_criteria": ["All components work together for market intelligence"]
       }
+    },
+    {
+      "task_id": "PBI-Market-Intelligence-T1",
+      "title": "Market briefings with short RAG and scenario narratives",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/functions/llm/index.ts", "src/components/MarketIntelligence.tsx", "src/lib/rag.ts", "tests/test_llm_endpoints.js"],
+      "test_plan": {
+        "unit": ["RAG builder returns ≥3 chunks; citation formatting function returns non-empty sources."],
+        "integration": ["POST /llm/market-brief returns 200 with summary, drivers[], sources[]."],
+        "manual": ["In MarketIntelligence.tsx, insights render within 3s with ≥1 citation."]
+      }
     }
   ]
 }

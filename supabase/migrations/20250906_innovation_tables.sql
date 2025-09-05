@@ -1,0 +1,338 @@
+-- Innovation and Technology Readiness Schema Migration
+-- Run this in Supabase SQL Editor to create tables for innovation opportunity identification
+-- This migration is idempotent and can be run multiple times safely
+
+BEGIN;
+
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- innovations table - stores technology innovation profiles
+CREATE TABLE IF NOT EXISTS public.innovations (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  innovation_name text NOT NULL,
+  technology_category text NOT NULL, -- e.g. 'battery_storage', 'smart_grid', 'renewable_energy', 'ai_optimization'
+  description text,
+  current_trl smallint NOT NULL, -- Technology Readiness Level 1-9
+  target_trl smallint,
+
+  -- Technical details
+  key_technologies text[], -- array of key technologies involved
+  primary_benefits text[],
+  technical_challenges text[],
+  scalability_potential text, -- low, medium, high, very_high
+
+  -- Market and commercialization
+  market_maturity text DEFAULT 'early', -- early, growth, mature
+  market_size_estimate numeric(15,2), -- estimated market size in CAD
+  competitive_advantage text,
+  ip_status text, -- proprietary, patented, open_source, etc.
+  regulatory_requirements text[],
+
+  -- Development status
+  development_stage text DEFAULT 'concept', -- concept, prototype, pilot, commercial
+  funding_received numeric(12,2),
+  funding_sought numeric(12,2),
+  development_partners text[],
+  timeline_to_market text, -- months/years estimate
+
+  -- Contact and ownership
+  lead_organization text,
+  contact_person text,
+  contact_email text,
+  website_url text,
+
+  -- Metadata
+  data_sources jsonb, -- sources used to gather this information
+  last_updated date,
+  created_at timestamptz DEFAULT now()
+);
+
+-- innovation_assessments table - TRL and market assessments
+CREATE TABLE IF NOT EXISTS public.innovation_assessments (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  innovation_id uuid REFERENCES public.innovations(id) ON DELETE CASCADE,
+  assessment_date date NOT NULL,
+  assessor_name text,
+  assessor_organization text,
+
+  -- TRL Assessment
+  assessed_trl smallint NOT NULL,
+  trl_confidence_level text DEFAULT 'medium', -- low, medium, high
+  trl_assessment_method text,
+  trl_gaps_identified text[],
+  time_to_next_trl_estimate text, -- months estimate
+
+  -- Market Assessment
+  market_potential_score smallint, -- 1-10 scale
+  commercialization_potential_score smallint, -- 1-10 scale
+  competitive_landscape text,
+  go_to_market_strategy text,
+
+  -- Technical Assessment
+  technical_maturity_score smallint, -- 1-10 scale
+  scalability_assessment text,
+  integration_complexity text, -- low, medium, high
+
+  -- Risk Assessment
+  technical_risks text[],
+  market_risks text[],
+  regulatory_risks text[],
+  overall_risk_level text DEFAULT 'medium', -- low, medium, high
+
+  -- Recommendations
+  recommended_actions text[],
+  priority_level text DEFAULT 'medium', -- low, medium, high, critical
+  investment_recommendation text,
+
+  -- Metadata
+  assessment_methodology text,
+  data_sources jsonb,
+  created_at timestamptz DEFAULT now()
+);
+
+-- innovation_funding_opportunities table - funding and partnership opportunities
+CREATE TABLE IF NOT EXISTS public.innovation_funding_opportunities (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  opportunity_name text NOT NULL,
+  funding_type text NOT NULL, -- grant, loan, equity, partnership, prize
+  funding_amount numeric(12,2),
+  funding_source text, -- government, private, ngo, etc.
+  eligibility_criteria text[],
+  application_deadline date,
+  technology_focus text[], -- relevant technology categories
+  regional_focus text[], -- provinces/states where applicable
+
+  -- Contact information
+  contact_organization text,
+  contact_person text,
+  contact_email text,
+  website_url text,
+
+  -- Status
+  status text DEFAULT 'active', -- active, closed, upcoming
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- innovation_partnerships table - potential collaboration opportunities
+CREATE TABLE IF NOT EXISTS public.innovation_partnerships (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  partner_name text NOT NULL,
+  partner_type text NOT NULL, -- university, company, government, ngo
+  partnership_type text, -- research, development, commercialization, testing
+  technology_interests text[],
+  collaboration_capacity text, -- low, medium, high
+
+  -- Contact information
+  contact_person text,
+  contact_email text,
+  website_url text,
+
+  -- Location and focus
+  location text,
+  regional_focus text[],
+  industry_focus text[],
+
+  -- Status
+  partnership_status text DEFAULT 'available', -- available, engaged, completed
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- innovation_metrics table - tracking adoption and impact
+CREATE TABLE IF NOT EXISTS public.innovation_metrics (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  innovation_id uuid REFERENCES public.innovations(id) ON DELETE CASCADE,
+  metric_date date NOT NULL,
+  metric_type text NOT NULL, -- adoption, impact, performance, cost
+
+  -- Metric values
+  metric_value numeric(10,2),
+  metric_unit text, -- %, MW, $, etc.
+  baseline_value numeric(10,2),
+  target_value numeric(10,2),
+
+  -- Context
+  measurement_method text,
+  data_source text,
+  confidence_level text DEFAULT 'medium',
+
+  created_at timestamptz DEFAULT now()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_innovations_category ON public.innovations (technology_category);
+CREATE INDEX IF NOT EXISTS idx_innovations_trl ON public.innovations (current_trl);
+CREATE INDEX IF NOT EXISTS idx_innovations_stage ON public.innovations (development_stage);
+CREATE INDEX IF NOT EXISTS idx_innovations_market_size ON public.innovations (market_size_estimate DESC);
+
+CREATE INDEX IF NOT EXISTS idx_innovation_assessments_innovation ON public.innovation_assessments (innovation_id);
+CREATE INDEX IF NOT EXISTS idx_innovation_assessments_date ON public.innovation_assessments (assessment_date);
+CREATE INDEX IF NOT EXISTS idx_innovation_assessments_trl ON public.innovation_assessments (assessed_trl);
+
+CREATE INDEX IF NOT EXISTS idx_innovation_funding_type ON public.innovation_funding_opportunities (funding_type);
+CREATE INDEX IF NOT EXISTS idx_innovation_funding_deadline ON public.innovation_funding_opportunities (application_deadline);
+CREATE INDEX IF NOT EXISTS idx_innovation_funding_status ON public.innovation_funding_opportunities (status);
+
+CREATE INDEX IF NOT EXISTS idx_innovation_partnerships_type ON public.innovation_partnerships (partner_type);
+CREATE INDEX IF NOT EXISTS idx_innovation_partnerships_status ON public.innovation_partnerships (partnership_status);
+
+CREATE INDEX IF NOT EXISTS idx_innovation_metrics_innovation ON public.innovation_metrics (innovation_id);
+CREATE INDEX IF NOT EXISTS idx_innovation_metrics_date ON public.innovation_metrics (metric_date);
+CREATE INDEX IF NOT EXISTS idx_innovation_metrics_type ON public.innovation_metrics (metric_type);
+
+-- Function to calculate innovation readiness score
+CREATE OR REPLACE FUNCTION public.calculate_innovation_readiness_score(
+  innovation_uuid uuid,
+  assessment_date date DEFAULT CURRENT_DATE
+)
+RETURNS TABLE (
+  innovation_name text,
+  current_trl smallint,
+  readiness_score numeric,
+  market_potential_score numeric,
+  risk_adjusted_score numeric,
+  commercialization_readiness text
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  innovation_record record;
+  assessment_record record;
+BEGIN
+  -- Get innovation details
+  SELECT * INTO innovation_record
+  FROM public.innovations
+  WHERE id = innovation_uuid;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Innovation not found';
+  END IF;
+
+  -- Get latest assessment
+  SELECT * INTO assessment_record
+  FROM public.innovation_assessments
+  WHERE innovation_id = innovation_uuid
+    AND assessment_date <= assessment_date
+  ORDER BY assessment_date DESC
+  LIMIT 1;
+
+  -- Calculate readiness scores
+  DECLARE
+    trl_score numeric := (innovation_record.current_trl::numeric / 9.0) * 100;
+    market_score numeric := COALESCE(assessment_record.market_potential_score::numeric, 5) * 10;
+    technical_score numeric := COALESCE(assessment_record.technical_maturity_score::numeric, 5) * 10;
+    commercialization_score numeric := COALESCE(assessment_record.commercialization_potential_score::numeric, 5) * 10;
+
+    overall_readiness numeric := (trl_score * 0.4) + (technical_score * 0.3) + (market_score * 0.2) + (commercialization_score * 0.1);
+
+    risk_penalty numeric := CASE assessment_record.overall_risk_level
+      WHEN 'high' THEN 20
+      WHEN 'medium' THEN 10
+      ELSE 0
+    END;
+
+    risk_adjusted numeric := GREATEST(0, overall_readiness - risk_penalty);
+
+    readiness_level text := CASE
+      WHEN risk_adjusted >= 80 THEN 'High'
+      WHEN risk_adjusted >= 60 THEN 'Medium'
+      WHEN risk_adjusted >= 40 THEN 'Low'
+      ELSE 'Very Low'
+    END;
+  BEGIN
+    RETURN QUERY
+    SELECT
+      innovation_record.innovation_name,
+      innovation_record.current_trl,
+      ROUND(overall_readiness, 1)::numeric,
+      market_score::numeric,
+      ROUND(risk_adjusted, 1)::numeric,
+      readiness_level;
+  END;
+END;
+$$;
+
+-- Seed sample innovation data
+INSERT INTO public.innovations (
+  innovation_name, technology_category, description, current_trl, target_trl,
+  key_technologies, primary_benefits, technical_challenges,
+  market_maturity, development_stage, lead_organization
+) VALUES
+('Advanced Flow Battery Storage', 'battery_storage', 'Long-duration energy storage using vanadium redox flow technology', 7, 9,
+ ARRAY['flow battery', 'vanadium electrolyte', 'smart controls'],
+ ARRAY['6+ hour storage duration', 'scalability', 'low degradation'],
+ ARRAY['electrolyte cost', 'system complexity'],
+ 'growth', 'pilot', 'Canadian Battery Innovation Centre'),
+
+('AI-Powered Grid Optimization', 'smart_grid', 'Machine learning for real-time grid balancing and optimization', 6, 8,
+ ARRAY['machine learning', 'iot sensors', 'edge computing'],
+ ARRAY['15% efficiency improvement', 'predictive maintenance', 'demand response'],
+ ARRAY['data integration', 'cybersecurity', 'algorithm training'],
+ 'growth', 'prototype', 'University of Toronto'),
+
+('Solar Tracking with IoT', 'renewable_energy', 'Dual-axis solar tracking with predictive weather optimization', 8, 9,
+ ARRAY['iot sensors', 'predictive analytics', 'dual-axis tracking'],
+ ARRAY['35% efficiency increase', 'weather adaptation', 'remote monitoring'],
+ ARRAY['initial cost premium', 'maintenance complexity'],
+ 'mature', 'commercial', 'SolarTech Canada'),
+
+('Hydrogen Fuel Cell Microgrid', 'renewable_energy', 'Integrated hydrogen production and fuel cell system for remote communities', 5, 8,
+ ARRAY['electrolysis', 'fuel cells', 'hydrogen storage'],
+ ARRAY['energy independence', 'zero emissions', 'energy storage'],
+ ARRAY['hydrogen storage safety', 'system integration', 'cost reduction'],
+ 'early', 'prototype', 'Hydrogen Canada'),
+
+('Blockchain Energy Trading', 'smart_grid', 'Peer-to-peer energy trading platform using blockchain', 4, 7,
+ ARRAY['blockchain', 'smart contracts', 'iot metering'],
+ ARRAY['transparent pricing', 'local energy markets', 'consumer empowerment'],
+ ARRAY['regulatory framework', 'scalability', 'cybersecurity'],
+ 'early', 'concept', 'Energy Blockchain Labs')
+ON CONFLICT DO NOTHING;
+
+-- Sample assessment data
+INSERT INTO public.innovation_assessments (
+  innovation_id, assessment_date, assessor_name, assessor_organization,
+  assessed_trl, trl_confidence_level, market_potential_score,
+  commercialization_potential_score, technical_maturity_score,
+  overall_risk_level, priority_level
+) VALUES
+((SELECT id FROM public.innovations WHERE innovation_name = 'Advanced Flow Battery Storage'), '2024-09-01', 'Dr. Sarah Chen', 'Natural Resources Canada',
+ 7, 'high', 8, 7, 8, 'medium', 'high'),
+
+((SELECT id FROM public.innovations WHERE innovation_name = 'AI-Powered Grid Optimization'), '2024-09-01', 'Prof. Michael Wong', 'University of British Columbia',
+ 6, 'medium', 9, 8, 7, 'medium', 'high'),
+
+((SELECT id FROM public.innovations WHERE innovation_name = 'Solar Tracking with IoT'), '2024-09-01', 'Dr. Lisa Thompson', 'SolarTech Canada',
+ 8, 'high', 7, 9, 9, 'low', 'medium'),
+
+((SELECT id FROM public.innovations WHERE innovation_name = 'Hydrogen Fuel Cell Microgrid'), '2024-09-01', 'Dr. Robert Davis', 'Hydrogen Canada',
+ 5, 'medium', 8, 6, 5, 'high', 'high'),
+
+((SELECT id FROM public.innovations WHERE innovation_name = 'Blockchain Energy Trading'), '2024-09-01', 'Mark Johnson', 'Energy Blockchain Labs',
+ 4, 'low', 6, 5, 4, 'high', 'medium')
+ON CONFLICT DO NOTHING;
+
+-- Sample funding opportunities
+INSERT INTO public.innovation_funding_opportunities (
+  opportunity_name, funding_type, funding_amount, funding_source,
+  eligibility_criteria, application_deadline, technology_focus,
+  contact_organization, status
+) VALUES
+('Clean Energy Innovation Program', 'grant', 500000, 'Natural Resources Canada',
+ ARRAY['Canadian company', 'clean energy focus', 'commercial potential'],
+ '2025-03-31', ARRAY['renewable_energy', 'battery_storage', 'smart_grid'],
+ 'Natural Resources Canada', 'active'),
+
+('Technology Development Program', 'grant', 250000, 'Sustainable Development Technology Canada',
+ ARRAY['SDTC eligible', 'technology demonstration', 'Canadian SME'],
+ '2025-02-28', ARRAY['battery_storage', 'smart_grid', 'renewable_energy'],
+ 'Sustainable Development Technology Canada', 'active'),
+
+('Innovation Commercialization Program', 'loan', 1000000, 'Business Development Bank of Canada',
+ ARRAY['Canadian business', 'revenue generating', 'growth potential'],
+ '2025-06-30', ARRAY['all'], 'Business Development Bank of Canada', 'active')
+ON CONFLICT DO NOTHING;
+
+COMMIT;

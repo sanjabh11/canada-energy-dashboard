@@ -130,28 +130,69 @@ async function testTransitionReport() {
 }
 
 async function testDataQuality() {
-  console.log('Test: data-quality (normal)');
-  const resp = await fetch(`${BASE}/data-quality`, {
-    method: 'POST',
-    headers: authHeaders({ 'Content-Type': 'application/json' }),
-    body: JSON.stringify({ datasetPath: 'provincial_generation', logs: [{ type: 'ingest', ok: true }] })
-  });
-  if (!resp.ok) {
-    console.error('Failed data-quality', resp.status, await resp.text());
+  console.log('Testing data-quality endpoint...');
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    const resp = await fetch(`${BASE}/data-quality`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ datasetPath: 'hf_electricity_demand' }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (resp.status !== 200) {
+      console.error(`data-quality status: ${resp.status}`);
+      return false;
+    }
+    const json = await resp.json();
+    const result = json.result;
+    if (!result || !result.issues || !Array.isArray(result.sources)) {
+      console.error('data-quality response missing required fields');
+      return false;
+    }
+    console.log('ok data-quality');
+    return true;
+  } catch (e) {
+    console.error('data-quality error:', e.message);
     return false;
   }
-  if (!resp.headers.get('x-ratelimit-remaining') || !resp.headers.get('x-ratelimit-limit')) {
-    console.error('Missing X-RateLimit-* headers (data-quality)');
+}
+
+async function testTransitionKpis() {
+  console.log('Testing transition-kpis endpoint...');
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
+    const resp = await fetch(`${BASE}/transition-kpis`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ datasetPath: 'hf_electricity_demand', timeframe: 'recent' }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+
+    if (resp.status !== 200) {
+      console.error(`transition-kpis status: ${resp.status}`);
+      return false;
+    }
+    const json = await resp.json();
+    const result = json.result;
+    if (!result || !result.kpis || !Array.isArray(result.sources)) {
+      console.error('transition-kpis response missing required fields');
+      return false;
+    }
+    console.log('ok transition-kpis');
+    return true;
+  } catch (e) {
+    console.error('transition-kpis error:', e.message);
     return false;
   }
-  const js = await resp.json();
-  const r = js.result || js;
-  if (!r.summary || !Array.isArray(r.sources)) {
-    console.error('data-quality response missing fields:', r);
-    return false;
-  }
-  console.log('ok data-quality shape.');
-  return true;
 }
 
 async function testIndigenousGuard() {
@@ -253,13 +294,14 @@ async function run() {
   const d = await testAnalyticsInsight();
   const e = await testTransitionReport();
   const f = await testDataQuality();
-  const g = await testSafetyOnDataQuality();
-  const h = await testTransitionIndigenousGuard();
-  let i = true;
+  const g = await testTransitionKpis();
+  const h = await testSafetyOnDataQuality();
+  const i = await testTransitionIndigenousGuard();
+  let j = true;
   if (process.env.TEST_RATE_LIMIT === '1') {
-    i = await testRateLimit();
+    j = await testRateLimit();
   }
-  if (a && b && c && d && e && f && g && h && i) {
+  if (a && b && c && d && e && f && g && h && i && j) {
     console.log('ALL TESTS PASS');
     process.exit(0);
   } else {

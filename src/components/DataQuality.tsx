@@ -1,15 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { getEmissionsPlanner, type EmissionsPlannerResponse } from '../lib/llmClient';
+import { getDataQuality, type DataQualityResponse } from '../lib/llmClient';
 import { FileDown, Loader2, Link as LinkIcon } from 'lucide-react';
 
 interface Props {
   datasetPath: string;
-  timeframe: string;
-  focus?: string;
 }
 
-const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) => {
-  const [data, setData] = useState<EmissionsPlannerResponse | null>(null);
+const DataQuality: React.FC<Props> = ({ datasetPath }) => {
+  const [data, setData] = useState<DataQualityResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -23,11 +21,11 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
       setLoading(true);
       setError(null);
       try {
-        const json = await getEmissionsPlanner(datasetPath, timeframe, focus, { signal: controller.signal });
+        const json = await getDataQuality(datasetPath, '', { signal: controller.signal });
         if (!controller.signal.aborted) setData(json);
       } catch (e: any) {
         if (e?.name === 'AbortError') return;
-        setError(e?.message || 'Failed to load emissions planner');
+        setError(e?.message || 'Failed to load data quality');
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
@@ -36,18 +34,18 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
     run();
 
     return () => controller.abort();
-  }, [datasetPath, timeframe, focus]);
+  }, [datasetPath]);
 
-  const keyFindings: string[] = Array.isArray(data?.key_findings) ? (data!.key_findings as string[]) : [];
-  const policyImplications: string[] = Array.isArray(data?.policy_implications) ? (data!.policy_implications as string[]) : [];
-  const scenarioExplainers: string[] = Array.isArray(data?.scenario_explainers) ? (data!.scenario_explainers as string[]) : [];
+  const issues: string[] = Array.isArray(data?.issues) ? (data!.issues as string[]) : [];
+  const recommendations: string[] = Array.isArray(data?.recommendations) ? (data!.recommendations as string[]) : [];
+  const alerts: string[] = Array.isArray(data?.alerts) ? (data!.alerts as string[]) : [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800">Emissions Planner</h3>
+        <h3 className="text-lg font-semibold text-slate-800">Data Quality</h3>
         <button
-          onClick={() => { if (data) { const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `emissions-planner_${datasetPath}_${timeframe}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } }}
+          onClick={() => { if (data) { const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `data-quality_${datasetPath}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } }}
           disabled={!data}
           className="flex items-center space-x-2 text-sm bg-slate-100 hover:bg-slate-200 disabled:opacity-50 px-3 py-2 rounded"
         >
@@ -59,7 +57,7 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
         {loading && (
           <div className="flex items-center space-x-2 text-slate-600">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Generating plan…</span>
+            <span>Generating quality report…</span>
           </div>
         )}
         {error && (
@@ -71,32 +69,32 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
               <h4 className="font-semibold text-slate-800 mb-1">Summary</h4>
               <p className="text-sm text-slate-700 whitespace-pre-line">{data.summary}</p>
             </div>
-            {keyFindings.length > 0 && (
+            {issues.length > 0 && (
               <div>
-                <h4 className="font-semibold text-slate-800 mb-1">Key Findings</h4>
+                <h4 className="font-semibold text-slate-800 mb-1">Issues</h4>
                 <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-                  {keyFindings.map((f, i) => (
-                    <li key={i}>{f}</li>
+                  {issues.map((issue, i) => (
+                    <li key={i}>{issue}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {policyImplications.length > 0 && (
+            {recommendations.length > 0 && (
               <div>
-                <h4 className="font-semibold text-slate-800 mb-1">Policy Implications</h4>
+                <h4 className="font-semibold text-slate-800 mb-1">Recommendations</h4>
                 <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-                  {policyImplications.map((p, i) => (
-                    <li key={i}>{p}</li>
+                  {recommendations.map((rec, i) => (
+                    <li key={i}>{rec}</li>
                   ))}
                 </ul>
               </div>
             )}
-            {scenarioExplainers.length > 0 && (
+            {alerts.length > 0 && (
               <div>
-                <h4 className="font-semibold text-slate-800 mb-1">Scenario Explainers</h4>
-                <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-                  {scenarioExplainers.map((e, i) => (
-                    <li key={i}>{e}</li>
+                <h4 className="font-semibold text-slate-800 mb-1">Alerts</h4>
+                <ul className="list-disc pl-5 text-sm text-red-600 space-y-1">
+                  {alerts.map((alert, i) => (
+                    <li key={i}>{alert}</li>
                   ))}
                 </ul>
               </div>
@@ -146,4 +144,4 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
   );
 };
 
-export default EmissionsPlanner;
+export default DataQuality;

@@ -1305,17 +1305,81 @@ async function handleDataQuality(req: Request): Promise<Response> {
   return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result: parsed }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 }
 
-async function handleFeedback(req: Request): Promise<Response> {
+// Handle emissions planner with RAG for deeper insights
+async function handleEmissionsPlanner(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
-  const entry = { ts: new Date().toISOString(), ...body } as any;
-  console.log('LLM feedback', entry);
-  logFeedback({
-    user_id: (entry as any).userId || null,
-    endpoint: (entry as any).endpoint || 'unknown',
-    feedback: (entry as any).feedback || null,
-    detail: (entry as any).detail ? JSON.stringify((entry as any).detail) : null
+  const { datasetPath, timeframe, queryType } = body;
+  if (!datasetPath) return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
+  if (isBlacklisted(queryType) || isSensitiveTopic(queryType)) return new Response(JSON.stringify({ error: 'Request blocked by safety policy.' }), { status: 403, headers: jsonHeaders });
+
+  if (!LLM_ENABLED) {
+    const key = `emissions:${datasetPath}:${timeframe || ''}:${(queryType || '').trim().toLowerCase()}`;
+    const cached = cache.get(key);
+    if (cached && cached.expires > Date.now()) {
+      return new Response(JSON.stringify({ dataset: datasetPath, result: cached.payload, cache: true }), { headers: { ...jsonHeaders, 'X-LLM-Mode': 'disabled-cache' } });
+    }
+    return new Response(JSON.stringify({ error: 'LLM disabled by operator. Try later.' }), { status: 503, headers: { ...jsonHeaders, 'X-LLM-Mode': 'disabled' } });
+  }
+
+  const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
+  const rl = await checkRateLimit(userId);
+  if (!rl.ok) return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+
+  const manifest = await fetchManifest(datasetPath);
+  const rows = await fetchSampleRows(datasetPath, 200);
+  const numericSummary = summarizeNumericRows(rows);
+
+  const systemPrompt = `SYSTEM: You are the Carbon Emissions Planner for Canada. Produce JSON with:\n{\n  "summary": "<2-3 sentence TL;DR>",\n  "key_findings": ["<finding 1>", "..."],\n  "policy_implications": ["<implication 1>", "..."],\n  "scenario_explainers": ["<scenario 1>", "..."],\n  "sources": [{"id":"<dataset>", "last_updated":"<ISO>", "excerpt":"<one-line>"}]\n}\nUse RAG context for citations.`;
+
+  const userContext = [
+    `Dataset: ${manifest.dataset || datasetPath}`,
+    `Numeric Summary: ${JSON.stringify(numericSummary)}`,
+    `Sample rows (first 10): ${JSON.stringify(rows.slice(0, 10))}`,
+    `Focus: ${queryType || 'emissions planning'}; timeframe: ${timeframe || 'recent'}`,
+  ].join('\n\n');
+
+  const rr = redactPIIWithSummary(rows.slice(0, 10));
+  const rq = redactPIIWithSummary(queryType || '');
+  const redactedRows = rr.redacted;
+  const redactedQuery = rq.redacted;
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userContext.replace(JSON.stringify(rows.slice(0, 10)), JSON.stringify(redactedRows)).replace(String(queryType || ''), String(redactedQuery)) },
+  ];
+  const est = calcTokenCost(messages);
+  const started = Date.now();
+  const llmResp = await callLLM({ messages, model: Deno.env.get('GEMINI_MODEL_EMISSIONS') || Deno.env.get('GEMINI_MODEL') || undefined, maxTokens: 1500 });
+  const durationMs = Date.now() - started;
+
+  let parsed: any = null;
+  try { parsed = typeof llmResp === 'string' ? JSON.parse(llmResp) : llmResp; } catch { parsed = { text: llmResp }; }
+  if (!parsed.sources) {
+    parsed.sources = [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }];
+  }
+  try {
+    const snippets = buildSnippets(rows.slice(0, 10), numericSummary, 3);
+    parsed.sources = parsed.sources.map((s: any) => ({ ...s, snippets }));
+  } catch (_) { /* noop */ }
+
+  console.log('LLM emissions-planner called', { datasetPath, queryType, durationMs });
+  const responseSummary = parsed?.summary || String(parsed?.text || '').slice(0, 200);
+  logCall({
+    endpoint: 'emissions-planner',
+    dataset_path: datasetPath,
+    user_id: userId,
+    prompt: queryType || null,
+    response_summary: responseSummary || null,
+    provenance: parsed?.sources ? JSON.stringify(parsed.sources) : null,
+    status_code: 200,
+    duration_ms: durationMs,
+    cost_usd: est.usd || null,
+    token_cost: est.tokens || null,
+    redaction_summary: { emissions_rows: rr.summary, emissions_query: rq.summary },
+    meta: { timeframe, cache: false }
   });
-  return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
+  const cacheKey = `emissions:${datasetPath}:${timeframe || ''}:${(queryType || '').trim().toLowerCase()}`;
+  cache.set(cacheKey, { expires: Date.now() + CACHE_TTL_MIN * 60_000, payload: parsed });
+  return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result: parsed }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
 }
 
 function handleHealth(): Response {
@@ -1341,18 +1405,18 @@ function resolveOrigin(req: Request): string {
 function withCors(res: Response, req: Request): Response {
   const headers = new Headers(res.headers);
   const origin = resolveOrigin(req);
-  headers.set('Access-Control-Allow-Origin', origin);
   headers.set('Vary', 'Origin');
+  headers.set('Access-Control-Allow-Origin', origin);
   // Expose rate limit and cache headers to the browser
   headers.set('Access-Control-Expose-Headers', 'X-RateLimit-Remaining, X-RateLimit-Limit, X-Cache, X-LLM-Mode');
   return new Response(res.body, { status: res.status, headers });
 }
 
 function handleOptions(req: Request): Response {
-  const origin = resolveOrigin(req);
   const headers = new Headers();
-  headers.set('Access-Control-Allow-Origin', origin);
+  const origin = resolveOrigin(req);
   headers.set('Vary', 'Origin');
+  headers.set('Access-Control-Allow-Origin', origin);
   headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   const reqHeaders = req.headers.get('access-control-request-headers') || 'authorization, x-client-info, apikey, content-type, x-user-id';
   headers.set('Access-Control-Allow-Headers', reqHeaders);

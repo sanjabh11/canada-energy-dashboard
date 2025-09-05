@@ -17,6 +17,7 @@ export interface DataQualityResponse {
   summary: string;
   issues: Array<{ description: string; severity?: string } | string>;
   recommendations?: string[];
+  alerts?: string[];
   confidence?: string | number;
   sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
 }
@@ -34,8 +35,9 @@ export interface TransitionKpisResponse {
 
 export interface EmissionsPlannerResponse {
   summary: string;
-  scenarios?: string[];
-  recommendations?: string[];
+  key_findings?: string[];
+  policy_implications?: string[];
+  scenario_explainers?: string[];
   confidence?: string | number;
   sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
 }

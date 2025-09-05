@@ -45,6 +45,18 @@
         "end_to_end_tests": ["Run full QA flow"],
         "acceptance_criteria": ["All QA components work together"]
       }
+    },
+    {
+      "task_id": "PBI-Data-Quality-Depth-T1",
+      "title": "Data quality insights with RAG for validation reports",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/functions/llm/index.ts", "src/components/DataQuality.tsx", "src/lib/rag.ts", "tests/test_llm_endpoints.js"],
+      "test_plan": {
+        "unit": ["RAG builder returns ≥3 chunks for data samples."],
+        "integration": ["POST /llm/data-quality returns 200 with issues[], recommendations[], sources[]."],
+        "manual": ["In DataQuality.tsx, validation reports render within 3s with citations."]
+      }
     }
   ]
 }

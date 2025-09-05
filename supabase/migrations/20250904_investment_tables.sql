@@ -1,0 +1,195 @@
+-- Investment Projects and ESG Data Schema Migration
+-- Run this in Supabase SQL Editor to create tables for investment decision support
+-- This migration is idempotent and can be run multiple times safely
+
+BEGIN;
+
+-- Enable UUID extension if not already enabled
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- investment_projects table - stores energy investment project details
+CREATE TABLE IF NOT EXISTS public.investment_projects (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_name text NOT NULL,
+  project_type text NOT NULL, -- e.g. 'solar', 'wind', 'grid_upgrade', 'storage'
+  province text NOT NULL,
+  municipality text,
+  description text,
+  status text DEFAULT 'proposed', -- proposed, planning, construction, operational, cancelled
+  estimated_cost numeric(15,2), -- in CAD
+  estimated_completion_date date,
+  expected_roi_percentage numeric(5,2),
+  environmental_impact_score smallint, -- 1-10 scale
+  job_creation_estimate integer,
+  renewable_percentage numeric(5,2), -- percentage of renewable energy
+  grid_impact_assessment jsonb, -- detailed grid impact analysis
+  funding_sources jsonb, -- array of funding sources and amounts
+  stakeholders jsonb, -- key stakeholders involved
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- esg_data table - Environmental, Social, and Governance data for projects
+CREATE TABLE IF NOT EXISTS public.esg_data (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id uuid REFERENCES public.investment_projects(id) ON DELETE CASCADE,
+  assessment_date date NOT NULL,
+  environmental_score numeric(5,2), -- 0-100 scale
+  social_score numeric(5,2), -- 0-100 scale
+  governance_score numeric(5,2), -- 0-100 scale
+  overall_esg_score numeric(5,2), -- weighted average
+
+  -- Environmental factors
+  carbon_emissions_reduction numeric(10,2), -- tonnes CO2/year
+  water_usage_impact text, -- positive, negative, neutral
+  land_use_impact text, -- positive, negative, neutral
+  biodiversity_impact text, -- positive, negative, neutral
+
+  -- Social factors
+  community_engagement_score smallint, -- 1-10 scale
+  indigenous_consultation_status text, -- not_started, in_progress, completed, not_applicable
+  local_job_creation integer,
+  local_procurement_percentage numeric(5,2),
+
+  -- Governance factors
+  transparency_score smallint, -- 1-10 scale
+  regulatory_compliance_status text, -- compliant, pending, non_compliant
+  stakeholder_engagement_level text, -- low, medium, high
+
+  -- Metadata
+  assessment_methodology text,
+  assessor_name text,
+  assessor_organization text,
+  data_sources jsonb, -- sources used for assessment
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- investment_cashflows table - NPV/IRR calculations and cash flow projections
+CREATE TABLE IF NOT EXISTS public.investment_cashflows (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id uuid REFERENCES public.investment_projects(id) ON DELETE CASCADE,
+  year smallint NOT NULL, -- year 0 = project start
+  capital_expenditure numeric(15,2), -- CAPEX
+  operational_expenditure numeric(15,2), -- OPEX
+  revenue numeric(15,2), -- expected revenue
+  tax_benefits numeric(15,2), -- tax credits, incentives
+  net_cash_flow numeric(15,2), -- calculated net cash flow
+  discount_rate numeric(5,4), -- annual discount rate used
+  present_value numeric(15,2), -- discounted cash flow
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now(),
+
+  UNIQUE(project_id, year)
+);
+
+-- investment_risks table - risk assessment for projects
+CREATE TABLE IF NOT EXISTS public.investment_risks (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  project_id uuid REFERENCES public.investment_projects(id) ON DELETE CASCADE,
+  risk_category text NOT NULL, -- e.g. 'technical', 'market', 'regulatory', 'environmental'
+  risk_description text NOT NULL,
+  probability smallint NOT NULL, -- 1-10 scale (1=very low, 10=very high)
+  impact smallint NOT NULL, -- 1-10 scale (1=very low, 10=very high)
+  risk_score smallint GENERATED ALWAYS AS (probability * impact) STORED,
+  mitigation_strategy text,
+  mitigation_cost_estimate numeric(12,2),
+  risk_owner text, -- person/department responsible
+  status text DEFAULT 'active', -- active, mitigated, accepted, transferred
+  created_at timestamptz DEFAULT now(),
+  updated_at timestamptz DEFAULT now()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_investment_projects_province ON public.investment_projects (province);
+CREATE INDEX IF NOT EXISTS idx_investment_projects_status ON public.investment_projects (status);
+CREATE INDEX IF NOT EXISTS idx_investment_projects_type ON public.investment_projects (project_type);
+CREATE INDEX IF NOT EXISTS idx_investment_projects_completion_date ON public.investment_projects (estimated_completion_date);
+
+CREATE INDEX IF NOT EXISTS idx_esg_data_project_id ON public.esg_data (project_id);
+CREATE INDEX IF NOT EXISTS idx_esg_data_assessment_date ON public.esg_data (assessment_date);
+CREATE INDEX IF NOT EXISTS idx_esg_data_overall_score ON public.esg_data (overall_esg_score DESC);
+
+CREATE INDEX IF NOT EXISTS idx_investment_cashflows_project_id ON public.investment_cashflows (project_id);
+CREATE INDEX IF NOT EXISTS idx_investment_cashflows_year ON public.investment_cashflows (year);
+
+CREATE INDEX IF NOT EXISTS idx_investment_risks_project_id ON public.investment_risks (project_id);
+CREATE INDEX IF NOT EXISTS idx_investment_risks_category ON public.investment_risks (risk_category);
+CREATE INDEX IF NOT EXISTS idx_investment_risks_score ON public.investment_risks (risk_score DESC);
+
+-- Function to calculate NPV for a project
+CREATE OR REPLACE FUNCTION public.calculate_project_npv(project_uuid uuid, discount_rate numeric DEFAULT 0.08)
+RETURNS TABLE (
+  project_name text,
+  total_capex numeric,
+  total_opex numeric,
+  total_revenue numeric,
+  npv numeric,
+  irr numeric,
+  payback_years numeric
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  project_record record;
+  npv_value numeric := 0;
+  total_capex numeric := 0;
+  total_opex numeric := 0;
+  total_revenue numeric := 0;
+BEGIN
+  -- Get project details
+  SELECT * INTO project_record
+  FROM public.investment_projects
+  WHERE id = project_uuid;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION 'Project not found';
+  END IF;
+
+  -- Calculate totals from cash flows
+  SELECT
+    COALESCE(SUM(capital_expenditure), 0),
+    COALESCE(SUM(operational_expenditure), 0),
+    COALESCE(SUM(revenue), 0),
+    COALESCE(SUM(present_value), 0)
+  INTO total_capex, total_opex, total_revenue, npv_value
+  FROM public.investment_cashflows
+  WHERE project_id = project_uuid;
+
+  -- Return results
+  RETURN QUERY
+  SELECT
+    project_record.project_name,
+    total_capex,
+    total_opex,
+    total_revenue,
+    npv_value,
+    0.08::numeric, -- placeholder IRR calculation
+    CASE WHEN total_revenue > 0 THEN total_capex / total_revenue ELSE NULL END; -- simple payback
+END;
+$$;
+
+-- Seed some sample data for testing
+INSERT INTO public.investment_projects (
+  project_name, project_type, province, description, status,
+  estimated_cost, estimated_completion_date, expected_roi_percentage,
+  environmental_impact_score, renewable_percentage
+) VALUES
+('Ontario Solar Farm Phase 1', 'solar', 'Ontario', 'Large-scale solar installation in southwestern Ontario', 'planning', 50000000, '2026-12-31', 8.5, 9, 100.0),
+('Alberta Wind Energy Hub', 'wind', 'Alberta', 'Offshore wind farm in Lake Erie', 'proposed', 120000000, '2027-06-30', 7.2, 8, 100.0),
+('BC Grid Modernization', 'grid_upgrade', 'British Columbia', 'Smart grid infrastructure upgrade', 'construction', 75000000, '2025-09-30', 6.8, 7, 0.0),
+('Quebec Hydro Expansion', 'hydro', 'Quebec', 'Small hydro project in northern Quebec', 'operational', 25000000, '2024-03-15', 9.1, 10, 100.0)
+ON CONFLICT DO NOTHING;
+
+-- Sample ESG data
+INSERT INTO public.esg_data (
+  project_id, assessment_date, environmental_score, social_score, governance_score,
+  carbon_emissions_reduction, community_engagement_score, local_job_creation
+) VALUES
+((SELECT id FROM public.investment_projects WHERE project_name = 'Ontario Solar Farm Phase 1'), '2024-09-01', 95.0, 88.0, 92.0, 15000.0, 9, 250),
+((SELECT id FROM public.investment_projects WHERE project_name = 'Alberta Wind Energy Hub'), '2024-09-01', 92.0, 85.0, 90.0, 45000.0, 8, 180),
+((SELECT id FROM public.investment_projects WHERE project_name = 'BC Grid Modernization'), '2024-09-01', 78.0, 82.0, 88.0, 0.0, 8, 120),
+((SELECT id FROM public.investment_projects WHERE project_name = 'Quebec Hydro Expansion'), '2024-09-01', 98.0, 95.0, 94.0, 8000.0, 10, 85)
+ON CONFLICT DO NOTHING;
+
+COMMIT;

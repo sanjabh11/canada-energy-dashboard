@@ -64,12 +64,7 @@ export class StreamingService {
   private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
 
   private constructor() {
-    // Add diagnostic logging for WebSocket configuration
-    console.log('🔧 StreamingService Configuration:');
-    console.log('  - VITE_ENABLE_LIVE_STREAMING:', import.meta.env.VITE_ENABLE_LIVE_STREAMING);
-    console.log('  - VITE_ENABLE_WEBSOCKET:', import.meta.env.VITE_ENABLE_WEBSOCKET);
-    console.log('  - VITE_WEBSOCKET_URL:', import.meta.env.VITE_WEBSOCKET_URL);
-    console.log('  - VITE_SUPABASE_URL:', import.meta.env.VITE_SUPABASE_URL);
+    // Console logging for debugging streaming configuration
 
     this.config = {
       enableLivestream: import.meta.env.VITE_ENABLE_LIVE_STREAMING === 'true',
@@ -157,8 +152,15 @@ export class StreamingService {
         const data = JSON.parse(event.data);
         connection.lastUpdate = new Date().toISOString();
 
-        if (data.error) {
-          throw new Error(data.error);
+        if (data.error || (data.message && data.message.includes('No data available'))) {
+          console.warn(`No data available for ${connection.dataset}:`, data.message || data.error);
+          eventSource.close();
+          connection.status = 'disconnected';
+          this.notifyListeners(connection.dataset, { type: 'no_data', connection });
+          if (this.config.fallbackToMock) {
+            this.createFallbackConnection(connection.dataset);
+          }
+          return;
         }
 
         this.handleStreamingData(connection.dataset, data);
@@ -205,7 +207,11 @@ export class StreamingService {
           clearInterval(checkInterval);
           try { eventSource.close(); } catch {}
           connection.status = 'disconnected';
-          reject(new Error('Connection timeout'));
+          this.notifyListeners(connection.dataset, { type: 'timeout', connection });
+          if (this.config.fallbackToMock) {
+            this.createFallbackConnection(connection.dataset);
+          }
+          resolve(); // Resolve to prevent uncaught rejection
         }
       }, 100);
     });

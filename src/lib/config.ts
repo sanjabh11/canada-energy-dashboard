@@ -8,6 +8,7 @@ let warnedMissingSupabase = false;
 export function getSupabaseConfig(): { url: string; anonKey: string } {
   const url = env.VITE_SUPABASE_URL as string | undefined;
   const anonKey = env.VITE_SUPABASE_ANON_KEY as string | undefined;
+  console.log('getSupabaseConfig - VITE_SUPABASE_URL:', url, 'VITE_SUPABASE_ANON_KEY loaded:', !!anonKey);
   if (!url || !anonKey) {
     // Don't throw here; callers may choose fallback. Log for visibility, but only once.
     if (!warnedMissingSupabase) {
@@ -21,6 +22,7 @@ export function getSupabaseConfig(): { url: string; anonKey: string } {
 export function getEdgeBaseUrl(): string {
   const { url } = getSupabaseConfig();
   const override = (env.VITE_SUPABASE_EDGE_BASE as string | undefined) || '';
+  console.log('getEdgeBaseUrl - override:', override, 'url:', url, 'final base:', override || `${url}/functions/v1`);
   if (override) return override; // explicit override
   if (!url) return '';
   // If user provided the functions subdomain directly, use as-is
@@ -36,11 +38,13 @@ export function getEdgeHeaders(): Record<string, string> {
     headers['Authorization'] = `Bearer ${anonKey}`;
     headers['apikey'] = anonKey;
   }
+  console.log('getEdgeHeaders - anonKey:', !!anonKey, 'Authorization header sent:', 'Authorization' in headers);
   return headers;
 }
 
 export function getFeatureFlagUseStreaming(): boolean {
   const raw = env.VITE_USE_STREAMING_DATASETS as string | boolean | undefined;
+
   if (typeof raw === 'boolean') return raw;
   if (typeof raw === 'string') return raw.toLowerCase() === 'true';
   return false; // default off unless explicitly enabled

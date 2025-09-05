@@ -44,6 +44,18 @@
         "end_to_end_tests": ["Run full flow from data to UI"],
         "acceptance_criteria": ["All components work together for emissions planning"]
       }
+    },
+    {
+      "task_id": "PBI-Carbon-Emissions-T1",
+      "title": "Emissions insights: multivariate analytics + citations",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/functions/llm/index.ts", "src/components/EmissionsPlanner.tsx", "src/lib/rag.ts", "tests/test_llm_endpoints.js"],
+      "test_plan": {
+        "unit": ["RAG builder returns ≥3 chunks; citation formatting function returns non-empty sources."],
+        "integration": ["POST /llm/emissions-planner returns 200 with summary, key_findings, sources[]."],
+        "manual": ["In EmissionsPlanner.tsx, insights render within 3s with ≥1 citation."]
+      }
     }
   ]
 }

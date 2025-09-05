@@ -45,6 +45,18 @@
         "end_to_end_tests": ["Run full flow with KPIs"],
         "acceptance_criteria": ["All components work together"]
       }
+    },
+    {
+      "task_id": "PBI-Transition-KPIs-T1",
+      "title": "Transition KPIs with RAG for progress tracking",
+      "type": "code",
+      "status": "InProgress",
+      "files": ["supabase/functions/llm/index.ts", "src/components/TransitionKPIs.tsx", "src/lib/rag.ts", "tests/test_llm_endpoints.js"],
+      "test_plan": {
+        "unit": ["RAG builder returns ≥3 chunks for KPI data."],
+        "integration": ["POST /llm/transition-kpis returns 200 with kpis[], sources[]."],
+        "manual": ["In TransitionKPIs.tsx, insights render within 3s with citations."]
+      }
     }
   ]
 }

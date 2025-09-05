@@ -12,7 +12,6 @@ const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Content-Type': 'text/event-stream',
   'Cache-Control': 'no-cache',
   'Connection': 'keep-alive',
 };
@@ -223,7 +222,7 @@ function handleSinceParameter(request: Request): string | null {
 serve(async (req: Request) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { headers: { ...corsHeaders, 'Content-Type': 'text/plain' } });
   }
 
   // Handle health check or static snapshot requests
@@ -262,7 +261,7 @@ serve(async (req: Request) => {
         timestamp: new Date().toISOString(),
         source: 'IESO'
       }), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     } catch (error) {
@@ -270,7 +269,7 @@ serve(async (req: Request) => {
         error: 'Failed to fetch IESO data',
         timestamp: new Date().toISOString()
       }), {
-        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500
       });
     }
@@ -329,7 +328,7 @@ serve(async (req: Request) => {
   });
 
   return new Response(stream, {
-    headers: corsHeaders,
+    headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     status: 200
   });
 });
@@ -356,7 +355,7 @@ function handleHealthRequest(): Response {
   };
 
   return new Response(JSON.stringify(health), {
-    headers: { 'Content-Type': 'application/json', ...corsHeaders },
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     status: 200
   });
 }
@@ -379,7 +378,7 @@ async function handleSnapshotRequest(sinceISOString: string): Promise<Response> 
       source: 'IESO',
       timestamp: new Date().toISOString()
     }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200
     });
 
@@ -388,7 +387,7 @@ async function handleSnapshotRequest(sinceISOString: string): Promise<Response> 
       error: 'Failed to fetch IESO snapshot data',
       timestamp: new Date().toISOString()
     }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500
     });
   }

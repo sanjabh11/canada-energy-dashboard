@@ -18,8 +18,20 @@ const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 function corsHeaders() {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    // Allow common headers used by Supabase client and our frontend
+    'Access-Control-Allow-Headers': [
+      'content-type',
+      'authorization',
+      'apikey',
+      'x-client-info',
+      'x-user-id'
+    ].join(', '),
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    // Expose rate-limit or other useful headers if added later
+    'Access-Control-Expose-Headers': [
+      'x-ratelimit-limit',
+      'x-ratelimit-remaining'
+    ].join(', '),
   };
 }
 
@@ -48,10 +60,15 @@ serve(async (req) => {
     const path = url.pathname.replace(/\/$/, ''); // trim trailing slash
     let route = path;
 
-    // Handle both function route formats
-    if (path.includes('/functions/v1/api/help/')) {
-      route = path.replace('/functions/v1/api/help', '/api/help');
-    }
+    // Normalize when invoked under Supabase functions mount points so routes are consistent
+    // Examples:
+    //  - /functions/v1/help/api/help/manifest  -> /api/help/manifest
+    //  - /functions/v1/api/help/manifest      -> /api/help/manifest
+    route = route.replace(/^\/functions\/v1\/help/, '');
+    route = route.replace(/^\/functions\/v1\/api\/help/, '/api/help');
+    // Also normalize when invoked on the functions subdomain with function name prefix
+    //  - /help/api/help/manifest -> /api/help/manifest
+    route = route.replace(/^\/help\/api\/help/, '/api/help');
 
     // GET /api/help/manifest
     if (route === '/api/help/manifest') {
