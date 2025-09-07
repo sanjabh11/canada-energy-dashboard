@@ -3,11 +3,12 @@ import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, Cartesia
 import { MapPin, AlertTriangle, Shield, Zap, Eye, TrendingUp } from 'lucide-react';
 import { resilienceEngine, type AssetProfile, ResilienceUtils } from '../lib/resilienceScoring';
 
-// Mock infrastructure data for Phase 2B demonstration
+// Enhanced mock infrastructure data with more realistic Canadian assets
+// TODO: Replace with real ECCC climate data and infrastructure registries
 const mockAssets: AssetProfile[] = [
   {
     id: 'electra_01',
-    name: 'Metro Downtown Grid',
+    name: 'Toronto Downtown Grid Network',
     latitude: 43.6532,
     longitude: -79.3832,
     assetType: 'power_grid' as any,
@@ -21,7 +22,7 @@ const mockAssets: AssetProfile[] = [
   },
   {
     id: 'water_01',
-    name: 'River Water Treatment',
+    name: 'Greater Toronto Water Treatment',
     latitude: 43.6828,
     longitude: -79.3872,
     assetType: 'water_systems' as any,
@@ -35,7 +36,7 @@ const mockAssets: AssetProfile[] = [
   },
   {
     id: 'road_01',
-    name: 'Highway Bridge',
+    name: 'Highway 401 Bridge Infrastructure',
     latitude: 43.735,
     longitude: -79.4408,
     assetType: 'transportation' as any,
@@ -46,6 +47,20 @@ const mockAssets: AssetProfile[] = [
     expectedLifespan: 75,
     currentCondition: 7.5,
     area_sq_km: 2
+  },
+  {
+    id: 'hydro_01',
+    name: 'Ontario Hydro Transmission Line',
+    latitude: 44.5,
+    longitude: -79.5,
+    assetType: 'power_grid' as any,
+    currentValue: 750000000,
+    dependents: 120000,
+    criticalityScore: 8.9,
+    constructionYear: 1980,
+    expectedLifespan: 60,
+    currentCondition: 7.8,
+    area_sq_km: 30
   }
 ];
 
@@ -212,6 +227,20 @@ export const ResilienceMap: React.FC = () => {
           </div>
         </div>
 
+        {/* Data Source Notice */}
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 mb-4">
+          <div className="flex items-start">
+            <AlertTriangle className="h-4 w-4 text-orange-600 mt-0.5 mr-2 flex-shrink-0" />
+            <div>
+              <p className="text-orange-700 text-sm">
+                <strong>Data Sources:</strong> Currently using enhanced mock data for demonstration.
+                Production will integrate with Environment and Climate Change Canada (ECCC) climate projections
+                and provincial infrastructure registries for real vulnerability assessments.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Scenario Controls */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
@@ -286,7 +315,7 @@ export const ResilienceMap: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
 
         {/* Vulnerability Heat Map */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200">

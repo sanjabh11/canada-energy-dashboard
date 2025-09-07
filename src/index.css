@@ -27,7 +27,168 @@
   }
 }
 
+/* Custom utilities */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
 
+/* Shader animation utilities */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 1s ease-out;
+  }
+  .animate-fade-in-delayed {
+    animation: fadeIn 1s ease-out 0.3s both;
+  }
+  .animate-fade-in-slow {
+    animation: fadeIn 1.5s ease-out 0.6s both;
+  }
+
+  /* Shader background animations */
+  .animate-shader-bg {
+    animation: shaderBackground 8s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-pulse-slow {
+    animation: pulseSlow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-gradient-x {
+    animation: gradientX 15s ease infinite;
+  }
+
+  .animate-gradient-y {
+    animation: gradientY 15s ease infinite;
+  }
+
+  .animate-gradient-xy {
+    animation: gradientXY 15s ease infinite;
+  }
+}
+
+/* Shader keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes shaderBackground {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes pulseSlow {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes gradientX {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes gradientY {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: center top;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: center bottom;
+  }
+}
+
+@keyframes gradientXY {
+  0%, 100% {
+    background-size: 400% 400%;
+    background-position: left top;
+  }
+  25% {
+    background-size: 400% 400%;
+    background-position: right top;
+  }
+  50% {
+    background-size: 400% 400%;
+    background-position: right bottom;
+  }
+  75% {
+    background-size: 400% 400%;
+    background-position: left bottom;
+  }
+}
+
+/* Glassmorphism utilities */
+.glass-card {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+.glass-card-dark {
+  backdrop-filter: blur(16px) saturate(180%);
+  background-color: rgba(17, 25, 40, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.125);
+}
+
+/* Shader gradient backgrounds */
+.shader-bg-primary {
+  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background-size: 400% 400%;
+}
+
+.shader-bg-secondary {
+  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+  background-size: 400% 400%;
+}
+
+.shader-bg-accent {
+  background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e);
+  background-size: 400% 400%;
+}
+
+.shader-bg-energy {
+  background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+  background-size: 400% 400%;
+}
 
 img {
   object-position: top;

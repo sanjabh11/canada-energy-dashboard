@@ -3,6 +3,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Briefcase, TrendingUp, Activity, Wifi, WifiOff } from 'lucide-react';
 import { financialEngine, type CashFlow, type InvestmentMetrics, type SimpleInvestment } from '../lib/financialCalculations';
 import { useStreamingData } from '../hooks/useStreamingData';
+import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
 
 // Mock investment data with realistic positive cash flows
 const mockInvestments: SimpleInvestment[] = [
@@ -188,97 +189,117 @@ export const InvestmentCards: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="bg-blue-500 p-3 rounded-lg">
-            <Briefcase className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Hero Section with Improved Layout */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-emerald-900 via-green-900 to-teal-900">
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-black/30"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+        </div>
+
+        <div className={CONTAINER_CLASSES.page}>
+          <div className="text-center">
+            <h1 className="text-4xl lg:text-6xl font-serif font-light text-white mb-6 tracking-tight animate-fade-in">
+              Investment Portfolio
+              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-green-400 font-medium">
+                Analysis
+              </span>
+            </h1>
+
+            <p className={`${TEXT_CLASSES.body} text-xl lg:text-2xl text-green-100 font-light max-w-3xl mx-auto leading-relaxed animate-fade-in-delayed`}>
+              AI-powered financial analysis with real-time market data integration
+            </p>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Investment Portfolio Analysis</h1>
-            <p className="text-slate-600">NPV/IRR analysis with AI-powered risk assessment</p>
+        </div>
+      </div>
+
+      <div className={CONTAINER_CLASSES.page}>
+        {/* Portfolio Key Metrics with Improved Grid */}
+        <div className={CONTAINER_CLASSES.gridDashboard}>
+          <div className={`${COLOR_SCHEMES.success.bg} p-6 rounded-xl border ${COLOR_SCHEMES.success.border} hover:shadow-lg transition-all duration-300`}>
+            <div className="flex items-center space-x-4">
+              <TrendingUp className={`h-8 w-8 ${COLOR_SCHEMES.success.accent}`} />
+              <div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.success.accent}`}>Total NPV</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>
+                  ${(portfolioMetrics.totalNPV / 1000000).toFixed(1)}M
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`${COLOR_SCHEMES.primary.bg} p-6 rounded-xl border ${COLOR_SCHEMES.primary.border} hover:shadow-lg transition-all duration-300`}>
+            <div className="flex items-center space-x-4">
+              <Activity className={`h-8 w-8 ${COLOR_SCHEMES.primary.accent}`} />
+              <div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.primary.accent}`}>Total Investment</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.primary.text}`}>
+                  ${(portfolioMetrics.totalInvestment / 1000000).toFixed(1)}M
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`${COLOR_SCHEMES.info.bg} p-6 rounded-xl border ${COLOR_SCHEMES.info.border} hover:shadow-lg transition-all duration-300`}>
+            <div className="flex items-center space-x-4">
+              <Briefcase className={`h-8 w-8 ${COLOR_SCHEMES.info.accent}`} />
+              <div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.info.accent}`}>Net Return</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.info.text}`}>
+                  ${(portfolioMetrics.netReturn / 1000000).toFixed(1)}M
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className={`${COLOR_SCHEMES.warning.bg} p-6 rounded-xl border ${COLOR_SCHEMES.warning.border} hover:shadow-lg transition-all duration-300`}>
+            <div className="flex items-center space-x-4">
+              <TrendingUp className={`h-8 w-8 ${COLOR_SCHEMES.warning.accent}`} />
+              <div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.warning.accent}`}>Portfolio Health</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.warning.text}`}>
+                  {portfolioMetrics.totalNPV > 0 ? 'Strong' : 'Attention Needed'}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Portfolio Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
-            <TrendingUp className="h-6 w-6 text-green-600" />
-            <div>
-              <div className="text-sm text-green-600 font-medium">Total NPV</div>
-              <div className="text-xl font-bold text-green-800">
-                ${(portfolioMetrics.totalNPV / 1000000).toFixed(1)}M
-              </div>
+        {/* AI Risk Analysis Summary with Improved Layout */}
+        <div className={`${COLOR_SCHEMES.info.bg} p-6 rounded-xl border ${COLOR_SCHEMES.info.border} mb-8`}>
+          <h3 className={`${TEXT_CLASSES.heading3} ${COLOR_SCHEMES.info.text} mb-4`}>AI Risk Analysis Summary</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Market Risk</div>
+              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Low - Strong renewable demand</div>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-            <Activity className="h-6 w-6 text-blue-600" />
-            <div>
-              <div className="text-sm text-blue-600 font-medium">Total Investment</div>
-              <div className="text-xl font-bold text-blue-800">
-                ${(portfolioMetrics.totalInvestment / 1000000).toFixed(1)}M
-              </div>
+            <div className="space-y-2">
+              <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Regulatory Risk</div>
+              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Medium - Policy changes possible</div>
             </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
-            <Briefcase className="h-6 w-6 text-purple-600" />
-            <div>
-              <div className="text-sm text-purple-600 font-medium">Net Return</div>
-              <div className="text-xl font-bold text-purple-800">
-                ${(portfolioMetrics.netReturn / 1000000).toFixed(1)}M
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg">
-            <TrendingUp className="h-6 w-6 text-orange-600" />
-            <div>
-              <div className="text-sm text-orange-600 font-medium">Portfolio Health</div>
-              <div className="text-xl font-bold text-orange-800">
-                {portfolioMetrics.totalNPV > 0 ? 'Strong' : 'Attention Needed'}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* AI Risk Analysis Summary */}
-        <div className="mt-6 p-4 bg-indigo-50 rounded-lg border border-indigo-200">
-          <h3 className="text-lg font-semibold text-indigo-800 mb-2">AI Risk Analysis Summary</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <div>
-              <div className="font-medium text-indigo-700">Market Risk</div>
-              <div className="text-indigo-600">Low - Strong renewable demand</div>
-            </div>
-            <div>
-              <div className="font-medium text-indigo-700">Regulatory Risk</div>
-              <div className="text-indigo-600">Medium - Policy changes possible</div>
-            </div>
-            <div>
-              <div className="font-medium text-indigo-700">Technology Risk</div>
-              <div className="text-indigo-600">Low - Proven technologies in use</div>
+            <div className="space-y-2">
+              <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Technology Risk</div>
+              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Low - Proven technologies in use</div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Real-time Data Status */}
-      <div className={`px-4 py-3 rounded-lg text-sm border ${
+      {/* Real-time Data Status with Enhanced Layout */}
+      <div className={`px-6 py-4 rounded-lg text-sm border mx-6 mb-6 ${
         isUsingRealData && connectionStatus === 'connected'
-          ? 'bg-green-50 border-green-200 text-green-800'
+          ? `${COLOR_SCHEMES.success.bg} border ${COLOR_SCHEMES.success.border} ${COLOR_SCHEMES.success.text}`
           : fallbackMode
-            ? 'bg-blue-50 border-blue-200 text-blue-800'
-            : 'bg-yellow-50 border-yellow-200 text-yellow-800'
+            ? `${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} ${COLOR_SCHEMES.primary.text}`
+            : `${COLOR_SCHEMES.warning.bg} border ${COLOR_SCHEMES.warning.border} ${COLOR_SCHEMES.warning.text}`
       }`}>
-        <div className="flex items-center space-x-3">
+        <div className={CONTAINER_CLASSES.flexBetween}>
           {isUsingRealData && connectionStatus === 'connected' ? (
             <>
-              <Wifi className="h-5 w-5 text-green-600" />
-              <div>
-                <div className="font-medium">🎯 LIVE Ontario Market Data</div>
-                <div className="text-xs opacity-80">
+              <Wifi className={`h-5 w-5 ${COLOR_SCHEMES.success.accent}`} />
+              <div className="flex-1 ml-4">
+                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.success.text}`}>🎯 LIVE Ontario Market Data</div>
+                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.success.text} opacity-80`}>
                   Investments calculated from real-time IESO demand data
                   {demandData.length > 0 && demandData[demandData.length - 1] &&
                     ` (${demandData[demandData.length - 1].values.demand_mw?.toLocaleString() || '0'} MW demand)`
@@ -288,22 +309,22 @@ export const InvestmentCards: React.FC = () => {
             </>
           ) : fallbackMode ? (
             <>
-              <Briefcase className="h-5 w-5 text-blue-600" />
-              <div>
-                <div className="font-medium">💡 Enhanced Analysis Mode</div>
-                <div className="text-xs opacity-80">
+              <Briefcase className={`h-5 w-5 ${COLOR_SCHEMES.primary.accent}`} />
+              <div className="flex-1 ml-4">
+                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.primary.text}`}>💡 Enhanced Analysis Mode</div>
+                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.primary.text} opacity-80`}>
                   Using calculated models with Ontario market conditions
                 </div>
               </div>
             </>
           ) : (
             <>
-              <WifiOff className="h-5 w-5 text-yellow-600" />
-              <div>
-                <div className="font-medium">
+              <WifiOff className={`h-5 w-5 ${COLOR_SCHEMES.warning.accent}`} />
+              <div className="flex-1 ml-4">
+                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.warning.text}`}>
                   {connectionStatus === 'connecting' ? '🔄 Connecting...' : '⚠️ Connection Issue'}
                 </div>
-                <div className="text-xs opacity-80">
+                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.warning.text} opacity-80`}>
                   {connectionStatus === 'connecting'
                     ? 'Establishing connection to live market data'
                     : 'Using enhanced calculation models'
@@ -315,64 +336,71 @@ export const InvestmentCards: React.FC = () => {
         </div>
       </div>
 
-      {/* Investment Cards Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {investments.map((investment) => {
-          const { npv, irr } = investment.analysis || {};
+      {/* Investment Cards Grid with Improved Responsive Layout */}
+      <div className={`${CONTAINER_CLASSES.page} pb-8`}>
+        <div className={LAYOUT_UTILS.generateGridClasses(3, true)}>
+          {investments.map((investment) => {
+            const { npv, irr } = investment.analysis || {};
 
-          return (
-            <div key={investment.id} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-slate-800 mb-1">
-                    {investment.name}
-                  </h3>
-                  <p className="text-sm text-slate-600 mb-2">
-                    {investment.description}
-                  </p>
+            return (
+              <div key={investment.id} className={`${CONTAINER_CLASSES.card} hover:shadow-xl transition-all duration-500 hover:scale-[1.02] group`}>
+                {/* Card Header with Enhanced Layout */}
+                <div className={`${CONTAINER_CLASSES.cardHeader} bg-gradient-to-r from-emerald-600 to-green-600 text-white group-hover:from-emerald-700 group-hover:to-green-700 transition-all duration-300`}>
+                  <div className={CONTAINER_CLASSES.flexBetween}>
+                    <div className="flex-1">
+                      <h3 className={`${TEXT_CLASSES.heading3} mb-2 text-white`}>{investment.name}</h3>
+                      <p className={`${TEXT_CLASSES.body} text-emerald-100 text-sm leading-relaxed`}>{investment.description}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card Content with Improved Spacing */}
+                <div className={CONTAINER_CLASSES.cardBody}>
+                  {/* Key Metrics with Enhanced Grid */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className={`text-center p-4 bg-gradient-to-br ${COLOR_SCHEMES.success.bg} rounded-xl border ${COLOR_SCHEMES.success.border} group-hover:shadow-md transition-all duration-300`}>
+                      <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.success.accent} mb-2 font-semibold`}>NPV</div>
+                      <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>
+                        ${npv ? (npv / 1000000).toFixed(2) : '—'}M
+                      </div>
+                    </div>
+
+                    <div className={`text-center p-4 bg-gradient-to-br ${COLOR_SCHEMES.primary.bg} rounded-xl border ${COLOR_SCHEMES.primary.border} group-hover:shadow-md transition-all duration-300`}>
+                      <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.primary.accent} mb-2 font-semibold`}>IRR</div>
+                      <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.primary.text}`}>
+                        {irr ? `${(irr * 100).toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Discount Rate with Improved Styling */}
+                  <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+                    <span className={`${TEXT_CLASSES.body} font-semibold text-slate-700`}>Discount Rate:</span>
+                    <span className={`${TEXT_CLASSES.body} ml-2 ${COLOR_SCHEMES.primary.accent} font-bold`}>
+                      {(investment.discountRate * 100).toFixed(1)}%
+                    </span>
+                  </div>
+
+                  {/* Real-time Update Indicator with Enhanced Layout */}
+                  {isUsingRealData && connectionStatus === 'connected' && (
+                    <div className={`${CONTAINER_CLASSES.flexBetween} mt-6 pt-4 border-t border-slate-200/50`}>
+                      <div className={`flex items-center space-x-2 ${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.success.accent}`}>
+                        <div className={`w-2 h-2 bg-green-500 rounded-full animate-pulse`}></div>
+                        <span className="font-semibold">Auto-updating every minute</span>
+                      </div>
+                      <div className={`${TEXT_CLASSES.caption} text-slate-500`}>
+                        Last updated: {demandData.length > 0 && new Date(demandData[demandData.length - 1]?.timestamp || Date.now()).toLocaleTimeString('en-CA', {
+                          hour12: false,
+                          timeZone: 'America/Toronto'
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Key Metrics */}
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-600 mb-1">NPV</div>
-                  <div className="font-bold text-lg">
-                    ${npv ? (npv / 1000000).toFixed(2) : '—'}M
-                  </div>
-                </div>
-
-                <div className="text-center p-3 bg-slate-50 rounded-lg">
-                  <div className="text-xs text-slate-600 mb-1">IRR</div>
-                  <div className="font-bold text-lg">
-                    {irr ? `${(irr * 100).toFixed(1)}%` : '—'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Discount Rate */}
-              <div className="text-sm text-slate-500">
-                Discount Rate: {(investment.discountRate * 100).toFixed(1)}%
-              </div>
-
-              {/* Real-time Update Indicator */}
-              {isUsingRealData && connectionStatus === 'connected' && (
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
-                  <div className="flex items-center space-x-2 text-xs text-green-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span>Auto-updating every minute</span>
-                  </div>
-                  <div className="text-xs text-slate-500">
-                    Last updated: {demandData.length > 0 && new Date(demandData[demandData.length - 1]?.timestamp || Date.now()).toLocaleTimeString('en-CA', {
-                      hour12: false,
-                      timeZone: 'America/Toronto'
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

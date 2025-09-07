@@ -37,9 +37,11 @@ const TransitionKPIs: React.FC<Props> = ({ datasetPath, timeframe }) => {
     return () => controller.abort();
   }, [datasetPath, timeframe]);
 
-  const progress: string[] = Array.isArray(data?.progress) ? (data!.progress as string[]) : [];
-  const risks: string[] = Array.isArray(data?.risks) ? (data!.risks as string[]) : [];
-  const recommendations: string[] = Array.isArray(data?.recommendations) ? (data!.recommendations as string[]) : [];
+  // Use a permissive proxy to read optional fields without breaking types
+  const anyData: any = data as any;
+  const progress: string[] = Array.isArray(anyData?.progress) ? anyData.progress as string[] : [];
+  const risks: string[] = Array.isArray(anyData?.risks) ? anyData.risks as string[] : [];
+  const recommendations: string[] = Array.isArray(anyData?.recommendations) ? anyData.recommendations as string[] : [];
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
@@ -68,7 +70,7 @@ const TransitionKPIs: React.FC<Props> = ({ datasetPath, timeframe }) => {
           <div className="space-y-4">
             <div>
               <h4 className="font-semibold text-slate-800 mb-1">Summary</h4>
-              <p className="text-sm text-slate-700 whitespace-pre-line">{data.summary}</p>
+              <p className="text-sm text-slate-700 whitespace-pre-line">{String(anyData?.summary ?? '')}</p>
             </div>
             {progress.length > 0 && (
               <div>
@@ -100,14 +102,14 @@ const TransitionKPIs: React.FC<Props> = ({ datasetPath, timeframe }) => {
                 </ul>
               </div>
             )}
-            {(data.confidence !== undefined && data.confidence !== null) && (
-              <div className="text-sm text-slate-600"><span className="font-medium">Confidence:</span> {String(data.confidence)}</div>
+            {(anyData?.confidence !== undefined && anyData?.confidence !== null) && (
+              <div className="text-sm text-slate-600"><span className="font-medium">Confidence:</span> {String(anyData.confidence)}</div>
             )}
-            {Array.isArray(data.sources) && data.sources.length > 0 && (
+            {Array.isArray(anyData?.sources) && anyData.sources.length > 0 && (
               <div>
                 <h4 className="font-semibold text-slate-800 mb-1">Citations</h4>
                 <ul className="list-disc pl-5 text-sm text-blue-700 space-y-1">
-                  {data.sources.map((s: any, i) => {
+                  {anyData.sources.map((s: any, i: number) => {
                     const label = s?.id || s?.title || 'Source';
                     const meta = s?.last_updated ? ` (updated: ${s.last_updated})` : '';
                     const excerpt = s?.excerpt ? String(s.excerpt) : '';

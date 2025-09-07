@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { BarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, Bar, Pie } from 'recharts';
 import TerritorialMap, { mockTerritories, mockMapPoints } from './TerritorialMap';
+import { AlertTriangle } from 'lucide-react';
 
 // Interfaces for Indigenous dashboard data
 export interface TerritoryData {
@@ -44,8 +46,12 @@ export const IndigenousDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use streaming data for real-time updates
+  // Use streaming data for real Indigenous data (governance-compliant sources)
+  // IMPORTANT: Only use data that has been approved through proper governance processes
   // const { data: indigenousData, connectionStatus } = useStreamingData('indigenous');
+
+  // For now, using governance-approved public data sources only
+  // TODO: Implement real Indigenous data integration with proper governance approval
   const indigenousData = [];
   const connectionStatus = 'connected';
 
@@ -202,15 +208,31 @@ export const IndigenousDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50">
+      <div className={CONTAINER_CLASSES.page}>
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Indigenous Energy Sovereignty Dashboard
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 mb-4">
             Track consultations, traditional knowledge, and territory management
           </p>
+
+          {/* Governance Notice */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start">
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
+              <div>
+                <h3 className="font-semibold text-amber-800 mb-2">Governance & Data Sovereignty Notice</h3>
+                <p className="text-amber-700 text-sm">
+                  This dashboard currently uses placeholder data for demonstration purposes.
+                  Real Indigenous data integration requires formal governance agreements and
+                  Free, Prior, Informed Consent (FPIC) from affected communities.
+                  Contact Indigenous governance representatives before implementing real data sources.
+                </p>
+              </div>
+            </div>
+          </div>
         </header>
 
         {/* Dashboard Metrics */}

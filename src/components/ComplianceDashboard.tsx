@@ -63,28 +63,35 @@ interface ComplianceData {
   alerts: ViolationAlert[];
 }
 
-// Mock compliance data
+// Enhanced mock compliance data with more realistic structures
+// TODO: Replace with real Environment Canada and Provincial regulator APIs
 const mockComplianceData = [
   {
     id: '项目-001',
-    projectName: 'Ontario Wind Farm',
+    projectName: 'Ontario Wind Farm Expansion',
     complianceScore: 87,
     violations: 3,
-    lastAudit: '2025-01-15'
+    lastAudit: '2025-01-15',
+    regulator: 'Environment Canada',
+    jurisdiction: 'Ontario'
   },
   {
     id: '项目-002',
-    projectName: 'BC Solar Array',
+    projectName: 'BC Solar Array Development',
     complianceScore: 94,
     violations: 1,
-    lastAudit: '2025-01-14'
+    lastAudit: '2025-01-14',
+    regulator: 'BC Ministry of Environment',
+    jurisdiction: 'British Columbia'
   },
   {
     id: '项目-003',
-    projectName: 'Quebec Hydro Reservoir',
+    projectName: 'Quebec Hydro Reservoir Maintenance',
     complianceScore: 76,
     violations: 7,
-    lastAudit: '2025-01-13'
+    lastAudit: '2025-01-13',
+    regulator: 'MDDELCC',
+    jurisdiction: 'Quebec'
   }
 ];
 
@@ -300,16 +307,29 @@ export const ComplianceDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Dashboard Header */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="bg-green-500 p-3 rounded-lg">
-            <Shield className="h-8 w-8 text-white" />
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="bg-green-500 p-3 rounded-lg">
+              <Shield className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-800">Regulatory Compliance Monitoring</h1>
+              <p className="text-slate-600">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Regulatory Compliance Monitoring</h1>
-            <p className="text-slate-600">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
+
+          {/* Data Source Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+            <div className="flex items-start">
+              <Database className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
+              <div>
+                <p className="text-blue-700 text-sm">
+                  <strong>Data Source:</strong> Currently using enhanced mock data for demonstration.
+                  Production deployment will integrate with Environment Canada and Provincial regulator APIs.
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

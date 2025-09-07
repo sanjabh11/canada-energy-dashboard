@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
@@ -223,8 +224,8 @@ const SecurityDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50">
+      <div className={CONTAINER_CLASSES.page}>
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Security Assessment Dashboard

@@ -37,10 +37,10 @@
       "path": "docs/delivery/PBI-Data-Quality-Depth/"
     },
     {
-      "id": "PBI-Transition-KPIs",
-      "title": "Transition Progress Tracker: KPI Dashboards + Scheduled Archival",
-      "status": "Agreed",
-      "path": "docs/delivery/PBI-Transition-KPIs/"
+      "id": "PBI-UI-Layout-Enhancement",
+      "title": "UI Layout and Alignment Enhancement for Canadian Energy Information Portal",
+      "status": "InProgress",
+      "path": "docs/delivery/PBI-UI-Layout-Enhancement/"
     }
   ]
 }

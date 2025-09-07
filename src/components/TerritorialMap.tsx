@@ -415,13 +415,14 @@ export const TerritorialMap: React.FC<{
   );
 };
 
-// Mock data for development/testing
+// Enhanced mock territory data with more realistic Canadian boundaries
+// TODO: Replace with Open Government of Canada boundary datasets and Indigenous territory shapefiles
 export const mockTerritories: TerritoryBoundary[] = [
   {
-    id: 't01',
+    id: 'treaty5',
     name: 'Treaty 5 Territory',
     coordinates: [
-      [[-97, 52], [-95, 52], [-95, 51], [-97, 51], [-97, 52]]
+      [[-102, 55], [-88, 55], [-88, 50], [-102, 50], [-102, 55]]
     ],
     color: '#10b981',
     consultationStatus: 'completed',
@@ -429,14 +430,14 @@ export const mockTerritories: TerritoryBoundary[] = [
       area: 227000,
       population: 85420,
       indigenousGroups: ['Cree', 'Ojibwe', 'Dene'],
-      traditionalTerritories: ['Treaty 5 Lands']
+      traditionalTerritories: ['Treaty 5 Lands', 'Hudson Bay Lowlands']
     }
   },
   {
-    id: 't02',
+    id: 'treaty9',
     name: 'Treaty 9 Territory',
     coordinates: [
-      [[-87, 51], [-85, 51], [-85, 48], [-87, 48], [-87, 51]]
+      [[-92, 52], [-78, 52], [-78, 48], [-92, 48], [-92, 52]]
     ],
     color: '#f59e0b',
     consultationStatus: 'ongoing',
@@ -444,22 +445,52 @@ export const mockTerritories: TerritoryBoundary[] = [
       area: 245000,
       population: 128000,
       indigenousGroups: ['Ojibwe', 'Cree', 'Oji-Cree'],
-      traditionalTerritories: ['James Bay', 'Hudson Bay Coast']
+      traditionalTerritories: ['James Bay', 'Hudson Bay Coast', 'Abitibi Region']
     }
   },
   {
-    id: 't03',
+    id: 'dene',
     name: 'Dene Territory',
     coordinates: [
-      [[-118, 61], [-110, 61], [-110, 57], [-118, 57], [-118, 61]]
+      [[-125, 65], [-105, 65], [-105, 58], [-125, 58], [-125, 65]]
     ],
     color: '#ef4444',
     consultationStatus: 'pending',
     metadata: {
       area: 195000,
       population: 28900,
-      indigenousGroups: ['Dene', 'Sahtu', 'North Slave'],
-      traditionalTerritories: ['Northwest Territories']
+      indigenousGroups: ['Dene', 'Sahtu', 'North Slave', 'Dehcho'],
+      traditionalTerritories: ['Northwest Territories', 'Sahtu Settlement Area']
+    }
+  },
+  {
+    id: 'nunavut',
+    name: 'Nunavut Settlement Area',
+    coordinates: [
+      [[-120, 72], [-60, 72], [-60, 60], [-120, 60], [-120, 72]]
+    ],
+    color: '#8b5cf6',
+    consultationStatus: 'ongoing',
+    metadata: {
+      area: 443000,
+      population: 39200,
+      indigenousGroups: ['Inuit', 'Inuvialuit'],
+      traditionalTerritories: ['Nunavut', 'Baffin Island', 'High Arctic']
+    }
+  },
+  {
+    id: 'yukon',
+    name: 'Yukon First Nations Territories',
+    coordinates: [
+      [[-141, 70], [-122, 70], [-122, 60], [-141, 60], [-141, 70]]
+    ],
+    color: '#06b6d4',
+    consultationStatus: 'completed',
+    metadata: {
+      area: 135000,
+      population: 42100,
+      indigenousGroups: ['Yukon First Nations', 'Kwanlin Dun', 'Selkirk'],
+      traditionalTerritories: ['Yukon Territory', 'Klondike Region']
     }
   }
 ];

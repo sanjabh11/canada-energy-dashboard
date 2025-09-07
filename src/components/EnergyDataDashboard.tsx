@@ -15,7 +15,7 @@ import {
 import { DatasetSelector } from './DatasetSelector';
 import { ConnectionStatusPanel } from './ConnectionStatusPanel';
 import { DataVisualization } from './DataVisualization';
-import { DataFilters } from './DataFilters';
+import { HelpButton } from './HelpButton';
 import { DataTable } from './DataTable';
 import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -28,7 +28,23 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock } from 'lucide-react';
-import { HelpButton } from './HelpButton';
+import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
+import NavigationRibbon from './NavigationRibbon';
+// Help ID mapping for each page/tab
+const helpIdByTab: Record<string, string> = {
+  Home: 'tab.home',
+  Dashboard: 'dashboard.overview',
+  Provinces: 'page.provinces',
+  Trends: 'page.trends',
+  Investment: 'page.investment',
+  Resilience: 'page.resilience',
+  Innovation: 'page.innovation',
+  Indigenous: 'page.indigenous',
+  Stakeholders: 'page.stakeholders',
+  GridOptimization: 'page.gridops',
+  Security: 'page.security',
+  Education: 'page.education'
+};
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
 const DEBUG_LOGS: boolean = ((import.meta as any).env?.VITE_DEBUG_LOGS === 'true');
@@ -217,25 +233,24 @@ export const EnergyDataDashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-900">
-      {/* Header */}
+      {/* Header with Improved Layout */}
       <header className="bg-gradient-to-r from-blue-900 to-blue-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
-            <div className="flex items-center space-x-3">
-              <div className="bg-blue-700 p-3 rounded-xl">
+        <div className={CONTAINER_CLASSES.page}>
+          <div className={CONTAINER_CLASSES.flexBetween}>
+            <div className={CONTAINER_CLASSES.flexCenter}>
+              <div className="bg-blue-700 p-3 rounded-xl mr-4">
                 <Zap className="h-8 w-8" />
               </div>
-              <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-bold">Canadian Energy Information Portal</h1>
-                <HelpButton id="tab.home" />
+              <div>
+                <h1 className={`${TEXT_CLASSES.heading1} text-white mb-1`}>Canadian Energy Information Portal</h1>
+                <p className={`${TEXT_CLASSES.bodySmall} text-blue-100 font-medium`}>Real-time • Resilient Architecture</p>
               </div>
-              <p className="text-slate-300 text-sm font-medium">Real-time • Resilient Architecture</p>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
-                <div className="text-blue-200">Total Records</div>
-                <div className="font-semibold text-lg">{state.filteredData.length.toLocaleString()}</div>
+
+            <div className={CONTAINER_CLASSES.flexCenter}>
+              <div className="text-right mr-6">
+                <div className={`${TEXT_CLASSES.bodySmall} text-blue-200`}>Total Records</div>
+                <div className={`${TEXT_CLASSES.metric} text-white`}>{state.filteredData.length.toLocaleString()}</div>
               </div>
               <button
                 onClick={handleRefresh}
@@ -245,68 +260,61 @@ export const EnergyDataDashboard: React.FC = () => {
                 <Activity className="h-4 w-4" />
                 <span>{state.loading ? 'Loading...' : 'Refresh'}</span>
               </button>
+              <div className="ml-4">
+                <HelpButton id={helpIdByTab[activeTab] ?? 'dashboard.overview'} />
+              </div>
             </div>
           </div>
         </div>
       </header>
-      
-      {/* Navigation Menu */}
-      <nav className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {navigationTabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-medium text-sm transition-colors ${
-                    isActive
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
+
+      {/* Navigation Menu: sticky horizontal ribbon with snap scrolling */}
+      <nav className="bg-white border-b border-slate-200 shadow-sm sticky-top">
+        <div className={CONTAINER_CLASSES.page}>
+          <NavigationRibbon
+            tabs={navigationTabs.map(t => ({ id: t.id, label: t.label, icon: t.icon }))}
+            activeTab={activeTab}
+            onSelect={setActiveTab}
+          />
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className={CONTAINER_CLASSES.page}>
         {activeTab === 'Dashboard' ? (
           <RealTimeDashboard />
         ) : activeTab === 'Home' ? (
-          // Home Tab - Landing Page
+          // Home Tab - Landing Page with Shader Effects
           <div className="space-y-8">
-            {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-8 border border-blue-100">
-              <div className="text-center max-w-4xl mx-auto">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="bg-cyan-600 p-4 rounded-full">
-                      <Zap className="h-12 w-12 text-white" />
+            {/* Welcome Section with Shader Background */}
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+              <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative z-10 p-8">
+                <div className="text-center max-w-4xl mx-auto">
+                  <div className="flex items-center justify-center mb-6 animate-float">
+                    <div className="glass-card rounded-full p-6 animate-pulse-slow">
+                      <Zap className="h-16 w-16 text-white" />
                     </div>
-                    <HelpButton id="tab.home" className="ml-2" />
                   </div>
-                  <h1 className="text-4xl font-bold text-slate-800 mb-4">Canadian Energy Information Portal</h1>
-                <p className="text-xl text-slate-600 mb-6">
-                  Real-time streaming architecture for comprehensive energy data analytics across Canada
-                </p>
-                <div className="flex items-center justify-center space-x-6 text-sm">
-                  <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                    <Signal className="h-4 w-4 text-green-500" />
-                    <span className="text-slate-600">Live Streaming</span>
-                  </div>
-                  <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                    <Database className="h-4 w-4 text-blue-500" />
-                    <span className="text-slate-600">4 Datasets</span>
-                  </div>
-                  <div className="flex items-center space-x-2 bg-white px-4 py-2 rounded-full shadow-sm">
-                    <Gauge className="h-4 w-4 text-purple-500" />
-                    <span className="text-slate-600">Real-time Analytics</span>
+                  <h1 className="text-5xl font-bold text-white mb-6 animate-fade-in">
+                    Canadian Energy Information Portal
+                  </h1>
+                  <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                    Real-time streaming architecture for comprehensive energy data analytics across Canada
+                  </p>
+                  <div className="flex flex-wrap items-center justify-center gap-4 text-sm animate-fade-in-slow">
+                    <div className="glass-card px-6 py-3 rounded-full text-white">
+                      <Signal className="h-4 w-4 inline mr-2" />
+                      Live Streaming
+                    </div>
+                    <div className="glass-card px-6 py-3 rounded-full text-white">
+                      <Database className="h-4 w-4 inline mr-2" />
+                      4 Datasets
+                    </div>
+                    <div className="glass-card px-6 py-3 rounded-full text-white">
+                      <Gauge className="h-4 w-4 inline mr-2" />
+                      Real-time Analytics
+                    </div>
                   </div>
                 </div>
               </div>
@@ -317,84 +325,59 @@ export const EnergyDataDashboard: React.FC = () => {
               {DATASETS.map((dataset, index) => {
                 const status = connectionStatuses.find(s => s.dataset === dataset.name);
                 return (
-                  <div key={dataset.key} className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-lg`} style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}>
-                        <Database className="h-6 w-6" />
-                      </div>
-                      <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        status?.status === 'connected' ? 'bg-green-100 text-green-700' : 
-                        status?.status === 'connecting' ? 'bg-blue-100 text-blue-700' :
-                        'bg-slate-100 text-slate-700'
-                      }`}>
-                        {status?.status === 'connected' ? <CheckCircle className="h-3 w-3" /> : 
-                         status?.status === 'connecting' ? <Clock className="h-3 w-3" /> :
-                         <AlertCircle className="h-3 w-3" />}
-                        <span>{status?.status === 'connected' ? 'LIVE' : 
-                              status?.status === 'connecting' ? 'CONNECTING' : 'OFFLINE'}</span>
+                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-lg transition-all duration-300`}>
+                    <div className={CONTAINER_CLASSES.cardHeader}>
+                      <div className={CONTAINER_CLASSES.flexBetween}>
+                        <div className={`p-3 rounded-lg`} style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}>
+                          <Database className="h-6 w-6" />
+                        </div>
+                        <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
+                          status?.status === 'connected' ? `${COLOR_SCHEMES.success.bg} ${COLOR_SCHEMES.success.text}` :
+                          status?.status === 'connecting' ? `${COLOR_SCHEMES.primary.bg} ${COLOR_SCHEMES.primary.text}` :
+                          `${COLOR_SCHEMES.warning.bg} ${COLOR_SCHEMES.warning.text}`
+                        }`}>
+                          {status?.status === 'connected' ? <CheckCircle className="h-3 w-3" /> :
+                           status?.status === 'connecting' ? <Clock className="h-3 w-3" /> :
+                           <AlertCircle className="h-3 w-3" />}
+                          <span>{status?.status === 'connected' ? 'LIVE' :
+                                status?.status === 'connecting' ? 'CONNECTING' : 'OFFLINE'}</span>
+                        </div>
                       </div>
                     </div>
-                    <h3 className="font-semibold text-slate-800 mb-1">{dataset.name}</h3>
-                    <p className="text-sm text-slate-600 mb-3">{dataset.description}</p>
-                    <div className="text-lg font-bold" style={{ color: dataset.color }}>
-                      {status?.recordCount.toLocaleString() || '0'} records
+                    <div className={CONTAINER_CLASSES.cardBody}>
+                      <h3 className={`${TEXT_CLASSES.heading4} ${COLOR_SCHEMES.primary.text} mb-1`} style={{ color: dataset.color }}>{dataset.name}</h3>
+                      <p className={`${TEXT_CLASSES.bodySmall} text-slate-600 mb-3`}>{dataset.description}</p>
+                      <div className={`${TEXT_CLASSES.metric} font-bold`} style={{ color: dataset.color }}>
+                        {status?.recordCount.toLocaleString() || '0'} records
+                      </div>
                     </div>
                   </div>
                 );
               })}
             </div>
-
-            {/* Quick Actions */}
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <h2 className="text-xl font-semibold text-slate-800 mb-4">Quick Access</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <button
-                  onClick={() => setActiveTab('Dashboard')}
-                  className="flex items-center space-x-3 p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                >
-                  <BarChart3 className="h-6 w-6 text-blue-600" />
-                  <span className="font-medium text-slate-700">View Dashboard</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('Provinces')}
-                  className="flex items-center space-x-3 p-4 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
-                >
-                  <Radio className="h-6 w-6 text-green-600" />
-                  <span className="font-medium text-slate-700">Live Streaming</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('Trends')}
-                  className="flex items-center space-x-3 p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
-                >
-                  <TrendingUp className="h-6 w-6 text-purple-600" />
-                  <span className="font-medium text-slate-700">Trend Analysis</span>
-                </button>
-                <button
-                  onClick={() => setActiveTab('Dashboard')}
-                  className="flex items-center space-x-3 p-4 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors"
-                >
-                  <Activity className="h-6 w-6 text-emerald-600" />
-                  <span className="font-medium text-slate-700">Get Started</span>
-                </button>
-              </div>
-            </div>
           </div>
         ) : activeTab === 'Provinces' ? (
-          // Provinces Tab - Real-time Streaming Showcase
+          // Provinces Tab - Real-time Streaming Showcase with Shader Effects
           <div className="space-y-8">
-            {/* Streaming Header */}
-            <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-2xl p-8">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="flex items-center space-x-3 mb-2">
-                    <Radio className="h-8 w-8" />
-                    <h1 className="text-3xl font-bold">REAL-TIME STREAMING ARCHITECTURE</h1>
+            {/* Streaming Header with Shader Background */}
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+              <div className="absolute inset-0 shader-bg-energy animate-gradient-xy"></div>
+              <div className="absolute inset-0 bg-black/30"></div>
+              <div className="relative z-10 p-8">
+                <div className="flex items-center justify-between">
+                  <div className="animate-fade-in">
+                    <div className="flex items-center space-x-3 mb-2">
+                      <div className="glass-card p-3 rounded-xl animate-float">
+                        <Radio className="h-8 w-8 text-white" />
+                      </div>
+                      <h1 className="text-3xl font-bold text-white">REAL-TIME STREAMING ARCHITECTURE</h1>
+                    </div>
+                    <p className="text-lg text-white/90">Live data streams from Canadian energy providers across all provinces</p>
                   </div>
-                  <p className="text-lg opacity-90">Live data streams from Canadian energy providers across all provinces</p>
-                </div>
-                <div className="flex items-center space-x-2 bg-white bg-opacity-20 px-4 py-2 rounded-full">
-                  <Signal className="h-5 w-5 animate-pulse" />
-                  <span className="font-semibold">LIVE STREAMING</span>
+                  <div className="glass-card px-6 py-3 rounded-full animate-fade-in-delayed">
+                    <Signal className="h-5 w-5 text-green-400 animate-pulse mr-2" />
+                    <span className="text-white font-semibold">LIVE STREAMING</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -565,40 +548,44 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
           </div>
         ) : activeTab === 'Trends' ? (
-          // Trends Tab - Analytics View
+          // Trends Tab - Analytics View with Shader Effects
           <div className="space-y-8">
-            <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-              <div className="text-center">
-                <div className="bg-purple-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                  <TrendingUp className="h-8 w-8 text-purple-600" />
+            <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+              <div className="absolute inset-0 shader-bg-secondary animate-gradient-xy"></div>
+              <div className="absolute inset-0 bg-black/20"></div>
+              <div className="relative z-10 p-8">
+                <div className="text-center animate-fade-in">
+                  <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                    <TrendingUp className="h-10 w-10 text-white mx-auto" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-4">Trend Analysis</h2>
+                  <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                    Advanced analytics and trend identification across Canadian energy data streams
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                    <div className="glass-card p-6 rounded-xl text-white">
+                      <TrendingUp className="h-8 w-8 text-blue-300 mb-3" />
+                      <h3 className="font-semibold mb-2">Peak Demand Patterns</h3>
+                      <p className="text-sm text-white/80">Historical and predictive analysis of energy demand peaks</p>
+                    </div>
+                    <div className="glass-card p-6 rounded-xl text-white">
+                      <BarChart3 className="h-8 w-8 text-green-300 mb-3" />
+                      <h3 className="font-semibold mb-2">Generation Trends</h3>
+                      <p className="text-sm text-white/80">Long-term trends in renewable vs traditional energy generation</p>
+                    </div>
+                    <div className="glass-card p-6 rounded-xl text-white">
+                      <Gauge className="h-8 w-8 text-purple-300 mb-3" />
+                      <h3 className="font-semibold mb-2">Price Volatility</h3>
+                      <p className="text-sm text-white/80">Market price analysis and volatility patterns</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('Dashboard')}
+                    className="mt-8 glass-card text-white px-6 py-3 rounded-lg font-medium transition-all hover:bg-white/20 animate-fade-in-slow"
+                  >
+                    Explore Trends in Dashboard
+                  </button>
                 </div>
-                <h2 className="text-2xl font-bold text-slate-800 mb-2">Trend Analysis</h2>
-                <p className="text-slate-600 mb-6">
-                  Advanced analytics and trend identification across Canadian energy data streams
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                  <div className="bg-purple-50 p-6 rounded-lg">
-                    <TrendingUp className="h-8 w-8 text-purple-600 mb-3" />
-                    <h3 className="font-semibold text-slate-800 mb-2">Peak Demand Patterns</h3>
-                    <p className="text-sm text-slate-600">Historical and predictive analysis of energy demand peaks</p>
-                  </div>
-                  <div className="bg-blue-50 p-6 rounded-lg">
-                    <BarChart3 className="h-8 w-8 text-blue-600 mb-3" />
-                    <h3 className="font-semibold text-slate-800 mb-2">Generation Trends</h3>
-                    <p className="text-sm text-slate-600">Long-term trends in renewable vs traditional energy generation</p>
-                  </div>
-                  <div className="bg-green-50 p-6 rounded-lg">
-                    <TrendingDown className="h-8 w-8 text-green-600 mb-3" />
-                    <h3 className="font-semibold text-slate-800 mb-2">Price Volatility</h3>
-                    <p className="text-sm text-slate-600">Market price analysis and volatility patterns</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setActiveTab('Dashboard')}
-                  className="mt-8 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
-                >
-                  Explore Trends in Dashboard
-                </button>
               </div>
             </div>
           </div>
@@ -675,92 +662,258 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
           </div>
         ) : (
-          // Fallback content
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
-            <div className="max-w-md mx-auto">
-              <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                {(() => {
-                  const activeTabData = navigationTabs.find(tab => tab.id === activeTab);
-                  if (activeTabData?.icon) {
-                    const IconComponent = activeTabData.icon;
-                    return <IconComponent className="h-8 w-8 text-blue-600" />;
-                  }
-                  return null;
-                })()}
+          <>
+            {/* Phase 2 Components */}
+            {activeTab === 'Resilience' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-accent animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Shield className="h-10 w-10 text-white mx-auto" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Infrastructure Resilience</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        Climate scenario modeling and vulnerability assessment for critical infrastructure
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Shield className="h-8 w-8 text-red-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Risk Assessment</h3>
+                          <p className="text-sm text-white/80">Advanced climate vulnerability analysis</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <MapPin className="h-8 w-8 text-blue-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Asset Mapping</h3>
+                          <p className="text-sm text-white/80">Comprehensive infrastructure inventory</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Gauge className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Scenario Planning</h3>
+                          <p className="text-sm text-white/80">Future climate impact modeling</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <ResilienceMap />
               </div>
-              {/* Trends Tab */}
-              {activeTab === 'Trends' && (
-                <div className="space-y-8">
-                  <div className="bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-2xl p-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center space-x-3 mb-2">
-                          <TrendingUp className="h-8 w-8" />
-                          <h1 className="text-3xl font-bold">TREND ANALYSIS & PREDICTIVE INSIGHTS</h1>
-                        </div>
-                        <p className="text-lg opacity-90">Advanced analytics and forecasting models for energy market trends</p>
+            )}
+
+            {activeTab === 'Investment' && (
+              <div className="space-y-8">
+                <InvestmentCards />
+              </div>
+            )}
+
+            {activeTab === 'Innovation' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Zap className="h-10 w-10 text-white mx-auto" />
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">2.3% ↑</div>
-                        <div className="text-sm opacity-90">Monthly Growth</div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Innovation Hub</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        AI-powered research and technology innovation for sustainable energy solutions
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Zap className="h-8 w-8 text-yellow-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Technology Search</h3>
+                          <p className="text-sm text-white/80">Advanced patent and innovation discovery</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <TrendingUp className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Market Analysis</h3>
+                          <p className="text-sm text-white/80">Emerging technology market insights</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Gauge className="h-8 w-8 text-purple-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Feasibility Studies</h3>
+                          <p className="text-sm text-white/80">Technical and economic viability assessment</p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
-                      <h3 className="text-lg font-semibold text-slate-800 mb-4">Market Trends</h3>
-                      <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600">Energy Prices</span>
-                          <span className="text-sm font-medium text-green-600">+5.2%</span>
+                </div>
+                <InnovationSearch />
+              </div>
+            )}
+
+            {/* Phase 3 Components */}
+            {activeTab === 'Indigenous' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-energy animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Shield className="h-10 w-10 text-white mx-auto" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Indigenous Energy Sovereignty</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        Respectful integration of Indigenous knowledge and governance in energy planning
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Shield className="h-8 w-8 text-blue-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Traditional Knowledge</h3>
+                          <p className="text-sm text-white/80">Integration of Indigenous ecological knowledge</p>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-slate-600">Demand Growth</span>
-                          <span className="text-sm font-medium text-blue-600">+3.8%</span>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <MapPin className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Territory Mapping</h3>
+                          <p className="text-sm text-white/80">Traditional territory and consultation tracking</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Gauge className="h-8 w-8 text-orange-300 mb-3" />
+                          <h3 className="font-semibold mb-2">FPIC Compliance</h3>
+                          <p className="text-sm text-white/80">Free, Prior, Informed Consent workflows</p>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+                <IndigenousDashboard />
+              </div>
+            )}
 
-              {/* Education Tab */}
-              {activeTab === 'Education' && (
-                <div className="space-y-8">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-2xl p-8">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center space-x-3 mb-2">
-                          <GraduationCap className="h-8 w-8" />
-                          <h1 className="text-3xl font-bold">EDUCATION & LEARNING RESOURCES</h1>
-                        </div>
-                        <p className="text-lg opacity-90">Comprehensive resources for understanding energy systems and analytics</p>
+            {activeTab === 'Stakeholders' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-secondary animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Zap className="h-10 w-10 text-white mx-auto" />
                       </div>
-                      <div className="text-right">
-                        <div className="text-2xl font-bold">50+</div>
-                        <div className="text-sm opacity-90">Learning Modules</div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Stakeholder Coordination</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        Multi-stakeholder engagement and collaboration platform for energy projects
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Zap className="h-8 w-8 text-purple-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Engagement Tracking</h3>
+                          <p className="text-sm text-white/80">Comprehensive stakeholder communication logs</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <MapPin className="h-8 w-8 text-blue-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Impact Mapping</h3>
+                          <p className="text-sm text-white/80">Geographic stakeholder impact analysis</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Gauge className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Consensus Building</h3>
+                          <p className="text-sm text-white/80">Collaborative decision-making support</p>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              )}
+                <StakeholderDashboard />
+              </div>
+            )}
 
-              {/* Phase 2 Components */}
-              {activeTab === 'Investment' && <InvestmentCards />}
-              {activeTab === 'Resilience' && <ResilienceMap />}
-              {activeTab === 'Innovation' && <InnovationSearch />}
+            {/* Phase 4 Components */}
+            {activeTab === 'GridOptimization' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Activity className="h-10 w-10 text-white mx-auto" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Grid Optimization</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        Advanced grid management and optimization for reliable energy distribution
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Activity className="h-8 w-8 text-cyan-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Load Balancing</h3>
+                          <p className="text-sm text-white/80">Real-time grid load optimization</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Gauge className="h-8 w-8 text-yellow-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Predictive Maintenance</h3>
+                          <p className="text-sm text-white/80">AI-driven equipment health monitoring</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <TrendingUp className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Efficiency Analytics</h3>
+                          <p className="text-sm text-white/80">Performance optimization insights</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <GridOptimizationDashboard />
+              </div>
+            )}
 
-              {/* Phase 3 Components */}
-              {activeTab === 'Indigenous' && <IndigenousDashboard />}
-              {activeTab === 'Stakeholders' && <StakeholderDashboard />}
+            {activeTab === 'Security' && (
+              <div className="space-y-8">
+                <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
+                  <div className="absolute inset-0 shader-bg-accent animate-gradient-xy"></div>
+                  <div className="absolute inset-0 bg-black/20"></div>
+                  <div className="relative z-10 p-8">
+                    <div className="text-center animate-fade-in">
+                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
+                        <Lock className="h-10 w-10 text-white mx-auto" />
+                      </div>
+                      <h2 className="text-3xl font-bold text-white mb-4">Cybersecurity & Monitoring</h2>
+                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                        Enterprise-grade security monitoring and threat detection for energy infrastructure
+                      </p>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Shield className="h-8 w-8 text-red-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Threat Detection</h3>
+                          <p className="text-sm text-white/80">Advanced cybersecurity monitoring</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Lock className="h-8 w-8 text-blue-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Access Control</h3>
+                          <p className="text-sm text-white/80">Multi-factor authentication and authorization</p>
+                        </div>
+                        <div className="glass-card p-6 rounded-xl text-white">
+                          <Activity className="h-8 w-8 text-green-300 mb-3" />
+                          <h3 className="font-semibold mb-2">Incident Response</h3>
+                          <p className="text-sm text-white/80">Automated security incident management</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <SecurityDashboard />
+              </div>
+            )}
 
-              {/* Phase 4 Components */}
-              {activeTab === 'GridOptimization' && <GridOptimizationDashboard />}
-              {activeTab === 'Security' && <SecurityDashboard />}
-
-              {/* Fallback for undefined tabs */}
-              {!['Investment', 'Resilience', 'Innovation', 'GridOptimization', 'Security'].includes(activeTab) && (
-                <>
+            {/* Fallback for undefined tabs */}
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Education'].includes(activeTab) && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+                    {(() => {
+                      const activeTabData = navigationTabs.find(tab => tab.id === activeTab);
+                      if (activeTabData?.icon) {
+                        const IconComponent = activeTabData.icon;
+                        return <IconComponent className="h-8 w-8 text-blue-600" />;
+                      }
+                      return null;
+                    })()}
+                  </div>
                   <h2 className="text-2xl font-bold text-slate-800 mb-2">{activeTab}</h2>
                   <p className="text-slate-600 mb-6">
                     Content for this section is being developed.
@@ -771,10 +924,10 @@ export const EnergyDataDashboard: React.FC = () => {
                   >
                     Go to Dashboard
                   </button>
-                </>
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
