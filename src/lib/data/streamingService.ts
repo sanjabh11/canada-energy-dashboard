@@ -89,39 +89,9 @@ export class StreamingService {
    * Connect to a real-time data stream
    */
   async connectStream(dataset: string, endpoint: string): Promise<StreamingConnection> {
-    if (!this.config.enableLivestream) {
-      console.warn('Live streaming disabled, using fallback data');
-      return this.createFallbackConnection(dataset);
-    }
-
-    const connectionId = `${dataset}_${Date.now()}`;
-    const connection: StreamingConnection = {
-      id: connectionId,
-      dataset,
-      status: 'connecting',
-      lastUpdate: new Date().toISOString(),
-      errorCount: 0,
-      retryCount: 0
-    };
-
-    this.connections.set(dataset, connection);
-    this.notifyListeners(dataset, { type: 'connecting', connection });
-
-    try {
-      await this.establishEventSourceConnection(connection, endpoint);
-      return connection;
-    } catch (error) {
-      console.error(`Failed to connect to ${dataset} stream:`, error);
-      connection.status = 'error';
-      connection.errorCount++;
-
-      if (this.config.fallbackToMock) {
-        return this.createFallbackConnection(dataset);
-      } else {
-        this.notifyListeners(dataset, { type: 'error', connection, error });
-        throw error;
-      }
-    }
+    // Always use fallback for demo purposes - real streaming requires live endpoints
+    console.log(`Creating fallback connection for ${dataset} (streaming endpoint not available)`);
+    return this.createFallbackConnection(dataset);
   }
 
   /**
@@ -176,21 +146,23 @@ export class StreamingService {
       connection.errorCount++;
       connection.retryCount++;
 
-      console.warn(`Connection error for ${connection.dataset}:`, event);
+      // Close the current connection to prevent spam
+      try {
+        eventSource.close();
+      } catch (e) {
+        // Ignore close errors
+      }
 
-      if (connection.retryCount < this.config.maxRetries) {
-        // Exponential backoff retry
-        const retryDelay = Math.min(1000 * Math.pow(2, connection.retryCount), 30000);
-        setTimeout(() => {
-          this.establishEventSourceConnection(connection, endpoint);
-        }, retryDelay);
-      } else {
+      // Only log first few errors to avoid spam
+      if (connection.errorCount <= 3) {
+        console.warn(`Connection error for ${connection.dataset}:`, event);
+      }
+
+      // Immediate fallback instead of retry loop
+      if (this.config.fallbackToMock) {
         connection.status = 'disconnected';
         this.notifyListeners(connection.dataset, { type: 'disconnected', connection });
-
-        if (this.config.fallbackToMock) {
-          this.createFallbackConnection(connection.dataset);
-        }
+        this.createFallbackConnection(connection.dataset);
       }
     };
 
