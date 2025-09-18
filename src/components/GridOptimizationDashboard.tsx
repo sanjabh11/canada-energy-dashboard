@@ -1,10 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { CONTAINER_CLASSES } from '../lib/ui/layout';
-import { useStreamingData } from '../hooks/useStreamingData';
-import { useWebSocketConsultation } from '../hooks/useWebSocket';
-import { getGridOptimizationRecommendations } from '../lib/llmClient';
-import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, Area, AreaChart, PieChart, Pie, Cell } from 'recharts';
-import { Activity, TrendingUp, AlertTriangle, CheckCircle, Zap, Gauge, Target, Clock, Wifi, WifiOff } from 'lucide-react';
+import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Zap, TrendingUp, AlertTriangle, CheckCircle, Settings, Battery, Gauge, Target, Activity, Wifi, WifiOff } from 'lucide-react';
+import { enhancedDataService, type RealGridStatus } from '../lib/enhancedDataService';
 
 // Interfaces for Grid Optimization Dashboard
 export interface GridStatus {

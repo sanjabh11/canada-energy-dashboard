@@ -10,6 +10,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
 import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info } from 'lucide-react';
 import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStorageManager';
+import { enhancedDataService, type RealMineralsData } from '../lib/enhancedDataService';
 
 interface MineralsMetrics {
   totalMinerals: number;
