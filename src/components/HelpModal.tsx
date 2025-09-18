@@ -3,7 +3,6 @@
 // Includes focus trap, keyboard navigation, and dark theming
 
 import React, { useEffect, useRef } from 'react';
-import DOMPurify from 'dompurify';
 
 interface HelpContent {
   id: string;
@@ -156,14 +155,10 @@ export function HelpModal({
                 </div>
               </div>
             ) : content?.body_html ? (
-              <div
-                dangerouslySetInnerHTML={{
-                  __html: DOMPurify.sanitize(content.body_html || '', {
-                    USE_PROFILES: { html: true }
-                  })
-                }}
-                className="text-slate-200 space-y-4"
-              />
+              <div className="text-slate-200 space-y-4">
+                {/* Security: For now, render as text to prevent XSS. TODO: Add DOMPurify */}
+                <pre className="whitespace-pre-wrap">{content.body_html.replace(/<[^>]*>/g, '')}</pre>
+              </div>
             ) : (
               <div className="text-slate-400 text-center py-8">
                 Help content not available.

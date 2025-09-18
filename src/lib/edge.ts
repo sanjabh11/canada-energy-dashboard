@@ -2,6 +2,7 @@ import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 
 export interface EdgeFetchOptions {
   signal?: AbortSignal;
+  timeoutMs?: number;
 }
 
 function isAbortError(err: any): boolean {
@@ -28,32 +29,44 @@ export async function fetchEdgeJson(pathCandidates: string[], options: EdgeFetch
   }
   let lastError: any = null;
 
-  if (options.signal?.aborted) {
+  // Create timeout controller if needed
+  const timeoutMs = options.timeoutMs || 15000; // Default 15s timeout
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  const signal = options.signal || controller.signal;
+
+  if (signal?.aborted) {
+    clearTimeout(timeoutId);
     throw createAbortError();
   }
 
-  for (const path of pathCandidates) {
-    if (options.signal?.aborted) {
-      throw createAbortError();
-    }
-    const url = `${base}/${path}`;
-    try {
-      const resp = await fetch(url, { headers, signal: options.signal });
-      if (!resp.ok) {
-        lastError = new Error(`Request failed: ${resp.status} ${resp.statusText}`);
-        continue;
+  try {
+    for (const path of pathCandidates) {
+      if (signal?.aborted) {
+        throw createAbortError();
       }
-      const json = await resp.json();
-      return { json, response: resp };
-    } catch (err) {
-      if (isAbortError(err)) {
-        throw err as any;
+      const url = `${base}/${path}`;
+      try {
+        const resp = await fetch(url, { headers, signal });
+        if (!resp.ok) {
+          lastError = new Error(`Request failed: ${resp.status} ${resp.statusText}`);
+          continue;
+        }
+        const json = await resp.json();
+        clearTimeout(timeoutId);
+        return { json, response: resp };
+      } catch (err) {
+        if (isAbortError(err)) {
+          throw err as any;
+        }
+        lastError = err;
       }
-      lastError = err;
     }
-  }
 
-  throw lastError || new Error('All edge endpoint candidates failed');
+    throw lastError || new Error('All edge endpoint candidates failed');
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 export async function fetchEdgePostJson(
