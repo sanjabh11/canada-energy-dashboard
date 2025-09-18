@@ -3,6 +3,7 @@
 // Includes focus trap, keyboard navigation, and dark theming
 
 import React, { useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 
 interface HelpContent {
   id: string;
@@ -156,7 +157,11 @@ export function HelpModal({
               </div>
             ) : content?.body_html ? (
               <div
-                dangerouslySetInnerHTML={{ __html: content.body_html }}
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(content.body_html || '', {
+                    USE_PROFILES: { html: true }
+                  })
+                }}
                 className="text-slate-200 space-y-4"
               />
             ) : (

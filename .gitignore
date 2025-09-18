@@ -1,4 +1,8 @@
 node_modules
+# Environment files (never commit secrets)
 .env
+.env.*
+!.env.example
+!.env.local.example
 # Ignore nested clone
 canada-energy-dashboard/

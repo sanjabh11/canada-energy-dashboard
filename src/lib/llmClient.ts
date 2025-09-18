@@ -1,6 +1,11 @@
 import { ENDPOINTS } from './constants';
 import { fetchEdgePostJson, fetchEdgeWithParams, EdgeFetchOptions } from './edge';
 
+const preferLite = String((import.meta as any)?.env?.VITE_LLM_PREFER_LITE || '').toLowerCase() === 'true';
+function orderCandidates(primary: string, fallback: string): string[] {
+  return preferLite ? [fallback, primary] : [primary, fallback];
+}
+
 export interface TransitionReportResponse {
   summary: string;
   progress?: string[];
@@ -65,7 +70,7 @@ export async function getTransitionReport(
   options: EdgeFetchOptions = {}
 ): Promise<TransitionReportResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.TRANSITION_REPORT],
+    orderCandidates(ENDPOINTS.LLM.TRANSITION_REPORT, ENDPOINTS.LLM_LITE.TRANSITION_REPORT),
     { datasetPath, timeframe },
     options
   );
@@ -79,7 +84,7 @@ export async function getDataQuality(
   options: EdgeFetchOptions = {}
 ): Promise<DataQualityResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.DATA_QUALITY],
+    orderCandidates(ENDPOINTS.LLM.DATA_QUALITY, ENDPOINTS.LLM_LITE.DATA_QUALITY),
     { datasetPath, timeframe },
     options
   );
@@ -93,7 +98,7 @@ export async function getTransitionKpis(
   options: EdgeFetchOptions = {}
 ): Promise<TransitionKpisResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.TRANSITION_KPIS],
+    orderCandidates(ENDPOINTS.LLM.TRANSITION_KPIS, ENDPOINTS.LLM_LITE.TRANSITION_KPIS),
     { datasetPath, timeframe },
     options
   );
@@ -105,9 +110,7 @@ export async function getHistory(
   params: { datasetPath?: string; type?: string; limit?: number },
   options: EdgeFetchOptions = {}
 ): Promise<any[]> {
-  const resp = await fetchEdgeWithParams([
-    ENDPOINTS.LLM.HISTORY,
-  ], {
+  const resp = await fetchEdgeWithParams(orderCandidates(ENDPOINTS.LLM.HISTORY, ENDPOINTS.LLM_LITE.HISTORY), {
     ...(params.datasetPath ? { datasetPath: params.datasetPath } : {}),
     ...(params.type ? { type: params.type } : {}),
     ...(params.limit ? { limit: String(params.limit) } : {}),
@@ -124,7 +127,7 @@ export async function getEmissionsPlanner(
   options: EdgeFetchOptions = {}
 ): Promise<EmissionsPlannerResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.EMISSIONS_PLANNER],
+    orderCandidates(ENDPOINTS.LLM.EMISSIONS_PLANNER, ENDPOINTS.LLM_LITE.EMISSIONS_PLANNER),
     { datasetPath, timeframe, focus },
     options
   );
@@ -139,7 +142,7 @@ export async function getMarketBrief(
   options: EdgeFetchOptions = {}
 ): Promise<MarketBriefResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.MARKET_BRIEF],
+    orderCandidates(ENDPOINTS.LLM.MARKET_BRIEF, ENDPOINTS.LLM_LITE.MARKET_BRIEF),
     { datasetPath, timeframe, focus },
     options
   );
@@ -154,7 +157,7 @@ export async function getCommunityPlan(
   options: EdgeFetchOptions = {}
 ): Promise<CommunityPlanResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.COMMUNITY_PLAN],
+    orderCandidates(ENDPOINTS.LLM.COMMUNITY_PLAN, ENDPOINTS.LLM_LITE.COMMUNITY_PLAN),
     { datasetPath, timeframe, focus },
     options
   );
@@ -183,7 +186,7 @@ export async function getGridOptimizationRecommendations(
   options: EdgeFetchOptions = {}
 ): Promise<GridOptimizationResponse> {
   const { json } = await fetchEdgePostJson(
-    [ENDPOINTS.LLM.GRID_OPTIMIZATION],
+    orderCandidates(ENDPOINTS.LLM.GRID_OPTIMIZATION, ENDPOINTS.LLM_LITE.GRID_OPTIMIZATION),
     { datasetPath, timeframe },
     options
   );

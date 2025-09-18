@@ -4,7 +4,8 @@ import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { BarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, Bar, Pie } from 'recharts';
 import TerritorialMap, { mockTerritories, mockMapPoints } from './TerritorialMap';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Plus, Edit, Save, X, Download, Upload, Shield, Users, FileText, Calendar } from 'lucide-react';
+import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
 
 // Interfaces for Indigenous dashboard data
 export interface TerritoryData {
@@ -45,6 +46,18 @@ export const IndigenousDashboard: React.FC = () => {
   const [selectedTerritory, setSelectedTerritory] = useState<TerritoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Enhanced state for real data management
+  const [indigenousProjects, setIndigenousProjects] = useState<IndigenousProjectRecord[]>([]);
+  const [showAddProject, setShowAddProject] = useState(false);
+  const [editingProject, setEditingProject] = useState<string | null>(null);
+  const [newProject, setNewProject] = useState<Partial<IndigenousProjectRecord>>({
+    name: '',
+    territory_name: '',
+    community: '',
+    consultation_status: 'not_started',
+    fpic_status: 'required'
+  });
 
   // Use streaming data for real Indigenous data (governance-compliant sources)
   // IMPORTANT: Only use data that has been approved through proper governance processes
@@ -63,7 +76,7 @@ export const IndigenousDashboard: React.FC = () => {
     sendMessage: sendWsMessage
   } = useWebSocketConsultation('general-consultation');
 
-  // Load initial data
+  // Load initial data from local storage
   useEffect(() => {
     loadInitialData();
   }, []);
@@ -72,7 +85,24 @@ export const IndigenousDashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      // Mock data for demonstration - in production, this would come from Supabase
+      // Load real data from local storage
+      const projects = localStorageManager.getIndigenousProjects();
+      setIndigenousProjects(projects);
+
+      // Convert projects to territory data for map display
+      const territoryData: TerritoryData[] = projects.map(project => ({
+        id: project.id,
+        name: project.territory_name,
+        coordinates: [[-95, 55]], // Default coordinates - would be real in production
+        consultationStatus: project.consultation_status,
+        community: project.community,
+        traditionalTerritory: project.traditional_territory,
+        lastActivity: project.updated_at
+      }));
+
+      setTerritories(territoryData);
+
+      // Legacy mock data for demonstration - gradually being replaced
       const mockTerritories: TerritoryData[] = [
         {
           id: '1',
@@ -152,20 +182,76 @@ export const IndigenousDashboard: React.FC = () => {
           description: 'Sacred sites and ceremonial locations',
           community: 'Dene First Nation',
           dateRecorded: new Date().toISOString(),
-          custodians: ['Spiritual Leader'],
+          custodians: ['Elder Council'],
           relatedTerritories: ['Dene Territory']
         }
       ];
 
-      setTerritories(mockTerritories);
+      // Merge real data with legacy mock data (temporary during transition)
+      setTerritories([...territoryData, ...mockTerritories]);
       setFpicWorkflows(mockFpicWorkflows);
       setTekEntries(mockTekEntries);
 
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load data');
-    } finally {
+      setLoading(false);
+    } catch (error) {
+      console.error('Error loading Indigenous dashboard data:', error);
+      setError('Failed to load Indigenous data');
       setLoading(false);
     }
+  };
+
+  // Project management functions
+  const handleAddProject = () => {
+    if (!newProject.name || !newProject.territory_name || !newProject.community) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const projectData = {
+      name: newProject.name!,
+      territory_name: newProject.territory_name!,
+      community: newProject.community!,
+      consultation_status: newProject.consultation_status || 'not_started',
+      fpic_status: newProject.fpic_status || 'required',
+      data_source: 'user_input' as const,
+      governance_status: 'pending' as const,
+      territory_id: `territory_${Date.now()}`,
+      traditional_territory: newProject.territory_name || '',
+      benefit_sharing: {},
+      consultation_log: []
+    };
+
+    const projectId = localStorageManager.addIndigenousProject(projectData);
+    
+    // Refresh data
+    loadInitialData();
+    
+    // Reset form
+    setNewProject({
+      name: '',
+      territory_name: '',
+      community: '',
+      consultation_status: 'not_started',
+      fpic_status: 'required'
+    });
+    setShowAddProject(false);
+  };
+
+  const handleUpdateProject = (projectId: string, updates: Partial<IndigenousProjectRecord>) => {
+    localStorageManager.updateIndigenousProject(projectId, updates);
+    loadInitialData();
+    setEditingProject(null);
+  };
+
+  const exportData = () => {
+    const data = localStorageManager.exportAllData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ceip_indigenous_data_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Calculate dashboard metrics
@@ -534,6 +620,223 @@ export const IndigenousDashboard: React.FC = () => {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Enhanced Project Management Section */}
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-semibold text-slate-900">Indigenous Energy Projects</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowAddProject(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus size={16} />
+              Add Project
+            </button>
+            <button
+              onClick={exportData}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Download size={16} />
+              Export Data
+            </button>
+          </div>
+        </div>
+
+        {/* Project List */}
+        <div className="space-y-4">
+          {indigenousProjects.map((project) => (
+            <div key={project.id} className="border border-slate-200 rounded-lg p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h4 className="font-medium text-slate-900">{project.name}</h4>
+                  <p className="text-sm text-slate-600 mt-1">{project.community}</p>
+                  <p className="text-sm text-slate-500">{project.territory_name}</p>
+                  
+                  <div className="flex items-center gap-4 mt-3">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      project.consultation_status === 'completed' ? 'bg-green-100 text-green-800' :
+                      project.consultation_status === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
+                      project.consultation_status === 'pending' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {project.consultation_status.replace('_', ' ').toUpperCase()}
+                    </span>
+                    
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      project.fpic_status === 'obtained' ? 'bg-green-100 text-green-800' :
+                      project.fpic_status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                      project.fpic_status === 'declined' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      FPIC: {project.fpic_status.replace('_', ' ').toUpperCase()}
+                    </span>
+
+                    {project.governance_status && (
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        project.governance_status === 'approved' ? 'bg-green-100 text-green-800' :
+                        project.governance_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-red-100 text-red-800'
+                      }`}>
+                        {project.governance_status.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+
+                  {project.benefit_sharing.revenue_share_percent && (
+                    <p className="text-sm text-slate-600 mt-2">
+                      Revenue Share: {project.benefit_sharing.revenue_share_percent}%
+                    </p>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setEditingProject(project.id)}
+                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
+                  >
+                    <Edit size={16} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Consultation Log */}
+              {project.consultation_log.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <h5 className="font-medium text-slate-700 mb-2">Recent Consultations</h5>
+                  <div className="space-y-2">
+                    {project.consultation_log.slice(-2).map((log, index) => (
+                      <div key={index} className="text-sm">
+                        <div className="flex items-center gap-2 text-slate-600">
+                          <Calendar size={14} />
+                          {new Date(log.date).toLocaleDateString()}
+                          <Users size={14} />
+                          {log.participants.length} participants
+                        </div>
+                        <p className="text-slate-500 mt-1">{log.outcomes.join('; ')}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+
+          {indigenousProjects.length === 0 && (
+            <div className="text-center py-8 text-slate-500">
+              <Shield size={48} className="mx-auto mb-4 text-slate-300" />
+              <p>No Indigenous energy projects recorded yet.</p>
+              <p className="text-sm">Add your first project to start tracking consultation and benefit-sharing.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Add Project Modal */}
+        {showAddProject && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold">Add Indigenous Energy Project</h4>
+                <button
+                  onClick={() => setShowAddProject(false)}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Project Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.name || ''}
+                    onChange={(e) => setNewProject({...newProject, name: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Treaty 5 Wind Energy Partnership"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Territory Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.territory_name || ''}
+                    onChange={(e) => setNewProject({...newProject, territory_name: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Treaty 5 Territory"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Community *
+                  </label>
+                  <input
+                    type="text"
+                    value={newProject.community || ''}
+                    onChange={(e) => setNewProject({...newProject, community: e.target.value})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="e.g., Cree, Ojibwe, Dene"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Consultation Status
+                  </label>
+                  <select
+                    value={newProject.consultation_status || 'not_started'}
+                    onChange={(e) => setNewProject({...newProject, consultation_status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="not_started">Not Started</option>
+                    <option value="ongoing">Ongoing</option>
+                    <option value="completed">Completed</option>
+                    <option value="pending">Pending</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    FPIC Status
+                  </label>
+                  <select
+                    value={newProject.fpic_status || 'required'}
+                    onChange={(e) => setNewProject({...newProject, fpic_status: e.target.value as any})}
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="required">Required</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="obtained">Obtained</option>
+                    <option value="declined">Declined</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-6">
+                <button
+                  onClick={handleAddProject}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Save size={16} />
+                  Save Project
+                </button>
+                <button
+                  onClick={() => setShowAddProject(false)}
+                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

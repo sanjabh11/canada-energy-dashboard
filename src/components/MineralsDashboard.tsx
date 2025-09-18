@@ -5,12 +5,10 @@
  * risk assessment, and market intelligence with real-time alerts.
  */
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import {
-  MapPin, AlertTriangle, TrendingUp, DollarSign, Globe, Zap, Eye, Star,
-  Shield, Activity, Database, Clock, CheckCircle, AlertCircle, Info
-} from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
+import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info } from 'lucide-react';
+import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStorageManager';
 import { getMarketBrief, type MarketBriefResponse } from '../lib/llmClient';
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
@@ -49,6 +47,22 @@ interface DashboardStats {
   lastUpdate: string;
 }
 
+interface MineralsFormData {
+  mineral: string;
+  production_tonnes_annually: number;
+  import_tonnes_annually: number;
+  export_tonnes_annually: number;
+  price_cad_per_tonne: number;
+  strategic_importance: 'critical' | 'important' | 'moderate' | 'low';
+  primary_suppliers: Array<{
+    country: string;
+    percentage_of_supply: number;
+    risk_score: number;
+  }>;
+  supply_risk_factors: string[];
+  mitigation_strategies: string[];
+}
+
 // Mock supply data (would come from firecrawl scraping in production)
 const mockSupplyData = [
   { mineral: 'Lithium', production: 25000, import: 35000, export: 8000, riskScore: 8.5, price: 12500, country: 'Australia' },
@@ -67,22 +81,29 @@ const mockRiskData = [
 ];
 
 export const MineralsDashboard: React.FC = () => {
-  const [data, setData] = useState<MineralsData>({
-    supplyStatus: mockSupplyData,
-    riskAssessment: mockRiskData,
-    alerts: []
+  const [mineralsRecords, setMineralsRecords] = useState<MineralsSupplyRecord[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedMineral, setSelectedMineral] = useState<string | null>(null);
+  const [showAddMineral, setShowAddMineral] = useState(false);
+  const [editingMineral, setEditingMineral] = useState<string | null>(null);
+  
+  const [newMineral, setNewMineral] = useState<MineralsFormData>({
+    mineral: '',
+    production_tonnes_annually: 0,
+    import_tonnes_annually: 0,
+    export_tonnes_annually: 0,
+    price_cad_per_tonne: 0,
+    strategic_importance: 'important',
+    primary_suppliers: [],
+    supply_risk_factors: [],
+    mitigation_strategies: []
   });
 
-  const [marketInsight, setMarketInsight] = useState<MarketBriefResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [insightLoading, setInsightLoading] = useState(false);
-  const [selectedMineral, setSelectedMineral] = useState<string>('Lithium');
-  const insightAbortRef = useRef<AbortController | null>(null);
-
   const [stats, setStats] = useState<DashboardStats>({
-    totalMinerals: 5,
-    highRiskCount: 3,
-    averageRiskScore: 8.2,
+    totalMinerals: 0,
+    highRiskCount: 0,
+    averageRiskScore: 0,
     lastUpdate: new Date().toLocaleString()
   });
 

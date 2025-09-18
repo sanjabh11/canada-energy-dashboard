@@ -41,6 +41,12 @@
       "title": "UI Layout and Alignment Enhancement for Canadian Energy Information Portal",
       "status": "InProgress",
       "path": "docs/delivery/PBI-UI-Layout-Enhancement/"
+    },
+    {
+      "id": "PBI-Phase4-Finalization",
+      "title": "Phase 4 Finalization: Data Foundation Validation, 404 Cleanup, and Test Hardening",
+      "status": "Proposed",
+      "path": "docs/delivery/PBI-Phase4-Finalization/"
     }
   ]
 }

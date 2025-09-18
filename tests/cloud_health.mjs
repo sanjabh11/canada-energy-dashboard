@@ -37,7 +37,10 @@ if (ANON_KEY) {
 const url = `${BASE.replace(/\/$/, '')}/llm/health`;
 
 try {
-  const resp = await fetch(url, { headers });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
+  const resp = await fetch(url, { headers, signal: controller.signal });
+  clearTimeout(timeoutId);
   console.log(resp.status, resp.url);
   if (!resp.ok) {
     const text = await resp.text();

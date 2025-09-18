@@ -16,6 +16,21 @@ export const ENDPOINTS = {
     COMMUNITY_PLAN: 'llm/community-plan',
     GRID_OPTIMIZATION: 'llm/grid-optimization'
   },
+  // Fallback endpoints backed by the minimal llm-lite function
+  LLM_LITE: {
+    EXPLAIN_CHART: 'llm-lite/explain-chart',
+    ANALYTICS_INSIGHT: 'llm-lite/analytics-insight',
+    TRANSITION_REPORT: 'llm-lite/transition-report',
+    DATA_QUALITY: 'llm-lite/data-quality',
+    FEEDBACK: 'llm-lite/feedback',
+    HEALTH: 'llm-lite/health',
+    TRANSITION_KPIS: 'llm-lite/transition-kpis',
+    HISTORY: 'llm-lite/history',
+    EMISSIONS_PLANNER: 'llm-lite/emissions-planner',
+    MARKET_BRIEF: 'llm-lite/market-brief',
+    COMMUNITY_PLAN: 'llm-lite/community-plan',
+    GRID_OPTIMIZATION: 'llm-lite/grid-optimization'
+  },
   STREAM: {
     MANIFEST_DASHED: (dataset: string) => `manifest-${dataset}`,
     STREAM_DASHED: (dataset: string) => `stream-${dataset}`,
