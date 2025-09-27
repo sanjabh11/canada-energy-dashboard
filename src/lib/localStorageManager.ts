@@ -226,6 +226,18 @@ class LocalStorageManager {
   }
 
   // Generic data operations
+  private formatKey(key: string): string {
+    return key.startsWith(this.STORAGE_PREFIX) ? key : `${this.STORAGE_PREFIX}${key}`;
+  }
+
+  public getDataset<T>(key: string): T[] {
+    return this.loadData<T>(this.formatKey(key));
+  }
+
+  public setDataset<T>(key: string, data: T[]): void {
+    this.saveData(this.formatKey(key), data);
+  }
+
   private saveData<T>(key: string, data: T[]): void {
     try {
       localStorage.setItem(key, JSON.stringify(data));

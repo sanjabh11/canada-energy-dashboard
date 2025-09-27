@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Supabase Edge Function: llm - Minimal Bootstrap
 // This is the minimal entry point that delegates to llm_app.ts for all non-health routes
 // Keeps only essential CORS helpers and health endpoint to avoid cold-start BOOT_ERROR
@@ -49,6 +48,10 @@ function handleOptions(req: Request): Response {
   return new Response(null, { status: 204, headers });
 }
 
+type LlmModule = {
+  handleRequest?: (req: Request) => Response | Promise<Response>;
+};
+
 serve(async (req) => {
   try {
     const url = new URL(req.url);
@@ -72,7 +75,7 @@ serve(async (req) => {
     }
 
     // Delegate all other routes to the lazily-loaded app module
-    const mod = await import('./llm_app.ts');
+    const mod: LlmModule = await import('./llm_app.ts');
     if (typeof mod.handleRequest === 'function') {
       const res = await mod.handleRequest(req);
       return withCors(res, req);
@@ -84,3 +87,5 @@ serve(async (req) => {
     return withCors(new Response(JSON.stringify({ error: String(e) }), { status: 500, headers: jsonHeaders }), req);
   }
 });
+
+export {};

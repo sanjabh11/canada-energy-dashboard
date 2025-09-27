@@ -1,80 +1,168 @@
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-type Row = {
-  datetime: string
-  node_name: string
-  lmp_price: number
-  energy_price: number
-  congestion_price: number
-  loss_price: number
-  zone: string
-  market_date: string
-  interval_ending: string
-  source: 'kaggle'
-  version: string
-}
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
-function makeRows(limit: number, offset: number): Row[] {
-  const rows: Row[] = []
-  const baseTime = Date.now() - 6 * 60 * 60 * 1000
-  for (let i = 0; i < limit; i++) {
-    const n = offset + i
-    const ts = new Date(baseTime + n * 5 * 60 * 1000)
-    const price = Math.round((30 + Math.sin(n / 10) * 10) * 100) / 100
-    rows.push({
-      datetime: ts.toISOString(),
-      node_name: `ON_NODE_${(n % 10) + 1}`,
-      lmp_price: price,
-      energy_price: price - 2,
-      congestion_price: 1.1,
-      loss_price: 0.3,
-      zone: 'ON',
-      market_date: ts.toISOString().slice(0,10),
-      interval_ending: new Date(ts.getTime() + 5*60*1000).toISOString(),
-      source: 'kaggle',
-      version: '1.0-stub',
-    })
+type OntarioPriceRow = {
+  datetime: string;
+  node_name: string;
+  lmp_price: number;
+  energy_price: number;
+  congestion_price: number;
+  loss_price: number;
+  zone: string | null;
+  market_date: string | null;
+  interval_ending: string | null;
+  source: 'kaggle';
+  version: string;
+};
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+const STREAM_KEY = 'ontario-nodal-prices';
+
+async function logInvocation(
+  status: 'success' | 'error',
+  metadata: Record<string, unknown>,
+  startedAt: number
+) {
+  if (!supabase) return;
+  try {
+    const duration = Math.max(0, Date.now() - startedAt);
+    await supabase.from('edge_invocation_log').insert({
+      function_name: 'stream-ontario-prices',
+      status,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_ms: duration,
+      metadata
+    });
+  } catch (err) {
+    console.error('Ontario prices: failed to log invocation', err);
   }
-  return rows
 }
+
+async function updateStreamHealth(
+  status: 'healthy' | 'degraded',
+  metadata: Record<string, unknown>,
+  extra: { last_success?: string; last_error?: string; error_count?: number }
+) {
+  if (!supabase) return;
+  try {
+    const payload: Record<string, unknown> = {
+      stream_key: STREAM_KEY,
+      status,
+      updated_at: new Date().toISOString(),
+      metadata
+    };
+    if (extra.last_success) payload.last_success = extra.last_success;
+    if (extra.last_error) payload.last_error = extra.last_error;
+    if (typeof extra.error_count === 'number') payload.error_count = extra.error_count;
+    await supabase.from('stream_health').upsert(payload, { onConflict: 'stream_key' });
+  } catch (err) {
+    console.error('Ontario prices: failed to update stream health', err);
+  }
+}
+
+function mapRow(row: Record<string, unknown>): OntarioPriceRow {
+  return {
+    datetime: new Date(String(row.datetime)).toISOString(),
+    node_name: String(row.node_name ?? ''),
+    lmp_price: Number(row.lmp_price ?? 0),
+    energy_price: Number(row.energy_price ?? 0),
+    congestion_price: Number(row.congestion_price ?? 0),
+    loss_price: Number(row.loss_price ?? 0),
+    zone: row.zone ? String(row.zone) : null,
+    market_date: row.market_date ? String(row.market_date) : null,
+    interval_ending: row.interval_ending ? new Date(String(row.interval_ending)).toISOString() : null,
+    source: 'kaggle',
+    version: String(row.version ?? '1.0')
+  };
+}
+
+const corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400'
+};
 
 Deno.serve(async (req: Request) => {
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-  };
-
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
+  if (!supabase) {
+    return new Response(JSON.stringify({ error: 'Supabase client not configured' }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 500
+    });
+  }
+
+  const startedAt = Date.now();
+  let errorCount = 0;
+
   try {
-    const url = new URL(req.url)
-    const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 1000)
-    const offset = Math.max(Number(url.searchParams.get('offset') ?? url.searchParams.get('cursor') ?? '0'), 0)
+    const url = new URL(req.url);
+    const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 1000);
+    const offset = Math.max(Number(url.searchParams.get('offset') ?? url.searchParams.get('cursor') ?? '0'), 0);
 
-    const rows = makeRows(limit, offset)
-    const nextOffset = rows.length < limit ? null : offset + limit
+    const query = supabase
+      .from('ontario_nodal_prices')
+      .select('*', { count: 'exact' })
+      .order('datetime', { ascending: true })
+      .order('node_name', { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    const hasMore = nextOffset !== null
-    const headers = new Headers({ 'Content-Type': 'application/json', ...corsHeaders })
-    if (hasMore) headers.set('x-next-cursor', String(nextOffset))
+    const { data, error, count } = await query;
 
-    const body = {
-      rows,
-      metadata: {
-        hasMore,
-        totalEstimate: 2_500_000
-      }
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return new Response(JSON.stringify(body), { headers, status: 200 })
+    const rows = (data ?? []).map(mapRow);
+    const total = typeof count === 'number' ? count : offset + rows.length;
+    const nextOffset = offset + rows.length;
+    const hasMore = nextOffset < total;
+
+    const metadata = {
+      streamKey: STREAM_KEY,
+      limit,
+      offset,
+      returned: rows.length,
+      totalEstimate: total,
+      hasMore
+    };
+
+    await updateStreamHealth('healthy', metadata, {
+      last_success: new Date().toISOString(),
+      error_count: errorCount
+    });
+    await logInvocation('success', metadata, startedAt);
+
+    const headers = new Headers({ 'Content-Type': 'application/json', ...corsHeaders });
+    if (hasMore) {
+      headers.set('x-next-cursor', String(nextOffset));
+    }
+
+    const body = { rows, metadata };
+    return new Response(JSON.stringify(body), { headers, status: 200 });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String((err as any)?.message ?? err) }), {
+    errorCount++;
+    const message = err instanceof Error ? err.message : String(err);
+    const metadata = { streamKey: STREAM_KEY, error: message };
+    await updateStreamHealth('degraded', metadata, {
+      last_error: new Date().toISOString(),
+      error_count: errorCount
+    });
+    await logInvocation('error', metadata, startedAt);
+
+    return new Response(JSON.stringify({ error: message }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 500,
-    })
+      status: 500
+    });
   }
-})
+});

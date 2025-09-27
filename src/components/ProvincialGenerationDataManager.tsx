@@ -61,12 +61,7 @@ export const ProvincialGenerationDataManager: React.FC<DataManagerProps> = ({
     });
   }, []);
 
-  // Load data on component mount
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async (forceStream = false) => {
+  const loadData = useCallback(async (forceStream = false) => {
     setLoadingState({
       isLoading: true,
       progress: 0,
@@ -107,7 +102,12 @@ export const ProvincialGenerationDataManager: React.FC<DataManagerProps> = ({
         error: error instanceof Error ? error.message : 'Unknown error'
       });
     }
-  };
+  }, [calculateStats, onDataLoaded]);
+
+  // Load data on component mount
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const refreshData = () => {
     provincialGenerationRepo.refresh({ forceStream: true })

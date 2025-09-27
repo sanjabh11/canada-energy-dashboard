@@ -26,11 +26,10 @@ import {
 } from '../lib/dataManager';
 import ExplainChartButton from './ExplainChartButton';
 import { HelpButton } from './HelpButton';
-import { getTransitionKpis, type TransitionKpisResponse } from '../lib/llmClient';
+import { getTransitionAnalyticsInsight, getTransitionKpis, type TransitionKpisResponse } from '../lib/llmClient';
 import TransitionReportPanel from './TransitionReportPanel';
 import DataQualityPanel from './DataQualityPanel';
-import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
-import { ENDPOINTS } from '../lib/constants';
+import { isEdgeFetchEnabled } from '../lib/config';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
 
 interface DashboardData {
@@ -161,6 +160,12 @@ export const RealTimeDashboard: React.FC = () => {
     const controller = new AbortController();
     kpiAbortRef.current = controller;
     (async () => {
+      if (!isEdgeFetchEnabled()) {
+        if (!controller.signal.aborted) {
+          setKpis(null);
+        }
+        return;
+      }
       try {
         const data = await getTransitionKpis('provincial_generation', 'recent', { signal: controller.signal });
         if (!controller.signal.aborted) setKpis(data);
@@ -180,14 +185,9 @@ export const RealTimeDashboard: React.FC = () => {
     setInsightLoading(true);
     setInsightError(null);
     try {
-      const { json } = await fetchEdgePostJson([
-        ENDPOINTS.LLM.ANALYTICS_INSIGHT,
-      ], {
-        datasetPath: INSIGHTS_DATASET,
-        timeframe: INSIGHTS_TIMEFRAME,
-        queryType: 'overview'
-      }, { signal: controller.signal } as EdgeFetchOptions);
-      const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
+      const payload = await getTransitionAnalyticsInsight(INSIGHTS_DATASET, INSIGHTS_TIMEFRAME, {
+        signal: controller.signal
+      });
       if (!controller.signal.aborted) setInsight(payload as AnalyticsInsight);
     } catch (e: any) {
       if (e?.name === 'AbortError') return;
@@ -218,17 +218,32 @@ export const RealTimeDashboard: React.FC = () => {
   // Process Provincial Generation data for horizontal bar chart
   const provinceGenerationChartData = data.provincialGeneration
     .reduce((acc: any[], record) => {
-      const existing = acc.find(item => item.type === record.generation_type);
+      const typeKey = record.generation_type || record.province_code || record.province || 'UNKNOWN';
+      const value = typeof record.megawatt_hours === 'number'
+        ? record.megawatt_hours
+        : typeof record.generation_gwh === 'number'
+          ? record.generation_gwh * 1000
+          : 0;
+
+      if (value === 0) {
+        return acc;
+      }
+
+      const existing = acc.find(item => item.type === typeKey);
       if (existing) {
-        existing.mwh += record.megawatt_hours;
+        existing.mwh += value;
       } else {
         acc.push({
-          type: record.generation_type.replace('_', ' ').toUpperCase(),
-          mwh: record.megawatt_hours
+          type: typeKey,
+          mwh: value
         });
       }
       return acc;
     }, [])
+    .map(item => ({
+      type: String(item.type).replace(/_/g, ' ').toUpperCase(),
+      mwh: item.mwh
+    }))
     .slice(0, 6);
 
   // Process Alberta Supply & Demand data - REPLACE MOCK WITH REAL AESO DATA

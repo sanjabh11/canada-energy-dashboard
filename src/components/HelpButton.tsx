@@ -360,19 +360,3 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
     </>
   );
 }
-
-// Higher-order component wrapper for easy placement next to UI elements
-export function withHelp(
-  Component: React.ComponentType<any>,
-  helpId: string,
-  helpPosition: 'inline' | 'right' | 'top' = 'inline'
-) {
-  return function HelpWrappedComponent(props: any) {
-    return (
-      <div className={`flex items-center gap-2 ${helpPosition === 'right' ? 'justify-between' : ''}`}>
-        <Component {...props} />
-        <HelpButton id={helpId} />
-      </div>
-    );
-  };
-}

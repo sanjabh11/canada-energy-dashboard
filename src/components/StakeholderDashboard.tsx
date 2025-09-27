@@ -254,13 +254,17 @@ export const StakeholderDashboard: React.FC = () => {
   const showWebSocketConnection = wsConnected;
 
   // Use NLP sentiment analysis for messages
-  const nlpMessages = allMessages.map(msg => ({
-    id: msg.id,
-    content: msg.content,
-    senderId: msg.senderId,
-    senderName: msg.senderName || 'Unknown',
-    timestamp: msg.timestamp
-  }));
+  const nlpMessages = React.useMemo(
+    () =>
+      allMessages.map((msg) => ({
+        id: msg.id,
+        content: msg.content,
+        senderId: msg.senderId,
+        senderName: msg.senderName || 'Unknown',
+        timestamp: msg.timestamp
+      })),
+    [allMessages]
+  );
 
   const {
     messageAnalysis,
@@ -268,7 +272,7 @@ export const StakeholderDashboard: React.FC = () => {
     getMessageCategories,
     getOverallSentiment,
     loading: nlpLoading
-  } = useMessageSentiment(nlpMessages, true);
+  } = useMessageSentiment(nlpMessages, nlpMessages.length > 0);
 
   const { isHealthy: nlpHealthy } = useNLPHealth();
 

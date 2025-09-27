@@ -6,7 +6,7 @@
  * Replaces mock data with persistent local storage.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import {
   Shield, AlertTriangle, CheckCircle, XCircle, Clock, Eye,
@@ -70,29 +70,7 @@ export const EnhancedComplianceDashboard: React.FC = () => {
     assigned_to: ''
   });
 
-  // Load compliance records from local storage
-  useEffect(() => {
-    loadComplianceRecords();
-  }, []);
-
-  const loadComplianceRecords = () => {
-    setLoading(true);
-    try {
-      const records = localStorageManager.getComplianceRecords();
-      setComplianceRecords(records);
-      
-      // Initialize with sample data if empty
-      if (records.length === 0) {
-        initializeSampleData();
-      }
-    } catch (error) {
-      console.error('Error loading compliance records:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const initializeSampleData = () => {
+  const initializeSampleData = useCallback((): ComplianceRecord[] => {
     const sampleRecords = [
       {
         project_id: 'project_001',
@@ -135,9 +113,31 @@ export const EnhancedComplianceDashboard: React.FC = () => {
     sampleRecords.forEach(record => {
       localStorageManager.addComplianceRecord(record);
     });
-    
+
+    return localStorageManager.getComplianceRecords();
+  }, []);
+
+  const loadComplianceRecords = useCallback(() => {
+    setLoading(true);
+    try {
+      const records = localStorageManager.getComplianceRecords();
+      if (records.length === 0) {
+        const seeded = initializeSampleData();
+        setComplianceRecords(seeded);
+      } else {
+        setComplianceRecords(records);
+      }
+    } catch (error) {
+      console.error('Error loading compliance records:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [initializeSampleData]);
+
+  // Load compliance records from local storage
+  useEffect(() => {
     loadComplianceRecords();
-  };
+  }, [loadComplianceRecords]);
 
   // Calculate compliance metrics
   const metrics: ComplianceMetrics = useMemo(() => {

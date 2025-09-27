@@ -56,3 +56,45 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/stream-provincial-generation/deno.json"
 entrypoint = "./functions/stream-provincial-generation/index.ts"
+
+[functions.api-v2-grid-status]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-grid-status/deno.json"
+entrypoint = "./functions/api-v2-grid-status/index.ts"
+
+[functions.api-v2-grid-stability-metrics]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-grid-stability-metrics/deno.json"
+entrypoint = "./functions/api-v2-grid-stability-metrics/index.ts"
+
+[functions.api-v2-grid-optimization-recommendations]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-grid-optimization-recommendations/deno.json"
+entrypoint = "./functions/api-v2-grid-optimization-recommendations/index.ts"
+
+[functions.api-v2-security-threat-models]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-security-threat-models/deno.json"
+entrypoint = "./functions/api-v2-security-threat-models/index.ts"
+
+[functions.api-v2-security-incidents]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-security-incidents/deno.json"
+entrypoint = "./functions/api-v2-security-incidents/index.ts"
+
+[functions.api-v2-security-metrics]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-security-metrics/deno.json"
+entrypoint = "./functions/api-v2-security-metrics/index.ts"
+
+[functions.api-v2-security-mitigation-strategies]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-security-mitigation-strategies/deno.json"
+entrypoint = "./functions/api-v2-security-mitigation-strategies/index.ts"

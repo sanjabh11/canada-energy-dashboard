@@ -84,7 +84,7 @@ export const MineralsDashboard: React.FC = () => {
   const [mineralsRecords, setMineralsRecords] = useState<MineralsSupplyRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedMineral, setSelectedMineral] = useState<string | null>(null);
+  const [selectedMineral, setSelectedMineral] = useState<string | null>(mockSupplyData[0]?.mineral ?? null);
   const [showAddMineral, setShowAddMineral] = useState(false);
   const [editingMineral, setEditingMineral] = useState<string | null>(null);
   
@@ -106,6 +106,16 @@ export const MineralsDashboard: React.FC = () => {
     averageRiskScore: 0,
     lastUpdate: new Date().toLocaleString()
   });
+
+  const [data, setData] = useState<MineralsData>({
+    supplyStatus: mockSupplyData,
+    riskAssessment: mockRiskData,
+    alerts: []
+  });
+
+  const insightAbortRef = useRef<AbortController | null>(null);
+  const [insightLoading, setInsightLoading] = useState(false);
+  const [marketInsight, setMarketInsight] = useState<MarketBriefResponse | null>(null);
 
   // Load minerals data (mock implementation)
   useEffect(() => {
@@ -133,10 +143,20 @@ export const MineralsDashboard: React.FC = () => {
           }
         ];
 
-        setData(prev => ({
-          ...prev,
+        const updatedData: MineralsData = {
+          supplyStatus: mockSupplyData,
+          riskAssessment: mockRiskData,
           alerts: mockAlerts
-        }));
+        };
+
+        setData(updatedData);
+
+        setStats({
+          totalMinerals: updatedData.supplyStatus.length,
+          highRiskCount: updatedData.riskAssessment.filter(item => item.overallScore >= 8).length,
+          averageRiskScore: Number((updatedData.riskAssessment.reduce((sum, item) => sum + item.overallScore, 0) / updatedData.riskAssessment.length || 0).toFixed(1)),
+          lastUpdate: new Date().toLocaleString()
+        });
 
         setLoading(false);
       } catch (error) {
@@ -150,6 +170,10 @@ export const MineralsDashboard: React.FC = () => {
 
   // Load market insights using LLM
   const loadMarketInsight = useCallback(async () => {
+    if (!selectedMineral) {
+      return;
+    }
+
     insightAbortRef.current?.abort();
     const controller = new AbortController();
     insightAbortRef.current = controller;
@@ -179,30 +203,34 @@ export const MineralsDashboard: React.FC = () => {
   }, [selectedMineral]);
 
   useEffect(() => {
+    if (!selectedMineral) {
+      return () => undefined;
+    }
+
     loadMarketInsight();
     return () => insightAbortRef.current?.abort();
-  }, [loadMarketInsight]);
+  }, [loadMarketInsight, selectedMineral]);
 
   // Process chart data
-  const supplyChartData = data.supplyStatus.map(item => ({
+  const supplyChartData = React.useMemo(() => data.supplyStatus.map(item => ({
     mineral: item.mineral,
     production: item.production / 1000, // Convert to thousands for display
     import: item.import / 1000,
     export: item.export / 1000
-  }));
+  })), [data.supplyStatus]);
 
-  const riskChartData = data.riskAssessment.map(item => ({
+  const riskChartData = React.useMemo(() => data.riskAssessment.map(item => ({
     mineral: item.mineral,
     risk: item.overallScore
-  }));
+  })), [data.riskAssessment]);
 
   // Performance metrics data
-  const performanceData = data.supplyStatus.map((item, index) => ({
+  const performanceData = React.useMemo(() => data.supplyStatus.map((item, index) => ({
     month: `Month ${index + 1}`,
     marketPrice: item.price,
     productionVolume: item.production,
     importVolume: item.import
-  }));
+  })), [data.supplyStatus]);
 
   const getRiskColor = (score: number) => {
     if (score >= 9) return 'text-red-600 border-red-200 bg-red-50';

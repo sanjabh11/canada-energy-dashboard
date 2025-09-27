@@ -1,10 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
-import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
-import { BarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area, AreaChart, Bar, Pie } from 'recharts';
-import TerritorialMap, { mockTerritories, mockMapPoints } from './TerritorialMap';
-import { AlertTriangle, Plus, Edit, Save, X, Download, Upload, Shield, Users, FileText, Calendar } from 'lucide-react';
+import {
+  BarChart,
+  PieChart,
+  Cell,
+  ResponsiveContainer,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  Area,
+  AreaChart,
+  Bar,
+  Pie
+} from 'recharts';
+import TerritorialMap, { type MapPoint, type TerritoryBoundary } from './TerritorialMap';
+import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save } from 'lucide-react';
 import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
 
 // Interfaces for Indigenous dashboard data
@@ -39,11 +52,152 @@ export interface TEKEntry {
   relatedTerritories: string[];
 }
 
+const CONSULTATION_STATUS_COLORS: Record<TerritoryData['consultationStatus'], string> = {
+  completed: '#10b981',
+  ongoing: '#f59e0b',
+  pending: '#ef4444',
+  not_started: '#6b7280'
+};
+
+const DEFAULT_TERRITORIES: TerritoryData[] = [
+  {
+    id: 'treaty-5',
+    name: 'Treaty 5 Territory',
+    coordinates: [
+      [55, -95],
+      [55.6, -96.2],
+      [54.4, -96.6]
+    ],
+    consultationStatus: 'completed',
+    community: 'Cree, Ojibwe, Dene',
+    traditionalTerritory: 'Treaty 5 Territory',
+    lastActivity: '2024-04-15T00:00:00.000Z'
+  },
+  {
+    id: 'treaty-9',
+    name: 'Treaty 9 Territory',
+    coordinates: [
+      [50, -80],
+      [50.7, -81.5],
+      [49.6, -82.1]
+    ],
+    consultationStatus: 'ongoing',
+    community: 'Ojibwe, Cree, Oji-Cree',
+    traditionalTerritory: 'Treaty 9 Territory',
+    lastActivity: '2024-05-02T00:00:00.000Z'
+  },
+  {
+    id: 'dene',
+    name: 'Dene Territory',
+    coordinates: [
+      [60, -120],
+      [60.8, -118.6],
+      [59.5, -119.2]
+    ],
+    consultationStatus: 'pending',
+    community: 'Dene, Sahtu, North Slave',
+    traditionalTerritory: 'Dene Territory',
+    lastActivity: '2024-03-21T00:00:00.000Z'
+  }
+];
+
+const DEFAULT_MAP_POINTS: MapPoint[] = [
+  {
+    id: 'treaty-5-point',
+    lat: 55,
+    lng: -95,
+    title: 'Treaty 5 Consultation',
+    type: 'consultation',
+    status: 'completed',
+    description: 'Community wind partnership review.'
+  },
+  {
+    id: 'treaty-9-point',
+    lat: 50,
+    lng: -80,
+    title: 'Treaty 9 Energy Forum',
+    type: 'consultation',
+    status: 'active',
+    description: 'Joint planning meeting with utilities & leadership.'
+  },
+  {
+    id: 'dene-point',
+    lat: 60,
+    lng: -120,
+    title: 'Dene FPIC Workshop',
+    type: 'consultation',
+    status: 'pending',
+    description: 'FPIC readiness workshops with advisors.'
+  }
+];
+
+const derivePolygon = (coordinates: [number, number][]): [number, number][][] => {
+  if (coordinates.length < 3) {
+    return [];
+  }
+
+  const ring = coordinates.map(([lat, lng]) => [lng, lat] as [number, number]);
+  if (ring.length > 0 && (ring[0][0] !== ring[ring.length - 1][0] || ring[0][1] !== ring[ring.length - 1][1])) {
+    ring.push([...ring[0]] as [number, number]);
+  }
+
+  return [ring];
+};
+
+const buildTerritoryBoundary = (territory: TerritoryData, index: number): TerritoryBoundary => {
+  const polygon = derivePolygon(territory.coordinates);
+  const centroid = territory.coordinates[0]
+    ? ([territory.coordinates[0][0], territory.coordinates[0][1]] as [number, number])
+    : undefined;
+
+  return {
+    id: territory.id || `territory-${index}`,
+    name: territory.name,
+    consultationStatus: territory.consultationStatus,
+    color: CONSULTATION_STATUS_COLORS[territory.consultationStatus] ?? '#3b82f6',
+    metadata: {
+      indigenousGroups: territory.community
+        ? territory.community.split(',').map((group) => group.trim()).filter(Boolean)
+        : [],
+      area: polygon.length > 0 ? 120000 : undefined
+    },
+    coordinates: polygon,
+    centroid
+  };
+};
+
+const buildMapPoint = (territory: TerritoryData, index: number): MapPoint | null => {
+  const primaryCoord = territory.coordinates[0];
+  if (!primaryCoord) {
+    return null;
+  }
+
+  const [lat, lng] = primaryCoord;
+  const status: MapPoint['status'] =
+    territory.consultationStatus === 'completed'
+      ? 'completed'
+      : territory.consultationStatus === 'ongoing'
+      ? 'active'
+      : 'pending';
+
+  return {
+    id: `territory-point-${territory.id ?? index}`,
+    lat,
+    lng,
+    title: `${territory.name} consultation`,
+    type: 'consultation',
+    status,
+    description: `Community: ${territory.community || 'TBD'}`
+  };
+};
+
 export const IndigenousDashboard: React.FC = () => {
-  const [territories, setTerritories] = useState<TerritoryData[]>([]);
+  const [territories, setTerritories] = useState<TerritoryData[]>(DEFAULT_TERRITORIES);
   const [fpicWorkflows, setFpicWorkflows] = useState<FPICWorkflow[]>([]);
   const [tekEntries, setTekEntries] = useState<TEKEntry[]>([]);
-  const [selectedTerritory, setSelectedTerritory] = useState<TerritoryData | null>(null);
+  const [selectedTerritory, setSelectedTerritory] = useState<TerritoryData | null>(
+    DEFAULT_TERRITORIES[0] ?? null
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -270,6 +424,22 @@ export const IndigenousDashboard: React.FC = () => {
     };
   }, [territories]);
 
+  const effectiveTerritories = territories.length > 0 ? territories : DEFAULT_TERRITORIES;
+
+  const territoryBoundaries = useMemo<TerritoryBoundary[]>(
+    () => effectiveTerritories.map(buildTerritoryBoundary),
+    [effectiveTerritories]
+  );
+
+  const mapPoints = useMemo<MapPoint[]>(() => {
+    const derived = effectiveTerritories
+      .map(buildMapPoint)
+      .filter((point): point is MapPoint => point !== null);
+    return derived.length > 0 ? derived : DEFAULT_MAP_POINTS;
+  }, [effectiveTerritories]);
+
+  const territoryList = effectiveTerritories;
+
   // Prepare chart data
   const consultationChartData = [
     { name: 'Completed', value: dashboardMetrics.completedConsultations, color: '#10b981' },
@@ -394,15 +564,8 @@ export const IndigenousDashboard: React.FC = () => {
             <h3 className="text-xl font-semibold text-slate-900 mb-4">Territory Map</h3>
             <div className="h-96">
               <TerritorialMap
-                territories={mockTerritories.map(mt => ({
-                  id: mt.id,
-                  name: mt.name,
-                  coordinates: mt.coordinates,
-                  color: mt.color,
-                  consultationStatus: mt.consultationStatus,
-                  metadata: mt.metadata
-                }))}
-                mapPoints={mockMapPoints}
+                territories={territoryBoundaries}
+                mapPoints={mapPoints}
                 config={{
                   center: [-95, 55],
                   zoom: 4,
@@ -410,12 +573,18 @@ export const IndigenousDashboard: React.FC = () => {
                   showPoints: true,
                   showLabels: true
                 }}
-                onTerritoryClick={(territory) => {
-                  const foundTerritory = territories.find(t => t.name === territory.name) || territories[0];
-                  setSelectedTerritory(foundTerritory || null);
+                onTerritoryClick={(boundary) => {
+                  const match = territoryList.find(
+                    (territory) => territory.id === boundary.id || territory.name === boundary.name
+                  );
+                  setSelectedTerritory(match ?? territoryList[0] ?? null);
                 }}
                 onPointClick={(point) => {
-                  console.log('Point clicked:', point);
+                  const match = territoryList.find((territory) => {
+                    const [lat, lng] = territory.coordinates[0] ?? [undefined, undefined];
+                    return lat === point.lat && lng === point.lng;
+                  });
+                  setSelectedTerritory(match ?? territoryList[0] ?? null);
                 }}
               />
             </div>
@@ -425,54 +594,22 @@ export const IndigenousDashboard: React.FC = () => {
           <div className="bg-white rounded-lg shadow p-6">
             <h3 className="text-xl font-semibold text-slate-900 mb-4">Territories</h3>
             <div className="space-y-4 max-h-96 overflow-y-auto">
-              {territories.length === 0 ? (
-                mockTerritories.map((territory) => (
-                  <div
-                    key={territory.id}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
-                      selectedTerritory?.name === territory.name
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-slate-200 hover:border-slate-300'
-                    }`}
-                    onClick={() => setSelectedTerritory({
-                      id: territory.id,
-                      name: territory.name,
-                      coordinates: territory.coordinates[0] || [],
-                      consultationStatus: territory.consultationStatus,
-                      community: territory.metadata.indigenousGroups.join(', '),
-                      traditionalTerritory: territory.metadata.indigenousGroups.join(', '),
-                      lastActivity: new Date().toISOString()
-                    })}
-                  >
-                    <h4 className="font-medium text-slate-900">{territory.name}</h4>
-                    <p className="text-sm text-slate-600">{territory.metadata.indigenousGroups.join(', ')}</p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
-                        territory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                        territory.consultationStatus === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
-                        territory.consultationStatus === 'pending' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {territory.consultationStatus.replace('_', ' ').toUpperCase()}
-                      </span>
-                      <span className="text-xs text-slate-500">
-                        {territory.metadata.area.toLocaleString()} km²
-                      </span>
-                    </div>
-                  </div>
-                ))
-              ) : territories.map((territory) => (
+              {territoryList.length === 0 ? (
+                <div className="text-center text-slate-500 text-sm">
+                  No Indigenous territories available. Confirm Supabase seed ran.
+                </div>
+              ) : territoryList.map((territory) => (
                 <div
                   key={territory.id}
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                     selectedTerritory?.id === territory.id
                       ? 'border-blue-500 bg-blue-50'
-                      : 'border-slate-200 hover:border-slate-300'
+                      : 'border-slate-200 hover-border-slate-300'
                   }`}
                   onClick={() => setSelectedTerritory(territory)}
                 >
                   <h4 className="font-medium text-slate-900">{territory.name}</h4>
-                  <p className="text-sm text-slate-600">{territory.community}</p>
+                  <p className="text-sm text-slate-600">{territory.community || 'Community TBD'}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       territory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
@@ -483,7 +620,9 @@ export const IndigenousDashboard: React.FC = () => {
                       {territory.consultationStatus.replace('_', ' ').toUpperCase()}
                     </span>
                     <span className="text-xs text-slate-500">
-                      {new Date(territory.lastActivity).toLocaleDateString()}
+                      {territory.lastActivity
+                        ? new Date(territory.lastActivity).toLocaleDateString('en-CA')
+                        : 'Date TBD'}
                     </span>
                   </div>
                 </div>

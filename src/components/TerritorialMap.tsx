@@ -15,14 +15,15 @@ export interface MapPoint {
 export interface TerritoryBoundary {
   id: string;
   name: string;
-  coordinates: [number, number][][];
+  coordinates?: [number, number][][];
+  centroid?: [number, number];
   color: string;
   consultationStatus: 'not_started' | 'ongoing' | 'completed' | 'pending';
-  metadata: {
-    area: number;
-    population: number;
-    indigenousGroups: string[];
-    traditionalTerritories: string[];
+  metadata?: {
+    area?: number;
+    population?: number;
+    indigenousGroups?: string[];
+    traditionalTerritories?: string[];
   };
 }
 
@@ -94,10 +95,54 @@ export const TerritorialMap: React.FC<{
   };
 
   const getBoundaryPath = (coordinates: [number, number][][]): string => {
-    return coordinates[0]?.map((coord, index) => {
-      const [x, y] = getPointCoordinates(coord[1], coord[0]);
-      return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
-    }).join('') + 'Z';
+    const ring = coordinates[0] ?? [];
+    if (ring.length === 0) {
+      return '';
+    }
+    return (
+      ring
+        .map((coord, index) => {
+          const [x, y] = getPointCoordinates(coord[1], coord[0]);
+          return index === 0 ? `M ${x} ${y}` : `L ${x} ${y}`;
+        })
+        .join('') + 'Z'
+    );
+  };
+
+  const buildFallbackPolygon = (centroid?: [number, number]): [number, number][][] => {
+    if (!centroid) {
+      return [];
+    }
+    const [lat, lng] = centroid;
+    const delta = 1.2; // degrees for simplified box footprint
+    return [[
+      [lng - delta, lat + delta],
+      [lng + delta, lat + delta],
+      [lng + delta, lat - delta],
+      [lng - delta, lat - delta],
+      [lng - delta, lat + delta]
+    ]];
+  };
+
+  const resolvePolygon = (territory: TerritoryBoundary): [number, number][][] => {
+    if (territory.coordinates && territory.coordinates.length > 0) {
+      return territory.coordinates;
+    }
+    return buildFallbackPolygon(territory.centroid);
+  };
+
+  const resolveLabelPosition = (territory: TerritoryBoundary, polygon: [number, number][][]): [number, number] => {
+    const ring = polygon[0];
+    if (ring && ring.length > 0) {
+      const avgLat = ring.reduce((acc, coord) => acc + coord[1], 0) / ring.length;
+      const avgLng = ring.reduce((acc, coord) => acc + coord[0], 0) / ring.length;
+      return getPointCoordinates(avgLat, avgLng);
+    }
+    if (territory.centroid) {
+      const [lat, lng] = territory.centroid;
+      return getPointCoordinates(lat, lng);
+    }
+    return getPointCoordinates(mapConfig.center[0], mapConfig.center[1]);
   };
 
   const getStatusColor = (status: string): string => {
@@ -203,35 +248,31 @@ export const TerritorialMap: React.FC<{
           }}
         >
           {/* Territory Boundaries */}
-          {mapConfig.showBoundaries && territories.map((territory) => (
-            <g key={territory.id}>
-              <path
-                d={getBoundaryPath(territory.coordinates)}
-                fill={getStatusColor(territory.consultationStatus)}
-                fillOpacity="0.3"
-                stroke={getStatusColor(territory.consultationStatus)}
-                strokeWidth="2"
-                className="cursor-pointer hover:fill-opacity-50 transition-all"
-                onClick={(e) => handleTerritoryClick(territory, e)}
-                onMouseEnter={() => setHoveredTerritory(territory)}
-                onMouseLeave={() => setHoveredTerritory(null)}
-              />
+          {mapConfig.showBoundaries && territories.map((territory) => {
+            const polygon = resolvePolygon(territory);
+            if (!polygon || polygon.length === 0) {
+              return null;
+            }
+            const [labelX, labelY] = resolveLabelPosition(territory, polygon);
 
-              {mapConfig.showLabels && (() => {
-                const centerCoord = territory.coordinates[0]?.reduce(
-                  (acc, coord) => [acc[0] + coord[0], acc[1] + coord[1]],
-                  [0, 0]
-                );
-                if (!centerCoord || territory.coordinates[0]?.length === 0) return null;
+            return (
+              <g key={territory.id}>
+                <path
+                  d={getBoundaryPath(polygon)}
+                  fill={getStatusColor(territory.consultationStatus)}
+                  fillOpacity="0.3"
+                  stroke={getStatusColor(territory.consultationStatus)}
+                  strokeWidth="2"
+                  className="cursor-pointer hover:fill-opacity-50 transition-all"
+                  onClick={(e) => handleTerritoryClick(territory, e)}
+                  onMouseEnter={() => setHoveredTerritory(territory)}
+                  onMouseLeave={() => setHoveredTerritory(null)}
+                />
 
-                const centerLat = centerCoord[1] / territory.coordinates[0].length;
-                const centerLng = centerCoord[0] / territory.coordinates[0].length;
-                const [x, y] = getPointCoordinates(centerLat, centerLng);
-
-                return (
+                {mapConfig.showLabels && (
                   <text
-                    x={x}
-                    y={y}
+                    x={labelX}
+                    y={labelY}
                     textAnchor="middle"
                     dominantBaseline="middle"
                     className="fill-slate-700 text-sm font-medium pointer-events-none select-none"
@@ -239,10 +280,10 @@ export const TerritorialMap: React.FC<{
                   >
                     {territory.name}
                   </text>
-                );
-              })()}
-            </g>
-          ))}
+                )}
+              </g>
+            );
+          })}
 
           {/* Map Points */}
           {mapConfig.showPoints && mapPoints.map((point) => {
@@ -308,29 +349,43 @@ export const TerritorialMap: React.FC<{
                   </span>
                 </div>
 
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Area:</span>
-                  <span>{(selectedTerritory || hoveredTerritory)?.metadata.area.toLocaleString()} km²</span>
-                </div>
-
-                <div className="flex justify-between">
-                  <span className="text-slate-600">Population:</span>
-                  <span>{(selectedTerritory || hoveredTerritory)?.metadata.population.toLocaleString()}</span>
-                </div>
-
-                <div>
-                  <span className="text-slate-600 text-xs">Indigenous Groups:</span>
-                  <div className="mt-1 flex flex-wrap gap-1">
-                    {(selectedTerritory || hoveredTerritory)?.metadata.indigenousGroups.slice(0, 3).map((group, index) => (
-                      <span key={index} className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">
-                        {group}
-                      </span>
-                    ))}
-                    {((selectedTerritory || hoveredTerritory)?.metadata.indigenousGroups.length || 0) > 3 && (
-                      <span className="text-slate-500 text-xs">+{(selectedTerritory || hoveredTerritory)?.metadata.indigenousGroups.length - 3} more</span>
-                    )}
-                  </div>
-                </div>
+                {(() => {
+                  const territory = selectedTerritory || hoveredTerritory;
+                  const metadata = territory?.metadata;
+                  if (!metadata) return null;
+                  const groups = metadata.indigenousGroups ?? [];
+                  return (
+                    <>
+                      {typeof metadata.area === 'number' && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Area:</span>
+                          <span>{metadata.area.toLocaleString()} km²</span>
+                        </div>
+                      )}
+                      {typeof metadata.population === 'number' && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-600">Population:</span>
+                          <span>{metadata.population.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {groups.length > 0 && (
+                        <div>
+                          <span className="text-slate-600 text-xs">Indigenous Groups:</span>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            {groups.slice(0, 3).map((group, index) => (
+                              <span key={index} className="bg-slate-100 text-slate-700 text-xs px-2 py-1 rounded">
+                                {group}
+                              </span>
+                            ))}
+                            {groups.length > 3 && (
+                              <span className="text-slate-500 text-xs">+{groups.length - 3} more</span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -414,124 +469,4 @@ export const TerritorialMap: React.FC<{
     </div>
   );
 };
-
-// Enhanced mock territory data with more realistic Canadian boundaries
-// TODO: Replace with Open Government of Canada boundary datasets and Indigenous territory shapefiles
-export const mockTerritories: TerritoryBoundary[] = [
-  {
-    id: 'treaty5',
-    name: 'Treaty 5 Territory',
-    coordinates: [
-      [[-102, 55], [-88, 55], [-88, 50], [-102, 50], [-102, 55]]
-    ],
-    color: '#10b981',
-    consultationStatus: 'completed',
-    metadata: {
-      area: 227000,
-      population: 85420,
-      indigenousGroups: ['Cree', 'Ojibwe', 'Dene'],
-      traditionalTerritories: ['Treaty 5 Lands', 'Hudson Bay Lowlands']
-    }
-  },
-  {
-    id: 'treaty9',
-    name: 'Treaty 9 Territory',
-    coordinates: [
-      [[-92, 52], [-78, 52], [-78, 48], [-92, 48], [-92, 52]]
-    ],
-    color: '#f59e0b',
-    consultationStatus: 'ongoing',
-    metadata: {
-      area: 245000,
-      population: 128000,
-      indigenousGroups: ['Ojibwe', 'Cree', 'Oji-Cree'],
-      traditionalTerritories: ['James Bay', 'Hudson Bay Coast', 'Abitibi Region']
-    }
-  },
-  {
-    id: 'dene',
-    name: 'Dene Territory',
-    coordinates: [
-      [[-125, 65], [-105, 65], [-105, 58], [-125, 58], [-125, 65]]
-    ],
-    color: '#ef4444',
-    consultationStatus: 'pending',
-    metadata: {
-      area: 195000,
-      population: 28900,
-      indigenousGroups: ['Dene', 'Sahtu', 'North Slave', 'Dehcho'],
-      traditionalTerritories: ['Northwest Territories', 'Sahtu Settlement Area']
-    }
-  },
-  {
-    id: 'nunavut',
-    name: 'Nunavut Settlement Area',
-    coordinates: [
-      [[-120, 72], [-60, 72], [-60, 60], [-120, 60], [-120, 72]]
-    ],
-    color: '#8b5cf6',
-    consultationStatus: 'ongoing',
-    metadata: {
-      area: 443000,
-      population: 39200,
-      indigenousGroups: ['Inuit', 'Inuvialuit'],
-      traditionalTerritories: ['Nunavut', 'Baffin Island', 'High Arctic']
-    }
-  },
-  {
-    id: 'yukon',
-    name: 'Yukon First Nations Territories',
-    coordinates: [
-      [[-141, 70], [-122, 70], [-122, 60], [-141, 60], [-141, 70]]
-    ],
-    color: '#06b6d4',
-    consultationStatus: 'completed',
-    metadata: {
-      area: 135000,
-      population: 42100,
-      indigenousGroups: ['Yukon First Nations', 'Kwanlin Dun', 'Selkirk'],
-      traditionalTerritories: ['Yukon Territory', 'Klondike Region']
-    }
-  }
-];
-
-export const mockMapPoints: MapPoint[] = [
-  {
-    id: 'p01',
-    lat: 49.5,
-    lng: -93.5,
-    title: 'Kenora Consultation Hub',
-    type: 'consultation',
-    status: 'active',
-    description: 'Main consultation office for Treaty 5 lands'
-  },
-  {
-    id: 'p02',
-    lat: 50.2,
-    lng: -86.2,
-    title: 'Moose Factory Community Office',
-    type: 'stakeholder',
-    status: 'active',
-    description: 'James Bay Cree First Nation consultation office'
-  },
-  {
-    id: 'p03',
-    lat: 58.8,
-    lng: -114.5,
-    title: 'Traditional Fishing Grounds',
-    type: 'cultural',
-    status: 'urgent',
-    description: 'Sacred fishing grounds requiring special protection'
-  },
-  {
-    id: 'p04',
-    lat: 55.3,
-    lng: -115.2,
-    title: 'Winter Traditional Territory',
-    type: 'land_right',
-    status: 'pending',
-    description: 'Historical hunting and trapping lands'
-  }
-];
-
 export default TerritorialMap;

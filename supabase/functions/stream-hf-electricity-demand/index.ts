@@ -1,102 +1,173 @@
-// Follow this setup guide to integrate the Deno language server with your editor:
-// https://deno.land/manual/getting_started/setup_your_environment
-// This enables autocomplete, go to definition, etc.
+import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
-// Setup type definitions for built-in Supabase Runtime APIs
-import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
-
-// Shape expected by frontend (see src/lib/dataStreamers.ts -> HFElectricityDemandStreamer)
-// Response body should be: { rows: HfRow[], metadata: { hasMore: boolean, totalEstimate?: number } }
-// Header should include: 'x-next-cursor' when more pages exist
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
 type HfRow = {
-  datetime: string // ISO timestamp
-  electricity_demand: number
-  temperature: number
-  humidity: number
-  wind_speed: number
-  solar_irradiance: number
-  household_id: string
-  location: string
-  day_of_week: number
-  hour: number
-  source: 'huggingface'
-  version: string
-}
+  datetime: string;
+  electricity_demand: number;
+  temperature: number;
+  humidity: number;
+  wind_speed: number;
+  solar_irradiance: number;
+  household_id: string;
+  location: string;
+  day_of_week: number;
+  hour: number;
+  source: 'huggingface';
+  version: string;
+};
 
-function makeFakeRows(limit: number, offset: number): HfRow[] {
-  const rows: HfRow[] = []
-  const baseTime = Date.now() - 6 * 60 * 60 * 1000 // last 6 hours
-  for (let i = 0; i < limit; i++) {
-    const n = offset + i
-    const ts = new Date(baseTime + n * 5 * 60 * 1000) // 5-min intervals
-    const hour = ts.getUTCHours()
-    const dow = ts.getUTCDay()
-    const demandBase = 950 + (hour % 6) * 20
-    const demand = demandBase + (n % 15) * 3
-    const temperature = 20 + Math.sin(n / 10) * 5
-    const humidity = 40 + (n % 20)
-    const wind = 5 + (n % 7)
-    const solar = Math.max(0, 800 * Math.sin(((hour - 6) / 12) * Math.PI))
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
 
-    rows.push({
-      datetime: ts.toISOString(),
-      electricity_demand: Math.round(demand),
-      temperature: Math.round(temperature * 10) / 10,
-      humidity: Math.round(humidity),
-      wind_speed: Math.round(wind * 10) / 10,
-      solar_irradiance: Math.round(solar),
-      household_id: `hh-${(n % 1000).toString().padStart(3, '0')}`,
-      location: 'hf_demo',
-      day_of_week: dow,
-      hour,
-      source: 'huggingface',
-      version: '1.0-stub'
-    })
+const STREAM_KEY = 'hf-electricity-demand';
+
+async function logInvocation(
+  status: 'success' | 'error',
+  metadata: Record<string, unknown>,
+  startedAt: number
+) {
+  if (!supabase) return;
+  try {
+    const duration = Math.max(0, Date.now() - startedAt);
+    await supabase.from('edge_invocation_log').insert({
+      function_name: 'stream-hf-electricity-demand',
+      status,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_ms: duration,
+      metadata
+    });
+  } catch (err) {
+    console.error('HF stream: failed to log invocation', err);
   }
-  return rows
 }
+
+async function updateStreamHealth(
+  status: 'healthy' | 'degraded',
+  metadata: Record<string, unknown>,
+  extra: { last_success?: string; last_error?: string; error_count?: number }
+) {
+  if (!supabase) return;
+  try {
+    const payload: Record<string, unknown> = {
+      stream_key: STREAM_KEY,
+      status,
+      updated_at: new Date().toISOString(),
+      metadata
+    };
+    if (extra.last_success) payload.last_success = extra.last_success;
+    if (extra.last_error) payload.last_error = extra.last_error;
+    if (typeof extra.error_count === 'number') payload.error_count = extra.error_count;
+    await supabase.from('stream_health').upsert(payload, { onConflict: 'stream_key' });
+  } catch (err) {
+    console.error('HF stream: failed to update stream health', err);
+  }
+}
+
+function mapRow(row: Record<string, unknown>): HfRow {
+  return {
+    datetime: new Date(String(row.datetime)).toISOString(),
+    electricity_demand: Number(row.electricity_demand ?? 0),
+    temperature: Number(row.temperature ?? 0),
+    humidity: Number(row.humidity ?? 0),
+    wind_speed: Number(row.wind_speed ?? 0),
+    solar_irradiance: Number(row.solar_irradiance ?? 0),
+    household_id: String(row.household_id ?? ''),
+    location: String(row.location ?? ''),
+    day_of_week: Number(row.day_of_week ?? 0),
+    hour: Number(row.hour ?? 0),
+    source: 'huggingface',
+    version: String(row.version ?? '1.0')
+  };
+}
+
+const corsHeaders: Record<string, string> = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Max-Age': '86400'
+};
 
 Deno.serve(async (req: Request) => {
-  // CORS preflight support
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-  };
-
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
+
+  if (!supabase) {
+    return new Response(JSON.stringify({ error: 'Supabase client not configured' }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 500
+    });
+  }
+
+  const startedAt = Date.now();
+  let errorCount = 0;
+
   try {
-    const url = new URL(req.url)
-    const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 1000)
-    const offset = Math.max(Number(url.searchParams.get('offset') ?? '0'), 0)
+    const url = new URL(req.url);
+    const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 1000);
+    const offset = Math.max(Number(url.searchParams.get('offset') ?? '0'), 0);
 
-    const rows = makeFakeRows(limit, offset)
-    const nextOffset = rows.length < limit ? null : offset + limit
+    const query = supabase
+      .from('hf_electricity_demand')
+      .select('*', { count: 'exact' })
+      .order('datetime', { ascending: true })
+      .order('household_id', { ascending: true })
+      .range(offset, offset + limit - 1);
 
-    const hasMore = nextOffset !== null
-    const headers = new Headers({ 'Content-Type': 'application/json', ...corsHeaders })
-    if (hasMore) headers.set('x-next-cursor', String(nextOffset))
+    const { data, error, count } = await query;
 
-    const body = {
-      rows,
-      metadata: {
-        hasMore,
-        totalEstimate: 10_000
-      }
+    if (error) {
+      throw new Error(error.message);
     }
 
-    return new Response(JSON.stringify(body), { headers, status: 200 })
+    const rows = (data ?? []).map(mapRow);
+    const total = typeof count === 'number' ? count : offset + rows.length;
+    const nextOffset = offset + rows.length;
+    const hasMore = nextOffset < total;
+
+    const metadata = {
+      streamKey: STREAM_KEY,
+      limit,
+      offset,
+      returned: rows.length,
+      totalEstimate: total,
+      hasMore
+    };
+
+    await updateStreamHealth('healthy', metadata, {
+      last_success: new Date().toISOString(),
+      error_count: errorCount
+    });
+    await logInvocation('success', metadata, startedAt);
+
+    const headers = new Headers({ 'Content-Type': 'application/json', ...corsHeaders });
+    if (hasMore) {
+      headers.set('x-next-cursor', String(nextOffset));
+    }
+
+    const body = { rows, metadata };
+    return new Response(JSON.stringify(body), { headers, status: 200 });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String((err as any)?.message ?? err) }), {
+    errorCount++;
+    const message = err instanceof Error ? err.message : String(err);
+    const metadata = { streamKey: STREAM_KEY, error: message };
+    await updateStreamHealth('degraded', metadata, {
+      last_error: new Date().toISOString(),
+      error_count: errorCount
+    });
+    await logInvocation('error', metadata, startedAt);
+
+    return new Response(JSON.stringify({ error: message }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 500,
-    })
+      status: 500
+    });
   }
-})
+});
 
 /* To invoke locally:
 

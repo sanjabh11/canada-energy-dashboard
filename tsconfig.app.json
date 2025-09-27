@@ -37,6 +37,8 @@
     "noUncheckedSideEffectImports": false
   },
   "include": [
-    "src"
+    "src",
+    "types/**/*.d.ts",
+    "supabase/functions/**/*.ts"
   ]
 }

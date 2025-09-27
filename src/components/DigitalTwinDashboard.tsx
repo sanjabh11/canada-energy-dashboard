@@ -5,13 +5,13 @@
  * with real-time simulation, stress testing, and predictive modeling.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { 
-  Cpu, Network, Zap, AlertTriangle, Play, Pause, Settings, 
+import {
+  Cpu, Network, Zap, AlertTriangle, Play, Pause, Settings,
   Target, Activity, Gauge, ThermometerSun, Wind, CloudRain,
   MapPin, Layers, RotateCcw, FastForward, Rewind, SkipForward,
-  Shield, TrendingUp, Battery, Transmission, Factory, Home
+  Shield, TrendingUp, Battery, Factory, Home
 } from 'lucide-react';
 import { digitalTwin, type SystemState, type SimulationScenario, type SimulationResult } from '../lib/digitalTwin';
 
@@ -62,7 +62,7 @@ export const DigitalTwinDashboard: React.FC = () => {
   });
 
   // Simulation control
-  const simulationInterval = useRef<NodeJS.Timeout>();
+  const simulationInterval = useRef<ReturnType<typeof setInterval>>();
   const [timeSeriesData, setTimeSeriesData] = useState<Array<{
     time: string;
     generation: number;
@@ -72,24 +72,27 @@ export const DigitalTwinDashboard: React.FC = () => {
     cost: number;
   }>>([]);
 
-  useEffect(() => {
-    loadInitialSystemState();
-    return () => {
-      if (simulationInterval.current) {
-        clearInterval(simulationInterval.current);
-      }
-    };
+  const stopSimulation = useCallback(() => {
+    if (simulationInterval.current) {
+      clearInterval(simulationInterval.current);
+      simulationInterval.current = undefined;
+    }
   }, []);
 
-  useEffect(() => {
-    if (twinState.isRunning) {
-      startSimulation();
-    } else {
-      stopSimulation();
-    }
-  }, [twinState.isRunning, twinState.simulationSpeed]);
+  const updateMetrics = useCallback((state: SystemState) => {
+    setMetrics({
+      totalGeneration: state.total_generation_mw,
+      totalDemand: state.total_demand_mw,
+      reserveMargin: state.reserve_margin_percent,
+      frequency: state.frequency_hz,
+      renewablePercentage: state.renewable_percentage,
+      carbonIntensity: state.carbon_intensity_g_co2_per_kwh,
+      systemStability: state.system_stability,
+      economicCost: state.economic_dispatch_cost_cad
+    });
+  }, []);
 
-  const loadInitialSystemState = async () => {
+  const loadInitialSystemState = useCallback(async () => {
     setLoading(true);
     try {
       // Simulate loading real system state
@@ -134,46 +137,36 @@ export const DigitalTwinDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [updateMetrics]);
 
-  const updateMetrics = (state: SystemState) => {
-    setMetrics({
-      totalGeneration: state.total_generation_mw,
-      totalDemand: state.total_demand_mw,
-      reserveMargin: state.reserve_margin_percent,
-      frequency: state.frequency_hz,
-      renewablePercentage: state.renewable_percentage,
-      carbonIntensity: state.carbon_intensity_g_co2_per_kwh,
-      systemStability: state.system_stability,
-      economicCost: state.economic_dispatch_cost_cad
-    });
-  };
+  const startSimulation = useCallback(() => {
+    stopSimulation();
+    const interval = 2000 / twinState.simulationSpeed;
 
-  const startSimulation = () => {
-    const interval = 2000 / twinState.simulationSpeed; // Base 2 second interval
-    
     simulationInterval.current = setInterval(() => {
-      // Simulate system evolution
-      setMetrics(prev => ({
-        ...prev,
-        totalGeneration: prev.totalGeneration + (Math.random() - 0.5) * 200,
-        totalDemand: prev.totalDemand + (Math.random() - 0.5) * 150,
-        frequency: 60.0 + (Math.random() - 0.5) * 0.1,
-        renewablePercentage: Math.max(0, Math.min(100, prev.renewablePercentage + (Math.random() - 0.5) * 2)),
-        carbonIntensity: prev.carbonIntensity + (Math.random() - 0.5) * 10
-      }));
-
-      // Update time series
-      setTimeSeriesData(prev => {
-        const newPoint = {
-          time: new Date().toLocaleTimeString(),
-          generation: metrics.totalGeneration,
-          demand: metrics.totalDemand,
-          renewable: metrics.renewablePercentage,
-          frequency: metrics.frequency,
-          cost: metrics.economicCost
+      setMetrics(prev => {
+        const next: SystemMetrics = {
+          ...prev,
+          totalGeneration: prev.totalGeneration + (Math.random() - 0.5) * 200,
+          totalDemand: prev.totalDemand + (Math.random() - 0.5) * 150,
+          frequency: 60.0 + (Math.random() - 0.5) * 0.1,
+          renewablePercentage: Math.max(0, Math.min(100, prev.renewablePercentage + (Math.random() - 0.5) * 2)),
+          carbonIntensity: prev.carbonIntensity + (Math.random() - 0.5) * 10
         };
-        return [...prev.slice(-23), newPoint]; // Keep last 24 points
+
+        setTimeSeriesData(prevSeries => {
+          const newPoint = {
+            time: new Date().toLocaleTimeString(),
+            generation: next.totalGeneration,
+            demand: next.totalDemand,
+            renewable: next.renewablePercentage,
+            frequency: next.frequency,
+            cost: next.economicCost
+          };
+          return [...prevSeries.slice(-23), newPoint];
+        });
+
+        return next;
       });
 
       setTwinState(prev => ({
@@ -181,13 +174,7 @@ export const DigitalTwinDashboard: React.FC = () => {
         currentTime: new Date().toISOString()
       }));
     }, interval);
-  };
-
-  const stopSimulation = () => {
-    if (simulationInterval.current) {
-      clearInterval(simulationInterval.current);
-    }
-  };
+  }, [stopSimulation, twinState.simulationSpeed]);
 
   const runStressTest = async (stressType: 'extreme_weather' | 'cyber_attack' | 'equipment_failure') => {
     setStressTestActive(true);
@@ -501,7 +488,7 @@ export const DigitalTwinDashboard: React.FC = () => {
           <div className="bg-green-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Transmission className="text-green-600" size={20} />
+                <Network className="text-green-600" size={20} />
                 <span className="font-medium text-green-900">Transmission</span>
               </div>
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>

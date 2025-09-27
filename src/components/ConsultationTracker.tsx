@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { ConsultationWorkflow, Milestone, ConsentStatus } from '../lib/consultationWorkflow';
 import { BarChart, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Bar, Pie } from 'recharts';
 
@@ -20,24 +20,19 @@ export const ConsultationTracker: React.FC<ConsultationTrackerProps> = ({
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState<any>(null);
 
-  useEffect(() => {
-    loadWorkflows();
+  const loadMetrics = useCallback(async (id: string) => {
+    try {
+      const { consultationWorkflowService } = await import('../lib/consultationWorkflow');
+      const workflowMetrics = consultationWorkflowService.getWorkflowMetrics(id);
+      setMetrics(workflowMetrics);
+    } catch (error) {
+      console.error('Error loading workflow metrics:', error);
+    }
   }, []);
 
-  useEffect(() => {
-    if (workflowId) {
-      const workflow = workflows.find(w => w.id === workflowId);
-      if (workflow) {
-        setSelectedWorkflow(workflow);
-        loadMetrics(workflow.id);
-      }
-    }
-  }, [workflowId, workflows]);
-
-  const loadWorkflows = async () => {
+  const loadWorkflows = useCallback(async () => {
     try {
       setLoading(true);
-      // In production, this would fetch from API
       const { consultationWorkflowService } = await import('../lib/consultationWorkflow');
       const allWorkflows = consultationWorkflowService.getWorkflows();
       setWorkflows(allWorkflows);
@@ -51,17 +46,21 @@ export const ConsultationTracker: React.FC<ConsultationTrackerProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [loadMetrics, workflowId]);
 
-  const loadMetrics = async (id: string) => {
-    try {
-      const { consultationWorkflowService } = await import('../lib/consultationWorkflow');
-      const workflowMetrics = consultationWorkflowService.getWorkflowMetrics(id);
-      setMetrics(workflowMetrics);
-    } catch (error) {
-      console.error('Error loading workflow metrics:', error);
+  useEffect(() => {
+    loadWorkflows();
+  }, [loadWorkflows]);
+
+  useEffect(() => {
+    if (workflowId) {
+      const workflow = workflows.find(w => w.id === workflowId);
+      if (workflow) {
+        setSelectedWorkflow(workflow);
+        loadMetrics(workflow.id);
+      }
     }
-  };
+  }, [workflowId, workflows, loadMetrics]);
 
   if (loading) {
     return (

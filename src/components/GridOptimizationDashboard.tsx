@@ -1,7 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Zap, TrendingUp, AlertTriangle, CheckCircle, Settings, Battery, Gauge, Target, Activity, Wifi, WifiOff } from 'lucide-react';
-import { enhancedDataService, type RealGridStatus } from '../lib/enhancedDataService';
+import { fetchEdgeJson } from '../lib/edge';
+import { useStreamingData } from '../hooks/useStreamingData';
+import { useWebSocketConsultation } from '../hooks/useWebSocket';
+import { CONTAINER_CLASSES } from '../lib/ui/layout';
+import { realDataService } from '../lib/realDataService';
 
 // Interfaces for Grid Optimization Dashboard
 export interface GridStatus {
@@ -42,6 +46,7 @@ const GridOptimizationDashboard: React.FC = () => {
   const [selectedRegion, setSelectedRegion] = useState('Ontario');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isFallbackData, setIsFallbackData] = useState(false);
 
   // Use real IESO data for Ontario
   const { data: iesoData, connectionStatus, isUsingRealData } = useStreamingData('ontario-demand');
@@ -55,70 +60,182 @@ const GridOptimizationDashboard: React.FC = () => {
   } = useWebSocketConsultation('grid-optimization');
 
   // Load initial data
+  const mapToGridStatus = useCallback((record: any, fallbackRegion: string, defaultIndex: number): GridStatus | null => {
+    if (!record) return null;
+
+    const demand = Number(record.demand_mw ?? record.demand ?? record.ontario_demand ?? record.load ?? NaN);
+    const supply = Number(record.supply_mw ?? record.supply ?? record.generation ?? NaN);
+
+    const hasDemand = Number.isFinite(demand);
+    const hasSupply = Number.isFinite(supply);
+
+    if (!hasDemand && !hasSupply) {
+      return null;
+    }
+
+    const resolvedDemand = hasDemand ? demand : 0;
+    const resolvedSupply = hasSupply ? supply : resolvedDemand * 1.05;
+
+    const frequency = Number(record.frequency_hz ?? record.frequency ?? 60);
+    const voltage = Number(record.voltage_kv ?? record.voltage ?? 120);
+    const congestion = Number(record.congestion_index ?? record.congestion ?? 0);
+    const status = (record.status || (congestion > 0.25 ? 'warning' : 'stable')) as GridStatus['status'];
+
+    return {
+      id: record.id || `grid_${record.captured_at || defaultIndex}`,
+      region: record.region || fallbackRegion,
+      demand: resolvedDemand,
+      supply: resolvedSupply,
+      frequency,
+      voltage,
+      congestion,
+      timestamp: record.captured_at || record.timestamp || record.last_updated || new Date().toISOString(),
+      status
+    };
+  }, []);
+
+  const loadGridData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const regionQuery = encodeURIComponent(selectedRegion);
+
+      const [gridStatusResult, stabilityResult, recommendationsResult] = await Promise.all([
+        fetchEdgeJson([
+          `api-v2-grid-status?region=${regionQuery}`,
+          'api/grid/status'
+        ]),
+        fetchEdgeJson([
+          `api-v2-grid-stability-metrics?region=${regionQuery}`,
+          'api/grid/stability-metrics'
+        ]),
+        fetchEdgeJson([
+          `api-v2-grid-optimization-recommendations?region=${regionQuery}`,
+          'api/grid/optimization-recommendations'
+        ])
+      ]);
+
+      const statusRecordsRaw = Array.isArray(gridStatusResult.json?.records)
+        ? gridStatusResult.json.records
+        : Array.isArray(gridStatusResult.json)
+          ? gridStatusResult.json
+          : [];
+
+      const mappedStatus: GridStatus[] = statusRecordsRaw
+        .map((record: any, index: number) => mapToGridStatus(record, selectedRegion, index))
+        .filter((item): item is GridStatus => item !== null);
+      setGridStatus(mappedStatus);
+
+      const stabilityPayload = Array.isArray(stabilityResult.json)
+        ? stabilityResult.json[0]
+        : stabilityResult.json;
+
+      if (stabilityPayload) {
+        setStabilityMetrics({
+          frequencyStability: Number(stabilityPayload.frequency_stability ?? stabilityPayload.frequencyStability ?? 0),
+          voltageStability: Number(stabilityPayload.voltage_stability ?? stabilityPayload.voltageStability ?? 0),
+          congestionIndex: Number(stabilityPayload.congestion_index ?? stabilityPayload.congestionIndex ?? 0),
+          reserveMargin: Number(stabilityPayload.reserve_margin ?? stabilityPayload.reserveMargin ?? 0),
+          lastUpdated: stabilityPayload.last_updated || stabilityPayload.lastUpdated || new Date().toISOString()
+        });
+      } else {
+        setStabilityMetrics(null);
+      }
+
+      const recommendationItems = Array.isArray(recommendationsResult.json?.recommendations)
+        ? recommendationsResult.json.recommendations
+        : Array.isArray(recommendationsResult.json)
+          ? recommendationsResult.json
+          : [];
+
+      const processedRecommendations: OptimizationRecommendation[] = recommendationItems.map((rec: any, index: number) => ({
+        id: rec.id || `recommendation_${rec.generated_at || index}`,
+        type: (rec.recommendation_type || rec.type || 'demand_response') as OptimizationRecommendation['type'],
+        priority: (rec.priority || 'medium') as OptimizationRecommendation['priority'],
+        description: rec.description || 'Optimization recommendation',
+        expectedImpact: Number(rec.expected_impact_percent ?? rec.expectedImpact ?? 0),
+        implementationTime: Number(rec.implementation_time_minutes ?? rec.implementationTime ?? 0),
+        confidence: typeof rec.confidence === 'number' ? rec.confidence : Number(rec.confidence ?? 0),
+        timestamp: rec.generated_at || rec.timestamp || new Date().toISOString()
+      }));
+      setRecommendations(processedRecommendations);
+      setIsFallbackData(false);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isEdgeDisabled = message.includes('VITE_ENABLE_EDGE_FETCH=false');
+      if (!isEdgeDisabled) {
+        console.error('Failed to load grid data', err);
+      }
+
+      setError(
+        isEdgeDisabled
+          ? 'Supabase Edge fetch disabled via configuration. Using local grid dataset.'
+          : 'Using locally generated grid dataset while Supabase APIs are unavailable.'
+      );
+      setIsFallbackData(true);
+
+      const fallbackStatus = await realDataService.getGridStatus();
+      setGridStatus(
+        fallbackStatus.map((record, index) =>
+          mapToGridStatus(
+            {
+              id: record.id,
+              region: record.region,
+              demand_mw: record.load_mw,
+              supply_mw: record.generation_mw,
+              frequency_hz: record.grid_frequency_hz,
+              voltage_kv: 120,
+              congestion_index:
+                record.congestion_level === 'high'
+                  ? 0.6
+                  : record.congestion_level === 'medium'
+                  ? 0.35
+                  : 0.15,
+              status: record.voltage_stability,
+              captured_at: record.timestamp,
+            },
+            record.region,
+            index,
+          ) ?? null,
+        ).filter((item): item is GridStatus => item !== null),
+      );
+
+      const reserveMargin = fallbackStatus[0]?.reserve_margin_percent ?? 8;
+      setStabilityMetrics({
+        frequencyStability: 0.95,
+        voltageStability: 0.9,
+        congestionIndex: 0.25,
+        reserveMargin,
+        lastUpdated: fallbackStatus[0]?.timestamp ?? new Date().toISOString(),
+      });
+
+      setRecommendations([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [mapToGridStatus, selectedRegion]);
+
   useEffect(() => {
     loadGridData();
-  }, [selectedRegion]);
+  }, [selectedRegion, loadGridData]);
 
   // Process real-time IESO data
+  const processIESOData = useCallback((data: any[]) => {
+    if (data.length === 0) return;
+
+    const latestData = data[data.length - 1];
+    const mapped = mapToGridStatus(latestData, selectedRegion, Date.now());
+    if (!mapped) return;
+
+    setGridStatus(prev => [mapped, ...prev].slice(0, 100));
+  }, [mapToGridStatus, selectedRegion]);
+
   useEffect(() => {
     if (iesoData.length > 0) {
       processIESOData(iesoData);
     }
-  }, [iesoData]);
-
-  const loadGridData = async () => {
-    try {
-      setLoading(true);
-
-      // Load grid status data
-      const gridResponse = await fetch('/api/grid/status');
-      const gridData = await gridResponse.json();
-      setGridStatus(gridData);
-
-      // Load stability metrics
-      const metricsResponse = await fetch('/api/grid/stability-metrics');
-      const metricsData = await metricsResponse.json();
-      setStabilityMetrics(metricsData);
-
-      // Get AI-powered optimization recommendations
-      const recommendationsData = await getGridOptimizationRecommendations('ontario-demand', '24h');
-      const processedRecommendations: OptimizationRecommendation[] = (recommendationsData.recommendations || []).map(rec => ({
-        id: rec.id,
-        type: rec.type as OptimizationRecommendation['type'],
-        priority: rec.priority as OptimizationRecommendation['priority'],
-        description: rec.description,
-        expectedImpact: rec.expectedImpact,
-        implementationTime: rec.implementationTime,
-        confidence: rec.confidence,
-        timestamp: new Date().toISOString()
-      }));
-      setRecommendations(processedRecommendations);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load grid data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processIESOData = (data: any[]) => {
-    if (data.length === 0) return;
-
-    const latestData = data[data.length - 1];
-    const mockGridStatus: GridStatus = {
-      id: `grid_${Date.now()}`,
-      region: 'Ontario',
-      demand: latestData.ontario_demand || 0,
-      supply: (latestData.ontario_demand || 0) * 1.05, // Assume 5% reserve
-      frequency: 60 + (Math.random() - 0.5) * 0.1, // 60Hz ± 0.05Hz
-      voltage: 120 + (Math.random() - 0.5) * 2, // 120V ± 1V
-      congestion: Math.random() * 30, // 0-30% congestion
-      timestamp: latestData.timestamp || new Date().toISOString(),
-      status: Math.random() > 0.8 ? 'warning' : 'stable'
-    };
-
-    setGridStatus(prev => [mockGridStatus, ...prev.slice(0, 99)]); // Keep last 100 readings
-  };
+  }, [iesoData, processIESOData]);
 
   // Calculate dashboard metrics
   const dashboardMetrics = useMemo(() => {
@@ -191,6 +308,31 @@ const GridOptimizationDashboard: React.FC = () => {
           <p className="text-slate-600">
             Real-time grid monitoring, stability analysis, and optimization recommendations
           </p>
+          {error && (
+            <div
+              className={`mt-4 rounded-lg p-4 ${
+                isFallbackData
+                  ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                  : 'bg-red-50 border border-red-200 text-red-700'
+              }`}
+            >
+              <div className="flex items-start space-x-3">
+                <AlertTriangle
+                  className={`h-5 w-5 ${isFallbackData ? 'text-amber-600' : 'text-red-600'}`}
+                />
+                <div>
+                  <h3
+                    className={`font-semibold mb-1 ${
+                      isFallbackData ? 'text-amber-800' : 'text-red-800'
+                    }`}
+                  >
+                    {isFallbackData ? 'Fallback Dataset Active' : 'Data Load Issue'}
+                  </h3>
+                  <p className={`${isFallbackData ? 'text-amber-700' : 'text-red-700'} text-sm`}>{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
         </header>
 
         {/* Status Indicators */}

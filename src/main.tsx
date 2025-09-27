@@ -32,6 +32,34 @@ if (typeof window !== 'undefined') {
       toArray: () => Promise.resolve([])
     }
   };
+
+  const setupScrollAnimations = () => {
+    if (!('IntersectionObserver' in window)) {
+      return;
+    }
+
+    const observerOptions = {
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+        }
+      });
+    }, observerOptions);
+
+    const animateElements = document.querySelectorAll('.scroll-animate');
+    animateElements.forEach((el) => observer.observe(el));
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setupScrollAnimations, { once: true });
+  } else {
+    setupScrollAnimations();
+  }
 }
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

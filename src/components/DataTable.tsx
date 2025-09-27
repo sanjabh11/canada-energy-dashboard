@@ -88,7 +88,7 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   // Sort and paginate data
   const { sortedData, totalPages } = useMemo(() => {
-    let sorted = [...data].slice(0, maxRows);
+    const sorted = [...data].slice(0, maxRows);
     
     // Apply sorting
     if (sortConfig.key && sortConfig.direction) {

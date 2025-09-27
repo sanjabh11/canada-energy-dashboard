@@ -5,7 +5,7 @@
  * reactive monitoring into predictive insights and autonomous decision support.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
   Brain, Zap, AlertTriangle, TrendingUp, Target, MessageSquare, 
@@ -54,24 +54,42 @@ export const AIEnergyOracle: React.FC = () => {
   const [loading, setLoading] = useState(false);
   
   // Real-time processing simulation
-  const processingInterval = useRef<NodeJS.Timeout>();
-  const insightInterval = useRef<NodeJS.Timeout>();
+  const processingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+  const insightInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (oracleState.isActive) {
-      startRealTimeProcessing();
-      generateInitialInsights();
-    } else {
-      stopRealTimeProcessing();
+  const stopRealTimeProcessing = useCallback(() => {
+    if (processingInterval.current) {
+      clearInterval(processingInterval.current);
+      processingInterval.current = null;
     }
+    if (insightInterval.current) {
+      clearInterval(insightInterval.current);
+      insightInterval.current = null;
+    }
+  }, []);
 
-    return () => {
-      stopRealTimeProcessing();
+  const generateNewInsight = useCallback(() => {
+    const insightTypes = ['forecast', 'anomaly', 'opportunity', 'risk'] as const;
+    const impacts = ['low', 'medium', 'high', 'critical'] as const;
+
+    const newInsight: PredictiveInsight = {
+      id: `insight_${Date.now()}`,
+      type: insightTypes[Math.floor(Math.random() * insightTypes.length)],
+      title: 'New AI-Generated Insight',
+      description: 'Real-time analysis has identified a new pattern requiring attention.',
+      confidence: Math.floor(Math.random() * 40) + 60,
+      timeframe: Math.random() > 0.5 ? '2 hours' : '1 day',
+      impact: impacts[Math.floor(Math.random() * impacts.length)],
+      actionable: Math.random() > 0.3,
+      data: {}
     };
-  }, [oracleState.isActive]);
 
-  const startRealTimeProcessing = () => {
-    // Simulate real-time AI processing load
+    setInsights(prev => [newInsight, ...prev.slice(0, 9)]);
+  }, []);
+
+  const startRealTimeProcessing = useCallback(() => {
+    stopRealTimeProcessing();
+
     processingInterval.current = setInterval(() => {
       setOracleState(prev => ({
         ...prev,
@@ -80,18 +98,12 @@ export const AIEnergyOracle: React.FC = () => {
       }));
     }, 2000);
 
-    // Generate new insights periodically
     insightInterval.current = setInterval(() => {
       generateNewInsight();
     }, 15000);
-  };
+  }, [generateNewInsight, stopRealTimeProcessing]);
 
-  const stopRealTimeProcessing = () => {
-    if (processingInterval.current) clearInterval(processingInterval.current);
-    if (insightInterval.current) clearInterval(insightInterval.current);
-  };
-
-  const generateInitialInsights = async () => {
+  const generateInitialInsights = useCallback(async () => {
     const initialInsights: PredictiveInsight[] = [
       {
         id: 'insight_001',
@@ -140,26 +152,20 @@ export const AIEnergyOracle: React.FC = () => {
     ];
 
     setInsights(initialInsights);
-  };
+  }, []);
 
-  const generateNewInsight = () => {
-    const insightTypes = ['forecast', 'anomaly', 'opportunity', 'risk'] as const;
-    const impacts = ['low', 'medium', 'high', 'critical'] as const;
-    
-    const newInsight: PredictiveInsight = {
-      id: `insight_${Date.now()}`,
-      type: insightTypes[Math.floor(Math.random() * insightTypes.length)],
-      title: 'New AI-Generated Insight',
-      description: 'Real-time analysis has identified a new pattern requiring attention.',
-      confidence: Math.floor(Math.random() * 40) + 60, // 60-100%
-      timeframe: Math.random() > 0.5 ? '2 hours' : '1 day',
-      impact: impacts[Math.floor(Math.random() * impacts.length)],
-      actionable: Math.random() > 0.3,
-      data: {}
+  useEffect(() => {
+    if (oracleState.isActive) {
+      startRealTimeProcessing();
+      generateInitialInsights();
+    } else {
+      stopRealTimeProcessing();
+    }
+
+    return () => {
+      stopRealTimeProcessing();
     };
-
-    setInsights(prev => [newInsight, ...prev.slice(0, 9)]); // Keep last 10 insights
-  };
+  }, [oracleState.isActive, startRealTimeProcessing, stopRealTimeProcessing, generateInitialInsights]);
 
   const handleNaturalLanguageQuery = async () => {
     if (!naturalLanguageQuery.trim()) return;

@@ -1,9 +1,18 @@
 import { ENDPOINTS } from './constants';
 import { fetchEdgePostJson, fetchEdgeWithParams, EdgeFetchOptions } from './edge';
+import { isEdgeFetchEnabled } from './config';
 
 const preferLite = String((import.meta as any)?.env?.VITE_LLM_PREFER_LITE || '').toLowerCase() === 'true';
 function orderCandidates(primary: string, fallback: string): string[] {
   return preferLite ? [fallback, primary] : [primary, fallback];
+}
+
+export interface TransitionAnalyticsInsight {
+  summary: string;
+  key_findings?: string[];
+  policy_implications?: string[];
+  confidence?: string | number;
+  sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
 }
 
 export interface TransitionReportResponse {
@@ -104,6 +113,35 @@ export async function getTransitionKpis(
   );
   const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
   return payload as TransitionKpisResponse;
+}
+
+export async function getTransitionAnalyticsInsight(
+  datasetPath: string,
+  timeframe: string,
+  options: EdgeFetchOptions = {}
+): Promise<TransitionAnalyticsInsight> {
+  if (!isEdgeFetchEnabled()) {
+    return {
+      summary: 'Live analytics insights require Supabase Edge access. Offline mode is currently active, so mock datasets are displayed without LLM commentary.',
+      key_findings: [
+        'Streaming datasets are running on local fallback samples.',
+        'Enable `VITE_ENABLE_EDGE_FETCH` with valid Supabase credentials to retrieve real-time insights.'
+      ],
+      policy_implications: [
+        'Offline review mode only provides static summaries.',
+        'Re-connect to Supabase to unlock transition impact insights.'
+      ],
+      confidence: 'offline-mode'
+    };
+  }
+
+  const { json } = await fetchEdgePostJson(
+    orderCandidates(ENDPOINTS.LLM.ANALYTICS_INSIGHT, ENDPOINTS.LLM_LITE.ANALYTICS_INSIGHT),
+    { datasetPath, timeframe, queryType: 'overview' },
+    options
+  );
+  const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
+  return payload as TransitionAnalyticsInsight;
 }
 
 export async function getHistory(

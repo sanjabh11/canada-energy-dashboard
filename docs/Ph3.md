@@ -1,7 +1,5 @@
-immediate cause & fix
-
-Cause: your front-end HelpButton is trying to call the server Help endpoint (/.netlify/functions/help or equivalent), but that serverless function (or Supabase Edge function) is not deployed or cannot reach Supabase (or the help_text table is empty / RLS blocked).
-Immediate hot-fix: enable a client-side fallback map (small JSON embedded in the app) so the ? shows helpful text right away. Then deploy or fix the server endpoint + seed the DB.
+ 
+Help features : enable a client-side fallback map (small JSON embedded in the app) so the ? shows helpful text right away. Then deploy or fix the server endpoint + seed the DB.
 
 1) Where is each page’s Help content coming from?
 

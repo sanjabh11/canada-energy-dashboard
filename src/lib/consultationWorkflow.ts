@@ -401,10 +401,17 @@ export interface AccessPermission {
 }
 
 // Workflow Management Service
+type WorkflowEventPayload = {
+  type: string;
+  data: unknown;
+};
+
+type WorkflowEventListener = (event: WorkflowEventPayload) => void;
+
 export class ConsultationWorkflowService {
   private static instance: ConsultationWorkflowService;
   private workflows: Map<string, ConsultationWorkflow> = new Map();
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, WorkflowEventListener[]> = new Map();
 
   private constructor() {
     // Initialize with sample data for development
@@ -686,17 +693,17 @@ export class ConsultationWorkflowService {
   /**
    * Subscribe to workflow events
    */
-  onWorkflowEvent(workflowId: string, callback: Function): () => void {
-    if (!this.listeners.has(workflowId)) {
-      this.listeners.set(workflowId, []);
-    }
-    this.listeners.get(workflowId)?.push(callback);
+  onWorkflowEvent(workflowId: string, callback: WorkflowEventListener): () => void {
+    const existing = this.listeners.get(workflowId) ?? [];
+    this.listeners.set(workflowId, [...existing, callback]);
 
     return () => {
       const listeners = this.listeners.get(workflowId) || [];
-      const index = listeners.indexOf(callback);
-      if (index > -1) {
-        listeners.splice(index, 1);
+      const next = listeners.filter(listener => listener !== callback);
+      if (next.length > 0) {
+        this.listeners.set(workflowId, next);
+      } else {
+        this.listeners.delete(workflowId);
       }
     };
   }
@@ -704,11 +711,11 @@ export class ConsultationWorkflowService {
   /**
    * Notify listeners of workflow events
    */
-  private notifyListeners(eventType: string, data: any): void {
-    this.listeners.forEach((listeners) => {
-      listeners.forEach(callback => {
+  private notifyListeners(eventType: string, data: unknown): void {
+    this.listeners.forEach((listenerList) => {
+      listenerList.forEach(listener => {
         try {
-          callback({ type: eventType, data });
+          listener({ type: eventType, data });
         } catch (error) {
           console.error('Error in workflow listener callback:', error);
         }

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
+import { fetchEdgeJson } from '../lib/edge';
 import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
 import { Shield, AlertTriangle, Eye, Lock, Zap, Activity, TrendingUp, Target, Clock, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 
@@ -74,65 +75,170 @@ const SecurityDashboard: React.FC = () => {
   } = useWebSocketConsultation('security-monitoring');
 
   // Load initial data
+  const inferSeverity = useCallback((impact: number, likelihood: number): ThreatModel['severity'] => {
+    const score = impact * likelihood;
+    if (score >= 0.6) return 'critical';
+    if (score >= 0.4) return 'high';
+    if (score >= 0.2) return 'medium';
+    return 'low';
+  }, []);
+
+  const mapThreatModel = useCallback((record: any): ThreatModel | null => {
+    if (!record) return null;
+
+    return {
+      id: record.id || `threat_${record.vector || record.category || Date.now()}`,
+      type: (record.category || 'cyber') as ThreatModel['type'],
+      severity: (record.severity || inferSeverity(record.impact ?? 0, record.likelihood ?? 0)) as ThreatModel['severity'],
+      likelihood: Number(record.likelihood ?? 0),
+      impact: Number(record.impact ?? 0),
+      description: record.description || record.mitigation_summary || 'Threat description pending',
+      affectedAssets: Array.isArray(record.affected_assets) ? record.affected_assets : [],
+      mitigationStrategies: Array.isArray(record.mitigation_strategies) ? record.mitigation_strategies : [],
+      detectionMethods: Array.isArray(record.detection_methods) ? record.detection_methods : [],
+      lastAssessed: record.last_reviewed || record.lastAssessed || new Date().toISOString(),
+      riskScore: Number(record.likelihood ?? 0) * Number(record.impact ?? 0)
+    };
+  }, [inferSeverity]);
+
+  const mapIncident = useCallback((record: any, fallbackId: string | number): SecurityIncident | null => {
+    if (!record) return null;
+
+    return {
+      id: record.id || `incident_${fallbackId}`,
+      type: String(record.incident_type || record.type || 'unknown'),
+      severity: (record.severity || 'medium') as SecurityIncident['severity'],
+      status: (record.status || 'detected') as SecurityIncident['status'],
+      description: record.description || 'Security event detected',
+      affectedSystems: Array.isArray(record.affected_systems) ? record.affected_systems : [],
+      timestamp: record.detected_at || record.timestamp || new Date().toISOString(),
+      responseTime: Number(record.response_time_minutes ?? record.responseTime ?? 0),
+      resolutionTime: record.resolution_time_minutes ?? record.resolutionTime
+        ? Number(record.resolution_time_minutes ?? record.resolutionTime)
+        : undefined
+    };
+  }, []);
+
+  const mapMitigation = useCallback((record: any): MitigationStrategy | null => {
+    if (!record) return null;
+
+    return {
+      id: record.id || `mitigation_${record.strategy_name || Date.now()}`,
+      threatId: record.related_threat || record.threatId || '',
+      strategy: record.strategy_name || record.strategy || 'Mitigation strategy',
+      priority: (record.priority || 'medium') as MitigationStrategy['priority'],
+      implementationStatus: (record.status || 'planned') as MitigationStrategy['implementationStatus'],
+      expectedEffectiveness: Number(record.effectiveness ?? record.expectedEffectiveness ?? 0),
+      cost: Number(record.cost_estimate ?? record.cost ?? 0),
+      timeline: `${record.time_to_implement_days ?? record.timeline ?? 0} days`,
+      responsibleParty: record.responsible_party || record.responsibleParty || 'Unassigned'
+    };
+  }, []);
+
+  const extractThreatModels = useCallback((payload: any): ThreatModel[] => {
+    const list = Array.isArray(payload?.threats) ? payload.threats : Array.isArray(payload) ? payload : [];
+    return list.map(mapThreatModel).filter((item): item is ThreatModel => item !== null);
+  }, [mapThreatModel]);
+
+  const extractIncidents = useCallback((payload: any): SecurityIncident[] => {
+    const list = Array.isArray(payload?.incidents) ? payload.incidents : Array.isArray(payload) ? payload : [];
+    return list.map((record, index) => mapIncident(record, index)).filter((item): item is SecurityIncident => item !== null);
+  }, [mapIncident]);
+
+  const extractMetrics = useCallback((payload: any): SecurityMetrics | null => {
+    const source = Array.isArray(payload) ? payload[0] : payload;
+    if (!source) return null;
+
+    return {
+      overallRiskScore: Number(source.overall_risk_score ?? source.overallRiskScore ?? 0),
+      activeIncidents: Number(source.active_incidents_count ?? source.activeIncidents ?? 0),
+      criticalVulnerabilities: Number(source.critical_vulnerabilities ?? source.criticalVulnerabilities ?? 0),
+      complianceScore: Number(source.compliance_score ?? source.complianceScore ?? 0),
+      threatDetectionRate: Number(source.detection_rate ?? source.threatDetectionRate ?? 0),
+      lastUpdated: source.last_updated || source.lastUpdated || new Date().toISOString()
+    };
+  }, []);
+
+  const extractMitigations = useCallback((payload: any): MitigationStrategy[] => {
+    const list = Array.isArray(payload?.strategies) ? payload.strategies : Array.isArray(payload) ? payload : [];
+    return list.map(mapMitigation).filter((item): item is MitigationStrategy => item !== null);
+  }, [mapMitigation]);
+
+  const loadSecurityData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      const [threatResult, incidentResult, metricsResult, mitigationResult] = await Promise.all([
+        fetchEdgeJson([
+          'api-v2-security-threat-models',
+          'api/security/threat-models'
+        ]),
+        fetchEdgeJson([
+          'api-v2-security-incidents',
+          'api/security/incidents'
+        ]),
+        fetchEdgeJson([
+          'api-v2-security-metrics',
+          'api/security/metrics'
+        ]),
+        fetchEdgeJson([
+          'api-v2-security-mitigation-strategies',
+          'api/security/mitigation-strategies'
+        ])
+      ]);
+
+      const mappedThreats: ThreatModel[] = extractThreatModels(threatResult.json);
+      setThreatModels(mappedThreats);
+
+      const mappedIncidents: SecurityIncident[] = extractIncidents(incidentResult.json);
+      setIncidents(mappedIncidents);
+
+      const mappedMetrics = extractMetrics(metricsResult.json);
+      setSecurityMetrics(mappedMetrics);
+
+      const mappedStrategies: MitigationStrategy[] = extractMitigations(mitigationResult.json);
+      setMitigationStrategies(mappedStrategies);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const isEdgeDisabled = message.includes('VITE_ENABLE_EDGE_FETCH=false');
+      if (!isEdgeDisabled) {
+        console.error('Failed to load security data', err);
+      }
+
+      setError(
+        isEdgeDisabled
+          ? 'Supabase Edge fetch disabled via configuration. Showing security fallback dataset.'
+          : err instanceof Error
+            ? err.message
+            : 'Failed to load security data'
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [extractIncidents, extractMetrics, extractMitigations, extractThreatModels]);
+
+  const processSecurityData = useCallback((data: any[]) => {
+    if (data.length === 0) return;
+
+    const newIncidents = data
+      .map((event, index) => mapIncident(event, `stream_${Date.now()}_${index}`))
+      .filter((item): item is SecurityIncident => item !== null);
+
+    if (newIncidents.length === 0) return;
+
+    setIncidents(prev => [...newIncidents, ...prev].slice(0, 100)); // Keep last 100 incidents
+  }, [mapIncident]);
+
   useEffect(() => {
     loadSecurityData();
-  }, [selectedTimeframe]);
+  }, [selectedTimeframe, loadSecurityData]);
 
-  // Process real-time security data
   useEffect(() => {
     if (securityData.length > 0) {
       processSecurityData(securityData);
     }
-  }, [securityData]);
-
-  const loadSecurityData = async () => {
-    try {
-      setLoading(true);
-
-      // Load threat models
-      const threatResponse = await fetch('/api/security/threat-models');
-      const threatData = await threatResponse.json();
-      setThreatModels(threatData);
-
-      // Load security incidents
-      const incidentResponse = await fetch('/api/security/incidents');
-      const incidentData = await incidentResponse.json();
-      setIncidents(incidentData);
-
-      // Load security metrics
-      const metricsResponse = await fetch('/api/security/metrics');
-      const metricsData = await metricsResponse.json();
-      setSecurityMetrics(metricsData);
-
-      // Load mitigation strategies
-      const mitigationResponse = await fetch('/api/security/mitigation-strategies');
-      const mitigationData = await mitigationResponse.json();
-      setMitigationStrategies(mitigationData);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load security data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const processSecurityData = (data: any[]) => {
-    if (data.length === 0) return;
-
-    // Process incoming security events and update incidents
-    const newIncidents = data.map(event => ({
-      id: `incident_${Date.now()}_${Math.random()}`,
-      type: event.type || 'unknown',
-      severity: event.severity || 'medium',
-      status: event.status || 'detected',
-      description: event.description || 'Security event detected',
-      affectedSystems: event.affectedSystems || [],
-      timestamp: event.timestamp || new Date().toISOString(),
-      responseTime: Math.floor(Math.random() * 30) + 5 // 5-35 minutes
-    }));
-
-    setIncidents(prev => [...newIncidents, ...prev.slice(0, 99)]); // Keep last 100 incidents
-  };
+  }, [securityData, processSecurityData]);
 
   // Calculate dashboard metrics
   const dashboardMetrics = useMemo(() => {

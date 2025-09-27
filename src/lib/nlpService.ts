@@ -201,7 +201,7 @@ export class NLPService {
     const magnitude = Math.min(Math.abs(score), 1);
     const confidence = Math.min(totalWords / 5, 1); // Higher confidence with more sentiment words
 
-    let label: 'negative' | 'neutral' | 'positive' =
+    const label: 'negative' | 'neutral' | 'positive' =
       score < -0.3 ? 'negative' :
       score > 0.3 ? 'positive' : 'neutral';
 

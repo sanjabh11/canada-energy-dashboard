@@ -6,6 +6,7 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 
 // CORS headers for Edge Function responses
 const corsHeaders = {
@@ -15,6 +16,170 @@ const corsHeaders = {
   'Cache-Control': 'no-cache',
   'Connection': 'keep-alive',
 };
+
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
+  ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  : null;
+
+const STREAM_KEY = 'ontario-demand';
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+type IESODataResult = {
+  rows: any[];
+  metadata: Record<string, unknown>;
+  hadError: boolean;
+};
+
+async function logInvocation(
+  status: 'success' | 'error',
+  metadata: Record<string, unknown>,
+  startedAt: number
+) {
+  if (!supabase) return;
+  try {
+    const duration = Math.max(0, Date.now() - startedAt);
+    await supabase.from('edge_invocation_log').insert({
+      function_name: 'stream-ontario-demand',
+      status,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      duration_ms: duration,
+      metadata
+    });
+  } catch (err) {
+    console.error('Failed to log invocation', err);
+  }
+}
+
+async function collectIESOData(options: { skipFilter?: boolean } = {}): Promise<IESODataResult> {
+  const { skipFilter = false } = options;
+  const [demandData, priceData] = await Promise.allSettled([
+    fetchIESODemandData(),
+    fetchIESOPriceData()
+  ]);
+
+  const demand = demandData.status === 'fulfilled' ? demandData.value : [];
+  const prices = priceData.status === 'fulfilled' ? priceData.value : [];
+
+  const hadError = demandData.status === 'rejected' || priceData.status === 'rejected';
+  const combined = combineIESOData(demand, prices);
+  const rows = skipFilter ? combined : filterNewData(combined);
+
+  const metadata: Record<string, unknown> = {
+    streamKey: STREAM_KEY,
+    demandStatus: demandData.status === 'fulfilled' ? 'ok' : 'error',
+    priceStatus: priceData.status === 'fulfilled' ? 'ok' : 'error',
+    demandRows: demand.length,
+    priceRows: prices.length,
+    combinedRows: combined.length,
+    skipFilter
+  };
+
+  return { rows, metadata, hadError };
+}
+
+async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): Promise<IESODataResult> {
+  const startedAt = Date.now();
+  const { rows, metadata, hadError } = await collectIESOData(options);
+
+  try {
+    if (rows.length > 0) {
+      await persistGridSnapshots(rows);
+      lastSuccessfulFetch = Date.now();
+    }
+
+    if (hadError) {
+      errorCount++;
+      const degradedMeta = { ...metadata, rowsPersisted: rows.length };
+      await updateStreamHealth('degraded', degradedMeta, {
+        last_error: new Date().toISOString(),
+        error_count: errorCount
+      });
+      await logInvocation('error', degradedMeta, startedAt);
+      if (rows.length === 0) {
+        throw new Error('IESO demand and price data unavailable');
+      }
+    } else {
+      errorCount = 0;
+      const successMeta = { ...metadata, rowsPersisted: rows.length };
+      await updateStreamHealth('healthy', successMeta, {
+        last_success: new Date(lastSuccessfulFetch).toISOString(),
+        error_count: errorCount
+      });
+      await logInvocation('success', successMeta, startedAt);
+    }
+
+    return { rows, metadata: { ...metadata, rowsPersisted: rows.length }, hadError };
+  } catch (err) {
+    errorCount++;
+    const message = err instanceof Error ? err.message : String(err);
+    const failureMeta = { ...metadata, rowsPersisted: rows.length, error: message };
+    await updateStreamHealth('degraded', failureMeta, {
+      last_error: new Date().toISOString(),
+      error_count: errorCount
+    });
+    await logInvocation('error', failureMeta, startedAt);
+    throw err;
+  }
+}
+
+async function updateStreamHealth(
+  status: 'healthy' | 'degraded',
+  metadata: Record<string, unknown>,
+  timestamps: { last_success?: string; last_error?: string; error_count?: number }
+) {
+  if (!supabase) return;
+  try {
+    const payload: Record<string, unknown> = {
+      stream_key: STREAM_KEY,
+      status,
+      updated_at: new Date().toISOString(),
+      metadata
+    };
+    if (timestamps.last_success) payload.last_success = timestamps.last_success;
+    if (timestamps.last_error) payload.last_error = timestamps.last_error;
+    if (typeof timestamps.error_count === 'number') payload.error_count = timestamps.error_count;
+    await supabase.from('stream_health').upsert(payload, { onConflict: 'stream_key' });
+  } catch (err) {
+    console.error('Failed to update stream health', err);
+  }
+}
+
+async function persistGridSnapshots(rows: any[]) {
+  if (!supabase || rows.length === 0) return;
+  try {
+    const upsertRows = rows.map((row: any) => {
+      const demand = typeof row.demand_mw === 'number' ? row.demand_mw : null;
+      const supply = row.supply_mw ?? (demand !== null ? demand * 1.05 : null);
+      const reserve = demand !== null && supply !== null && demand > 0
+        ? (supply - demand) / demand
+        : null;
+      return {
+        region: row.region || 'Ontario',
+        demand_mw: demand,
+        supply_mw: supply,
+        reserve_margin: reserve,
+        frequency_hz: row.frequency_hz ?? 60,
+        voltage_kv: row.voltage_kv ?? 120,
+        congestion_index: row.congestion_index ?? null,
+        data_source: row.source || 'IESO',
+        status: row.status || 'stable',
+        captured_at: row.timestamp || new Date().toISOString()
+      };
+    });
+    const { error } = await supabase.from('grid_status').upsert(upsertRows, {
+      onConflict: 'region,captured_at'
+    });
+    if (error) {
+      throw new Error(error.message);
+    }
+  } catch (err) {
+    console.error('Failed to persist grid snapshots', err);
+    throw err;
+  }
+}
 
 // IESO API configuration
 const IESO_CONFIG = {
@@ -30,7 +195,7 @@ const IESO_CONFIG = {
 };
 
 // Global state for caching and deduplication
-let lastDataTimestamps: Map<string, string> = new Map();
+const lastDataTimestamps: Map<string, string> = new Map();
 let errorCount = 0;
 let lastSuccessfulFetch = Date.now();
 
@@ -101,31 +266,8 @@ async function fetchIESOPriceData(): Promise<any[]> {
  * Combine and enrich IESO data
  */
 async function getIESOCombinedData(): Promise<any[]> {
-  try {
-    const [demandData, priceData] = await Promise.allSettled([
-      fetchIESODemandData(),
-      fetchIESOPriceData()
-    ]);
-
-    const demand = demandData.status === 'fulfilled' ? demandData.value : [];
-    const prices = priceData.status === 'fulfilled' ? priceData.value : [];
-
-    // Combine demand and price data by timestamp
-    const combined = combineIESOData(demand, prices);
-    const newData = filterNewData(combined);
-
-    return newData;
-
-  } catch (error) {
-    // If both APIs fail, return an error record
-    return [{
-      timestamp: new Date().toISOString(),
-      demand_mw: null,
-      price_cents_kwh: null,
-      source: 'IESO',
-      error: 'Both demand and price APIs unavailable'
-    }];
-  }
+  const { rows } = await collectIESOData();
+  return rows;
 }
 
 /**
@@ -278,47 +420,37 @@ serve(async (req: Request) => {
   // Create SSE stream for real-time requests
   const stream = new ReadableStream({
     async start(controller) {
-      try {
-        controller.enqueue(encodeSSE('hello', { message: 'IESO Ontario Demand Stream Connected', timestamp: new Date().toISOString() }));
+      controller.enqueue(encodeSSE('hello', { message: 'IESO Ontario Demand Stream Connected', timestamp: new Date().toISOString() }));
 
-        // Send a test data point
-        controller.enqueue(encodeSSE('data', {
-          dataset: 'ontario-demand',
-          hour: new Date().toISOString(),
-          demand_mw: 15000,
-          price_cents_kwh: 8.5,
-          timestamp: new Date().toISOString(),
-          source: 'TEST'
-        }));
+      while (true) {
+        try {
+          const { rows, metadata } = await fetchAndPersistIESOData({ skipFilter: true });
 
-        controller.enqueue(encodeSSE('heartbeat', {
-          lastActivity: new Date().toISOString(),
-          connectionsActive: 1
-        }));
+          if (rows.length > 0) {
+            controller.enqueue(encodeSSE('data', {
+              dataset: STREAM_KEY,
+              rows,
+              metadata,
+              timestamp: new Date().toISOString()
+            }));
+          }
 
-        // Wait a bit
-        await new Promise(resolve => setTimeout(resolve, 5000));
+          controller.enqueue(encodeSSE('heartbeat', {
+            lastActivity: new Date().toISOString(),
+            connectionsActive: 1,
+            metadata
+          }));
 
-        // Send another test
-        controller.enqueue(encodeSSE('data', {
-          dataset: 'ontario-demand',
-          hour: new Date().toISOString(),
-          demand_mw: 15500,
-          price_cents_kwh: 9.0,
-          timestamp: new Date().toISOString(),
-          source: 'TEST'
-        }));
+          await delay(IESO_CONFIG.POLL_INTERVAL_MS);
+        } catch (err) {
+          console.error('IESO stream loop error', err);
+          controller.enqueue(encodeSSE('error', {
+            timestamp: new Date().toISOString(),
+            message: err instanceof Error ? err.message : String(err)
+          }));
 
-        // Close after test
-        controller.close();
-
-      } catch (error) {
-        console.error('Critical stream error:', error);
-        controller.enqueue(encodeSSE('fatal', {
-          error: 'Stream terminated due to critical error',
-          timestamp: new Date().toISOString()
-        }));
-        controller.close();
+          await delay(IESO_CONFIG.ERROR_RETRY_DELAY_MS ?? 300000);
+        }
       }
     },
 

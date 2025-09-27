@@ -31,15 +31,17 @@ export interface ConnectionStatus {
 
 // Dataset Types
 export interface ProvincialGenerationRecord {
-  id?: number;
+  id?: string | number;
   date: string;
-  province: string;
-  producer: string;
-  generation_type: string;
-  megawatt_hours: number;
-  source: 'kaggle' | 'fallback';
-  version: string;
-  ingested_at: Date;
+  province?: string;
+  province_code?: string;
+  producer?: string;
+  generation_type?: string | null;
+  megawatt_hours?: number;
+  generation_gwh?: number;
+  source?: string;
+  version?: string;
+  ingested_at?: Date;
 }
 
 export interface OntarioDemandRecord {
@@ -142,6 +144,20 @@ abstract class BaseDataStreamer {
   }
 }
 
+const getBaseDataUrl = () => {
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/+$/, '/');
+  return `${base}data/`;
+};
+
+async function loadSampleJson<T>(fileName: string): Promise<T> {
+  const url = `${getBaseDataUrl()}${fileName}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load fallback data from ${url}: ${response.status} ${response.statusText}`);
+  }
+  return (await response.json()) as T;
+}
+
 /**
  * Provincial Generation Data Streamer
  */
@@ -204,8 +220,17 @@ export class ProvincialGenerationStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<ProvincialGenerationRecord[]> {
-    // Fallback disabled: no mock/sample data permitted
-    throw new Error('Fallback disabled: provincial_generation requires real streaming backend');
+    const raw = await loadSampleJson<Array<Omit<ProvincialGenerationRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'provincial_generation_sample.json'
+    );
+    const now = new Date();
+    return raw.map((record, index) => ({
+      ...record,
+      id: record.id ?? `provincial_generation_fallback_${index}`,
+      source: 'fallback',
+      version: '1.0-fallback',
+      ingested_at: now
+    }));
   }
 }
 
@@ -271,8 +296,16 @@ export class OntarioDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioDemandRecord[]> {
-    // Fallback disabled: no mock/sample data permitted
-    throw new Error('Fallback disabled: ontario_demand requires real streaming backend');
+    const raw = await loadSampleJson<Array<Omit<OntarioDemandRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'ontario_demand_sample.json'
+    );
+    return raw.map((record, index) => ({
+      ...record,
+      id: record.id ?? index,
+      source: 'fallback',
+      version: '1.0-fallback',
+      ingested_at: new Date(record.datetime)
+    }));
   }
 }
 
@@ -338,8 +371,16 @@ export class OntarioPricesStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioPricesRecord[]> {
-    // Fallback disabled: no mock/sample data permitted
-    throw new Error('Fallback disabled: ontario_prices requires real streaming backend');
+    const raw = await loadSampleJson<Array<Omit<OntarioPricesRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'ontario_prices_sample.json'
+    );
+    return raw.map((record, index) => ({
+      ...record,
+      id: record.id ?? index,
+      source: 'fallback',
+      version: '1.0-fallback',
+      ingested_at: new Date(record.datetime)
+    }));
   }
 }
 
@@ -407,8 +448,14 @@ export class HFElectricityDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<HFElectricityDemandRecord[]> {
-    // Fallback disabled: no mock/sample data permitted
-    throw new Error('Fallback disabled: hf_electricity_demand requires real streaming backend');
+    const raw = await loadSampleJson<Array<HFElectricityDemandRecord & { datetime: string }>>(
+      'hf_electricity_demand_sample.json'
+    );
+    return raw.map((record) => ({
+      ...record,
+      source: 'fallback',
+      version: '1.0-fallback'
+    }));
   }
 }
 
