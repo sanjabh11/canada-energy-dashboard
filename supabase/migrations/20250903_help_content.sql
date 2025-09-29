@@ -277,6 +277,206 @@ Write a short incident response checklist for local grid ops.$$,
  ARRAY['security','cyber','operational-technology','critical-infrastructure'],
  '[{"name":"CSE","url":"https://cyber.gc.ca/"}]',
  'CEIP Team'
+),
+('module.indigenous.overview',
+ 'Overview of Indigenous sovereignty dashboard, data sources, and stewardship protocols.',
+ $$## Indigenous Overview — sovereignty-first analytics
+This dashboard amplifies Indigenous-led energy initiatives while upholding nation-to-nation governance.
+
+**Key concepts**
+- FPIC status, consultation stages, and benefit-sharing are highlighted for every project.
+- Data shown here is illustrative and must be replaced with community-approved sources before production use.
+
+**Using this view**
+- Review the governance banner before sharing insights.
+- Use the metrics cards to gauge consultation progress and identify follow-up actions.
+
+**Protocol reminder**
+Always validate outputs with Indigenous partners prior to distribution.$$,
+ ARRAY['indigenous','sovereignty','governance'],
+ '[{"name":"Assembly of First Nations","url":"https://www.afn.ca/"}]',
+ 'Indigenous Governance Working Group'
+),
+('module.indigenous.governance',
+ 'Guidance on FPIC, data sovereignty, and safe handling of Indigenous energy information.',
+ $$## Indigenous Governance Protocols
+- Confirm Free, Prior, and Informed Consent (FPIC) with communities before operational use.
+- Follow Indigenous data sovereignty frameworks (OCAP®, CARE principles) for storage, sharing, and archival.
+- Route any new data ingestion through community-approved agreements and ensure opt-in consent tracking.
+
+**Escalation**
+Contact the Indigenous governance team before enabling real data streams or exporting sensitive insights.$$,
+ ARRAY['indigenous','protocols','fpic'],
+ '[{"name":"First Nations Information Governance Centre","url":"https://fnigc.ca"}]',
+ 'Indigenous Governance Working Group'
+),
+('metric.indigenous.total_territories',
+ 'Explains how total territory count is derived and how to interpret gaps.',
+ $$### Total Territories Metric
+Shows the number of territories represented in the current dataset (approved plus placeholder records).
+
+- **What it means**: each entry represents a distinct territory with consultation tracking enabled.
+- **When it spikes**: new partnerships or data imports.
+- **Validation**: confirm territories align with community-approved boundaries before publishing.$$,
+ ARRAY['indigenous','metrics','territories'],
+ '[{"name":"NRCan Indigenous Mapping","url":"https://maps-cartes.services.gc.ca/"}]',
+ 'CEIP Team'
+),
+('metric.indigenous.ongoing_consultations',
+ 'Tracks consultations currently active for Indigenous territories.',
+ $$### Ongoing Consultations
+Counts territories whose consultation status is marked as ongoing.
+
+- Use this to coordinate engagement cadence.
+- Pair with FPIC workflow details to ensure obligations are met.
+- Investigate anomalies (e.g., prolonged "ongoing") with community liaisons.$$,
+ ARRAY['indigenous','consultation','engagement'],
+ '[{"name":"Impact Assessment Agency","url":"https://www.canada.ca/en/impact-assessment-agency.html"}]',
+ 'CEIP Team'
+),
+('metric.indigenous.completed_consultations',
+ 'Highlights communities where consultation commitments are fulfilled.',
+ $$### Completed Consultations
+Represents territories that reported completion of consultation commitments.
+
+- Ensure completion is confirmed by community sign-off.
+- Use to document success stories and share best practices.$$,
+ ARRAY['indigenous','consultation','success'],
+ '[{"name":"Crown-Indigenous Relations","url":"https://www.rcaanc-cirnac.gc.ca/"}]',
+ 'CEIP Team'
+),
+('metric.indigenous.completion_rate',
+ 'Percentage of territories with completed consultations.',
+ $$### Completion Rate
+Calculated as completed territories divided by total tracked territories.
+
+- Use to monitor progress toward consultation objectives.
+- Highlight gaps where additional support is required.$$,
+ ARRAY['indigenous','metrics','progress'],
+ '[{"name":"Indigenous Services Canada","url":"https://www.sac-isc.gc.ca/"}]',
+ 'CEIP Team'
+),
+('chart.indigenous.consultation_status',
+ 'Explains pie chart segmentation for consultation stages.',
+ $$### Consultation Status Chart
+- **Green**: completed
+- **Gold**: ongoing
+- **Red**: pending
+- **Gray**: not yet started
+
+Use this visual to brief leadership on where to focus facilitation efforts.$$,
+ ARRAY['indigenous','visualization','consultation'],
+ '[{"name":"CEIP Consultation Playbook","url":"#"}]',
+ 'CEIP Team'
+),
+('chart.indigenous.tek_categories',
+ 'Breaks down Traditional Ecological Knowledge (TEK) entries by category.',
+ $$### Traditional Ecological Knowledge Categories
+Shows the volume of TEK entries grouped by cultural, environmental, spiritual, and economic themes.
+
+Ensure TEK handling complies with cultural protocols and community consent.$$,
+ ARRAY['indigenous','tek','knowledge'],
+ '[{"name":"First Peoples Cultural Council","url":"https://fpcc.ca"}]',
+ 'CEIP Team'
+),
+('module.indigenous.map',
+ 'Guides use of the territory map and highlights sovereignty safeguards.',
+ $$## Territory Map Guidance
+- Hover territories to view consultation details.
+- Map points indicate active engagements or workshops.
+- Confirm coordinates with communities prior to sharing publicly.
+
+**Privacy note**
+Only display community-approved geographic data.$$,
+ ARRAY['indigenous','map','territory'],
+ '[{"name":"Native Land Digital","url":"https://native-land.ca"}]',
+ 'Indigenous Governance Working Group'
+),
+('module.stakeholder.overview',
+ 'Orientation for the stakeholder coordination workspace.',
+ $$## Stakeholder Coordination Overview
+Use this dashboard to orchestrate consultations, manage meetings, and analyse cross-stakeholder sentiment.
+
+- Metric cards summarise participation and tone.
+- Charts surface engagement trends and priority issues.
+- Real-time collaboration panel keeps teams aligned.$$,
+ ARRAY['stakeholder','coordination','engagement'],
+ '[{"name":"Impact Assessment Agency","url":"https://www.canada.ca/en/impact-assessment-agency.html"}]',
+ 'Stakeholder Engagement Team'
+),
+('module.stakeholder.protocols',
+ 'Best practices for multi-stakeholder engagement governance.',
+ $$## Stakeholder Engagement Protocols
+- Respect confidentiality agreements and consent preferences.
+- Record meetings, notes, and follow-ups transparently.
+- Coordinate with Indigenous and provincial leads before sharing decisions.
+
+Refer to agency-specific engagement frameworks when planning outreach.$$,
+ ARRAY['stakeholder','protocols','governance'],
+ '[{"name":"Canadian Environmental Assessment Agency","url":"https://www.canada.ca/en/environmental-assessment-agency.html"}]',
+ 'Stakeholder Engagement Team'
+),
+('metric.stakeholder.total',
+ 'Definition of the total stakeholders metric and data hygiene tips.',
+ $$### Total Stakeholders
+Counts unique stakeholder profiles with active records.
+
+- Keep contacts up to date via the stakeholder admin interface.
+- Archive inactive stakeholders to maintain clarity.$$,
+ ARRAY['stakeholder','metrics','directory'],
+ '[{"name":"Stakeholder Registry","url":"#"}]',
+ 'CEIP Team'
+),
+('metric.stakeholder.upcoming_meetings',
+ 'Explains how upcoming meetings are tracked and displayed.',
+ $$### Upcoming Meetings
+Shows the number of scheduled meetings with a future start time.
+- Use the meeting drawer to confirm agendas and participants.
+- Cross-check with consultation plans to avoid overlaps.$$,
+ ARRAY['stakeholder','meetings','coordination'],
+ '[{"name":"Consultation Planner","url":"#"}]',
+ 'CEIP Team'
+),
+('metric.stakeholder.average_sentiment',
+ 'Interpreting the sentiment metric derived from feedback and messages.',
+ $$### Average Sentiment
+Aggregates analysed feedback sentiment on a -1 to 1 scale (displayed as a percentage).
+
+- Watch for downward trends signalling engagement risks.
+- Combine with feedback categories to prioritise responses.$$,
+ ARRAY['stakeholder','sentiment','analytics'],
+ '[{"name":"Sentiment Analysis Guide","url":"#"}]',
+ 'CEIP Team'
+),
+('metric.stakeholder.feedback_entries',
+ 'Counts feedback submissions logged within the selected window.',
+ $$### Feedback Entries
+Total number of feedback records analysed in the current view.
+- Encourage stakeholders to submit follow-up notes.
+- Tag feedback for quicker triage.$$,
+ ARRAY['stakeholder','feedback','analytics'],
+ '[{"name":"Engagement Feedback Toolkit","url":"#"}]',
+ 'CEIP Team'
+),
+('chart.stakeholder.sentiment_trend',
+ 'How to read the seven-day sentiment trend chart.',
+ $$### Sentiment Trend Chart
+Displays average sentiment per day over the past week.
+- Purple line indicates overall tone; hover to see daily details.
+- Low counts may reduce confidence; collect more feedback for accuracy.$$,
+ ARRAY['stakeholder','sentiment','visualization'],
+ '[{"name":"Consultation Analytics","url":"#"}]',
+ 'CEIP Team'
+),
+('chart.stakeholder.feedback_categories',
+ 'Explains the bar chart grouping feedback themes.',
+ $$### Feedback Categories Chart
+Shows frequency of tagged feedback categories.
+- Identify recurring themes to plan follow-up actions.
+- Use alongside sentiment data for context.$$,
+ ARRAY['stakeholder','feedback','visualization'],
+ '[{"name":"Engagement Analytics","url":"#"}]',
+ 'CEIP Team'
 )
 ON CONFLICT (id) DO UPDATE
   SET short_text = EXCLUDED.short_text,

@@ -80,12 +80,82 @@ export const EnergyDataDashboard: React.FC = () => {
   const [maxRows, setMaxRows] = useState(5000);
   const [activeTab, setActiveTab] = useState<string>('Dashboard');
 
+  const loadDataset = useCallback(async (datasetKey: DatasetType, forceStream = false) => {
+    setState(prev => ({
+      ...prev,
+      loading: true,
+      error: null,
+      progress: null
+    }));
+
+    try {
+      const data = await energyDataManager.loadData(datasetKey, {
+        forceStream,
+        maxRows,
+        onProgress: (progress) => {
+          setState(prev => ({ ...prev, progress }));
+        },
+        onStatusChange: (status) => {
+          if (DEBUG_LOGS) console.debug(`Status update for ${datasetKey}:`, status);
+        }
+      });
+
+      setState(prev => ({
+        ...prev,
+        data,
+        loading: false,
+        progress: { loaded: data.length, total: data.length, percentage: 100 }
+      }));
+    } catch (error) {
+      setState(prev => ({
+        ...prev,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to load data',
+        progress: null
+      }));
+    }
+  }, [maxRows]);
+
+  const applyFilters = useCallback(() => {
+    let filtered = [...state.data];
+
+    if (filters.searchQuery && filters.searchQuery.trim()) {
+      const query = filters.searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(row =>
+        Object.values(row).some(value =>
+          String(value).toLowerCase().includes(query)
+        )
+      );
+    }
+
+    if (filters.dateRange) {
+      const { start, end } = filters.dateRange;
+      filtered = filtered.filter(row => {
+        const dateField = row.date || row.datetime || row.market_date;
+        if (!dateField) return true;
+
+        const rowDate = new Date(dateField).toISOString().split('T')[0];
+        return rowDate >= start && rowDate <= end;
+      });
+    }
+
+    if (filters.selectedFields) {
+      Object.entries(filters.selectedFields).forEach(([field, values]) => {
+        if (values.length > 0) {
+          filtered = filtered.filter(row => values.includes(String(row[field])));
+        }
+      });
+    }
+
+    setState(prev => ({ ...prev, filteredData: filtered }));
+  }, [filters, state.data]);
+
   // Handle case where users might have 'Education' tab saved or bookmarked
   useEffect(() => {
     if (activeTab === 'Education') {
-      setActiveTab('Dashboard'); // Redirect to Dashboard
+      setActiveTab('Dashboard');
     }
-  }, []);
+  }, [activeTab]);
 
   const navigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
@@ -135,85 +205,12 @@ export const EnergyDataDashboard: React.FC = () => {
   // Load data when dataset changes
   useEffect(() => {
     loadDataset(state.activeDataset, false);
-  }, [state.activeDataset]);
+  }, [state.activeDataset, loadDataset]);
 
   // Apply filters when data or filters change
   useEffect(() => {
     applyFilters();
-  }, [state.data, filters]);
-
-  const loadDataset = useCallback(async (datasetKey: DatasetType, forceStream = false) => {
-    setState(prev => ({
-      ...prev,
-      loading: true,
-      error: null,
-      progress: null
-    }));
-
-    try {
-      const data = await energyDataManager.loadData(datasetKey, {
-        forceStream,
-        maxRows,
-        onProgress: (progress) => {
-          setState(prev => ({ ...prev, progress }));
-        },
-        onStatusChange: (status) => {
-          if (DEBUG_LOGS) console.debug(`Status update for ${datasetKey}:`, status);
-        }
-      });
-
-      setState(prev => ({
-        ...prev,
-        data,
-        loading: false,
-        progress: { loaded: data.length, total: data.length, percentage: 100 }
-      }));
-    } catch (error) {
-      setState(prev => ({
-        ...prev,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to load data',
-        progress: null
-      }));
-    }
-  }, [maxRows]);
-
-  const applyFilters = useCallback(() => {
-    let filtered = [...state.data];
-
-    // Apply search query
-    if (filters.searchQuery && filters.searchQuery.trim()) {
-      const query = filters.searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(row => 
-        Object.values(row).some(value => 
-          String(value).toLowerCase().includes(query)
-        )
-      );
-    }
-
-    // Apply date range filter
-    if (filters.dateRange) {
-      const { start, end } = filters.dateRange;
-      filtered = filtered.filter(row => {
-        const dateField = row.date || row.datetime || row.market_date;
-        if (!dateField) return true;
-        
-        const rowDate = new Date(dateField).toISOString().split('T')[0];
-        return rowDate >= start && rowDate <= end;
-      });
-    }
-
-    // Apply field-specific filters
-    if (filters.selectedFields) {
-      Object.entries(filters.selectedFields).forEach(([field, values]) => {
-        if (values.length > 0) {
-          filtered = filtered.filter(row => values.includes(String(row[field])));
-        }
-      });
-    }
-
-    setState(prev => ({ ...prev, filteredData: filtered }));
-  }, [state.data, filters]);
+  }, [applyFilters]);
 
   const handleDatasetChange = (datasetKey: DatasetType) => {
     setState(prev => ({ ...prev, activeDataset: datasetKey }));

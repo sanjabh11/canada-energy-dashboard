@@ -169,7 +169,9 @@ class DigitalTwinEngine {
     options: EdgeFetchOptions = {}
   ): Promise<SystemState> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/system-state`,
+      [
+        `${this.baseEndpoint}/system-state`
+      ],
       {
         region: region || 'canada',
         include_forecasts: true,
@@ -190,7 +192,9 @@ class DigitalTwinEngine {
     options: EdgeFetchOptions = {}
   ): Promise<SimulationResult> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/simulate`,
+      [
+        `${this.baseEndpoint}/simulate`
+      ],
       {
         scenario,
         simulation_engine: 'advanced_power_flow',
@@ -231,7 +235,9 @@ class DigitalTwinEngine {
     }>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/stress-test`,
+      [
+        `${this.baseEndpoint}/stress-test`
+      ],
       {
         stress_type: stressType,
         intensity,
@@ -281,7 +287,9 @@ class DigitalTwinEngine {
     };
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/optimize`,
+      [
+        `${this.baseEndpoint}/optimize`
+      ],
       {
         objective,
         constraints,
@@ -334,7 +342,9 @@ class DigitalTwinEngine {
     }>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/predict-evolution`,
+      [
+        `${this.baseEndpoint}/predict-evolution`
+      ],
       {
         time_horizon: timeHorizon,
         scenarios,
@@ -393,7 +403,9 @@ class DigitalTwinEngine {
     sensitivity_analysis: Record<string, Record<string, number>>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/investment-analysis`,
+      [
+        `${this.baseEndpoint}/investment-analysis`
+      ],
       {
         investments,
         analysis_horizon: analysisHorizon,
@@ -415,7 +427,9 @@ class DigitalTwinEngine {
     options: EdgeFetchOptions = {}
   ): Promise<DigitalTwinMetrics> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/metrics`,
+      [
+        `${this.baseEndpoint}/metrics`
+      ],
       {
         include_historical: true,
         benchmark_against: 'industry_standard'
@@ -456,7 +470,9 @@ class DigitalTwinEngine {
     }>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/calibrate`,
+      [
+        `${this.baseEndpoint}/calibrate`
+      ],
       {
         calibration_data: calibrationData,
         calibration_method: 'machine_learning',
@@ -507,7 +523,7 @@ export class DigitalTwinUtils {
       case 'cyber':
         baseScenario.parameters.cyber_attack = {
           target_type: 'control_systems',
-          severity,
+          severity: severity === 'extreme' ? 'critical' : severity,
           affected_nodes: [] // Would be populated based on analysis
         };
         break;
@@ -591,13 +607,3 @@ export class DigitalTwinUtils {
     ];
   }
 }
-
-// Export types for use in components
-export type {
-  EnergySystemNode,
-  EnergyFlow,
-  SystemState,
-  SimulationScenario,
-  SimulationResult,
-  DigitalTwinMetrics
-};

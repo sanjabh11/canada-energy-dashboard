@@ -183,36 +183,39 @@ export const ComplianceDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<string>('overview');
   const remediationAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    const loadComplianceData = async () => {
-      setLoading(true);
-      try {
-        // Simulate API call with ENV and energy compliance data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+  const loadComplianceData = useCallback(async (projectFilter: string) => {
+    setLoading(true);
+    try {
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-        // Generate compliance scores over time for visualization
-        const complianceScores = data.projects.map(project => ({
-  project: project.projectName,
-  current: project.complianceScore,
-  month1: Math.max(0, project.complianceScore - (Math.random() * 10)),
-  month2: Math.max(0, project.complianceScore + (Math.random() - 0.5) * 15),
-  month3: project.complianceScore
-}));
+      setData(prev => {
+        const projectsForScore = projectFilter === 'all'
+          ? prev.projects
+          : prev.projects.filter(project => project.id === projectFilter);
 
-        setData(prev => ({
+        const complianceScores = projectsForScore.map(project => ({
+          project: project.projectName,
+          current: project.complianceScore,
+          month1: Math.max(0, project.complianceScore - (Math.random() * 10)),
+          month2: Math.max(0, project.complianceScore + (Math.random() - 0.5) * 15),
+          month3: project.complianceScore
+        }));
+
+        return {
           ...prev,
           complianceScores
-        } as any));
+        } as any;
+      });
+    } catch (error) {
+      console.error('Error loading compliance data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-        setLoading(false);
-      } catch (error) {
-        console.error('Error loading compliance data:', error);
-        setLoading(false);
-      }
-    };
-
-    loadComplianceData();
-  }, [selectedProject]);
+  useEffect(() => {
+    loadComplianceData(selectedProject);
+  }, [selectedProject, loadComplianceData]);
 
   // Generate remediation advice using LLM
   const loadRemediationAdvice = useCallback(async (violationId: string) => {

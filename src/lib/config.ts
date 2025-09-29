@@ -43,6 +43,23 @@ export function getEdgeHeaders(): Record<string, string> {
   return headers;
 }
 
+export function isEdgeFetchEnabled(): boolean {
+  const raw = env.VITE_ENABLE_EDGE_FETCH as string | boolean | undefined;
+
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'string') return raw.toLowerCase() === 'true';
+
+  // Default: disable in local dev to avoid noisy CORS failures unless explicitly opted-in
+  if (typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return false;
+    }
+  }
+
+  return Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+}
+
 export function getFeatureFlagUseStreaming(): boolean {
   const raw = env.VITE_USE_STREAMING_DATASETS as string | boolean | undefined;
 

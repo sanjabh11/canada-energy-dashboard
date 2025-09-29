@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { nlpService, NLPAnalysisConfig, FeedbackAnalysis, TextAnalysis } from '../lib/nlpService';
 
 /**
@@ -68,7 +68,7 @@ export function useFeedbackBatchAnalysis(feedbacks: string[], enabled: boolean =
     };
 
     analyzeBatch();
-  }, [JSON.stringify(feedbacks), enabled]);
+  }, [feedbacks, enabled]);
 
   const summary = analyses.length > 0 ? nlpService.generateSummary(analyses) : null;
 
@@ -128,12 +128,23 @@ export function useMessageSentiment(messages: Array<{
   const [messageAnalysis, setMessageAnalysis] = useState<Map<string, TextAnalysis>>(new Map());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const previousSignatureRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!enabled || messages.length === 0) {
       setMessageAnalysis(new Map());
       return;
     }
+
+    const signature = JSON.stringify(
+      messages.map((msg) => [msg.id, msg.timestamp, msg.content, msg.senderId])
+    );
+
+    if (previousSignatureRef.current === signature) {
+      return;
+    }
+
+    previousSignatureRef.current = signature;
 
     const analyzeMessages = async () => {
       setLoading(true);
@@ -176,7 +187,7 @@ export function useMessageSentiment(messages: Array<{
     };
 
     analyzeMessages();
-  }, [JSON.stringify(messages.map(m => ({ id: m.id, content: m.content }))), enabled]);
+  }, [messages, enabled]);
 
   const getMessageSentiment = (messageId: string): TextAnalysis['sentiment'] | undefined => {
     return messageAnalysis.get(messageId)?.sentiment;

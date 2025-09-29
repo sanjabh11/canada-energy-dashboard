@@ -40,10 +40,9 @@ serve(async (req: Request) => {
     console.log('Testing if llm_rl_increment function exists...');
 
     try {
-      // Try to call the function that the LLM function needs
       const testCall = await supabase.rpc('llm_rl_increment', {
         p_user_id: 'test_user',
-        p_window: new Date(),
+        p_window: new Date().toISOString(),
         p_default_limit: 30
       });
 
@@ -52,15 +51,15 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({
         success: true,
         message: 'llm_rl_increment function already exists and works',
-        result: testCall.data
+        result: testCall.data ?? null
       }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200
       });
-
+    } catch (rpcError) {
+      console.warn('llm_rl_increment function missing or failed:', rpcError);
     }
 
-    // Now check if the required database tables exist (which the LLM function also needs)
     console.log('Checking for required LLM database tables...');
 
     const tablesToCheck = ['llm_call_log', 'llm_feedback', 'llm_reports'];
@@ -80,22 +79,15 @@ serve(async (req: Request) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'All required database components found',
-      rateLimitFunctionWorks: true,
+      message: missingTables.length === 0
+        ? 'All required database components found'
+        : 'Missing database components detected',
+      rateLimitFunctionWorks: false,
       tablesFound: tablesToCheck,
-      missingTables: missingTables,
-      diagnosis: missingTables.length > 0 ?
-        `Missing tables: ${missingTables.join(', ')} - this is likely causing the LLM function BOOT_ERROR` :
-        'All database components exist - BOOT_ERROR might be caused by runtime environment differences'
-    }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 200
-    });
-
-    return new Response(JSON.stringify({
-      success: true,
-      message: 'LLM database function created successfully',
-      timestamp: new Date().toISOString()
+      missingTables,
+      diagnosis: missingTables.length > 0
+        ? `Missing tables: ${missingTables.join(', ')} - create these before re-running the LLM function.`
+        : 'All database components exist - investigate runtime environment differences causing BOOT_ERROR.'
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
       status: 200

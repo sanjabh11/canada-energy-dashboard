@@ -3,10 +3,8 @@
 // Handles /api/help/manifest and /api/help/{id} routes
 // Converts Markdown to HTML server-side for performance
 
-import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-// Import marked for MD->HTML conversion
-import { marked } from 'https://esm.sh/marked@9.1.2';
+import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 
 // Environment variables
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -60,6 +58,8 @@ serve(async (req) => {
     const path = url.pathname.replace(/\/$/, ''); // trim trailing slash
     let route = path;
 
+    console.log('Help function called with path:', path);
+
     // Normalize when invoked under Supabase functions mount points so routes are consistent
     // Examples:
     //  - /functions/v1/help/api/help/manifest  -> /api/help/manifest
@@ -69,9 +69,13 @@ serve(async (req) => {
     // Also normalize when invoked on the functions subdomain with function name prefix
     //  - /help/api/help/manifest -> /api/help/manifest
     route = route.replace(/^\/help\/api\/help/, '/api/help');
+    // Handle direct function invocation
+    route = route.replace(/^\/help/, '');
+    
+    console.log('Normalized route:', route);
 
     // GET /api/help/manifest
-    if (route === '/api/help/manifest') {
+    if (route === '/api/help/manifest' || route === '/manifest') {
       const { data, error } = await supa
         .from('help_content')
         .select('id, short_text')
@@ -97,7 +101,7 @@ serve(async (req) => {
     }
 
     // GET /api/help/{id}
-    const helpIdMatch = route.match(/^\/api\/help\/(.+)$/);
+    const helpIdMatch = route.match(/^\/api\/help\/(.+)$/) || route.match(/^\/(.+)$/);
     if (helpIdMatch) {
       const helpId = helpIdMatch[1];
 
@@ -119,17 +123,12 @@ serve(async (req) => {
       }
 
       // Convert Markdown to HTML (server-side for performance)
-      let bodyHtml = '';
-      try {
-        marked.setOptions({
-          breaks: true,
-          gfm: true,
-        });
-        bodyHtml = marked.parse(data.body_md || '');
-      } catch (mdError) {
-        console.error('Markdown parsing error:', mdError);
-        bodyHtml = '<p>Error parsing content</p>';
-      }
+      // Simple markdown-to-HTML conversion (basic implementation)
+      let bodyHtml = data.body_md || '';
+      bodyHtml = bodyHtml
+        .replace(/\n/g, '<br>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g, '<em>$1</em>');
 
       return new Response(JSON.stringify({
         id: data.id,

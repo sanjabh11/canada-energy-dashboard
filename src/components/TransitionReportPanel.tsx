@@ -32,18 +32,6 @@ const TransitionReportPanel: React.FC<Props> = ({ datasetPath, timeframe }) => {
       }
     };
 
-  const progress: string[] = Array.isArray(data?.progress)
-    ? (data!.progress as string[])
-    : Array.isArray(data?.key_findings)
-    ? (data!.key_findings as string[])
-    : [];
-  const risks: string[] = Array.isArray(data?.risks) ? (data!.risks as string[]) : [];
-  const recs: string[] = Array.isArray(data?.recommendations)
-    ? (data!.recommendations as string[])
-    : Array.isArray(data?.policy_implications)
-    ? (data!.policy_implications as string[])
-    : [];
-
     run();
 
     return () => controller.abort();

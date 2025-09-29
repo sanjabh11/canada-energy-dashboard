@@ -52,13 +52,29 @@ export interface WebSocketConnection {
   lastHeartbeat: string;
 }
 
+interface StreamingEventPayload {
+  type: string;
+  data?: StreamingDataPoint;
+  connection?: StreamingConnection;
+  error?: unknown;
+}
+
+type StreamingEventListener = (event: StreamingEventPayload) => void;
+
+type WebSocketControlEvent = {
+  type: 'connected' | 'disconnected' | 'error' | 'send_error';
+  [key: string]: unknown;
+};
+
+type WebSocketListener = (event: WebSocketMessage | WebSocketControlEvent) => void;
+
 export class StreamingService {
   private static instance: StreamingService;
   private connections = new Map<string, StreamingConnection>();
   private webSocketConnections = new Map<string, WebSocketConnection>();
   private dataCache = new Map<string, StreamingDataPoint[]>();
-  private eventListeners = new Map<string, Function[]>();
-  private messageListeners = new Map<string, Function[]>();
+  private eventListeners = new Map<string, StreamingEventListener[]>();
+  private messageListeners = new Map<string, WebSocketListener[]>();
   private config: RealDataConfig;
   private abortControllers = new Map<string, AbortController>();
   private heartbeatIntervals = new Map<string, NodeJS.Timeout>();
@@ -177,7 +193,11 @@ export class StreamingService {
           resolve();
         } else if (Date.now() - startedAt > timeoutMs) {
           clearInterval(checkInterval);
-          try { eventSource.close(); } catch {}
+          try {
+            eventSource.close();
+          } catch (closeError) {
+            console.warn('Failed to close EventSource after timeout', closeError);
+          }
           connection.status = 'disconnected';
           this.notifyListeners(connection.dataset, { type: 'timeout', connection });
           if (this.config.fallbackToMock) {
@@ -244,18 +264,18 @@ export class StreamingService {
   /**
    * Subscribe to data updates
    */
-  onDataUpdate(dataset: string, callback: (data: any) => void): () => void {
-    if (!this.eventListeners.has(dataset)) {
-      this.eventListeners.set(dataset, []);
-    }
-    this.eventListeners.get(dataset)?.push(callback);
+  onDataUpdate(dataset: string, callback: StreamingEventListener): () => void {
+    const listeners = this.eventListeners.get(dataset) ?? [];
+    this.eventListeners.set(dataset, [...listeners, callback]);
 
     // Return unsubscribe function
     return () => {
-      const listeners = this.eventListeners.get(dataset) || [];
-      const index = listeners.indexOf(callback);
-      if (index > -1) {
-        listeners.splice(index, 1);
+      const current = this.eventListeners.get(dataset) || [];
+      const next = current.filter(listener => listener !== callback);
+      if (next.length > 0) {
+        this.eventListeners.set(dataset, next);
+      } else {
+        this.eventListeners.delete(dataset);
       }
     };
   }
@@ -263,18 +283,18 @@ export class StreamingService {
   /**
    * Subscribe to WebSocket messages
    */
-  onWebSocketMessage(channelName: string, callback: (message: WebSocketMessage) => void): () => void {
-    if (!this.messageListeners.has(channelName)) {
-      this.messageListeners.set(channelName, []);
-    }
-    this.messageListeners.get(channelName)?.push(callback);
+  onWebSocketMessage(channelName: string, callback: WebSocketListener): () => void {
+    const listeners = this.messageListeners.get(channelName) ?? [];
+    this.messageListeners.set(channelName, [...listeners, callback]);
 
     // Return unsubscribe function
     return () => {
-      const listeners = this.messageListeners.get(channelName) || [];
-      const index = listeners.indexOf(callback);
-      if (index > -1) {
-        listeners.splice(index, 1);
+      const current = this.messageListeners.get(channelName) || [];
+      const next = current.filter(listener => listener !== callback);
+      if (next.length > 0) {
+        this.messageListeners.set(channelName, next);
+      } else {
+        this.messageListeners.delete(channelName);
       }
     };
   }
@@ -302,13 +322,13 @@ export class StreamingService {
   /**
    * Notify all listeners for a dataset
    */
-  private notifyListeners(dataset: string, data: any): void {
+  private notifyListeners(dataset: string, event: StreamingEventPayload): void {
     const listeners = this.eventListeners.get(dataset) || [];
-    listeners.forEach(callback => {
+    listeners.forEach(listener => {
       try {
-        callback(data);
-      } catch (error) {
-        console.error('Error in listener callback:', error);
+        listener(event);
+      } catch (callbackError) {
+        console.error('Error in listener callback:', callbackError);
       }
     });
   }
@@ -385,14 +405,26 @@ export class StreamingService {
     const prevClose = ws.onclose;
 
     ws.onopen = (ev: Event) => {
-      try { prevOpen && prevOpen.call(ws, ev as any); } catch (e) { console.error(e); }
+      if (prevOpen) {
+        try {
+          prevOpen.call(ws, ev);
+        } catch (openError) {
+          console.error(openError);
+        }
+      }
       connection.status = 'connected';
       this.notifyWebSocketListeners(channelName, { type: 'connected', connectionId: connection.id });
       this.startHeartbeat(channelName);
     };
 
-    ws.onmessage = (event) => {
-      try { prevMessage && prevMessage.call(ws, event as any); } catch (e) { console.error(e); }
+    ws.onmessage = (event: MessageEvent<string>) => {
+      if (prevMessage) {
+        try {
+          prevMessage.call(ws, event);
+        } catch (messageError) {
+          console.error(messageError);
+        }
+      }
       try {
         const message: WebSocketMessage = JSON.parse(event.data);
         message.timestamp = new Date().toISOString();
@@ -404,14 +436,26 @@ export class StreamingService {
     };
 
     ws.onerror = (ev: Event) => {
-      try { prevError && prevError.call(ws, ev as any); } catch (e) { console.error(e); }
+      if (prevError) {
+        try {
+          prevError.call(ws, ev);
+        } catch (errorHandlerError) {
+          console.error(errorHandlerError);
+        }
+      }
       connection.status = 'error';
       this.notifyWebSocketListeners(channelName, { type: 'error' });
       this.handleWebSocketReconnect(channelName);
     };
 
     ws.onclose = (ev: CloseEvent) => {
-      try { prevClose && prevClose.call(ws, ev as any); } catch (e) { console.error(e); }
+      if (prevClose) {
+        try {
+          prevClose.call(ws, ev);
+        } catch (closeHandlerError) {
+          console.error(closeHandlerError);
+        }
+      }
       connection.status = 'disconnected';
       connection.reconnectCount = 0;
       if (this.heartbeatIntervals.has(channelName)) {
@@ -489,11 +533,11 @@ export class StreamingService {
    */
   private notifyWebSocketListeners(channelName: string, data: any): void {
     const listeners = this.messageListeners.get(channelName) || [];
-    listeners.forEach(callback => {
+    listeners.forEach(listener => {
       try {
-        callback(data);
-      } catch (error) {
-        console.error('WebSocket listener error:', error);
+        listener(data);
+      } catch (listenerError) {
+        console.error('WebSocket listener error:', listenerError);
       }
     });
   }

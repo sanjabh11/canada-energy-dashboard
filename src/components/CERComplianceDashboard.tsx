@@ -11,7 +11,7 @@ import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { 
   Shield, AlertTriangle, CheckCircle, Clock, FileText, 
   MapPin, Factory, Zap, Gauge, TrendingUp, Eye, Search,
-  Filter, Download, Calendar, Users, Settings
+  Filter, Download, Calendar, Users, Settings, Package as PackageIcon
 } from 'lucide-react';
 import { 
   canadianRegulatoryService, 
@@ -47,7 +47,7 @@ const FACILITY_TYPE_ICONS = {
   pipeline: Factory,
   power_line: Zap,
   processing_plant: Settings,
-  storage_facility: Package
+  storage_facility: PackageIcon
 };
 
 export const CERComplianceDashboard: React.FC = () => {

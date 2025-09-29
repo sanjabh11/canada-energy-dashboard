@@ -22,9 +22,8 @@ export interface HelpContent {
  */
 export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
   const base = getEdgeBaseUrl();
-  // The Supabase Edge Function is named `help`. It expects paths under `/api/help/*` inside the function.
-  // So the full URL is: `${base}/help/api/help/manifest`
-  const url = base ? `${base}/help/api/help/manifest` : '/api/help/manifest';
+  // Use the new simplified help function
+  const url = base ? `${base}/help-simple/manifest` : '/api/help/manifest';
   const response = await fetch(url, {
     headers: getEdgeHeaders()
   });
@@ -44,7 +43,7 @@ export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
  */
 export async function fetchHelpById(id: string): Promise<HelpContent | null> {
   const base = getEdgeBaseUrl();
-  const url = base ? `${base}/help/api/help/${encodeURIComponent(id)}` : `/api/help/${encodeURIComponent(id)}`;
+  const url = base ? `${base}/help-simple/${encodeURIComponent(id)}` : `/api/help/${encodeURIComponent(id)}`;
   const response = await fetch(url, {
     headers: getEdgeHeaders()
   });

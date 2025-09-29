@@ -1,4 +1,4 @@
-import { getEdgeBaseUrl, getEdgeHeaders } from './config';
+import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from './config';
 
 export interface EdgeFetchOptions {
   signal?: AbortSignal;
@@ -22,6 +22,9 @@ function createAbortError(): any {
 }
 
 export async function fetchEdgeJson(pathCandidates: string[], options: EdgeFetchOptions = {}): Promise<{ json: any; response: Response }> {
+  if (!isEdgeFetchEnabled()) {
+    throw new Error('Supabase Edge fetch disabled via configuration (VITE_ENABLE_EDGE_FETCH=false)');
+  }
   const base = getEdgeBaseUrl();
   const headers = getEdgeHeaders();
   if (!base) {
@@ -74,6 +77,9 @@ export async function fetchEdgePostJson(
   body: any,
   options: EdgeFetchOptions = {}
 ): Promise<{ json: any; response: Response }> {
+  if (!isEdgeFetchEnabled()) {
+    throw new Error('Supabase Edge fetch disabled via configuration (VITE_ENABLE_EDGE_FETCH=false)');
+  }
   const base = getEdgeBaseUrl();
   const headers = getEdgeHeaders();
   if (!base) {
@@ -115,6 +121,9 @@ export async function fetchEdgePostJson(
 }
 
 export async function fetchEdgeWithParams(pathCandidates: string[], params: Record<string, string>, options: EdgeFetchOptions = {}): Promise<Response> {
+  if (!isEdgeFetchEnabled()) {
+    throw new Error('Supabase Edge fetch disabled via configuration (VITE_ENABLE_EDGE_FETCH=false)');
+  }
   const base = getEdgeBaseUrl();
   const headers = getEdgeHeaders();
   if (!base) {

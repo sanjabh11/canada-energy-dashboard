@@ -17,7 +17,7 @@ import {
   type StreamingOptions,
   type ConnectionStatus
 } from './dataStreamers';
-import { getFeatureFlagUseStreaming, canUseStreaming, isStreamingConfigured } from './config';
+import { getFeatureFlagUseStreaming, canUseStreaming, isStreamingConfigured, isEdgeFetchEnabled } from './config';
 import { cache } from './cache';
 
 // Re-export types for convenience
@@ -138,14 +138,17 @@ export class EnergyDataManager {
     try {
       this.updateStatus(datasetKey, { status: 'connecting', error: undefined });
       
-      // If streaming isn't enabled or not configured, surface error (no mock fallback allowed)
-      if (!canUseStreaming()) {
+      const streamingAvailable = canUseStreaming() && isEdgeFetchEnabled();
+
+      if (!streamingAvailable) {
         this.updateStatus(datasetKey, {
-          status: 'error',
-          source: 'stream',
-          error: 'Streaming not configured (no fallback allowed)'
+          status: 'fallback',
+          source: 'fallback',
+          lastUpdate: new Date(),
+          recordCount: this.dataCache.get(datasetKey)?.length ?? 0,
+          error: undefined
         });
-        return false;
+        return true;
       }
 
       // Attempt to connect to the stream by getting the manifest
@@ -191,23 +194,15 @@ export class EnergyDataManager {
     } catch { /* ignore cache errors */ }
 
     try {
-      let data: any[];
-      const wantStreaming = forceStream || getFeatureFlagUseStreaming();
-      const useStreaming = wantStreaming && isStreamingConfigured();
+      const streamingConfigured = isStreamingConfigured() && isEdgeFetchEnabled();
+      const streamingFeatureEnabled = canUseStreaming() && isEdgeFetchEnabled();
+      const shouldAttemptStream = forceStream ? streamingConfigured : streamingFeatureEnabled;
 
-      if (!useStreaming) {
-        const err = new Error('Streaming disabled or not configured (no fallback allowed)');
-        this.updateStatus(datasetKey, {
-          status: 'error',
-          source: 'stream',
-          recordCount: 0,
-          lastUpdate: new Date(),
-          error: err.message
-        });
-        throw err;
+      if (!shouldAttemptStream) {
+        return await this.loadUsingFallback(datasetKey, { maxRows, onProgress, onStatusChange });
       }
 
-      data = await this.loadFromStream(datasetKey, { maxRows, onProgress, signal });
+      const data = await this.loadFromStream(datasetKey, { maxRows, onProgress, signal });
       this.updateStatus(datasetKey, {
         status: 'connected',
         source: 'stream',
@@ -221,21 +216,25 @@ export class EnergyDataManager {
       onStatusChange?.(this.getConnectionStatus(datasetKey));
       return data;
     } catch (error: any) {
-      // If the request was aborted, do not fallback; bubble up and let caller handle.
       if (error?.name === 'AbortError') {
         throw error;
       }
+
       console.error(`Failed to load streaming data for ${datasetKey}:`, error);
-      // Surface error; do not attempt sample fallback
-      this.updateStatus(datasetKey, {
-        status: 'error',
-        source: 'stream',
-        recordCount: 0,
-        lastUpdate: new Date(),
-        error: error instanceof Error ? error.message : 'Stream failed'
-      });
-      onStatusChange?.(this.getConnectionStatus(datasetKey));
-      throw error;
+
+      try {
+        return await this.loadUsingFallback(datasetKey, { maxRows, onProgress, onStatusChange });
+      } catch (fallbackError: any) {
+        this.updateStatus(datasetKey, {
+          status: 'error',
+          source: 'stream',
+          recordCount: 0,
+          lastUpdate: new Date(),
+          error: fallbackError instanceof Error ? fallbackError.message : 'Stream and fallback failed'
+        });
+        onStatusChange?.(this.getConnectionStatus(datasetKey));
+        throw fallbackError;
+      }
     }
   }
 
@@ -261,6 +260,39 @@ export class EnergyDataManager {
     }
 
     return allRows;
+  }
+
+  private async loadUsingFallback(
+    datasetKey: DatasetType,
+    options: {
+      maxRows: number;
+      onProgress?: StreamingOptions['onProgress'];
+      onStatusChange?: (status: ConnectionStatus) => void;
+    }
+  ): Promise<any[]> {
+    const fallbackData = await this.loadFromFallback(datasetKey);
+    const limited = options.maxRows ? fallbackData.slice(0, options.maxRows) : fallbackData;
+
+    if (options.onProgress) {
+      options.onProgress({
+        loaded: limited.length,
+        total: limited.length,
+        percentage: limited.length > 0 ? 100 : 0
+      });
+    }
+
+    this.dataCache.set(datasetKey, limited);
+
+    this.updateStatus(datasetKey, {
+      status: 'fallback',
+      source: 'fallback',
+      recordCount: limited.length,
+      lastUpdate: new Date(),
+      error: undefined
+    });
+
+    options.onStatusChange?.(this.getConnectionStatus(datasetKey));
+    return limited;
   }
 
   private async loadFromFallback(datasetKey: DatasetType): Promise<any[]> {

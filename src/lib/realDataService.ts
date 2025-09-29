@@ -97,7 +97,7 @@ class RealDataService {
    */
   async getGridStatus(): Promise<GridStatus[]> {
     // Try to get from local storage first
-    const stored = localStorageManager.getData('grid_status');
+    const stored = localStorageManager.getDataset<GridStatus>('grid_status');
     if (stored && stored.length > 0) {
       return stored;
     }
@@ -139,7 +139,7 @@ class RealDataService {
     });
 
     // Store in local storage
-    localStorageManager.saveData('grid_status', gridData);
+    localStorageManager.setDataset('grid_status', gridData);
     return gridData;
   }
 
@@ -147,7 +147,7 @@ class RealDataService {
    * Get critical minerals supply chain data
    */
   async getMineralsSupplyData(): Promise<MineralSupplyData[]> {
-    const stored = localStorageManager.getData('minerals_supply');
+    const stored = localStorageManager.getDataset<MineralSupplyData>('minerals_supply');
     if (stored && stored.length > 0) {
       return stored;
     }
@@ -268,7 +268,7 @@ class RealDataService {
       }
     ];
 
-    localStorageManager.saveData('minerals_supply', mineralsData);
+    localStorageManager.setDataset('minerals_supply', mineralsData);
     return mineralsData;
   }
 
@@ -276,7 +276,7 @@ class RealDataService {
    * Get infrastructure resilience assessment data
    */
   async getInfrastructureAssets(): Promise<InfrastructureAsset[]> {
-    const stored = localStorageManager.getData('infrastructure_assets');
+    const stored = localStorageManager.getDataset<InfrastructureAsset>('infrastructure_assets');
     if (stored && stored.length > 0) {
       return stored;
     }
@@ -455,7 +455,7 @@ class RealDataService {
       }
     ];
 
-    localStorageManager.saveData('infrastructure_assets', assetsData);
+    localStorageManager.setDataset('infrastructure_assets', assetsData);
     return assetsData;
   }
 
@@ -467,7 +467,7 @@ class RealDataService {
     const updatedData = currentData.map(item => 
       item.region === regionId ? { ...item, ...updates, timestamp: new Date().toISOString() } : item
     );
-    localStorageManager.saveData('grid_status', updatedData);
+    localStorageManager.setDataset('grid_status', updatedData);
   }
 
   /**
@@ -476,7 +476,7 @@ class RealDataService {
   async addMineralSupplySource(mineralData: MineralSupplyData): Promise<void> {
     const currentData = await this.getMineralsSupplyData();
     currentData.push(mineralData);
-    localStorageManager.saveData('minerals_supply', currentData);
+    localStorageManager.setDataset('minerals_supply', currentData);
   }
 
   /**
@@ -487,7 +487,7 @@ class RealDataService {
     const updatedData = currentData.map(asset => 
       asset.id === assetId ? { ...asset, ...updates } : asset
     );
-    localStorageManager.saveData('infrastructure_assets', updatedData);
+    localStorageManager.setDataset('infrastructure_assets', updatedData);
   }
 
   /**
@@ -602,10 +602,3 @@ class RealDataService {
 
 // Export singleton instance
 export const realDataService = RealDataService.getInstance();
-
-// Export types
-export type {
-  GridStatus,
-  MineralSupplyData,
-  InfrastructureAsset
-};

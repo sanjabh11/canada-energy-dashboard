@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { streamingService, StreamingDataPoint, StreamingConnection } from '../lib/data/streamingService';
 
 /**
@@ -33,7 +33,10 @@ export function useStreamingData(dataset: string) {
       } else if (update.type === 'disconnected' || update.type === 'error') {
         setConnectionStatus('error');
         setIsUsingRealData(false);
-        setError(update.error?.message || 'Connection lost');
+        const errorMessage = typeof update.error === 'string'
+          ? update.error
+          : (update.error as { message?: string } | undefined)?.message;
+        setError(errorMessage ?? 'Connection lost');
       } else if (update.type === 'connecting') {
         setConnectionStatus('connecting');
       }
@@ -76,7 +79,7 @@ export function useHistoricalData(dataset: string, limit = 100, cursor?: string)
   const [error, setError] = useState<string | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
 
-  const loadHistoricalData = async (newCursor?: string) => {
+  const loadHistoricalData = useCallback(async (newCursor?: string) => {
     setLoading(true);
     setError(null);
 
@@ -99,13 +102,13 @@ export function useHistoricalData(dataset: string, limit = 100, cursor?: string)
     } finally {
       setLoading(false);
     }
-  };
+  }, [dataset, limit, cursor]);
 
   useEffect(() => {
     if (dataset) {
       loadHistoricalData();
     }
-  }, [dataset, limit]);
+  }, [dataset, limit, loadHistoricalData]);
 
   return {
     historicalData,

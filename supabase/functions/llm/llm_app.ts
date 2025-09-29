@@ -1,12 +1,15 @@
-// @ts-nocheck
 // LLM App Module - All handlers and utilities moved from index.ts
 // This is lazily imported by the minimal bootstrap in index.ts
 
 // Local adapter within this function (defer import to avoid cold start failures)
-let __callLLM: any = null;
-async function getCallLLM() {
+type CallLlmModule = {
+  callLLM: (params: Record<string, unknown>) => Promise<unknown>;
+};
+
+let __callLLM: ((params: Record<string, unknown>) => Promise<unknown>) | null = null;
+async function getCallLLM(): Promise<(params: Record<string, unknown>) => Promise<unknown>> {
   if (!__callLLM) {
-    const mod = await import("./call_llm_adapter.ts");
+    const mod: CallLlmModule = await import("./call_llm_adapter.ts");
     __callLLM = mod.callLLM;
   }
   return __callLLM;
@@ -38,14 +41,28 @@ async function ensureSupabase() {
 const COST_PER_1K_TOKENS = Number(Deno.env.get('LLM_COST_PER_1K') || 0);
 const LLM_ENABLED = (Deno.env.get('LLM_ENABLED') ?? 'true') !== 'false';
 const CACHE_TTL_MIN = Number(Deno.env.get('LLM_CACHE_TTL_MIN') || 15);
-const cache = new Map<string, { expires: number; payload: any }>();
-const memoryReports: any[] = [];
+interface CacheEntry {
+  expires: number;
+  payload: unknown;
+}
+
+const cache = new Map<string, CacheEntry>();
+const memoryReports: Array<Record<string, unknown>> = [];
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
 // Build small snippet array from numeric summary and sample rows for provenance depth
-function buildSnippets(rows: any[], numericSummary: any, maxSnippets = 3): Array<{ text: string; context?: string }>{
-  const out: Array<{ text: string; context?: string }> = [];
+interface Snippet {
+  text: string;
+  context?: string;
+}
+
+type NumericSummary = Record<string, unknown> & {
+  columns?: Record<string, { mean?: number; count?: number }>;
+};
+
+function buildSnippets(rows: unknown[], numericSummary: NumericSummary, maxSnippets = 3): Snippet[] {
+  const out: Snippet[] = [];
   try {
     const cols = Object.entries((numericSummary?.columns || {})) as Array<[string, any]>;
     const metric = cols.find(([, v]) => v && typeof v.mean === 'number');
@@ -63,7 +80,7 @@ function buildSnippets(rows: any[], numericSummary: any, maxSnippets = 3): Array
 }
 
 // Redact basic PII from text/rows and provide a short summary of redactions performed
-function redactPIIWithSummary(input: unknown): { redacted: any; summary: Record<string, number> } {
+function redactPIIWithSummary<T>(input: T): { redacted: T; summary: Record<string, number> } {
   const summary: Record<string, number> = { emails: 0, phones: 0, numbers: 0 };
   const redactText = (txt: string) => {
     let out = txt;
@@ -88,7 +105,7 @@ function redactPIIWithSummary(input: unknown): { redacted: any; summary: Record<
     return val;
   };
   const redacted = walk(input);
-  return { redacted, summary };
+  return { redacted: redacted as T, summary };
 }
 
 function extractTextFromLLM(resp: any): string | null {
@@ -176,7 +193,7 @@ async function logCall(entry: any) {
   try {
     await ensureSupabase();
     if (!supabase) return;
-    await supabase.from('llm_call_log').insert(entry);
+    await (supabase as any).from('llm_call_log').insert(entry);
   } catch (e) {
     console.warn('llm_call_log insert failed', e);
   }
@@ -186,7 +203,7 @@ async function logFeedback(entry: any) {
   try {
     await ensureSupabase();
     if (!supabase) return;
-    await supabase.from('llm_feedback').insert(entry);
+    await (supabase as any).from('llm_feedback').insert(entry);
   } catch (e) {
     console.warn('llm_feedback insert failed', e);
   }
@@ -195,7 +212,8 @@ async function logFeedback(entry: any) {
 async function fetchManifest(datasetPath: string): Promise<any> {
   if (!WRAPPER_BASE_URL) {
     try {
-      const url = new URL(`./mock-data/manifest_${datasetPath.replaceAll('/', '_')}.json`, import.meta.url);
+      const sanitized = datasetPath.replace(/[/\\]/g, '_');
+      const url = new URL(`./mock-data/manifest_${sanitized}.json`, import.meta.url);
       const resp = await fetch(url);
       if (resp.ok) {
         const json = await resp.json();
@@ -216,7 +234,8 @@ async function fetchManifest(datasetPath: string): Promise<any> {
 async function fetchSampleRows(datasetPath: string, limit = 50): Promise<any[]> {
   if (!WRAPPER_BASE_URL) {
     try {
-      const url = new URL(`./mock-data/sample_${datasetPath.replaceAll('/', '_')}.json`, import.meta.url);
+      const sanitized = datasetPath.replace(/[/\\]/g, '_');
+      const url = new URL(`./mock-data/sample_${sanitized}.json`, import.meta.url);
       const resp = await fetch(url);
       if (resp.ok) {
         const arr = await resp.json();
@@ -249,8 +268,8 @@ async function fetchSampleRows(datasetPath: string, limit = 50): Promise<any[]> 
   return out || [];
 }
 
-function summarizeNumericRows(rows: any[], numericColumns: string[] = []) {
-  if (!rows || rows.length === 0) return { count: 0, columns: {} as Record<string, any> };
+function summarizeNumericRows(rows: any[], numericColumns: string[] = []): { count: number; columns: Record<string, unknown> } {
+  if (!rows || rows.length === 0) return { count: 0, columns: {} };
   const sample = rows[0];
   if (!numericColumns.length) {
     numericColumns = Object.keys(sample).filter((k) => {
@@ -564,6 +583,9 @@ export async function handleRequest(req: Request): Promise<Response> {
   }
   if (req.method === 'POST' && (path === '/data-quality' || url.pathname.endsWith('/data-quality'))) {
     return await handleDataQuality(req);
+  }
+  if (req.method === 'POST' && (path === '/insights' || url.pathname.endsWith('/insights'))) {
+    return await handleAnalyticsInsight(req);
   }
 
   return new Response(JSON.stringify({ error: 'Route not implemented yet' }), { status: 503, headers: jsonHeaders });

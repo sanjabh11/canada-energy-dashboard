@@ -244,7 +244,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<CERComplianceRecord[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/cer-compliance`,
+      [
+        `${this.baseEndpoint}/cer-compliance`
+      ],
       {
         facility_id: facilityId,
         province,
@@ -265,7 +267,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<CERMarketOversight[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/cer-market-oversight`,
+      [
+        `${this.baseEndpoint}/cer-market-oversight`
+      ],
       {
         participant_type: participantType,
         include_recent_filings: true
@@ -284,7 +288,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<AESOComplianceRecord[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/aeso-compliance`,
+      [
+        `${this.baseEndpoint}/aeso-compliance`
+      ],
       {
         participant_name: participantName,
         include_performance_metrics: true
@@ -303,7 +309,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<IESOComplianceRecord[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/ieso-compliance`,
+      [
+        `${this.baseEndpoint}/ieso-compliance`
+      ],
       {
         participant_name: participantName,
         include_market_participation: true
@@ -322,7 +330,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<HydroQuebecComplianceRecord[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/hydro-quebec-compliance`,
+      [
+        `${this.baseEndpoint}/hydro-quebec-compliance`
+      ],
       {
         facility_name: facilityName,
         include_interconnection_data: true
@@ -342,7 +352,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<UNDRIPComplianceRecord[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/undrip-compliance`,
+      [
+        `${this.baseEndpoint}/undrip-compliance`
+      ],
       {
         project_id: projectId,
         traditional_territory: traditionalTerritory,
@@ -364,7 +376,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<CarbonPricingCompliance[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/carbon-pricing-compliance`,
+      [
+        `${this.baseEndpoint}/carbon-pricing-compliance`
+      ],
       {
         province,
         facility_id: facilityId,
@@ -385,7 +399,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<CleanFuelRegulationsCompliance[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/clean-fuel-regulations-compliance`,
+      [
+        `${this.baseEndpoint}/clean-fuel-regulations-compliance`
+      ],
       {
         supplier,
         fuel_type: fuelType,
@@ -405,7 +421,9 @@ class CanadianRegulatoryService {
     options: EdgeFetchOptions = {}
   ): Promise<NetZeroAccountabilityTracking[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/net-zero-accountability`,
+      [
+        `${this.baseEndpoint}/net-zero-accountability`
+      ],
       {
         sector,
         include_sectoral_plans: true,
@@ -460,7 +478,9 @@ class CanadianRegulatoryService {
     };
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/compliance-report`,
+      [
+        `${this.baseEndpoint}/compliance-report`
+      ],
       {
         scope,
         analysis_depth: 'comprehensive',
@@ -533,15 +553,3 @@ export class CanadianRegulatoryUtils {
   }
 }
 
-// Export types for use in components
-export type {
-  CERComplianceRecord,
-  CERMarketOversight,
-  AESOComplianceRecord,
-  IESOComplianceRecord,
-  HydroQuebecComplianceRecord,
-  UNDRIPComplianceRecord,
-  CarbonPricingCompliance,
-  CleanFuelRegulationsCompliance,
-  NetZeroAccountabilityTracking
-};

@@ -48,48 +48,116 @@ CREATE TABLE IF NOT EXISTS public.innovations (
   created_at timestamptz DEFAULT now()
 );
 
+-- Add missing columns to innovations table
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS innovation_name text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS technology_category text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS description text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS current_trl smallint;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS target_trl smallint;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS key_technologies text[];
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS primary_benefits text[];
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS technical_challenges text[];
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS scalability_potential text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS market_maturity text DEFAULT 'early';
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS market_size_estimate numeric(15,2);
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS competitive_advantage text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS ip_status text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS regulatory_requirements text[];
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS development_stage text DEFAULT 'concept';
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS funding_received numeric(12,2);
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS funding_sought numeric(12,2);
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS development_partners text[];
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS timeline_to_market text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS lead_organization text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS contact_person text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS contact_email text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS website_url text;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS data_sources jsonb;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS last_updated date;
+ALTER TABLE public.innovations ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now();
+
+-- Ensure innovations table has proper defaults
+DO $$
+BEGIN
+  -- Set UUID default if the id column is uuid type
+  IF EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'innovations' 
+    AND column_name = 'id' 
+    AND data_type = 'uuid'
+  ) THEN
+    ALTER TABLE public.innovations ALTER COLUMN id SET DEFAULT uuid_generate_v4();
+  END IF;
+END $$;
+
 -- innovation_assessments table - TRL and market assessments
-CREATE TABLE IF NOT EXISTS public.innovation_assessments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  innovation_id uuid REFERENCES public.innovations(id) ON DELETE CASCADE,
-  assessment_date date NOT NULL,
-  assessor_name text,
-  assessor_organization text,
+DO $$
+DECLARE
+  innovation_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, NULL)
+    INTO innovation_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON a.attrelid = c.oid
+  JOIN pg_namespace n ON c.relnamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND c.relname = 'innovations'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+  LIMIT 1;
 
-  -- TRL Assessment
-  assessed_trl smallint NOT NULL,
-  trl_confidence_level text DEFAULT 'medium', -- low, medium, high
-  trl_assessment_method text,
-  trl_gaps_identified text[],
-  time_to_next_trl_estimate text, -- months estimate
+  IF innovation_id_type IS NULL THEN
+    innovation_id_type := 'uuid';
+  ELSIF innovation_id_type IN ('int4','integer') THEN
+    innovation_id_type := 'integer';
+  ELSIF innovation_id_type IN ('int8','bigint') THEN
+    innovation_id_type := 'bigint';
+  ELSIF innovation_id_type IN ('int2','smallint') THEN
+    innovation_id_type := 'smallint';
+  ELSIF innovation_id_type <> 'uuid' THEN
+    RAISE NOTICE 'Unexpected innovations.id type %, defaulting to uuid', innovation_id_type;
+    innovation_id_type := 'uuid';
+  END IF;
 
-  -- Market Assessment
-  market_potential_score smallint, -- 1-10 scale
-  commercialization_potential_score smallint, -- 1-10 scale
-  competitive_landscape text,
-  go_to_market_strategy text,
+  EXECUTE format($SQL$
+    CREATE TABLE IF NOT EXISTS public.innovation_assessments (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      innovation_id %s REFERENCES public.innovations(id) ON DELETE CASCADE,
+      assessment_date date NOT NULL,
+      assessor_name text,
+      assessor_organization text,
 
-  -- Technical Assessment
-  technical_maturity_score smallint, -- 1-10 scale
-  scalability_assessment text,
-  integration_complexity text, -- low, medium, high
+      assessed_trl smallint NOT NULL,
+      trl_confidence_level text DEFAULT 'medium',
+      trl_assessment_method text,
+      trl_gaps_identified text[],
+      time_to_next_trl_estimate text,
 
-  -- Risk Assessment
-  technical_risks text[],
-  market_risks text[],
-  regulatory_risks text[],
-  overall_risk_level text DEFAULT 'medium', -- low, medium, high
+      market_potential_score smallint,
+      commercialization_potential_score smallint,
+      competitive_landscape text,
+      go_to_market_strategy text,
 
-  -- Recommendations
-  recommended_actions text[],
-  priority_level text DEFAULT 'medium', -- low, medium, high, critical
-  investment_recommendation text,
+      technical_maturity_score smallint,
+      scalability_assessment text,
+      integration_complexity text,
 
-  -- Metadata
-  assessment_methodology text,
-  data_sources jsonb,
-  created_at timestamptz DEFAULT now()
-);
+      technical_risks text[],
+      market_risks text[],
+      regulatory_risks text[],
+      overall_risk_level text DEFAULT 'medium',
+
+      recommended_actions text[],
+      priority_level text DEFAULT 'medium',
+      investment_recommendation text,
+
+      assessment_methodology text,
+      data_sources jsonb,
+      created_at timestamptz DEFAULT now()
+    )
+  $SQL$, innovation_id_type);
+END $$;
 
 -- innovation_funding_opportunities table - funding and partnership opportunities
 CREATE TABLE IF NOT EXISTS public.innovation_funding_opportunities (
@@ -141,25 +209,55 @@ CREATE TABLE IF NOT EXISTS public.innovation_partnerships (
 );
 
 -- innovation_metrics table - tracking adoption and impact
-CREATE TABLE IF NOT EXISTS public.innovation_metrics (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  innovation_id uuid REFERENCES public.innovations(id) ON DELETE CASCADE,
-  metric_date date NOT NULL,
-  metric_type text NOT NULL, -- adoption, impact, performance, cost
+DO $$
+DECLARE
+  innovation_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, NULL)
+    INTO innovation_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON a.attrelid = c.oid
+  JOIN pg_namespace n ON c.relnamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND c.relname = 'innovations'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+  LIMIT 1;
 
-  -- Metric values
-  metric_value numeric(10,2),
-  metric_unit text, -- %, MW, $, etc.
-  baseline_value numeric(10,2),
-  target_value numeric(10,2),
+  IF innovation_id_type IS NULL THEN
+    innovation_id_type := 'uuid';
+  ELSIF innovation_id_type IN ('int4','integer') THEN
+    innovation_id_type := 'integer';
+  ELSIF innovation_id_type IN ('int8','bigint') THEN
+    innovation_id_type := 'bigint';
+  ELSIF innovation_id_type IN ('int2','smallint') THEN
+    innovation_id_type := 'smallint';
+  ELSIF innovation_id_type <> 'uuid' THEN
+    RAISE NOTICE 'Unexpected innovations.id type %, defaulting to uuid', innovation_id_type;
+    innovation_id_type := 'uuid';
+  END IF;
 
-  -- Context
-  measurement_method text,
-  data_source text,
-  confidence_level text DEFAULT 'medium',
+  EXECUTE format($SQL$
+    CREATE TABLE IF NOT EXISTS public.innovation_metrics (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      innovation_id %s REFERENCES public.innovations(id) ON DELETE CASCADE,
+      metric_date date NOT NULL,
+      metric_type text NOT NULL,
 
-  created_at timestamptz DEFAULT now()
-);
+      metric_value numeric(10,2),
+      metric_unit text,
+      baseline_value numeric(10,2),
+      target_value numeric(10,2),
+
+      measurement_method text,
+      data_source text,
+      confidence_level text DEFAULT 'medium',
+
+      created_at timestamptz DEFAULT now()
+    )
+  $SQL$, innovation_id_type);
+END $$;
 
 -- Indexes for performance
 CREATE INDEX IF NOT EXISTS idx_innovations_category ON public.innovations (technology_category);
@@ -259,7 +357,8 @@ INSERT INTO public.innovations (
   innovation_name, technology_category, description, current_trl, target_trl,
   key_technologies, primary_benefits, technical_challenges,
   market_maturity, development_stage, lead_organization
-) VALUES
+) 
+SELECT * FROM (VALUES
 ('Advanced Flow Battery Storage', 'battery_storage', 'Long-duration energy storage using vanadium redox flow technology', 7, 9,
  ARRAY['flow battery', 'vanadium electrolyte', 'smart controls'],
  ARRAY['6+ hour storage duration', 'scalability', 'low degradation'],
@@ -289,7 +388,8 @@ INSERT INTO public.innovations (
  ARRAY['transparent pricing', 'local energy markets', 'consumer empowerment'],
  ARRAY['regulatory framework', 'scalability', 'cybersecurity'],
  'early', 'concept', 'Energy Blockchain Labs')
-ON CONFLICT DO NOTHING;
+) AS v(innovation_name, technology_category, description, current_trl, target_trl, key_technologies, primary_benefits, technical_challenges, market_maturity, development_stage, lead_organization)
+WHERE NOT EXISTS (SELECT 1 FROM public.innovations WHERE innovation_name = v.innovation_name);
 
 -- Sample assessment data
 INSERT INTO public.innovation_assessments (

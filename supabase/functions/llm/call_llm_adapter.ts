@@ -1,5 +1,4 @@
 // call_llm_adapter.ts (Deno)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Deno: any; // Provided by Supabase Edge Functions runtime
 // Native Google Gemini adapter with OpenAI-compatible gateway fallback.
 // Keeps the same signature used by index.ts

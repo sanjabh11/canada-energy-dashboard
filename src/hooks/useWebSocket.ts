@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   streamingService,
   WebSocketConnection,
@@ -18,7 +18,7 @@ export function useWebSocketConsultation(consultationId: string) {
   const [error, setError] = useState<string | null>(null);
   const [participants, setParticipants] = useState<string[]>([]);
 
-  const channelName = `consultation-${consultationId}`;
+  const channelName = useMemo(() => `consultation-${consultationId}`, [consultationId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,7 +146,7 @@ export function useWebSocketConsultation(consultationId: string) {
         setTimeout(() => ws.close(), 100); // Give time to send leave message
       }
     };
-  }, [consultationId]);
+  }, [consultationId, channelName]);
 
   /**
    * Send message to consultation
@@ -234,7 +234,7 @@ export function useStakeholderCollaboration(stakeholderId: string) {
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const channelName = `stakeholder-${stakeholderId}`;
+  const channelName = useMemo(() => `stakeholder-${stakeholderId}`, [stakeholderId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -301,7 +301,7 @@ export function useStakeholderCollaboration(stakeholderId: string) {
     return () => {
       isMounted = false;
     };
-  }, [stakeholderId]);
+  }, [stakeholderId, channelName]);
 
   const sendCollaborationMessage = (channel: string, content: string, type: string = 'message') => {
     const message: WebSocketMessage = {

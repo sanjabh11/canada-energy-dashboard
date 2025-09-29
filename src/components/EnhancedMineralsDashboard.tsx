@@ -6,7 +6,7 @@
  * Replaces mock data with persistent local storage.
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
 import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info } from 'lucide-react';
 import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStorageManager';
@@ -66,28 +66,7 @@ export const EnhancedMineralsDashboard: React.FC = () => {
   });
 
   // Load minerals data from local storage
-  useEffect(() => {
-    loadMineralsData();
-  }, []);
-
-  const loadMineralsData = () => {
-    setLoading(true);
-    try {
-      const records = localStorageManager.getMineralsSupply();
-      setMineralsRecords(records);
-      
-      // Initialize with sample data if empty
-      if (records.length === 0) {
-        initializeSampleData();
-      }
-    } catch (error) {
-      console.error('Error loading minerals data:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const initializeSampleData = () => {
+  const initializeSampleData = useCallback(() => {
     const sampleMinerals = [
       {
         mineral: 'Lithium',
@@ -142,9 +121,30 @@ export const EnhancedMineralsDashboard: React.FC = () => {
     sampleMinerals.forEach(mineral => {
       localStorageManager.addMineralsSupplyRecord(mineral);
     });
-    
+
+    return localStorageManager.getMineralsSupply();
+  }, []);
+
+  const loadMineralsData = useCallback(() => {
+    setLoading(true);
+    try {
+      const records = localStorageManager.getMineralsSupply();
+      if (records.length === 0) {
+        const seeded = initializeSampleData();
+        setMineralsRecords(seeded);
+      } else {
+        setMineralsRecords(records);
+      }
+    } catch (error) {
+      console.error('Error loading minerals data:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [initializeSampleData]);
+
+  useEffect(() => {
     loadMineralsData();
-  };
+  }, [loadMineralsData]);
 
   // Calculate metrics
   const metrics: MineralsMetrics = useMemo(() => {

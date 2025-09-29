@@ -126,7 +126,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<EnergyForecast> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/forecast`,
+      [
+        `${this.baseEndpoint}/forecast`
+      ],
       {
         datasets,
         timeframe,
@@ -151,7 +153,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<EnergyAnomaly[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/anomaly-detection`,
+      [
+        `${this.baseEndpoint}/anomaly-detection`
+      ],
       {
         real_time_data: realTimeData,
         historical_context: historicalContext,
@@ -174,7 +178,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<CrossCorrelationInsight[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/cross-correlation`,
+      [
+        `${this.baseEndpoint}/cross-correlation`
+      ],
       {
         datasets,
         time_range: timeRange,
@@ -198,7 +204,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<IntelligentAlert[]> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/intelligent-alerts`,
+      [
+        `${this.baseEndpoint}/intelligent-alerts`
+      ],
       {
         current_state: currentState,
         user_context: userContext,
@@ -224,7 +232,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<ScenarioAnalysis> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/scenario-analysis`,
+      [
+        `${this.baseEndpoint}/scenario-analysis`
+      ],
       {
         scenario: scenarioConfig,
         analysis_depth: 'comprehensive',
@@ -247,7 +257,9 @@ class AIEnergyOracle {
     options: EdgeFetchOptions = {}
   ): Promise<NaturalLanguageResponse> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/natural-language`,
+      [
+        `${this.baseEndpoint}/natural-language`
+      ],
       {
         query: query.query,
         context: query.context,
@@ -283,7 +295,9 @@ class AIEnergyOracle {
     };
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/daily-briefing`,
+      [
+        `${this.baseEndpoint}/daily-briefing`
+      ],
       {
         stakeholder_type: stakeholderType,
         jurisdiction,
@@ -327,7 +341,9 @@ class AIEnergyOracle {
     }>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/system-optimization`,
+      [
+        `${this.baseEndpoint}/system-optimization`
+      ],
       {
         current_state: currentState,
         constraints,
@@ -370,7 +386,9 @@ class AIEnergyOracle {
     }>;
   }> {
     const { json } = await fetchEdgePostJson(
-      `${this.baseEndpoint}/crisis-prediction`,
+      [
+        `${this.baseEndpoint}/crisis-prediction`
+      ],
       {
         risk_factors: riskFactors,
         time_horizon: timeHorizon,
@@ -482,14 +500,3 @@ export class AIDataProcessor {
     };
   }
 }
-
-// Export types for use in components
-export type {
-  EnergyForecast,
-  EnergyAnomaly,
-  CrossCorrelationInsight,
-  IntelligentAlert,
-  ScenarioAnalysis,
-  NaturalLanguageQuery,
-  NaturalLanguageResponse
-};
