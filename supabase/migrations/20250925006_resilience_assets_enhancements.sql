@@ -18,23 +18,55 @@ ALTER TABLE public.resilience_assets
   ADD COLUMN IF NOT EXISTS population_served integer;
 
 -- Create hazard assessment table capturing scenario metrics
-CREATE TABLE IF NOT EXISTS public.resilience_hazard_assessments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  asset_id integer REFERENCES public.resilience_assets(id) ON DELETE CASCADE,
-  asset_uuid uuid,
-  scenario text NOT NULL,
-  time_horizon_years integer NOT NULL,
-  flooding numeric,
-  wildfire numeric,
-  hurricane numeric,
-  sea_level_rise numeric,
-  extreme_heat numeric,
-  drought numeric,
-  landslide numeric,
-  erosion numeric,
-  overall_risk numeric,
-  generated_at timestamptz DEFAULT now()
-);
+DO $$
+DECLARE
+  asset_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, NULL)
+    INTO asset_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON a.attrelid = c.oid
+  JOIN pg_namespace n ON c.relnamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND c.relname = 'resilience_assets'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+  LIMIT 1;
+
+  IF asset_id_type IS NULL THEN
+    asset_id_type := 'uuid';
+  ELSIF asset_id_type IN ('int4','integer') THEN
+    asset_id_type := 'integer';
+  ELSIF asset_id_type IN ('int8','bigint') THEN
+    asset_id_type := 'bigint';
+  ELSIF asset_id_type IN ('int2','smallint') THEN
+    asset_id_type := 'smallint';
+  ELSIF asset_id_type <> 'uuid' THEN
+    RAISE NOTICE 'Unexpected resilience_assets.id type %, defaulting to uuid', asset_id_type;
+    asset_id_type := 'uuid';
+  END IF;
+
+  EXECUTE format($SQL$
+    CREATE TABLE IF NOT EXISTS public.resilience_hazard_assessments (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      asset_id %s REFERENCES public.resilience_assets(id) ON DELETE CASCADE,
+      asset_uuid uuid,
+      scenario text NOT NULL,
+      time_horizon_years integer NOT NULL,
+      flooding numeric,
+      wildfire numeric,
+      hurricane numeric,
+      sea_level_rise numeric,
+      extreme_heat numeric,
+      drought numeric,
+      landslide numeric,
+      erosion numeric,
+      overall_risk numeric,
+      generated_at timestamptz DEFAULT now()
+    )
+  $SQL$, asset_id_type);
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_resilience_hazard_asset_scenario
   ON public.resilience_hazard_assessments (asset_id, scenario, time_horizon_years);

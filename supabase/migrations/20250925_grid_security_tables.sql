@@ -78,17 +78,49 @@ CREATE TABLE IF NOT EXISTS public.threat_models (
 );
 
 -- Mitigation strategies table
-CREATE TABLE IF NOT EXISTS public.mitigation_strategies (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  strategy_name text NOT NULL,
-  description text,
-  effectiveness numeric(5,2),
-  cost_estimate numeric(12,2),
-  time_to_implement_days integer,
-  related_threat uuid REFERENCES public.threat_models(id) ON DELETE SET NULL,
-  status text DEFAULT 'proposed',
-  last_updated timestamptz DEFAULT now()
-);
+DO $$
+DECLARE
+  threat_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, NULL)
+    INTO threat_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON a.attrelid = c.oid
+  JOIN pg_namespace n ON c.relnamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND c.relname = 'threat_models'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+  LIMIT 1;
+
+  IF threat_id_type IS NULL THEN
+    threat_id_type := 'uuid';
+  ELSIF threat_id_type IN ('int4','integer') THEN
+    threat_id_type := 'integer';
+  ELSIF threat_id_type IN ('int8','bigint') THEN
+    threat_id_type := 'bigint';
+  ELSIF threat_id_type IN ('int2','smallint') THEN
+    threat_id_type := 'smallint';
+  ELSIF threat_id_type <> 'uuid' THEN
+    RAISE NOTICE 'Unexpected threat_models.id type %, defaulting to uuid', threat_id_type;
+    threat_id_type := 'uuid';
+  END IF;
+
+  EXECUTE format($SQL$
+    CREATE TABLE IF NOT EXISTS public.mitigation_strategies (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      strategy_name text NOT NULL,
+      description text,
+      effectiveness numeric(5,2),
+      cost_estimate numeric(12,2),
+      time_to_implement_days integer,
+      related_threat %s REFERENCES public.threat_models(id) ON DELETE SET NULL,
+      status text DEFAULT 'proposed',
+      last_updated timestamptz DEFAULT now()
+    )
+  $SQL$, threat_id_type);
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_mitigation_related_threat
   ON public.mitigation_strategies (related_threat);

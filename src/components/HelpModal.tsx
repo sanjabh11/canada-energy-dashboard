@@ -83,7 +83,6 @@ export function HelpModal({
     // Backdrop
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      aria-hidden="true"
     >
       {/* Modal backdrop with dismiss on click */}
       <div

@@ -46,6 +46,52 @@ CREATE TABLE IF NOT EXISTS public.resilience_assets (
   updated_at timestamptz DEFAULT now()
 );
 
+-- Harmonise with legacy Phase 2 schema where resilience_assets used integer ids
+DO $$
+BEGIN
+  -- Ensure core columns exist (older deployments only had name/location metrics)
+  ALTER TABLE public.resilience_assets
+    ADD COLUMN IF NOT EXISTS name text,
+    ADD COLUMN IF NOT EXISTS asset_name text,
+    ADD COLUMN IF NOT EXISTS asset_type text,
+    ADD COLUMN IF NOT EXISTS province text,
+    ADD COLUMN IF NOT EXISTS municipality text,
+    ADD COLUMN IF NOT EXISTS latitude numeric(10,6),
+    ADD COLUMN IF NOT EXISTS longitude numeric(10,6),
+    ADD COLUMN IF NOT EXISTS description text,
+    ADD COLUMN IF NOT EXISTS criticality_level text DEFAULT 'medium',
+    ADD COLUMN IF NOT EXISTS infrastructure_type text,
+    ADD COLUMN IF NOT EXISTS age_years integer,
+    ADD COLUMN IF NOT EXISTS replacement_cost numeric(15,2),
+    ADD COLUMN IF NOT EXISTS capacity_mw numeric(10,2),
+    ADD COLUMN IF NOT EXISTS length_km numeric(8,2),
+    ADD COLUMN IF NOT EXISTS flood_risk_level text DEFAULT 'low',
+    ADD COLUMN IF NOT EXISTS storm_risk_level text DEFAULT 'low',
+    ADD COLUMN IF NOT EXISTS heat_risk_level text DEFAULT 'low',
+    ADD COLUMN IF NOT EXISTS cold_risk_level text DEFAULT 'low',
+    ADD COLUMN IF NOT EXISTS seismic_risk_level text DEFAULT 'low',
+    ADD COLUMN IF NOT EXISTS last_inspection_date date,
+    ADD COLUMN IF NOT EXISTS next_inspection_date date,
+    ADD COLUMN IF NOT EXISTS maintenance_schedule text,
+    ADD COLUMN IF NOT EXISTS backup_power_available boolean DEFAULT false,
+    ADD COLUMN IF NOT EXISTS redundancy_level text DEFAULT 'none',
+    ADD COLUMN IF NOT EXISTS operational_status text DEFAULT 'operational',
+    ADD COLUMN IF NOT EXISTS created_at timestamptz DEFAULT now(),
+    ADD COLUMN IF NOT EXISTS updated_at timestamptz DEFAULT now();
+
+  -- Backfill new descriptive columns from legacy fields when possible
+  UPDATE public.resilience_assets
+  SET asset_name = COALESCE(asset_name, name),
+      name = COALESCE(name, asset_name),
+      infrastructure_type = COALESCE(infrastructure_type, asset_type),
+      operational_status = COALESCE(operational_status, 'operational')
+  WHERE TRUE;
+EXCEPTION
+  WHEN undefined_column THEN
+    -- Legacy table may not contain "name" column; ignore backfill in that case
+    NULL;
+END $$;
+
 -- climate_projections table - climate change impact projections
 CREATE TABLE IF NOT EXISTS public.climate_projections (
   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -85,48 +131,108 @@ CREATE TABLE IF NOT EXISTS public.climate_projections (
   created_at timestamptz DEFAULT now()
 );
 
--- resilience_assessments table - calculated resilience scores for assets
-CREATE TABLE IF NOT EXISTS public.resilience_assessments (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  asset_id uuid REFERENCES public.resilience_assets(id) ON DELETE CASCADE,
-  assessment_date date NOT NULL,
-  climate_scenario text, -- references climate_projections.scenario_name
+DO $$
+DECLARE
+  asset_id_type text;
+BEGIN
+  SELECT format_type(a.atttypid, NULL)
+    INTO asset_id_type
+  FROM pg_attribute a
+  JOIN pg_class c ON a.attrelid = c.oid
+  JOIN pg_namespace n ON c.relnamespace = n.oid
+  WHERE n.nspname = 'public'
+    AND c.relname = 'resilience_assets'
+    AND a.attname = 'id'
+    AND a.attnum > 0
+    AND NOT a.attisdropped
+  LIMIT 1;
 
-  -- Resilience scores (0-100 scale)
-  overall_resilience_score numeric(5,2),
-  physical_resilience_score numeric(5,2), -- ability to withstand physical damage
-  operational_resilience_score numeric(5,2), -- ability to maintain operations
-  adaptive_capacity_score numeric(5,2), -- ability to adapt to changes
-  recovery_capacity_score numeric(5,2), -- ability to recover from disruptions
+  IF asset_id_type IS NULL THEN
+    asset_id_type := 'uuid';
+  END IF;
 
-  -- Risk scores (0-100 scale, higher = higher risk)
-  climate_risk_score numeric(5,2),
-  operational_risk_score numeric(5,2),
-  dependency_risk_score numeric(5,2), -- risk from dependencies on other systems
+  IF asset_id_type IN ('int4', 'integer') THEN
+    asset_id_type := 'integer';
+  ELSIF asset_id_type IN ('int8', 'bigint') THEN
+    asset_id_type := 'bigint';
+  ELSIF asset_id_type IN ('int2', 'smallint') THEN
+    asset_id_type := 'smallint';
+  ELSIF asset_id_type <> 'uuid' THEN
+    RAISE NOTICE 'Unexpected resilience_assets.id type %, defaulting to uuid', asset_id_type;
+    asset_id_type := 'uuid';
+  END IF;
 
-  -- Vulnerability breakdown
-  flood_vulnerability_score numeric(5,2),
-  storm_vulnerability_score numeric(5,2),
-  heat_vulnerability_score numeric(5,2),
-  cold_vulnerability_score numeric(5,2),
-  seismic_vulnerability_score numeric(5,2),
+  RAISE NOTICE 'resilience_assets.id detected type: %', asset_id_type;
 
-  -- Adaptation recommendations
-  recommended_actions jsonb, -- array of recommended adaptation measures
-  priority_level text DEFAULT 'medium', -- low, medium, high, critical
-  estimated_adaptation_cost numeric(15,2),
+  EXECUTE format($SQL$
+    CREATE TABLE IF NOT EXISTS public.resilience_assessments (
+      id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+      asset_id %s REFERENCES public.resilience_assets(id) ON DELETE CASCADE,
+      assessment_date date NOT NULL,
+      climate_scenario text,
 
-  -- Assessment metadata
-  assessment_methodology text,
-  assessor_name text,
-  assessor_organization text,
-  data_sources jsonb,
-  confidence_level text DEFAULT 'medium',
-  created_at timestamptz DEFAULT now(),
-  updated_at timestamptz DEFAULT now(),
+      overall_resilience_score numeric(5,2),
+      physical_resilience_score numeric(5,2),
+      operational_resilience_score numeric(5,2),
+      adaptive_capacity_score numeric(5,2),
+      recovery_capacity_score numeric(5,2),
 
-  UNIQUE(asset_id, assessment_date, climate_scenario)
-);
+      climate_risk_score numeric(5,2),
+      operational_risk_score numeric(5,2),
+      dependency_risk_score numeric(5,2),
+
+      flood_vulnerability_score numeric(5,2),
+      storm_vulnerability_score numeric(5,2),
+      heat_vulnerability_score numeric(5,2),
+      cold_vulnerability_score numeric(5,2),
+      seismic_vulnerability_score numeric(5,2),
+
+      recommended_actions jsonb,
+      priority_level text DEFAULT 'medium',
+      estimated_adaptation_cost numeric(15,2),
+
+      assessment_methodology text,
+      assessor_name text,
+      assessor_organization text,
+      data_sources jsonb,
+      confidence_level text DEFAULT 'medium',
+      created_at timestamptz DEFAULT now(),
+      updated_at timestamptz DEFAULT now(),
+
+      UNIQUE(asset_id, assessment_date, climate_scenario)
+    )
+  $SQL$, asset_id_type);
+END $$;
+
+DO $$
+BEGIN
+  ALTER TABLE public.climate_projections
+    ADD COLUMN IF NOT EXISTS scenario_name text,
+    ADD COLUMN IF NOT EXISTS time_horizon text,
+    ADD COLUMN IF NOT EXISTS region text,
+    ADD COLUMN IF NOT EXISTS data_source text,
+    ADD COLUMN IF NOT EXISTS temperature_increase_c numeric(4,2),
+    ADD COLUMN IF NOT EXISTS heat_wave_days_increase integer,
+    ADD COLUMN IF NOT EXISTS precipitation_change_percent numeric(6,2),
+    ADD COLUMN IF NOT EXISTS sea_level_rise_cm numeric(6,2),
+    ADD COLUMN IF NOT EXISTS flood_risk_increase_percent numeric(6,2),
+    ADD COLUMN IF NOT EXISTS infrastructure_impact_score smallint,
+    ADD COLUMN IF NOT EXISTS confidence_level text DEFAULT 'medium';
+
+  BEGIN
+    UPDATE public.climate_projections
+    SET scenario_name = COALESCE(scenario_name, scenario),
+        time_horizon = COALESCE(time_horizon, horizon)
+    WHERE scenario_name IS DISTINCT FROM COALESCE(scenario_name, scenario)
+       OR time_horizon IS DISTINCT FROM COALESCE(time_horizon, horizon);
+  EXCEPTION
+    WHEN undefined_column THEN
+      NULL; -- legacy table may not have scenario/horizon columns
+  END;
+EXCEPTION
+  WHEN undefined_table THEN
+    NULL;
+END $$;
 
 -- resilience_scenarios table - simulation scenarios for resilience planning
 CREATE TABLE IF NOT EXISTS public.resilience_scenarios (
@@ -301,15 +407,15 @@ $$;
 
 -- Seed sample data
 INSERT INTO public.resilience_assets (
-  asset_name, asset_type, province, latitude, longitude, description,
+  name, asset_name, asset_type, province, latitude, longitude, description,
   criticality_level, infrastructure_type, age_years, capacity_mw,
   flood_risk_level, storm_risk_level, heat_risk_level,
   backup_power_available, redundancy_level
 ) VALUES
-('Ontario Hydro One Substation A', 'substation', 'Ontario', 43.6532, -79.3832, 'Major downtown Toronto substation', 'critical', 'power', 25, 500.0, 'medium', 'medium', 'high', true, 'partial'),
-('BC Transmission Line Alpha', 'transmission_line', 'British Columbia', 49.2827, -123.1207, 'Vancouver to Victoria high-voltage line', 'high', 'power', 35, null, 'high', 'high', 'low', false, 'none'),
-('Alberta Solar Farm Beta', 'power_plant', 'Alberta', 51.0447, -114.0719, 'Large-scale solar installation near Calgary', 'medium', 'power', 8, 150.0, 'low', 'medium', 'high', true, 'partial'),
-('Quebec Hydro Dam Gamma', 'power_plant', 'Quebec', 46.8139, -71.2080, 'Hydroelectric dam on St. Lawrence River', 'critical', 'power', 45, 2000.0, 'medium', 'high', 'low', true, 'full')
+('Ontario Hydro One Substation A', 'Ontario Hydro One Substation A', 'substation', 'Ontario', 43.6532, -79.3832, 'Major downtown Toronto substation', 'critical', 'power', 25, 500.0, 'medium', 'medium', 'high', true, 'partial'),
+('BC Transmission Line Alpha', 'BC Transmission Line Alpha', 'transmission_line', 'British Columbia', 49.2827, -123.1207, 'Vancouver to Victoria high-voltage line', 'high', 'power', 35, null, 'high', 'high', 'low', false, 'none'),
+('Alberta Solar Farm Beta', 'Alberta Solar Farm Beta', 'power_plant', 'Alberta', 51.0447, -114.0719, 'Large-scale solar installation near Calgary', 'medium', 'power', 8, 150.0, 'low', 'medium', 'high', true, 'partial'),
+('Quebec Hydro Dam Gamma', 'Quebec Hydro Dam Gamma', 'power_plant', 'Quebec', 46.8139, -71.2080, 'Hydroelectric dam on St. Lawrence River', 'critical', 'power', 45, 2000.0, 'medium', 'high', 'low', true, 'full')
 ON CONFLICT DO NOTHING;
 
 INSERT INTO public.climate_projections (

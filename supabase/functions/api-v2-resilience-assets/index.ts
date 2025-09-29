@@ -67,7 +67,7 @@ serve(async (req) => {
     const { data, error } = await supabase
       .from("resilience_assets")
       .select("*")
-      .order("criticality_score", { ascending: false })
+      .order("id", { ascending: false })
       .limit(200);
 
     if (error) {

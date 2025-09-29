@@ -584,6 +584,9 @@ export async function handleRequest(req: Request): Promise<Response> {
   if (req.method === 'POST' && (path === '/data-quality' || url.pathname.endsWith('/data-quality'))) {
     return await handleDataQuality(req);
   }
+  if (req.method === 'POST' && (path === '/insights' || url.pathname.endsWith('/insights'))) {
+    return await handleAnalyticsInsight(req);
+  }
 
   return new Response(JSON.stringify({ error: 'Route not implemented yet' }), { status: 503, headers: jsonHeaders });
 }

@@ -6,7 +6,7 @@ CREATE EXTENSION IF NOT EXISTS postgis;
 
 CREATE TABLE IF NOT EXISTS public.indigenous_territories (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
+  name text NOT NULL UNIQUE,
   province text,
   community text,
   consultation_status text NOT NULL DEFAULT 'not_started',

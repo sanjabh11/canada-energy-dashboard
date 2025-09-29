@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
+import { HelpButton } from './HelpButton';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import {
   BarChart,
@@ -467,12 +468,22 @@ export const IndigenousDashboard: React.FC = () => {
     <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Indigenous Energy Sovereignty Dashboard
-          </h1>
-          <p className="text-slate-600 mb-4">
-            Track consultations, traditional knowledge, and territory management
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900">
+                  Indigenous Energy Sovereignty Dashboard
+                </h1>
+                <HelpButton id="module.indigenous.overview" />
+              </div>
+              <p className="text-slate-600 mt-2">
+                Track consultations, traditional knowledge, and territory management
+              </p>
+            </div>
+            <div className="self-start">
+              <HelpButton id="module.indigenous.governance" className="bg-amber-600 hover:bg-amber-500 border-amber-500" />
+            </div>
+          </div>
 
           {/* Governance Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
@@ -494,23 +505,35 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Dashboard Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Total Territories</h3>
-            <p className="text-3xl font-bold text-blue-600">{dashboardMetrics.totalTerritories}</p>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Total Territories</h3>
+              <HelpButton id="metric.indigenous.total_territories" />
+            </div>
+            <p className="text-3xl font-bold text-blue-600 mt-4">{dashboardMetrics.totalTerritories}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Ongoing Consultations</h3>
-            <p className="text-3xl font-bold text-yellow-600">{dashboardMetrics.ongoingConsultations}</p>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Ongoing Consultations</h3>
+              <HelpButton id="metric.indigenous.ongoing_consultations" />
+            </div>
+            <p className="text-3xl font-bold text-yellow-600 mt-4">{dashboardMetrics.ongoingConsultations}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Completed</h3>
-            <p className="text-3xl font-bold text-green-600">{dashboardMetrics.completedConsultations}</p>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Completed</h3>
+              <HelpButton id="metric.indigenous.completed_consultations" />
+            </div>
+            <p className="text-3xl font-bold text-green-600 mt-4">{dashboardMetrics.completedConsultations}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Completion Rate</h3>
-            <p className="text-3xl font-bold text-purple-600">
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Completion Rate</h3>
+              <HelpButton id="metric.indigenous.completion_rate" />
+            </div>
+            <p className="text-3xl font-bold text-purple-600 mt-4">
               {dashboardMetrics.completionRate.toFixed(1)}%
             </p>
           </div>
@@ -519,7 +542,10 @@ export const IndigenousDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Consultation Status Chart */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Consultation Status</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">Consultation Status</h3>
+              <HelpButton id="chart.indigenous.consultation_status" />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -544,7 +570,10 @@ export const IndigenousDashboard: React.FC = () => {
 
           {/* TEK Categories Chart */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Traditional Ecological Knowledge</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">Traditional Ecological Knowledge</h3>
+              <HelpButton id="chart.indigenous.tek_categories" />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={tekByCategoryData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -561,7 +590,10 @@ export const IndigenousDashboard: React.FC = () => {
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
           {/* Territory Map */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Territory Map</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">Territory Map</h3>
+              <HelpButton id="module.indigenous.map" />
+            </div>
             <div className="h-96">
               <TerritorialMap
                 territories={territoryBoundaries}

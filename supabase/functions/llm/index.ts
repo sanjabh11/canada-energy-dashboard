@@ -15,7 +15,7 @@ function handleHealth(): Response {
 }
 
 // CORS helpers
-const ALLOW_ORIGINS = (Deno.env.get('LLM_CORS_ALLOW_ORIGINS') || '*')
+const ALLOW_ORIGINS = (Deno.env.get('LLM_CORS_ALLOW_ORIGINS') || 'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,*')
   .split(',')
   .map((s) => s.trim())
   .filter(Boolean);

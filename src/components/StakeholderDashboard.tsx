@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
+import { HelpButton } from './HelpButton';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { useMessageSentiment, useNLPHealth } from '../hooks/useNLP';
@@ -290,28 +291,45 @@ export const StakeholderDashboard: React.FC = () => {
     <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Stakeholder Coordination Dashboard
-          </h1>
-          <p className="text-slate-600">
-            Manage consultations, track feedback, and collaborate in real-time
-          </p>
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold text-slate-900">Stakeholder Coordination Dashboard</h1>
+                <HelpButton id="module.stakeholder.overview" />
+              </div>
+              <p className="text-slate-600 mt-2">
+                Manage consultations, track feedback, and collaborate in real-time
+              </p>
+            </div>
+            <div className="self-start">
+              <HelpButton id="module.stakeholder.protocols" className="bg-indigo-600 hover:bg-indigo-500 border-indigo-500" />
+            </div>
+          </div>
         </header>
 
         {/* Dashboard Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Total Stakeholders</h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Total Stakeholders</h3>
+              <HelpButton id="metric.stakeholder.total" />
+            </div>
             <p className="text-3xl font-bold text-blue-600">{dashboardMetrics.totalStakeholders}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Upcoming Meetings</h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Upcoming Meetings</h3>
+              <HelpButton id="metric.stakeholder.upcoming_meetings" />
+            </div>
             <p className="text-3xl font-bold text-green-600">{dashboardMetrics.upcomingMeetings}</p>
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Average Sentiment</h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Average Sentiment</h3>
+              <HelpButton id="metric.stakeholder.average_sentiment" />
+            </div>
             <p className={`text-3xl font-bold ${
               dashboardMetrics.averageSentiment > 0.3 ? 'text-green-600' :
               dashboardMetrics.averageSentiment < -0.3 ? 'text-red-600' :
@@ -322,7 +340,10 @@ export const StakeholderDashboard: React.FC = () => {
           </div>
 
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-slate-900 mb-2">Feedback Entries</h3>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-semibold text-slate-900">Feedback Entries</h3>
+              <HelpButton id="metric.stakeholder.feedback_entries" />
+            </div>
             <p className="text-3xl font-bold text-purple-600">{dashboardMetrics.feedbackEntries}</p>
           </div>
         </div>
@@ -330,7 +351,10 @@ export const StakeholderDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Sentiment Trend Chart */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Sentiment Trend (7 Days)</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">Sentiment Trend (7 Days)</h3>
+              <HelpButton id="chart.stakeholder.sentiment_trend" />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={sentimentTrendData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -350,7 +374,10 @@ export const StakeholderDashboard: React.FC = () => {
 
           {/* Feedback Categories */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-4">Feedback Categories</h3>
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-xl font-semibold text-slate-900">Feedback Categories</h3>
+              <HelpButton id="chart.stakeholder.feedback_categories" />
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={feedbackCategoriesData}>
                 <CartesianGrid strokeDasharray="3 3" />

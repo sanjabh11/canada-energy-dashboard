@@ -30,6 +30,7 @@ import { getTransitionAnalyticsInsight, getTransitionKpis, type TransitionKpisRe
 import TransitionReportPanel from './TransitionReportPanel';
 import DataQualityPanel from './DataQualityPanel';
 import { isEdgeFetchEnabled } from '../lib/config';
+import { fetchEdgeJson } from '../lib/edge';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
 
 interface DashboardData {
@@ -37,6 +38,9 @@ interface DashboardData {
   provincialGeneration: ProvincialGenerationRecord[];
   ontarioPrices: OntarioPricesRecord[];
   weatherData: HFElectricityDemandRecord[];
+  nationalOverview?: any;
+  provinceMetrics?: any;
+  trends?: any;
 }
 
 interface DashboardStats {
@@ -58,9 +62,6 @@ export const RealTimeDashboard: React.FC = () => {
     weatherData: []
   });
   
-  const [albertaData, setAlbertaData] = useState<any[]>([]);
-  const [albertaConnectionStatus, setAlbertaConnectionStatus] = useState('connecting');
-
   const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
@@ -92,9 +93,12 @@ export const RealTimeDashboard: React.FC = () => {
   const [insightError, setInsightError] = useState<string | null>(null);
   const insightAbortRef = useRef<AbortController | null>(null);
 
+  const nationalOverview = data.nationalOverview;
+  const provinceMetrics = data.provinceMetrics;
+  const trends = data.trends;
+
   // Load all dashboard data concurrently with cancellation support
   const loadDashboardData = useCallback(async () => {
-    // Cancel any in-flight load
     loadAbortRef.current?.abort();
     const controller = new AbortController();
     loadAbortRef.current = controller;
@@ -102,27 +106,71 @@ export const RealTimeDashboard: React.FC = () => {
     setLoading(true);
     try {
       const signal = controller.signal;
-      const [ontarioDemand, provincialGeneration, ontarioPrices, weatherData] = await Promise.all([
-        energyDataManager.loadData('ontario_demand', { maxRows: 100, signal }),
-        energyDataManager.loadData('provincial_generation', { maxRows: 100, signal }),
-        energyDataManager.loadData('ontario_prices', { maxRows: 50, signal }),
-        energyDataManager.loadData('hf_electricity_demand', { maxRows: 50, signal })
+
+      const nationalOverviewPromise = isEdgeFetchEnabled()
+        ? fetchEdgeJson([
+            'api-v2-analytics-national-overview',
+            'api/analytics/national-overview'
+          ], { signal }).then((res) => res.json).catch((err) => {
+            console.warn('National overview fallback triggered', err);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const provinceMetricsPromise = isEdgeFetchEnabled()
+        ? fetchEdgeJson([
+            'api-v2-analytics-provincial-metrics?province=ON&window_days=30',
+            'api/analytics/provincial/ON?window_days=30'
+          ], { signal }).then((res) => res.json).catch((err) => {
+            console.warn('Provincial metrics fallback triggered', err);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const trendPromise = isEdgeFetchEnabled()
+        ? fetchEdgeJson([
+            'api-v2-analytics-trends?timeframe=30d',
+            'api/analytics/trends?timeframe=30d'
+          ], { signal }).then((res) => res.json).catch((err) => {
+            console.warn('Trend analytics fallback triggered', err);
+            return null;
+          })
+        : Promise.resolve(null);
+
+      const [
+        ontarioDemand,
+        provincialGeneration,
+        ontarioPrices,
+        weatherData,
+        nationalOverview,
+        provinceMetrics,
+        trends
+      ] = await Promise.all([
+        energyDataManager.loadData('ontario_demand', { maxRows: 200, signal }),
+        energyDataManager.loadData('provincial_generation', { maxRows: 500, signal }),
+        energyDataManager.loadData('ontario_prices', { maxRows: 200, signal }),
+        energyDataManager.loadData('hf_electricity_demand', { maxRows: 200, signal }),
+        nationalOverviewPromise,
+        provinceMetricsPromise,
+        trendPromise
       ]);
 
-      if (signal.aborted) return; // avoid state updates after abort
+      if (signal.aborted) return;
 
       setData({
         ontarioDemand,
         provincialGeneration,
         ontarioPrices,
-        weatherData
+        weatherData,
+        nationalOverview: nationalOverview ?? undefined,
+        provinceMetrics: provinceMetrics ?? undefined,
+        trends: trends ?? undefined
       });
-      
-      // Update connection statuses after data loading completes
+
       setConnectionStatuses(energyDataManager.getAllConnectionStatuses());
       setLastUpdate(new Date());
     } catch (error: any) {
-      if (error?.name === 'AbortError') return; // expected during cancellation
+      if (error?.name === 'AbortError') return;
       console.error('Error loading dashboard data:', error);
     } finally {
       if (!controller.signal.aborted) setLoading(false);
@@ -202,6 +250,19 @@ export const RealTimeDashboard: React.FC = () => {
     return () => insightAbortRef.current?.abort();
   }, [loadAnalyticsInsight]);
 
+  const fallbackGenerationGwh = data.provincialGeneration.reduce((sum, record) => {
+    const valueMwh = typeof record.megawatt_hours === 'number'
+      ? record.megawatt_hours
+      : typeof record.generation_gwh === 'number'
+        ? record.generation_gwh * 1000
+        : 0;
+    return sum + valueMwh / 1000;
+  }, 0);
+
+  const totalGenerationGwh = provinceMetrics?.generation?.total_gwh
+    ?? nationalOverview?.generation?.total_generation_gwh
+    ?? fallbackGenerationGwh;
+
   // Process Ontario Demand data for chart
   const ontarioDemandChartData = data.ontarioDemand
     .slice(0, 20)
@@ -216,60 +277,62 @@ export const RealTimeDashboard: React.FC = () => {
     }));
 
   // Process Provincial Generation data for horizontal bar chart
-  const provinceGenerationChartData = data.provincialGeneration
-    .reduce((acc: any[], record) => {
-      const typeKey = record.generation_type || record.province_code || record.province || 'UNKNOWN';
-      const value = typeof record.megawatt_hours === 'number'
-        ? record.megawatt_hours
-        : typeof record.generation_gwh === 'number'
-          ? record.generation_gwh * 1000
-          : 0;
+  const generationBySource = provinceMetrics?.generation?.by_source?.length
+    ? provinceMetrics.generation.by_source.map((record: { source?: string; generation_gwh?: number }) => ({
+        type: String(record.source ?? 'unspecified').replace(/_/g, ' ').toUpperCase(),
+        gwh: Number(record.generation_gwh ?? 0)
+      }))
+    : Array.from(
+        data.provincialGeneration.reduce((acc: Map<string, number>, record) => {
+          const typeKey = record.generation_type || record.source || record.province_code || record.province || 'UNKNOWN';
+          const valueMwh = typeof record.megawatt_hours === 'number'
+            ? record.megawatt_hours
+            : typeof record.generation_gwh === 'number'
+              ? record.generation_gwh * 1000
+              : 0;
+          if (valueMwh <= 0) {
+            return acc;
+          }
+          const prev = acc.get(typeKey) ?? 0;
+          acc.set(typeKey, prev + valueMwh / 1000); // convert to GWh
+          return acc;
+        }, new Map<string, number>()).entries()
+      ).map(([type, gwh]) => ({
+        type: String(type).replace(/_/g, ' ').toUpperCase(),
+        gwh: Number(gwh)
+      }));
 
-      if (value === 0) {
-        return acc;
-      }
-
-      const existing = acc.find(item => item.type === typeKey);
-      if (existing) {
-        existing.mwh += value;
-      } else {
-        acc.push({
-          type: typeKey,
-          mwh: value
-        });
-      }
-      return acc;
-    }, [])
-    .map(item => ({
-      type: String(item.type).replace(/_/g, ' ').toUpperCase(),
-      mwh: item.mwh
-    }))
+  const generationChartSeries = generationBySource
+    .filter(item => item.gwh > 0)
+    .sort((a, b) => b.gwh - a.gwh)
     .slice(0, 6);
 
-  // Process Alberta Supply & Demand data - REPLACE MOCK WITH REAL AESO DATA
-  const albertaChartData = data.ontarioPrices
+  const fallbackSupplyDemandData = data.ontarioPrices
     .slice(0, 20)
-    .map((record, index) => {
-      // TODO: Replace with real AESO streaming data
-      // For now, using Ontario prices as proxy until AESO integration complete
-      const baseSupply = 14706; // AESO typical supply level
-      const baseDemand = 12842; // AESO typical demand level
-      const price = record.lmp_price;
-
-      // Use price to modulate supply/demand (higher prices = higher demand)
+    .map(record => {
+      const baseSupply = 14706;
+      const baseDemand = 12842;
+      const price = record.lmp_price ?? 0;
       const priceMultiplier = Math.max(0.8, Math.min(1.2, price / 50));
-
       return {
-        time: new Date(record.datetime).toLocaleTimeString('en-CA', {
+        label: new Date(record.datetime).toLocaleTimeString('en-CA', {
           hour: '2-digit',
           minute: '2-digit',
           hour12: false
         }),
-        supply: Math.round(baseSupply * priceMultiplier + (Math.random() - 0.5) * 500), // Reduced randomness
-        demand: Math.round(baseDemand * priceMultiplier + (Math.random() - 0.5) * 400), // Reduced randomness
-        price: record.lmp_price
+        supply: Math.round(baseSupply * priceMultiplier + (Math.random() - 0.5) * 300),
+        demand: Math.round(baseDemand * priceMultiplier + (Math.random() - 0.5) * 250),
+        price
       };
     });
+
+  const demandTrendChartData = trends?.ontario_demand?.map((row: { date: string; average_mw: number | null }) => ({
+    label: row.date,
+    demand: row.average_mw ?? 0
+  }));
+
+  const supplyDemandChartData = demandTrendChartData?.length ? demandTrendChartData : fallbackSupplyDemandData;
+  const hasDemandTrend = !!demandTrendChartData?.length;
 
   // Process Weather Correlation data
   const weatherCorrelationData = data.weatherData
@@ -280,20 +343,21 @@ export const RealTimeDashboard: React.FC = () => {
     }));
 
   // Calculate current values - REPLACE MOCK WITH REAL DATA
-  const currentDemand = data.ontarioDemand[0]?.total_demand_mw || 14033;
+  const currentDemand = nationalOverview?.demand?.ontario_demand_mw
+    ?? provinceMetrics?.latest_demand?.market_demand_mw
+    ?? data.ontarioDemand[0]?.total_demand_mw
+    ?? null;
   const currentTemperature = data.weatherData.length > 0
     ? data.weatherData[0]?.temperature || 15 // Use real weather data if available
     : 15; // Default temperature for Toronto area
-  const totalGeneration = data.provincialGeneration.reduce((sum, record) => sum + record.megawatt_hours, 0);
 
-  // Use real AESO-like calculations for Alberta
-  const currentSupply = albertaChartData.length > 0
-    ? albertaChartData[0]?.supply || 14706
-    : 14706; // AESO typical supply
-  const currentDemandAlberta = albertaChartData.length > 0
-    ? albertaChartData[0]?.demand || 12842
-    : 12842; // AESO typical demand
-  const currentPrice = data.ontarioPrices[0]?.lmp_price || 41.43;
+  const albertaLatest = nationalOverview?.alberta;
+  const currentSupply = albertaLatest?.total_gen_mw
+    ?? (fallbackSupplyDemandData[0]?.supply ?? null);
+  const currentDemandAlberta = albertaLatest?.total_demand_mw
+    ?? (fallbackSupplyDemandData[0]?.demand ?? null);
+  const currentPrice = albertaLatest?.pool_price_cad
+    ?? (fallbackSupplyDemandData[0]?.price ?? null);
 
   // Calculate correlation from actual weather and demand data
   const averageCorrelation = data.weatherData.length > 0 && data.ontarioDemand.length > 0
@@ -416,16 +480,26 @@ export const RealTimeDashboard: React.FC = () => {
                 <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.primary.text}`}>{stats.dataSources}</div>
               </div>
               <div className={`text-center p-4 rounded-lg ${COLOR_SCHEMES.success.bg} border ${COLOR_SCHEMES.success.border}`}>
-                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.success.accent}`}>Coverage</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>{stats.coverage}%</div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.success.accent}`}>30-Day Generation</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>
+                  {totalGenerationGwh !== null && totalGenerationGwh !== undefined
+                    ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
+                    : '—'}
+                </div>
               </div>
               <div className={`text-center p-4 rounded-lg ${COLOR_SCHEMES.info.bg} border ${COLOR_SCHEMES.info.border}`}>
-                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.info.accent}`}>Update Freq</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.info.text}`}>{stats.updateFreq}</div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.info.accent}`}>Ontario Demand</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.info.text}`}>
+                  {typeof currentDemand === 'number'
+                    ? `${Math.round(currentDemand).toLocaleString()} MW`
+                    : '—'}
+                </div>
               </div>
               <div className={`text-center p-4 rounded-lg ${COLOR_SCHEMES.warning.bg} border ${COLOR_SCHEMES.warning.border}`}>
-                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.warning.accent}`}>Architecture</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.warning.text}`}>{stats.architecture}</div>
+                <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.warning.accent}`}>Alberta Price</div>
+                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.warning.text}`}>
+                  {currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : '—'}
+                </div>
               </div>
             </div>
           </div>
@@ -443,7 +517,11 @@ export const RealTimeDashboard: React.FC = () => {
                 </h3>
                 <div className="text-right">
                   <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Current Demand</div>
-                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>{currentDemand.toLocaleString()} MW</div>
+                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>
+                    {typeof currentDemand === 'number'
+                      ? `${Math.round(currentDemand).toLocaleString()} MW`
+                      : '—'}
+                  </div>
                 </div>
               </div>
             </div>
@@ -474,36 +552,40 @@ export const RealTimeDashboard: React.FC = () => {
                   Provincial Generation Mix
                 </h3>
                 <div className="text-right">
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Total Generation</div>
-                  <div className={`${TEXT_CLASSES.metric} text-green-600`}>{Math.round(totalGeneration).toLocaleString()} MWh</div>
+                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>30-Day Total Generation</div>
+                  <div className={`${TEXT_CLASSES.metric} text-green-600`}>
+                    {totalGenerationGwh !== null && totalGenerationGwh !== undefined
+                      ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
+                      : '—'}
+                  </div>
                 </div>
               </div>
             </div>
             <div className={CONTAINER_CLASSES.cardBody}>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
-                  <BarChart data={provinceGenerationChartData} layout="horizontal">
+                  <BarChart data={generationChartSeries} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
-                    <YAxis dataKey="type" type="category" width={100} />
+                    <YAxis dataKey="type" type="category" width={120} />
                     <Tooltip />
-                    <Bar dataKey="mwh" fill="#10b981" />
+                    <Bar dataKey="gwh" fill="#10b981" name="Generation (GWh)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
               <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
-                Data: {data.provincialGeneration.length} records • Source: {sourceText('provincial_generation')}
+                Data window: {provinceMetrics?.period?.start ?? nationalOverview?.metadata?.window?.start ?? '—'} → {provinceMetrics?.period?.end ?? nationalOverview?.metadata?.window?.end ?? '—'}
               </div>
             </div>
           </div>
 
-          {/* Panel 3: Alberta Supply & Demand */}
+          {/* Panel 3: Alberta Supply & Demand / Ontario Demand Trend */}
           <div className={CONTAINER_CLASSES.card}>
             <div className={CONTAINER_CLASSES.cardHeader}>
               <div className={CONTAINER_CLASSES.flexBetween}>
                 <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
                   <Activity className="h-5 w-5 mr-2 text-purple-600" />
-                  Alberta Supply & Demand
+                  {hasDemandTrend ? 'Ontario Demand Trend' : 'Alberta Supply & Demand'}
                 </h3>
                 <div className="col-span-3 flex justify-end">
                   <HelpButton id="chart.alberta_supply_demand" />
@@ -512,34 +594,52 @@ export const RealTimeDashboard: React.FC = () => {
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Supply</div>
-                  <div className={`${TEXT_CLASSES.metric} text-purple-600`}>{currentSupply.toLocaleString()} MW</div>
+                  <div className={`${TEXT_CLASSES.metric} text-purple-600`}>
+                    {typeof currentSupply === 'number' ? `${Math.round(currentSupply).toLocaleString()} MW` : '—'}
+                  </div>
                 </div>
                 <div>
                   <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Demand</div>
-                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>{currentDemandAlberta.toLocaleString()} MW</div>
+                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>
+                    {typeof currentDemandAlberta === 'number'
+                      ? `${Math.round(currentDemandAlberta).toLocaleString()} MW`
+                      : hasDemandTrend && supplyDemandChartData.length
+                        ? `${Math.round(supplyDemandChartData[0]?.demand ?? 0).toLocaleString()} MW`
+                        : '—'}
+                  </div>
                 </div>
                 <div>
                   <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Price</div>
-                  <div className={`${TEXT_CLASSES.metric} text-orange-600`}>${currentPrice.toFixed(2)}</div>
+                  <div className={`${TEXT_CLASSES.metric} text-orange-600`}>
+                    {typeof currentPrice === 'number' ? `$${currentPrice.toFixed(2)}` : '—'}
+                  </div>
                 </div>
               </div>
             </div>
             <div className={CONTAINER_CLASSES.cardBody}>
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
-                  <LineChart data={albertaChartData}>
+                  <LineChart data={supplyDemandChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="time" />
+                    <XAxis dataKey="label" />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Line type="monotone" dataKey="supply" stroke="#7c3aed" strokeWidth={2} name="Supply" />
-                    <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} name="Demand" />
+                    {hasDemandTrend ? (
+                      <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} name="Ontario Demand" />
+                    ) : (
+                      <>
+                        <Line type="monotone" dataKey="supply" stroke="#7c3aed" strokeWidth={2} name="Supply" />
+                        <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} name="Demand" />
+                      </>
+                    )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
               <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
-                Data: {data.ontarioPrices.length} records • Source: {sourceText('ontario_prices')}
+                {hasDemandTrend
+                  ? `Trend window: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • Source: analytics trends API`
+                  : `Data: ${data.ontarioPrices.length} records • Source: ${sourceText('ontario_prices')}`}
               </div>
             </div>
           </div>

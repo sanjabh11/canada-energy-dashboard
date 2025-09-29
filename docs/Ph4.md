@@ -318,6 +318,86 @@ Focus on technically feasible solutions that maintain grid reliability while max
 - International data integration
 - Platform federation with provinces
 
+## Phase 4 Implementation Plan (Detailed)
+
+### Guiding Objectives
+- **Performance Optimization**: Drive the average API response time below 500 ms and reach 99.5% uptime by hardening data pipelines, adding caching, and tuning Supabase policies.
+- **Advanced AI Delivery**: Deploy GPT-5 and Gemini 2.5 Pro prompts through a centralized LLM service with human-in-the-loop review, logging, and confidence scoring.
+- **International & Federated Data**: Expand ingestion to cross-border datasets while respecting provincial and Indigenous data sovereignty via granular row-level security (RLS).
+- **Stakeholder-Centered Value**: Ensure each federal, provincial, Indigenous, industry, and community persona receives tangible workflow improvements tied to their user story.
+
+### Core Workstreams
+- **Data Foundation & Quality (WF-1)**
+  - Finalize missing core tables via `supabase/migrations/20250927_create_missing_core_tables.sql` and related seeds.
+  - Implement automated data validation jobs and surface quality metrics through `/api/v2/data/quality-metrics`.
+  - Establish data provenance logs and unresolved-data queues for manual review.
+- **Priority API Services (WF-2)**
+  - Harden existing edge functions (e.g., `supabase/functions/api-v2-resilience-assets/`) with error handling, caching, and pagination.
+  - Deliver remaining API endpoints for Stories #1–#8, following the REST conventions in `prd.md`.
+  - Document every endpoint in OpenAPI and publish to the developer portal.
+- **Streaming & Optimization Layer (WF-3)**
+  - Stabilize the four live streams (`stream-ontario-demand`, `stream-provincial-generation`, `stream-ontario-prices`, `stream-hf-electricity-demand`).
+  - Introduce Redis-backed caching for high-traffic metrics and pre-compute trend aggregates.
+  - Add observability hooks (Prometheus or Supabase logs) with alerting on latency and error budgets.
+- **AI & Insight Delivery (WF-4)**
+  - Centralize GPT-5 and Gemini prompts in `src/lib/aiOracle.ts` with versioned configurations.
+  - Implement confidence scoring, rationale logging, and human override tooling for critical recommendations.
+  - Run supervised fine-tuning cycles using anonymized feedback collected from Story owners.
+- **Security, Sovereignty & Compliance (WF-5)**
+  - Enforce RLS across all Phase 4 tables with persona-based policies (federal, provincial, Indigenous, public).
+  - Implement audit trails for Indigenous data access and integrate sovereignty agreements into consent workflows.
+  - Complete ITSG-33 security review, update `SECURITY.md`, and schedule penetration testing.
+- **Stakeholder Experience & UX (WF-6)**
+  - Map user journeys for the top six personas and align frontend components under `src/components/` to the new APIs.
+  - Ensure WCAG 2.1 compliance and introduce localization hooks for multilingual delivery.
+  - Produce training assets and onboarding dashboards for each persona group.
+  - Deploy contextual help overlays and tooltips with the `HelpButton` pattern across dashboards (see plan below).
+
+### Contextual Help & Education Plan (WF-6E)
+- **Content Architecture**
+  - Audit `supabase/functions/help/index.ts` and `supabase/migrations/20250903_help_content.sql` to guarantee every active `HelpButton` ID has curated markdown content with provenance links.
+  - Maintain help authoring guidelines so Indigenous, provincial, and federal stakeholders can review updates before publication.
+- **Component Instrumentation**
+  - `src/components/EnergyDataDashboard.tsx`: confirm top-level ribbon help aligns each tab with `HelpButton` IDs (e.g., `page.indigenous`, `page.stakeholders`).
+  - `src/components/IndigenousDashboard.tsx`: add inline help triggers for the sovereignty overview and territory map sections (`module.indigenous.overview`, `module.indigenous.map`).
+  - `src/components/StakeholderDashboard.tsx`: surface contextual guidance for the consultation workspace (`module.stakeholder.overview`) and collaboration metrics.
+  - Real-time analytics cards (e.g., Alberta supply/demand) expose specific chart help (`chart.alberta_supply_demand`).
+- **Feedback & Iteration**
+  - Capture help usage analytics and optional feedback via `help_feedback` to inform monthly content revisions.
+  - Schedule quarterly reviews with Indigenous governance advisors to validate sovereignty-related help entries.
+
+### Sequenced Execution (12-Week Horizon)
+- **Sprint 1 (Weeks 1-2)**
+  - Finalize WF-1 migrations and RLS policies; run data backfill scripts.
+  - Ship monitoring dashboards for data freshness and API latency.
+- **Sprint 2 (Weeks 3-4)**
+  - Complete WF-2 endpoints for Stories #1 (Analytics) and #2 (Indigenous Tracker).
+  - Align frontend components (`src/components/EnergyDataDashboard.tsx`, Indigenous modules) with new APIs.
+- **Sprint 3 (Weeks 5-6)**
+  - Deliver WF-3 caching and streaming metrics; integrate alerting into `tests/cloud_health.mjs`.
+  - Expand WF-4 AI orchestration with logging and human-review pipelines.
+- **Sprint 4 (Weeks 7-8)**
+  - Roll out Story #3 (Grid Optimization) and #5 (Emissions Planner) APIs plus dashboard wiring.
+  - Complete ITSG-33 checklist items and Indigenous data governance review.
+- **Sprint 5 (Weeks 9-10)**
+  - Implement WF-6 UX upgrades, accessibility audits, and localization scaffolding.
+  - Launch stakeholder onboarding playbooks and training sessions.
+- **Sprint 6 (Weeks 11-12)**
+  - Conduct integrated performance testing, failover drills, and success-metric validation.
+  - Prepare release notes and readiness report for Phase 4 go-live.
+
+### Validation & Exit Criteria
+- **Data Integrity**: >95% completeness/accuracy reported by `/api/v2/data/quality-metrics`; zero unresolved critical data incidents.
+- **Performance**: P95 latency <450 ms on priority APIs; uptime ≥99.5% over a rolling 30-day window.
+- **AI Governance**: 100% of AI recommendations logged with rationale and reviewer status; human override exercised in acceptance test scenarios.
+- **Security & Sovereignty**: All RLS policies reviewed by Indigenous governance advisors; ITSG-33 control checklist signed off; latest penetration test passed.
+- **Stakeholder Adoption**: Pilot cohorts from federal, provincial, Indigenous, industry, and community groups actively using their dashboards with satisfaction ≥4/5.
+
+### Coordination & Reporting Cadence
+- Weekly workstream sync with shared burn-down metrics.
+- Bi-weekly stakeholder steering committee review focused on sovereignty commitments and cross-jurisdiction coordination.
+- Monthly executive readout summarizing KPIs, risks, and mitigation actions for Phase 4 delivery.
+
 ## Success Metrics
 
 ### Technical Performance
