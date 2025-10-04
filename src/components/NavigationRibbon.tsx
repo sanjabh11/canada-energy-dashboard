@@ -6,6 +6,8 @@ export interface RibbonTab {
   label: string;
   // lucide icon component
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
+  // Optional badge text (e.g., "Limited", "Soon")
+  badge?: string | null;
 }
 
 interface NavigationRibbonProps {
@@ -56,6 +58,17 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
             >
               {Icon ? <Icon className="h-4 w-4 mr-2" /> : null}
               <span>{tab.label}</span>
+              {tab.badge && (
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${
+                  tab.badge === 'Limited' 
+                    ? 'bg-yellow-100 text-yellow-700' 
+                    : tab.badge === 'Soon'
+                    ? 'bg-gray-100 text-gray-600'
+                    : 'bg-blue-100 text-blue-700'
+                }`}>
+                  {tab.badge}
+                </span>
+              )}
             </button>
           );
         })}

@@ -1,0 +1,418 @@
+/**
+ * Glassmorphism Energy Design System
+ * 
+ * Modern glass-style UI with energy-themed gradients
+ * Optimized for performance and accessibility
+ */
+
+/* ==================== ENERGY GRADIENTS ==================== */
+
+:root {
+  /* Primary - Electric Blue */
+  --gradient-electric: linear-gradient(135deg, #0066FF 0%, #00D4FF 100%);
+  --gradient-electric-subtle: linear-gradient(135deg, rgba(0, 102, 255, 0.1) 0%, rgba(0, 212, 255, 0.1) 100%);
+  
+  /* Success - Renewable Green */
+  --gradient-renewable: linear-gradient(135deg, #00FF88 0%, #00D4AA 100%);
+  --gradient-renewable-subtle: linear-gradient(135deg, rgba(0, 255, 136, 0.1) 0%, rgba(0, 212, 170, 0.1) 100%);
+  
+  /* Warning - Solar Orange */
+  --gradient-solar: linear-gradient(135deg, #FFB800 0%, #FF8800 100%);
+  --gradient-solar-subtle: linear-gradient(135deg, rgba(255, 184, 0, 0.1) 0%, rgba(255, 136, 0, 0.1) 100%);
+  
+  /* Danger - Alert Red */
+  --gradient-alert: linear-gradient(135deg, #FF3366 0%, #FF6B9D 100%);
+  --gradient-alert-subtle: linear-gradient(135deg, rgba(255, 51, 102, 0.1) 0%, rgba(255, 107, 157, 0.1) 100%);
+  
+  /* Neutral - Cool Gray */
+  --gradient-neutral: linear-gradient(135deg, #64748B 0%, #94A3B8 100%);
+  
+  /* Glass Background */
+  --glass-white: rgba(255, 255, 255, 0.08);
+  --glass-white-hover: rgba(255, 255, 255, 0.12);
+  --glass-border: rgba(255, 255, 255, 0.18);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --glass-shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.16);
+  --glass-inset-light: inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  
+  /* Glow Effects */
+  --glow-electric: 0 0 20px rgba(0, 212, 255, 0.3);
+  --glow-renewable: 0 0 20px rgba(0, 255, 136, 0.3);
+  --glow-solar: 0 0 20px rgba(255, 184, 0, 0.3);
+  --glow-alert: 0 0 20px rgba(255, 51, 102, 0.3);
+}
+
+/* ==================== GLASS CARDS ==================== */
+
+.glass-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.08) 100%);
+  backdrop-filter: blur(14px) saturate(185%);
+  -webkit-backdrop-filter: blur(14px) saturate(185%);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 24px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18), var(--glass-inset-light);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card-hover:hover {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0.14) 100%);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.28), var(--glass-inset-light);
+  transform: translateY(-2px);
+}
+
+.glass-card-electric {
+  background: linear-gradient(135deg, rgba(12, 74, 110, 0.88) 0%, rgba(37, 99, 235, 0.68) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  color: #e3f3ff;
+  box-shadow: 0 30px 60px rgba(37, 99, 235, 0.35);
+}
+
+.glass-card-renewable {
+  background: linear-gradient(135deg, rgba(6, 95, 70, 0.82) 0%, rgba(16, 185, 129, 0.68) 100%);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #eaffe9;
+  box-shadow: 0 30px 60px rgba(34, 197, 94, 0.28);
+}
+
+.glass-card-solar {
+  background: linear-gradient(135deg, rgba(120, 53, 15, 0.78) 0%, rgba(249, 115, 22, 0.65) 100%);
+  border: 1px solid rgba(249, 115, 22, 0.42);
+  color: #fff7ec;
+  box-shadow: 0 30px 60px rgba(249, 115, 22, 0.25);
+}
+
+/* ==================== GRADIENT BACKGROUNDS ==================== */
+
+.bg-gradient-electric {
+  background: var(--gradient-electric);
+}
+
+.bg-gradient-electric-subtle {
+  background: var(--gradient-electric-subtle);
+}
+
+.bg-gradient-renewable {
+  background: var(--gradient-renewable);
+}
+
+.bg-gradient-renewable-subtle {
+  background: var(--gradient-renewable-subtle);
+}
+
+.bg-gradient-solar {
+  background: var(--gradient-solar);
+}
+
+.bg-gradient-solar-subtle {
+  background: var(--gradient-solar-subtle);
+}
+
+/* ==================== GLOW EFFECTS ==================== */
+
+.glow-electric {
+  box-shadow: var(--glow-electric);
+}
+
+.glow-renewable {
+  box-shadow: var(--glow-renewable);
+}
+
+.glow-solar {
+  box-shadow: var(--glow-solar);
+}
+
+.glow-electric-pulse {
+  animation: pulse-electric 2s ease-in-out infinite;
+}
+
+.glow-renewable-pulse {
+  animation: pulse-renewable 2s ease-in-out infinite;
+}
+
+@keyframes pulse-electric {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 212, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 212, 255, 0.5);
+  }
+}
+
+@keyframes pulse-renewable {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 255, 136, 0.5);
+  }
+}
+
+/* ==================== FLOATING ANIMATION ==================== */
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+.float-animation-delayed {
+  animation: float 6s ease-in-out infinite;
+  animation-delay: 1s;
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+/* ==================== SHIMMER EFFECT ==================== */
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+}
+
+.shimmer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+/* ==================== METRIC CARDS ==================== */
+
+.metric-card-glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.metric-card-glass:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================== BUTTONS ==================== */
+
+.btn-glass {
+  background: var(--glass-white);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-glass:hover {
+  background: var(--glass-white-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--glass-shadow);
+}
+
+.btn-glass-electric {
+  background: linear-gradient(135deg, rgba(0, 102, 255, 0.15) 0%, rgba(0, 212, 255, 0.15) 100%);
+  border: 1px solid rgba(0, 212, 255, 0.3);
+  color: #00D4FF;
+}
+
+.btn-glass-electric:hover {
+  box-shadow: var(--glow-electric);
+}
+
+/* ==================== CHART ENHANCEMENTS ==================== */
+
+.chart-glass-container {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 1rem;
+}
+
+.chart-gradient-overlay {
+  position: relative;
+}
+
+.chart-gradient-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 102, 255, 0.05) 100%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* ==================== LIVE DATA INDICATORS ==================== */
+
+.live-indicator {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.live-indicator::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #00FF88;
+  box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2);
+  }
+}
+
+/* ==================== HERO SECTION ==================== */
+
+.hero-glass {
+  background: linear-gradient(130deg, #0b1020 0%, #0f2541 40%, #174c82 75%, #4338ca 100%);
+  color: #e7f2ff;
+  backdrop-filter: blur(14px) saturate(220%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+  position: relative;
+  overflow: hidden;
+  box-shadow: inset 0 -60px 90px rgba(8, 12, 24, 0.55);
+}
+
+.hero-glass::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 20% 35%, rgba(59, 130, 246, 0.45) 0%, transparent 55%),
+    radial-gradient(circle at 80% 65%, rgba(16, 185, 129, 0.38) 0%, transparent 60%),
+    linear-gradient(to bottom, rgba(14, 165, 233, 0.2) 0%, rgba(11, 15, 28, 0.75) 100%);
+  pointer-events: none;
+}
+
+.hero-title {
+  color: #f8fbff;
+  text-shadow: 0 12px 32px rgba(10, 16, 32, 0.45);
+}
+
+.hero-title-accent {
+  color: #ffffff;
+  background: linear-gradient(90deg, #7dd3fc 0%, #38bdf8 45%, #a5b4fc 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0 8px 26px rgba(8, 145, 178, 0.65);
+}
+
+.hero-subtitle {
+  color: rgba(224, 242, 255, 0.88);
+  text-shadow: 0 6px 18px rgba(8, 12, 24, 0.45);
+}
+
+/* ==================== STATUS BADGES ==================== */
+
+.badge-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+  padding: 0.375rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.badge-glass-success {
+  background: linear-gradient(135deg, rgba(0, 255, 136, 0.15) 0%, rgba(0, 212, 170, 0.15) 100%);
+  border-color: rgba(0, 255, 136, 0.3);
+  color: #00FF88;
+}
+
+.badge-glass-warning {
+  background: linear-gradient(135deg, rgba(255, 184, 0, 0.15) 0%, rgba(255, 136, 0, 0.15) 100%);
+  border-color: rgba(255, 184, 0, 0.3);
+  color: #FFB800;
+}
+
+/* ==================== PERFORMANCE OPTIMIZATIONS ==================== */
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  .glass-card-hover:hover,
+  .metric-card-glass:hover,
+  .btn-glass:hover,
+  .float-animation,
+  .float-animation-delayed {
+    animation: none;
+    transform: none;
+  }
+  
+  .shimmer::before {
+    animation: none;
+  }
+}
+
+/* Disable blur on low-end devices for performance */
+@supports not (backdrop-filter: blur(12px)) {
+  .glass-card,
+  .glass-card-electric,
+  .glass-card-renewable,
+  .glass-card-solar,
+  .metric-card-glass,
+  .btn-glass,
+  .chart-glass-container,
+  .hero-glass,
+  .badge-glass {
+    backdrop-filter: none;
+    background: rgba(255, 255, 255, 0.95);
+  }
+}
+
+/* ==================== RESPONSIVE ADJUSTMENTS ==================== */
+
+@media (max-width: 768px) {
+  .glass-card {
+    border-radius: 16px;
+  }
+  
+  .metric-card-glass {
+    border-radius: 14px;
+    padding: 1rem;
+  }
+  
+  /* Reduce blur on mobile for performance */
+  .glass-card,
+  .metric-card-glass,
+  .btn-glass {
+    backdrop-filter: blur(8px) saturate(160%);
+  }
+}

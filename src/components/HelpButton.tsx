@@ -5,6 +5,7 @@
 import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
 import { fetchHelpById, type HelpContent } from '../lib/helpApi';
+import { getHelpContent, getShortHelp } from '../lib/helpContent';
 import { HelpModal } from './HelpModal';
 import { useHelpText } from './HelpProvider';
 
@@ -21,7 +22,7 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
   // Get tooltip text from the help context
   const shortText = useHelpText(id);
 
-  // Handle button click - fetch content if not already loaded
+  // Handle button click - use local content database first, then try API
   const handleClick = async () => {
     setOpen(true);
 
@@ -29,14 +30,36 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
     if (!content || content.id !== id) {
       setLoading(true);
       try {
-        const fetchedContent = await fetchHelpById(id);
-        setContent(fetchedContent);
+        // First, check local help content database (instant, no network)
+        const localContent = getHelpContent(id);
+        
+        // Convert to HelpContent format
+        setContent({
+          id: localContent.id,
+          short_text: localContent.shortText,
+          body_html: localContent.bodyHtml,
+          related_sources: localContent.relatedTopics?.map(topic => ({
+            name: topic,
+            url: `#help-${topic}`
+          }))
+        });
+        
+        // Optionally try to fetch from API to get latest content (non-blocking)
+        // This allows server-side updates without redeploying
+        fetchHelpById(id).then(apiContent => {
+          if (apiContent) {
+            setContent(apiContent);
+          }
+        }).catch(() => {
+          // Silently fail - we already have local content
+        });
+        
       } catch (error) {
         console.error('Failed to load help content:', error);
-        // Set default error content
+        // Fallback to generic message
         setContent({
           id,
-          short_text: shortText,
+          short_text: shortText || 'Help',
           body_html: '<p>Unable to load help content. Please try again or contact support.</p>'
         });
       } finally {

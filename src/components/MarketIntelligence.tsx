@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getMarketBrief, type MarketBriefResponse } from '../lib/llmClient';
 import { FileDown, Loader2, Link as LinkIcon } from 'lucide-react';
+import { DeferredFeatureNotice } from './FeatureStatusBadge';
+import { isFeatureEnabled } from '../lib/featureFlags';
 
 interface Props {
   datasetPath: string;
@@ -37,6 +39,11 @@ const MarketIntelligence: React.FC<Props> = ({ datasetPath, timeframe, focus }) 
 
     return () => controller.abort();
   }, [datasetPath, timeframe, focus]);
+
+  // Check if feature is enabled
+  if (!isFeatureEnabled('market_intelligence')) {
+    return <DeferredFeatureNotice featureId="market_intelligence" />;
+  }
 
   const drivers: string[] = Array.isArray(data?.drivers) ? (data!.drivers as string[]) : [];
   const forecasts: string[] = Array.isArray(data?.forecasts) ? (data!.forecasts as string[]) : [];

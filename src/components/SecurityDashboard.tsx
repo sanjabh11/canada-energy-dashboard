@@ -5,6 +5,7 @@ import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { fetchEdgeJson } from '../lib/edge';
 import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
 import { Shield, AlertTriangle, Eye, Lock, Zap, Activity, TrendingUp, Target, Clock, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { PartialFeatureWarning } from './FeatureStatusBadge';
 
 // Interfaces for Security Dashboard
 export interface ThreatModel {
@@ -332,6 +333,9 @@ const SecurityDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
+        {/* Feature Warning */}
+        <PartialFeatureWarning featureId="security_assessment" />
+        
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Security Assessment Dashboard

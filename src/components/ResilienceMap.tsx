@@ -288,12 +288,17 @@ export const ResilienceMap: React.FC = () => {
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         const isCorsFailure = /failed to fetch/i.test(message) || /cors/i.test(message);
+        const is500Error = /500/.test(message);
+        
         const fallbackReason = isCorsFailure
           ? 'Supabase Edge denied the resilience request (likely CORS or auth). Using local resilience dataset instead.'
+          : is500Error
+          ? 'API temporarily unavailable. Using local resilience dataset instead.'
           : undefined;
 
-        if (isCorsFailure) {
-          console.warn('Resilience datasets fell back due to edge CORS/auth failure:', err);
+        // Use warn instead of error for expected fallback scenarios
+        if (isCorsFailure || is500Error) {
+          console.warn('ℹ️ Resilience API unavailable, using local data (this is normal in development):', message);
         } else {
           console.error('Failed to load resilience datasets', err);
         }

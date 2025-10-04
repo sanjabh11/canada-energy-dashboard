@@ -27,9 +27,11 @@ import { IndigenousDashboard } from './IndigenousDashboard';
 import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock } from 'lucide-react';
+import { FeatureAvailability } from './FeatureAvailability';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
+import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -43,11 +45,25 @@ const helpIdByTab: Record<string, string> = {
   Stakeholders: 'page.stakeholders',
   GridOptimization: 'page.gridops',
   Security: 'page.security',
+  Features: 'page.features',
   Education: 'page.education'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
 const DEBUG_LOGS: boolean = ((import.meta as any).env?.VITE_DEBUG_LOGS === 'true');
+
+// Map tabs to feature IDs for feature flag checking
+const tabToFeatureMap: Record<string, string> = {
+  'Dashboard': 'energy_analytics',
+  'Investment': 'investment_analysis',
+  'Resilience': 'resilience_analysis',
+  'Innovation': 'innovation_tracking',
+  'Indigenous': 'indigenous_dashboard',
+  'Stakeholders': 'stakeholder_coordination',
+  'GridOptimization': 'grid_optimization',
+  'Security': 'security_assessment',
+  // Home, Provinces, Trends, Features always shown
+};
 
 interface DashboardState {
   activeDataset: DatasetType;
@@ -157,7 +173,8 @@ export const EnergyDataDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  const navigationTabs = [
+  // Base navigation tabs
+  const baseNavigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
@@ -168,8 +185,39 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Indigenous', label: 'Indigenous', icon: Shield },
     { id: 'Stakeholders', label: 'Stakeholders', icon: Zap },
     { id: 'GridOptimization', label: 'Grid Ops', icon: Activity },
-    { id: 'Security', label: 'Security', icon: Lock }
+    { id: 'Security', label: 'Security', icon: Lock },
+    { id: 'Features', label: 'Features', icon: Info }
   ];
+
+  // Add feature status badges and filter based on feature flags
+  const navigationTabs = React.useMemo(() => {
+    return baseNavigationTabs.map(tab => {
+      const featureId = tabToFeatureMap[tab.id];
+      if (!featureId) return { ...tab, badge: null }; // Always show non-mapped tabs
+      
+      const feature = getFeature(featureId);
+      if (!feature) return { ...tab, badge: null };
+      
+      // Add badge based on feature status
+      let badge = null;
+      if (feature.status === 'partial') {
+        badge = 'Limited';
+      } else if (feature.status === 'deferred') {
+        badge = 'Soon';
+      }
+      
+      return { ...tab, badge, status: feature.status };
+    }).filter(tab => {
+      // In production, hide deferred features
+      if (import.meta.env.PROD) {
+        const featureId = tabToFeatureMap[tab.id];
+        if (featureId && !isFeatureEnabled(featureId)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, []);
 
   // Load connection statuses
   useEffect(() => {
@@ -269,7 +317,12 @@ export const EnergyDataDashboard: React.FC = () => {
       <nav className="bg-white border-b border-slate-200 shadow-sm sticky-top">
         <div className={CONTAINER_CLASSES.page}>
           <NavigationRibbon
-            tabs={navigationTabs.map(t => ({ id: t.id, label: t.label, icon: t.icon }))}
+            tabs={navigationTabs.map(t => ({
+              id: t.id,
+              label: t.label,
+              icon: t.icon,
+              badge: t.badge
+            }))}
             activeTab={activeTab}
             onSelect={setActiveTab}
           />
@@ -897,8 +950,13 @@ export const EnergyDataDashboard: React.FC = () => {
               </div>
             )}
 
+            {/* Features Tab */}
+            {activeTab === 'Features' && (
+              <FeatureAvailability />
+            )}
+
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Education'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education'].includes(activeTab) && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

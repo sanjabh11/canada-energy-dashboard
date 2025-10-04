@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getEmissionsPlanner, type EmissionsPlannerResponse } from '../lib/llmClient';
 import { FileDown, Loader2, Link as LinkIcon } from 'lucide-react';
+import { DeferredFeatureNotice } from './FeatureStatusBadge';
+import { isFeatureEnabled } from '../lib/featureFlags';
 
 interface Props {
   datasetPath: string;
@@ -37,6 +39,11 @@ const EmissionsPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
 
     return () => controller.abort();
   }, [datasetPath, timeframe, focus]);
+
+  // Check if feature is enabled
+  if (!isFeatureEnabled('emissions_tracking')) {
+    return <DeferredFeatureNotice featureId="emissions_tracking" />;
+  }
 
   const keyFindings: string[] = Array.isArray(data?.key_findings) ? (data!.key_findings as string[]) : [];
   const policyImplications: string[] = Array.isArray(data?.policy_implications) ? (data!.policy_implications as string[]) : [];

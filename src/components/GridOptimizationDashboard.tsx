@@ -6,6 +6,7 @@ import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { realDataService } from '../lib/realDataService';
+import { PartialFeatureWarning } from './FeatureStatusBadge';
 
 // Interfaces for Grid Optimization Dashboard
 export interface GridStatus {
@@ -301,6 +302,9 @@ const GridOptimizationDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
+        {/* Feature Warning */}
+        <PartialFeatureWarning featureId="grid_optimization" />
+        
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Grid Optimization Dashboard

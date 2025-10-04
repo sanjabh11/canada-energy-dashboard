@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import { validateFeatureFlags, getDeploymentStats } from './lib/featureFlags'
 
 // Initialize global database for caching (optional)
 if (typeof window !== 'undefined') {
@@ -59,6 +60,29 @@ if (typeof window !== 'undefined') {
     document.addEventListener('DOMContentLoaded', setupScrollAnimations, { once: true });
   } else {
     setupScrollAnimations();
+  }
+
+  // Validate feature flags on initialization
+  const validation = validateFeatureFlags();
+  const stats = getDeploymentStats();
+  
+  if (import.meta.env.DEV) {
+    // In development mode, log detailed information
+    if (!validation.valid) {
+      console.error('⚠️ Feature flag validation failed:', validation.errors);
+    } else {
+      console.log('✅ Feature flags validated successfully');
+    }
+    console.log('📊 Deployment stats:', stats);
+    console.log(`🚀 Phase 1 Launch: ${stats.enabled}/${stats.total} features enabled`);
+    console.log(`   - Production Ready: ${stats.productionReady}`);
+    console.log(`   - Acceptable: ${stats.acceptable}`);
+    console.log(`   - Partial: ${stats.partial}`);
+    console.log(`   - Deferred: ${stats.deferred}`);
+  } else {
+    // In production, only log summary
+    console.log(`🚀 Canada Energy Intelligence Platform - Phase 1 Launch`);
+    console.log(`📊 ${stats.enabled} features available`);
   }
 }
 

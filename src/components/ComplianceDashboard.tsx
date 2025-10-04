@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
+import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 
 interface ComplianceRecord {
   id: string;
@@ -309,6 +310,9 @@ export const ComplianceDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Feature Info */}
+      <AcceptableFeatureInfo featureId="compliance_monitoring" />
+      
       {/* Dashboard Header */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center space-x-4 mb-4">

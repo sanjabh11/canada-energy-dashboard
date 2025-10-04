@@ -20,6 +20,7 @@ import {
 import TerritorialMap, { type MapPoint, type TerritoryBoundary } from './TerritorialMap';
 import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save } from 'lucide-react';
 import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
+import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 
 // Interfaces for Indigenous dashboard data
 export interface TerritoryData {
@@ -467,6 +468,9 @@ export const IndigenousDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
+        {/* Feature Info */}
+        <AcceptableFeatureInfo featureId="indigenous_dashboard" />
+        
         <header className="mb-8">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
             <div>

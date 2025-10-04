@@ -12,6 +12,7 @@ import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStor
 import { getMarketBrief, type MarketBriefResponse } from '../lib/llmClient';
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
+import { PartialFeatureWarning } from './FeatureStatusBadge';
 
 interface MineralsData {
   supplyStatus: Array<{
@@ -246,6 +247,9 @@ export const MineralsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Feature Warning */}
+      <PartialFeatureWarning featureId="minerals_supply_chain" />
+      
       {/* Dashboard Header */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
         <div className="flex items-center space-x-4 mb-4">

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getCommunityPlan, type CommunityPlanResponse } from '../lib/llmClient';
 import { FileDown, Loader2, Link as LinkIcon } from 'lucide-react';
+import { DeferredFeatureNotice } from './FeatureStatusBadge';
+import { isFeatureEnabled } from '../lib/featureFlags';
 
 interface Props {
   datasetPath: string;
@@ -37,6 +39,11 @@ const CommunityPlanner: React.FC<Props> = ({ datasetPath, timeframe, focus }) =>
 
     return () => controller.abort();
   }, [datasetPath, timeframe, focus]);
+
+  // Check if feature is enabled
+  if (!isFeatureEnabled('community_planning')) {
+    return <DeferredFeatureNotice featureId="community_planning" />;
+  }
 
   const plans: string[] = Array.isArray(data?.plans) ? (data!.plans as string[]) : [];
   const recs: string[] = Array.isArray(data?.recommendations) ? (data!.recommendations as string[]) : [];
