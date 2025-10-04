@@ -32,10 +32,12 @@ import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Gl
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
+import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
   Dashboard: 'dashboard.overview',
+  HouseholdAdvisor: 'page.household-advisor',
   Provinces: 'page.provinces',
   Trends: 'page.trends',
   Investment: 'page.investment',
@@ -177,6 +179,7 @@ export const EnergyDataDashboard: React.FC = () => {
   const baseNavigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
+    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
     { id: 'Trends', label: 'Trends', icon: TrendingUp },
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
@@ -332,6 +335,8 @@ export const EnergyDataDashboard: React.FC = () => {
       <div className={CONTAINER_CLASSES.page}>
         {activeTab === 'Dashboard' ? (
           <RealTimeDashboard />
+        ) : activeTab === 'HouseholdAdvisor' ? (
+          <HouseholdEnergyAdvisor />
         ) : activeTab === 'Home' ? (
           // Home Tab - Landing Page with Shader Effects
           <div className="space-y-8">
