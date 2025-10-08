@@ -272,6 +272,10 @@ export class EnergyDataManager {
         ingested_at: new Date()
       })));
     }
+    if (allRows.length === 0) {
+      console.warn(`[${datasetKey}] Streaming returned 0 rows; falling back to sample data.`);
+      throw new Error('Stream returned no data');
+    }
 
     return allRows;
   }

@@ -7,6 +7,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { getOntarioDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 
 // CORS headers for Edge Function responses
 const corsHeaders = {
@@ -392,23 +393,69 @@ serve(async (req: Request) => {
   if (hasParams) {
     // Return JSON for batch requests
     try {
-      const data = await getIESOCombinedData();
+      // Parse query parameters
+      const limit = parseInt(url.searchParams.get('limit') || '1000', 10);
+      const cursor = url.searchParams.get('cursor') || undefined;
+      
+      let data: any[] = [];
+      let source = 'IESO';
+      let usedSample = false;
+
+      // Try to get real IESO data first
+      try {
+        data = await getIESOCombinedData();
+        console.log(`IESO API returned ${data.length} records`);
+      } catch (iesoError) {
+        console.warn('IESO API unavailable, using sample data:', iesoError);
+        usedSample = true;
+      }
+
+      // If IESO returned empty or failed, use sample data
+      if (data.length === 0) {
+        console.log('IESO data empty, loading sample data...');
+        const sampleData = await getOntarioDemandSample();
+        const paginated = paginateSampleData(sampleData, limit, cursor);
+        
+        return new Response(JSON.stringify({
+          dataset: 'ontario-demand',
+          rows: paginated.rows,
+          metadata: {
+            hasMore: paginated.hasMore,
+            totalEstimate: sampleData.length,
+            usingSampleData: true
+          },
+          timestamp: new Date().toISOString(),
+          source: 'Sample Data (IESO unavailable)'
+        }), {
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'X-Next-Cursor': paginated.nextCursor || ''
+          },
+          status: 200
+        });
+      }
+
+      // Return real IESO data
       return new Response(JSON.stringify({
         dataset: 'ontario-demand',
         rows: data,
         metadata: {
           hasMore: false,
-          totalEstimate: data.length
+          totalEstimate: data.length,
+          usingSampleData: usedSample
         },
         timestamp: new Date().toISOString(),
-        source: 'IESO'
+        source: usedSample ? 'Sample Data' : 'IESO'
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200
       });
     } catch (error) {
+      console.error('Critical error in stream-ontario-demand:', error);
       return new Response(JSON.stringify({
-        error: 'Failed to fetch IESO data',
+        error: 'Failed to fetch data',
+        message: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
