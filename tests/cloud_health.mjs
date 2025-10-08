@@ -39,8 +39,10 @@ const url = `${BASE.replace(/\/$/, '')}/llm/health`;
 try {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 15000);
+  
   const resp = await fetch(url, { headers, signal: controller.signal });
   clearTimeout(timeoutId);
+  
   console.log(resp.status, resp.url);
   if (!resp.ok) {
     const text = await resp.text();
@@ -49,6 +51,10 @@ try {
   }
   process.exit(0);
 } catch (e) {
+  if (e.name === 'AbortError') {
+    console.error('Health check timed out after 15 seconds');
+    process.exit(3);
+  }
   console.error('Health request failed:', e.message || e);
   process.exit(2);
 }

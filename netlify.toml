@@ -1,0 +1,77 @@
+# Netlify Configuration for Canada Energy Intelligence Platform
+# https://docs.netlify.com/configure-builds/file-based-configuration/
+
+[build]
+  # Build command
+  command = "pnpm run build:prod"
+  
+  # Publish directory (where built files are)
+  publish = "dist"
+  
+  # Node version
+  environment = { NODE_VERSION = "20" }
+
+[build.processing]
+  # Skip processing - we handle it ourselves
+  skip_processing = false
+
+[build.processing.css]
+  bundle = true
+  minify = true
+
+[build.processing.js]
+  bundle = true
+  minify = true
+
+[build.processing.html]
+  pretty_urls = true
+
+[build.processing.images]
+  compress = true
+
+# Redirects and rewrites
+[[redirects]]
+  # SPA fallback - all routes go to index.html
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
+
+# Headers are defined in public/_headers file
+
+# Environment variables (set these in Netlify UI)
+# VITE_SUPABASE_URL
+# VITE_SUPABASE_ANON_KEY
+# VITE_USE_STREAMING_DATASETS=true
+# VITE_ENABLE_EDGE_FETCH=true
+
+# Plugin configuration
+[[plugins]]
+  package = "@netlify/plugin-lighthouse"
+  
+  [[plugins.inputs.audits]]
+    path = "/"
+    
+  [[plugins.inputs.audits.thresholds]]
+    performance = 0.8
+    accessibility = 0.9
+    best-practices = 0.9
+    seo = 0.9
+
+# Deploy contexts
+[context.production]
+  command = "pnpm run build:prod"
+  
+[context.deploy-preview]
+  command = "pnpm run build"
+  
+[context.branch-deploy]
+  command = "pnpm run build"
+
+# Dev server settings (for netlify dev)
+[dev]
+  command = "pnpm run dev"
+  port = 5173
+  targetPort = 5173
+  publish = "dist"
+  autoLaunch = false

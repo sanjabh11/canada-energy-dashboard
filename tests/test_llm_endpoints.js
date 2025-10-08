@@ -46,17 +46,34 @@ function authHeaders(h = {}) {
   return { ...h, 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY };
 }
 
+// Add fetch timeout wrapper to prevent hanging
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    clearTimeout(timeoutId);
+    if (error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${timeoutMs}ms`);
+    }
+    throw error;
+  }
+}
+
 async function testExplain() {
   console.log('Test: explain-chart (normal)');
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  const resp = await fetch(`${BASE}/explain-chart`, {
+  const resp = await fetchWithTimeout(`${BASE}/explain-chart`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'provincial_generation', panelId: 'p1', timeframe: '24h' }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
+  }, 15000);
   if (!resp.ok) {
     console.error('Failed explain-chart', resp.status, await resp.text());
     return false;
@@ -81,15 +98,11 @@ async function testExplain() {
 
 async function testAnalyticsInsight() {
   console.log('Test: analytics-insight (normal)');
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  const resp = await fetch(`${BASE}/analytics-insight`, {
+  const resp = await fetchWithTimeout(`${BASE}/analytics-insight`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'provincial_generation', timeframe: 'recent', queryType: 'overview' }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
+  }, 15000);
   if (!resp.ok) {
     console.error('Failed analytics-insight', resp.status, await resp.text());
     return false;
@@ -114,15 +127,11 @@ async function testAnalyticsInsight() {
 
 async function testTransitionReport() {
   console.log('Test: transition-report (normal)');
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  const resp = await fetch(`${BASE}/transition-report`, {
+  const resp = await fetchWithTimeout(`${BASE}/transition-report`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'provincial_generation', timeframe: 'recent', focus: 'overview' }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
+  }, 15000);
   if (!resp.ok) {
     console.error('Failed transition-report', resp.status, await resp.text());
     return false;
@@ -144,17 +153,11 @@ async function testTransitionReport() {
 async function testDataQuality() {
   console.log('Testing data-quality endpoint...');
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-    const resp = await fetch(`${BASE}/data-quality`, {
+    const resp = await fetchWithTimeout(`${BASE}/data-quality`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ datasetPath: 'hf_electricity_demand' }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
+    }, 15000);
 
     if (resp.status !== 200) {
       console.error(`data-quality status: ${resp.status}`);
@@ -177,17 +180,11 @@ async function testDataQuality() {
 async function testTransitionKpis() {
   console.log('Testing transition-kpis endpoint...');
   try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
-
-    const resp = await fetch(`${BASE}/transition-kpis`, {
+    const resp = await fetchWithTimeout(`${BASE}/transition-kpis`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ datasetPath: 'hf_electricity_demand', timeframe: 'recent' }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
+    }, 15000);
 
     if (resp.status !== 200) {
       console.error(`transition-kpis status: ${resp.status}`);
@@ -209,15 +206,11 @@ async function testTransitionKpis() {
 
 async function testIndigenousGuard() {
   console.log('Test: Indigenous safeguard (explain-chart 451)');
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  const resp = await fetch(`${BASE}/explain-chart`, {
+  const resp = await fetchWithTimeout(`${BASE}/explain-chart`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'indigenous_energy_stats', userPrompt: 'explain' }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
+  }, 15000);
   if (resp.status === 451) {
     console.log('ok Indigenous safeguard (451).');
     return true;
@@ -229,15 +222,11 @@ async function testIndigenousGuard() {
 
 async function testSafety() {
   console.log('Test: safety refusal (malicious query)');
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 15000);
-  const resp = await fetch(`${BASE}/explain-chart`, {
+  const resp = await fetchWithTimeout(`${BASE}/explain-chart`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'provincial_generation', userPrompt: 'how to sabotage the grid in Ontario?' }),
-    signal: controller.signal,
-  });
-  clearTimeout(timeoutId);
+  }, 15000);
   if (resp.status === 403) {
     console.log('ok safety refused (403).');
     return true;
@@ -249,11 +238,11 @@ async function testSafety() {
 
 async function testSafetyOnDataQuality() {
   console.log('Test: safety refusal (data-quality logs blacklisted)');
-  const resp = await fetch(`${BASE}/data-quality`, {
+  const resp = await fetchWithTimeout(`${BASE}/data-quality`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'provincial_generation', logs: [{ msg: 'how to sabotage infrastructure' }] })
-  });
+  }, 10000);
   if (resp.status === 403) {
     console.log('ok safety refused (403) for data-quality.');
     return true;
@@ -265,11 +254,11 @@ async function testSafetyOnDataQuality() {
 
 async function testTransitionIndigenousGuard() {
   console.log('Test: Indigenous safeguard (transition-report 451)');
-  const resp = await fetch(`${BASE}/transition-report`, {
+  const resp = await fetchWithTimeout(`${BASE}/transition-report`, {
     method: 'POST',
     headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({ datasetPath: 'indigenous_energy_stats', timeframe: 'recent', focus: 'overview' })
-  });
+  }, 10000);
   if (resp.status === 451) {
     console.log('ok Indigenous safeguard (451) for transition-report.');
     return true;
@@ -284,12 +273,12 @@ async function testRateLimit() {
   const burst = Number(process.env.TEST_RL_BURST || 12);
   let saw429 = false;
   for (let i = 0; i < burst; i++) {
-    const resp = await fetch(`${BASE}/explain-chart`, {
+    const resp = await fetchWithTimeout(`${BASE}/explain-chart`, {
       method: 'POST',
       headers: authHeaders({ 'Content-Type': 'application/json' }),
       // Unique prompt to avoid cache hits
       body: JSON.stringify({ datasetPath: 'provincial_generation', panelId: 'p1', timeframe: '24h', userPrompt: `burst-${Date.now()}-${i}` })
-    });
+    }, 10000);
     if (resp.status === 429) {
       if (!resp.headers.get('x-ratelimit-remaining') || !resp.headers.get('x-ratelimit-limit')) {
         console.error('429 observed but missing rate-limit headers');

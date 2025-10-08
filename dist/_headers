@@ -1,10 +1,10 @@
 /*
   Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none';
-    script-src 'self';
+    script-src 'self' 'unsafe-inline' 'unsafe-eval';
     style-src 'self' 'unsafe-inline';
-    img-src 'self' data: blob:;
+    img-src 'self' data: blob: https:;
     font-src 'self' data:;
-    connect-src 'self' https://*.supabase.co wss://*.supabase.co;
+    connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://ieso.ca https://aeso.ca;
     frame-ancestors 'none';
     form-action 'self';
     upgrade-insecure-requests;

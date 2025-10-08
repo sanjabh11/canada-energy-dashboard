@@ -11,8 +11,9 @@ import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, Cart
 import { 
   Snowflake, MapPin, Fuel, Zap, Thermometer, Wind,
   AlertTriangle, TrendingUp, Users, Leaf, Clock,
-  Battery, Truck, Home, Factory, Download, Filter
+  Battery, Truck, Home, Factory, Download, Filter, Play, Settings
 } from 'lucide-react';
+import { optimizeDieselToRenewable, PRESET_SCENARIOS, type OptimizationResult, type CommunityEnergyProfile as OptProfileType } from '../lib/arcticOptimization';
 
 interface CommunityEnergyProfile {
   id: string;
@@ -83,8 +84,13 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
   const [communityProfiles, setCommunityProfiles] = useState<CommunityEnergyProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTerritory, setSelectedTerritory] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'overview' | 'communities' | 'transitions' | 'resilience'>('overview');
+  const [viewMode, setViewMode] = useState<'overview' | 'communities' | 'transitions' | 'resilience' | 'optimizer'>('overview');
   const [selectedCommunity, setSelectedCommunity] = useState<CommunityEnergyProfile | null>(null);
+  
+  // Optimization engine state
+  const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
+  const [selectedScenario, setSelectedScenario] = useState('moderate_transition');
+  const [optimizing, setOptimizing] = useState(false);
 
   useEffect(() => {
     loadArcticEnergyData();

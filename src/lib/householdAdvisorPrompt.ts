@@ -1,9 +1,11 @@
 /**
  * Household Energy Advisor AI Prompt
  * System prompt configuration for Gemini 2.5 Pro conversational AI
+ * Enhanced with Canadian Energy Knowledge Base integration
  */
 
 import type { HouseholdProfile, MonthlyUsage, ProvincialPricing } from './types/household';
+import { getProvincialContext, formatContextForPrompt } from './energyKnowledgeBase';
 
 export interface PromptContext {
   profile: HouseholdProfile;
@@ -25,6 +27,10 @@ export function generateHouseholdAdvisorPrompt(context: PromptContext): string {
   const avgCost = recentUsage.length > 0
     ? (recentUsage.reduce((sum, u) => sum + u.cost_cad, 0) / recentUsage.length).toFixed(2)
     : 'N/A';
+  
+  // Enhanced: Inject Canadian Energy Context
+  const provincialContext = getProvincialContext(profile.province);
+  const contextSummary = formatContextForPrompt(profile.province);
 
   const homeTypeDescription = {
     'house': 'detached house',
@@ -70,6 +76,19 @@ export function generateHouseholdAdvisorPrompt(context: PromptContext): string {
 ${provincialData.hasTOUPricing && provincialData.touRates ? `
   - Off-Peak: ${provincialData.touRates.offPeak}¢/kWh (${provincialData.touRates.offPeakHours})
   - On-Peak: ${provincialData.touRates.onPeak}¢/kWh (${provincialData.touRates.onPeakHours})
+` : ''}
+
+# ENHANCED CANADIAN ENERGY CONTEXT (From Knowledge Base)
+${contextSummary}
+
+${provincialContext ? `
+**Provincial Energy Mix:**
+${Object.entries(provincialContext.current_mix).map(([source, pct]) => `- ${source}: ${(pct * 100).toFixed(0)}%`).join('\n')}
+
+**Key Provincial Programs:**
+${provincialContext.key_programs.map(prog => `- ${prog}`).join('\n')}
+
+**Renewable Target:** ${provincialContext.renewable_target}
 ` : ''}
 
 # RESPONSE FRAMEWORK
