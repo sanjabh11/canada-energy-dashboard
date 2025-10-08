@@ -180,13 +180,15 @@ export const EnergyDataDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Base navigation tabs
+  // Base navigation tabs - Logically grouped: Core → Analysis → Specialized → Admin
   const baseNavigationTabs = [
+    // Core Navigation (Most Important)
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
-    { id: 'Provinces', label: 'Provinces', icon: Globe },
     { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
+    { id: 'Provinces', label: 'Provinces', icon: Globe },
+    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
+    // Specialized Dashboards
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
