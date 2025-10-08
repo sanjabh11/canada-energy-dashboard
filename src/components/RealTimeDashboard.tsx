@@ -32,6 +32,9 @@ import DataQualityPanel from './DataQualityPanel';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { fetchEdgeJson } from '../lib/edge';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
+import PeakAlertBanner from './PeakAlertBanner';
+import CO2EmissionsTracker from './CO2EmissionsTracker';
+import RenewablePenetrationHeatmap from './RenewablePenetrationHeatmap';
 
 interface DashboardData {
   ontarioDemand: OntarioDemandRecord[];
@@ -453,6 +456,68 @@ export const RealTimeDashboard: React.FC = () => {
       </div>
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 animate-fade-in-slow`}>
+
+      {/* Phase III.0: Peak Alert Banner */}
+      <PeakAlertBanner
+        currentDemand={currentDemand || 0}
+        recentDemand={data.ontarioDemand.slice(0, 10).map(d => d.total_demand_mw)}
+        historicalPattern={[
+          { hour: 6, avg_demand: 15000 },
+          { hour: 9, avg_demand: 18000 },
+          { hour: 12, avg_demand: 19000 },
+          { hour: 15, avg_demand: 17500 },
+          { hour: 18, avg_demand: 21000 },
+          { hour: 21, avg_demand: 18500 }
+        ]}
+      />
+
+      {/* Phase III.0: CO2 Emissions Tracker */}
+      <CO2EmissionsTracker
+        generationData={data.provincialGeneration.map(record => ({
+          source_type: record.generation_type || 'other',
+          capacity_mw: typeof record.megawatt_hours === 'number' 
+            ? record.megawatt_hours 
+            : 0,
+          percentage: 0
+        }))}
+        showBreakdown={true}
+      />
+
+      {/* Phase III.0: Renewable Penetration Heatmap */}
+      <RenewablePenetrationHeatmap
+        provincialData={Object.entries(
+          data.provincialGeneration.reduce((acc, record) => {
+            const province = record.province || 'Unknown';
+            if (!acc[province]) {
+              acc[province] = {
+                province,
+                renewable_mw: 0,
+                fossil_mw: 0,
+                total_mw: 0,
+                renewable_pct: 0,
+                sources: {}
+              };
+            }
+            const mw = typeof record.megawatt_hours === 'number' 
+              ? record.megawatt_hours 
+              : 0;
+            const fuelType = (record.generation_type || 'other').toLowerCase();
+            const isRenewable = ['hydro', 'wind', 'solar', 'biomass', 'geothermal'].includes(fuelType);
+            
+            if (isRenewable) acc[province].renewable_mw += mw;
+            else acc[province].fossil_mw += mw;
+            acc[province].total_mw += mw;
+            
+            if (!acc[province].sources[fuelType]) acc[province].sources[fuelType] = 0;
+            acc[province].sources[fuelType] += mw;
+            
+            return acc;
+          }, {} as Record<string, any>)
+        ).map(([_, data]) => ({
+          ...data,
+          renewable_pct: data.total_mw > 0 ? (data.renewable_mw / data.total_mw) * 100 : 0
+        }))}
+      />
 
       {/* 4-Panel Dashboard Grid */}
       {/* Transition KPIs */}
