@@ -198,9 +198,23 @@ export class EnergyDataManager {
       const streamingFeatureEnabled = canUseStreaming() && isEdgeFetchEnabled();
       const shouldAttemptStream = forceStream ? streamingConfigured : streamingFeatureEnabled;
 
+      console.log(`[${datasetKey}] Streaming check:`, {
+        isStreamingConfigured: isStreamingConfigured(),
+        isEdgeFetchEnabled: isEdgeFetchEnabled(),
+        canUseStreaming: canUseStreaming(),
+        streamingConfigured,
+        streamingFeatureEnabled,
+        shouldAttemptStream,
+        forceStream
+      });
+
       if (!shouldAttemptStream) {
+        console.log(`[${datasetKey}] Using fallback (shouldAttemptStream=false)`);
         return await this.loadUsingFallback(datasetKey, { maxRows, onProgress, onStatusChange });
       }
+
+      console.log(`[${datasetKey}] Attempting to stream from edge functions...`);
+
 
       const data = await this.loadFromStream(datasetKey, { maxRows, onProgress, signal });
       this.updateStatus(datasetKey, {

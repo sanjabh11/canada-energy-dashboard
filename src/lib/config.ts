@@ -45,19 +45,33 @@ export function getEdgeHeaders(): Record<string, string> {
 
 export function isEdgeFetchEnabled(): boolean {
   const raw = env.VITE_ENABLE_EDGE_FETCH as string | boolean | undefined;
+  
+  if (DEBUG) console.log('isEdgeFetchEnabled - raw value:', raw, 'type:', typeof raw);
 
-  if (typeof raw === 'boolean') return raw;
-  if (typeof raw === 'string') return raw.toLowerCase() === 'true';
+  // If explicitly set, honor that setting (works for both localhost and production)
+  if (typeof raw === 'boolean') {
+    if (DEBUG) console.log('isEdgeFetchEnabled - returning boolean:', raw);
+    return raw;
+  }
+  if (typeof raw === 'string') {
+    const result = raw.toLowerCase() === 'true';
+    if (DEBUG) console.log('isEdgeFetchEnabled - returning string parsed:', result);
+    return result;
+  }
 
   // Default: disable in local dev to avoid noisy CORS failures unless explicitly opted-in
   if (typeof window !== 'undefined') {
     const host = window.location?.hostname || '';
     if (host === 'localhost' || host === '127.0.0.1') {
+      if (DEBUG) console.log('isEdgeFetchEnabled - localhost detected, returning false');
       return false;
     }
   }
 
-  return Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+  // For production deployments without explicit setting, enable if Supabase is configured
+  const fallback = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+  if (DEBUG) console.log('isEdgeFetchEnabled - using fallback:', fallback);
+  return fallback;
 }
 
 export function getFeatureFlagUseStreaming(): boolean {

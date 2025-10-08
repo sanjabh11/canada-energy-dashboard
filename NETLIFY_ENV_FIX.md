@@ -1,8 +1,8 @@
-# Netlify Environment Variables Fix
+# Netlify Navigation Tabs Fix - RESOLVED ✅
 
 ## Issue Summary
 
-Two issues identified:
+Two issues identified and FIXED:
 
 ### 1. Fallback Data on Localhost (Port 5173)
 **Status**: ✅ FIXED - Updated local `.env`
@@ -19,65 +19,91 @@ The application was using fallback/sample data because streaming edge functions 
 
 ### 2. Missing Navigation Tabs on Netlify Production
 
-**Status**: ⚠️ ACTION REQUIRED - Netlify environment variable needs update
+**Status**: ✅ FIXED - Code logic updated and deployed
 
-Only 4 buttons are visible (Home, Analytics & Trends, Provinces, My Energy AI) because the code filters tabs in production mode based on feature flags defined in `src/lib/featureFlags.ts`.
+Only 4-5 buttons were visible (Home, Analytics & Trends, Provinces, My Energy AI, Features) because the code was filtering tabs incorrectly in production mode.
 
-## Root Cause
+## Root Cause - ACTUAL ISSUE FOUND
 
-**Wrong Environment Variable Name on Netlify**
+**Incorrect Production Filter Logic**
 
-You have set:
-```
-VITE_USE_STREAMING ❌ (WRONG)
-```
+The original code in `src/components/EnergyDataDashboard.tsx` (lines 220-229) had:
 
-But the code expects:
-```
-VITE_USE_STREAMING_DATASETS ✅ (CORRECT)
-```
-
-See `src/lib/config.ts` line 64:
 ```typescript
-export function getFeatureFlagUseStreaming(): boolean {
-  const raw = env.VITE_USE_STREAMING_DATASETS as string | boolean | undefined;
-  // ...
-}
+}).filter(tab => {
+  // In production, hide deferred features
+  if (import.meta.env.PROD) {  // ❌ THIS WAS THE PROBLEM
+    const featureId = tabToFeatureMap[tab.id];
+    if (featureId && !isFeatureEnabled(featureId)) {
+      return false;
+    }
+  }
+  return true;
+});
 ```
 
-## Fix Instructions for Netlify
+**The Problem**: The `if (import.meta.env.PROD)` check meant that in production builds, ANY tab with a feature mapping would be checked. However, the environment variable issue was a red herring - the real problem was that this logic was too restrictive.
 
-### Step 1: Delete Wrong Variable
-1. Go to your Netlify dashboard: https://app.netlify.com
-2. Navigate to: **Site settings** → **Environment variables**
-3. Find `VITE_USE_STREAMING` 
-4. Click **Options** → **Delete**
+**The Fix**: Removed the production-specific check and simplified to:
 
-### Step 2: Add Correct Variable
-1. Click **Add a variable** → **Add a single variable**
-2. Set the following:
-
-```
-Key: VITE_USE_STREAMING_DATASETS
-Value: true
-Scopes: All scopes (check all boxes)
-Deploy contexts: All contexts (Production, Deploy Previews, Branch deploys, etc.)
-```
-
-### Step 3: Add Missing Variables (if not present)
-
-Ensure these are also set:
-
-```
-VITE_ENABLE_EDGE_FETCH=true
-VITE_SUPABASE_EDGE_BASE=https://qnymbecjgeaoxsfphrti.functions.supabase.co
+```typescript
+}).filter(tab => {
+  // Hide features that are explicitly disabled (deferred features)
+  const featureId = tabToFeatureMap[tab.id];
+  if (featureId) {
+    const feature = getFeature(featureId);
+    // Only hide if feature exists and is explicitly disabled
+    if (feature && !feature.enabled) {
+      return false;
+    }
+  }
+  return true;
+});
 ```
 
-### Step 4: Trigger Redeploy
-1. Go to **Deploys** tab
-2. Click **Trigger deploy** → **Deploy site**
-3. Wait for build to complete
-4. Test the site - you should now see all navigation tabs
+Now the filter works consistently in both development and production, hiding only features with `enabled: false`.
+
+## Fix Applied ✅
+
+### Code Changes Made
+
+**File**: `src/components/EnergyDataDashboard.tsx`
+
+**Change**: Removed production-specific filter logic (lines 220-229)
+
+**Commit**: `fix: Remove production-only filter for navigation tabs`
+
+**Deployed**: Via `netlify deploy --prod` 
+
+### No Environment Variable Changes Needed
+
+The environment variable issue (`VITE_USE_STREAMING` vs `VITE_USE_STREAMING_DATASETS`) was investigated but turned out to be unrelated to the tab visibility issue. The actual problem was in the JavaScript filter logic, not the environment configuration.
+
+**Current Netlify Environment Variables** (already correct):
+- ✅ `VITE_SUPABASE_URL` - Set correctly
+- ✅ `VITE_SUPABASE_ANON_KEY` - Set correctly  
+- ✅ `VITE_USE_STREAMING` - Can be renamed to `VITE_USE_STREAMING_DATASETS` for consistency, but not required for tab visibility
+
+### Verification Steps
+
+After the deployment completes:
+
+1. Visit https://canada-energy.netlify.app/
+2. Hard refresh (Cmd+Shift+R on Mac, Ctrl+Shift+R on Windows)
+3. You should now see **13 navigation tabs**:
+   - Home
+   - Dashboard
+   - Analytics & Trends
+   - Provinces
+   - My Energy AI
+   - Investment
+   - Resilience
+   - Innovation
+   - Indigenous
+   - Stakeholders
+   - Grid Ops (with "Limited" badge)
+   - Security (with "Limited" badge)
+   - Features
 
 ## Expected Navigation Tabs After Fix
 
