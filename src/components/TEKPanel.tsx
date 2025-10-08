@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { tekRepositoryService, TEKEntry, TEKDashboardData } from '../lib/tekRepository';
-import { MapPin, Users, Globe, Calendar, Leaf, Filter } from 'lucide-react';
+import { MapPin, Users, Globe, Calendar, Leaf, Filter, MessageCircle, Send, Sparkles, X } from 'lucide-react';
 
 interface TEKPanelProps {
   territory?: string;
@@ -19,6 +19,17 @@ export const TEKPanel: React.FC<TEKPanelProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  
+  // AI Co-Design Chat state
+  const [showAIChat, setShowAIChat] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{role: 'user' | 'assistant', content: string}>>([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  
+  // Enhanced filters
+  const [selectedTerritory, setSelectedTerritory] = useState<string>('all');
+  const [selectedEnergyType, setSelectedEnergyType] = useState<string>('all');
+  const [selectedSeason, setSelectedSeason] = useState<string>('all');
 
   useEffect(() => {
     loadTEKData();
@@ -33,6 +44,51 @@ export const TEKPanel: React.FC<TEKPanelProps> = ({
       console.error('Error loading TEK data:', error);
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const handleAIChatSubmit = async () => {
+    if (!chatInput.trim() || chatLoading) return;
+    
+    const userMessage = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setChatLoading(true);
+    
+    try {
+      // Call LLM Edge Function with Indigenous prompt template
+      const response = await fetch('https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/llm/explain-chart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          datasetPath: 'indigenous_tek',
+          userPrompt: userMessage,
+          context: {
+            territory: territory || 'General',
+            nation: nation || 'Multi-Nation',
+            currentSeason: tekData?.seasonalInsights.currentSeason
+          }
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('AI chat request failed');
+      }
+      
+      const data = await response.json();
+      const assistantMessage = data.result?.explanation || data.explanation || 'I apologize, but I encountered an error processing your request about Traditional Ecological Knowledge. Please try again.';
+      
+      setChatMessages(prev => [...prev, { role: 'assistant', content: assistantMessage }]);
+    } catch (error) {
+      console.error('Error in AI chat:', error);
+      setChatMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'I apologize for the inconvenience. The AI co-design assistant is temporarily unavailable. Please try again later or consult with your community knowledge keepers directly.' 
+      }]);
+    } finally {
+      setChatLoading(false);
     }
   };
 
@@ -93,6 +149,26 @@ export const TEKPanel: React.FC<TEKPanelProps> = ({
   // Apply category filter if selected
   if (selectedCategory !== 'all') {
     displayEntries = displayEntries.filter(entry => entry.category === selectedCategory);
+  }
+  
+  // Apply territory filter
+  if (selectedTerritory !== 'all') {
+    displayEntries = displayEntries.filter(entry => entry.territory === selectedTerritory);
+  }
+  
+  // Apply energy type filter
+  if (selectedEnergyType !== 'all') {
+    displayEntries = displayEntries.filter(entry => 
+      entry.tags.some(tag => tag.toLowerCase().includes(selectedEnergyType.toLowerCase()))
+    );
+  }
+  
+  // Apply season filter
+  if (selectedSeason !== 'all') {
+    displayEntries = displayEntries.filter(entry => 
+      entry.tags.some(tag => tag.toLowerCase().includes(selectedSeason.toLowerCase())) ||
+      entry.description.toLowerCase().includes(selectedSeason.toLowerCase())
+    );
   }
 
   // Apply search query filter
@@ -247,30 +323,246 @@ export const TEKPanel: React.FC<TEKPanelProps> = ({
           </div>
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-          <div className="flex-1">
-            <input
-              type="text"
-              placeholder="Search traditional knowledge..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
-            />
-          </div>
-
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-md"
+        {/* AI Co-Design Assistant Button */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => setShowAIChat(!showAIChat)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg hover:from-purple-700 hover:to-indigo-700 transition-all shadow-md"
           >
-            <option value="all">All Categories</option>
-            {Object.keys(tekData.summary.categories).map(category => (
-              <option key={category} value={category}>
-                {category.charAt(0).toUpperCase() + category.slice(1)} ({tekData.summary.categories[category]})
-              </option>
-            ))}
-          </select>
+            <Sparkles size={18} />
+            <span className="font-medium">AI Co-Design Assistant</span>
+            {chatMessages.length > 0 && (
+              <span className="bg-white text-purple-600 px-2 py-0.5 rounded-full text-xs font-bold">
+                {chatMessages.length}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* AI Chat Interface */}
+        {showAIChat && (
+          <div className="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-6 mb-6 border-2 border-purple-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="text-purple-600" size={24} />
+                <h3 className="text-lg font-bold text-purple-900">AI Co-Design Assistant</h3>
+              </div>
+              <button
+                onClick={() => setShowAIChat(false)}
+                className="text-purple-400 hover:text-purple-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <p className="text-sm text-purple-700 mb-4">
+              Ask about TEK integration, FPIC protocols, or community engagement best practices.
+            </p>
+            
+            {/* Chat Messages */}
+            <div className="bg-white rounded-lg p-4 mb-4 max-h-96 overflow-y-auto space-y-3">
+              {chatMessages.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p>Start a conversation about Traditional Ecological Knowledge integration</p>
+                  <div className="mt-4 space-y-2">
+                    <button
+                      onClick={() => setChatInput('How can we integrate TEK into solar project planning?')}
+                      className="block w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-sm"
+                    >
+                      "How can we integrate TEK into solar project planning?"
+                    </button>
+                    <button
+                      onClick={() => setChatInput('What are the key FPIC workflow stages?')}
+                      className="block w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-sm"
+                    >
+                      "What are the key FPIC workflow stages?"
+                    </button>
+                    <button
+                      onClick={() => setChatInput('Best practices for community energy engagement?')}
+                      className="block w-full text-left px-3 py-2 bg-gray-50 hover:bg-gray-100 rounded text-sm"
+                    >
+                      "Best practices for community energy engagement?"
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                chatMessages.map((msg, idx) => (
+                  <div
+                    key={idx}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[80%] px-4 py-2 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-900'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              {chatLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                      <span className="text-sm text-gray-600">AI is thinking...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Chat Input */}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAIChatSubmit()}
+                placeholder="Ask about TEK integration, FPIC, or community engagement..."
+                className="flex-1 px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                disabled={chatLoading}
+              />
+              <button
+                onClick={handleAIChatSubmit}
+                disabled={!chatInput.trim() || chatLoading}
+                className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Send size={18} />
+              </button>
+            </div>
+            
+            <p className="text-xs text-purple-600 mt-2">
+              ⚠️ UNDRIP-compliant • Culturally sensitive responses • Community validation recommended
+            </p>
+          </div>
+        )}
+
+        {/* Enhanced Search and Filter Bar */}
+        <div className="space-y-4 p-4 bg-gray-50 rounded-lg mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Filter className="text-gray-600" size={18} />
+            <span className="font-medium text-gray-700">Enhanced Filters</span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Search */}
+            <div className="lg:col-span-2">
+              <input
+                type="text"
+                placeholder="Search traditional knowledge..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              />
+            </div>
+
+            {/* Category Filter */}
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="all">All Categories</option>
+              {Object.keys(tekData.summary.categories).map(category => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)} ({tekData.summary.categories[category]})
+                </option>
+              ))}
+            </select>
+            
+            {/* Territory Filter */}
+            <select
+              value={selectedTerritory}
+              onChange={(e) => setSelectedTerritory(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="all">All Territories</option>
+              {tekData.territorialDistribution.map(territory => (
+                <option key={territory.territory} value={territory.territory}>
+                  {territory.territory} ({territory.entries})
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Energy Type Filter */}
+            <select
+              value={selectedEnergyType}
+              onChange={(e) => setSelectedEnergyType(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="all">All Energy Types</option>
+              <option value="solar">Solar</option>
+              <option value="wind">Wind</option>
+              <option value="hydro">Hydro</option>
+              <option value="biomass">Biomass</option>
+              <option value="geothermal">Geothermal</option>
+            </select>
+            
+            {/* Season Filter */}
+            <select
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="all">All Seasons</option>
+              <option value="spring">Spring</option>
+              <option value="summer">Summer</option>
+              <option value="fall">Fall</option>
+              <option value="winter">Winter</option>
+            </select>
+          </div>
+          
+          {/* Active Filters Display */}
+          {(searchQuery || selectedCategory !== 'all' || selectedTerritory !== 'all' || 
+            selectedEnergyType !== 'all' || selectedSeason !== 'all') && (
+            <div className="flex items-center gap-2 flex-wrap pt-2 border-t border-gray-200">
+              <span className="text-sm text-gray-600">Active filters:</span>
+              {searchQuery && (
+                <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  Search: "{searchQuery}"
+                </span>
+              )}
+              {selectedCategory !== 'all' && (
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs">
+                  Category: {selectedCategory}
+                </span>
+              )}
+              {selectedTerritory !== 'all' && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-xs">
+                  Territory: {selectedTerritory}
+                </span>
+              )}
+              {selectedEnergyType !== 'all' && (
+                <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded-full text-xs">
+                  Energy: {selectedEnergyType}
+                </span>
+              )}
+              {selectedSeason !== 'all' && (
+                <span className="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs">
+                  Season: {selectedSeason}
+                </span>
+              )}
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                  setSelectedTerritory('all');
+                  setSelectedEnergyType('all');
+                  setSelectedSeason('all');
+                }}
+                className="px-2 py-1 bg-red-100 text-red-800 rounded-full text-xs hover:bg-red-200"
+              >
+                Clear all
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Seasonal Insights */}

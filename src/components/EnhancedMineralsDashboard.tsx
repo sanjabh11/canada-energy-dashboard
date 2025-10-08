@@ -8,7 +8,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from 'recharts';
-import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info } from 'lucide-react';
+import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info, Sparkles, Bell } from 'lucide-react';
 import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStorageManager';
 import { enhancedDataService, type RealMineralsData } from '../lib/enhancedDataService';
 
@@ -52,6 +52,11 @@ export const EnhancedMineralsDashboard: React.FC = () => {
   const [editingMineral, setEditingMineral] = useState<string | null>(null);
   const [selectedMineral, setSelectedMineral] = useState<MineralsSupplyRecord | null>(null);
   const [viewMode, setViewMode] = useState<'overview' | 'supply' | 'risk'>('overview');
+  
+  // Risk Alert System state
+  const [showRiskAlerts, setShowRiskAlerts] = useState(true);
+  const [aiRiskAnalysis, setAiRiskAnalysis] = useState<string>('');
+  const [analyzingRisk, setAnalyzingRisk] = useState(false);
 
   const [newMineral, setNewMineral] = useState<MineralsFormData>({
     mineral: '',
@@ -264,6 +269,34 @@ export const EnhancedMineralsDashboard: React.FC = () => {
       </span>
     );
   };
+  
+  const analyzeSupplyChainRisk = async (mineral: MineralsSupplyRecord) => {
+    setAnalyzingRisk(true);
+    setAiRiskAnalysis('');
+    
+    try {
+      const response = await fetch('https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/llm/explain-chart', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          datasetPath: 'minerals_supply_chain',
+          userPrompt: `Analyze the supply chain risk for ${mineral.mineral}. Key factors: ${mineral.supply_risk_factors.join(', ')}. Primary suppliers: ${mineral.primary_suppliers.map(s => `${s.country} (${s.percentage_of_supply}%, risk: ${s.risk_score})`).join(', ')}. Provide geopolitical analysis and mitigation recommendations.`
+        })
+      });
+      
+      if (!response.ok) throw new Error('Analysis failed');
+      
+      const data = await response.json();
+      setAiRiskAnalysis(data.result?.explanation || data.explanation || 'Analysis completed but no detailed insights available.');
+    } catch (error) {
+      console.error('Error analyzing risk:', error);
+      setAiRiskAnalysis('Unable to complete risk analysis. Please try again later.');
+    } finally {
+      setAnalyzingRisk(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -358,6 +391,108 @@ export const EnhancedMineralsDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Risk Alert System */}
+      {showRiskAlerts && mineralsRecords.some(m => {
+        const avgRisk = m.primary_suppliers.reduce((sum, s) => sum + s.risk_score, 0) / m.primary_suppliers.length;
+        return avgRisk > 60 || m.strategic_importance === 'critical';
+      }) && (
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg shadow-lg p-6 border-2 border-red-200">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Bell className="text-red-600 animate-pulse" size={24} />
+              <div>
+                <h3 className="text-lg font-bold text-red-900">Critical Supply Chain Alerts</h3>
+                <p className="text-sm text-red-700">High-risk minerals requiring immediate attention</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowRiskAlerts(false)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {mineralsRecords
+              .filter(m => {
+                const avgRisk = m.primary_suppliers.reduce((sum, s) => sum + s.risk_score, 0) / m.primary_suppliers.length;
+                return avgRisk > 60 || m.strategic_importance === 'critical';
+              })
+              .slice(0, 6)
+              .map((mineral, idx) => {
+                const avgRisk = mineral.primary_suppliers.reduce((sum, s) => sum + s.risk_score, 0) / mineral.primary_suppliers.length;
+                return (
+                  <div key={idx} className="bg-white rounded-lg p-4 border-l-4 border-red-500">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-bold text-slate-900">{mineral.mineral}</h4>
+                      {getRiskBadge(avgRisk)}
+                    </div>
+                    <p className="text-xs text-slate-600 mb-2">
+                      Strategic Importance: <span className="font-medium uppercase">{mineral.strategic_importance}</span>
+                    </p>
+                    <div className="text-xs text-slate-700 space-y-1">
+                      <p className="font-medium">Top Risk Factors:</p>
+                      <ul className="list-disc list-inside">
+                        {mineral.supply_risk_factors.slice(0, 2).map((factor, i) => (
+                          <li key={i}>{factor}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setSelectedMineral(mineral);
+                        analyzeSupplyChainRisk(mineral);
+                      }}
+                      className="mt-3 w-full flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                    >
+                      <Sparkles size={14} />
+                      AI Risk Analysis
+                    </button>
+                  </div>
+                );
+              })}
+          </div>
+          
+          {/* AI Risk Analysis Panel */}
+          {(analyzingRisk || aiRiskAnalysis) && selectedMineral && (
+            <div className="mt-6 bg-white rounded-lg p-6 border-2 border-purple-200">
+              <div className="flex items-center gap-2 mb-4">
+                <Sparkles className="text-purple-600" size={20} />
+                <h4 className="font-bold text-purple-900">
+                  AI Geopolitical Risk Analysis: {selectedMineral.mineral}
+                </h4>
+              </div>
+              
+              {analyzingRisk ? (
+                <div className="flex items-center gap-3 text-purple-700">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                  <span>Analyzing supply chain risks, geopolitical factors, and mitigation strategies...</span>
+                </div>
+              ) : (
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-slate-700 whitespace-pre-wrap">{aiRiskAnalysis}</p>
+                  <div className="mt-4 flex gap-2">
+                    <button
+                      onClick={() => setAiRiskAnalysis('')}
+                      className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 text-sm"
+                    >
+                      Close Analysis
+                    </button>
+                    <button
+                      onClick={() => analyzeSupplyChainRisk(selectedMineral)}
+                      className="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 text-sm"
+                    >
+                      Refresh Analysis
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Content based on view mode */}
       {viewMode === 'overview' && (

@@ -352,7 +352,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
           
           <div className="flex items-center gap-3">
             <div className="flex bg-white/10 rounded-lg p-1">
-              {['overview', 'communities', 'transitions', 'resilience'].map((mode) => (
+              {['overview', 'communities', 'transitions', 'resilience', 'optimizer'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode as any)}
@@ -558,8 +558,430 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
         </div>
       )}
 
+      {/* Optimizer View */}
+      {viewMode === 'optimizer' && (
+        <div className="space-y-6">
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-slate-900">Diesel-to-Renewable Optimization Engine</h2>
+                <p className="text-sm text-slate-600">Plan your community's transition with AI-powered scenario modeling</p>
+              </div>
+              <Settings className="text-blue-600" size={24} />
+            </div>
+
+            {/* Community Selector for Optimization */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Select Community to Optimize
+              </label>
+              <select
+                value={selectedCommunity?.id || ''}
+                onChange={(e) => {
+                  const community = communityProfiles.find(c => c.id === e.target.value);
+                  setSelectedCommunity(community || null);
+                  setOptimizationResult(null);
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">-- Choose a Community --</option>
+                {communityProfiles.map(community => (
+                  <option key={community.id} value={community.id}>
+                    {community.community_name} ({community.province_territory})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {selectedCommunity && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column: Scenario Builder */}
+                <div className="space-y-6">
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-6">
+                    <h3 className="text-lg font-bold text-slate-900 mb-4">Scenario Parameters</h3>
+                    
+                    {/* Budget Slider */}
+                    <div className="mb-6">
+                      <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
+                        <span>Budget (CAD)</span>
+                        <span className="text-blue-600 font-bold">
+                          ${(selectedScenario === 'custom' ? 
+                            (PRESET_SCENARIOS.moderate_transition.budget_cad) : 
+                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.budget_cad || 2000000)
+                          ).toLocaleString()}
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="100000"
+                        max="10000000"
+                        step="100000"
+                        disabled={selectedScenario !== 'custom'}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        style={{
+                          background: selectedScenario === 'custom' ? 
+                            'linear-gradient(to right, #3b82f6 0%, #3b82f6 50%, #e2e8f0 50%, #e2e8f0 100%)' : 
+                            '#e2e8f0'
+                        }}
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>$100K</span>
+                        <span>$10M</span>
+                      </div>
+                    </div>
+
+                    {/* Diesel Reduction Target */}
+                    <div className="mb-6">
+                      <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
+                        <span>Diesel Reduction Target</span>
+                        <span className="text-green-600 font-bold">
+                          {selectedScenario === 'custom' ? 
+                            50 : 
+                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.diesel_reduction_target_percent || 50)
+                          }%
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="100"
+                        step="5"
+                        disabled={selectedScenario !== 'custom'}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>0%</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+
+                    {/* Implementation Timeline */}
+                    <div className="mb-6">
+                      <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
+                        <span>Implementation Timeline</span>
+                        <span className="text-purple-600 font-bold">
+                          {selectedScenario === 'custom' ? 
+                            5 : 
+                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.max_implementation_years || 5)
+                          } years
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="1"
+                        max="10"
+                        step="1"
+                        disabled={selectedScenario !== 'custom'}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>1 year</span>
+                        <span>10 years</span>
+                      </div>
+                    </div>
+
+                    {/* Min Reliability */}
+                    <div className="mb-6">
+                      <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
+                        <span>Min Backup Reliability</span>
+                        <span className="text-orange-600 font-bold">
+                          {selectedScenario === 'custom' ? 
+                            72 : 
+                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.min_reliability_hours || 72)
+                          } hours
+                        </span>
+                      </label>
+                      <input
+                        type="range"
+                        min="24"
+                        max="168"
+                        step="24"
+                        disabled={selectedScenario !== 'custom'}
+                        className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                      />
+                      <div className="flex justify-between text-xs text-slate-500 mt-1">
+                        <span>24h</span>
+                        <span>168h (1 week)</span>
+                      </div>
+                    </div>
+
+                    {/* Renewable Technology Selector */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-3">
+                        Renewable Technologies
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {[
+                          { id: 'solar', label: 'Solar', icon: '☀️' },
+                          { id: 'wind', label: 'Wind', icon: '💨' },
+                          { id: 'battery_storage', label: 'Battery', icon: '🔋' },
+                          { id: 'hydro', label: 'Hydro', icon: '💧' },
+                          { id: 'biomass', label: 'Biomass', icon: '🌱' }
+                        ].map(tech => (
+                          <label
+                            key={tech.id}
+                            className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border-2 border-slate-200 hover:border-blue-400 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              defaultChecked={['solar', 'wind', 'battery_storage'].includes(tech.id)}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                            />
+                            <span className="text-lg">{tech.icon}</span>
+                            <span className="text-sm font-medium">{tech.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Preset Scenarios */}
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-700 mb-3">Preset Scenarios</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.entries(PRESET_SCENARIOS).map(([key, scenario]) => (
+                        <button
+                          key={key}
+                          onClick={() => setSelectedScenario(key)}
+                          className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                            selectedScenario === key
+                              ? 'border-blue-600 bg-blue-50 text-blue-900'
+                              : 'border-slate-200 bg-white text-slate-700 hover:border-blue-300'
+                          }`}
+                        >
+                          <div className="font-bold text-sm">{scenario.name}</div>
+                          <div className="text-xs mt-1 opacity-75">
+                            {scenario.diesel_reduction_target_percent}% reduction
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Run Optimization Button */}
+                  <button
+                    onClick={() => {
+                      setOptimizing(true);
+                      setTimeout(() => {
+                        const result = optimizeDieselToRenewable(
+                          {
+                            community_name: selectedCommunity.community_name,
+                            current_diesel_consumption_liters_annual: selectedCommunity.energy_system.diesel_consumption_liters_annual,
+                            diesel_price_per_liter: 1.50,
+                            population: selectedCommunity.population,
+                            current_renewable_capacity_kw: selectedCommunity.energy_system.renewable_capacity_kw,
+                            grid_connected: selectedCommunity.energy_system.grid_connected
+                          },
+                          PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS] || PRESET_SCENARIOS.moderate_transition,
+                          ['solar', 'wind', 'battery_storage']
+                        );
+                        setOptimizationResult(result);
+                        setOptimizing(false);
+                      }, 1000);
+                    }}
+                    disabled={optimizing}
+                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-bold hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  >
+                    {optimizing ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                        <span>Optimizing...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play size={20} />
+                        <span>Run Optimization</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Right Column: Results Display */}
+                <div className="space-y-6">
+                  {optimizationResult ? (
+                    <>
+                      {/* Success/Feasibility Indicator */}
+                      <div className={`rounded-lg p-4 ${
+                        optimizationResult.feasible
+                          ? 'bg-green-50 border-2 border-green-200'
+                          : 'bg-yellow-50 border-2 border-yellow-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-2">
+                          {optimizationResult.feasible ? (
+                            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                          ) : (
+                            <AlertTriangle className="text-yellow-600" size={20} />
+                          )}
+                          <span className={`font-bold ${
+                            optimizationResult.feasible ? 'text-green-900' : 'text-yellow-900'
+                          }`}>
+                            {optimizationResult.feasible ? 'Feasible Solution Found' : 'Partially Feasible'}
+                          </span>
+                        </div>
+                        <p className="text-sm">
+                          Confidence: <span className="font-bold capitalize">{optimizationResult.confidence}</span>
+                        </p>
+                      </div>
+
+                      {/* Key Metrics */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-4 text-white">
+                          <p className="text-sm opacity-90 mb-1">Total Investment</p>
+                          <p className="text-2xl font-bold">${(optimizationResult.total_cost_cad / 1000000).toFixed(2)}M</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-4 text-white">
+                          <p className="text-sm opacity-90 mb-1">Annual Savings</p>
+                          <p className="text-2xl font-bold">${(optimizationResult.annual_savings_cad / 1000).toFixed(0)}K</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-4 text-white">
+                          <p className="text-sm opacity-90 mb-1">Payback Period</p>
+                          <p className="text-2xl font-bold">{optimizationResult.payback_period_years} years</p>
+                        </div>
+                        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-4 text-white">
+                          <p className="text-sm opacity-90 mb-1">Reliability Score</p>
+                          <p className="text-2xl font-bold">{optimizationResult.reliability_score}/100</p>
+                        </div>
+                      </div>
+
+                      {/* Diesel Reduction Gauge */}
+                      <div className="bg-white rounded-lg border-2 border-slate-200 p-6">
+                        <h4 className="font-bold text-slate-900 mb-4">Diesel Reduction Achievement</h4>
+                        <div className="relative pt-1">
+                          <div className="flex mb-2 items-center justify-between">
+                            <div>
+                              <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">
+                                Target: {PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.diesel_reduction_target_percent || 50}%
+                              </span>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs font-semibold inline-block text-green-600">
+                                {optimizationResult.diesel_reduction_percent.toFixed(1)}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="overflow-hidden h-4 mb-4 text-xs flex rounded-full bg-slate-200">
+                            <div
+                              style={{ width: `${optimizationResult.diesel_reduction_percent}%` }}
+                              className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500"
+                            ></div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <Leaf size={16} className="text-green-600" />
+                          <span>CO₂ Reduction: <strong>{optimizationResult.co2_reduction_tonnes_annual.toFixed(1)} tonnes/year</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Recommended Mix */}
+                      <div className="bg-white rounded-lg border-2 border-slate-200 p-6">
+                        <h4 className="font-bold text-slate-900 mb-4">Recommended Energy Mix</h4>
+                        <div className="space-y-3">
+                          {optimizationResult.recommended_mix.map((item, idx) => (
+                            <div key={idx} className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg flex items-center justify-center">
+                                  {item.type === 'solar' && '☀️'}
+                                  {item.type === 'wind' && '💨'}
+                                  {item.type === 'battery_storage' && '🔋'}
+                                  {item.type === 'hydro' && '💧'}
+                                  {item.type === 'biomass' && '🌱'}
+                                </div>
+                                <div>
+                                  <p className="font-medium text-slate-900 capitalize">{item.type.replace('_', ' ')}</p>
+                                  <p className="text-sm text-slate-600">{item.capacity_kw.toFixed(1)} kW</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-blue-600">${(item.cost_cad / 1000).toFixed(0)}K</p>
+                                <p className="text-xs text-slate-500">{(item.annual_generation_kwh / 1000).toFixed(0)} MWh/yr</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Implementation Timeline */}
+                      <div className="bg-white rounded-lg border-2 border-slate-200 p-6">
+                        <h4 className="font-bold text-slate-900 mb-4">Implementation Timeline</h4>
+                        <div className="space-y-3">
+                          {optimizationResult.timeline.map((phase, idx) => (
+                            <div key={idx} className="flex items-start gap-3">
+                              <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                <Clock size={16} className="text-blue-600" />
+                              </div>
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between">
+                                  <p className="font-medium text-slate-900">Year {phase.year}</p>
+                                  <p className="font-bold text-blue-600">${(phase.cost_cad / 1000).toFixed(0)}K</p>
+                                </div>
+                                <p className="text-sm text-slate-600">{phase.action}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Warnings */}
+                      {optimizationResult.warnings.length > 0 && (
+                        <div className="bg-yellow-50 border-2 border-yellow-200 rounded-lg p-4">
+                          <h4 className="flex items-center gap-2 font-bold text-yellow-900 mb-2">
+                            <AlertTriangle size={18} />
+                            Considerations
+                          </h4>
+                          <ul className="space-y-1 text-sm text-yellow-800">
+                            {optimizationResult.warnings.map((warning, idx) => (
+                              <li key={idx}>• {warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Assumptions */}
+                      <div className="bg-slate-50 rounded-lg p-4">
+                        <h4 className="font-bold text-slate-700 mb-2 text-sm">Assumptions</h4>
+                        <ul className="space-y-1 text-xs text-slate-600">
+                          {optimizationResult.assumptions.map((assumption, idx) => (
+                            <li key={idx}>• {assumption}</li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      {/* Export Button */}
+                      <button
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-slate-800 text-white rounded-lg hover:bg-slate-900 transition-colors"
+                      >
+                        <Download size={18} />
+                        <span>Export Optimization Report</span>
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center py-20">
+                      <Settings className="text-slate-300 mb-4" size={64} />
+                      <h3 className="text-xl font-bold text-slate-900 mb-2">Ready to Optimize</h3>
+                      <p className="text-slate-600 max-w-md">
+                        Adjust the parameters on the left and click "Run Optimization" to generate a customized diesel-to-renewable transition plan for {selectedCommunity.community_name}.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!selectedCommunity && (
+              <div className="flex flex-col items-center justify-center py-20 text-center">
+                <MapPin className="text-slate-300 mb-4" size={64} />
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Select a Community</h3>
+                <p className="text-slate-600 max-w-md">
+                  Choose a community from the dropdown above to start optimizing their energy transition plan.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Community Details Modal */}
-      {selectedCommunity && (
+      {selectedCommunity && viewMode !== 'optimizer' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
