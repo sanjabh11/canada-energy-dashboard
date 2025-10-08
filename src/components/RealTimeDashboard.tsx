@@ -9,10 +9,10 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { LineChart, Line, BarChart, Bar, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { 
-  Zap, Activity, Thermometer, Database, Wifi, Clock, CheckCircle, AlertCircle,
-  TrendingUp, DollarSign, Cloud, MapPin 
+  Zap, Activity, Database, CheckCircle,
+  TrendingUp, MapPin 
 } from 'lucide-react';
 import { 
   energyDataManager, 
@@ -24,17 +24,13 @@ import {
   type OntarioPricesRecord,
   type HFElectricityDemandRecord
 } from '../lib/dataManager';
-import ExplainChartButton from './ExplainChartButton';
 import { HelpButton } from './HelpButton';
-import { getTransitionAnalyticsInsight, getTransitionKpis, type TransitionKpisResponse } from '../lib/llmClient';
-import TransitionReportPanel from './TransitionReportPanel';
-import DataQualityPanel from './DataQualityPanel';
+import { getTransitionKpis, type TransitionKpisResponse } from '../lib/llmClient';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { fetchEdgeJson } from '../lib/edge';
-import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
+import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES } from '../lib/ui/layout';
 import PeakAlertBanner from './PeakAlertBanner';
 import CO2EmissionsTracker from './CO2EmissionsTracker';
-import RenewablePenetrationHeatmap from './RenewablePenetrationHeatmap';
 
 interface DashboardData {
   ontarioDemand: OntarioDemandRecord[];
@@ -54,9 +50,6 @@ interface DashboardStats {
 }
 
 export const RealTimeDashboard: React.FC = () => {
-  // Local constant to avoid magic strings (P5); move to constants in follow‑up task if reused elsewhere
-  const INSIGHTS_DATASET = 'provincial_generation' as const;
-  const INSIGHTS_TIMEFRAME = 'recent' as const;
 
   const [data, setData] = useState<DashboardData>({
     ontarioDemand: [],
@@ -82,19 +75,6 @@ export const RealTimeDashboard: React.FC = () => {
 
   // Abort controller ref to cancel overlapping loads
   const loadAbortRef = useRef<AbortController | null>(null);
-
-  // Analytics Insight state
-  interface AnalyticsInsight {
-    summary: string;
-    key_findings?: string[];
-    policy_implications?: string[];
-    confidence?: string | number;
-    sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
-  }
-  const [insight, setInsight] = useState<AnalyticsInsight | null>(null);
-  const [insightLoading, setInsightLoading] = useState<boolean>(false);
-  const [insightError, setInsightError] = useState<string | null>(null);
-  const insightAbortRef = useRef<AbortController | null>(null);
 
   const nationalOverview = data.nationalOverview;
   const provinceMetrics = data.provinceMetrics;
@@ -235,30 +215,6 @@ export const RealTimeDashboard: React.FC = () => {
     return () => controller.abort();
   }, []);
 
-  // Load Analytics Insight (server-side LLM summarized analytics)
-  const loadAnalyticsInsight = useCallback(async () => {
-    insightAbortRef.current?.abort();
-    const controller = new AbortController();
-    insightAbortRef.current = controller;
-    setInsightLoading(true);
-    setInsightError(null);
-    try {
-      const payload = await getTransitionAnalyticsInsight(INSIGHTS_DATASET, INSIGHTS_TIMEFRAME, {
-        signal: controller.signal
-      });
-      if (!controller.signal.aborted) setInsight(payload as AnalyticsInsight);
-    } catch (e: any) {
-      if (e?.name === 'AbortError') return;
-      setInsightError(e?.message || 'Failed to load insights');
-    } finally {
-      if (!controller.signal.aborted) setInsightLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    loadAnalyticsInsight();
-    return () => insightAbortRef.current?.abort();
-  }, [loadAnalyticsInsight]);
 
   const fallbackGenerationGwh = data.provincialGeneration.reduce((sum, record) => {
     const valueMwh = typeof record.megawatt_hours === 'number'
@@ -471,7 +427,7 @@ export const RealTimeDashboard: React.FC = () => {
         ]}
       />
 
-      {/* Phase III.0: CO2 Emissions Tracker */}
+      {/* Phase III.0: CO2 Emissions Tracker - Compact Mode */}
       <CO2EmissionsTracker
         generationData={data.provincialGeneration.map(record => ({
           source_type: record.generation_type || 'other',
@@ -480,43 +436,8 @@ export const RealTimeDashboard: React.FC = () => {
             : 0,
           percentage: 0
         }))}
-        showBreakdown={true}
-      />
-
-      {/* Phase III.0: Renewable Penetration Heatmap */}
-      <RenewablePenetrationHeatmap
-        provincialData={Object.entries(
-          data.provincialGeneration.reduce((acc, record) => {
-            const province = record.province || 'Unknown';
-            if (!acc[province]) {
-              acc[province] = {
-                province,
-                renewable_mw: 0,
-                fossil_mw: 0,
-                total_mw: 0,
-                renewable_pct: 0,
-                sources: {}
-              };
-            }
-            const mw = typeof record.megawatt_hours === 'number' 
-              ? record.megawatt_hours 
-              : 0;
-            const fuelType = (record.generation_type || 'other').toLowerCase();
-            const isRenewable = ['hydro', 'wind', 'solar', 'biomass', 'geothermal'].includes(fuelType);
-            
-            if (isRenewable) acc[province].renewable_mw += mw;
-            else acc[province].fossil_mw += mw;
-            acc[province].total_mw += mw;
-            
-            if (!acc[province].sources[fuelType]) acc[province].sources[fuelType] = 0;
-            acc[province].sources[fuelType] += mw;
-            
-            return acc;
-          }, {} as Record<string, any>)
-        ).map(([_, data]) => ({
-          ...data,
-          renewable_pct: data.total_mw > 0 ? (data.renewable_mw / data.total_mw) * 100 : 0
-        }))}
+        compact={true}
+        showBreakdown={false}
       />
 
       {/* 4-Panel Dashboard Grid */}
@@ -564,18 +485,10 @@ export const RealTimeDashboard: React.FC = () => {
           </div>
 
           <div className={CONTAINER_CLASSES.cardBody}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="glass-card glass-card-electric text-center p-4 glass-card-hover">
                 <div className="text-xs text-cyan-300 font-semibold uppercase tracking-wide mb-2">Data Sources</div>
                 <div className="text-3xl font-bold text-white">{stats.dataSources}</div>
-              </div>
-              <div className="glass-card glass-card-renewable text-center p-4 glass-card-hover">
-                <div className="text-xs text-emerald-300 font-semibold uppercase tracking-wide mb-2">30-Day Generation</div>
-                <div className="text-3xl font-bold text-white">
-                  {totalGenerationGwh !== null && totalGenerationGwh !== undefined
-                    ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
-                    : '—'}
-                </div>
               </div>
               <div className="glass-card glass-card-electric text-center p-4 glass-card-hover">
                 <div className="text-xs text-cyan-300 font-semibold uppercase tracking-wide mb-2">Ontario Demand</div>
@@ -744,115 +657,26 @@ export const RealTimeDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Panel 4: Weather Correlation */}
-          <div className={CONTAINER_CLASSES.card}>
-            <div className={CONTAINER_CLASSES.cardHeader}>
-              <div className={CONTAINER_CLASSES.flexBetween}>
-                <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
-                  <Cloud className="h-5 w-5 mr-2 text-orange-600" />
-                  Weather Correlation
-                </h3>
-                <div className="text-right">
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Average Correlation</div>
-                  <div className={`${TEXT_CLASSES.metric} text-orange-600`}>{averageCorrelation.toFixed(2)}</div>
-                </div>
-              </div>
-            </div>
-            <div className={CONTAINER_CLASSES.cardBody}>
-              <div className="chart-container">
-                <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard - 40}>
-                  <ScatterChart data={weatherCorrelationData}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="temperature" name="Temperature" unit="°C" />
-                    <YAxis dataKey="correlation" name="Correlation" />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Scatter fill="#f59e0b" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* City Data Table with Improved Layout */}
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-5 gap-2">
-                {[
-                  { city: 'Calgary', temp: '20.9°C', correlation: '0.98' },
-                  { city: 'Montreal', temp: '23.5°C', correlation: '0.95' },
-                  { city: 'Ottawa', temp: '26.3°C', correlation: '0.96' },
-                  { city: 'Edmonton', temp: '21.4°C', correlation: '0.95' },
-                  { city: 'Toronto', temp: '23.3°C', correlation: '0.95' }
-                ].map((item, index) => (
-                  <div key={index} className="text-center p-2 bg-slate-50 rounded-lg">
-                    <div className={`${TEXT_CLASSES.bodySmall} font-semibold text-slate-800`}>{item.city}</div>
-                    <div className={`${TEXT_CLASSES.caption} text-slate-600`}>{item.temp}</div>
-                    <div className={`${TEXT_CLASSES.caption} text-orange-600 font-semibold`}>{item.correlation}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
-                Data: {data.weatherData.length} records • Source: {sourceText('hf_electricity_demand')}
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
 
-      {/* LLM Insights Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <TransitionReportPanel datasetPath="provincial_generation" timeframe="recent" />
-        <DataQualityPanel datasetPath="provincial_generation" timeframe="recent" />
-        {/* Insights Panel */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-          <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-              <AlertCircle className="h-5 w-5 mr-2 text-indigo-600" />
-              Insights
-            </h3>
+        {/* CTA to Analytics & Trends */}
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 border-2 border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Explore Historical Trends & AI Insights
+              </h3>
+              <p className="text-sm text-slate-600">
+                View 30-day trends, weather correlations, renewable penetration heatmaps, and AI-powered analytics
+              </p>
+            </div>
             <button
-              onClick={loadAnalyticsInsight}
-              className="text-sm text-indigo-600 hover:text-indigo-800"
-              disabled={insightLoading}
+              onClick={() => window.location.hash = '#analytics'}
+              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium whitespace-nowrap"
             >
-              {insightLoading ? 'Refreshing...' : 'Refresh'}
+              <TrendingUp size={20} />
+              View Analytics
             </button>
-          </div>
-          <div className="p-4 space-y-3">
-            {insightError && (
-              <div className="text-sm text-red-600">{insightError}</div>
-            )}
-            {!insight && !insightError && (
-              <div className="text-sm text-slate-500">Loading insights…</div>
-            )}
-            {insight && (
-              <>
-                <p className="text-slate-800 text-sm leading-relaxed">{insight.summary}</p>
-                {Array.isArray(insight.key_findings) && insight.key_findings.length > 0 && (
-                  <div>
-                    <div className="text-xs font-semibold text-slate-600 mb-1">Key findings</div>
-                    <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-                      {insight.key_findings.slice(0, 4).map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {Array.isArray(insight.policy_implications) && insight.policy_implications.length > 0 && (
-                  <div>
-                    <div className="text-xs font-semibold text-slate-600 mb-1">Policy implications</div>
-                    <ul className="list-disc pl-5 text-sm text-slate-700 space-y-1">
-                      {insight.policy_implications.slice(0, 4).map((f, i) => (
-                        <li key={i}>{f}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div className="flex items-center justify-between text-xs text-slate-500 pt-2 border-t border-slate-100">
-                  <span>Confidence: {String(insight.confidence ?? '—')}</span>
-                  <span>
-                    Citations: {Array.isArray(insight.sources) ? insight.sources.length : 0}
-                  </span>
-                </div>
-              </>
-            )}
           </div>
         </div>
       </div>
