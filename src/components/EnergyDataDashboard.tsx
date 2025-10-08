@@ -347,49 +347,64 @@ export const EnergyDataDashboard: React.FC = () => {
         ) : activeTab === 'Analytics' ? (
           <AnalyticsTrendsDashboard />
         ) : activeTab === 'Home' ? (
-          // Home Tab - Landing Page with Shader Effects
-          <div className="space-y-8">
-            {/* Welcome Section with Shader Background */}
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
-              <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="relative z-10 p-8">
-                <div className="text-center max-w-4xl mx-auto">
-                  <div className="flex items-center justify-center mb-6 animate-float">
-                    <div className="glass-card rounded-full p-6 animate-pulse-slow">
-                      <Zap className="h-16 w-16 text-white" />
+          // Home Tab - Premium Landing Page with Enhanced Hero Section
+          <div className="space-y-12 -mt-8">
+            {/* Premium Hero Section - Full-width with glassmorphism */}
+            <div className="relative overflow-hidden -mx-8 lg:-mx-16">
+              {/* Background Image with Blur Overlay */}
+              <div className="absolute inset-0">
+                <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-purple-900/40 backdrop-blur-sm"></div>
+              </div>
+              
+              {/* Hero Content - Centered with Premium Typography */}
+              <div className="relative z-10 px-8 lg:px-16 py-32 lg:py-40">
+                <div className="text-center max-w-5xl mx-auto">
+                  {/* Animated Icon */}
+                  <div className="flex items-center justify-center mb-8 animate-fade-in">
+                    <div className="glass-card rounded-full p-8 shadow-2xl hover:scale-110 transition-transform duration-500">
+                      <Zap className="h-20 w-20 text-white animate-pulse-slow" />
                     </div>
                   </div>
-                  <h1 className="text-5xl font-bold text-white mb-6 animate-fade-in">
-                    Canadian Energy Information Portal
+                  
+                  {/* Main Heading - Serif Font for Premium Feel */}
+                  <h1 className="text-6xl lg:text-7xl font-serif font-light text-white mb-6 tracking-tight animate-fade-in leading-tight">
+                    Canadian Energy
+                    <span className="block font-medium mt-2 bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
+                      Intelligence Platform
+                    </span>
                   </h1>
-                  <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
+                  
+                  {/* Subtitle with Better Spacing */}
+                  <p className="text-xl lg:text-2xl text-white/90 mb-12 animate-fade-in-delayed leading-relaxed max-w-3xl mx-auto font-light">
                     Real-time streaming architecture for comprehensive energy data analytics across Canada
                   </p>
-                  <div className="flex flex-wrap items-center justify-center gap-4 text-sm animate-fade-in-slow">
-                    <div className="glass-card px-6 py-3 rounded-full text-white">
-                      <Signal className="h-4 w-4 inline mr-2" />
-                      Live Streaming
+                  
+                  {/* Feature Pills with Smooth Hover */}
+                  <div className="flex flex-wrap items-center justify-center gap-4 text-sm lg:text-base animate-fade-in-slow">
+                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
+                      <Signal className="h-5 w-5 inline mr-3" />
+                      <span className="font-medium">Live Streaming</span>
                     </div>
-                    <div className="glass-card px-6 py-3 rounded-full text-white">
-                      <Database className="h-4 w-4 inline mr-2" />
-                      4 Datasets
+                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
+                      <Database className="h-5 w-5 inline mr-3" />
+                      <span className="font-medium">4 Datasets</span>
                     </div>
-                    <div className="glass-card px-6 py-3 rounded-full text-white">
-                      <Gauge className="h-4 w-4 inline mr-2" />
-                      Real-time Analytics
+                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
+                      <Gauge className="h-5 w-5 inline mr-3" />
+                      <span className="font-medium">Real-time Analytics</span>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Stats Overview - Enhanced Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
               {DATASETS.map((dataset, index) => {
                 const status = connectionStatuses.find(s => s.dataset === dataset.name);
                 return (
-                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-lg transition-all duration-300`}>
+                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 animate-fade-in group`} style={{animationDelay: `${index * 100}ms`}}>
                     <div className={CONTAINER_CLASSES.cardHeader}>
                       <div className={CONTAINER_CLASSES.flexBetween}>
                         <div className={`p-3 rounded-lg`} style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}>
