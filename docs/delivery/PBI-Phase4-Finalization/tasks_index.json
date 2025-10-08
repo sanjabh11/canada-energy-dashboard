@@ -1,5 +1,0 @@
-{
-  "tasks": [
-    { "task_id": "PBI-Phase4-Finalization-T1", "title": "Validate data foundation, add fetch timeouts, and clean PRD 404s if resolved", "status": "InProgress" }
-  ]
-}

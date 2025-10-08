@@ -12,3 +12,7 @@ node_modules
 tmp/
 # Ignore nested clone
 canada-energy-dashboard/
+
+# Local Netlify folder
+.netlify
+docs/

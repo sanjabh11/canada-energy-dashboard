@@ -218,10 +218,12 @@ export const EnergyDataDashboard: React.FC = () => {
       
       return { ...tab, badge, status: feature.status };
     }).filter(tab => {
-      // In production, hide deferred features
-      if (import.meta.env.PROD) {
-        const featureId = tabToFeatureMap[tab.id];
-        if (featureId && !isFeatureEnabled(featureId)) {
+      // Hide features that are explicitly disabled (deferred features)
+      const featureId = tabToFeatureMap[tab.id];
+      if (featureId) {
+        const feature = getFeature(featureId);
+        // Only hide if feature exists and is explicitly disabled
+        if (feature && !feature.enabled) {
           return false;
         }
       }
