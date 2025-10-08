@@ -364,6 +364,14 @@ export const RealTimeDashboard: React.FC = () => {
     }
   };
 
+  // Debug: Check if env vars are loaded
+  const envDebug = {
+    edgeFetch: import.meta.env.VITE_ENABLE_EDGE_FETCH,
+    streaming: import.meta.env.VITE_USE_STREAMING_DATASETS,
+    debug: import.meta.env.VITE_DEBUG_LOGS
+  };
+  console.log('🔧 RealTimeDashboard env check:', envDebug);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Hero Section with Glassmorphic Design */}
