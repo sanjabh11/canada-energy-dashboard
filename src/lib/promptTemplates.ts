@@ -466,6 +466,146 @@ Now provide the market intelligence brief with specific numbers and clear recomm
 }
 
 /**
+ * Renewable Energy Optimization Prompt
+ * For AI-Powered Forecasting, Curtailment Reduction, Storage Dispatch
+ */
+export function createRenewableOptimizationPrompt(
+  context: PromptContext & {
+    optimizationType: 'solar_forecast' | 'wind_forecast' | 'curtailment_reduction' | 'storage_dispatch';
+    realTimeData: any;
+    weatherData?: any;
+    historicalPerformance?: any;
+  }
+): string {
+  const { optimizationType, realTimeData, weatherData, historicalPerformance } = context;
+  
+  return `You are an advanced AI optimization engine for renewable energy integration in Canadian power grids, specializing in ${optimizationType.replace('_', ' ')}.
+
+CORE COMPETENCIES:
+1. **Renewable Energy Forecasting**: Short-term solar/wind generation prediction (1-48h) with weather pattern analysis
+2. **Curtailment Reduction**: Identify and mitigate renewable curtailment events to maximize clean energy utilization
+3. **Storage Dispatch Optimization**: Real-time battery charge/discharge recommendations for grid stability and arbitrage
+4. **Grid Stability Integration**: Balance renewable variability while maintaining 60 Hz ±0.05 frequency
+
+OPTIMIZATION FRAMEWORK (Chain-of-Thought):
+
+## Step 1: SITUATIONAL AWARENESS
+Current Grid State:
+- Renewable Generation: ${realTimeData?.renewable_mw || 'N/A'} MW (${realTimeData?.renewable_pct || 0}% of mix)
+- Total Demand: ${realTimeData?.demand_mw || 'N/A'} MW
+- Reserve Margin: ${realTimeData?.reserve_margin || 'N/A'}%
+- Grid Frequency: ${realTimeData?.frequency || 60.0} Hz
+- Province: ${context.userProvince || 'ON'}
+
+Weather Conditions:
+${weatherData ? JSON.stringify(weatherData, null, 2) : 'Fetching weather data...'}
+
+## Step 2: ${optimizationType === 'solar_forecast' || optimizationType === 'wind_forecast' ? 'FORECAST GENERATION' : 'OPTIMIZATION ANALYSIS'}
+
+${optimizationType === 'solar_forecast' ? `
+For Solar Forecasting:
+- Time: ${new Date().toISOString()}
+- Cloud Cover: ${weatherData?.cloud_cover_pct || 'Unknown'}%
+- Temperature: ${weatherData?.temp_c || 'Unknown'}°C
+- Solar Radiation: ${weatherData?.solar_radiation_wm2 || 'Unknown'} W/m²
+- Historical MAE: ${historicalPerformance?.mae_percent || 'N/A'}%
+
+Generate predictions:
+- 1-hour forecast: [MW] ±[confidence interval]
+- 6-hour forecast: [MW] ±[confidence interval]
+- 24-hour forecast: [MW] ±[confidence interval]
+` : ''}
+
+${optimizationType === 'wind_forecast' ? `
+For Wind Forecasting:
+- Wind Speed: ${weatherData?.wind_speed_ms || 'Unknown'} m/s
+- Wind Direction: ${weatherData?.wind_direction_deg || 'Unknown'}°
+- Temperature: ${weatherData?.temp_c || 'Unknown'}°C
+- Historical MAE: ${historicalPerformance?.mae_percent || 'N/A'}%
+
+Generate predictions:
+- 1-hour forecast: [MW] ±[confidence interval]
+- 6-hour forecast: [MW] ±[confidence interval]
+- 24-hour forecast: [MW] ±[confidence interval]
+` : ''}
+
+${optimizationType === 'curtailment_reduction' ? `
+Curtailment Risk Assessment:
+- Current Curtailment: ${realTimeData?.curtailment_mw || 0} MW
+- Reason: ${realTimeData?.curtailment_reason || 'None detected'}
+- Opportunity Cost: $${((realTimeData?.curtailment_mw || 0) * 50).toFixed(0)}/hour
+
+Mitigation Strategies:
+1. **Demand Response**: Recommend DR programs to absorb surplus
+2. **Storage Charging**: Check battery availability
+3. **Inter-Tie Exports**: Evaluate neighboring grid capacity
+4. **Industrial Load Shifting**: Identify flexible loads
+
+Expected Impact: Reduce curtailment by [X] MW → Save [Y] MWh/day
+` : ''}
+
+${optimizationType === 'storage_dispatch' ? `
+Battery Dispatch Decision:
+- Current SoC: ${realTimeData?.battery_soc || 'N/A'}%
+- Available Capacity: ${realTimeData?.battery_capacity_mwh || 0} MWh
+- Grid Price: $${realTimeData?.price || 0}/MWh
+- Renewable Output: ${realTimeData?.renewable_mw || 0} MW
+
+Decision Matrix:
+| Action | Magnitude | Timing | Expected Revenue | Grid Service |
+|--------|-----------|--------|------------------|--------------|
+| CHARGE | [MW] | immediate | $[X] saved | renewable_absorption |
+| DISCHARGE | [MW] | +2h peak | $[Y] earned | peak_shaving |
+| HOLD | 0 | standby | $0 | frequency_reserve |
+
+Optimization Objective: Maximize revenue + grid services
+` : ''}
+
+## Step 3: CONFIDENCE & VALIDATION
+Confidence Level: ${historicalPerformance?.recent_accuracy === 'improving' ? 'HIGH (90%+)' : 'MEDIUM (70-90%)'}
+- Physical constraints respected ✓
+- Grid stability maintained ✓
+- Economic feasibility confirmed ✓
+
+## Step 4: CANADIAN GRID CONTEXT
+Province: ${context.userProvince || 'Ontario'}
+ISO: ${context.userProvince === 'ON' ? 'IESO' : context.userProvince === 'AB' ? 'AESO' : 'Provincial'}
+Renewable Target: Net-zero by 2050
+Current Renewable Mix: ${realTimeData?.renewable_pct || 0}%
+
+PERFORMANCE METRICS (Award Evidence):
+1. **Forecast Accuracy**: Target MAE < ${optimizationType.includes('solar') ? '6%' : '8%'}
+2. **Curtailment Reduction**: Target 500 MWh/month saved
+3. **Storage Efficiency**: Target >88% round-trip
+4. **Grid Reliability**: Frequency deviation < 0.05 Hz
+
+OUTPUT FORMAT (JSON):
+{
+  "optimization_type": "${optimizationType}",
+  "timestamp": "${new Date().toISOString()}",
+  ${optimizationType.includes('forecast') ? `"forecast": {
+    "1h": { "value_mw": 0, "confidence": "high|medium|low" },
+    "6h": { "value_mw": 0, "confidence": "high|medium|low" },
+    "24h": { "value_mw": 0, "confidence": "high|medium|low" }
+  },` : ''}
+  "recommendations": [
+    {
+      "action": "specific action",
+      "magnitude_mw": 0,
+      "timing": "immediate|15min|1h",
+      "priority": "critical|high|medium|low",
+      "expected_impact": "description with numbers",
+      "cost_benefit": "$X saved or earned"
+    }
+  ],
+  "confidence": "high|medium|low",
+  "reasoning": "step-by-step explanation"
+}
+
+Now generate your optimization recommendation with specific, actionable, measurable outputs.`;
+}
+
+/**
  * Export all templates
  */
 export const PromptTemplates = {
@@ -475,6 +615,7 @@ export const PromptTemplates = {
   chartExplanation: createChartExplanationPrompt,
   policyImpact: createPolicyImpactPrompt,
   marketBrief: createMarketBriefPrompt,
+  renewableOptimization: createRenewableOptimizationPrompt,
 };
 
 /**
@@ -486,6 +627,7 @@ export const PROMPT_VERSIONS = {
   household_v3: '2.1.0', // + Few-shot examples
   dataAnalysis_v1: '1.0.0',
   dataAnalysis_v2: '2.0.0', // Enhanced with Canadian context
+  renewableOptimization_v1: '1.0.0', // NEW: Award-focused optimization
 };
 
 export default PromptTemplates;

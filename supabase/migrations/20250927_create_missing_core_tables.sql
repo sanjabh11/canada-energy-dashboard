@@ -24,6 +24,17 @@ CREATE TABLE IF NOT EXISTS public.provincial_generation (
   generation_gwh double precision,
   created_at timestamptz DEFAULT now()
 );
+
+-- Clean up duplicates before creating unique index
+DELETE FROM public.provincial_generation
+WHERE id IN (
+  SELECT id FROM (
+    SELECT id, ROW_NUMBER() OVER (PARTITION BY date, province_code, source ORDER BY created_at DESC) AS rn
+    FROM public.provincial_generation
+  ) t
+  WHERE rn > 1
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS idx_provincial_generation_unique
   ON public.provincial_generation (date, province_code, source);
 CREATE INDEX IF NOT EXISTS idx_provincial_generation_date_province ON public.provincial_generation (date, province_code);

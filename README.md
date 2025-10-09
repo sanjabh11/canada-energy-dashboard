@@ -5,7 +5,7 @@ A comprehensive real-time energy data visualization platform for Canadian energy
 
 ---
 
-## 🎯 **Latest Implementation Status (Phase I + II + III.0 + IV Complete - 97% Complete)**
+## 🎯 **Latest Implementation Status (Phase I + II + III.0 + IV + Tier 1 Complete - 98% Complete)**
 
 ### ✅ **COMPLETED FEATURES (Production Ready)**
 
@@ -119,6 +119,27 @@ A comprehensive real-time energy data visualization platform for Canadian energy
 - [x] ✅ Real-Time Dashboard slimmed (40% density reduction)
 - [x] ✅ Content separation (real-time vs. analytical)
 - [x] ✅ Legacy redirect support (Trends → Analytics)
+
+### ✅ **TIER 1 COMPLETED FEATURES** (2025-10-09) 🆕
+
+#### **Renewable Forecasting & Optimization System** ✅
+- [x] ✅ Multi-horizon forecasts (1h, 3h, 6h, 12h, 24h, 48h horizons)
+- [x] ✅ Forecast performance metrics (MAE/MAPE/RMSE calculation)
+- [x] ✅ Award evidence API (nomination-ready JSON endpoint)
+- [x] ✅ Curtailment event detection (4 reason types: transmission, oversupply, negative pricing, frequency)
+- [x] ✅ AI-powered mitigation recommendations (storage, demand response, inter-tie export)
+- [x] ✅ Cost-benefit analysis with ROI calculations
+- [x] ✅ Data retention & purge (60-180 day retention, free tier compliant)
+- [x] ✅ Curtailment Analytics Dashboard (4-tab interface: Events, Recommendations, Analytics, Award Evidence)
+- [x] ✅ 3 new Edge Functions deployed (renewable-forecast, curtailment-reduction, forecast-performance)
+- [x] ✅ 8 new database tables (renewable_forecasts, forecast_actuals, forecast_performance, weather_observations, curtailment_events, curtailment_reduction_recommendations, storage_dispatch_log, renewable_capacity_registry)
+
+**Award Evidence Metrics**:
+- Solar/Wind forecast MAE tracking (target: <6% solar, <8% wind)
+- Monthly curtailment avoided (target: >500 MWh/month)
+- Opportunity cost savings (CAD)
+- Implementation success rates
+- Data completeness monitoring
 
 ### ✅ **PHASE II COMPLETED FEATURES** (2025-10-08)
 
@@ -296,13 +317,26 @@ Run migrations in Supabase SQL Editor:
 ```bash
 # Location: supabase/migrations/
 20250827_llm_schemas.sql  # LLM call logging, rate limiting
+20251009_phase2_complete.sql  # Renewable forecasting tables
+20251009_tier1_complete.sql  # Performance metrics & retention
+20251009_fix_database_stats.sql  # Database monitoring fix
 ```
 
-Key tables created:
+**Core Platform Tables**:
 - `llm_call_log` - LLM request audit trail
 - `llm_feedback` - User feedback on LLM responses
 - `llm_rate_limit` - Per-user rate limiting
 - `household_chat_messages` - Household advisor conversations
+
+**Phase 2: Renewable Forecasting & Optimization** 🆕:
+- `renewable_forecasts` - Multi-horizon generation forecasts (1h-48h)
+- `forecast_actuals` - Actual vs. predicted with error metrics
+- `forecast_performance` - Daily/monthly performance summaries
+- `weather_observations` - Weather data for forecast correlation
+- `curtailment_events` - Curtailment detection and tracking
+- `curtailment_reduction_recommendations` - AI mitigation strategies (26 columns)
+- `storage_dispatch_log` - Battery optimization decisions
+- `renewable_capacity_registry` - Provincial capacity tracking
 
 #### B. Edge Functions (Required for full features)
 Deploy Edge Functions to Supabase:
@@ -323,6 +357,9 @@ supabase functions deploy household-advisor --project-ref $SUPABASE_PROJECT_REF
 - `household-advisor/` - Personalized energy advice
 - `stream-*` - Real-time data streaming endpoints
 - `api-v2-*` - Various API v2 endpoints (indigenous, grid, analytics)
+- `api-v2-renewable-forecast` 🆕 - Forecast generation API (multi-horizon)
+- `api-v2-curtailment-reduction` 🆕 - Curtailment management (detect, recommend, statistics)
+- `api-v2-forecast-performance` 🆕 - Performance metrics & award evidence
 
 #### C. Server-Side Environment Variables
 Set in Supabase Dashboard → Project → Configuration → Functions → Environment:
@@ -629,13 +666,13 @@ netlify deploy --prod --dir=dist
 
 | Metric | Value |
 |--------|-------|
-| **Total Lines of Code** | 3,643+ |
+| **Total Lines of Code** | 7,143+ |
 | **Components** | 50+ |
 | **Dashboards** | 15+ |
-| **Edge Functions** | 40+ |
+| **Edge Functions** | 43+ |
 | **Data Sources** | 4 streaming |
 | **AI Models** | Gemini 2.5 Flash & Pro |
-| **Platform Completion** | 97% |
+| **Platform Completion** | 98% |
 | **Bundle Size** | 263 KB gzipped |
 | **Build Time** | ~11s |
 

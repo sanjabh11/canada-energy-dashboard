@@ -71,6 +71,19 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_resilience_hazard_asset_scenario
   ON public.resilience_hazard_assessments (asset_id, scenario, time_horizon_years);
 
+-- Add unique constraint for ON CONFLICT
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint 
+    WHERE conname = 'resilience_hazard_assessments_asset_scenario_key'
+  ) THEN
+    ALTER TABLE public.resilience_hazard_assessments
+      ADD CONSTRAINT resilience_hazard_assessments_asset_scenario_key 
+      UNIQUE (asset_id, scenario, time_horizon_years);
+  END IF;
+END$$;
+
 -- Seed reference assets (idempotent)
 INSERT INTO public.resilience_assets (id, name, location, vulnerability_score, adaptation_cost, asset_type, latitude, longitude, dependents, current_condition, criticality_score, climate_region, population_served)
 VALUES
@@ -97,10 +110,6 @@ UPDATE public.resilience_assets
 SET asset_uuid = COALESCE(asset_uuid, uuid_generate_v4());
 
 -- Seed hazard assessments
-WITH upsert AS (
-  SELECT rs.id, rs.asset_uuid
-  FROM public.resilience_assets rs
-)
 INSERT INTO public.resilience_hazard_assessments (
   asset_id,
   asset_uuid,
@@ -132,7 +141,7 @@ SELECT
   scenario_data.erosion,
   scenario_data.overall_risk,
   now()
-FROM upsert rs
+FROM public.resilience_assets rs
 CROSS JOIN LATERAL (
   VALUES
     ('current_2c', 10, 62, 35, 18, 25, 54, 28, 14, 21, 68),
