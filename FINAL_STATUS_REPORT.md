@@ -123,7 +123,7 @@ VITE_ENABLE_EDGE_FETCH=true
 **Current Configuration**:
 ```bash
 # Server-side (Supabase Edge Functions)
-GEMINI_API_KEY=AIzaSyCseZFXvRDfcBi4fjgS9MTcnOB_Ee3TgXs ✅ CORRECT
+GEMINI_API_KEY=xxx ✅ CORRECT
 
 # Client-side (Browser)
 VITE_LLM_BASE=https://qnymbecjgeaoxsfphrti.functions.supabase.co ✅ CORRECT
