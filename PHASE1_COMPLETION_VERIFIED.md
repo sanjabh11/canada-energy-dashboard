@@ -33,7 +33,7 @@
 ### 3. Weather API Integration ✅
 - ✅ `/src/lib/weatherService.ts` (350+ lines)
 - ✅ Environment Canada (primary, free)
-- ✅ OpenWeatherMap (backup) - **API Key Configured**: `46729c3c1126f0eae3ba3ad9a1615db2`
+- ✅ OpenWeatherMap (backup) - **API Key Configured**: 
 - ✅ Mock data generator for development
 - ✅ 13 provincial weather stations
 
