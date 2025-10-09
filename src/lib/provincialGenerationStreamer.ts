@@ -5,12 +5,12 @@
  * through the Supabase edge functions and populates IndexedDB for client-side caching.
  */
 
-// Feature flag - set to false in production until validated
-const USE_STREAMING_DATASETS = false;
+// Feature flag - read from environment
+const USE_STREAMING_DATASETS = import.meta.env.VITE_USE_STREAMING_DATASETS === 'true';
 
-// Configuration
-const SUPABASE_URL = 'https://jxdihzqoaxtydolmltdr.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4ZGloenFvYXh0eWRvbG1sdGRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5MjQ2MDUsImV4cCI6MjA3MTUwMDYwNX0.RS92p3Y7qJ-38PLFR1L4Y9Rl9R4dmFYYCVxhBcJBW8Q';
+// Configuration - read from environment variables
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Types
 interface ManifestResponse {

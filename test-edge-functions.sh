@@ -1,9 +1,20 @@
 #!/bin/bash
 
 # Test script to verify Supabase Edge Functions are deployed and working
+# Usage: SUPABASE_URL=<url> ANON_KEY=<key> ./test-edge-functions.sh
+# Or set these in your .env file and source it: source .env && ./test-edge-functions.sh
 
-SUPABASE_URL="https://qnymbecjgeaoxsfphrti.functions.supabase.co"
-ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU"
+# Read from environment or use placeholders
+SUPABASE_URL="${SUPABASE_URL:-https://YOUR_PROJECT.functions.supabase.co}"
+ANON_KEY="${ANON_KEY:-YOUR_SUPABASE_ANON_KEY}"
+
+# Check if variables are set
+if [[ "$SUPABASE_URL" == *"YOUR_PROJECT"* ]] || [[ "$ANON_KEY" == *"YOUR_"* ]]; then
+  echo "❌ Error: SUPABASE_URL and ANON_KEY must be set"
+  echo "Usage: SUPABASE_URL=<url> ANON_KEY=<key> ./test-edge-functions.sh"
+  echo "Or: source .env && ./test-edge-functions.sh"
+  exit 1
+fi
 
 echo "Testing Supabase Edge Functions Deployment"
 echo "==========================================="

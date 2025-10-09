@@ -7,14 +7,14 @@ The Supabase CLI is showing a 403 permissions error:
 Your account does not have the necessary privileges to access this endpoint.
 ```
 
-This means the project `qnymbecjgeaoxsfphrti` may belong to a different Supabase account or organization.
+This means the project may belong to a different Supabase account or organization.
 
 ## Solution: Deploy via Supabase Dashboard
 
 ### Step 1: Access Supabase Dashboard
 
 1. Go to: https://supabase.com/dashboard
-2. Login with the account that owns project `qnymbecjgeaoxsfphrti`
+2. Login with the account that owns your Supabase project
 3. Select the project (should show as "canada-energy" or similar)
 
 ### Step 2: Deploy Edge Functions
@@ -59,8 +59,8 @@ Expected output:
 Verify the functions now return actual data (not empty arrays):
 
 ```bash
-curl -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU" \
-  "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-demand?limit=5" | jq '.rows | length'
+curl -H "apikey: $SUPABASE_ANON_KEY" \
+  "$SUPABASE_EDGE_BASE/stream-ontario-demand?limit=5" | jq '.rows | length'
 ```
 
 Expected: Should show a number > 0 (e.g., 5)
@@ -86,10 +86,10 @@ supabase logout
 supabase login
 
 # Try deployment again
-supabase functions deploy stream-ontario-demand --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-provincial-generation --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-ontario-prices --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-hf-electricity-demand --project-ref qnymbecjgeaoxsfphrti
+supabase functions deploy stream-ontario-demand --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-provincial-generation --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-ontario-prices --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-hf-electricity-demand --project-ref <YOUR_PROJECT_REF>
 ```
 
 ## What These Changes Do
@@ -160,7 +160,7 @@ supabase functions deploy stream-hf-electricity-demand --project-ref qnymbecjgea
 2. Check browser console for errors
 3. Verify edge functions are returning data:
    ```bash
-   curl "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-demand?limit=1" | jq
+   curl "$SUPABASE_EDGE_BASE/stream-ontario-demand?limit=1" | jq
    ```
 
 ### If functions return 500 errors:

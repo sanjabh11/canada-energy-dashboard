@@ -48,12 +48,12 @@ supabase functions deploy api-v2-renewable-forecast
 supabase functions deploy api-v2-curtailment-reduction
 
 # Test Phase 1
-curl "https://qnymbecjgeaoxsfphrti.functions.supabase.co/functions/v1/api-v2-renewable-forecast?province=ON&source_type=solar&horizon_hours=24" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU"
+curl "$SUPABASE_EDGE_BASE/functions/v1/api-v2-renewable-forecast?province=ON&source_type=solar&horizon_hours=24" \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY"
 
 # Test Phase 2
-curl "https://qnymbecjgeaoxsfphrti.functions.supabase.co/functions/v1/api-v2-curtailment-reduction/statistics?province=ON" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU"
+curl "$SUPABASE_EDGE_BASE/functions/v1/api-v2-curtailment-reduction/statistics?province=ON" \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY"
 ```
 
 **Expected**: JSON responses (may be empty initially, that's OK)

@@ -18,8 +18,8 @@ Tested all streaming endpoints - they are deployed and returning 200 OK:
 ## Environment Configuration: ✅ CORRECT
 
 ```bash
-VITE_SUPABASE_URL=https://qnymbecjgeaoxsfphrti.supabase.co
-VITE_SUPABASE_ANON_KEY=ey... (set)
+VITE_SUPABASE_URL=<YOUR_SUPABASE_PROJECT_URL>
+VITE_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
 VITE_USE_STREAMING_DATASETS=true
 VITE_ENABLE_EDGE_FETCH=true
 VITE_DEBUG_LOGS=true (temporarily enabled)

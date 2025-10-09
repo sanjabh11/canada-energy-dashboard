@@ -57,7 +57,8 @@ export const TEKPanel: React.FC<TEKPanelProps> = ({
     
     try {
       // Call LLM Edge Function with Indigenous prompt template
-      const response = await fetch('https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/llm/explain-chart', {
+      const llmBase = import.meta.env.VITE_LLM_BASE || import.meta.env.VITE_SUPABASE_EDGE_BASE;
+      const response = await fetch(`${llmBase}/llm/explain-chart`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

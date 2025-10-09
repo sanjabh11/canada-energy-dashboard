@@ -62,14 +62,14 @@ If any of these is `false`, the system falls back to local JSON samples.
 
 The console shows:
 ```
-GET https://qnymbecjgeaoxsfphrti.functions.supabase.co/api-v2-resilience-hazards 500 (Internal Server Error)
+GET <YOUR_SUPABASE_EDGE_BASE>/api-v2-resilience-hazards 500 (Internal Server Error)
 ```
 
 **This suggests edge functions may not be fully deployed or have errors.**
 
 Check which edge functions are actually deployed:
 ```bash
-supabase functions list --project-ref qnymbecjgeaoxsfphrti
+supabase functions list --project-ref <YOUR_PROJECT_REF>
 ```
 
 Expected streaming endpoints:
@@ -115,25 +115,24 @@ catch (error: any) {
 Try accessing an edge function directly:
 
 ```bash
-curl -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU" \
-  "https://qnymbecjgeaoxsfphrti.functions.supabase.co/manifest-provincial-generation"
+curl -H "apikey: $SUPABASE_ANON_KEY" \
+  "$SUPABASE_EDGE_BASE/manifest-provincial-generation"
 ```
 
 Expected: JSON response with manifest data
 If 404: Function not deployed or wrong endpoint name
-If 500: Function has runtime error
 
 ### Step 3: Check Edge Function Deployment
 
 ```bash
 cd /Users/sanjayb/minimax/energy-data-dashboard
-supabase functions list --project-ref qnymbecjgeaoxsfphrti
+supabase functions list --project-ref $VITE_SUPABASE_URL
 ```
 
 ### Step 4: Review Edge Function Logs
 
 ```bash
-supabase functions logs manifest-provincial-generation --project-ref qnymbecjgeaoxsfphrti
+{{ ... }}
 ```
 
 ## Resolution Paths
@@ -143,7 +142,7 @@ supabase functions logs manifest-provincial-generation --project-ref qnymbecjgea
 
 ```bash
 # Deploy all functions
-supabase functions deploy --project-ref qnymbecjgeaoxsfphrti
+supabase functions deploy --project-ref <YOUR_PROJECT_REF>
 ```
 
 ### Path B: isEdgeFetchEnabled() Returns False

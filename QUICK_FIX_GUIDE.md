@@ -18,14 +18,14 @@ Click "Add a variable" for each:
 #### Variable 1
 ```
 Key: VITE_SUPABASE_URL
-Value: https://qnymbecjgeaoxsfphrti.supabase.co
+Value: <YOUR_SUPABASE_PROJECT_URL>
 Scopes: All scopes
 ```
 
 #### Variable 2
 ```
 Key: VITE_SUPABASE_ANON_KEY
-Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNDk4ODYsImV4cCI6MjA0OTYyNTg4Nn0.Rl_0gYCCwLGRWz3oBCWqpHJPXVWnPNdVTqCWZLHkRqM
+Value: <YOUR_SUPABASE_ANON_KEY>
 Scopes: All scopes
 ```
 

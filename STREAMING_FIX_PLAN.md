@@ -137,10 +137,10 @@ curl "http://localhost:54321/functions/v1/stream-ontario-demand?limit=10"
 
 #### 4.1 Deploy All Updated Functions
 ```bash
-supabase functions deploy stream-ontario-demand --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-provincial-generation --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-ontario-prices --project-ref qnymbecjgeaoxsfphrti
-supabase functions deploy stream-hf-electricity-demand --project-ref qnymbecjgeaoxsfphrti
+supabase functions deploy stream-ontario-demand --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-provincial-generation --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-ontario-prices --project-ref <YOUR_PROJECT_REF>
+supabase functions deploy stream-hf-electricity-demand --project-ref <YOUR_PROJECT_REF>
 ```
 
 #### 4.2 Verify Deployment

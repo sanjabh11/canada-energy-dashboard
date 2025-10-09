@@ -20,8 +20,8 @@
 
 ```bash
 # Supabase Configuration
-VITE_SUPABASE_URL=https://qnymbecjgeaoxsfphrti.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNDk4ODYsImV4cCI6MjA0OTYyNTg4Nn0.Rl_0gYCCwLGRWz3oBCWqpHJPXVWnPNdVTqCWZLHkRqM
+VITE_SUPABASE_URL=<YOUR_SUPABASE_PROJECT_URL>
+VITE_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
 
 # Feature Flags - CRITICAL
 VITE_USE_STREAMING_DATASETS=true
@@ -64,7 +64,7 @@ netlify deploy --prod --dir=dist
    ```
 
 3. **Network Tab**
-   - Should see requests to: `https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-*`
+   - Should see requests to: `<YOUR_SUPABASE_EDGE_BASE>/stream-*`
    - Should NOT see only fallback data
 
 ---
@@ -142,11 +142,11 @@ VITE_USE_STREAMING_DATASETS=true  # ✅ Exact match
 
 ```
 Variable Name: VITE_SUPABASE_URL
-Value: https://qnymbecjgeaoxsfphrti.supabase.co
+Value: <YOUR_SUPABASE_PROJECT_URL>
 Scopes: All scopes
 
 Variable Name: VITE_SUPABASE_ANON_KEY
-Value: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQwNDk4ODYsImV4cCI6MjA0OTYyNTg4Nn0.Rl_0gYCCwLGRWz3oBCWqpHJPXVWnPNdVTqCWZLHkRqM
+Value: <YOUR_SUPABASE_ANON_KEY>
 Scopes: All scopes
 
 Variable Name: VITE_USE_STREAMING_DATASETS

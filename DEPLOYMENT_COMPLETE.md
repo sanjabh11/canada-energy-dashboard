@@ -103,7 +103,7 @@ Since Supabase CLI has permission issues, deploy via Dashboard:
 
 **Option 1: Supabase Dashboard (RECOMMENDED)**
 
-1. Go to: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/functions
+1. Go to: https://supabase.com/dashboard/project/<YOUR_PROJECT_REF>/functions
 2. Click "Deploy new function"
 3. Upload `supabase/functions/api-v2-renewable-forecast/index.ts`
 4. Repeat for `api-v2-curtailment-reduction/index.ts`
@@ -118,7 +118,7 @@ npm install -g supabase@latest
 supabase login
 
 # Link project
-supabase link --project-ref qnymbecjgeaoxsfphrti
+supabase link --project-ref <YOUR_PROJECT_REF>
 
 # Deploy functions
 supabase functions deploy api-v2-renewable-forecast

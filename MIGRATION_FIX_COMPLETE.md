@@ -32,7 +32,7 @@ Since the Supabase CLI has connection issues with the password containing `#`, u
 
 ### Option 1: Dashboard SQL Editor (RECOMMENDED)
 
-1. Go to: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql/new
+1. Go to: https://supabase.com/dashboard/project/<YOUR_PROJECT_REF>/sql/new
 2. Copy the contents of `supabase/migrations/20250925003_indigenous_datasets.sql`
 3. Paste into SQL Editor
 4. Click "Run"

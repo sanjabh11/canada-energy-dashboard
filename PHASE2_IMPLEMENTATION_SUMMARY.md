@@ -129,8 +129,8 @@ cd /Users/sanjayb/minimax/energy-data-dashboard
 supabase functions deploy api-v2-curtailment-reduction
 
 # Test endpoint
-curl "https://qnymbecjgeaoxsfphrti.functions.supabase.co/functions/v1/api-v2-curtailment-reduction/statistics?province=ON" \
-  -H "Authorization: Bearer YOUR_ANON_KEY"
+curl "$SUPABASE_EDGE_BASE/functions/v1/api-v2-curtailment-reduction/statistics?province=ON" \
+  -H "Authorization: Bearer $SUPABASE_ANON_KEY"
 ```
 
 **Expected**: JSON response with statistics (empty initially)
