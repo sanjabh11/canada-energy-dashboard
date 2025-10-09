@@ -85,12 +85,10 @@
 
 ```bash
 # Supabase Configuration ✅
-VITE_SUPABASE_URL=https://qnymbecjgeaoxsfphrti.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_SUPABASE_EDGE_BASE=https://qnymbecjgeaoxsfphrti.functions.supabase.co
+ 
 
 # Weather API ✅
-VITE_OPENWEATHERMAP_API_KEY=46729c3c1126f0eae3ba3ad9a1615db2
+VITE_OPENWEATHERMAP_API_KEY= 
 
 # Feature Flags ✅
 VITE_ENABLE_RENEWABLE_OPTIMIZATION=true
