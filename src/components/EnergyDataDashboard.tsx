@@ -28,7 +28,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
@@ -36,6 +36,7 @@ import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
 import AnalyticsTrendsDashboard from './AnalyticsTrendsDashboard';
 import RenewableOptimizationHub from './RenewableOptimizationHub';
 import CurtailmentAnalyticsDashboard from './CurtailmentAnalyticsDashboard';
+import StorageDispatchDashboard from './StorageDispatchDashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -54,7 +55,8 @@ const helpIdByTab: Record<string, string> = {
   Features: 'page.features',
   Education: 'page.education',
   RenewableOptimization: 'page.renewable-optimization',
-  CurtailmentAnalytics: 'page.curtailment-analytics'
+  CurtailmentAnalytics: 'page.curtailment-analytics',
+  StorageDispatch: 'page.storage-dispatch'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -192,9 +194,10 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
     { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
-    // Renewable Energy Optimization (Phase 1 & 2)
+    // Renewable Energy Optimization (Phase 5)
     { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
+    { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
     // Specialized Dashboards
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
@@ -998,13 +1001,18 @@ export const EnergyDataDashboard: React.FC = () => {
               <CurtailmentAnalyticsDashboard />
             )}
 
+            {/* Storage Dispatch Tab - Phase 5 */}
+            {activeTab === 'StorageDispatch' && (
+              <StorageDispatchDashboard />
+            )}
+
             {/* Features Tab */}
             {activeTab === 'Features' && (
               <FeatureAvailability />
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'Analytics', 'HouseholdAdvisor'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor'].includes(activeTab) && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

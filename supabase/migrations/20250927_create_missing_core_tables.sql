@@ -57,8 +57,16 @@ CREATE TABLE IF NOT EXISTS public.weather_data (
   precipitation_mm double precision,
   created_at timestamptz DEFAULT now()
 );
-ALTER TABLE public.weather_data
-  ADD CONSTRAINT weather_data_pkey PRIMARY KEY (timestamp, station_id);
+-- Only add primary key if it doesn't exist
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'weather_data_pkey'
+  ) THEN
+    ALTER TABLE public.weather_data
+      ADD CONSTRAINT weather_data_pkey PRIMARY KEY (timestamp, station_id);
+  END IF;
+END $$;
 
 -- Enable RLS and create permissive read policies for development
 ALTER TABLE public.ontario_hourly_demand ENABLE ROW LEVEL SECURITY;

@@ -106,6 +106,18 @@ serve(async (req) => {
         byReason[e.reason].cost_cad += e.opportunity_cost_cad || 0;
       });
 
+      // Calculate ROI and provenance for test suite
+      const netBenefit = totalRevenue - totalCost;
+      const roiBenefitCost = totalCost > 0 ? netBenefit / totalCost : 0;
+      
+      // Determine provenance (exclude mock events)
+      const nonMockEvents = (events || []).filter(e => e.data_source !== 'mock');
+      const provenance = nonMockEvents.length > 0 ? 'historical' : 'mock';
+      
+      // Monthly calculations (assuming 30-day window)
+      const daysInRange = Math.max(1, (new Date(endDate).getTime() - new Date(startDate).getTime()) / (24 * 60 * 60 * 1000));
+      const monthlyMultiplier = 30 / daysInRange;
+      
       const statistics = {
         total_events: totalEvents,
         total_curtailed_mwh: totalCurtailedMwh,
@@ -115,6 +127,15 @@ serve(async (req) => {
         total_revenue_cad: totalRevenue,
         curtailment_reduction_percent: curtailmentReductionPercent,
         avg_effectiveness_rating: avgEffectiveness,
+        
+        // Monthly projections for test suite
+        monthly_curtailment_avoided_mwh: totalMwhSaved * monthlyMultiplier,
+        monthly_opportunity_cost_saved_cad: netBenefit * monthlyMultiplier,
+        
+        // ROI and provenance
+        roi_benefit_cost: roiBenefitCost,
+        provenance: provenance,
+        
         by_reason: byReason,
         events: events || [],
         recommendations: recommendations || []

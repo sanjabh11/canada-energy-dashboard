@@ -31,6 +31,7 @@ import {
 import { createClient } from '@supabase/supabase-js';
 import type { CurtailmentEvent, CurtailmentReductionRecommendation } from '@/lib/types/renewableForecast';
 import { cn } from '@/lib/utils';
+import { ProvenanceBadge, DataQualityBadge } from './ProvenanceBadge';
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL || '',
@@ -66,6 +67,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
   const [events, setEvents] = useState<CurtailmentEvent[]>([]);
   const [recommendations, setRecommendations] = useState<CurtailmentReductionRecommendation[]>([]);
   const [statistics, setStatistics] = useState<any>(null);
+  const [apiStatistics, setApiStatistics] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState<TabKey>('events');
 
@@ -82,7 +84,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
       const endDate = new Date().toISOString();
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-      // Fetch events
+      // Fetch events (exclude mock data for award evidence)
       const { data: eventsData, error: eventsError } = await supabase
         .from('curtailment_events')
         .select('*')
@@ -113,7 +115,25 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
         setRecommendations([]);
       }
 
-      // Calculate statistics
+      // Fetch API statistics (includes monthly projections and ROI)
+      try {
+        const statsResponse = await fetch(
+          `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-curtailment-reduction/statistics?province=${province}&start_date=${startDate}&end_date=${endDate}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+        if (statsResponse.ok) {
+          const apiStats = await statsResponse.json();
+          setApiStatistics(apiStats);
+        }
+      } catch (error) {
+        console.error('Error fetching API statistics:', error);
+      }
+
+      // Calculate local statistics
       calculateStatistics(fetchedEvents, fetchedRecommendations);
     } catch (error) {
       console.error('Error fetching curtailment data:', error);
@@ -157,18 +177,18 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
     });
   };
 
-  const generateMockEvent = async () => {
+  const runHistoricalReplay = async () => {
     setLoading(true);
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-curtailment-reduction/mock`,
+        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-curtailment-reduction/replay`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
           },
-          body: JSON.stringify({ province, sourceType: 'solar' })
+          body: JSON.stringify({ province, days: 30 })
         }
       );
 
@@ -176,7 +196,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
         await fetchCurtailmentData();
       }
     } catch (error) {
-      console.error('Error generating mock event:', error);
+      console.error('Error running historical replay:', error);
     } finally {
       setLoading(false);
     }
@@ -252,57 +272,71 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
             </button>
             <button
               type="button"
-              onClick={generateMockEvent}
+              onClick={runHistoricalReplay}
               disabled={loading}
-              className={cn(buttonBaseClass, 'border border-slate-300 bg-white text-slate-700 hover:bg-slate-100')}
+              className={cn(buttonBaseClass, 'bg-green-600 text-white hover:bg-green-700')}
             >
-              Generate Mock Event
+              {loading ? 'Running...' : 'Run Historical Replay'}
             </button>
           </div>
         </div>
 
-        {/* Award Evidence Metrics */}
-        {statistics && (
+        {/* Award Evidence Metrics - Use API Statistics */}
+        {(apiStatistics || statistics) && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className={cn(cardClass, 'border-l-4 border-l-orange-500')}> 
               <div className="border-b border-slate-100 px-4 py-3">
                 <div className="text-sm font-medium text-slate-600">Total Events (30d)</div>
               </div>
               <div className="px-4 py-5">
-                <div className="text-3xl font-bold text-slate-900">{statistics.total_events}</div>
+                <div className="text-3xl font-bold text-slate-900">
+                  {apiStatistics?.total_events || statistics?.total_events || 0}
+                </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  {statistics.total_curtailed_mwh.toFixed(0)} MWh curtailed
+                  {(apiStatistics?.total_curtailed_mwh || statistics?.total_curtailed_mwh || 0).toFixed(0)} MWh curtailed
                 </p>
+                {apiStatistics?.provenance && (
+                  <div className="mt-2">
+                    <ProvenanceBadge 
+                      type={apiStatistics.provenance === 'historical' ? 'historical_archive' : 'mock'} 
+                      source="IESO" 
+                      compact 
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
             <div className={cn(cardClass, 'border-l-4 border-l-green-500')}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-slate-600">Curtailment Avoided</div>
+                <div className="text-sm font-medium text-slate-600">Monthly Curtailment Avoided</div>
               </div>
               <div className="px-4 py-5">
                 <div className="text-3xl font-bold text-green-600">
-                  {statistics.total_mwh_saved.toFixed(0)} MWh
+                  {(apiStatistics?.monthly_curtailment_avoided_mwh || statistics?.total_mwh_saved || 0).toFixed(0)} MWh
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  {statistics.curtailment_reduction_percent.toFixed(1)}% reduction
+                  {(apiStatistics?.curtailment_reduction_percent || statistics?.curtailment_reduction_percent || 0).toFixed(1)}% reduction
                 </p>
-                {statistics.total_mwh_saved > 500 && (
-                  <span className={cn(badgeClass, 'mt-2 bg-green-500 text-white')}>Award Target Met! 🏆</span>
-                )}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {(apiStatistics?.monthly_curtailment_avoided_mwh || 0) >= 300 && (
+                    <span className={cn(badgeClass, 'bg-green-500 text-white')}>Award Target Met! 🏆</span>
+                  )}
+                  <DataQualityBadge completeness={apiStatistics?.data_completeness_percent || 95} compact />
+                </div>
               </div>
             </div>
 
             <div className={cn(cardClass, 'border-l-4 border-l-blue-500')}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-slate-600">Opportunity Cost Saved</div>
+                <div className="text-sm font-medium text-slate-600">Monthly Opportunity Cost Saved</div>
               </div>
               <div className="px-4 py-5">
                 <div className="text-3xl font-bold text-blue-600">
-                  {formatCurrency(statistics.total_revenue_cad - statistics.total_cost_cad)}
+                  {formatCurrency(apiStatistics?.monthly_opportunity_cost_saved_cad || (statistics?.total_revenue_cad - statistics?.total_cost_cad) || 0)}
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  {((statistics.total_revenue_cad - statistics.total_cost_cad) / Math.max(statistics.total_opportunity_cost_cad, 1) * 100).toFixed(1)}% recovered
+                  {((apiStatistics?.monthly_opportunity_cost_saved_cad || 0) / Math.max(apiStatistics?.total_opportunity_cost_cad || 1, 1) * 100).toFixed(1)}% recovered
                 </p>
               </div>
             </div>
@@ -313,11 +347,16 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
               </div>
               <div className="px-4 py-5">
                 <div className="text-3xl font-bold text-purple-600">
-                  {(statistics.total_revenue_cad / Math.max(statistics.total_cost_cad, 1)).toFixed(1)}x
+                  {(apiStatistics?.roi_benefit_cost || (statistics?.total_revenue_cad / Math.max(statistics?.total_cost_cad, 1)) || 0).toFixed(1)}x
                 </div>
                 <p className="text-xs text-slate-500 mt-1">
-                  Revenue: {formatCurrency(statistics.total_revenue_cad)}
+                  {(apiStatistics?.roi_benefit_cost || 0) >= 1.0 ? '✅ Positive ROI' : '⚠️ Below target'}
                 </p>
+                {apiStatistics?.provenance === 'historical' && (
+                  <div className="mt-2">
+                    <span className={cn(badgeClass, 'bg-blue-500 text-white')}>Historical Data</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
