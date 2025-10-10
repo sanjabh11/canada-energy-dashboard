@@ -3,6 +3,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Zap, TrendingUp, Target, Battery, Wind, Sun, AlertTriangle, CheckCircle, Activity, Info } from 'lucide-react';
 import type { RenewableForecast, ForecastPerformance, AwardEvidenceMetrics } from '../lib/types/renewableForecast';
 import { fetchEdgeJson } from '../lib/edge';
+import { supabase } from '../lib/supabaseClient';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { ProvenanceBadge, DataQualityBadge, BaselineComparisonBadge } from './ProvenanceBadge';
 import type { ProvenanceType } from '../lib/types/provenance';
@@ -62,30 +63,43 @@ const RenewableOptimizationHub: React.FC = () => {
 
       setForecasts(allForecasts);
 
-      // Fetch real performance data from API
+      // Fetch real performance data from API (fallback to database if edge function not deployed)
       try {
         const perfResponse = await fetchEdgeJson([
-          `api-v2-forecast-performance/daily?province=${province}`
+          `api-v2-renewable-forecast/performance?province=${province}`
         ]);
         
         if (perfResponse.json?.metrics) {
           setPerformance(perfResponse.json.metrics);
         }
       } catch (error) {
-        console.error('Failed to fetch performance data:', error);
+        console.error('Performance API not available, using database fallback:', error);
+        // Fallback: query database directly
+        try {
+          const { data } = await supabase
+            .from('forecast_performance_metrics')
+            .select('*')
+            .eq('province', province)
+            .order('calculated_at', { ascending: false })
+            .limit(10);
+          if (data) setPerformance(data);
+        } catch (dbError) {
+          console.error('Database fallback failed:', dbError);
+        }
       }
 
-      // Fetch award evidence metrics
+      // Fetch award evidence metrics (optional, won't break if missing)
       try {
         const awardResponse = await fetchEdgeJson([
-          `api-v2-forecast-performance/award-evidence?province=${province}`
+          `api-v2-renewable-forecast/award-evidence?province=${province}`
         ]);
         
         if (awardResponse.json) {
           setAwardMetrics(awardResponse.json);
         }
       } catch (error) {
-        console.error('Failed to fetch award metrics:', error);
+        console.error('Award metrics API not available:', error);
+        // Non-critical, continue without award metrics
       }
 
     } catch (error) {
@@ -271,8 +285,8 @@ const RenewableOptimizationHub: React.FC = () => {
 
             {/* Forecast Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {forecasts.slice(0, 4).map((forecast) => (
-                <div key={forecast.id} className="bg-white rounded-lg shadow p-6">
+              {forecasts.slice(0, 4).map((forecast, index) => (
+                <div key={forecast.id || `forecast-${index}`} className="bg-white rounded-lg shadow p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       {forecast.source_type === 'solar' ? (
@@ -410,7 +424,7 @@ const RenewableOptimizationHub: React.FC = () => {
               
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-6">
                 <div className="text-sm text-green-700 mb-2">Opportunity Cost Recovered</div>
-                <div className="text-4xl font-bold text-green-900">${awardMetrics?.monthly_opportunity_cost_recovered_cad.toLocaleString()}</div>
+                <div className="text-4xl font-bold text-green-900">${awardMetrics?.monthly_opportunity_cost_recovered_cad?.toLocaleString() || '0'}</div>
                 <div className="text-lg text-green-700">CAD/month</div>
               </div>
               
