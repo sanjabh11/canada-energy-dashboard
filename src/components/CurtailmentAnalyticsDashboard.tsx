@@ -28,15 +28,10 @@ import {
   Lightbulb,
   BarChart3
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import type { CurtailmentEvent, CurtailmentReductionRecommendation } from '@/lib/types/renewableForecast';
 import { cn } from '@/lib/utils';
 import { ProvenanceBadge, DataQualityBadge } from './ProvenanceBadge';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 const COLORS = {
   oversupply: '#ef4444',

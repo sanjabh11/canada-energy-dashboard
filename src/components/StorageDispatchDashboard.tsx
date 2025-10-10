@@ -8,14 +8,9 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Battery, TrendingUp, Zap, DollarSign, Activity, CheckCircle, AlertTriangle } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { ProvenanceBadge, DataQualityBadge } from './ProvenanceBadge';
 import { cn } from '@/lib/utils';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 interface BatteryState {
   soc_percent: number;
