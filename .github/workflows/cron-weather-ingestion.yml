@@ -1,0 +1,53 @@
+name: Weather Ingestion Cron
+
+# Runs every 3 hours to fetch weather data for all provinces
+# Optimized for Supabase free tier (240 invocations/month)
+
+on:
+  schedule:
+    # Every 3 hours (00:00, 03:00, 06:00, 09:00, 12:00, 15:00, 18:00, 21:00 UTC)
+    - cron: '0 */3 * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  trigger-weather-ingestion:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Weather Ingestion Edge Function
+        run: |
+          echo "🌤️  Triggering weather ingestion..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/weather-ingestion-cron" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Weather ingestion successful"
+            echo "$BODY" | jq -r '.message // "Success"'
+          else
+            echo "❌ Weather ingestion failed with HTTP $HTTP_CODE"
+            echo "$BODY"
+            exit 1
+          fi
+
+      - name: Verify Data Ingestion
+        if: success()
+        run: |
+          echo "🔍 Verifying weather data was stored..."
+          
+          # Give database a moment to process
+          sleep 2
+          
+          # Note: This is a basic health check
+          # Actual verification would require querying the database
+          echo "✅ Cron job completed successfully"

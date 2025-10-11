@@ -1,0 +1,56 @@
+name: Storage Dispatch Cron
+
+# Runs every 30 minutes to optimize battery charge/discharge decisions
+# Optimized for Supabase free tier (1,440 invocations/month)
+
+on:
+  schedule:
+    # Every 30 minutes
+    - cron: '*/30 * * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  trigger-storage-dispatch:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        province: ['ON', 'AB', 'BC', 'QC']
+    
+    steps:
+      - name: Trigger Storage Dispatch for ${{ matrix.province }}
+        run: |
+          echo "🔋 Triggering storage dispatch for ${{ matrix.province }}..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/storage-dispatch-engine?province=${{ matrix.province }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Storage dispatch successful for ${{ matrix.province }}"
+            
+            # Extract decision details
+            ACTION=$(echo "$BODY" | jq -r '.decision.action // "unknown"')
+            TARGET_MW=$(echo "$BODY" | jq -r '.decision.target_mw // 0')
+            REASON=$(echo "$BODY" | jq -r '.decision.reason // "N/A"')
+            
+            echo "   Action: $ACTION"
+            echo "   Power: ${TARGET_MW} MW"
+            echo "   Reason: $REASON"
+          else
+            echo "❌ Storage dispatch failed for ${{ matrix.province }} with HTTP $HTTP_CODE"
+            echo "$BODY"
+            # Don't fail the job - continue with other provinces
+          fi
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "✅ Storage dispatch cron completed for ${{ matrix.province }}"

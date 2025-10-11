@@ -1,0 +1,60 @@
+name: Data Purge Cron
+
+# Runs weekly on Sunday at 2 AM UTC to clean up old data
+# Maintains database size within Supabase free tier limits (500 MB)
+
+on:
+  schedule:
+    # Every Sunday at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  trigger-data-purge:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Trigger Data Purge Edge Function
+        run: |
+          echo "🗑️  Triggering weekly data purge..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/data-purge-cron" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Data purge successful"
+            
+            # Extract purge statistics
+            TOTAL_DELETED=$(echo "$BODY" | jq -r '.total_rows_deleted // 0')
+            TABLES_PURGED=$(echo "$BODY" | jq -r '.tables_purged // 0')
+            
+            echo "   Total rows deleted: $TOTAL_DELETED"
+            echo "   Tables purged: $TABLES_PURGED"
+            
+            # Show details per table
+            echo ""
+            echo "📊 Purge details:"
+            echo "$BODY" | jq -r '.purge_details[] | "   \(.table_name): \(.rows_deleted) rows (\(.retention_days) day retention)"'
+            
+          else
+            echo "❌ Data purge failed with HTTP $HTTP_CODE"
+            echo "$BODY"
+            exit 1
+          fi
+
+      - name: Check Database Size
+        if: success()
+        run: |
+          echo ""
+          echo "📊 Database statistics after purge:"
+          echo "$BODY" | jq -r '.database_stats[] | "   \(.table_name): \(.row_count) rows, \(.total_size)"' || echo "   Stats not available"
