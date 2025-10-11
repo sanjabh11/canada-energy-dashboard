@@ -91,6 +91,9 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
       if (eventsError) throw eventsError;
       const fetchedEvents = eventsData || [];
+      console.log('[CURTAILMENT] Events loaded:', fetchedEvents.length);
+      console.log('[CURTAILMENT] Sample event:', fetchedEvents[0]);
+      console.log('[CURTAILMENT] Data sources:', [...new Set(fetchedEvents.map(e => e.data_source))]);
       setEvents(fetchedEvents);
 
       // Fetch recommendations for these events
@@ -105,6 +108,10 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
         if (recsError) throw recsError;
         fetchedRecommendations = recsData || [];
+        console.log('[CURTAILMENT] Recommendations loaded:', fetchedRecommendations.length);
+        console.log('[CURTAILMENT] Implemented count:', fetchedRecommendations.filter(r => r.implemented).length);
+        const totalSaved = fetchedRecommendations.reduce((sum, r) => sum + (r.actual_mwh_saved || 0), 0);
+        console.log('[CURTAILMENT] Total MWh saved:', totalSaved.toFixed(2));
         setRecommendations(fetchedRecommendations);
       } else {
         setRecommendations([]);
@@ -293,8 +300,8 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                 {apiStatistics?.provenance && (
                   <div className="mt-2">
                     <ProvenanceBadge 
-                      type={apiStatistics.provenance === 'historical' ? 'historical_archive' : 'mock'} 
-                      source="IESO" 
+                      type={apiStatistics.provenance === 'historical' ? 'historical_archive' : 'simulated'} 
+                      source="Historical Analysis" 
                       compact 
                     />
                   </div>

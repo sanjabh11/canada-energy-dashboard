@@ -1,0 +1,1029 @@
+
+================================================================================
+🚀 COMPREHENSIVE GAP DIAGNOSTIC TOOL
+================================================================================
+Supabase URL: https://qnymbecjgeaoxsfphrti.supabase.co
+Timestamp: 2025-10-11T08:10:23.245Z
+
+🔍 CATEGORY 1: Real-Time Dashboard
+================================================================================
+
+🔍 CATEGORY 2: Renewable Forecasts
+================================================================================
+
+🔍 CATEGORY 3: Curtailment Reduction
+================================================================================
+
+🔍 CATEGORY 4: Storage Dispatch
+================================================================================
+
+🔍 CATEGORY 5: Award Evidence Metrics
+================================================================================
+
+🔍 CATEGORY 6: Analytics & Trends
+================================================================================
+
+🔍 CATEGORY 7: Province Configurations
+================================================================================
+
+🔍 CATEGORY 8: My Energy AI
+================================================================================
+
+🔍 CATEGORY 9: Operations & Monitoring
+================================================================================
+
+================================================================================
+📊 DIAGNOSTIC SUMMARY
+================================================================================
+✅ PASS: 4
+❌ FAIL: 10
+⚠️  WARN: 6
+📋 TOTAL: 20
+
+🔥 CRITICAL FAILURES (Blocking Award Evidence):
+
+1. Renewable Forecasts: Weather Features Not Shown
+   Root Cause: weather_observations table empty - no ingestion pipeline
+   Most Likely Source: 1. Weather ingestion cron job not running or not deployed
+
+2. Curtailment Reduction: No Recommendations Available
+   Root Cause: curtailment_reduction_recommendations table empty
+   Most Likely Source: 1. Seed script not run (generates recommendations with events)
+
+3. Curtailment Reduction: Monthly Avoided MWh = 0, Savings = $0
+   Root Cause: No events with implemented recommendations in database
+   Most Likely Source: 1. Edge function not deployed or broken
+
+4. Award Evidence: Curtailment Avoided <500 MWh/month
+   Root Cause: No curtailment events or recommendations in database
+   Most Likely Source: 1. Seed script not run or insufficient events generated
+
+5. Award Evidence: Storage Efficiency <88%
+   Root Cause: No storage dispatch data to calculate efficiency
+   Most Likely Source: 1. storage_dispatch_log empty
+
+================================================================================
+📄 FULL RESULTS (JSON):
+================================================================================
+[
+  {
+    "category": "Real-Time Dashboard",
+    "issue": "Ontario Demand Streaming",
+    "status": "PASS",
+    "rootCause": "Unknown",
+    "possibleSources": [
+      "1. Edge function not deployed after code changes",
+      "2. IESO API unavailable and sample data fallback broken",
+      "3. Data transformation layer missing required fields"
+    ],
+    "evidence": {
+      "available": true,
+      "response": {
+        "dataset": "ontario-demand",
+        "rows": [
+          {
+            "datetime": "2023-01-01 00:00:00",
+            "hour_ending": 24,
+            "total_demand_mw": 18416.98,
+            "hourly_demand_gwh": 18.42,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 01:00:00",
+            "hour_ending": 1,
+            "total_demand_mw": 18835.72,
+            "hourly_demand_gwh": 18.84,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 02:00:00",
+            "hour_ending": 2,
+            "total_demand_mw": 17705.95,
+            "hourly_demand_gwh": 17.71,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 03:00:00",
+            "hour_ending": 3,
+            "total_demand_mw": 17953.86,
+            "hourly_demand_gwh": 17.95,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 04:00:00",
+            "hour_ending": 4,
+            "total_demand_mw": 18555.35,
+            "hourly_demand_gwh": 18.56,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 05:00:00",
+            "hour_ending": 5,
+            "total_demand_mw": 18696.19,
+            "hourly_demand_gwh": 18.7,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 06:00:00",
+            "hour_ending": 6,
+            "total_demand_mw": 18021.79,
+            "hourly_demand_gwh": 18.02,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 07:00:00",
+            "hour_ending": 7,
+            "total_demand_mw": 18107.52,
+            "hourly_demand_gwh": 18.11,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 08:00:00",
+            "hour_ending": 8,
+            "total_demand_mw": 18085.88,
+            "hourly_demand_gwh": 18.09,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          },
+          {
+            "datetime": "2023-01-01 09:00:00",
+            "hour_ending": 9,
+            "total_demand_mw": 18633.49,
+            "hourly_demand_gwh": 18.63,
+            "date": "2023-01-01",
+            "source": "kaggle",
+            "version": "1.0-sample"
+          }
+        ],
+        "metadata": {
+          "hasMore": true,
+          "totalEstimate": 2000,
+          "usingSampleData": true
+        },
+        "timestamp": "2025-10-11T08:10:24.156Z",
+        "source": "Sample Data (IESO unavailable)"
+      },
+      "error": null
+    }
+  },
+  {
+    "category": "Real-Time Dashboard",
+    "issue": "CO2 Emissions Showing Zero",
+    "status": "WARN",
+    "rootCause": "CO2 calculation logic not implemented or fuel type missing",
+    "possibleSources": [
+      "1. Provincial generation table empty or missing fuel_type field",
+      "2. CO2 emission factors not configured per fuel type",
+      "3. Frontend calculation logic missing or broken"
+    ],
+    "evidence": {
+      "count": 16,
+      "sample": {
+        "id": "a464876e-8cf3-4074-bbe0-554a739056fa",
+        "date": "2025-09-24",
+        "province_code": "ON",
+        "source": "ieso",
+        "generation_gwh": 450.2,
+        "created_at": "2025-09-25T12:51:16.312469+00:00"
+      }
+    }
+  },
+  {
+    "category": "Real-Time Dashboard",
+    "issue": "Provenance Badges Not Visible",
+    "status": "WARN",
+    "rootCause": "ProvenanceBadge component not integrated into all data panels",
+    "possibleSources": [
+      "1. Component exists but not imported/used in RealTimeDashboard",
+      "2. Data source metadata not passed to badge component",
+      "3. Conditional rendering hiding badges when data is fallback"
+    ],
+    "evidence": "Code inspection required"
+  },
+  {
+    "category": "Renewable Forecasts",
+    "issue": "Forecast Performance Showing \"No Data Available\"",
+    "status": "PASS",
+    "rootCause": "Data exists but component query broken",
+    "possibleSources": [
+      "1. SQL seed script not executed in Supabase dashboard",
+      "2. Table name mismatch (forecast_performance vs forecast_performance_metrics)",
+      "3. RLS policy blocking reads for anon role"
+    ],
+    "evidence": {
+      "count": 42,
+      "sample": {
+        "id": "93b791e8-83ea-4b19-af12-5fe74eb57d5f",
+        "province": "ON",
+        "source_type": "solar",
+        "horizon_hours": 1,
+        "model_version": "v2.1.0",
+        "period_start": "2025-10-11",
+        "period_end": "2025-10-11",
+        "mae_mw": 169.04,
+        "mae_percent": 3.71,
+        "mape_percent": 3.54,
+        "rmse_mw": 214.78,
+        "bias_mw": 6.64,
+        "forecast_count": 428,
+        "avg_predicted_mw": 14629.9,
+        "avg_actual_mw": 14639.57,
+        "improvement_vs_baseline": 32.02,
+        "calculated_at": "2025-10-11T07:50:18.089853+00:00",
+        "notes": "Seeded data for demo"
+      }
+    }
+  },
+  {
+    "category": "Renewable Forecasts",
+    "issue": "Weather Features Not Shown",
+    "status": "FAIL",
+    "rootCause": "weather_observations table empty - no ingestion pipeline",
+    "possibleSources": [
+      "1. Weather ingestion cron job not running or not deployed",
+      "2. API keys for weather services missing/invalid",
+      "3. Frontend not querying or displaying weather_data jsonb field"
+    ],
+    "evidence": {
+      "count": 0
+    }
+  },
+  {
+    "category": "Renewable Forecasts",
+    "issue": "Baseline Uplift Not Shown",
+    "status": "PASS",
+    "rootCause": "Data exists but UI not displaying",
+    "possibleSources": [
+      "1. Baseline calculation function not implemented",
+      "2. SQL seed missing improvement_vs_baseline values",
+      "3. Frontend component not rendering baseline comparison card"
+    ],
+    "evidence": {
+      "id": "93b791e8-83ea-4b19-af12-5fe74eb57d5f",
+      "province": "ON",
+      "source_type": "solar",
+      "horizon_hours": 1,
+      "model_version": "v2.1.0",
+      "period_start": "2025-10-11",
+      "period_end": "2025-10-11",
+      "mae_mw": 169.04,
+      "mae_percent": 3.71,
+      "mape_percent": 3.54,
+      "rmse_mw": 214.78,
+      "bias_mw": 6.64,
+      "forecast_count": 428,
+      "avg_predicted_mw": 14629.9,
+      "avg_actual_mw": 14639.57,
+      "improvement_vs_baseline": 32.02,
+      "calculated_at": "2025-10-11T07:50:18.089853+00:00",
+      "notes": "Seeded data for demo"
+    }
+  },
+  {
+    "category": "Curtailment Reduction",
+    "issue": "Events Labeled as \"Mock\" / Avoided MWh = 0",
+    "status": "WARN",
+    "rootCause": "Events exist but data_source field = \"mock\" or UI hardcoded \"Mock\" label",
+    "possibleSources": [
+      "1. Seed script scripts/seed-curtailment-data.ts not executed",
+      "2. Historical replay pipeline not implemented",
+      "3. UI checking data_source field and showing \"Mock\" badge"
+    ],
+    "evidence": {
+      "count": 8,
+      "sample": {
+        "id": "f349eb5a-9a18-4289-a2e3-cbc76767fa98",
+        "province": "ON",
+        "source_type": "solar",
+        "curtailed_mw": 171.57,
+        "available_capacity_mw": 466.94,
+        "curtailment_percent": 36.74,
+        "duration_hours": 1.38,
+        "total_energy_curtailed_mwh": 281.4,
+        "reason": "negative_pricing",
+        "reason_detail": "Mock negative_pricing event",
+        "market_price_cad_per_mwh": 81.57,
+        "opportunity_cost_cad": 13995,
+        "grid_demand_mw": 18327.93,
+        "mitigation_actions": null,
+        "mitigation_effective": null,
+        "occurred_at": "2025-10-05T20:07:22.323+00:00",
+        "ended_at": null,
+        "detected_at": "2025-10-09T13:02:28.946353+00:00",
+        "data_source": "mock",
+        "notes": "Generated for testing",
+        "data_provenance": "simulated",
+        "price_provenance": "indicative"
+      }
+    }
+  },
+  {
+    "category": "Curtailment Reduction",
+    "issue": "No Recommendations Available",
+    "status": "FAIL",
+    "rootCause": "curtailment_reduction_recommendations table empty",
+    "possibleSources": [
+      "1. Seed script not run (generates recommendations with events)",
+      "2. curtailmentEngine.generateCurtailmentRecommendations() not called",
+      "3. RLS policy blocking reads"
+    ],
+    "evidence": {
+      "count": 0
+    }
+  },
+  {
+    "category": "Curtailment Reduction",
+    "issue": "Monthly Avoided MWh = 0, Savings = $0",
+    "status": "FAIL",
+    "rootCause": "No events with implemented recommendations in database",
+    "possibleSources": [
+      "1. Edge function not deployed or broken",
+      "2. Database empty (no events/recommendations)",
+      "3. Aggregation logic not summing implemented recommendations"
+    ],
+    "evidence": {
+      "available": true,
+      "response": {
+        "total_events": 8,
+        "total_curtailed_mwh": 1922.6000000000001,
+        "total_opportunity_cost_cad": 45783.81,
+        "total_mwh_saved": 0,
+        "total_cost_cad": 0,
+        "total_revenue_cad": 0,
+        "curtailment_reduction_percent": 0,
+        "avg_effectiveness_rating": 0,
+        "monthly_curtailment_avoided_mwh": 0,
+        "monthly_opportunity_cost_saved_cad": 0,
+        "roi_benefit_cost": 0,
+        "provenance": "mock",
+        "by_reason": {
+          "negative_pricing": {
+            "events": 3,
+            "mwh": 541.81,
+            "cost_cad": 18412.68
+          },
+          "frequency_regulation": {
+            "events": 2,
+            "mwh": 465.87,
+            "cost_cad": 10816.5
+          },
+          "oversupply": {
+            "events": 2,
+            "mwh": 358.22999999999996,
+            "cost_cad": 6236.71
+          },
+          "transmission_congestion": {
+            "events": 1,
+            "mwh": 556.69,
+            "cost_cad": 10317.92
+          }
+        },
+        "events": [
+          {
+            "id": "f349eb5a-9a18-4289-a2e3-cbc76767fa98",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 171.57,
+            "available_capacity_mw": 466.94,
+            "curtailment_percent": 36.74,
+            "duration_hours": 1.38,
+            "total_energy_curtailed_mwh": 281.4,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 81.57,
+            "opportunity_cost_cad": 13995,
+            "grid_demand_mw": 18327.93,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-05T20:07:22.323+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:02:28.946353+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "d62212e0-7699-4ee1-b3c5-696b8b72fcd7",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 87.68,
+            "available_capacity_mw": 252.68,
+            "curtailment_percent": 34.7,
+            "duration_hours": 0.66,
+            "total_energy_curtailed_mwh": 200.2,
+            "reason": "frequency_regulation",
+            "reason_detail": "Mock frequency_regulation event",
+            "market_price_cad_per_mwh": 75.98,
+            "opportunity_cost_cad": 6661.96,
+            "grid_demand_mw": 15202.21,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-08T14:29:19.272+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:42.654121+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "1caee421-7219-434e-9f83-f34a23c594ec",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 57.49,
+            "available_capacity_mw": 322.93,
+            "curtailment_percent": 17.8,
+            "duration_hours": 2.5,
+            "total_energy_curtailed_mwh": 175.1,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 14.78,
+            "opportunity_cost_cad": 1724.65,
+            "grid_demand_mw": 19583.41,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-03T09:28:06.918+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:44.877797+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "326d1021-ed6f-4409-a1f4-d3d986a97fd1",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 114.23,
+            "available_capacity_mw": 234.21,
+            "curtailment_percent": 48.77,
+            "duration_hours": 1.97,
+            "total_energy_curtailed_mwh": 290.59,
+            "reason": "oversupply",
+            "reason_detail": "Mock oversupply event",
+            "market_price_cad_per_mwh": 9.32,
+            "opportunity_cost_cad": 3426.93,
+            "grid_demand_mw": 21928.59,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-04T00:05:18.765+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:46.740085+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "abffa59c-35cf-4620-95a4-c7482b17b93a",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 224.86,
+            "available_capacity_mw": 558.95,
+            "curtailment_percent": 40.23,
+            "duration_hours": 1.92,
+            "total_energy_curtailed_mwh": 556.69,
+            "reason": "transmission_congestion",
+            "reason_detail": "Mock transmission_congestion event",
+            "market_price_cad_per_mwh": 45.89,
+            "opportunity_cost_cad": 10317.92,
+            "grid_demand_mw": 13640.83,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-08T07:57:42.471+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:28.925365+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "b384983f-369d-4b87-999f-2fbad79e4ea9",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 89.77,
+            "available_capacity_mw": 554.09,
+            "curtailment_percent": 16.2,
+            "duration_hours": 0.53,
+            "total_energy_curtailed_mwh": 85.31,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 18.48,
+            "opportunity_cost_cad": 2693.03,
+            "grid_demand_mw": 19599.89,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-07T16:52:43.633+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:31.849307+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "539b7c63-1d72-47a3-aeb3-67a3eb72343f",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 94.86,
+            "available_capacity_mw": 342.03,
+            "curtailment_percent": 27.73,
+            "duration_hours": 1.79,
+            "total_energy_curtailed_mwh": 265.67,
+            "reason": "frequency_regulation",
+            "reason_detail": "Mock frequency_regulation event",
+            "market_price_cad_per_mwh": 43.8,
+            "opportunity_cost_cad": 4154.54,
+            "grid_demand_mw": 11840.11,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-02T23:20:24.74+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:33.368386+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "fb3c04e7-6a02-4056-b08c-ee86380f4604",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 93.66,
+            "available_capacity_mw": 198.79,
+            "curtailment_percent": 47.11,
+            "duration_hours": 2.45,
+            "total_energy_curtailed_mwh": 67.64,
+            "reason": "oversupply",
+            "reason_detail": "Mock oversupply event",
+            "market_price_cad_per_mwh": 10.91,
+            "opportunity_cost_cad": 2809.78,
+            "grid_demand_mw": 16671.27,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-09T21:30:11.854+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-10T09:11:51.205441+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          }
+        ],
+        "recommendations": []
+      },
+      "error": null
+    }
+  },
+  {
+    "category": "Storage Dispatch",
+    "issue": "Actions Count = 0, Alignment = 0%",
+    "status": "FAIL",
+    "rootCause": "storage_dispatch_log table empty - no dispatch decisions logged",
+    "possibleSources": [
+      "1. Rule-based dispatch engine not implemented or not running",
+      "2. Dispatch cron job not scheduled",
+      "3. Table exists but no writes due to missing province configs"
+    ],
+    "evidence": {
+      "count": 0
+    }
+  },
+  {
+    "category": "Storage Dispatch",
+    "issue": "SoC Bounds Violated",
+    "status": "FAIL",
+    "rootCause": "No dispatch data to validate bounds",
+    "possibleSources": [
+      "1. Dispatch algorithm missing SoC validation",
+      "2. Province config missing battery_capacity_mwh or soc_min/max",
+      "3. Frontend calculation error"
+    ],
+    "evidence": null
+  },
+  {
+    "category": "Storage Dispatch",
+    "issue": "Alignment % Renewable Absorption = 0%",
+    "status": "FAIL",
+    "rootCause": "Alignment calculation not implemented or no charge actions during high renewable periods",
+    "possibleSources": [
+      "1. No logic to correlate dispatch actions with renewable generation timestamps",
+      "2. Renewable generation data not available for alignment calculation",
+      "3. All actions are discharge/hold, no charge actions"
+    ],
+    "evidence": "Requires code inspection"
+  },
+  {
+    "category": "Award Evidence",
+    "issue": "Solar MAE / Wind MAE Blank or Zero",
+    "status": "PASS",
+    "rootCause": "Unknown",
+    "possibleSources": [
+      "1. SQL seed not run",
+      "2. Real forecast performance calculation not implemented",
+      "3. Frontend querying wrong table or field"
+    ],
+    "evidence": {
+      "solarMAE": 3.71,
+      "windMAE": 3.71,
+      "sample": {
+        "id": "93b791e8-83ea-4b19-af12-5fe74eb57d5f",
+        "province": "ON",
+        "source_type": "solar",
+        "horizon_hours": 1,
+        "model_version": "v2.1.0",
+        "period_start": "2025-10-11",
+        "period_end": "2025-10-11",
+        "mae_mw": 169.04,
+        "mae_percent": 3.71,
+        "mape_percent": 3.54,
+        "rmse_mw": 214.78,
+        "bias_mw": 6.64,
+        "forecast_count": 428,
+        "avg_predicted_mw": 14629.9,
+        "avg_actual_mw": 14639.57,
+        "improvement_vs_baseline": 32.02,
+        "calculated_at": "2025-10-11T07:50:18.089853+00:00",
+        "notes": "Seeded data for demo"
+      }
+    }
+  },
+  {
+    "category": "Award Evidence",
+    "issue": "Curtailment Avoided <500 MWh/month",
+    "status": "FAIL",
+    "rootCause": "No curtailment events or recommendations in database",
+    "possibleSources": [
+      "1. Seed script not run or insufficient events generated",
+      "2. Historical replay not producing enough events",
+      "3. Recommendations not marked as implemented"
+    ],
+    "evidence": {
+      "avoidedMWh": 0,
+      "response": {
+        "total_events": 8,
+        "total_curtailed_mwh": 1922.6000000000001,
+        "total_opportunity_cost_cad": 45783.81,
+        "total_mwh_saved": 0,
+        "total_cost_cad": 0,
+        "total_revenue_cad": 0,
+        "curtailment_reduction_percent": 0,
+        "avg_effectiveness_rating": 0,
+        "monthly_curtailment_avoided_mwh": 0,
+        "monthly_opportunity_cost_saved_cad": 0,
+        "roi_benefit_cost": 0,
+        "provenance": "mock",
+        "by_reason": {
+          "negative_pricing": {
+            "events": 3,
+            "mwh": 541.81,
+            "cost_cad": 18412.68
+          },
+          "frequency_regulation": {
+            "events": 2,
+            "mwh": 465.87,
+            "cost_cad": 10816.5
+          },
+          "oversupply": {
+            "events": 2,
+            "mwh": 358.22999999999996,
+            "cost_cad": 6236.71
+          },
+          "transmission_congestion": {
+            "events": 1,
+            "mwh": 556.69,
+            "cost_cad": 10317.92
+          }
+        },
+        "events": [
+          {
+            "id": "f349eb5a-9a18-4289-a2e3-cbc76767fa98",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 171.57,
+            "available_capacity_mw": 466.94,
+            "curtailment_percent": 36.74,
+            "duration_hours": 1.38,
+            "total_energy_curtailed_mwh": 281.4,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 81.57,
+            "opportunity_cost_cad": 13995,
+            "grid_demand_mw": 18327.93,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-05T20:07:22.323+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:02:28.946353+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "d62212e0-7699-4ee1-b3c5-696b8b72fcd7",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 87.68,
+            "available_capacity_mw": 252.68,
+            "curtailment_percent": 34.7,
+            "duration_hours": 0.66,
+            "total_energy_curtailed_mwh": 200.2,
+            "reason": "frequency_regulation",
+            "reason_detail": "Mock frequency_regulation event",
+            "market_price_cad_per_mwh": 75.98,
+            "opportunity_cost_cad": 6661.96,
+            "grid_demand_mw": 15202.21,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-08T14:29:19.272+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:42.654121+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "1caee421-7219-434e-9f83-f34a23c594ec",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 57.49,
+            "available_capacity_mw": 322.93,
+            "curtailment_percent": 17.8,
+            "duration_hours": 2.5,
+            "total_energy_curtailed_mwh": 175.1,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 14.78,
+            "opportunity_cost_cad": 1724.65,
+            "grid_demand_mw": 19583.41,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-03T09:28:06.918+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:44.877797+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "326d1021-ed6f-4409-a1f4-d3d986a97fd1",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 114.23,
+            "available_capacity_mw": 234.21,
+            "curtailment_percent": 48.77,
+            "duration_hours": 1.97,
+            "total_energy_curtailed_mwh": 290.59,
+            "reason": "oversupply",
+            "reason_detail": "Mock oversupply event",
+            "market_price_cad_per_mwh": 9.32,
+            "opportunity_cost_cad": 3426.93,
+            "grid_demand_mw": 21928.59,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-04T00:05:18.765+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:06:46.740085+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "abffa59c-35cf-4620-95a4-c7482b17b93a",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 224.86,
+            "available_capacity_mw": 558.95,
+            "curtailment_percent": 40.23,
+            "duration_hours": 1.92,
+            "total_energy_curtailed_mwh": 556.69,
+            "reason": "transmission_congestion",
+            "reason_detail": "Mock transmission_congestion event",
+            "market_price_cad_per_mwh": 45.89,
+            "opportunity_cost_cad": 10317.92,
+            "grid_demand_mw": 13640.83,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-08T07:57:42.471+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:28.925365+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "b384983f-369d-4b87-999f-2fbad79e4ea9",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 89.77,
+            "available_capacity_mw": 554.09,
+            "curtailment_percent": 16.2,
+            "duration_hours": 0.53,
+            "total_energy_curtailed_mwh": 85.31,
+            "reason": "negative_pricing",
+            "reason_detail": "Mock negative_pricing event",
+            "market_price_cad_per_mwh": 18.48,
+            "opportunity_cost_cad": 2693.03,
+            "grid_demand_mw": 19599.89,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-07T16:52:43.633+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:31.849307+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "539b7c63-1d72-47a3-aeb3-67a3eb72343f",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 94.86,
+            "available_capacity_mw": 342.03,
+            "curtailment_percent": 27.73,
+            "duration_hours": 1.79,
+            "total_energy_curtailed_mwh": 265.67,
+            "reason": "frequency_regulation",
+            "reason_detail": "Mock frequency_regulation event",
+            "market_price_cad_per_mwh": 43.8,
+            "opportunity_cost_cad": 4154.54,
+            "grid_demand_mw": 11840.11,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-02T23:20:24.74+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-09T13:08:33.368386+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          },
+          {
+            "id": "fb3c04e7-6a02-4056-b08c-ee86380f4604",
+            "province": "ON",
+            "source_type": "solar",
+            "curtailed_mw": 93.66,
+            "available_capacity_mw": 198.79,
+            "curtailment_percent": 47.11,
+            "duration_hours": 2.45,
+            "total_energy_curtailed_mwh": 67.64,
+            "reason": "oversupply",
+            "reason_detail": "Mock oversupply event",
+            "market_price_cad_per_mwh": 10.91,
+            "opportunity_cost_cad": 2809.78,
+            "grid_demand_mw": 16671.27,
+            "mitigation_actions": null,
+            "mitigation_effective": null,
+            "occurred_at": "2025-10-09T21:30:11.854+00:00",
+            "ended_at": null,
+            "detected_at": "2025-10-10T09:11:51.205441+00:00",
+            "data_source": "mock",
+            "notes": "Generated for testing",
+            "data_provenance": "simulated",
+            "price_provenance": "indicative"
+          }
+        ],
+        "recommendations": []
+      }
+    }
+  },
+  {
+    "category": "Award Evidence",
+    "issue": "Storage Efficiency <88%",
+    "status": "FAIL",
+    "rootCause": "No storage dispatch data to calculate efficiency",
+    "possibleSources": [
+      "1. storage_dispatch_log empty",
+      "2. Efficiency calculation not implemented (energy_out / energy_in)",
+      "3. Round-trip losses not modeled"
+    ],
+    "evidence": "No dispatch data"
+  },
+  {
+    "category": "Analytics & Trends",
+    "issue": "Days <95% Completeness Not Excluded",
+    "status": "WARN",
+    "rootCause": "Frontend not filtering data by completeness_percent field",
+    "possibleSources": [
+      "1. Completeness field not calculated or stored",
+      "2. Frontend query missing WHERE completeness_percent >= 95",
+      "3. Completeness calculation logic not implemented"
+    ],
+    "evidence": "Code inspection required"
+  },
+  {
+    "category": "Analytics & Trends",
+    "issue": "Weather Correlations Not Shown",
+    "status": "FAIL",
+    "rootCause": "weather_observations table empty",
+    "possibleSources": [
+      "1. Weather ingestion not running",
+      "2. JOIN logic not implemented in analytics query",
+      "3. Correlation calculation missing"
+    ],
+    "evidence": {
+      "count": 0
+    }
+  },
+  {
+    "category": "Province Configs",
+    "issue": "Reserve Margin, Price Profile, Timezone Not Shown",
+    "status": "WARN",
+    "rootCause": "Config data exists but UI not displaying",
+    "possibleSources": [
+      "1. Migration not run to create/seed province_configs",
+      "2. Frontend component not querying province_configs",
+      "3. Province detail pages not implemented"
+    ],
+    "evidence": {
+      "count": 8,
+      "sample": {
+        "province": "ON",
+        "reserve_margin_pct": 10,
+        "price_curve_profile": "default",
+        "timezone": "America/Toronto",
+        "curtailment_threshold_mw": 50,
+        "updated_at": "2025-10-11T06:55:01.346268+00:00"
+      }
+    }
+  },
+  {
+    "category": "My Energy AI",
+    "issue": "Not Using Live Optimization Data",
+    "status": "WARN",
+    "rootCause": "LLM context not including forecast/curtailment/dispatch endpoints",
+    "possibleSources": [
+      "1. llmClient.ts not fetching optimization data before prompt",
+      "2. System prompt not instructing to reference live data",
+      "3. RAG/context injection not implemented"
+    ],
+    "evidence": "Code inspection required"
+  },
+  {
+    "category": "Ops & Monitoring",
+    "issue": "Uptime, Job Latency, Retention Status Not Shown",
+    "status": "FAIL",
+    "rootCause": "Ops dashboard not implemented",
+    "possibleSources": [
+      "1. No ops metrics collection infrastructure",
+      "2. Edge functions not logging performance metrics",
+      "3. UI component for ops dashboard not created"
+    ],
+    "evidence": "Feature not implemented"
+  }
+]
+
+================================================================================
+🎯 RECOMMENDED FIX PRIORITY:
+================================================================================
+1. Run SQL seed for forecast_performance table
+   Impact: Fixes 3 award evidence gaps
+
+2. Run seed-curtailment-data.ts script
+   Impact: Fixes curtailment events, recommendations, avoided MWh
+
+3. Deploy Ontario streaming edge function
+   Impact: Fixes real-time demand data
+
+4. Implement storage dispatch engine
+   Impact: Fixes storage efficiency and alignment metrics
+
+5. Set up weather ingestion cron
+   Impact: Enables weather features and correlations
+
+6. Remove "Mock" labels from UI
+   Impact: Professional presentation
+
+7. Add provenance badges to all panels
+   Impact: Data transparency
+
+8. Implement ops monitoring dashboard
+   Impact: System observability
+
+
+✅ Diagnostics complete!

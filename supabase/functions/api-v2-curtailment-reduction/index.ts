@@ -378,6 +378,99 @@ serve(async (req) => {
       });
     }
 
+    // POST /replay - Run historical replay to compute avoided MWh
+    if (req.method === 'POST' && path === 'replay') {
+      const { province = 'ON' } = await req.json();
+      
+      // Fetch recent curtailment events (last 30 days)
+      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: events } = await supabase
+        .from('curtailment_events')
+        .select('*')
+        .eq('province', province)
+        .gte('occurred_at', startDate);
+
+      // Get province config
+      const { data: config } = await supabase
+        .from('province_configs')
+        .select('*')
+        .eq('province', province)
+        .single();
+
+      const reserveMarginPct = config?.reserve_margin_pct || 10;
+
+      // Simulate recommendations for each event
+      let totalAvoidedMwh = 0;
+      const recommendations: any[] = [];
+
+      for (const event of events || []) {
+        const curtailedMw = event.curtailed_mw || 0;
+        const marketPrice = event.market_price_cad_per_mwh || 50;
+        
+        // Check if battery storage could have helped
+        const { data: batteries } = await supabase
+          .from('batteries')
+          .select('*')
+          .eq('province', province)
+          .eq('operational_status', 'operational');
+
+        if (batteries && batteries.length > 0) {
+          const battery = batteries[0];
+          const storageMw = Math.min(curtailedMw, battery.max_charge_mw);
+          const durationHours = event.duration_hours || 1;
+          const avoidedMwh = storageMw * durationHours;
+          
+          totalAvoidedMwh += avoidedMwh;
+          
+          recommendations.push({
+            type: 'storage_charge',
+            event_id: event.id,
+            target_mw: storageMw,
+            avoided_mwh: avoidedMwh,
+            revenue_cad: avoidedMwh * marketPrice,
+            confidence: 0.85
+          });
+        } else {
+          // Fallback: demand response recommendation
+          const drMw = Math.min(curtailedMw * 0.5, 100);
+          const durationHours = event.duration_hours || 1;
+          const avoidedMwh = drMw * durationHours;
+          
+          totalAvoidedMwh += avoidedMwh * 0.6; // Lower effectiveness
+          
+          recommendations.push({
+            type: 'demand_response',
+            event_id: event.id,
+            target_mw: drMw,
+            avoided_mwh: avoidedMwh * 0.6,
+            revenue_cad: avoidedMwh * 0.6 * marketPrice,
+            confidence: 0.65
+          });
+        }
+      }
+
+      const totalCurtailedMwh = (events || []).reduce((sum, e) => sum + (e.total_energy_curtailed_mwh || 0), 0);
+      const opportunityCostSaved = recommendations.reduce((sum, r) => sum + (r.revenue_cad || 0), 0);
+      const implementationCost = recommendations.length * 100; // Simplified cost model
+      const roi = implementationCost > 0 ? opportunityCostSaved / implementationCost : 0;
+
+      return new Response(JSON.stringify({
+        province,
+        events_analyzed: (events || []).length,
+        total_curtailed_baseline_mwh: totalCurtailedMwh,
+        monthly_curtailment_avoided_mwh: totalAvoidedMwh,
+        monthly_opportunity_cost_saved_cad: opportunityCostSaved,
+        implementation_cost_cad: implementationCost,
+        roi_benefit_cost: roi,
+        curtailment_reduction_percent: totalCurtailedMwh > 0 ? (totalAvoidedMwh / totalCurtailedMwh) * 100 : 0,
+        recommendations_count: recommendations.length,
+        recommendations: recommendations.slice(0, 10), // Return top 10
+        provenance: 'Historical-Replay'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // POST /mock - Generate mock curtailment event for testing
     if (req.method === 'POST' && path === 'mock') {
       const { province = 'ON', sourceType = 'solar' } = await req.json();

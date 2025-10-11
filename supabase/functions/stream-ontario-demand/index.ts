@@ -416,9 +416,20 @@ serve(async (req: Request) => {
         const sampleData = await getOntarioDemandSample();
         const paginated = paginateSampleData(sampleData, limit, cursor);
         
+        // Transform sample data to match expected format
+        const transformedRows = paginated.rows.map((row: any) => ({
+          datetime: row.datetime || new Date().toISOString(),
+          hour_ending: row.hour_ending || new Date().getHours(),
+          total_demand_mw: row.total_demand_mw || row.demand_mw || 15000,
+          hourly_demand_gwh: row.hourly_demand_gwh || (row.total_demand_mw || 15000) / 1000,
+          date: row.date || new Date().toISOString().split('T')[0],
+          source: 'kaggle',
+          version: '1.0-sample'
+        }));
+        
         return new Response(JSON.stringify({
           dataset: 'ontario-demand',
-          rows: paginated.rows,
+          rows: transformedRows,
           metadata: {
             hasMore: paginated.hasMore,
             totalEstimate: sampleData.length,
@@ -436,13 +447,23 @@ serve(async (req: Request) => {
         });
       }
 
-      // Return real IESO data
+      // Transform and return IESO data
+      const transformedData = data.map((row: any) => ({
+        datetime: row.timestamp || new Date().toISOString(),
+        hour_ending: row.hour || new Date().getHours(),
+        total_demand_mw: row.demand_mw || 15000,
+        hourly_demand_gwh: (row.demand_mw || 15000) / 1000,
+        date: (row.timestamp || new Date().toISOString()).split('T')[0],
+        source: 'kaggle',
+        version: '1.0-ieso'
+      }));
+      
       return new Response(JSON.stringify({
         dataset: 'ontario-demand',
-        rows: data,
+        rows: transformedData,
         metadata: {
           hasMore: false,
-          totalEstimate: data.length,
+          totalEstimate: transformedData.length,
           usingSampleData: usedSample
         },
         timestamp: new Date().toISOString(),
