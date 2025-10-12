@@ -1,0 +1,25 @@
+name: Storage Dispatch Scheduler
+
+on:
+  schedule:
+    # Run every 30 minutes
+    - cron: '*/30 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Storage Dispatch
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/storage-dispatch-scheduler
+        env:
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      
+      - name: Verify Dispatch
+        run: |
+          echo "Storage dispatch triggered at $(date)"
+          echo "Check logs: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/functions/storage-dispatch-scheduler/logs"
