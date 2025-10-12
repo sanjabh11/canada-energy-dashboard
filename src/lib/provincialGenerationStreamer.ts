@@ -12,6 +12,10 @@ const USE_STREAMING_DATASETS = import.meta.env.VITE_USE_STREAMING_DATASETS === '
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// Imports
+import { DataStreamer } from './dataStreamer';
+import { debug } from '@/lib/debug';
+
 // Types
 interface ManifestResponse {
   dataset: string;
@@ -66,11 +70,12 @@ interface StreamingOptions {
 /**
  * Provincial Generation Data Streamer
  */
-export class ProvincialGenerationStreamer {
+export class ProvincialGenerationStreamer extends DataStreamer {
   private baseUrl: string;
   private headers: Record<string, string>;
 
   constructor() {
+    super();
     this.baseUrl = `${SUPABASE_URL}/functions/v1`;
     this.headers = {
       'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
@@ -222,14 +227,14 @@ export class ProvincialGenerationRepository {
 
     try {
       if (useStreaming) {
-        console.log('Loading provincial generation data via streaming...');
+        debug.log('Loading provincial generation data via streaming...');
         return await this.loadFromStream({ maxRows, onProgress });
       } else {
-        console.log('Loading provincial generation data from fallback...');
+        debug.log('Loading provincial generation data from fallback...');
         return await this.loadFromFallback();
       }
     } catch (error) {
-      console.error('Failed to load streaming data, falling back to static data:', error);
+      debug.error('Failed to load streaming data, falling back to static data:', error);
       return await this.loadFromFallback();
     }
   }
@@ -245,7 +250,7 @@ export class ProvincialGenerationRepository {
     
     // Get manifest first
     const manifest = await this.streamer.getManifest();
-    console.log('Manifest loaded:', manifest.metadata);
+    debug.log('Manifest loaded:', manifest.metadata);
 
     const records: ProvincialGenerationRecord[] = [];
     const batchSize = 1000;
@@ -273,14 +278,14 @@ export class ProvincialGenerationRepository {
       if (typeof window !== 'undefined' && (window as any).ceipDb) {
         try {
           await (window as any).ceipDb.provincial_generation.bulkPut(transformedBatch);
-          console.log(`Stored ${transformedBatch.length} records in IndexedDB`);
+          debug.log(`Stored ${transformedBatch.length} records in IndexedDB`);
         } catch (dbError) {
-          console.warn('Failed to store in IndexedDB:', dbError);
+          debug.warn('Failed to store in IndexedDB:', dbError);
         }
       }
     }
 
-    console.log(`Successfully loaded ${records.length} provincial generation records from streaming`);
+    debug.log(`Successfully loaded ${records.length} provincial generation records from streaming`);
     return records;
   }
 
@@ -312,16 +317,16 @@ export class ProvincialGenerationRepository {
         try {
           await (window as any).ceipDb.provincial_generation.clear();
           await (window as any).ceipDb.provincial_generation.bulkAdd(records);
-          console.log('Fallback data stored in IndexedDB');
+          debug.log('Fallback data stored in IndexedDB');
         } catch (dbError) {
-          console.warn('Failed to store fallback data in IndexedDB:', dbError);
+          debug.warn('Failed to store fallback data in IndexedDB:', dbError);
         }
       }
 
-      console.log(`Loaded ${records.length} records from fallback data`);
+      debug.log(`Loaded ${records.length} records from fallback data`);
       return records;
     } catch (error) {
-      console.error('Failed to load fallback data:', error);
+      debug.error('Failed to load fallback data:', error);
       throw error;
     }
   }
@@ -335,11 +340,11 @@ export class ProvincialGenerationRepository {
       try {
         const records = await (window as any).ceipDb.provincial_generation.toArray();
         if (records && records.length > 0) {
-          console.log(`Retrieved ${records.length} records from IndexedDB`);
+          debug.log(`Retrieved ${records.length} records from IndexedDB`);
           return records;
         }
       } catch (dbError) {
-        console.warn('Failed to retrieve from IndexedDB:', dbError);
+        debug.warn('Failed to retrieve from IndexedDB:', dbError);
       }
     }
 
@@ -355,9 +360,9 @@ export class ProvincialGenerationRepository {
     if (typeof window !== 'undefined' && (window as any).ceipDb) {
       try {
         await (window as any).ceipDb.provincial_generation.clear();
-        console.log('IndexedDB cache cleared');
+        debug.log('IndexedDB cache cleared');
       } catch (dbError) {
-        console.warn('Failed to clear IndexedDB cache:', dbError);
+        debug.warn('Failed to clear IndexedDB cache:', dbError);
       }
     }
 
@@ -372,37 +377,37 @@ export const provincialGenerationRepo = new ProvincialGenerationRepository();
  * Demo function to show streaming in action
  */
 export async function demoStreamingData() {
-  console.log('=== Provincial Generation Streaming Demo ===');
+  debug.log('=== Provincial Generation Streaming Demo ===');
   
   const streamer = new ProvincialGenerationStreamer();
   
   try {
     // Get manifest
     const manifest = await streamer.getManifest();
-    console.log('Dataset:', manifest.dataset);
-    console.log('Estimated rows:', manifest.estimatedRows);
-    console.log('Sample data:', manifest.sampleRows.slice(0, 2));
+    debug.log('Dataset:', manifest.dataset);
+    debug.log('Estimated rows:', manifest.estimatedRows);
+    debug.log('Sample data:', manifest.sampleRows.slice(0, 2));
     
     // Stream first 100 rows
-    console.log('\nStreaming first 100 rows...');
+    debug.log('\nStreaming first 100 rows...');
     let totalRows = 0;
     
     for await (const batch of streamer.streamData({ 
       limit: 25, 
       maxRows: 100,
       onProgress: ({ loaded, percentage }) => {
-        console.log(`Progress: ${loaded} rows (${percentage.toFixed(1)}%)`);
+        debug.log(`Progress: ${loaded} rows (${percentage.toFixed(1)}%)`);
       }
     })) {
       totalRows += batch.length;
-      console.log(`Batch received: ${batch.length} rows`);
-      console.log('Sample row:', batch[0]);
+      debug.log(`Batch received: ${batch.length} rows`);
+      debug.log('Sample row:', batch[0]);
     }
     
-    console.log(`\nTotal rows received: ${totalRows}`);
+    debug.log(`\nTotal rows received: ${totalRows}`);
     
   } catch (error) {
-    console.error('Demo failed:', error);
+    debug.error('Demo failed:', error);
   }
 }
 

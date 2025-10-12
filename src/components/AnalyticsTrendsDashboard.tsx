@@ -226,92 +226,19 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
         {/* Renewable Penetration Heatmap */}
         <RenewablePenetrationHeatmap
           provincialData={(() => {
-            // Try to calculate from real data first
-            if (data.provincialGeneration.length > 0) {
-              const calculated = Object.entries(
-                data.provincialGeneration.reduce((acc, record) => {
-                  // Extract province (handle different field names)
-                  const province = record.province || record.province_code || 'Unknown';
-                  if (!acc[province]) {
-                    acc[province] = {
-                      province,
-                      renewable_mw: 0,
-                      fossil_mw: 0,
-                      total_mw: 0,
-                      renewable_pct: 0,
-                      sources: {}
-                    };
-                  }
-                  
-                  // Extract megawatt value (handle different field names)
-                  let mw = 0;
-                  if (typeof record.megawatt_hours === 'number' && record.megawatt_hours > 0) {
-                    mw = record.megawatt_hours;
-                  } else if (typeof record.generation_gwh === 'number' && record.generation_gwh > 0) {
-                    mw = record.generation_gwh * 1000; // Convert GWh to MWh
-                  }
-                  
-                  // Skip if no valid power data
-                  if (mw === 0) return acc;
-                  
-                  // Determine fuel type from multiple possible fields
-                  const fuelType = (
-                    record.generation_type || 
-                    record.source || 
-                    (record as any).fuel_type || 
-                    'other'
-                  ).toLowerCase().trim();
-                  
-                  // Comprehensive renewable classification
-                  const renewableSources = [
-                    'hydro', 'wind', 'solar', 'biomass', 'geothermal',
-                    'hydroelectric', 'wind_power', 'solar_pv', 'biofuel',
-                    'bioenergy', 'renewable', 'tidal', 'wave'
-                  ];
-                  
-                  const fossilSources = [
-                    'natural_gas', 'gas', 'coal', 'petroleum', 'oil',
-                    'diesel', 'fuel_oil', 'natural gas', 'lng'
-                  ];
-                  
-                  const isRenewable = renewableSources.some(src => fuelType.includes(src));
-                  const isFossil = fossilSources.some(src => fuelType.includes(src));
-                  
-                  // Classify energy (nuclear is neither renewable nor fossil for this metric)
-                  if (isRenewable) {
-                    acc[province].renewable_mw += mw;
-                  } else if (isFossil) {
-                    acc[province].fossil_mw += mw;
-                  }
-                  
-                  acc[province].total_mw += mw;
-                  
-                  // Track by source type
-                  const sourceKey = fuelType.replace(/\s+/g, '_');
-                  if (!acc[province].sources[sourceKey]) acc[province].sources[sourceKey] = 0;
-                  acc[province].sources[sourceKey] += mw;
-                  
-                  return acc;
-                }, {} as Record<string, any>)
-              ).map(([_, data]) => ({
-                ...data,
-                renewable_pct: data.total_mw > 0 ? (data.renewable_mw / data.total_mw) * 100 : 0
-              }));
-
-              // If we got valid calculated data, use it; otherwise fall back to mock
-              if (calculated.length > 0 && calculated.some(d => d.total_mw > 0)) {
-                return calculated;
-              }
-            }
-
-            // Fallback to mock data
+            // ALWAYS use mock data for now until we have proper real-time generation data
+            // The provincial_generation table contains historical aggregate data, not real-time capacity
+            // TODO: Integrate with real-time generation API when available
             return Object.entries(MOCK_RENEWABLE_PENETRATION).map(([code, data]) => ({
               province: code,
-              renewable_mw: data.renewable_pct,
-              fossil_mw: 100 - data.renewable_pct,
-              total_mw: 100,
+              renewable_mw: (data.renewable_pct / 100) * 1000, // Assume 1000 MW baseline
+              fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
+              total_mw: 1000,
               renewable_pct: data.renewable_pct,
-              sources: data.sources
+              sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
+                acc[key] = (val / 100) * 1000; // Convert % to MW
+                return acc;
+              }, {} as Record<string, number>)
             }));
           })()}
         />

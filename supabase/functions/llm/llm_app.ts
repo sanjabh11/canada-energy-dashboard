@@ -1,6 +1,16 @@
 // LLM App Module - All handlers and utilities moved from index.ts
 // This is lazily imported by the minimal bootstrap in index.ts
 
+// Import grid context and prompt templates for enhanced LLM responses
+import { fetchGridContext, formatGridContext, analyzeOpportunities, getDataSources } from './grid_context.ts';
+import {
+  buildChartExplanationPrompt,
+  buildAnalyticsInsightPrompt,
+  buildTransitionReportPrompt,
+  buildDataQualityPrompt,
+  buildGridOptimizationPrompt
+} from './prompt_templates.ts';
+
 // Local adapter within this function (defer import to avoid cold start failures)
 type CallLlmModule = {
   callLLM: (params: Record<string, unknown>) => Promise<unknown>;
@@ -447,14 +457,69 @@ async function handleExplainChart(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'Dataset flagged as Indigenous-related. Consent and governance checks required before LLM processing.', code: 'INDIGENOUS_GUARD' }), { status: 451, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
   }
 
-  const result = {
-    tl_dr: `Chart data for ${manifest.dataset || datasetPath} with ${rows.length} sample rows.`,
-    trends: [`Sample contains ${numericSummary.count} rows`, 'Data appears to be energy-related'],
-    classroom_activity: 'Analyze the energy data trends and create a simple chart showing the main patterns.',
-    provenance: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), note: 'manifest' }]
-  };
-  
-  return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+  // Fetch grid context for enhanced LLM response
+  const sb = await ensureSupabase();
+  const gridContext = sb ? await fetchGridContext(sb) : null;
+  const gridContextStr = gridContext ? formatGridContext(gridContext) : '';
+  const opportunities = gridContext ? analyzeOpportunities(gridContext) : [];
+
+  // Build grid-aware prompt
+  const prompt = buildChartExplanationPrompt(
+    gridContextStr,
+    opportunities,
+    rows.slice(0, 10),
+    manifest.dataset || datasetPath,
+    rows.length
+  );
+
+  // Call LLM with enhanced prompt
+  const startTime = Date.now();
+  try {
+    const callLLM = await getCallLLM();
+    const llmResponse = await callLLM({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'gemini-2.0-flash-exp',
+      maxTokens: 1000,
+    }) as any;
+
+    const duration = Date.now() - startTime;
+    const responseText = llmResponse?.text || llmResponse?.content || '';
+    
+    // Parse JSON response
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      // Fallback if LLM doesn't return valid JSON
+      result = {
+        tl_dr: responseText.slice(0, 200),
+        trends: ['LLM response parsing failed'],
+        optimization: 'Unable to parse optimization',
+        classroom_activity: 'Review the data manually',
+        confidence: 0.5
+      };
+    }
+
+    // Add data sources for provenance
+    result.sources = gridContext ? getDataSources(gridContext) : [];
+    result.grid_context_used = !!gridContext;
+    result.optimization_suggested = opportunities.length > 0;
+
+    logCall({ endpoint: 'explain-chart', dataset_path: datasetPath, panel_id: panelId, user_id: userId, prompt: userPrompt || null, status_code: 200, duration_ms: duration, cost_usd: 0, response_summary: result.tl_dr, provenance: result.sources, meta: { timeframe } });
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'active' } });
+  } catch (error) {
+    console.error('LLM call failed:', error);
+    // Fallback to static response if LLM fails
+    const result = {
+      tl_dr: `Chart data for ${manifest.dataset || datasetPath} with ${rows.length} sample rows.`,
+      trends: [`Sample contains ${numericSummary.count} rows`, 'Data appears to be energy-related'],
+      classroom_activity: 'Analyze the energy data trends and create a simple chart showing the main patterns.',
+      provenance: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), note: 'manifest' }],
+      error: 'LLM temporarily unavailable, showing fallback response'
+    };
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'fallback' } });
+  }
 }
 
 async function handleAnalyticsInsight(req: Request): Promise<Response> {
@@ -475,15 +540,62 @@ async function handleAnalyticsInsight(req: Request): Promise<Response> {
   const rows = await fetchSampleRows(datasetPath, 200);
   const numericSummary = summarizeNumericRows(rows);
 
-  const result = {
-    summary: `Analytics insight for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows analyzed.`,
-    key_findings: [`Dataset contains ${numericSummary.count} sampled rows`, 'Energy data patterns detected'],
-    policy_implications: ['Preliminary insights only. Re-run later for model-backed analysis.'],
-    confidence: 'low',
-    sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }]
-  };
+  // Fetch grid context
+  const sb = await ensureSupabase();
+  const gridContext = sb ? await fetchGridContext(sb) : null;
+  const gridContextStr = gridContext ? formatGridContext(gridContext) : '';
+  const opportunities = gridContext ? analyzeOpportunities(gridContext) : [];
 
-  return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+  // Build grid-aware prompt
+  const prompt = buildAnalyticsInsightPrompt(
+    gridContextStr,
+    opportunities,
+    manifest.dataset || datasetPath,
+    rows.length,
+    numericSummary
+  );
+
+  // Call LLM
+  const startTime = Date.now();
+  try {
+    const callLLM = await getCallLLM();
+    const llmResponse = await callLLM({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'gemini-2.0-flash-exp',
+      maxTokens: 1200,
+    }) as any;
+
+    const duration = Date.now() - startTime;
+    const responseText = llmResponse?.text || llmResponse?.content || '';
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = {
+        summary: responseText.slice(0, 200),
+        key_findings: ['LLM response parsing failed'],
+        policy_implications: ['Unable to parse response'],
+        confidence: 0.5
+      };
+    }
+
+    result.sources = gridContext ? getDataSources(gridContext) : [];
+    result.grid_context_used = !!gridContext;
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'active' } });
+  } catch (error) {
+    console.error('LLM call failed:', error);
+    const result = {
+      summary: `Analytics insight for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows analyzed.`,
+      key_findings: [`Dataset contains ${numericSummary.count} sampled rows`, 'Energy data patterns detected'],
+      policy_implications: ['Preliminary insights only. Re-run later for model-backed analysis.'],
+      confidence: 'low',
+      sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }],
+      error: 'LLM temporarily unavailable'
+    };
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'fallback' } });
+  }
 }
 
 async function handleTransitionReport(req: Request): Promise<Response> {
@@ -509,16 +621,64 @@ async function handleTransitionReport(req: Request): Promise<Response> {
     return new Response(JSON.stringify({ error: 'Dataset flagged as Indigenous-related. Consent and governance checks required before LLM processing.', code: 'INDIGENOUS_GUARD' }), { status: 451, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
   }
 
-  const result = {
-    summary: `Transition report for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows analyzed.`,
-    progress: ['Energy transition metrics analyzed'],
-    risks: ['Limited context; treat as preliminary.'],
-    recommendations: ['Collect more data and retry later.'],
-    confidence: 'low',
-    sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }]
-  };
+  // Fetch grid context
+  const sb = await ensureSupabase();
+  const gridContext = sb ? await fetchGridContext(sb) : null;
+  const gridContextStr = gridContext ? formatGridContext(gridContext) : '';
+  const opportunities = gridContext ? analyzeOpportunities(gridContext) : [];
 
-  return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+  // Build grid-aware prompt
+  const prompt = buildTransitionReportPrompt(
+    gridContextStr,
+    opportunities,
+    manifest.dataset || datasetPath,
+    timeframe || '30d',
+    focus || null
+  );
+
+  // Call LLM
+  const startTime = Date.now();
+  try {
+    const callLLM = await getCallLLM();
+    const llmResponse = await callLLM({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'gemini-2.0-flash-exp',
+      maxTokens: 1500,
+    }) as any;
+
+    const duration = Date.now() - startTime;
+    const responseText = llmResponse?.text || llmResponse?.content || '';
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = {
+        summary: responseText.slice(0, 200),
+        progress: ['LLM response parsing failed'],
+        risks: ['Unable to parse response'],
+        recommendations: ['Retry request'],
+        confidence: 0.5
+      };
+    }
+
+    result.sources = gridContext ? getDataSources(gridContext) : [];
+    result.grid_context_used = !!gridContext;
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'active' } });
+  } catch (error) {
+    console.error('LLM call failed:', error);
+    const result = {
+      summary: `Transition report for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows analyzed.`,
+      progress: ['Energy transition metrics analyzed'],
+      risks: ['Limited context; treat as preliminary.'],
+      recommendations: ['Collect more data and retry later.'],
+      confidence: 'low',
+      sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }],
+      error: 'LLM temporarily unavailable'
+    };
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'fallback' } });
+  }
 }
 
 async function handleDataQuality(req: Request): Promise<Response> {
@@ -551,15 +711,64 @@ async function handleDataQuality(req: Request): Promise<Response> {
   const rows = await fetchSampleRows(datasetPath, 100);
   const numericSummary = summarizeNumericRows(rows);
 
-  const result = {
-    summary: `Data quality assessment for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows checked.`,
-    quality_score: 0.75,
-    issues: ['Sample size limited', 'Full validation pending'],
-    recommendations: ['Increase sample size', 'Run comprehensive validation'],
-    sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }]
-  };
+  // Calculate completeness
+  const completeness = rows.length > 0 ? Math.round((numericSummary.count / rows.length) * 100) : 0;
 
-  return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+  // Fetch grid context
+  const sb = await ensureSupabase();
+  const gridContext = sb ? await fetchGridContext(sb) : null;
+  const gridContextStr = gridContext ? formatGridContext(gridContext) : '';
+
+  // Build grid-aware prompt
+  const prompt = buildDataQualityPrompt(
+    gridContextStr,
+    manifest.dataset || datasetPath,
+    rows.length,
+    completeness,
+    numericSummary
+  );
+
+  // Call LLM
+  const startTime = Date.now();
+  try {
+    const callLLM = await getCallLLM();
+    const llmResponse = await callLLM({
+      messages: [{ role: 'user', content: prompt }],
+      model: 'gemini-2.0-flash-exp',
+      maxTokens: 1200,
+    }) as any;
+
+    const duration = Date.now() - startTime;
+    const responseText = llmResponse?.text || llmResponse?.content || '';
+    
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = {
+        summary: responseText.slice(0, 200),
+        issues: [{ description: 'LLM response parsing failed', severity: 'low' }],
+        recommendations: ['Retry request'],
+        confidence: 0.5
+      };
+    }
+
+    result.sources = gridContext ? getDataSources(gridContext) : [];
+    result.grid_context_used = !!gridContext;
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'active' } });
+  } catch (error) {
+    console.error('LLM call failed:', error);
+    const result = {
+      summary: `Data quality assessment for ${manifest.dataset || datasetPath}: ${numericSummary.count} rows checked.`,
+      quality_score: 0.75,
+      issues: ['Sample size limited', 'Full validation pending'],
+      recommendations: ['Increase sample size', 'Run comprehensive validation'],
+      sources: [{ id: manifest.dataset || datasetPath, last_updated: manifest.last_updated || new Date().toISOString(), excerpt: 'manifest' }],
+      error: 'LLM temporarily unavailable'
+    };
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), { headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(rl.remaining ?? ''), 'X-RateLimit-Limit': String(rl.limit ?? ''), 'X-LLM-Mode': 'fallback' } });
+  }
 }
 
 export async function handleRequest(req: Request): Promise<Response> {

@@ -2,7 +2,7 @@
  * Forecast Performance API - Phase 5
  * 
  * Endpoints:
- * - GET /award-evidence - Get award submission evidence
+ * - GET /award-evidence - Get performance evidence metrics
  * - GET /daily - Get daily performance metrics
  * - GET /comparison - Get baseline comparisons
  */
@@ -28,7 +28,7 @@ serve(async (req) => {
     const url = new URL(req.url);
     const path = url.pathname.split('/').pop();
 
-    // GET /award-evidence - Award submission evidence
+    // GET /award-evidence - Performance evidence metrics
     if (req.method === 'GET' && path === 'award-evidence') {
       const province = url.searchParams.get('province') || 'ON';
       const startDate = url.searchParams.get('start_date') || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];

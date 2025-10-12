@@ -1,19 +1,21 @@
 // Centralized configuration and feature flags for streaming
 
 // Vite exposes env vars on import.meta.env
-const env = (import.meta as any).env || {};
-const DEBUG = String(env.VITE_DEBUG_LOGS || '').toLowerCase() === 'true';
+import { debug } from '@/lib/debug';
+
+const env = import.meta.env;
+const DEBUG = env.DEV;
 
 let warnedMissingSupabase = false;
 
 export function getSupabaseConfig(): { url: string; anonKey: string } {
   const url = env.VITE_SUPABASE_URL as string | undefined;
   const anonKey = env.VITE_SUPABASE_ANON_KEY as string | undefined;
-  if (DEBUG) console.log('getSupabaseConfig - VITE_SUPABASE_URL:', url, 'VITE_SUPABASE_ANON_KEY loaded:', !!anonKey);
+  if (DEBUG) debug.log('getSupabaseConfig - VITE_SUPABASE_URL:', url, 'VITE_SUPABASE_ANON_KEY loaded:', !!anonKey);
   if (!url || !anonKey) {
     // Don't throw here; callers may choose fallback. Log for visibility, but only once.
     if (!warnedMissingSupabase) {
-      console.warn('Supabase config missing: ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
+      debug.warn('Supabase config missing: ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set.');
       warnedMissingSupabase = true;
     }
   }
@@ -23,7 +25,7 @@ export function getSupabaseConfig(): { url: string; anonKey: string } {
 export function getEdgeBaseUrl(): string {
   const { url } = getSupabaseConfig();
   const override = (env.VITE_SUPABASE_EDGE_BASE as string | undefined) || '';
-  if (DEBUG) console.log('getEdgeBaseUrl - override:', override, 'url:', url, 'final base:', override || `${url}/functions/v1`);
+  if (DEBUG) debug.log('getEdgeBaseUrl - override:', override, 'url:', url, 'final base:', override || `${url}/functions/v1`);
   if (override) return override; // explicit override
   if (!url) return '';
   // If user provided the functions subdomain directly, use as-is
@@ -39,23 +41,23 @@ export function getEdgeHeaders(): Record<string, string> {
     headers['Authorization'] = `Bearer ${anonKey}`;
     headers['apikey'] = anonKey;
   }
-  if (DEBUG) console.log('getEdgeHeaders - anonKey:', !!anonKey, 'Authorization header sent:', 'Authorization' in headers);
+  if (DEBUG) debug.log('getEdgeHeaders - anonKey:', !!anonKey, 'Authorization header sent:', 'Authorization' in headers);
   return headers;
 }
 
 export function isEdgeFetchEnabled(): boolean {
   const raw = env.VITE_ENABLE_EDGE_FETCH as string | boolean | undefined;
   
-  if (DEBUG) console.log('isEdgeFetchEnabled - raw value:', raw, 'type:', typeof raw);
+  if (DEBUG) debug.log('isEdgeFetchEnabled - raw value:', raw, 'type:', typeof raw);
 
   // If explicitly set, honor that setting (works for both localhost and production)
   if (typeof raw === 'boolean') {
-    if (DEBUG) console.log('isEdgeFetchEnabled - returning boolean:', raw);
+    if (DEBUG) debug.log('isEdgeFetchEnabled - returning boolean:', raw);
     return raw;
   }
   if (typeof raw === 'string') {
     const result = raw.toLowerCase() === 'true';
-    if (DEBUG) console.log('isEdgeFetchEnabled - returning string parsed:', result);
+    if (DEBUG) debug.log('isEdgeFetchEnabled - returning string parsed:', result);
     return result;
   }
 
@@ -63,14 +65,14 @@ export function isEdgeFetchEnabled(): boolean {
   if (typeof window !== 'undefined') {
     const host = window.location?.hostname || '';
     if (host === 'localhost' || host === '127.0.0.1') {
-      if (DEBUG) console.log('isEdgeFetchEnabled - localhost detected, returning false');
+      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, returning false');
       return false;
     }
   }
 
   // For production deployments without explicit setting, enable if Supabase is configured
   const fallback = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
-  if (DEBUG) console.log('isEdgeFetchEnabled - using fallback:', fallback);
+  if (DEBUG) debug.log('isEdgeFetchEnabled - using fallback:', fallback);
   return fallback;
 }
 

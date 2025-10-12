@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { debug } from '@/lib/debug';
 import {
   LineChart,
   Line,
@@ -91,9 +92,9 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
       if (eventsError) throw eventsError;
       const fetchedEvents = eventsData || [];
-      console.log('[CURTAILMENT] Events loaded:', fetchedEvents.length);
-      console.log('[CURTAILMENT] Sample event:', fetchedEvents[0]);
-      console.log('[CURTAILMENT] Data sources:', [...new Set(fetchedEvents.map(e => e.data_source))]);
+      debug.log('[CURTAILMENT] Events loaded:', fetchedEvents.length);
+      debug.log('[CURTAILMENT] Sample event:', fetchedEvents[0]);
+      debug.log('[CURTAILMENT] Data sources:', [...new Set(fetchedEvents.map(e => e.data_source))]);
       setEvents(fetchedEvents);
 
       // Fetch recommendations for these events
@@ -108,10 +109,10 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
         if (recsError) throw recsError;
         fetchedRecommendations = recsData || [];
-        console.log('[CURTAILMENT] Recommendations loaded:', fetchedRecommendations.length);
-        console.log('[CURTAILMENT] Implemented count:', fetchedRecommendations.filter(r => r.implemented).length);
+        debug.log('[CURTAILMENT] Recommendations loaded:', fetchedRecommendations.length);
+        debug.log('[CURTAILMENT] Implemented count:', fetchedRecommendations.filter(r => r.implemented).length);
         const totalSaved = fetchedRecommendations.reduce((sum, r) => sum + (r.actual_mwh_saved || 0), 0);
-        console.log('[CURTAILMENT] Total MWh saved:', totalSaved.toFixed(2));
+        debug.log('[CURTAILMENT] Total MWh saved:', totalSaved.toFixed(2));
         setRecommendations(fetchedRecommendations);
       } else {
         setRecommendations([]);
@@ -132,13 +133,13 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
           setApiStatistics(apiStats);
         }
       } catch (error) {
-        console.error('Error fetching API statistics:', error);
+        debug.error('Error fetching API statistics:', error);
       }
 
       // Calculate local statistics
       calculateStatistics(fetchedEvents, fetchedRecommendations);
     } catch (error) {
-      console.error('Error fetching curtailment data:', error);
+      debug.error('Error fetching curtailment data:', error);
     } finally {
       setLoading(false);
     }
@@ -198,7 +199,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
         await fetchCurtailmentData();
       }
     } catch (error) {
-      console.error('Error running historical replay:', error);
+      debug.error('Error running historical replay:', error);
     } finally {
       setLoading(false);
     }

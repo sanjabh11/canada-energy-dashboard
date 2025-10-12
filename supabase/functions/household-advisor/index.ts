@@ -1,10 +1,13 @@
 /**
  * Household Energy Advisor Edge Function
  * Provides AI-powered energy recommendations via Gemini API
+ * Enhanced with real-time grid context and optimization opportunities
  */
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { fetchGridContext, formatGridContext, analyzeOpportunities } from '../llm/grid_context.ts';
+import { buildHouseholdAdvisorPrompt } from '../llm/prompt_templates.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -65,29 +68,18 @@ serve(async (req) => {
       );
     }
 
-    // Build system prompt with context
-    const systemPrompt = `You are "My Energy AI", a friendly and knowledgeable energy advisor for Canadian households.
+    // Fetch real-time grid context for enhanced recommendations
+    const gridContext = await fetchGridContext(supabase);
+    const gridContextStr = formatGridContext(gridContext);
+    const opportunities = analyzeOpportunities(gridContext);
 
-USER CONTEXT:
-${context ? `
-- Province: ${context.province}
-- Home Type: ${context.homeType}
-- Square Footage: ${context.squareFootage} sq ft
-- Occupants: ${context.occupants}
-- Heating: ${context.heatingType}
-${context.avgUsage ? `- Average Usage: ${context.avgUsage} kWh/month` : ''}
-${context.avgCost ? `- Average Cost: $${context.avgCost}/month` : ''}
-` : 'Limited context available'}
-
-GUIDELINES:
-- Be warm, encouraging, and supportive
-- Provide specific, actionable advice
-- Include dollar amounts and percentages when relevant
-- Focus on Canadian energy programs and rebates
-- Keep responses concise (2-3 paragraphs max)
-- Never be judgmental about high usage
-
-Respond to the user's question in a helpful, conversational way.`;
+    // Build enhanced system prompt with grid context
+    const systemPrompt = buildHouseholdAdvisorPrompt(
+      gridContextStr,
+      opportunities,
+      context || null,
+      userMessage
+    );
 
     // Call Gemini API
     const geminiResponse = await fetch(
@@ -141,14 +133,16 @@ Respond to the user's question in a helpful, conversational way.`;
       // Continue even if storage fails
     }
 
-    // Return response
+    // Return response with grid context metadata
     return new Response(
       JSON.stringify({
         response: aiResponse,
         confidence: 0.9,
         timestamp: new Date().toISOString(),
+        grid_opportunities: opportunities.length,
+        grid_context_used: true,
       }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-LLM-Mode': 'active' } }
     );
 
   } catch (error) {
