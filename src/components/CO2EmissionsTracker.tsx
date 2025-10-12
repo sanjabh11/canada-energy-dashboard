@@ -70,6 +70,26 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
   const [historicalData, setHistoricalData] = useState<number[]>([]);
   const [showInfo, setShowInfo] = useState(false);
 
+  const exportData = () => {
+    const csvContent = [
+      ['Source', 'MW', 'CO2 (kg/h)', 'Percentage'],
+      ...co2Data.breakdown.map(item => [
+        item.source,
+        item.mw.toFixed(2),
+        item.co2_kg.toFixed(2),
+        item.percentage.toFixed(1) + '%'
+      ])
+    ].map(row => row.join(',')).join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `co2-emissions-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const co2Data = useMemo<CO2Data>(() => {
     // Filter out UNCLASSIFIED/UNKNOWN/UNSPECIFIED sources
     const validMix = (generationData ?? []).filter(s => 

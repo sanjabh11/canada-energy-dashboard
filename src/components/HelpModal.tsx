@@ -144,29 +144,14 @@ export const HelpModal: React.FC<HelpModalProps> = ({
 
         {/* Content */}
         <div className="px-6 py-4">
-          {/* Short text as subtitle if available */}
-          {content?.short_text && (
-            <div className="mb-4 text-slate-300 text-sm leading-relaxed">
-              {content.short_text}
-            </div>
-          )}
-
           {/* Main content area */}
           <div
             id="help-modal-content"
             className="prose prose-slate prose-invert max-w-none"
           >
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="flex items-center space-x-2 text-slate-400">
-                  <div className="w-4 h-4 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                  <span>Loading help content...</span>
-                </div>
-              </div>
-            ) : content?.body_html ? (
+            {content ? (
               <div className="text-slate-200 space-y-4">
-                {/* Security: For now, render as text to prevent XSS. TODO: Add DOMPurify */}
-                <pre className="whitespace-pre-wrap">{content.body_html.replace(/<[^>]*>/g, '')}</pre>
+                {content}
               </div>
             ) : (
               <div className="text-slate-400 text-center py-8">
@@ -175,21 +160,29 @@ export const HelpModal: React.FC<HelpModalProps> = ({
             )}
           </div>
 
-          {/* Related sources section */}
-          {content?.related_sources && content.related_sources.length > 0 && (
+          {/* Sections */}
+          {sections && sections.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-slate-700 space-y-4">
+              {sections.map((section, index) => (
+                <div key={index}>
+                  <div className="flex items-center gap-2 mb-2">
+                    {section.icon}
+                    <h3 className="text-sm font-medium text-slate-200">{section.title}</h3>
+                  </div>
+                  <div className="text-slate-300 text-sm">{section.content}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Provenance section */}
+          {provenance && provenance.length > 0 && (
             <div className="mt-6 pt-4 border-t border-slate-700">
-              <h3 className="text-sm font-medium text-slate-200 mb-2">More Information:</h3>
+              <h3 className="text-sm font-medium text-slate-200 mb-2">Data Sources:</h3>
               <ul className="space-y-1">
-                {content.related_sources.map((source, index) => (
-                  <li key={index}>
-                    <a
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-cyan-400 hover:text-cyan-300 transition-colors underline"
-                    >
-                      {source.name}
-                    </a>
+                {provenance.map((item, index) => (
+                  <li key={index} className="text-slate-300 text-sm">
+                    <strong>{item.label}:</strong> {item.description}
                   </li>
                 ))}
               </ul>

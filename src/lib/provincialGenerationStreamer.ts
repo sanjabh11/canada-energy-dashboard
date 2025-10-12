@@ -71,9 +71,6 @@ interface StreamingOptions {
  * Provincial Generation Data Streamer
  */
 export class ProvincialGenerationStreamer extends DataStreamer {
-  private baseUrl: string;
-  private headers: Record<string, string>;
-
   constructor() {
     super();
     this.baseUrl = `${SUPABASE_URL}/functions/v1`;

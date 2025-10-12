@@ -122,7 +122,7 @@ export interface CommunityRecord {
 /**
  * Base Data Streamer Class
  */
-abstract class BaseDataStreamer {
+export abstract class BaseDataStreamer {
   protected baseUrl: string;
   protected headers: Record<string, string>;
   

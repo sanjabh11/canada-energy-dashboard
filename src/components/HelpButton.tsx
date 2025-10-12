@@ -107,11 +107,10 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
 
       {open && (
         <HelpModal
-          id={id}
-          open={open}
+          isOpen={open}
           onClose={() => setOpen(false)}
-          content={content}
-          loading={loading}
+          title={content?.short_text || 'Help'}
+          content={content?.body_html ? <div dangerouslySetInnerHTML={{ __html: content.body_html }} /> : null}
         />
       )}
     </>

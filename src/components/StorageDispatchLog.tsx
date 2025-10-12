@@ -299,9 +299,9 @@ export const StorageDispatchLog: React.FC<{
                     </td>
                     <td className="px-4 py-3">
                       {isValid ? (
-                        <CheckCircle size={16} className="text-green-600" title="SoC within optimal bounds (10-90%)" />
+                        <CheckCircle size={16} className="text-green-600" aria-label="SoC within optimal bounds (10-90%)" />
                       ) : (
-                        <AlertCircle size={16} className="text-red-600" title="SoC outside optimal bounds" />
+                        <AlertCircle size={16} className="text-red-600" aria-label="SoC outside optimal bounds" />
                       )}
                     </td>
                   </tr>

@@ -120,7 +120,8 @@ export async function runDispatchTick(supabase: any, province: string) {
   }
 
   const grid = await getGridSnapshot(supabase, province);
-  const decision = decideDispatch(batt, grid);
+  const curtailmentRisk = (grid as any).curtailment_risk || false;
+  const decision = decideDispatch(batt, (grid as any).price_cad_mwh || 50, curtailmentRisk);
 
   // Calculate new SoC
   let socDelta = 0;
