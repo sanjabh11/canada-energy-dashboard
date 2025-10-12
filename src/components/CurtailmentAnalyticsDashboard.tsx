@@ -397,7 +397,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                   <div className={alertClass}>
                     <div className="font-semibold text-amber-800">No events found</div>
                     <p className="mt-1 text-sm text-amber-700">
-                      No curtailment events recorded for {province} in the last 30 days. Click "Generate Mock Event" to create test data.
+                      No curtailment events recorded for {province} in the last 30 days. Historical data will appear here once events occur naturally from grid operations.
                     </p>
                   </div>
                 ) : (

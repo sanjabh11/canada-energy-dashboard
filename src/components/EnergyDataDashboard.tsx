@@ -193,11 +193,11 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
-    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
     // Renewable Energy Optimization (Phase 5)
     { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
     { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
+    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
     // Specialized Dashboards
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },

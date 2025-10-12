@@ -71,11 +71,65 @@ export const CERComplianceDashboard: React.FC = () => {
   const loadComplianceData = async () => {
     setLoading(true);
     try {
-      // In a real implementation, this would fetch from the API
-      // For now, we'll create sample data
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const sampleComplianceRecords: CERComplianceRecord[] = [
+      // Fetch from CER compliance API
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-cer-compliance?province=${filters.province || ''}&type=${filters.facilityType || ''}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      const apiData = await response.json();
+      console.log('[CER] Loaded from API:', apiData);
+
+      // Transform API data to dashboard format
+      const records = apiData.records?.map((r: any) => ({
+        id: r.id,
+        facility_id: r.id,
+        facility_name: r.company_name || 'Unknown Facility',
+        facility_type: 'pipeline',
+        operator: r.company_name,
+        province: r.province,
+        cer_regulation: 'CER Act',
+        compliance_status: r.severity === 'Low' ? 'compliant' : 'under_review',
+        last_inspection_date: r.date,
+        next_inspection_due: new Date(new Date(r.date).getTime() + 180 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        violations: r.severity !== 'Low' ? [{
+          violation_id: r.id,
+          violation_type: r.incident_type,
+          severity: r.severity.toLowerCase(),
+          description: r.description,
+          date_identified: r.date,
+          corrective_action_required: r.status === 'Open',
+          corrective_action_deadline: new Date(new Date(r.date).getTime() + 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+          status: r.status.toLowerCase().replace(' ', '_')
+        }] : [],
+        environmental_conditions: [],
+        safety_performance: {
+          incident_count: 0,
+          lost_time_injury_frequency: 0,
+          environmental_incidents: 0,
+          near_misses: 0
+        },
+        notes: r.description
+      })) || [];
+
+      setComplianceRecords(records);
+
+      // Use sample data for market oversight (not in API yet)
+      const sampleMarketOversight: CERMarketOversight[] = [];
+      setMarketOversight(sampleMarketOversight);
+
+      // Fallback to sample data if API returns empty
+      if (records.length === 0) {
+        console.log('[CER] Using sample data fallback');
+        const sampleComplianceRecords: CERComplianceRecord[] = [
         {
           id: 'cer_001',
           facility_id: 'TC_001',
@@ -190,8 +244,9 @@ export const CERComplianceDashboard: React.FC = () => {
         }
       ];
 
-      setComplianceRecords(sampleComplianceRecords);
-      setMarketOversight(sampleMarketOversight);
+        setComplianceRecords(sampleComplianceRecords);
+        setMarketOversight(sampleMarketOversight);
+      }
     } catch (error) {
       console.error('Error loading CER compliance data:', error);
     } finally {

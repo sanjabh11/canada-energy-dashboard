@@ -26,6 +26,9 @@ import TransitionReportPanel from './TransitionReportPanel';
 import DataQualityPanel from './DataQualityPanel';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES } from '../lib/ui/layout';
+import { fetchEdgeJson } from '../lib/edge';
+import { DataQualityBadge } from './DataQualityBadge';
+import { createProvenance } from '../lib/types/provenance';
 import RenewablePenetrationHeatmap from './RenewablePenetrationHeatmap';
 
 interface AnalyticsData {
@@ -56,6 +59,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   
   const [loading, setLoading] = useState(true);
   const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>([]);
+  const [excludedLowQualityCount, setExcludedLowQualityCount] = useState(0);
   const loadAbortRef = useRef<AbortController | null>(null);
 
   // Analytics Insight state
@@ -92,10 +96,29 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
       if (signal.aborted) return;
 
+      // Filter out low-completeness records (< 95%)
+      const COMPLETENESS_THRESHOLD = 95;
+      const filterByCompleteness = (records: any[]) => {
+        const originalCount = records.length;
+        const filtered = records.filter(r => {
+          const completeness = Number(r.completeness_pct ?? r.data_completeness_percent ?? 100);
+          return completeness >= COMPLETENESS_THRESHOLD;
+        });
+        return { filtered, excluded: originalCount - filtered.length };
+      };
+
+      const demandFiltered = filterByCompleteness(ontarioDemand);
+      const genFiltered = filterByCompleteness(provincialGeneration);
+      const weatherFiltered = filterByCompleteness(weatherData);
+      
+      const totalExcluded = demandFiltered.excluded + genFiltered.excluded + weatherFiltered.excluded;
+      setExcludedLowQualityCount(totalExcluded);
+
       setData({
-        ontarioDemand,
-        provincialGeneration,
-        weatherData
+        ontarioDemand: demandFiltered.filtered,
+        provincialGeneration: genFiltered.filtered,
+        weatherData: weatherFiltered.filtered,
+        trends: undefined
       });
 
       setConnectionStatuses(energyDataManager.getAllConnectionStatuses());
@@ -206,6 +229,12 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
               <p className="text-lg text-indigo-100">
                 Explore historical patterns, correlations, and AI-powered insights
               </p>
+              {excludedLowQualityCount > 0 && (
+                <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-yellow-500/20 border border-yellow-400/30 rounded-lg text-sm">
+                  <AlertCircle size={16} />
+                  <span>{excludedLowQualityCount} low-completeness records excluded (threshold: 95%)</span>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -251,9 +280,18 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
                 <div className="bg-blue-100 p-3 rounded-xl border-2 border-blue-200">
                   <BarChart3 className="text-blue-600" size={28} />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900">30-Day Generation Trend</h2>
-                  <p className="text-sm text-slate-600">Historical electricity generation patterns</p>
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-lg font-semibold text-slate-800">30-Day Demand Trend</h2>
+                      <p className="text-sm text-slate-500">Historical electricity demand patterns</p>
+                    </div>
+                    <DataQualityBadge
+                      provenance={createProvenance('historical_archive', 'Analytics API', 0.94, { completeness: data.trends?.demand?.length ? data.trends.demand.length / 30 : 0 })}
+                      sampleCount={data.trends?.demand?.length || 0}
+                      showDetails={true}
+                    />
+                  </div>
                 </div>
               </div>
               <HelpButton id="chart.generation_trend" />
@@ -285,8 +323,15 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
                   <Cloud className="text-orange-600" size={28} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-slate-900">Weather Correlation Analysis</h2>
-                  <p className="text-sm text-slate-600">Temperature impact on energy demand</p>
+                  <h3 className="text-xl font-semibold text-slate-800">Weather Correlation Analysis</h3>
+                  <p className="text-sm text-slate-500">European smart meter dataset • Contextual reference</p>
+                  <div className="mt-2">
+                    <DataQualityBadge
+                      provenance={createProvenance('proxy_indicative', 'European Smart Meter Dataset', 0.85, { completeness: 0.92 })}
+                      sampleCount={data.weatherData.length}
+                      showDetails={false}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="text-right">

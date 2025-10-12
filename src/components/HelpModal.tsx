@@ -3,30 +3,40 @@
 // Includes focus trap, keyboard navigation, and dark theming
 
 import React, { useEffect, useRef } from 'react';
+import { X, HelpCircle, Info, Database, TrendingUp, AlertTriangle } from 'lucide-react';
 
-interface HelpContent {
-  id: string;
-  short_text?: string;
-  body_html?: string;
-  related_sources?: Array<{name: string; url: string}>;
-  last_updated?: string;
+interface HelpSection {
+  title: string;
+  content: React.ReactNode;
+  icon?: React.ReactNode;
 }
 
 interface HelpModalProps {
-  id: string;
-  open: boolean;
+  isOpen: boolean;
   onClose: () => void;
-  content?: HelpContent | null;
-  loading?: boolean;
+  title: string;
+  content?: React.ReactNode;
+  sections?: HelpSection[];
+  provenance?: {
+    label: string;
+    description: string;
+  }[];
+  methodology?: string;
+  limitations?: string[];
 }
 
-export function HelpModal({
-  id,
-  open,
-  onClose,
+export const HelpModal: React.FC<HelpModalProps> = ({ 
+  isOpen, 
+  onClose, 
+  title, 
   content,
-  loading = false
-}: HelpModalProps) {
+  sections,
+  provenance,
+  methodology,
+  limitations
+}) => {
+  if (!isOpen) return null;
+
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 

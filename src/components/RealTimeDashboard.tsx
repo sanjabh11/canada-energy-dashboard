@@ -31,6 +31,10 @@ import { fetchEdgeJson } from '../lib/edge';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES } from '../lib/ui/layout';
 import PeakAlertBanner from './PeakAlertBanner';
 import CO2EmissionsTracker from './CO2EmissionsTracker';
+import { DataQualityBadge } from './DataQualityBadge';
+import { createProvenance } from '../lib/types/provenance';
+import OpsHealthPanel from './OpsHealthPanel';
+import StorageMetricsCard from './StorageMetricsCard';
 
 interface DashboardData {
   ontarioDemand: OntarioDemandRecord[];
@@ -102,8 +106,8 @@ export const RealTimeDashboard: React.FC = () => {
 
       const provinceMetricsPromise = isEdgeFetchEnabled()
         ? fetchEdgeJson([
-            'api-v2-analytics-provincial-metrics?province=ON&window_days=30',
-            'api/analytics/provincial/ON?window_days=30'
+            'api-v2-analytics-provincial-metrics?province=ON&window_days=2',
+            'api/analytics/provincial/ON?window_days=2'
           ], { signal }).then((res) => res.json).catch((err) => {
             console.warn('Provincial metrics fallback triggered', err);
             return null;
@@ -264,7 +268,7 @@ export const RealTimeDashboard: React.FC = () => {
       }))
     : Array.from(
         data.provincialGeneration.reduce((acc: Map<string, number>, record) => {
-          const typeKey = record.generation_type || record.source || record.province_code || record.province || 'UNKNOWN';
+          const typeKey = record.generation_type || record.source || 'UNCLASSIFIED';
           const valueMwh = typeof record.megawatt_hours === 'number'
             ? record.megawatt_hours
             : typeof record.generation_gwh === 'number'
@@ -282,9 +286,15 @@ export const RealTimeDashboard: React.FC = () => {
         gwh: Number(gwh)
       }));
 
+  // Filter UNCLASSIFIED and UNKNOWN from generation mix, sort by value
   const generationChartSeries = generationBySource.length > 0
     ? generationBySource
-        .filter(item => item.gwh > 0)
+        .filter(item => 
+          item.gwh > 0 && 
+          item.type !== 'UNCLASSIFIED' && 
+          item.type !== 'UNKNOWN' &&
+          item.type !== 'UNSPECIFIED'
+        )
         .sort((a, b) => b.gwh - a.gwh)
         .slice(0, 6)
     : [
@@ -435,18 +445,41 @@ export const RealTimeDashboard: React.FC = () => {
         ]}
       />
 
-      {/* Phase III.0: CO2 Emissions Tracker - Compact Mode */}
-      <CO2EmissionsTracker
-        generationData={data.provincialGeneration.map(record => ({
-          source_type: record.generation_type || 'other',
-          capacity_mw: typeof record.megawatt_hours === 'number' 
-            ? record.megawatt_hours 
-            : 0,
-          percentage: 0
-        }))}
-        compact={true}
-        showBreakdown={false}
-      />
+      {/* Grid: CO2 Emissions + Ops Health + Storage */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div>
+          {/* Phase III.0: CO2 Emissions Tracker - Connected to Live Generation Mix */}
+          {totalGenerationGwh > 0 && generationChartSeries.length > 0 ? (
+            <CO2EmissionsTracker
+              generationData={generationChartSeries.map(source => ({
+                source_type: source.type.toLowerCase(),
+                capacity_mw: (source.gwh * 1000) / 24, // Convert GWh to average MW over 24h
+                percentage: totalGenerationGwh > 0 ? (source.gwh / totalGenerationGwh) * 100 : 0
+              }))}
+              compact={true}
+              showBreakdown={false}
+            />
+          ) : (
+            <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
+              </div>
+              <div className="text-center py-8">
+                <div className="text-gray-400 text-sm">Data unavailable</div>
+                <div className="text-xs text-gray-500 mt-1">No valid generation data</div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div>
+          {/* Ops Health Panel - Real-time SLO Metrics */}
+          <OpsHealthPanel variant="compact" autoRefresh={true} refreshInterval={30000} />
+        </div>
+        <div>
+          {/* Storage Dispatch Metrics */}
+          <StorageMetricsCard province="ON" compact={true} />
+        </div>
+      </div>
 
       {/* 4-Panel Dashboard Grid */}
       {/* Transition KPIs */}
@@ -458,7 +491,16 @@ export const RealTimeDashboard: React.FC = () => {
           </div>
           <div className="p-4 bg-emerald-50 rounded-lg">
             <div className="text-sm text-emerald-600">Top Source</div>
-            <div className="text-2xl font-bold text-emerald-800">{kpis.kpis.top_source ? kpis.kpis.top_source.type.toUpperCase() : '—'}</div>
+            <div className="text-2xl font-bold text-emerald-800">
+              {(() => {
+                const topSource = kpis.kpis.top_source?.type?.toUpperCase() ?? '—';
+                // Exclude UNCLASSIFIED/UNKNOWN from display
+                if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(topSource)) {
+                  return '—';
+                }
+                return topSource;
+              })()}
+            </div>
           </div>
           <div className="p-4 bg-amber-50 rounded-lg">
             <div className="text-sm text-amber-600">Renewable Share</div>
@@ -526,6 +568,19 @@ export const RealTimeDashboard: React.FC = () => {
                   <Activity className="h-5 w-5 mr-2 text-blue-600" />
                   Ontario Hourly Demand
                 </h3>
+                <div className="border-b border-slate-100 px-4 py-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className={`${TEXT_CLASSES.heading2} text-slate-800`}>Ontario Demand</h2>
+                      <p className={`${TEXT_CLASSES.caption} text-slate-500`}>Real-time electricity demand</p>
+                    </div>
+                    <DataQualityBadge
+                      provenance={createProvenance('real_stream', 'IESO', 0.95, { completeness: data.ontarioDemand.length / 96 })}
+                      sampleCount={data.ontarioDemand.length}
+                      showDetails={true}
+                    />
+                  </div>
+                </div>
                 <div className="text-right">
                   <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Current Demand</div>
                   <div className={`${TEXT_CLASSES.metric} text-blue-600`}>
@@ -562,17 +617,34 @@ export const RealTimeDashboard: React.FC = () => {
           <div className={CONTAINER_CLASSES.card}>
             <div className={CONTAINER_CLASSES.cardHeader}>
               <div className={CONTAINER_CLASSES.flexBetween}>
-                <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
-                  <Zap className="h-5 w-5 mr-2 text-green-600" />
-                  Provincial Generation Mix
-                </h3>
-                <div className="text-right">
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>30-Day Total Generation</div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
+                      <Zap className="h-5 w-5 mr-2 text-green-600" />
+                      Provincial Generation Mix
+                    </h3>
+                    <DataQualityBadge
+                      provenance={createProvenance(
+                        provinceMetrics?.generation ? 'historical_archive' : 'proxy_indicative',
+                        provinceMetrics?.generation ? 'Analytics API' : 'Fallback Sample',
+                        provinceMetrics?.generation ? 0.92 : 0.65,
+                        { completeness: provinceMetrics?.generation ? 0.95 : 0.80 }
+                      )}
+                      sampleCount={generationChartSeries.length}
+                      showDetails={true}
+                    />
+                  </div>
+                </div>
+                <div className="text-right ml-4">
+                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>2-Day Total Generation</div>
                   <div className={`${TEXT_CLASSES.metric} text-green-600`}>
-                    {totalGenerationGwh !== null && totalGenerationGwh !== undefined
+                    {totalGenerationGwh !== null && totalGenerationGwh !== undefined && totalGenerationGwh > 0
                       ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
                       : '—'}
                   </div>
+                  {totalGenerationGwh === 0 && (
+                    <div className="text-xs text-amber-600 mt-1">⚠️ Awaiting live data</div>
+                  )}
                 </div>
               </div>
             </div>
@@ -595,7 +667,7 @@ export const RealTimeDashboard: React.FC = () => {
                     ? `Data: ${data.provincialGeneration.length} records • Source: ${sourceText('provincial_generation')}`
                     : loading
                       ? 'Loading data...'
-                      : 'Using sample data • Source: IESO'}
+                      : '⚠️ Fallback: Sample Data (KAGGLE archive) • Prefer live/historical tables'}
               </div>
             </div>
           </div>

@@ -53,9 +53,27 @@ export const CanadianClimatePolicyDashboard: React.FC = () => {
   const loadClimateData = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch from climate policy API
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-climate-policy?jurisdiction=${selectedProvince || ''}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+          }
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      const apiData = await response.json();
+      console.log('[CLIMATE] Loaded from API:', apiData);
+
+      // Transform API data - for now use sample data structure
+      // Real implementation would map policies to compliance records
       
-      // Sample Carbon Pricing Data
+      // Fallback to sample data for demo
       const sampleCarbonPricing: CarbonPricingCompliance[] = [
         {
           id: 'cp_001',

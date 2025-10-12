@@ -1,33 +1,41 @@
 /**
- * Forecast Baseline Calculations
+ * Forecast Baseline Utilities
  * 
- * Provides baseline models for comparison:
- * - Persistence: Predicts t+h = t (naive forecast)
- * - Seasonal Naive: Predicts t+h = t-168h (same hour last week)
- * - Climatology: Uses historical averages
- * 
- * Used to prove forecast uplift claims.
+ * Provides baseline forecast methods for comparison:
+ * - Persistence forecast (current value projected forward)
+ * - Seasonal average (historical patterns)
+ * - Naive forecast (last known value)
  */
 
-export interface BaselineMetrics {
-  persistence: {
-    mae: number;
-    mape: number;
-    rmse: number;
-  };
-  seasonalNaive: {
-    mae: number;
-    mape: number;
-    rmse: number;
-  };
-  uplift: {
-    vsPersistence: number;
-    vsSeasonalNaive: number;
-  };
-  sampleCount: number;
-  confidence: {
-    lower: number;
-    upper: number;
+export interface BaselineForecast {
+  method: 'persistence' | 'seasonal' | 'naive';
+  values: number[];
+  mae: number;
+  rmse: number;
+}
+
+/**
+ * Compute uplift safely with proper validation
+ */
+export function computeUplift(mae: number, base: number): number {
+  if (!isFinite(mae) || !isFinite(base) || base <= 0) return 0;
+  return ((base - mae) / base) * 100;
+}
+
+/**
+ * Persistence forecast: assumes current value continues
+ */
+export function persistenceForecast(
+  currentValue: number,
+  horizonHours: number
+): BaselineForecast {
+  const values = Array(horizonHours).fill(currentValue);
+  
+  return {
+    method: 'persistence',
+    values,
+    mae: 0, // Will be calculated against actuals
+    rmse: 0
   };
 }
 
@@ -173,6 +181,17 @@ export function calculateBootstrapCI(
 export function calculateUplift(modelMAE: number, baselineMAE: number): number {
   if (baselineMAE === 0) return 0;
   return ((baselineMAE - modelMAE) / baselineMAE) * 100;
+}
+
+export interface BaselineMetrics {
+  persistence: { mae: number; mape: number; rmse: number };
+  seasonalNaive: { mae: number; mape: number; rmse: number };
+  uplift: {
+    vsPersistence: number;
+    vsSeasonalNaive: number;
+  };
+  sampleCount: number;
+  confidence: { lower: number; upper: number };
 }
 
 /**

@@ -66,7 +66,7 @@ export const ProvenanceBadge: React.FC<ProvenanceBadgeProps> = ({
         )}
         {completeness !== undefined && (
           <span className="text-xs opacity-75">
-            Completeness: {completeness.toFixed(0)}%
+            Completeness: {(completeness ?? 0).toFixed(0)}%
           </span>
         )}
       </div>
@@ -120,7 +120,7 @@ export const DataQualityBadge: React.FC<DataQualityBadgeProps> = ({
       <Icon className="h-4 w-4 mr-2" />
       <div className="flex flex-col">
         <span className="font-semibold">{label} Quality</span>
-        <span className="text-xs opacity-75">{completeness.toFixed(1)}% complete</span>
+        <span className="text-xs opacity-75">{(completeness ?? 0).toFixed(1)}% complete</span>
         {sampleCount && (
           <span className="text-xs opacity-75">n = {sampleCount.toLocaleString()}</span>
         )}
@@ -151,7 +151,7 @@ export const BaselineComparisonBadge: React.FC<BaselineComparisonBadgeProps> = (
   if (compact) {
     return (
       <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${color}`}>
-        {sign}{improvement.toFixed(0)}% vs {baselineMethod}
+        {sign}{(improvement ?? 0).toFixed(0)}% vs {baselineMethod}
       </span>
     );
   }
@@ -160,7 +160,7 @@ export const BaselineComparisonBadge: React.FC<BaselineComparisonBadgeProps> = (
     <div className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-medium border ${color}`}>
       <Icon className="h-4 w-4 mr-2" />
       <div className="flex flex-col">
-        <span className="font-semibold">{sign}{improvement.toFixed(1)}% Improvement</span>
+        <span className="font-semibold">{sign}{(improvement ?? 0).toFixed(1)}% Improvement</span>
         <span className="text-xs opacity-75">vs. {baselineMethod}</span>
       </div>
     </div>

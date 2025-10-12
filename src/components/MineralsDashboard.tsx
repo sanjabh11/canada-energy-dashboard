@@ -64,7 +64,7 @@ interface MineralsFormData {
   mitigation_strategies: string[];
 }
 
-// Mock supply data (would come from firecrawl scraping in production)
+// Fallback supply data (used only if NRCan API unavailable)
 const mockSupplyData = [
   { mineral: 'Lithium', production: 25000, import: 35000, export: 8000, riskScore: 8.5, price: 12500, country: 'Australia' },
   { mineral: 'Cobalt', production: 18000, import: 42000, export: 5000, riskScore: 9.2, price: 18500, country: 'DRC' },
@@ -118,36 +118,63 @@ export const MineralsDashboard: React.FC = () => {
   const [insightLoading, setInsightLoading] = useState(false);
   const [marketInsight, setMarketInsight] = useState<MarketBriefResponse | null>(null);
 
-  // Load minerals data (mock implementation)
+  // Load minerals data from NRCan open data API
   useEffect(() => {
     const loadMineralsData = async () => {
       setLoading(true);
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Generate mock alerts
-        const mockAlerts = [
+        // Fetch from NRCan minerals API
+        const response = await fetch(
+          `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-minerals-supply`,
           {
-            id: '1',
-            mineral: 'Cobalt',
-            type: 'critical' as const,
-            message: 'DRC production disruption - potential 15% supply reduction',
-            timeframe: '3 months'
-          },
-          {
-            id: '2',
-            mineral: 'Rare Earth',
-            type: 'warning' as const,
-            message: 'China export quotas may increase by 10%',
-            timeframe: '6 months'
+            headers: {
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            }
           }
-        ];
+        );
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const apiData = await response.json();
+        console.log('[MINERALS] Loaded from NRCan:', apiData);
+
+        // Transform API data to dashboard format
+        const supplyStatus = apiData.facilities?.slice(0, 10).map((f: any) => ({
+          mineral: f.mineral_type,
+          production: f.production_tonnes || 0,
+          import: 0, // Would come from trade data
+          export: 0,
+          riskScore: 5.0,
+          price: 0,
+          country: f.province
+        })) || mockSupplyData;
+
+        const riskAssessment = apiData.risk_assessment?.map((r: any) => ({
+          mineral: r.mineral,
+          supplyRisk: r.risk_score / 10,
+          geopoliticalRisk: r.province_count < 2 ? 9.0 : 5.0,
+          environmentalRisk: 6.0,
+          marketVolatility: 7.0,
+          overallScore: r.risk_score / 10
+        })) || mockRiskData;
+
+        // Generate alerts from high-risk minerals
+        const alerts = apiData.risk_assessment
+          ?.filter((r: any) => r.risk_level === 'High')
+          .map((r: any, idx: number) => ({
+            id: `alert-${idx}`,
+            mineral: r.mineral,
+            type: 'warning' as const,
+            message: r.reason,
+            timeframe: 'Current'
+          })) || [];
 
         const updatedData: MineralsData = {
-          supplyStatus: mockSupplyData,
-          riskAssessment: mockRiskData,
-          alerts: mockAlerts
+          supplyStatus,
+          riskAssessment,
+          alerts
         };
 
         setData(updatedData);

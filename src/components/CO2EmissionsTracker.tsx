@@ -71,7 +71,12 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
   const [showInfo, setShowInfo] = useState(false);
 
   const co2Data = useMemo<CO2Data>(() => {
-    if (generationData.length === 0) {
+    // Filter out UNCLASSIFIED/UNKNOWN/UNSPECIFIED sources
+    const validMix = (generationData ?? []).filter(s => 
+      !['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes((s.source_type ?? '').toUpperCase())
+    );
+
+    if (validMix.length === 0) {
       return {
         total_co2_tonnes_hour: 0,
         total_co2_kg_hour: 0,
@@ -84,9 +89,23 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
       };
     }
 
-    const totalMW = generationData.reduce((sum, s) => sum + s.capacity_mw, 0);
+    const totalMW = validMix.reduce((sum, s) => sum + s.capacity_mw, 0);
     
-    const breakdown = generationData.map(source => {
+    // Never compute CO2 against zero generation
+    if (totalMW <= 0) {
+      return {
+        total_co2_tonnes_hour: 0,
+        total_co2_kg_hour: 0,
+        fossil_co2: 0,
+        renewable_co2: 0,
+        intensity_kg_per_mwh: 0,
+        breakdown: [],
+        trend: 'stable',
+        comparison_to_avg: 0
+      };
+    }
+    
+    const breakdown = validMix.map(source => {
       const sourceType = source.source_type.toLowerCase().trim();
       const emissionFactor = EMISSION_FACTORS[sourceType] || EMISSION_FACTORS['other'];
       const co2_kg = source.capacity_mw * emissionFactor;
@@ -134,17 +153,30 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
       trend,
       comparison_to_avg
     };
-  }, [generationData, historicalData]);
+  }, [generationData]);
 
-  // Track historical data for trend calculation
+  // Track historical data for trend
   useEffect(() => {
     if (co2Data.total_co2_tonnes_hour > 0) {
-      setHistoricalData(prev => {
-        const updated = [...prev, co2Data.total_co2_tonnes_hour];
-        return updated.slice(-10); // Keep last 10 data points
-      });
+      setHistoricalData(prev => [...prev.slice(-23), co2Data.total_co2_tonnes_hour]);
     }
   }, [co2Data.total_co2_tonnes_hour]);
+
+  // Return unavailable card if no valid data
+  if (co2Data.total_co2_tonnes_hour === 0 && co2Data.intensity_kg_per_mwh === 0) {
+    return (
+      <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Leaf className="h-5 w-5 text-gray-400" />
+          <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
+        </div>
+        <div className="text-center py-4">
+          <div className="text-gray-400 text-lg font-bold">Data unavailable</div>
+          <div className="text-xs text-gray-500 mt-1">No valid generation data</div>
+        </div>
+      </div>
+    );
+  }
 
   const getIntensityColor = (intensity: number): string => {
     if (intensity < 100) return 'text-green-600';
@@ -160,29 +192,48 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
     return 'bg-red-50 border-red-200';
   };
 
-  const exportData = () => {
-    const csvContent = [
-      'Source,Capacity (MW),CO2 (kg/h),Percentage',
-      ...co2Data.breakdown.map(b => 
-        `${b.source},${b.mw.toFixed(2)},${b.co2_kg.toFixed(2)},${b.percentage.toFixed(1)}%`
-      ),
-      '',
-      `Total CO2,${co2Data.total_co2_kg_hour.toFixed(2)} kg/h,${co2Data.total_co2_tonnes_hour.toFixed(3)} tonnes/h`,
-      `Intensity,${co2Data.intensity_kg_per_mwh.toFixed(1)} kg CO2/MWh`,
-      `Fossil Contribution,${co2Data.fossil_co2.toFixed(2)} kg/h`,
-      `Renewable Contribution,${co2Data.renewable_co2.toFixed(2)} kg/h`
-    ].join('\n');
+  if (compact) {
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `co2_emissions_${new Date().toISOString()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+    return (
+      <div className={`${getIntensityBgColor(co2Data.intensity_kg_per_mwh)} border-2 rounded-lg p-4`}>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
+            <Leaf className="h-5 w-5 text-gray-600" />
+            <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
+          </div>
+          <div className={`text-lg font-bold ${getIntensityColor(co2Data.intensity_kg_per_mwh)}`}>
+            {co2Data.total_co2_tonnes_hour.toFixed(1)} t/h
+          </div>
+        </div>
+        <div className="text-xs text-gray-600">
+          Intensity: {Math.round(co2Data.intensity_kg_per_mwh)} kg/MWh
+        </div>
+      </div>
+    );
+  }
+
+  // Full view - show "no data" state
+  const hasValidData = generationData.length > 0 && 
+    generationData.reduce((sum, s) => sum + s.capacity_mw, 0) > 0;
 
   if (compact) {
+    if (!hasValidData) {
+      return (
+        <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <AlertCircle className="text-gray-400" size={20} />
+            <h3 className="font-semibold text-gray-700">CO₂ Emissions</h3>
+          </div>
+          <div className="text-sm text-gray-500">
+            Data Unavailable
+          </div>
+          <div className="text-xs text-gray-400 mt-1">
+            Waiting for generation data...
+          </div>
+        </div>
+      );
+    }
+    
     return (
       <div className={`${getIntensityBgColor(co2Data.intensity_kg_per_mwh)} border-2 rounded-lg p-4`}>
         <div className="flex items-center justify-between mb-2">
@@ -201,6 +252,38 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
           </div>
           <div className="text-xs text-slate-600">
             Intensity: {co2Data.intensity_kg_per_mwh.toFixed(0)} kg/MWh
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Full view - show "no data" state
+  if (!hasValidData) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="bg-gray-50 border-b-2 border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gray-100 rounded-lg">
+                <AlertCircle className="text-gray-400" size={24} />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-gray-700">CO₂ Emissions Tracker</h2>
+                <p className="text-sm text-gray-500">Real-time carbon intensity monitoring</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+            <AlertCircle className="mx-auto text-gray-300 mb-4" size={48} />
+            <h3 className="text-lg font-semibold text-gray-700 mb-2">Data Unavailable</h3>
+            <p className="text-gray-500 mb-4">
+              CO₂ emissions cannot be calculated without generation data.
+            </p>
+            <p className="text-sm text-gray-400">
+              Waiting for provincial generation mix data to load...
+            </p>
           </div>
         </div>
       </div>

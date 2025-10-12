@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Lightbulb, Target, Zap, Eye, Briefcase, Clock, DollarSign, Users, Award } from 'lucide-react';
 import { trlEngine, type TRLEvaluation, InnovationCategory } from '../lib/technologyReadiness';
+import { createClient } from '@supabase/supabase-js';
+import { getSupabaseConfig } from '../lib/config';
 
 // Mock innovation data for demonstration
 const mockInnovations = [
@@ -93,28 +95,81 @@ export const InnovationSearch: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<InnovationCategory | 'all'>('all');
   const [selectedInnovation, setSelectedInnovation] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [innovations, setInnovations] = useState<any[]>([]);
   const [trlEvaluations, setTrlEvaluations] = useState<Map<string, TRLEvaluation>>(new Map());
   const [showPitchGeneration, setShowPitchGeneration] = useState(false);
   const [generatedPitch, setGeneratedPitch] = useState<string>('');
 
-  // Load TRL evaluations for innovations
+  // Load innovations from database
   useEffect(() => {
-    const loadTRevaluations = async () => {
+    const loadInnovations = async () => {
       setLoading(true);
+      
+      try {
+        const { url, anonKey } = getSupabaseConfig();
+        if (!url || !anonKey) {
+          console.warn('Supabase not configured, using mock data');
+          setInnovations(mockInnovations);
+          await loadTRLEvaluationsForMock();
+          setLoading(false);
+          return;
+        }
 
+        const supabase = createClient(url, anonKey);
+        
+        // Fetch innovations from database
+        const { data, error } = await supabase
+          .from('innovations')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Error loading innovations:', error);
+          // Fallback to mock data
+          setInnovations(mockInnovations);
+          await loadTRLEvaluationsForMock();
+        } else if (data && data.length > 0) {
+          // Map database records to expected format
+          const mappedInnovations = data.map(inn => ({
+            id: inn.id,
+            name: inn.name || 'Unnamed Innovation',
+            description: inn.description || '',
+            trl: inn.trl || 1,
+            patentsFiled: 0, // Would need separate patents table
+            prototypesBuilt: inn.trl >= 4 ? 1 : 0,
+            pilotProjects: inn.trl >= 6 ? 1 : 0,
+            commercialDeployments: inn.trl >= 8 ? 1 : 0,
+            regulatoryApprovals: [],
+            fundingSecured: 0,
+            publications: 0,
+            certifications: [],
+            partnerships: 0,
+            yearsOfDevelopment: 1
+          }));
+          
+          setInnovations(mappedInnovations);
+          await loadTRLEvaluations(mappedInnovations);
+        } else {
+          // No data in database, use mock
+          console.info('No innovations in database, using mock data');
+          setInnovations(mockInnovations);
+          await loadTRLEvaluationsForMock();
+        }
+      } catch (error) {
+        console.error('Failed to load innovations:', error);
+        setInnovations(mockInnovations);
+        await loadTRLEvaluationsForMock();
+      }
+      
+      setLoading(false);
+    };
+
+    const loadTRLEvaluations = async (innovationsList: any[]) => {
       const evaluations = new Map<string, TRLEvaluation>();
 
-      for (const innovation of mockInnovations) {
+      for (const innovation of innovationsList) {
         try {
-          // Determine category (would be tagged in real implementation)
-          const category: InnovationCategory =
-            innovation.name.includes('Hydrogen') ? InnovationCategory.HYDROGEN_TECH :
-            innovation.name.includes('AI') ? InnovationCategory.AI_ML :
-            innovation.name.includes('Carbon') ? InnovationCategory.CARBON_CAPTURE :
-            innovation.name.includes('Battery') ? InnovationCategory.ENERGY_STORAGE :
-            innovation.name.includes('Digital') ? InnovationCategory.DIGITAL_TWINS :
-            InnovationCategory.CLIMATE_TECH;
-
+          const category = getInnovationCategory(innovation);
           const evaluation = trlEngine.assessTechnologyReadiness(innovation, category);
           evaluations.set(innovation.name, evaluation);
         } catch (error) {
@@ -123,10 +178,13 @@ export const InnovationSearch: React.FC = () => {
       }
 
       setTrlEvaluations(evaluations);
-      setLoading(false);
     };
 
-    loadTRevaluations();
+    const loadTRLEvaluationsForMock = async () => {
+      await loadTRLEvaluations(mockInnovations);
+    };
+
+    loadInnovations();
   }, []);
 
   // Helper function to determine innovation category
@@ -140,7 +198,7 @@ export const InnovationSearch: React.FC = () => {
   };
 
   // Filter innovations based on search and category
-  const filteredInnovations = mockInnovations.filter(innovation => {
+  const filteredInnovations = innovations.filter(innovation => {
     const matchesSearch = searchQuery === '' ||
       innovation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       innovation.description.toLowerCase().includes(searchQuery.toLowerCase());
@@ -432,7 +490,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
           </div>
 
           {(() => {
-            const innovation = mockInnovations.find(i => i.name === selectedInnovation);
+            const innovation = innovations.find(i => i.name === selectedInnovation);
             const evaluation = trlEvaluations.get(selectedInnovation);
 
             if (!innovation) return <div>Innovation not found</div>;

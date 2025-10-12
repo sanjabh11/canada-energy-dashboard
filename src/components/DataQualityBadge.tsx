@@ -32,6 +32,12 @@ export const DataQualityBadge: React.FC<DataQualityBadgeProps> = ({
     return null;
   }
   
+  // Handle undefined badge (invalid provenance type)
+  if (!badge) {
+    console.warn('Invalid provenance type:', provenance.type);
+    return null;
+  }
+  
   const qualityColor = quality >= 0.9 ? 'bg-green-100 text-green-800 border-green-300' :
                        quality >= 0.7 ? 'bg-blue-100 text-blue-800 border-blue-300' :
                        'bg-yellow-100 text-yellow-800 border-yellow-300';
@@ -73,6 +79,11 @@ export const DataQualityBadgeCompact: React.FC<{
   const badge = getProvenanceBadge(type);
   
   if (type === 'mock' || type === 'simulated') {
+    return null;
+  }
+  
+  if (!badge) {
+    console.warn('Invalid provenance type:', type);
     return null;
   }
   
@@ -153,6 +164,8 @@ export const DataQualitySummary: React.FC<DataQualitySummaryProps> = ({
             const badge = getProvenanceBadge(type as any);
             const percentage = (count / totalRecords * 100).toFixed(1);
             
+            if (!badge) return null;
+            
             return (
               <div key={type} className="flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1">
@@ -164,7 +177,7 @@ export const DataQualitySummary: React.FC<DataQualitySummaryProps> = ({
                 </span>
               </div>
             );
-          })}
+          })}  
         </div>
       </div>
     </div>

@@ -45,11 +45,61 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Generate AI response (mock implementation - replace with actual Gemini API call)
+  // Generate AI response using household-advisor edge function
   const generateAIResponse = async (userMessage: string): Promise<string> => {
-    // In production, this would call the Gemini API with the system prompt
-    // For now, we'll provide rule-based responses
-    
+    try {
+      const { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } = await import('../lib/config');
+      
+      if (!isEdgeFetchEnabled()) {
+        console.warn('Edge functions disabled, using fallback response');
+        return getFallbackResponse(userMessage);
+      }
+
+      const edgeBase = getEdgeBaseUrl();
+      const headers = getEdgeHeaders();
+      
+      const avgUsage = usage.length > 0
+        ? usage.reduce((sum, u) => sum + u.consumption_kwh, 0) / usage.length
+        : undefined;
+      
+      const avgCost = usage.length > 0
+        ? usage.reduce((sum, u) => sum + u.cost_cad, 0) / usage.length
+        : undefined;
+
+      const response = await fetch(`${edgeBase}/household-advisor`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          userMessage,
+          userId: profile.userId || 'anonymous',
+          context: {
+            province: profile.province,
+            homeType: profile.homeType,
+            squareFootage: profile.squareFootage,
+            occupants: profile.occupants,
+            heatingType: profile.heatingType,
+            avgUsage,
+            avgCost
+          }
+        })
+      });
+
+      if (!response.ok) {
+        console.error('Household advisor API error:', response.status);
+        return getFallbackResponse(userMessage);
+      }
+
+      const data = await response.json();
+      return data.response || getFallbackResponse(userMessage);
+      
+    } catch (error) {
+      console.error('Failed to fetch AI response:', error);
+      return getFallbackResponse(userMessage);
+    }
+  };
+
+  // Fallback response when API is unavailable
+  const getFallbackResponse = (userMessage: string): string => {
     const lowerMessage = userMessage.toLowerCase();
     const intent = extractUserIntent(userMessage);
 
@@ -129,15 +179,14 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
         `\n\nWould you like details on how to implement any of these?`;
     }
 
-    // Default response
-    return `That's a great question! Based on your ${profile.homeType} in ${profile.province} with ${profile.occupants} occupants, ` +
-      `I can help you with:\n\n` +
-      `• Understanding your electricity bill\n` +
-      `• Finding the best times to use electricity\n` +
-      `• Discovering rebates you qualify for\n` +
-      `• Reducing heating and cooling costs\n` +
-      `• Calculating your potential savings\n\n` +
-      `What specific aspect would you like to explore?`;
+    // Default: comprehensive response
+    return `I'd be happy to help with that! I can assist you with:\n\n` +
+      `💰 **Cost & Billing** - Understanding your electricity costs and how to reduce them\n` +
+      `⏰ **Time-of-Use Pricing** - Best times to use appliances\n` +
+      `🎁 **Rebates & Grants** - Programs available in ${profile.province}\n` +
+      `🔥 **Heating & Cooling** - Your biggest energy expenses\n` +
+      `⚡ **Energy Efficiency** - Simple changes that save money\n\n` +
+      `What would you like to explore first?`;
   };
 
   const handleSendMessage = async () => {
