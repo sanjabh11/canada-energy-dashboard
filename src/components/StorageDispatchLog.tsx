@@ -50,6 +50,7 @@ export const StorageDispatchLog: React.FC<{
   const [alignment, setAlignment] = useState<AlignmentMetrics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<'storage_dispatch_log' | 'storage_dispatch_logs'>('storage_dispatch_logs');
 
   useEffect(() => {
     fetchDispatchLog();
@@ -61,15 +62,93 @@ export const StorageDispatchLog: React.FC<{
   const fetchDispatchLog = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('storage_dispatch_logs')
-        .select('*')
-        .eq('province', province)
-        .order('timestamp', { ascending: false })
-        .limit(limit);
+      // Attempt 1: singular table (scheduler path)
+      let source: 'singular' | 'plural' = 'singular';
+      const mapped: DispatchAction[] = [];
 
-      if (error) throw error;
-      setActions(data || []);
+      // Try singular first; province filter may not exist on this table, so catch errors
+      let singularOk = false;
+      try {
+        const q = supabase
+          .from('storage_dispatch_log')
+          .select('*')
+          .eq('province', province)
+          .limit(limit);
+        const { data: singData, error: singErr } = await q;
+
+        if (!singErr && (singData?.length ?? 0) > 0) {
+          singularOk = true;
+          for (const r of singData!) {
+            mapped.push({
+              id: (r as any).id,
+              timestamp: (r as any).decision_timestamp || (r as any).timestamp || (r as any).created_at || new Date().toISOString(),
+              battery_id: (r as any).battery_id || 'unknown',
+              province: province,
+              action: (r as any).action,
+              soc_before: (r as any).soc_before_pct ?? (r as any).soc_before_percent ?? (r as any).soc_before ?? 0,
+              soc_after: (r as any).soc_after_pct ?? (r as any).soc_after_percent ?? (r as any).soc_after ?? 0,
+              power_mw: (r as any).magnitude_mw ?? (r as any).power_mw ?? 0,
+              reason: (r as any).reasoning ?? (r as any).reason ?? '',
+              expected_revenue_cad: (r as any).expected_revenue_cad ?? 0,
+              actual_revenue_cad: (r as any).actual_revenue_cad ?? null,
+              curtailment_event_id: (r as any).curtailment_event_id ?? undefined,
+              price_signal: (r as any).grid_price_cad_per_mwh ?? (r as any).market_price_cad_per_mwh ?? null,
+            });
+          }
+        }
+      } catch (_) {
+        // ignore and fallback
+      }
+
+      // Attempt 2: plural table (engine path)
+      if (!singularOk) {
+        source = 'plural';
+        // Try with timestamp ordering first; if it errors, retry without ordering
+        let pluralData: any[] | null = null;
+        let pluralErr: any = null;
+        try {
+          const { data, error } = await supabase
+            .from('storage_dispatch_logs')
+            .select('*')
+            .eq('province', province)
+            .order('timestamp', { ascending: false })
+            .limit(limit);
+          pluralData = data ?? null;
+          pluralErr = error ?? null;
+        } catch (e) {
+          pluralErr = e;
+        }
+
+        if (pluralErr) {
+          const { data } = await supabase
+            .from('storage_dispatch_logs')
+            .select('*')
+            .eq('province', province)
+            .limit(limit);
+          pluralData = data ?? null;
+        }
+
+        for (const r of pluralData ?? []) {
+          mapped.push({
+            id: (r as any).id,
+            timestamp: (r as any).timestamp || (r as any).decision_timestamp || (r as any).created_at || new Date().toISOString(),
+            battery_id: (r as any).battery_id || (r as any).battery || 'unknown',
+            province: (r as any).province || province,
+            action: (r as any).action,
+            soc_before: (r as any).soc_before_percent ?? (r as any).soc_before_pct ?? (r as any).soc_before ?? 0,
+            soc_after: (r as any).soc_after_percent ?? (r as any).soc_after_pct ?? (r as any).soc_after ?? 0,
+            power_mw: (r as any).power_mw ?? (r as any).magnitude_mw ?? 0,
+            reason: (r as any).reason ?? (r as any).reasoning ?? '',
+            expected_revenue_cad: (r as any).expected_revenue_cad ?? 0,
+            actual_revenue_cad: (r as any).actual_revenue_cad ?? null,
+            curtailment_event_id: (r as any).curtailment_event_id ?? undefined,
+            price_signal: (r as any).market_price_cad_per_mwh ?? (r as any).grid_price_cad_per_mwh ?? null,
+          });
+        }
+      }
+
+      setActions(mapped);
+      setDataSource(source === 'singular' ? 'storage_dispatch_log' : 'storage_dispatch_logs');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load dispatch log');
     } finally {
@@ -187,7 +266,7 @@ export const StorageDispatchLog: React.FC<{
         <DataQualityBadge
           provenance={{
             type: 'real_stream',
-            source: 'storage_dispatch_logs',
+            source: dataSource,
             timestamp: new Date().toISOString(),
             confidence: 1,
             completeness: 1
