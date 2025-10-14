@@ -33,15 +33,31 @@ type WeatherRecord = {
   wind_speed_m_s: number | null;
 };
 
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,https://canada-energy.netlify.app")
+const DEFAULT_ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://localhost:5176",
+  "https://canada-energy.netlify.app",
+  "https://*.netlify.app",
+];
+
+const envAllowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
 
+const ALLOWED_ORIGINS = Array.from(new Set([
+  ...envAllowedOrigins,
+  ...DEFAULT_ALLOWED_ORIGINS,
+]));
+
 function buildCorsHeaders(originHeader: string | null): Record<string, string> {
+  const fallbackOrigin = ALLOWED_ORIGINS[0] ?? DEFAULT_ALLOWED_ORIGINS[0];
+
   const origin = originHeader && ALLOWED_ORIGINS.includes(originHeader)
     ? originHeader
-    : ALLOWED_ORIGINS[0] ?? "http://localhost:5173";
+    : fallbackOrigin;
 
   return {
     "Access-Control-Allow-Origin": origin,
