@@ -207,17 +207,28 @@ serve(async (req) => {
     const generationSeries = transformGeneration(generationRows);
     const demandSeries = transformDemand(demandRows);
 
+    const uniqueGenDates = new Set(generationRows.map((r) => (r as { date: string }).date));
+    const effectiveDays = Math.min(uniqueGenDates.size, timeframe.days);
+    const completenessPct = timeframe.days > 0 ? (effectiveDays / timeframe.days) * 100 : 0;
+    const excludedDays = timeframe.days - effectiveDays;
+    const demandSampleCount = demandSeries.length;
+
     const payload = {
       timeframe: timeframe.label,
       window: {
         start: windowStartStr,
         end: windowEnd.toISOString().slice(0, 10),
         days: timeframe.days,
+        days_effective: effectiveDays,
       },
       generation: generationSeries,
       ontario_demand: demandSeries,
       metadata: {
         sources: ['provincial_generation', 'ontario_hourly_demand'],
+        completeness_pct: parseFloat(completenessPct.toFixed(2)),
+        excluded_days_below_threshold: Math.max(0, excludedDays),
+        completeness_threshold_pct: 95,
+        demand_sample_count: demandSampleCount,
       },
     };
 

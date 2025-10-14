@@ -66,6 +66,33 @@ serve(async (req) => {
         ? ((persistenceBaseline - context.avgUsage) / persistenceBaseline * 100).toFixed(1)
         : null;
 
+      // Compute data freshness from ops_runs or demand tables
+      let dataFreshnessMin = 999;
+      try {
+        const { data: lastRun } = await supabase
+          .from('ops_runs')
+          .select('completed_at')
+          .eq('run_type', 'ingestion')
+          .eq('status', 'success')
+          .order('completed_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const lastTs = lastRun?.completed_at || null;
+        if (lastTs) {
+          dataFreshnessMin = Math.floor((Date.now() - new Date(lastTs).getTime()) / 60000);
+        } else {
+          const { data: recentHour } = await supabase
+            .from('ontario_hourly_demand')
+            .select('hour')
+            .order('hour', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          if (recentHour?.hour) {
+            dataFreshnessMin = Math.floor((Date.now() - new Date(recentHour.hour).getTime()) / 60000);
+          }
+        }
+      } catch (_) { /* ignore */ }
+
       // Build enhanced system prompt with grid context and baseline awareness
       const systemPrompt = `You are an expert energy advisor for Canadian households with REAL-TIME grid awareness. You provide personalized, actionable advice on reducing electricity costs and consumption.
 
@@ -100,18 +127,25 @@ Provide specific, actionable recommendations that:
 8. **FRAME IN ROI TERMS**: upfront cost, monthly savings, payback period
 9. Are practical and easy to implement
 
-ALWAYS include data source citations and confidence levels. Keep responses concise (3-4 paragraphs) and conversational.`;
+ALWAYS include data source citations and confidence levels. Keep responses concise (3-4 paragraphs) and conversational.
+
+You MUST end every response with a footer:
+Confidence: [0.0-1.0]
+Data Freshness: ${dataFreshnessMin} minutes
+Limitations: [one sentence]`;
 
       // Return mock response for development
       const mockResponse = {
-        response: `Thank you for your question about energy usage. Based on your ${context?.homeType || 'home'} in ${context?.province || 'your province'}, I can help you save money and reduce consumption. What specific aspect would you like to explore further?`,
-        confidence: 0.8,
+        response: `Thank you for your question about energy usage. Based on your ${context?.homeType || 'home'} in ${context?.province || 'your province'}, I can help you save money and reduce consumption. What specific aspect would you like to explore further?\n\nConfidence: 0.7\nData Freshness: ${dataFreshnessMin} minutes\nLimitations: Mock responder used due to missing API key`,
+        confidence: 0.7,
+        data_freshness_min: dataFreshnessMin,
         timestamp: new Date().toISOString(),
+        mode: 'mock'
       };
 
       return new Response(
         JSON.stringify(mockResponse),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-LLM-Mode': 'mock' } }
       );
     }
 
@@ -121,12 +155,42 @@ ALWAYS include data source citations and confidence levels. Keep responses conci
     const opportunities = analyzeOpportunities(gridContext);
 
     // Build enhanced system prompt with grid context
-    const systemPrompt = buildHouseholdAdvisorPrompt(
+    let systemPrompt = buildHouseholdAdvisorPrompt(
       gridContextStr,
       opportunities,
       context || null,
       userMessage
     );
+
+    // Append strict output requirements for confidence and freshness footer
+    // Compute data freshness similar to mock path
+    let dataFreshnessMin = 999;
+    try {
+      const { data: lastRun } = await supabase
+        .from('ops_runs')
+        .select('completed_at')
+        .eq('run_type', 'ingestion')
+        .eq('status', 'success')
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      const lastTs = lastRun?.completed_at || null;
+      if (lastTs) {
+        dataFreshnessMin = Math.floor((Date.now() - new Date(lastTs).getTime()) / 60000);
+      } else {
+        const { data: recentHour } = await supabase
+          .from('ontario_hourly_demand')
+          .select('hour')
+          .order('hour', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (recentHour?.hour) {
+          dataFreshnessMin = Math.floor((Date.now() - new Date(recentHour.hour).getTime()) / 60000);
+        }
+      }
+    } catch (_) { /* ignore */ }
+
+    systemPrompt += `\n\nYou MUST end every response with:\nConfidence: [0.0-1.0]\nData Freshness: ${dataFreshnessMin} minutes\nLimitations: [one sentence]`;
 
     // Call Gemini API
     const geminiResponse = await fetch(
@@ -157,8 +221,13 @@ ALWAYS include data source citations and confidence levels. Keep responses conci
     }
 
     const geminiData = await geminiResponse.json();
-    const aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 
+    let aiResponse = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || 
       'I apologize, but I had trouble generating a response. Please try asking your question again.';
+
+    // Ensure footer exists even if model ignored instruction
+    if (!/Confidence:\s*/i.test(aiResponse)) {
+      aiResponse += `\n\nConfidence: 0.8\nData Freshness: ${dataFreshnessMin} minutes\nLimitations: Based on available grid data at request time`;
+    }
 
     // Store conversation in database (optional)
     try {
@@ -185,9 +254,11 @@ ALWAYS include data source citations and confidence levels. Keep responses conci
       JSON.stringify({
         response: aiResponse,
         confidence: 0.9,
+        data_freshness_min: dataFreshnessMin,
         timestamp: new Date().toISOString(),
         grid_opportunities: opportunities.length,
         grid_context_used: true,
+        mode: 'active'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-LLM-Mode': 'active' } }
     );

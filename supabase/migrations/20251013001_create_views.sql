@@ -60,7 +60,12 @@ WITH base AS (
 SELECT
   b.observed_at,
   b.province,
-  NULL::double precision AS price_cad_mwh,
+  CASE
+    WHEN b.province = 'ON' THEN (
+      SELECT hoep FROM public.ontario_prices ORDER BY datetime_et DESC LIMIT 1
+    )
+    ELSE NULL
+  END::double precision AS price_cad_mwh,
   (COALESCE(b.reserve_margin, 0) < 5 OR COALESCE(b.congestion_index, 0) > 80) AS curtailment_risk,
   b.demand_mw,
   b.supply_mw,

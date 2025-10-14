@@ -15,6 +15,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
 };
 
 serve(async (req) => {
@@ -32,16 +33,47 @@ serve(async (req) => {
     const last24h = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    // Calculate ingestion uptime (based on data freshness)
-    const { data: recentData, error: recentError } = await supabaseClient
-      .from('ontario_demand')
-      .select('timestamp')
-      .order('timestamp', { ascending: false })
-      .limit(1);
+    // Calculate ingestion freshness from heartbeat with fallbacks
+    let lastIngestAt: string | null = null;
+    let dataFreshness = 999;
 
-    const dataFreshness = recentData && recentData.length > 0
-      ? Math.floor((now.getTime() - new Date(recentData[0].timestamp).getTime()) / 60000)
-      : 999;
+    const { data: lastRun } = await supabaseClient
+      .from('ops_runs')
+      .select('completed_at')
+      .eq('run_type', 'ingestion')
+      .eq('status', 'success')
+      .order('completed_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (lastRun?.completed_at) {
+      lastIngestAt = lastRun.completed_at;
+      dataFreshness = Math.floor((now.getTime() - new Date(lastRun.completed_at).getTime()) / 60000);
+    } else {
+      const { data: recentHour } = await supabaseClient
+        .from('ontario_hourly_demand')
+        .select('hour')
+        .order('hour', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (recentHour?.hour) {
+        lastIngestAt = recentHour.hour;
+        dataFreshness = Math.floor((now.getTime() - new Date(recentHour.hour).getTime()) / 60000);
+      } else {
+        const { data: recentFallback } = await supabaseClient
+          .from('ontario_demand')
+          .select('timestamp')
+          .order('timestamp', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (recentFallback?.timestamp) {
+          lastIngestAt = recentFallback.timestamp;
+          dataFreshness = Math.floor((now.getTime() - new Date(recentFallback.timestamp).getTime()) / 60000);
+        }
+      }
+    }
 
     const ingestionUptime = dataFreshness <= 10 ? 99.9 : dataFreshness <= 30 ? 99.5 : 98.0;
 
@@ -104,6 +136,8 @@ serve(async (req) => {
     const successfulJobs = (jobsError && jobsError.code === '42P01') ? 47 : (jobs24h?.filter(j => j.status === 'success').length || 47);
     const failedJobs = totalJobs - successfulJobs;
 
+    const monitoringActive = (ingestionUptime >= 95 && dataFreshness < 10);
+
     const opsMetrics = {
       ingestion_uptime_percent: parseFloat(ingestionUptime.toFixed(2)),
       ingestion_uptime_pct: parseFloat(ingestionUptime.toFixed(2)), // Alias for UI compatibility
@@ -115,6 +149,7 @@ serve(async (req) => {
       data_freshness_minutes: dataFreshness,
       data_freshness_min: dataFreshness, // Alias for UI compatibility
       error_rate_percent: parseFloat(errorRate.toFixed(2)),
+      last_heartbeat_at: lastIngestAt,
       last_24h_jobs: {
         total: totalJobs,
         successful: successfulJobs,
@@ -126,6 +161,7 @@ serve(async (req) => {
         latency: avgJobLatency <= 500 ? 'meeting' : 'degraded',
         freshness: dataFreshness <= 5 ? 'meeting' : 'degraded'
       },
+      monitoring_status: monitoringActive ? 'Active' : 'Offline',
       timestamp: now.toISOString()
     };
 

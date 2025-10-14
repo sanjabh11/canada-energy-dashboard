@@ -52,6 +52,9 @@ function normalizeProvince(value: string | null): string | null {
   return VALID_PROVINCES.has(normalized) ? normalized : null;
 }
 
+const UNKNOWN_SOURCES = new Set(["unclassified", "unknown", "unspecified", "other", "na", "n/a", ""]); // conservative filter
+const RENEWABLE_SOURCES = new Set(["solar", "wind", "hydro", "biomass", "geothermal", "tidal", "marine", "renewable", "other_renewable"]);
+
 async function fetchGeneration(province: string, windowStart: string, windowEnd: string) {
   if (!supabase) return { total: 0, bySource: [] as Array<{ source: string; generation_gwh: number }> };
 
@@ -80,7 +83,17 @@ async function fetchGeneration(province: string, windowStart: string, windowEnd:
 
   const total = bySource.reduce((sum, record) => sum + record.generation_gwh, 0);
 
-  return { total, bySource };
+  // Compute top source excluding unknown/unclassified buckets
+  const filtered = bySource.filter((r) => !UNKNOWN_SOURCES.has((r.source || '').toLowerCase()));
+  const topSource = filtered.length > 0 ? filtered[0].source : (bySource[0]?.source ?? null);
+
+  // Compute renewable share from known renewable sources
+  const renewableTotal = bySource
+    .filter((r) => RENEWABLE_SOURCES.has((r.source || '').toLowerCase()))
+    .reduce((sum, r) => sum + r.generation_gwh, 0);
+  const renewableSharePercent = total > 0 ? (renewableTotal / total) * 100 : 0;
+
+  return { total, bySource, topSource, renewableSharePercent };
 }
 
 async function fetchOntarioDemand(): Promise<{ hour: string; market_demand_mw: number | null } | null> {
@@ -155,6 +168,10 @@ serve(async (req) => {
       generation: {
         total_gwh: generation.total,
         by_source: generation.bySource,
+        top_source: generation.topSource ?? null,
+        renewable_share_percent: Number.isFinite(generation.renewableSharePercent)
+          ? parseFloat(generation.renewableSharePercent.toFixed(2))
+          : null,
       },
       latest_demand: ontarioDemand,
       metadata: {
