@@ -1,0 +1,75 @@
+name: IESO Data Ingestion Cron
+
+# Fetches real-time Ontario electricity demand and price data from IESO
+# Runs every hour to maintain fresh data for analytics
+
+on:
+  schedule:
+    # Every hour at :05 past the hour (after IESO updates)
+    - cron: '5 * * * *'
+  
+  # Allow manual triggering for testing
+  workflow_dispatch:
+
+jobs:
+  trigger-ieso-ingestion:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Fetch IESO Demand Data
+        run: |
+          echo "📊 Triggering IESO demand ingestion..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-demand?mode=persist" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ IESO demand ingestion successful"
+          else
+            echo "⚠️  IESO demand ingestion returned HTTP $HTTP_CODE"
+            echo "$BODY"
+            # Don't fail - IESO API may be temporarily unavailable
+          fi
+
+      - name: Fetch IESO Price Data
+        run: |
+          echo "💰 Triggering IESO price ingestion..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/stream-ontario-prices?mode=persist" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "Response: $BODY"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ IESO price ingestion successful"
+          else
+            echo "⚠️  IESO price ingestion returned HTTP $HTTP_CODE"
+            echo "$BODY"
+          fi
+
+      - name: Update Heartbeat
+        if: success()
+        run: |
+          echo "💓 Updating ops heartbeat..."
+          
+          curl -s -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ops-heartbeat" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "Content-Type: application/json" \
+            -d '{"run_type":"ieso_ingestion","status":"success"}'
+          
+          echo "✅ IESO ingestion cron completed"
