@@ -64,8 +64,8 @@ async function getGridSnapshot(supabase: any, province: string): Promise<GridSna
   // Get latest price (from ontario_prices or alberta equivalent)
   const { data: priceData } = await supabase
     .from('ontario_prices')
-    .select('hoep')
-    .order('datetime_et', { ascending: false })
+    .select('hoep, datetime')
+    .order('datetime', { ascending: false })
     .limit(1)
     .single();
 

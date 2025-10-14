@@ -32,6 +32,7 @@ interface OpsHealthMetrics {
     latency: 'meeting' | 'degraded';
     freshness: 'meeting' | 'degraded';
   };
+  monitoring_status?: 'Active' | 'Offline' | string;
   timestamp: string;
 }
 
@@ -182,13 +183,22 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
             } size={20} />
             <h3 className="font-semibold text-gray-900">Ops Health</h3>
           </div>
-          <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-            overallStatus === 'healthy' ? 'bg-green-200 text-green-800' :
-            overallStatus === 'degraded' ? 'bg-yellow-200 text-yellow-800' :
-            'bg-red-200 text-red-800'
-          }`}>
-            {overallStatus.toUpperCase()}
-          </span>
+          <div className="flex items-center gap-2">
+            {metrics.monitoring_status && (
+              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                metrics.monitoring_status === 'Active' ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-800'
+              }`}>
+                Monitoring: {String(metrics.monitoring_status)}
+              </span>
+            )}
+            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+              overallStatus === 'healthy' ? 'bg-green-200 text-green-800' :
+              overallStatus === 'degraded' ? 'bg-yellow-200 text-yellow-800' :
+              'bg-red-200 text-red-800'
+            }`}>
+              {overallStatus.toUpperCase()}
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">

@@ -84,6 +84,10 @@ export const RealTimeDashboard: React.FC = () => {
   const provinceMetrics = data.provinceMetrics;
   const trends = data.trends;
 
+  // Analytics API-derived quick stats (primary source)
+  const topSourceFromAPI: string | null = (data.provinceMetrics?.generation?.top_source ?? null);
+  const renewableShareFromAPI: number | null = (data.provinceMetrics?.generation?.renewable_share_percent ?? null);
+
   // Load all dashboard data concurrently with cancellation support
   const loadDashboardData = useCallback(async () => {
     loadAbortRef.current?.abort();
@@ -482,32 +486,40 @@ export const RealTimeDashboard: React.FC = () => {
       </div>
 
       {/* 4-Panel Dashboard Grid */}
-      {/* Transition KPIs */}
-      {kpis?.kpis && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-indigo-50 rounded-lg">
-            <div className="text-sm text-indigo-600">Total Generation (sample)</div>
-            <div className="text-2xl font-bold text-indigo-800">{kpis.kpis.total_mwh !== null ? Math.round(kpis.kpis.total_mwh).toLocaleString() : '—'} MWh</div>
-          </div>
-          <div className="p-4 bg-emerald-50 rounded-lg">
-            <div className="text-sm text-emerald-600">Top Source</div>
-            <div className="text-2xl font-bold text-emerald-800">
-              {(() => {
-                const topSource = kpis.kpis.top_source?.type?.toUpperCase() ?? '—';
-                // Exclude UNCLASSIFIED/UNKNOWN from display
-                if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(topSource)) {
-                  return '—';
-                }
-                return topSource;
-              })()}
-            </div>
-          </div>
-          <div className="p-4 bg-amber-50 rounded-lg">
-            <div className="text-sm text-amber-600">Renewable Share</div>
-            <div className="text-2xl font-bold text-amber-800">{kpis.kpis.renewable_share !== null ? `${(kpis.kpis.renewable_share * 100).toFixed(1)}%` : '—'}</div>
-          </div>
+      {/* Transition KPIs / Analytics quick tiles */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="p-4 bg-indigo-50 rounded-lg">
+          <div className="text-sm text-indigo-600">Total Generation (sample)</div>
+          <div className="text-2xl font-bold text-indigo-800">{
+            kpis?.kpis?.total_mwh !== null && kpis?.kpis?.total_mwh !== undefined
+              ? Math.round(kpis.kpis.total_mwh).toLocaleString()
+              : (typeof totalGenerationGwh === 'number' ? Math.round(totalGenerationGwh * 1000).toLocaleString() : '—')
+          } MWh</div>
         </div>
-      )}
+        <div className="p-4 bg-emerald-50 rounded-lg">
+          <div className="text-sm text-emerald-600">Top Source</div>
+          <div className="text-2xl font-bold text-emerald-800">{
+            (() => {
+              const topFromKpi = kpis?.kpis?.top_source?.type?.toUpperCase() ?? null;
+              const topFromApi = topSourceFromAPI ? String(topSourceFromAPI).toUpperCase() : null;
+              const top = topFromApi || topFromKpi || '—';
+              if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(top)) return '—';
+              return top;
+            })()
+          }</div>
+        </div>
+        <div className="p-4 bg-amber-50 rounded-lg">
+          <div className="text-sm text-amber-600">Renewable Share</div>
+          <div className="text-2xl font-bold text-amber-800">{
+            (() => {
+              const shareFromApi = (typeof renewableShareFromAPI === 'number') ? renewableShareFromAPI : null;
+              const shareFromKpi = (typeof kpis?.kpis?.renewable_share === 'number') ? (kpis!.kpis!.renewable_share * 100) : null;
+              const pct = shareFromApi !== null ? shareFromApi : (shareFromKpi !== null ? shareFromKpi : null);
+              return pct !== null ? `${pct.toFixed(1)}%` : '—';
+            })()
+          }</div>
+        </div>
+      </div>
 
       <div className="space-y-6">
         {/* Dashboard Header with Glassmorphic Design */}
@@ -731,7 +743,7 @@ export const RealTimeDashboard: React.FC = () => {
               </div>
               <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
                 {hasDemandTrend
-                  ? `Trend window: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • Source: analytics trends API`
+                  ? `Trend window: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • Completeness: ${typeof trends?.metadata?.completeness_pct === 'number' ? trends.metadata.completeness_pct.toFixed(1) + '%' : '—'} • Samples: ${trends?.metadata?.demand_sample_count ?? '—'} • Source: analytics trends API`
                   : `Data: ${data.ontarioPrices.length} records • Source: ${sourceText('ontario_prices')}`}
               </div>
             </div>

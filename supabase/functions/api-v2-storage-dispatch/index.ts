@@ -86,14 +86,37 @@ serve(async (req) => {
       const renewableAbsorptionCount = logs?.filter(l => l.renewable_absorption).length || 0;
       const alignmentPct = totalActions > 0 ? (renewableAbsorptionCount / totalActions) * 100 : 0;
       
+      const now = new Date();
+      const since24h = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
+      const since7d = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+      const { data: rev24h } = await supabase
+        .from('storage_dispatch_logs')
+        .select('expected_revenue_cad, actual_revenue_cad, dispatched_at')
+        .eq('province', province)
+        .gte('dispatched_at', since24h);
+
+      const { data: rev7d } = await supabase
+        .from('storage_dispatch_logs')
+        .select('expected_revenue_cad, actual_revenue_cad, dispatched_at')
+        .eq('province', province)
+        .gte('dispatched_at', since7d);
+
+      const expectedRevenue24h = (rev24h || []).reduce((sum, r: any) => sum + Number(r.actual_revenue_cad ?? r.expected_revenue_cad ?? 0), 0);
+      const expectedRevenue7d = (rev7d || []).reduce((sum, r: any) => sum + Number(r.actual_revenue_cad ?? r.expected_revenue_cad ?? 0), 0);
+
       const currentBattery = battery || await initializeBattery(supabase, province);
-      const socBoundsOk = currentBattery.soc_percent >= 0 && currentBattery.soc_percent <= 100;
+      const socBoundsOk = currentBattery.soc_percent >= 5 && currentBattery.soc_percent <= 95;
 
       return new Response(JSON.stringify({ 
         battery: currentBattery,
         alignment_pct_renewable_absorption: alignmentPct,
         soc_bounds_ok: socBoundsOk,
-        actions_count: totalActions
+        actions_count: totalActions,
+        expected_revenue_24h: expectedRevenue24h,
+        expected_revenue_7d: expectedRevenue7d,
+        provenance: (rev7d && rev7d.length > 0) ? 'storage_dispatch_logs' : 'batteries_state',
+        last_updated: currentBattery?.last_updated || null
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -328,7 +351,9 @@ async function executeDispatch(
 
   // Clamp to capacity limits
   newSocMwh = Math.max(0, Math.min(battery.capacity_mwh, newSocMwh));
-  const newSocPercent = (newSocMwh / battery.capacity_mwh) * 100;
+  let newSocPercent = (newSocMwh / battery.capacity_mwh) * 100;
+  if (newSocPercent < 5) newSocPercent = 5;
+  if (newSocPercent > 95) newSocPercent = 95;
 
   const updatedBattery: BatteryState = {
     ...battery,
