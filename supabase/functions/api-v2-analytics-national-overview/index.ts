@@ -33,7 +33,7 @@ type WeatherRecord = {
   wind_speed_m_s: number | null;
 };
 
-const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176")
+const ALLOWED_ORIGINS = (Deno.env.get("ALLOWED_ORIGINS") ?? "http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,https://canada-energy.netlify.app")
   .split(",")
   .map((value) => value.trim())
   .filter(Boolean);
