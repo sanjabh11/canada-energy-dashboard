@@ -30,6 +30,8 @@ import { fetchEdgeJson } from '../lib/edge';
 import { DataQualityBadge } from './DataQualityBadge';
 import { createProvenance } from '../lib/types/provenance';
 import RenewablePenetrationHeatmap from './RenewablePenetrationHeatmap';
+import ModularChartWidget from './ModularChartWidget';
+import AIAnalyticsWidget from './AIAnalyticsWidget';
 
 interface AnalyticsData {
   ontarioDemand: OntarioDemandRecord[];
@@ -179,11 +181,15 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
   // Process weather correlation data
   const weatherCorrelationData = data.weatherData.length > 0
-    ? data.weatherData.slice(0, 50).map(record => ({
+    ? data.weatherData.slice(0, 50).map((record, index) => ({
+        name: `Point ${index + 1}`,
+        value: 0.65 + (Math.random() * 0.3),
         temperature: record.temperature || 20,
         correlation: 0.65 + (Math.random() * 0.3)
       }))
     : Array.from({ length: 20 }, (_, i) => ({
+        name: `Point ${i + 1}`,
+        value: 0.6 + (Math.random() * 0.35),
         temperature: 15 + i,
         correlation: 0.6 + (Math.random() * 0.35)
       }));
@@ -202,15 +208,17 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
           } else if (typeof record.generation_gwh === 'number' && record.generation_gwh > 0) {
             gwh = record.generation_gwh;
           }
-          
+
           return {
-            day: `Day ${idx + 1}`,
-            generation: gwh > 0 ? gwh : (15 + Math.random() * 5) // Fallback to realistic value
+            name: `Day ${idx + 1}`,
+            value: gwh > 0 ? gwh : (15 + Math.random() * 5), // Fallback to realistic value
+            generation: gwh > 0 ? gwh : (15 + Math.random() * 5)
           };
         })
     : Array.from({ length: 30 }, (_, i) => ({
-        day: `Day ${i + 1}`,
-        generation: 15 + Math.random() * 5 // 15-20 GWh range
+        name: `Day ${i + 1}`,
+        value: 15 + Math.random() * 5, // 15-20 GWh range
+        generation: 15 + Math.random() * 5
       }));
 
   return (
@@ -272,164 +280,64 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
           })()}
         />
 
-        {/* 30-Day Generation Trend */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-blue-100 p-3 rounded-xl border-2 border-blue-200">
-                  <BarChart3 className="text-blue-600" size={28} />
-                </div>
-                <div className="border-b border-slate-100 px-4 py-3">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-lg font-semibold text-slate-800">30-Day Demand Trend</h2>
-                      <p className="text-sm text-slate-500">Historical electricity demand patterns</p>
-                    </div>
-                    <DataQualityBadge
-                      provenance={createProvenance('historical_archive', 'Analytics API', 0.94, { completeness: data.trends?.demand?.length ? data.trends.demand.length / 30 : 0 })}
-                      sampleCount={data.trends?.demand?.length || 0}
-                      showDetails={true}
-                    />
-                  </div>
-                </div>
-              </div>
-              <HelpButton id="chart.generation_trend" />
-            </div>
-          </div>
-          <div className="p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={generationTrendData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="day" />
-                <YAxis />
-                <Tooltip />
-                <Legend />
-                <Line type="monotone" dataKey="generation" stroke="#3b82f6" strokeWidth={2} name="Generation (GWh)" />
-              </LineChart>
-            </ResponsiveContainer>
-            <div className="text-center text-sm text-slate-600 mt-4">
-              Data: {data.provincialGeneration.length} records • Rolling 30-day window
-            </div>
-          </div>
+        {/* Enhanced Modular Charts */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* 30-Day Generation Trend - Modular */}
+          <ModularChartWidget
+            title="30-Day Generation Trend"
+            data={generationTrendData}
+            chartType="line"
+            dataKeys={['generation']}
+            colors={['#3b82f6']}
+            height={350}
+            aiInsights={true}
+            interactive={true}
+          />
+
+          {/* Weather Correlation Analysis - Modular */}
+          <ModularChartWidget
+            title="Weather Correlation Analysis"
+            data={weatherCorrelationData}
+            chartType="scatter"
+            dataKeys={['correlation']}
+            colors={['#f59e0b']}
+            height={350}
+            aiInsights={true}
+            interactive={true}
+          />
         </div>
 
-        {/* Weather Correlation Analysis */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 border-b-2 border-orange-200 p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-orange-100 p-3 rounded-xl border-2 border-orange-200">
-                  <Cloud className="text-orange-600" size={28} />
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-slate-800">Weather Correlation Analysis</h3>
-                  <p className="text-sm text-slate-500">European smart meter dataset • Contextual reference</p>
-                  <div className="mt-2">
-                    <DataQualityBadge
-                      provenance={createProvenance('proxy_indicative', 'European Smart Meter Dataset', 0.85, { completeness: 0.92 })}
-                      sampleCount={data.weatherData.length}
-                      showDetails={false}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="text-sm text-slate-600">Average Correlation</div>
-                <div className="text-3xl font-bold text-orange-600">{averageCorrelation.toFixed(2)}</div>
-              </div>
-            </div>
-          </div>
-          <div className="p-6">
-            <ResponsiveContainer width="100%" height={300}>
-              <ScatterChart data={weatherCorrelationData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="temperature" name="Temperature" unit="°C" />
-                <YAxis dataKey="correlation" name="Correlation" />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                <Scatter fill="#f59e0b" />
-              </ScatterChart>
-            </ResponsiveContainer>
+        {/* Provincial Energy Mix - Pie Chart */}
+        <ModularChartWidget
+          title="Provincial Energy Mix Distribution"
+          data={Object.entries(MOCK_RENEWABLE_PENETRATION).map(([province, data]) => ({
+            name: province,
+            value: data.renewable_pct,
+            renewable: data.renewable_pct,
+            fossil: 100 - data.renewable_pct
+          }))}
+          chartType="pie"
+          dataKeys={['value']}
+          colors={['#10b981', '#ef4444', '#f59e0b', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']}
+          height={400}
+          aiInsights={true}
+          interactive={true}
+        />
 
-            {/* City Data Table */}
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-5 gap-3">
-              {[
-                { city: 'Calgary', temp: '20.9°C', correlation: '0.98' },
-                { city: 'Montreal', temp: '23.5°C', correlation: '0.95' },
-                { city: 'Ottawa', temp: '26.3°C', correlation: '0.96' },
-                { city: 'Edmonton', temp: '21.4°C', correlation: '0.95' },
-                { city: 'Toronto', temp: '23.3°C', correlation: '0.95' }
-              ].map((item, index) => (
-                <div key={index} className="text-center p-3 bg-orange-50 rounded-lg border border-orange-200">
-                  <div className="font-semibold text-slate-800">{item.city}</div>
-                  <div className="text-sm text-slate-600">{item.temp}</div>
-                  <div className="text-sm text-orange-600 font-semibold">{item.correlation}</div>
-                </div>
-              ))}
-            </div>
+        {/* AI Analytics Widget */}
+        <AIAnalyticsWidget
+          dataset="provincial_generation"
+          currentMetrics={{
+            renewablePercentage: 67,
+            totalCapacity: 100000,
+            peakDemand: 25000
+          }}
+        />
 
-            <div className="text-center text-sm text-slate-600 mt-4">
-              Data: {data.weatherData.length} records • European smart meter dataset
-            </div>
-          </div>
-        </div>
-
-        {/* AI Insights & Reports Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Reports Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TransitionReportPanel datasetPath="provincial_generation" timeframe="recent" />
           <DataQualityPanel datasetPath="provincial_generation" timeframe="recent" />
-          
-          {/* Insights Panel */}
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-            <div className="p-4 border-b border-slate-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-slate-800 flex items-center">
-                <AlertCircle className="h-5 w-5 mr-2 text-indigo-600" />
-                AI Insights
-              </h3>
-              <button
-                onClick={loadAnalyticsInsight}
-                className="text-sm text-indigo-600 hover:text-indigo-800"
-                disabled={insightLoading}
-              >
-                {insightLoading ? 'Refreshing...' : 'Refresh'}
-              </button>
-            </div>
-            <div className="p-4 space-y-3">
-              {insightError && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded">
-                  {insightError}
-                </div>
-              )}
-              {insightLoading && (
-                <div className="text-sm text-slate-600 animate-pulse">
-                  Loading AI insights...
-                </div>
-              )}
-              {!insightLoading && !insightError && insight && (
-                <>
-                  <p className="text-sm text-slate-700">{insight.summary}</p>
-                  {insight.key_findings && insight.key_findings.length > 0 && (
-                    <div className="mt-3">
-                      <div className="text-xs font-semibold text-slate-600 uppercase mb-2">Key Findings</div>
-                      <ul className="space-y-1">
-                        {insight.key_findings.map((finding, idx) => (
-                          <li key={idx} className="text-sm text-slate-600 flex items-start">
-                            <span className="text-indigo-600 mr-2">•</span>
-                            <span>{finding}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
-              )}
-              {!insightLoading && !insightError && !insight && (
-                <div className="text-sm text-slate-500 italic">
-                  No insights available. Click refresh to generate.
-                </div>
-              )}
-            </div>
-          </div>
         </div>
 
         {/* Back to Dashboard CTA */}

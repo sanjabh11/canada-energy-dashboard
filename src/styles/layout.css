@@ -145,7 +145,7 @@
   display: none;
 }
 
-/* Mobile navigation improvements */
+/* Mobile-first responsive improvements */
 @media (max-width: 767px) {
   .nav-tabs-mobile {
     display: flex;
@@ -167,6 +167,65 @@
     padding: var(--spacing-3) var(--spacing-4);
     border-radius: 0.5rem;
     transition: all 0.2s ease;
+  }
+
+  /* Mobile card improvements */
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  .grid-responsive-cards {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  .grid-responsive-charts {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-4);
+  }
+
+  /* Mobile ribbon improvements */
+  .ribbon {
+    gap: var(--spacing-3);
+    padding: var(--spacing-1) 0;
+  }
+
+  .ribbon-item {
+    padding: var(--spacing-2) var(--spacing-3);
+    font-size: 0.875rem;
+  }
+
+  /* Mobile container padding */
+  .container-responsive {
+    padding-left: var(--spacing-3);
+    padding-right: var(--spacing-3);
+  }
+
+  /* Mobile flex improvements */
+  .flex-responsive {
+    gap: var(--spacing-3);
+  }
+
+  /* Mobile spacing */
+  .space-y-responsive {
+    margin-bottom: var(--spacing-4);
+  }
+
+  .space-y-responsive > * + * {
+    margin-top: var(--spacing-4);
+  }
+
+  /* Mobile chart containers */
+  .chart-container-responsive {
+    min-height: 150px;
+  }
+
+  /* Mobile sticky elements */
+  .sticky-top {
+    position: sticky;
+    top: 0;
+    z-index: 50;
   }
 }
 

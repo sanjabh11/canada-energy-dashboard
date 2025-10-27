@@ -186,19 +186,19 @@ export const EnergyDataDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Base navigation tabs - Logically grouped: Core → Analysis → Specialized → Admin
-  const baseNavigationTabs = [
-    // Core Navigation (Most Important)
+  // Base navigation tabs - Core 6 + More dropdown
+  const coreNavigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
     { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
     { id: 'Provinces', label: 'Provinces', icon: Globe },
-    // Renewable Energy Optimization (Phase 5)
     { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
+    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home }
+  ];
+
+  const moreNavigationTabs = [
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
     { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
-    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home },
-    // Specialized Dashboards
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
@@ -211,13 +211,14 @@ export const EnergyDataDashboard: React.FC = () => {
 
   // Add feature status badges and filter based on feature flags
   const navigationTabs = React.useMemo(() => {
-    return baseNavigationTabs.map(tab => {
+    const allTabs = [...coreNavigationTabs, ...moreNavigationTabs];
+    return allTabs.map(tab => {
       const featureId = tabToFeatureMap[tab.id];
       if (!featureId) return { ...tab, badge: null }; // Always show non-mapped tabs
-      
+
       const feature = getFeature(featureId);
       if (!feature) return { ...tab, badge: null };
-      
+
       // Add badge based on feature status
       let badge = null;
       if (feature.status === 'partial') {
@@ -225,7 +226,7 @@ export const EnergyDataDashboard: React.FC = () => {
       } else if (feature.status === 'deferred') {
         badge = 'Soon';
       }
-      
+
       return { ...tab, badge, status: feature.status };
     }).filter(tab => {
       // Hide features that are explicitly disabled (deferred features)
@@ -332,6 +333,37 @@ export const EnergyDataDashboard: React.FC = () => {
               </div>
             </div>
           </div>
+
+          {/* Navigation Links */}
+          <div className="mt-4 pt-4 border-t border-blue-700">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-6">
+                <a
+                  href="/about"
+                  className="text-blue-100 hover:text-white transition-colors text-sm font-medium"
+                >
+                  About
+                </a>
+                <a
+                  href="/contact"
+                  className="text-blue-100 hover:text-white transition-colors text-sm font-medium"
+                >
+                  Contact
+                </a>
+                <a
+                  href="https://docs.canada-energy.net"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-100 hover:text-white transition-colors text-sm font-medium"
+                >
+                  Documentation
+                </a>
+              </div>
+              <div className="text-xs text-blue-200">
+                © 2025 Canada Energy Intelligence Platform
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -359,64 +391,57 @@ export const EnergyDataDashboard: React.FC = () => {
         ) : activeTab === 'Analytics' ? (
           <AnalyticsTrendsDashboard />
         ) : activeTab === 'Home' ? (
-          // Home Tab - Premium Landing Page with Enhanced Hero Section
+          // Home Tab - Simplified Landing Page with Clear CTAs
           <div className="space-y-12 -mt-8">
-            {/* Premium Hero Section - Full-width with glassmorphism */}
+            {/* Simplified Hero Section */}
             <div className="relative overflow-hidden -mx-8 lg:-mx-16">
-              {/* Background Image with Blur Overlay */}
               <div className="absolute inset-0">
                 <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-purple-900/40 backdrop-blur-sm"></div>
               </div>
-              
-              {/* Hero Content - Centered with Premium Typography */}
-              <div className="relative z-10 px-8 lg:px-16 py-32 lg:py-40">
-                <div className="text-center max-w-5xl mx-auto">
-                  {/* Animated Icon */}
-                  <div className="flex items-center justify-center mb-8 animate-fade-in">
-                    <div className="glass-card rounded-full p-8 shadow-2xl hover:scale-110 transition-transform duration-500">
-                      <Zap className="h-20 w-20 text-white animate-pulse-slow" />
+
+              <div className="relative z-10 px-8 lg:px-16 py-24 lg:py-32">
+                <div className="text-center max-w-4xl mx-auto">
+                  {/* Icon */}
+                  <div className="flex items-center justify-center mb-6 animate-fade-in">
+                    <div className="glass-card rounded-full p-6 shadow-xl">
+                      <Zap className="h-16 w-16 text-white animate-pulse-slow" />
                     </div>
                   </div>
-                  
-                  {/* Main Heading - Serif Font for Premium Feel */}
-                  <h1 className="text-6xl lg:text-7xl font-serif font-light text-white mb-6 tracking-tight animate-fade-in leading-tight">
-                    Canadian Energy
+
+                  {/* Main Heading */}
+                  <h1 className="text-4xl lg:text-6xl font-serif font-light text-white mb-4 tracking-tight animate-fade-in leading-tight">
+                    Your Real-Time
                     <span className="block font-medium mt-2 bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
-                      Intelligence Platform
+                      Energy Pulse
                     </span>
                   </h1>
-                  
-                  {/* Subtitle with Better Spacing */}
-                  <p className="text-xl lg:text-2xl text-white/90 mb-12 animate-fade-in-delayed leading-relaxed max-w-3xl mx-auto font-light">
-                    Real-time streaming architecture for comprehensive energy data analytics across Canada
+
+                  {/* Subtitle */}
+                  <p className="text-lg lg:text-xl text-white/90 mb-8 animate-fade-in-delayed leading-relaxed max-w-2xl mx-auto">
+                    Monitor Canadian energy markets with live data, AI insights, and comprehensive analytics across all provinces.
                   </p>
-                  
-                  {/* Feature Pills with Smooth Hover */}
-                  <div className="flex flex-wrap items-center justify-center gap-4 text-sm lg:text-base animate-fade-in-slow">
-                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
-                      <Signal className="h-5 w-5 inline mr-3" />
-                      <span className="font-medium">Live Streaming</span>
-                    </div>
-                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
-                      <Database className="h-5 w-5 inline mr-3" />
-                      <span className="font-medium">4 Datasets</span>
-                    </div>
-                    <div className="glass-card px-8 py-4 rounded-full text-white hover:bg-white/20 transition-all duration-300 hover:scale-105 cursor-pointer">
-                      <Gauge className="h-5 w-5 inline mr-3" />
-                      <span className="font-medium">Real-time Analytics</span>
-                    </div>
+
+                  {/* Primary CTA */}
+                  <div className="animate-fade-in-slow">
+                    <button
+                      onClick={() => setActiveTab('Analytics')}
+                      className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                    >
+                      Explore Trends
+                    </button>
+                    <p className="text-white/80 text-sm mt-3">See detailed analytics and AI-powered insights</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Stats Overview - Enhanced Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 px-4">
+            {/* Quick Insights Grid */}
+            <div className="grid-responsive-cards px-4">
               {DATASETS.map((dataset, index) => {
                 const status = connectionStatuses.find(s => s.dataset === dataset.name);
                 return (
-                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 animate-fade-in group`} style={{animationDelay: `${index * 100}ms`}}>
+                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 animate-fade-in group overflow-hidden`} style={{animationDelay: `${index * 100}ms`}}>
                     <div className={CONTAINER_CLASSES.cardHeader}>
                       <div className={CONTAINER_CLASSES.flexBetween}>
                         <div className={`p-3 rounded-lg`} style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}>
@@ -445,6 +470,95 @@ export const EnergyDataDashboard: React.FC = () => {
                   </div>
                 );
               })}
+            </div>
+
+            {/* Key CTA Section */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+              <div className="max-w-2xl mx-auto">
+                <h2 className="text-2xl font-bold text-slate-800 mb-4">Ready for Deeper Insights?</h2>
+                <p className="text-slate-600 mb-6">
+                  Explore advanced analytics, scenario modeling, and AI-powered recommendations to optimize your energy strategy.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => setActiveTab('Analytics')}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    View Analytics
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('Dashboard')}
+                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                  >
+                    Live Dashboard
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Map/Chart Previews */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Provincial Overview */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-200">
+                  <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                    <MapPin className="h-6 w-6 mr-3 text-blue-600" />
+                    Provincial Overview
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { province: 'Ontario', status: 'LIVE', color: 'text-green-600' },
+                      { province: 'Quebec', status: 'LIVE', color: 'text-green-600' },
+                      { province: 'Alberta', status: 'LIVE', color: 'text-green-600' },
+                      { province: 'BC', status: 'CONNECTING', color: 'text-blue-600' }
+                    ].map((item, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <span className="font-medium text-slate-800">{item.province}</span>
+                        <span className={`text-xs font-medium ${item.color}`}>{item.status}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('Provinces')}
+                    className="w-full mt-4 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    View All Provinces
+                  </button>
+                </div>
+              </div>
+
+              {/* Energy Mix Preview */}
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b border-slate-200">
+                  <h3 className="text-xl font-semibold text-slate-800 flex items-center">
+                    <Gauge className="h-6 w-6 mr-3 text-purple-600" />
+                    Energy Mix
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Renewable</span>
+                      <span className="text-sm font-medium text-green-600">67%</span>
+                    </div>
+                    <div className="w-full bg-slate-200 rounded-full h-2">
+                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '67%' }}></div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-slate-600">Traditional</span>
+                      <span className="text-sm font-medium text-slate-600">33%</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('Analytics')}
+                    className="w-full mt-4 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                  >
+                    View Detailed Trends
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         ) : activeTab === 'Provinces' ? (
@@ -579,7 +693,7 @@ export const EnergyDataDashboard: React.FC = () => {
                 </h2>
               </div>
               <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid-responsive-auto">
                   {[
                     { province: 'Ontario', source: 'IESO', status: 'connected', datasets: 2 },
                     { province: 'Quebec', source: 'Hydro-Québec', status: 'connected', datasets: 1 },
@@ -1040,6 +1154,27 @@ export const EnergyDataDashboard: React.FC = () => {
             )}
           </>
         )}
+      </div>
+
+      {/* Mobile Sticky CTA Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-lg z-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-100 p-2 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <div className="font-semibold text-slate-800">Explore Analytics</div>
+              <div className="text-sm text-slate-600">Deep insights & trends</div>
+            </div>
+          </div>
+          <button
+            onClick={() => setActiveTab('Analytics')}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
+          >
+            View Now
+          </button>
+        </div>
       </div>
     </div>
   );

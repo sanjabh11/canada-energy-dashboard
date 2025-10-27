@@ -188,7 +188,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
               <span className={`px-2 py-0.5 rounded text-xs font-medium ${
                 metrics.monitoring_status === 'Active' ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-800'
               }`}>
-                Monitoring: {String(metrics.monitoring_status)}
+                Monitoring: {metrics.monitoring_status === 'Offline' ? 'Standby' : String(metrics.monitoring_status)}
               </span>
             )}
             <span className={`px-2 py-0.5 rounded text-xs font-medium ${
@@ -238,7 +238,9 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
               <span>Freshness</span>
             </div>
             <div className="font-semibold text-gray-900">
-              {metrics.data_freshness_minutes}min
+              {metrics.data_freshness_minutes < 60
+                ? `${metrics.data_freshness_minutes}min`
+                : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
             </div>
           </div>
         </div>
@@ -296,7 +298,9 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
               {metrics.ingestion_uptime_percent.toFixed(2)}%
             </div>
             <div className="text-xs text-gray-600">
-              Target: ≥99.5% • Data freshness: {metrics.data_freshness_minutes}min
+              Target: ≥99.5% • Data freshness: {metrics.data_freshness_minutes < 60
+                ? `${metrics.data_freshness_minutes}min`
+                : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
             </div>
           </div>
 
