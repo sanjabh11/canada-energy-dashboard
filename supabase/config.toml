@@ -98,3 +98,27 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/api-v2-security-mitigation-strategies/deno.json"
 entrypoint = "./functions/api-v2-security-mitigation-strategies/index.ts"
+
+[functions.api-v2-ai-datacentres]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-ai-datacentres/deno.json"
+entrypoint = "./functions/api-v2-ai-datacentres/index.ts"
+
+[functions.api-v2-aeso-queue]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-aeso-queue/deno.json"
+entrypoint = "./functions/api-v2-aeso-queue/index.ts"
+
+[functions.api-v2-hydrogen-hub]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-hydrogen-hub/deno.json"
+entrypoint = "./functions/api-v2-hydrogen-hub/index.ts"
+
+[functions.api-v2-minerals-supply-chain]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-minerals-supply-chain/deno.json"
+entrypoint = "./functions/api-v2-minerals-supply-chain/index.ts"

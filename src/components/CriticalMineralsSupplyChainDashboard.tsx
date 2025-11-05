@@ -149,7 +149,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       })
     : [];
 
-  const chinaDependencyData = data.trade?.china_dependency && typeof data.summary.trade?.china_dependency === 'number'
+  const chinaDependencyData = data.summary.trade?.china_dependency && typeof data.summary.trade?.china_dependency === 'number'
     ? [
         { name: 'China', value: data.summary.trade.china_dependency, fill: COLORS.danger },
         { name: 'Other', value: 100 - data.summary.trade.china_dependency, fill: COLORS.success },
