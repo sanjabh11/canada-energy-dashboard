@@ -192,20 +192,20 @@ export const EnergyDataDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Base navigation tabs - Core 6 + More dropdown
+  // Base navigation tabs - Core 6 (prominently showing Phase 1 features) + More dropdown
   const coreNavigationTabs = [
     { id: 'Home', label: 'Home', icon: Home },
     { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
-    { id: 'Provinces', label: 'Provinces', icon: Globe },
-    { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
+    { id: 'AIDataCentres', label: 'AI Data Centres', icon: Server },
+    { id: 'HydrogenHub', label: 'Hydrogen Hub', icon: Fuel },
+    { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package },
     { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home }
   ];
 
   const moreNavigationTabs = [
-    { id: 'AIDataCentres', label: 'AI Data Centres', icon: Server },
-    { id: 'HydrogenHub', label: 'Hydrogen Hub', icon: Fuel },
-    { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package },
+    { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
+    { id: 'Provinces', label: 'Provinces', icon: Globe },
+    { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
     { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
