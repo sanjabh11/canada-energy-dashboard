@@ -1,0 +1,37 @@
+#!/bin/bash
+
+echo "╔════════════════════════════════════════════════════════════════╗"
+echo "║                                                                ║"
+echo "║   🚀 PHASE 1 CLEAN START - Follow Steps Below                 ║"
+echo "║                                                                ║"
+echo "╚════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "✅ Step 1 of 3: Cleaning all caches..."
+rm -rf node_modules/.vite node_modules/.vite-temp .vite dist 2>/dev/null
+echo "   Cache cleared!"
+echo ""
+echo "✅ Step 2 of 3: Starting development server..."
+echo ""
+echo "╔════════════════════════════════════════════════════════════════╗"
+echo "║  ⚠️  WHEN SERVER STARTS - DO THIS IN YOUR BROWSER:            ║"
+echo "║                                                                ║"
+echo "║  1. Press Ctrl+Shift+N (Chrome) or Ctrl+Shift+P (Firefox)     ║"
+echo "║     to open INCOGNITO/PRIVATE window                          ║"
+echo "║                                                                ║"
+echo "║  2. Type: http://localhost:5173/                              ║"
+echo "║                                                                ║"
+echo "║  3. Look for these tabs (positions 3, 4, 5):                  ║"
+echo "║     • AI Data Centres                                         ║"
+echo "║     • Hydrogen Hub                                            ║"
+echo "║     • Critical Minerals                                       ║"
+echo "║                                                                ║"
+echo "║  ✅ If you see them → SUCCESS!                                ║"
+echo "║  ❌ If you still see old tabs → Report back                   ║"
+echo "║                                                                ║"
+echo "╚════════════════════════════════════════════════════════════════╝"
+echo ""
+echo "Starting server in 3 seconds..."
+sleep 3
+echo ""
+
+npm run dev
