@@ -24,7 +24,10 @@ interface NavigationRibbonProps {
  */
 export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, activeTab, onSelect, className }) => {
   const ribbonRef = useRef<HTMLDivElement | null>(null);
+  const moreButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
 
   const scrollByAmount = (dx: number) => {
     const el = ribbonRef.current;
@@ -36,10 +39,21 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
   const coreTabs = tabs.slice(0, 6);
   const moreTabs = tabs.slice(6);
 
+  // Update dropdown position when it opens
+  useEffect(() => {
+    if (showMoreDropdown && moreButtonRef.current) {
+      const rect = moreButtonRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + 4,
+        right: window.innerWidth - rect.right
+      });
+    }
+  }, [showMoreDropdown]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (showMoreDropdown && !event.target || !((event.target as Element).closest('.relative'))) {
+      if (showMoreDropdown && dropdownRef.current && !dropdownRef.current.contains(event.target as Node) && !moreButtonRef.current?.contains(event.target as Node)) {
         setShowMoreDropdown(false);
       }
     };
@@ -95,53 +109,62 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
 
         {/* More dropdown */}
         {moreTabs.length > 0 && (
-          <div className="relative">
+          <>
             <button
+              ref={moreButtonRef}
               onClick={() => setShowMoreDropdown(!showMoreDropdown)}
               className={`ribbon-item ${moreTabs.some(tab => tab.id === activeTab) ? 'ribbon-item-active' : ''}`}
             >
               <MoreHorizontal className="h-4 w-4 mr-2" />
               <span>More</span>
-              <ChevronDown className="h-4 w-4 ml-2" />
+              <ChevronDown className={`h-4 w-4 ml-2 transition-transform ${showMoreDropdown ? 'rotate-180' : ''}`} />
             </button>
-
-            {showMoreDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 min-w-48">
-                {moreTabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = activeTab === tab.id;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        onSelect(tab.id);
-                        setShowMoreDropdown(false);
-                      }}
-                      className={`w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center ${
-                        isActive ? 'bg-blue-50 text-blue-700' : 'text-slate-700'
-                      }`}
-                    >
-                      {Icon ? <Icon className="h-4 w-4 mr-3" /> : null}
-                      <span>{tab.label}</span>
-                      {tab.badge && (
-                        <span className={`ml-auto px-2 py-0.5 text-xs rounded-full font-medium ${
-                          tab.badge === 'Limited'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : tab.badge === 'Soon'
-                            ? 'bg-gray-100 text-gray-600'
-                            : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {tab.badge}
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          </>
         )}
       </div>
+
+      {/* Dropdown rendered outside ribbon container to avoid overflow clipping */}
+      {showMoreDropdown && moreTabs.length > 0 && (
+        <div
+          ref={dropdownRef}
+          className="fixed bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] min-w-[220px] max-w-[280px] max-h-[calc(100vh-100px)] overflow-y-auto"
+          style={{
+            top: `${dropdownPosition.top}px`,
+            right: `${dropdownPosition.right}px`
+          }}
+        >
+          {moreTabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  onSelect(tab.id);
+                  setShowMoreDropdown(false);
+                }}
+                className={`w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center transition-colors border-b border-slate-100 last:border-b-0 ${
+                  isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                }`}
+              >
+                {Icon ? <Icon className="h-4 w-4 mr-3 flex-shrink-0" /> : null}
+                <span className="flex-1">{tab.label}</span>
+                {tab.badge && (
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${
+                    tab.badge === 'Limited'
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : tab.badge === 'Soon'
+                      ? 'bg-gray-100 text-gray-600'
+                      : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {tab.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Right control (hidden on small screens) */}
       <button
