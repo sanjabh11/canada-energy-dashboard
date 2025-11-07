@@ -410,7 +410,7 @@ INSERT INTO minerals_supply_chain (id, mineral, stage, facility_name, operator, 
 ('msc-001', 'Lithium', 'Refining', 'Nemaska Lithium Hydroxide Plant', 'Nemaska Lithium', 'Shawinigan', 'QC', 'Canada', 330000, 33000, 'Electrolysis', 'Under Construction', FALSE),
 ('msc-002', 'Nickel', 'Refining', 'Sudbury Nickel Refinery', 'Glencore', 'Sudbury', 'ON', 'Canada', 150000, 120000, 'Electrolytic', 'Operational', FALSE),
 ('msc-003', 'Cobalt', 'Refining', 'MISSING - Cobalt Refinery', 'N/A', 'N/A', NULL, 'N/A', NULL, NULL, NULL, 'Proposed', TRUE),
-('msc-004', 'Graphite', 'Concentration', 'Lac Knife Graphite Processing', 'Mason Graphite', 'Baie-Comeau', 'QC', 'Canada', 52000, 50000, 'Flotation', 'Permitting', FALSE),
+('msc-004', 'Graphite', 'Concentration', 'Lac Knife Graphite Processing', 'Mason Graphite', 'Baie-Comeau', 'QC', 'Canada', 52000, 50000, 'Flotation', 'Proposed', FALSE),
 ('msc-005', 'Rare Earth Elements', 'Processing', 'Saskatchewan REE Processing Facility', 'Saskatchewan Research Council', 'Saskatoon', 'SK', 'Canada', 5000, 4000, 'Hydrometallurgical', 'Operational', FALSE),
 ('msc-006', 'Copper', 'Refining', 'CCR Copper Refinery', 'Glencore', 'Montreal', 'QC', 'Canada', 250000, 225000, 'Electrolytic', 'Operational', FALSE)
 ON CONFLICT (id) DO NOTHING;
