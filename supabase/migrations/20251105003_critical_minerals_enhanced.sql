@@ -492,9 +492,9 @@ ON CONFLICT (year, scenario) DO NOTHING;
 
 -- Strategic stockpile (sample)
 INSERT INTO minerals_strategic_stockpile (mineral, timestamp, stockpile_tonnes, target_stockpile_tonnes, minimum_stockpile_tonnes, stockpile_adequacy, months_of_supply, storage_location, province, defence_production_act) VALUES
-(NOW(), 'Lithium', 500, 2000, 1000, 'Low', 3.5, 'Secure Federal Facility', 'ON', TRUE),
-(NOW(), 'Cobalt', 200, 800, 400, 'Critical', 1.8, 'Secure Federal Facility', 'ON', TRUE),
-(NOW(), 'Rare Earth Elements', 150, 600, 300, 'Low', 4.2, 'Secure Federal Facility', 'QC', TRUE)
+('Lithium', NOW(), 500, 2000, 1000, 'Low', 3.5, 'Secure Federal Facility', 'ON', TRUE),
+('Cobalt', NOW(), 200, 800, 400, 'Critical', 1.8, 'Secure Federal Facility', 'ON', TRUE),
+('Rare Earth Elements', NOW(), 150, 600, 300, 'Low', 4.2, 'Secure Federal Facility', 'QC', TRUE)
 ON CONFLICT (mineral, timestamp) DO NOTHING;
 
 -- ============================================================================
