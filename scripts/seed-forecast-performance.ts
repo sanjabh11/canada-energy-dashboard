@@ -5,8 +5,20 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.VITE_SUPABASE_URL || 'https://qnymbecjgeaoxsfphrti.supabase.co';
-const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+
+// Validate environment variables
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('❌ Error: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY must be set');
+  console.error('');
+  console.error('Set them in .env.local or export as environment variables:');
+  console.error('  export VITE_SUPABASE_URL=https://your-project.supabase.co');
+  console.error('  export VITE_SUPABASE_ANON_KEY=your-anon-key');
+  console.error('');
+  console.error('Then run: npm run seed-forecast-performance');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -23,7 +35,8 @@ async function seedForecastPerformance() {
     if (queryError && queryError.code === '42P01') {
       console.error('❌ Table forecast_performance_metrics does not exist!');
       console.log('\n📋 Please create the table first using Supabase Dashboard SQL Editor:');
-      console.log('Navigate to: https://supabase.com/dashboard/project/qnymbecjgeaoxsfphrti/sql/new');
+      const projectRef = SUPABASE_URL.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project';
+      console.log(`Navigate to: https://supabase.com/dashboard/project/${projectRef}/sql/new`);
       console.log('\nOr run this SQL manually:');
       console.log('\nCREATE TABLE IF NOT EXISTS public.forecast_performance_metrics (');
       console.log('  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,');
