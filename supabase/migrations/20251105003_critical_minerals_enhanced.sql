@@ -406,13 +406,13 @@ INSERT INTO critical_minerals_projects (id, project_name, operator, primary_mine
 ON CONFLICT (id) DO NOTHING;
 
 -- Supply chain facilities
-INSERT INTO minerals_supply_chain (id, mineral, stage, facility_name, operator, location, province, country, input_capacity_tonnes_per_year, output_capacity_tonnes_per_year, processing_technology, status, is_domestic_gap, notes) VALUES
-('msc-001', 'Lithium', 'Refining', 'Nemaska Lithium Hydroxide Plant', 'Nemaska Lithium', 'Shawinigan', 'QC', 'Canada', 330000, 33000, 'Electrolysis', 'Under Construction', FALSE, 'Battery-grade lithium hydroxide production'),
-('msc-002', 'Nickel', 'Refining', 'Sudbury Nickel Refinery', 'Glencore', 'Sudbury', 'ON', 'Canada', 150000, 120000, 'Electrolytic', 'Operational', FALSE, 'High-purity nickel for batteries'),
-('msc-003', 'Cobalt', 'Refining', 'MISSING - Cobalt Refinery', 'N/A', 'N/A', NULL, 'N/A', NULL, NULL, NULL, 'Proposed', TRUE, 'Canada lacks domestic cobalt refining capacity - strategic gap'),
-('msc-004', 'Graphite', 'Concentration', 'Lac Knife Graphite Processing', 'Mason Graphite', 'Baie-Comeau', 'QC', 'Canada', 52000, 50000, 'Flotation', 'Permitting', FALSE, 'Natural graphite concentration'),
-('msc-005', 'Rare Earth Elements', 'Processing', 'Saskatchewan REE Processing Facility', 'Saskatchewan Research Council', 'Saskatoon', 'SK', 'Canada', 5000, 4000, 'Hydrometallurgical', 'Operational', FALSE, 'First commercial rare earth processing outside Asia'),
-('msc-006', 'Copper', 'Refining', 'CCR Copper Refinery', 'Glencore', 'Montreal', 'QC', 'Canada', 250000, 225000, 'Electrolytic', 'Operational', FALSE, 'High-purity copper for electrical applications')
+INSERT INTO minerals_supply_chain (id, mineral, stage, facility_name, operator, location, province, country, input_capacity_tonnes_per_year, output_capacity_tonnes_per_year, processing_technology, status, is_domestic_gap) VALUES
+('msc-001', 'Lithium', 'Refining', 'Nemaska Lithium Hydroxide Plant', 'Nemaska Lithium', 'Shawinigan', 'QC', 'Canada', 330000, 33000, 'Electrolysis', 'Under Construction', FALSE),
+('msc-002', 'Nickel', 'Refining', 'Sudbury Nickel Refinery', 'Glencore', 'Sudbury', 'ON', 'Canada', 150000, 120000, 'Electrolytic', 'Operational', FALSE),
+('msc-003', 'Cobalt', 'Refining', 'MISSING - Cobalt Refinery', 'N/A', 'N/A', NULL, 'N/A', NULL, NULL, NULL, 'Proposed', TRUE),
+('msc-004', 'Graphite', 'Concentration', 'Lac Knife Graphite Processing', 'Mason Graphite', 'Baie-Comeau', 'QC', 'Canada', 52000, 50000, 'Flotation', 'Permitting', FALSE),
+('msc-005', 'Rare Earth Elements', 'Processing', 'Saskatchewan REE Processing Facility', 'Saskatchewan Research Council', 'Saskatoon', 'SK', 'Canada', 5000, 4000, 'Hydrometallurgical', 'Operational', FALSE),
+('msc-006', 'Copper', 'Refining', 'CCR Copper Refinery', 'Glencore', 'Montreal', 'QC', 'Canada', 250000, 225000, 'Electrolytic', 'Operational', FALSE)
 ON CONFLICT (id) DO NOTHING;
 
 -- Battery supply chain facilities
