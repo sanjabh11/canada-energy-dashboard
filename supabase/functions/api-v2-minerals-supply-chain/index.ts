@@ -4,19 +4,22 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import {
+  validateProvince,
+  validateEnum,
+  validateBoolean,
+  getCorsHeaders,
+  errorResponse
+} from "../_shared/validation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 'Rare Earth Elements'];
+const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 'Rare Earth Elements'] as const;
 
 serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  };
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
@@ -24,9 +27,11 @@ serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
-    const mineral = url.searchParams.get('mineral');
-    const province = url.searchParams.get('province');
-    const priorityOnly = url.searchParams.get('priority') === 'true';
+
+    // Validate input parameters
+    const mineral = validateEnum(url.searchParams.get('mineral'), PRIORITY_MINERALS, true);
+    const province = url.searchParams.get('province') ? validateProvince(url.searchParams.get('province')) : null;
+    const priorityOnly = validateBoolean(url.searchParams.get('priority'), false);
 
     // Fetch critical minerals projects
     let projectsQuery = supabase
@@ -182,13 +187,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Minerals Supply Chain API error:', err);
-    return new Response(JSON.stringify({
-      error: String(err),
-      message: 'Failed to fetch critical minerals supply chain data'
-    }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 500,
-    });
+    return errorResponse('Failed to fetch critical minerals supply chain data', corsHeaders, 500, err);
   }
 });
 

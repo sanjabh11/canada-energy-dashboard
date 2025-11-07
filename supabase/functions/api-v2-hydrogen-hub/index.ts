@@ -4,17 +4,24 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import {
+  validateProvince,
+  validateEnum,
+  validateBoolean,
+  getCorsHeaders,
+  errorResponse
+} from "../_shared/validation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Validation constants
+const VALID_HUBS = ['Edmonton Hub', 'Calgary Hub'] as const;
+const VALID_HYDROGEN_TYPES = ['Green', 'Blue', 'Grey', 'Turquoise', 'Pink'] as const;
+
 serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  };
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
@@ -22,10 +29,12 @@ serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
-    const province = url.searchParams.get('province') || 'AB';
-    const hub = url.searchParams.get('hub'); // 'Edmonton Hub' or 'Calgary Hub'
-    const hydrogenType = url.searchParams.get('type'); // 'Green', 'Blue', etc.
-    const includeTimeseries = url.searchParams.get('timeseries') === 'true';
+
+    // Validate input parameters
+    const province = validateProvince(url.searchParams.get('province'), 'AB');
+    const hub = validateEnum(url.searchParams.get('hub'), VALID_HUBS, true);
+    const hydrogenType = validateEnum(url.searchParams.get('type'), VALID_HYDROGEN_TYPES, true);
+    const includeTimeseries = validateBoolean(url.searchParams.get('timeseries'), false);
 
     // Fetch hydrogen facilities
     let facilitiesQuery = supabase
@@ -184,13 +193,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Hydrogen Hub API error:', err);
-    return new Response(JSON.stringify({
-      error: String(err),
-      message: 'Failed to fetch hydrogen economy data'
-    }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 500,
-    });
+    return errorResponse('Failed to fetch hydrogen economy data', corsHeaders, 500, err);
   }
 });
 

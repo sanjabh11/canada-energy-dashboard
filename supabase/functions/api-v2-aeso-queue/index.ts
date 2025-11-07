@@ -4,17 +4,24 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import {
+  validateEnum,
+  getCorsHeaders,
+  errorResponse
+} from "../_shared/validation.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+// Validation constants
+const VALID_PROJECT_TYPES = ['AI Data Centre', 'Wind', 'Solar', 'Battery Storage', 'Natural Gas', 'Hydrogen', 'Other'] as const;
+const VALID_STUDY_PHASES = ['Phase 1', 'Phase 2', 'Phase 3', 'System Impact Study', 'Facility Study', 'Completed'] as const;
+const VALID_REGIONS = ['Calgary', 'Edmonton', 'Central', 'South', 'North', 'Northwest', 'Northeast'] as const;
+const VALID_STATUSES = ['Active', 'Inactive', 'Completed', 'Withdrawn', 'On Hold'] as const;
+
 serve(async (req: Request) => {
-  const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  };
+  const corsHeaders = getCorsHeaders(req);
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
@@ -22,10 +29,12 @@ serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
-    const projectType = url.searchParams.get('project_type');
-    const studyPhase = url.searchParams.get('study_phase');
-    const region = url.searchParams.get('region');
-    const status = url.searchParams.get('status') || 'Active';
+
+    // Validate input parameters
+    const projectType = validateEnum(url.searchParams.get('project_type'), VALID_PROJECT_TYPES, true);
+    const studyPhase = validateEnum(url.searchParams.get('study_phase'), VALID_STUDY_PHASES, true);
+    const region = validateEnum(url.searchParams.get('region'), VALID_REGIONS, true);
+    const status = validateEnum(url.searchParams.get('status'), VALID_STATUSES, false) || 'Active';
 
     // Fetch interconnection queue projects
     let queueQuery = supabase
@@ -120,13 +129,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('AESO Queue API error:', err);
-    return new Response(JSON.stringify({
-      error: String(err),
-      message: 'Failed to fetch AESO interconnection queue data'
-    }), {
-      headers: { 'Content-Type': 'application/json', ...corsHeaders },
-      status: 500,
-    });
+    return errorResponse('Failed to fetch AESO interconnection queue data', corsHeaders, 500, err);
   }
 });
 
