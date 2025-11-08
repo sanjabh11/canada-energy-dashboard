@@ -31,7 +31,7 @@ INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_countr
 ('Lithium', 2024, 9, 'Export', 'Canada', 'USA', 900, 22500000, 'Lithium Hydroxide', 'Statistics Canada'),
 ('Lithium', 2024, 10, 'Export', 'Canada', 'USA', 940, 23500000, 'Lithium Hydroxide', 'Statistics Canada'),
 ('Lithium', 2024, 11, 'Export', 'Canada', 'USA', 960, 24000000, 'Lithium Hydroxide', 'Statistics Canada'),
-('Lithium', 2024, 12, 'Export', 'Canada', 'USA', 1000, 25000000, 'Lithium Hydroxide', 'Statistics Canada');
+('Lithium', 2024, 12, 'Export', 'Canada', 'USA', 1000, 25000000, 'Lithium Hydroxide', 'Statistics Canada'),
 
 -- 2024 Lithium Exports to Europe (secondary destination)
 ('Lithium', 2024, 1, 'Export', 'Canada', 'Europe', 150, 3750000, 'Lithium Carbonate', 'Statistics Canada'),
