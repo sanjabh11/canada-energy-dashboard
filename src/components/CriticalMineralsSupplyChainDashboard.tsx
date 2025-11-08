@@ -172,15 +172,6 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       })).sort((a, b) => (b.volatility as number) - (a.volatility as number))
     : [];
 
-  // DEBUG: Log price volatility data
-  console.log('=== PRICE VOLATILITY DEBUG ===');
-  console.log('Raw pricing data:', data?.summary?.pricing);
-  console.log('price_volatility object:', data?.summary?.pricing?.price_volatility);
-  console.log('Processed priceVolatility array:', priceVolatility);
-  console.log('priceVolatility.length:', priceVolatility.length);
-  console.log('Chart will render:', priceVolatility.length > 0);
-  console.log('============================');
-
   // Prepare Mineral Prices time-series data (for Lithium and other priority minerals)
   const mineralPricesTimeSeries = data.prices && data.prices.length > 0
     ? data.prices
