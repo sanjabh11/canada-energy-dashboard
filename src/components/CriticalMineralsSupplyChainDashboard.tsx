@@ -240,17 +240,6 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
     netBalance: data.exports - data.imports,
   })).sort((a, b) => b.exports - a.exports);
 
-  // DEBUG: Log trade flows data processing
-  console.log('=== TRADE FLOWS DEBUG ===');
-  console.log('Raw trade_flows from API:', data?.trade_flows);
-  console.log('trade_flows length:', data?.trade_flows?.length || 0);
-  console.log('Processed tradeFlowsData:', tradeFlowsData);
-  console.log('tradeFlowsSummary:', tradeFlowsSummary);
-  console.log('Final tradeFlowsChart:', tradeFlowsChart);
-  console.log('tradeFlowsChart.length:', tradeFlowsChart.length);
-  console.log('Chart will render:', tradeFlowsChart.length > 0);
-  console.log('========================');
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 p-6">
       {/* Header */}
