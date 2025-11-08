@@ -68,7 +68,7 @@ INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_countr
 ('Nickel', 2024, 9, 'Export', 'Canada', 'USA', 3400, 57120000, 'Refined Nickel', 'Statistics Canada'),
 ('Nickel', 2024, 10, 'Export', 'Canada', 'USA', 3350, 56280000, 'Refined Nickel', 'Statistics Canada'),
 ('Nickel', 2024, 11, 'Export', 'Canada', 'USA', 3300, 55440000, 'Refined Nickel', 'Statistics Canada'),
-('Nickel', 2024, 12, 'Export', 'Canada', 'USA', 3250, 54600000, 'Refined Nickel', 'Statistics Canada');
+('Nickel', 2024, 12, 'Export', 'Canada', 'USA', 3250, 54600000, 'Refined Nickel', 'Statistics Canada'),
 
 -- Nickel Exports to Asia (China, Japan, South Korea)
 ('Nickel', 2024, 1, 'Export', 'Canada', 'Asia', 2100, 35280000, 'Nickel Matte', 'Statistics Canada'),

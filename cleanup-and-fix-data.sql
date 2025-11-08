@@ -5,21 +5,19 @@
 -- Run this in Supabase Dashboard → SQL Editor
 -- ============================================================================
 
--- Step 1: Delete existing minerals prices data
-DELETE FROM minerals_prices
-WHERE data_source IN ('LME', 'Benchmark Minerals Intelligence', 'China Domestic');
+-- Step 1: Delete ALL existing minerals prices data (aggressive cleanup)
+DELETE FROM minerals_prices;
 
 -- Verify deletion
 SELECT COUNT(*) as minerals_prices_count FROM minerals_prices;
--- Expected: Should be 0 or very low
+-- Expected: 0
 
--- Step 2: Delete existing trade flows data
-DELETE FROM minerals_trade_flows
-WHERE data_source = 'Statistics Canada';
+-- Step 2: Delete ALL existing trade flows data (aggressive cleanup)
+DELETE FROM minerals_trade_flows;
 
 -- Verify deletion
 SELECT COUNT(*) as trade_flows_count FROM minerals_trade_flows;
--- Expected: Should be much lower (only synthetic random() data should remain)
+-- Expected: 0
 
 -- ============================================================================
 -- NOW you can run the fix scripts in order:
