@@ -129,7 +129,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('AESO Queue API error:', err);
-    return errorResponse('Failed to fetch AESO interconnection queue data', corsHeaders, 500, err);
+    return errorResponse('Failed to fetch AESO interconnection queue data', 500, corsHeaders, err);
   }
 });
 

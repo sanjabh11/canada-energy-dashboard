@@ -193,7 +193,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Hydrogen Hub API error:', err);
-    return errorResponse('Failed to fetch hydrogen economy data', corsHeaders, 500, err);
+    return errorResponse('Failed to fetch hydrogen economy data', 500, corsHeaders, err);
   }
 });
 

@@ -187,7 +187,7 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Minerals Supply Chain API error:', err);
-    return errorResponse('Failed to fetch critical minerals supply chain data', corsHeaders, 500, err);
+    return errorResponse('Failed to fetch critical minerals supply chain data', 500, corsHeaders, err);
   }
 });
 
