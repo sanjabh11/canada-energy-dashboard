@@ -172,6 +172,74 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       })).sort((a, b) => (b.volatility as number) - (a.volatility as number))
     : [];
 
+  // Prepare Mineral Prices time-series data (for Lithium and other priority minerals)
+  const mineralPricesTimeSeries = data.prices && data.prices.length > 0
+    ? data.prices
+        .filter((p: any) => PRIORITY_MINERALS.includes(p.mineral))
+        .map((p: any) => ({
+          date: new Date(p.timestamp).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }),
+          timestamp: p.timestamp,
+          mineral: p.mineral,
+          price: Math.round(p.price_usd_per_tonne),
+        }))
+        .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
+    : [];
+
+  // Group prices by mineral for multi-line chart
+  const pricesByMineral: Record<string, any[]> = {};
+  mineralPricesTimeSeries.forEach((item: any) => {
+    if (!pricesByMineral[item.mineral]) {
+      pricesByMineral[item.mineral] = [];
+    }
+    pricesByMineral[item.mineral].push(item);
+  });
+
+  // Combine all minerals into one dataset with separate columns
+  const mineralPricesChart = mineralPricesTimeSeries.reduce((acc: any[], curr: any) => {
+    const existing = acc.find(item => item.date === curr.date);
+    if (existing) {
+      existing[curr.mineral] = curr.price;
+    } else {
+      acc.push({
+        date: curr.date,
+        timestamp: curr.timestamp,
+        [curr.mineral]: curr.price,
+      });
+    }
+    return acc;
+  }, []).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+  // Prepare Trade Flows data
+  const tradeFlowsData = data.trade_flows && data.trade_flows.length > 0
+    ? data.trade_flows.map((tf: any) => ({
+        mineral: tf.mineral,
+        flowType: tf.flow_type,
+        volume: Math.round(tf.volume_tonnes / 1000), // Convert to thousands of tonnes
+        destination: tf.destination_country || 'Unknown',
+        origin: tf.origin_country || 'Unknown',
+      }))
+    : [];
+
+  // Aggregate trade flows by mineral and flow type
+  const tradeFlowsSummary: Record<string, { imports: number; exports: number }> = {};
+  tradeFlowsData.forEach((tf: any) => {
+    if (!tradeFlowsSummary[tf.mineral]) {
+      tradeFlowsSummary[tf.mineral] = { imports: 0, exports: 0 };
+    }
+    if (tf.flowType === 'Import') {
+      tradeFlowsSummary[tf.mineral].imports += tf.volume;
+    } else if (tf.flowType === 'Export') {
+      tradeFlowsSummary[tf.mineral].exports += tf.volume;
+    }
+  });
+
+  const tradeFlowsChart = Object.entries(tradeFlowsSummary).map(([mineral, data]) => ({
+    mineral,
+    imports: data.imports,
+    exports: data.exports,
+    netBalance: data.exports - data.imports,
+  })).sort((a, b) => b.exports - a.exports);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 p-6">
       {/* Header */}
@@ -478,6 +546,81 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
               <div className="text-xs text-slate-600">Estimated Value</div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Mineral Prices Time-Series Chart */}
+      {mineralPricesChart.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" />
+            Mineral Prices (Monthly Trend)
+          </h2>
+          <ResponsiveContainer width="100%" height={350}>
+            <LineChart data={mineralPricesChart}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" angle={-45} textAnchor="end" height={80} />
+              <YAxis label={{ value: 'Price (USD/tonne)', angle: -90, position: 'insideLeft' }} />
+              <Tooltip
+                formatter={(value: any) => [`$${value.toLocaleString()}`, 'Price']}
+                labelFormatter={(label) => `Month: ${label}`}
+              />
+              <Legend verticalAlign="top" height={36} />
+              {PRIORITY_MINERALS.map((mineral, idx) => (
+                <Line
+                  key={mineral}
+                  type="monotone"
+                  dataKey={mineral}
+                  stroke={Object.values(COLORS)[idx % Object.keys(COLORS).length]}
+                  strokeWidth={2}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                  name={mineral}
+                  connectNulls
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+          <p className="text-sm text-slate-600 mt-4">
+            <strong>Data Quality Note:</strong> Displaying last 12 months of price data. January 2024 Lithium price is shown for consistency testing.
+          </p>
+        </div>
+      )}
+
+      {/* Trade Flows Chart */}
+      {tradeFlowsChart.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Globe className="w-6 h-6 text-blue-600" />
+            Trade Flows (Imports vs Exports)
+          </h2>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={tradeFlowsChart}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="mineral" />
+              <YAxis label={{ value: 'Volume (thousands of tonnes)', angle: -90, position: 'insideLeft' }} />
+              <Tooltip formatter={(value: any) => `${value.toLocaleString()}k tonnes`} />
+              <Legend />
+              <Bar dataKey="imports" fill={COLORS.danger} name="Imports" />
+              <Bar dataKey="exports" fill={COLORS.success} name="Exports" />
+            </BarChart>
+          </ResponsiveContainer>
+          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+            {tradeFlowsChart.slice(0, 3).map((item: any) => (
+              <div key={item.mineral} className="p-3 bg-slate-50 rounded-lg">
+                <div className="text-sm font-semibold text-slate-700">{item.mineral}</div>
+                <div className="text-xs text-slate-600 mt-1">
+                  Net Balance: {item.netBalance > 0 ? '+' : ''}{item.netBalance.toLocaleString()}k tonnes
+                  <span className={`ml-2 font-semibold ${item.netBalance > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                    ({item.netBalance > 0 ? 'Net Exporter' : 'Net Importer'})
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-sm text-slate-600 mt-4">
+            <strong>Interpretation:</strong> Positive net balance indicates net exporter status. Negative indicates import dependency.
+          </p>
         </div>
       )}
 
