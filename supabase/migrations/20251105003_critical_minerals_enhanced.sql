@@ -458,7 +458,8 @@ SELECT
 FROM generate_series(1, 1)
 ON CONFLICT (mineral, timestamp, price_basis) DO NOTHING;
 
--- Trade flows (sample Canada lithium exports)
+-- Trade flows (sample Canada critical minerals imports and exports)
+-- Lithium exports to USA
 INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, data_source)
 SELECT
   'Lithium',
@@ -470,6 +471,122 @@ SELECT
   800 + (random() * 400 - 200),
   (800 + (random() * 400 - 200)) * 25000,
   'Lithium Hydroxide',
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Lithium imports from Chile
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, is_china_sourced, data_source)
+SELECT
+  'Lithium',
+  2024,
+  generate_series(1, 12),
+  'Import',
+  'Chile',
+  'Canada',
+  500 + (random() * 200 - 100),
+  (500 + (random() * 200 - 100)) * 22000,
+  'Lithium Carbonate',
+  FALSE,
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Cobalt imports from DRC (via China processing)
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, is_china_sourced, data_source)
+SELECT
+  'Cobalt',
+  2024,
+  generate_series(1, 12),
+  'Import',
+  'China',
+  'Canada',
+  150 + (random() * 100 - 50),
+  (150 + (random() * 100 - 50)) * 35000,
+  'Refined Cobalt',
+  TRUE,
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Nickel exports to USA
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, data_source)
+SELECT
+  'Nickel',
+  2024,
+  generate_series(1, 12),
+  'Export',
+  'Canada',
+  'USA',
+  3000 + (random() * 1000 - 500),
+  (3000 + (random() * 1000 - 500)) * 18000,
+  'Class 1 Nickel',
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Nickel exports to Europe
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, data_source)
+SELECT
+  'Nickel',
+  2024,
+  generate_series(1, 12),
+  'Export',
+  'Canada',
+  'Europe',
+  1200 + (random() * 400 - 200),
+  (1200 + (random() * 400 - 200)) * 18500,
+  'Nickel Sulphate',
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Graphite imports from China
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, is_china_sourced, data_source)
+SELECT
+  'Graphite',
+  2024,
+  generate_series(1, 12),
+  'Import',
+  'China',
+  'Canada',
+  400 + (random() * 200 - 100),
+  (400 + (random() * 200 - 100)) * 2500,
+  'Synthetic Graphite',
+  TRUE,
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Rare Earth Elements imports from China (high dependency)
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, is_china_sourced, data_source)
+SELECT
+  'Rare Earth Elements',
+  2024,
+  generate_series(1, 12),
+  'Import',
+  'China',
+  'Canada',
+  200 + (random() * 100 - 50),
+  (200 + (random() * 100 - 50)) * 45000,
+  'Mixed REE Oxides',
+  TRUE,
+  'Statistics Canada'
+FROM generate_series(1, 1)
+ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;
+
+-- Copper exports to USA
+INSERT INTO minerals_trade_flows (mineral, year, month, flow_type, origin_country, destination_country, volume_tonnes, value_cad, material_form, data_source)
+SELECT
+  'Copper',
+  2024,
+  generate_series(1, 12),
+  'Export',
+  'Canada',
+  'USA',
+  15000 + (random() * 5000 - 2500),
+  (15000 + (random() * 5000 - 2500)) * 9000,
+  'Refined Copper',
   'Statistics Canada'
 FROM generate_series(1, 1)
 ON CONFLICT (mineral, year, month, flow_type, origin_country, destination_country) DO NOTHING;

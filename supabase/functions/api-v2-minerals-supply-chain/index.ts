@@ -82,12 +82,22 @@ serve(async (req: Request) => {
       .order('timestamp', { ascending: false })
       .limit(500);
 
-    // Fetch trade flows (current year)
+    // Fetch trade flows (most recent year available)
+    // First, get the most recent year in the database
+    const { data: latestYearData } = await supabase
+      .from('minerals_trade_flows')
+      .select('year')
+      .order('year', { ascending: false })
+      .limit(1)
+      .single();
+
     const currentYear = new Date().getFullYear();
+    const queryYear = latestYearData?.year || currentYear;
+
     let tradeQuery = supabase
       .from('minerals_trade_flows')
       .select('*')
-      .eq('year', currentYear)
+      .eq('year', queryYear)
       .order('volume_tonnes', { ascending: false });
 
     if (mineral) {
