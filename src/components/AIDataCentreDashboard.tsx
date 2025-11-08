@@ -133,7 +133,7 @@ export const AIDataCentreDashboard: React.FC = () => {
   const [queueData, setQueueData] = useState<QueueData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProvince] = useState('AB'); // Alberta focus
+  const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -247,6 +247,35 @@ export const AIDataCentreDashboard: React.FC = () => {
         <p className="text-lg text-slate-600 ml-13">
           Alberta's $100B AI Strategy | AESO Queue Crisis Management
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium">Province:</span>
+          </label>
+          <select
+            value={selectedProvince}
+            onChange={(e) => setSelectedProvince(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="AB">Alberta</option>
+            <option value="BC">British Columbia</option>
+            <option value="ON">Ontario</option>
+            <option value="QC">Quebec</option>
+            <option value="MB">Manitoba</option>
+            <option value="SK">Saskatchewan</option>
+            <option value="NS">Nova Scotia</option>
+            <option value="NB">New Brunswick</option>
+            <option value="NL">Newfoundland and Labrador</option>
+            <option value="PE">Prince Edward Island</option>
+            <option value="NT">Northwest Territories</option>
+            <option value="NU">Nunavut</option>
+            <option value="YT">Yukon</option>
+          </select>
+        </div>
       </div>
 
       {/* Critical Alerts Banner */}

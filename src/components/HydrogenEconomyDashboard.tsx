@@ -135,15 +135,21 @@ export const HydrogenEconomyDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedProvince] = useState('AB');
+  const [selectedProvince, setSelectedProvince] = useState('AB');
+  const [selectedHub, setSelectedHub] = useState<string | null>(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
+      const queryParams = new URLSearchParams();
+      queryParams.append('province', selectedProvince);
+      queryParams.append('timeseries', 'true');
+      if (selectedHub) queryParams.append('hub', selectedHub);
+
       const response = await fetchEdgeJson([
-        `api-v2-hydrogen-hub?province=${selectedProvince}&timeseries=true`,
+        `api-v2-hydrogen-hub?${queryParams.toString()}`,
         `api/hydrogen-hub/${selectedProvince}`
       ]);
 
@@ -154,7 +160,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedProvince]);
+  }, [selectedProvince, selectedHub]);
 
   useEffect(() => {
     loadDashboardData();
@@ -251,6 +257,49 @@ export const HydrogenEconomyDashboard: React.FC = () => {
         <p className="text-lg text-slate-600 ml-13">
           $300M Federal Investment | Edmonton & Calgary Hubs
         </p>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
+        <div className="flex flex-wrap items-center gap-4">
+          <label className="flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium">Province:</span>
+          </label>
+          <select
+            value={selectedProvince}
+            onChange={(e) => setSelectedProvince(e.target.value)}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="AB">Alberta</option>
+            <option value="BC">British Columbia</option>
+            <option value="ON">Ontario</option>
+            <option value="QC">Quebec</option>
+            <option value="MB">Manitoba</option>
+            <option value="SK">Saskatchewan</option>
+            <option value="NS">Nova Scotia</option>
+            <option value="NB">New Brunswick</option>
+            <option value="NL">Newfoundland and Labrador</option>
+            <option value="PE">Prince Edward Island</option>
+            <option value="NT">Northwest Territories</option>
+            <option value="NU">Nunavut</option>
+            <option value="YT">Yukon</option>
+          </select>
+
+          <label className="flex items-center gap-2 ml-4">
+            <Factory className="w-4 h-4 text-green-600" />
+            <span className="text-sm font-medium">Hub:</span>
+          </label>
+          <select
+            value={selectedHub || ''}
+            onChange={(e) => setSelectedHub(e.target.value || null)}
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">All Hubs</option>
+            <option value="Edmonton Hub">Edmonton Hub</option>
+            <option value="Calgary Hub">Calgary Hub</option>
+          </select>
+        </div>
       </div>
 
       {/* Key Metrics Grid */}
