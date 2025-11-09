@@ -190,18 +190,38 @@ async function logOpsRun(
   metadata: Record<string, unknown>,
   startedAt: number
 ) {
-  if (!supabase) return;
+  if (!supabase) {
+    console.error('CRITICAL: Supabase client not initialized - cannot log ops run!');
+    console.error('SUPABASE_URL:', SUPABASE_URL ? 'SET' : 'MISSING');
+    console.error('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? 'SET' : 'MISSING');
+    return;
+  }
+
   try {
-    await supabase.from('ops_runs').insert({
+    const record = {
       run_type: 'ingestion',
       status,
       started_at: new Date(startedAt).toISOString(),
       completed_at: new Date().toISOString(),
       metadata
-    });
-    console.log(`Ops run logged: ${status}`);
+    };
+
+    console.log('Attempting ops_runs insert:', JSON.stringify(record));
+
+    const { data, error } = await supabase.from('ops_runs').insert(record).select();
+
+    if (error) {
+      console.error('❌ ops_runs insert FAILED:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+      console.error('Error details:', JSON.stringify(error));
+    } else {
+      console.log('✅ Ops run logged successfully:', status, 'Record ID:', data?.[0]?.id);
+    }
   } catch (err) {
-    console.error('Failed to log ops run:', err);
+    console.error('❌ EXCEPTION in logOpsRun:', err);
+    console.error('Exception type:', err instanceof Error ? err.constructor.name : typeof err);
+    console.error('Exception message:', err instanceof Error ? err.message : String(err));
   }
 }
 
