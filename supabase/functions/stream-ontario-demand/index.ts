@@ -54,6 +54,26 @@ async function logInvocation(
   }
 }
 
+async function logOpsRun(
+  status: 'success' | 'failure',
+  metadata: Record<string, unknown>,
+  startedAt: number
+) {
+  if (!supabase) return;
+  try {
+    await supabase.from('ops_runs').insert({
+      run_type: 'ingestion',
+      status,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      metadata
+    });
+    console.log(`Ops run logged: ${status}`);
+  } catch (err) {
+    console.error('Failed to log ops run:', err);
+  }
+}
+
 async function collectIESOData(options: { skipFilter?: boolean } = {}): Promise<IESODataResult> {
   const { skipFilter = false } = options;
   const [demandData, priceData] = await Promise.allSettled([
@@ -110,6 +130,7 @@ async function fetchAndPersistIESOData(options: { skipFilter?: boolean } = {}): 
         error_count: errorCount
       });
       await logInvocation('success', successMeta, startedAt);
+      await logOpsRun('success', successMeta, startedAt);
     }
 
     return { rows, metadata: { ...metadata, rowsPersisted: rows.length }, hadError };

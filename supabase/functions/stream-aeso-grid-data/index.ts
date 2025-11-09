@@ -183,6 +183,29 @@ function transformAESOData(supplyDemand: any, poolPrice: any): any[] {
 }
 
 /**
+ * Log ops run to heartbeat table
+ */
+async function logOpsRun(
+  status: 'success' | 'failure',
+  metadata: Record<string, unknown>,
+  startedAt: number
+) {
+  if (!supabase) return;
+  try {
+    await supabase.from('ops_runs').insert({
+      run_type: 'ingestion',
+      status,
+      started_at: new Date(startedAt).toISOString(),
+      completed_at: new Date().toISOString(),
+      metadata
+    });
+    console.log(`Ops run logged: ${status}`);
+  } catch (err) {
+    console.error('Failed to log ops run:', err);
+  }
+}
+
+/**
  * Persist grid snapshots to database
  */
 async function persistGridSnapshots(rows: any[]): Promise<void> {
@@ -258,6 +281,13 @@ serve(async (req: Request) => {
     const duration = Date.now() - startedAt;
     console.log(`AESO data collection completed in ${duration}ms`);
 
+    // Log successful ops run for freshness tracking
+    await logOpsRun('success', {
+      function: 'stream-aeso-grid-data',
+      records: records.length,
+      duration_ms: duration
+    }, startedAt);
+
     return new Response(JSON.stringify({
       success: true,
       message: 'AESO data ingested successfully',
@@ -273,6 +303,13 @@ serve(async (req: Request) => {
     const message = error instanceof Error ? error.message : String(error);
 
     console.error(`AESO data collection failed after ${duration}ms:`, message);
+
+    // Log failed ops run
+    await logOpsRun('failure', {
+      function: 'stream-aeso-grid-data',
+      error: message,
+      duration_ms: duration
+    }, startedAt);
 
     return new Response(JSON.stringify({
       success: false,
