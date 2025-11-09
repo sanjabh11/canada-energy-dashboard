@@ -191,9 +191,52 @@ const IESO_CONFIG = {
     MARKET_STATUS: '/Current/Market_Status.json',
   },
   POLL_INTERVAL_MS: 60000, // Poll every 60 seconds (IESO rate limits)
-  MAX_RETRIES: 5,
+  MAX_RETRIES: 3,
   ERROR_RETRY_DELAY_MS: 300000, // 5 minutes for errors
+  FETCH_TIMEOUT_MS: 30000, // 30 second timeout
 };
+
+/**
+ * Fetch with retry logic and exponential backoff
+ */
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit = {},
+  maxRetries: number = IESO_CONFIG.MAX_RETRIES
+): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`IESO fetch attempt ${attempt + 1}/${maxRetries}: ${url}`);
+
+      const response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(IESO_CONFIG.FETCH_TIMEOUT_MS),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      console.log(`IESO fetch successful on attempt ${attempt + 1}`);
+      return response;
+
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.error(`IESO fetch attempt ${attempt + 1} failed:`, lastError.message);
+
+      // If this isn't the last attempt, wait before retrying with exponential backoff
+      if (attempt < maxRetries - 1) {
+        const delayMs = Math.pow(2, attempt) * 1000; // 1s, 2s, 4s
+        console.log(`Retrying in ${delayMs}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  throw lastError || new Error('Fetch failed after all retries');
+}
 
 // Global state for caching and deduplication
 const lastDataTimestamps: Map<string, string> = new Map();
@@ -201,13 +244,13 @@ let errorCount = 0;
 let lastSuccessfulFetch = Date.now();
 
 /**
- * Fetch IESO hourly demand data
+ * Fetch IESO hourly demand data with retry logic
  */
 async function fetchIESODemandData(): Promise<any[]> {
   const url = `${IESO_CONFIG.BASE_URL}${IESO_CONFIG.ENDPOINTS.HOURLY_DEMAND}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'User-Agent': 'Energy Dashboard/1.0',
@@ -215,10 +258,6 @@ async function fetchIESODemandData(): Promise<any[]> {
         'Cache-Control': 'no-cache'
       }
     });
-
-    if (!response.ok) {
-      throw new Error(`IESO Demand API returned ${response.status}: ${response.statusText}`);
-    }
 
     const csvText = await response.text();
     const data = parseIESOCSV(csvText);
@@ -235,23 +274,19 @@ async function fetchIESODemandData(): Promise<any[]> {
 }
 
 /**
- * Fetch IESO hourly price data
+ * Fetch IESO hourly price data with retry logic
  */
 async function fetchIESOPriceData(): Promise<any[]> {
   const url = `${IESO_CONFIG.BASE_URL}${IESO_CONFIG.ENDPOINTS.HOURLY_PRICES}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: 'GET',
       headers: {
         'User-Agent': 'Energy Dashboard/1.0',
         'Accept': 'text/csv'
       }
     });
-
-    if (!response.ok) {
-      throw new Error(`IESO Price API returned ${response.status}: ${response.statusText}`);
-    }
 
     const csvText = await response.text();
     const data = parseIESOCSV(csvText);
