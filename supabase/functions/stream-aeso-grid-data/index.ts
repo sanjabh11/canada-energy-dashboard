@@ -80,23 +80,50 @@ interface AESOPoolPrice {
   forecast_pool_price: number;
 }
 
+async function fetchWithRetry(url: string, maxRetries = 3): Promise<Response> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      console.log(`Fetching ${url} (attempt ${attempt + 1}/${maxRetries})...`);
+
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Supabase-Edge-Function/1.0 (Canada Energy Dashboard)',
+          'Accept': 'application/json, text/html, */*',
+        },
+        signal: AbortSignal.timeout(30000), // 30 second timeout (increased from 10s)
+      });
+
+      if (!response.ok) {
+        throw new Error(`AESO API returned ${response.status}: ${response.statusText}`);
+      }
+
+      return response;
+    } catch (err: any) {
+      lastError = err;
+      console.error(`Attempt ${attempt + 1} failed:`, err.message);
+
+      // Don't retry on final attempt
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt) * 1000; // Exponential backoff: 1s, 2s, 4s
+        console.log(`Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError || new Error('Failed to fetch after retries');
+}
+
 async function fetchAESOCurrentSupplyDemand(): Promise<AESOCurrentSupplyDemand | null> {
   try {
     console.log('Fetching AESO Current Supply Demand...');
 
-    const response = await fetch(AESO_CURRENT_SUPPLY_DEMAND, {
-      headers: {
-        'User-Agent': 'Supabase-Edge-Function/1.0 (Canada Energy Dashboard)',
-        'Accept': 'application/json, text/html, */*',
-      },
-      signal: AbortSignal.timeout(10000), // 10 second timeout
-    });
-
-    if (!response.ok) {
-      throw new Error(`AESO API returned ${response.status}: ${response.statusText}`);
-    }
+    const response = await fetchWithRetry(AESO_CURRENT_SUPPLY_DEMAND);
 
     const contentType = response.headers.get('content-type') || '';
+    console.log(`AESO Current Supply Demand content-type: ${contentType}`);
 
     // AESO API may return HTML, JSON, or CSV - we need to handle all formats
     if (contentType.includes('application/json')) {
@@ -104,6 +131,7 @@ async function fetchAESOCurrentSupplyDemand(): Promise<AESOCurrentSupplyDemand |
       return parseAESOJSON(data);
     } else if (contentType.includes('text/html')) {
       const html = await response.text();
+      console.log('Received HTML response, parsing...');
       return parseAESOHTML(html);
     } else {
       const text = await response.text();
@@ -116,8 +144,8 @@ async function fetchAESOCurrentSupplyDemand(): Promise<AESOCurrentSupplyDemand |
         return parseAESOHTML(text);
       }
     }
-  } catch (err) {
-    console.error('Failed to fetch AESO Current Supply Demand:', err);
+  } catch (err: any) {
+    console.error('Failed to fetch AESO Current Supply Demand:', err.message || err);
     return null;
   }
 }
@@ -181,19 +209,10 @@ async function fetchAESOPoolPrice(): Promise<AESOPoolPrice | null> {
   try {
     console.log('Fetching AESO Pool Price...');
 
-    const response = await fetch(AESO_POOL_PRICE, {
-      headers: {
-        'User-Agent': 'Supabase-Edge-Function/1.0 (Canada Energy Dashboard)',
-        'Accept': 'application/json, text/html, */*',
-      },
-      signal: AbortSignal.timeout(10000),
-    });
-
-    if (!response.ok) {
-      throw new Error(`AESO API returned ${response.status}: ${response.statusText}`);
-    }
+    const response = await fetchWithRetry(AESO_POOL_PRICE);
 
     const contentType = response.headers.get('content-type') || '';
+    console.log(`AESO Pool Price content-type: ${contentType}`);
 
     if (contentType.includes('application/json')) {
       const data = await response.json();
@@ -204,9 +223,12 @@ async function fetchAESOPoolPrice(): Promise<AESOPoolPrice | null> {
       };
     } else {
       const text = await response.text();
+      console.log('Received HTML response for pool price, parsing...');
       // Try parsing HTML for pool price
       const priceMatch = text.match(/Pool Price.*?(\d{1,5}(?:\.\d{2})?)/i);
       const forecastMatch = text.match(/Forecast.*?(\d{1,5}(?:\.\d{2})?)/i);
+
+      console.log(`Parsed pool price: ${priceMatch?.[1]}, forecast: ${forecastMatch?.[1]}`);
 
       return {
         timestamp: new Date().toISOString(),
@@ -214,8 +236,8 @@ async function fetchAESOPoolPrice(): Promise<AESOPoolPrice | null> {
         forecast_pool_price: forecastMatch ? parseFloat(forecastMatch[1]) : 50,
       };
     }
-  } catch (err) {
-    console.error('Failed to fetch AESO Pool Price:', err);
+  } catch (err: any) {
+    console.error('Failed to fetch AESO Pool Price:', err.message || err);
     return null;
   }
 }
