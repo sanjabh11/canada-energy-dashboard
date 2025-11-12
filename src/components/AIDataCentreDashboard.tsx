@@ -660,8 +660,31 @@ export const AIDataCentreDashboard: React.FC = () => {
       )}
 
       {/* Historical Queue Growth View */}
-      {activeTab === 'history' && queueHistory && (
+      {activeTab === 'history' && (
         <>
+          {!queueHistory || !queueHistory.history || queueHistory.history.length === 0 ? (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-yellow-800 mb-2">Queue History Data Not Available</h3>
+                  <p className="text-yellow-700 mb-3">
+                    The AESO queue history tracking feature requires the database migration to be run.
+                  </p>
+                  <div className="bg-white p-4 rounded border border-yellow-200">
+                    <p className="text-sm text-slate-700 mb-2"><strong>To enable this feature:</strong></p>
+                    <ol className="text-sm text-slate-600 list-decimal ml-5 space-y-1">
+                      <li>Open Supabase SQL Editor</li>
+                      <li>Run migration: <code className="bg-slate-100 px-2 py-1 rounded">supabase/migrations/20251112005_aeso_queue_history.sql</code></li>
+                      <li>Disable RLS: <code className="bg-slate-100 px-2 py-1 rounded">ALTER TABLE aeso_queue_history DISABLE ROW LEVEL SECURITY;</code></li>
+                      <li>Refresh this page</li>
+                    </ol>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <>
           {/* Historical Overview Banner */}
           <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-600 rounded-lg">
             <div className="flex items-start gap-3">
@@ -950,6 +973,8 @@ export const AIDataCentreDashboard: React.FC = () => {
               </table>
             </div>
           </div>
+            </>
+          )}
         </>
       )}
 
