@@ -43,6 +43,7 @@ import HydrogenEconomyDashboard from './HydrogenEconomyDashboard';
 import CriticalMineralsSupplyChainDashboard from './CriticalMineralsSupplyChainDashboard';
 import CCUSProjectTracker from './CCUSProjectTracker';
 import SMRDeploymentTracker from './SMRDeploymentTracker';
+import GridQueueTracker from './GridQueueTracker';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -68,7 +69,8 @@ const helpIdByTab: Record<string, string> = {
   HydrogenHub: 'page.hydrogen-hub',
   CriticalMinerals: 'page.critical-minerals',
   CCUS: 'page.ccus-tracker',
-  SMRTracker: 'page.smr-tracker'
+  SMRTracker: 'page.smr-tracker',
+  GridQueue: 'page.grid-queue'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -221,6 +223,7 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Indigenous', label: 'Indigenous', icon: Shield },
     { id: 'IndigenousEconomic', label: 'Indigenous Economic Impact', icon: DollarSign },
     { id: 'SMRTracker', label: 'SMR Deployment', icon: Radio },
+    { id: 'GridQueue', label: 'Grid Connection Queue', icon: Activity },
     { id: 'Stakeholders', label: 'Stakeholders', icon: Zap },
     { id: 'GridOptimization', label: 'Grid Ops', icon: Activity },
     { id: 'Security', label: 'Security', icon: Lock },
@@ -1016,6 +1019,11 @@ export const EnergyDataDashboard: React.FC = () => {
             {/* SMR Deployment Tracker - Phase 2 (Priority #3) */}
             {activeTab === 'SMRTracker' && (
               <SMRDeploymentTracker />
+            )}
+
+            {/* Grid Connection Queue Tracker - Phase 2 (Priority #4) */}
+            {activeTab === 'GridQueue' && (
+              <GridQueueTracker />
             )}
 
             {activeTab === 'Stakeholders' && (
