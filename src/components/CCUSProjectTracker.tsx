@@ -129,8 +129,8 @@ const CCUSProjectTracker: React.FC = () => {
     async function fetchData() {
       try {
         setLoading(true);
-        const response = await fetchEdgeJson('/api-v2-ccus?province=AB');
-        setData(response);
+        const result = await fetchEdgeJson(['api-v2-ccus?province=AB']);
+        setData(result.json);
         setError(null);
       } catch (err: any) {
         console.error('Failed to fetch CCUS data:', err);
