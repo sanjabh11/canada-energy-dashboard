@@ -54,6 +54,22 @@ interface HydrogenProject {
   expected_completion_date: string;
 }
 
+interface HydrogenPriceForecast {
+  id: string;
+  forecast_year: number;
+  forecast_quarter: string;
+  scenario: 'Base Case' | 'Optimistic' | 'Pessimistic';
+  green_h2_price_cad_per_kg: number;
+  blue_h2_price_cad_per_kg: number;
+  grey_h2_price_cad_per_kg: number;
+  blended_average_price_cad_per_kg: number;
+  carbon_price_cad_per_tonne: number;
+  technology_learning_rate: number;
+  diesel_equivalent_price_per_litre: number;
+  projected_demand_canada_tonnes_per_year: number;
+  notes: string;
+}
+
 interface DashboardData {
   facilities: HydrogenFacility[];
   projects: HydrogenProject[];
@@ -61,6 +77,7 @@ interface DashboardData {
   production: any[];
   pricing: any[];
   demand_forecast: any[];
+  price_forecasts: HydrogenPriceForecast[];
   summary: {
     facilities: {
       total_count: number;
@@ -507,6 +524,226 @@ export const HydrogenEconomyDashboard: React.FC = () => {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Price Forecasts (2025-2035) */}
+      {data.price_forecasts && data.price_forecasts.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-600 rounded-lg">
+            <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+              <TrendingUp className="w-6 h-6 text-green-600" />
+              Hydrogen Price Forecasts: Path to Cost Parity (2025-2035)
+            </h2>
+            <p className="text-slate-700 text-sm">
+              Scenario analysis showing green hydrogen achieving cost parity with blue hydrogen by 2030-2035.
+              Forecasts based on technology learning curves, carbon pricing, and renewable energy cost reductions.
+            </p>
+          </div>
+
+          {/* Base Case vs Scenarios */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            {/* Green H2 Price Trajectory */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <Zap className="w-5 h-5 text-green-600" />
+                Green Hydrogen Price Trajectory
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.price_forecasts.filter(f => f.scenario !== 'Pessimistic' || [2025, 2027, 2030, 2035].includes(f.forecast_year))}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="forecast_year" />
+                  <YAxis label={{ value: 'Price (CAD/kg)', angle: -90, position: 'insideLeft' }} domain={[0, 7.5]} />
+                  <Tooltip formatter={(value: any) => `$${value.toFixed(2)}/kg`} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    data={data.price_forecasts.filter(f => f.scenario === 'Base Case')}
+                    dataKey="green_h2_price_cad_per_kg"
+                    name="Base Case"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    data={data.price_forecasts.filter(f => f.scenario === 'Optimistic')}
+                    dataKey="green_h2_price_cad_per_kg"
+                    name="Optimistic"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    data={data.price_forecasts.filter(f => f.scenario === 'Pessimistic')}
+                    dataKey="green_h2_price_cad_per_kg"
+                    name="Pessimistic"
+                    stroke="#ef4444"
+                    strokeWidth={2}
+                    strokeDasharray="3 3"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-3 p-3 bg-green-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>2025:</strong> $6.50/kg | <strong>2030:</strong> $4.70/kg | <strong>2035:</strong> $3.20/kg (Base Case)
+                </p>
+                <p className="text-xs text-slate-600 mt-1">
+                  28% learning rate drives 51% cost reduction by 2035
+                </p>
+              </div>
+            </div>
+
+            {/* Blue vs Green Cost Parity */}
+            <div>
+              <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+                <Factory className="w-5 h-5 text-blue-600" />
+                Cost Parity Analysis (Base Case)
+              </h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={data.price_forecasts.filter(f => f.scenario === 'Base Case')}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="forecast_year" />
+                  <YAxis label={{ value: 'Price (CAD/kg)', angle: -90, position: 'insideLeft' }} domain={[2, 7]} />
+                  <Tooltip formatter={(value: any) => `$${value.toFixed(2)}/kg`} />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="green_h2_price_cad_per_kg"
+                    name="Green H₂"
+                    stroke="#10b981"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="blue_h2_price_cad_per_kg"
+                    name="Blue H₂ (with CCUS)"
+                    stroke="#3b82f6"
+                    strokeWidth={3}
+                    dot={{ r: 5 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="grey_h2_price_cad_per_kg"
+                    name="Grey H₂ (no CCUS)"
+                    stroke="#94a3b8"
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>Cost Parity:</strong> Green H₂ = Blue H₂ by 2035 at $3.20/kg
+                </p>
+                <p className="text-xs text-slate-600 mt-1">
+                  Grey H₂ uneconomic after 2030 due to $170+/t carbon pricing
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Key Milestones Table */}
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-slate-800 mb-3">Key Price Milestones (Base Case)</h3>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Year</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Green H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Blue H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Grey H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Carbon Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Key Insight</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {data.price_forecasts
+                    .filter(f => f.scenario === 'Base Case' && [2025, 2027, 2030, 2032, 2035].includes(f.forecast_year))
+                    .map((forecast, idx) => (
+                      <tr key={forecast.id} className={`hover:bg-slate-50 ${forecast.forecast_year === 2035 ? 'bg-green-50 font-semibold' : ''}`}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
+                          {forecast.forecast_year}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-semibold">
+                          ${forecast.green_h2_price_cad_per_kg.toFixed(2)}/kg
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-blue-600 font-semibold">
+                          ${forecast.blue_h2_price_cad_per_kg.toFixed(2)}/kg
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-600">
+                          ${forecast.grey_h2_price_cad_per_kg.toFixed(2)}/kg
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-700">
+                          ${forecast.carbon_price_cad_per_tonne}/t
+                        </td>
+                        <td className="px-4 py-3 text-xs text-slate-600 max-w-md">
+                          {forecast.notes.substring(0, 80)}{forecast.notes.length > 80 ? '...' : ''}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Scenario Comparison */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-5 h-5 text-blue-600" />
+                <h4 className="font-semibold text-blue-800">Optimistic Scenario</h4>
+              </div>
+              <div className="text-2xl font-bold text-blue-600 mb-1">
+                ${data.price_forecasts.find(f => f.scenario === 'Optimistic' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
+              </div>
+              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
+              <p className="text-xs text-slate-700 mt-2">
+                Rapid learning curve, aggressive carbon pricing. Cost parity by 2030.
+              </p>
+            </div>
+
+            <div className="p-4 bg-green-50 border-2 border-green-300 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <h4 className="font-semibold text-green-800">Base Case</h4>
+              </div>
+              <div className="text-2xl font-bold text-green-600 mb-1">
+                ${data.price_forecasts.find(f => f.scenario === 'Base Case' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
+              </div>
+              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
+              <p className="text-xs text-slate-700 mt-2">
+                Moderate technology adoption, steady carbon price increases. Parity by 2035.
+              </p>
+            </div>
+
+            <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+                <h4 className="font-semibold text-red-800">Pessimistic Scenario</h4>
+              </div>
+              <div className="text-2xl font-bold text-red-600 mb-1">
+                ${data.price_forecasts.find(f => f.scenario === 'Pessimistic' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
+              </div>
+              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
+              <p className="text-xs text-slate-700 mt-2">
+                Slow tech adoption, low carbon price. No cost parity by 2035.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
+            <p className="text-xs text-slate-600">
+              <strong>Data Sources:</strong> IEA Global Hydrogen Review 2024, NREL Hydrogen Production Cost Analysis, Canada Hydrogen Strategy (NRCan),
+              Alberta Hydrogen Roadmap. Carbon pricing based on federal Clean Fuel Regulations and provincial policies.
+            </p>
+          </div>
         </div>
       )}
 

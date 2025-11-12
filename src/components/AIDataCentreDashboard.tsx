@@ -111,6 +111,36 @@ interface QueueData {
   };
 }
 
+interface QueueHistorySnapshot {
+  id: string;
+  snapshot_date: string;
+  snapshot_month: string;
+  total_projects: number;
+  total_requested_mw: number;
+  total_allocated_mw: number;
+  dc_projects: number;
+  dc_requested_mw: number;
+  dc_allocated_mw: number;
+  dc_percentage_of_queue: number;
+  phase1_allocated_mw: number;
+  phase1_remaining_mw: number;
+  phase1_utilization_percent: number;
+  queue_to_peak_ratio: number;
+  average_wait_time_days: number;
+  by_project_type: Record<string, { count: number; total_mw: number }>;
+  data_source: string;
+  notes: string;
+}
+
+interface QueueHistoryData {
+  history: QueueHistorySnapshot[];
+  metadata: {
+    last_updated: string;
+    data_source: string;
+    snapshots_available: number;
+  };
+}
+
 const COLORS = {
   primary: '#3b82f6',
   success: '#10b981',
@@ -131,16 +161,18 @@ const STATUS_COLORS: Record<string, string> = {
 export const AIDataCentreDashboard: React.FC = () => {
   const [dcData, setDcData] = useState<DashboardData | null>(null);
   const [queueData, setQueueData] = useState<QueueData | null>(null);
+  const [queueHistory, setQueueHistory] = useState<QueueHistoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
+  const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [dcResponse, queueResponse] = await Promise.all([
+      const [dcResponse, queueResponse, historyResponse] = await Promise.all([
         fetchEdgeJson([
           `api-v2-ai-datacentres?province=${selectedProvince}&timeseries=true`,
           `api/ai-datacentres/${selectedProvince}`
@@ -149,10 +181,15 @@ export const AIDataCentreDashboard: React.FC = () => {
           'api-v2-aeso-queue?status=Active',
           'api/aeso-queue/active'
         ]).then(r => r.json),
+        fetchEdgeJson([
+          'api-v2-aeso-queue?history=true',
+          'api/aeso-queue/history'
+        ]).then(r => r.json),
       ]);
 
       setDcData(dcResponse);
       setQueueData(queueResponse);
+      setQueueHistory(historyResponse);
     } catch (err) {
       console.error('Failed to load AI Data Centre data:', err);
       setError('Failed to load dashboard data. Please try again.');
@@ -249,37 +286,66 @@ export const AIDataCentreDashboard: React.FC = () => {
         </p>
       </div>
 
-      {/* Filters */}
+      {/* Filters and Tab Switcher */}
       <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
-        <div className="flex flex-wrap items-center gap-4">
-          <label className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-medium">Province:</span>
-          </label>
-          <select
-            value={selectedProvince}
-            onChange={(e) => setSelectedProvince(e.target.value)}
-            className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="AB">Alberta</option>
-            <option value="BC">British Columbia</option>
-            <option value="ON">Ontario</option>
-            <option value="QC">Quebec</option>
-            <option value="MB">Manitoba</option>
-            <option value="SK">Saskatchewan</option>
-            <option value="NS">Nova Scotia</option>
-            <option value="NB">New Brunswick</option>
-            <option value="NL">Newfoundland and Labrador</option>
-            <option value="PE">Prince Edward Island</option>
-            <option value="NT">Northwest Territories</option>
-            <option value="NU">Nunavut</option>
-            <option value="YT">Yukon</option>
-          </select>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <label className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-medium">Province:</span>
+            </label>
+            <select
+              value={selectedProvince}
+              onChange={(e) => setSelectedProvince(e.target.value)}
+              className="px-4 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="AB">Alberta</option>
+              <option value="BC">British Columbia</option>
+              <option value="ON">Ontario</option>
+              <option value="QC">Quebec</option>
+              <option value="MB">Manitoba</option>
+              <option value="SK">Saskatchewan</option>
+              <option value="NS">Nova Scotia</option>
+              <option value="NB">New Brunswick</option>
+              <option value="NL">Newfoundland and Labrador</option>
+              <option value="PE">Prince Edward Island</option>
+              <option value="NT">Northwest Territories</option>
+              <option value="NU">Nunavut</option>
+              <option value="YT">Yukon</option>
+            </select>
+          </div>
+
+          {/* Tab Switcher */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => setActiveTab('current')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === 'current'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Current Queue
+            </button>
+            <button
+              onClick={() => setActiveTab('history')}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                activeTab === 'history'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Queue Growth (2023-2025)
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Critical Alerts Banner */}
-      {queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
+      {/* Current Queue View */}
+      {activeTab === 'current' && (
+        <>
+          {/* Critical Alerts Banner */}
+          {queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
         <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
@@ -590,11 +656,310 @@ export const AIDataCentreDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+        </>
+      )}
+
+      {/* Historical Queue Growth View */}
+      {activeTab === 'history' && queueHistory && (
+        <>
+          {/* Historical Overview Banner */}
+          <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-600 rounded-lg">
+            <div className="flex items-start gap-3">
+              <TrendingUp className="w-8 h-8 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-xl font-bold text-slate-800 mb-2">AESO Queue Growth: AI Boom Analysis (2023-2025)</h3>
+                <p className="text-slate-700 mb-3">
+                  Tracking the explosive growth of AI data centre interconnection requests following the ChatGPT launch and Alberta's $100B AI strategy.
+                </p>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-white p-3 rounded-lg">
+                    <div className="text-sm text-slate-600">Snapshots Tracked</div>
+                    <div className="text-2xl font-bold text-blue-600">{queueHistory.metadata.snapshots_available}</div>
+                    <div className="text-xs text-slate-500">Jan 2023 - Mar 2025</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg">
+                    <div className="text-sm text-slate-600">AI DC Growth</div>
+                    <div className="text-2xl font-bold text-purple-600">
+                      {queueHistory.history[queueHistory.history.length - 1].dc_projects - queueHistory.history[0].dc_projects}×
+                    </div>
+                    <div className="text-xs text-slate-500">2 → {queueHistory.history[queueHistory.history.length - 1].dc_projects} projects</div>
+                  </div>
+                  <div className="bg-white p-3 rounded-lg">
+                    <div className="text-sm text-slate-600">Queue Growth</div>
+                    <div className="text-2xl font-bold text-amber-600">
+                      {Math.round((queueHistory.history[queueHistory.history.length - 1].total_requested_mw / queueHistory.history[0].total_requested_mw - 1) * 100)}%
+                    </div>
+                    <div className="text-xs text-slate-500">6.8 GW → {(queueHistory.history[queueHistory.history.length - 1].total_requested_mw / 1000).toFixed(1)} GW</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Historical Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            {/* Total Queue Growth */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <TrendingUp className="w-6 h-6 text-blue-600" />
+                Total Queue Growth (GW)
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={queueHistory.history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="snapshot_month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis label={{ value: 'Capacity (GW)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip
+                    formatter={(value: any) => `${(value / 1000).toFixed(2)} GW`}
+                    labelFormatter={(label) => `Month: ${label}`}
+                  />
+                  <Legend />
+                  <Area
+                    type="monotone"
+                    dataKey="total_requested_mw"
+                    name="Total Queue"
+                    fill={COLORS.primary}
+                    stroke={COLORS.primary}
+                    opacity={0.3}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="dc_requested_mw"
+                    name="AI Data Centres"
+                    stroke={COLORS.danger}
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>Key Insight:</strong> AI data centres grew from {queueHistory.history[0].dc_requested_mw} MW (Jan 2023)
+                  to {Math.round(queueHistory.history[queueHistory.history.length - 1].dc_requested_mw)} MW (Mar 2025),
+                  a {Math.round((queueHistory.history[queueHistory.history.length - 1].dc_requested_mw / queueHistory.history[0].dc_requested_mw - 1) * 100)}% increase.
+                </p>
+              </div>
+            </div>
+
+            {/* AI Data Centre Dominance */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Server className="w-6 h-6 text-blue-600" />
+                AI Data Centre Market Share
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <ComposedChart data={queueHistory.history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="snapshot_month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    label={{ value: 'Projects', angle: -90, position: 'insideLeft' }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    label={{ value: '% of Queue', angle: 90, position: 'insideRight' }}
+                  />
+                  <Tooltip />
+                  <Legend />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="dc_projects"
+                    name="DC Projects"
+                    fill={COLORS.primary}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="dc_percentage_of_queue"
+                    name="% of Total Queue"
+                    stroke={COLORS.danger}
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>Crisis Point:</strong> AI data centres now represent {queueHistory.history[queueHistory.history.length - 1].dc_percentage_of_queue}%
+                  of the total queue (up from {queueHistory.history[0].dc_percentage_of_queue}% in Jan 2023).
+                </p>
+              </div>
+            </div>
+
+            {/* Phase 1 Allocation Timeline */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Gauge className="w-6 h-6 text-blue-600" />
+                Phase 1 Allocation (1,200 MW Limit)
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={queueHistory.history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="snapshot_month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis label={{ value: 'MW', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="phase1_allocated_mw" name="Allocated" fill={COLORS.warning} stackId="a" />
+                  <Bar dataKey="phase1_remaining_mw" name="Remaining" fill={COLORS.success} stackId="a" />
+                </BarChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-3 bg-amber-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>Limit Reached:</strong> Phase 1 capacity fully allocated by {
+                    queueHistory.history.find(h => h.phase1_utilization_percent >= 100)?.snapshot_month || 'Q2 2024'
+                  }.
+                  New projects must wait for Phase 2 approval.
+                </p>
+              </div>
+            </div>
+
+            {/* Queue to Peak Demand Ratio */}
+            <div className="bg-white rounded-xl shadow-lg p-6">
+              <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <AlertTriangle className="w-6 h-6 text-blue-600" />
+                Grid Reliability Concern
+              </h2>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={queueHistory.history}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis
+                    dataKey="snapshot_month"
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis label={{ value: 'Queue / Peak Demand (%)', angle: -90, position: 'insideLeft' }} />
+                  <Tooltip
+                    formatter={(value: any) => `${value}%`}
+                  />
+                  <Legend />
+                  <Line
+                    type="monotone"
+                    dataKey="queue_to_peak_ratio"
+                    name="Queue as % of Peak"
+                    stroke={COLORS.danger}
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={() => 100}
+                    name="100% Threshold"
+                    stroke="#000"
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-4 p-3 bg-red-50 rounded-lg">
+                <p className="text-sm text-slate-700">
+                  <strong>Grid Crisis:</strong> Queue now at {queueHistory.history[queueHistory.history.length - 1].queue_to_peak_ratio}%
+                  of Alberta's peak demand (12,100 MW). Major grid expansion required.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Historical Data Table */}
+          <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+            <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+              <MapPin className="w-6 h-6 text-blue-600" />
+              Monthly Snapshot History
+            </h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Month
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Total Projects
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Total Queue (GW)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      DC Projects
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      DC Capacity (GW)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      DC % of Queue
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
+                      Notes
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-slate-200">
+                  {queueHistory.history.map((snapshot, idx) => (
+                    <tr key={snapshot.id} className={`hover:bg-slate-50 ${idx === queueHistory.history.length - 1 ? 'bg-blue-50 font-semibold' : ''}`}>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-slate-900">
+                        {snapshot.snapshot_month}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-900">
+                        {snapshot.total_projects}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-slate-900">
+                        {(snapshot.total_requested_mw / 1000).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
+                        {snapshot.dc_projects}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-blue-600">
+                        {(snapshot.dc_requested_mw / 1000).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                          snapshot.dc_percentage_of_queue > 30 ? 'bg-red-100 text-red-800' :
+                          snapshot.dc_percentage_of_queue > 15 ? 'bg-amber-100 text-amber-800' :
+                          'bg-green-100 text-green-800'
+                        }`}>
+                          {snapshot.dc_percentage_of_queue.toFixed(1)}%
+                        </span>
+                      </td>
+                      <td className="px-4 py-4 text-xs text-slate-600 max-w-md">
+                        {snapshot.notes}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Footer */}
       <div className="text-center text-sm text-slate-500 mt-8">
         <p>Data Source: AESO Interconnection Queue, Alberta Electric System Operator</p>
         <p className="mt-1">Strategic Context: Alberta's $100B AI Data Centre Strategy (2025)</p>
+        {activeTab === 'history' && (
+          <p className="mt-1 text-blue-600 font-medium">Historical snapshots: Jan 2023 - Mar 2025 (8 snapshots tracked)</p>
+        )}
       </div>
     </div>
   );
