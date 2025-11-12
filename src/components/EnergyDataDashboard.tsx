@@ -24,6 +24,7 @@ import { InvestmentCards } from './InvestmentCards';
 import { ResilienceMap } from './ResilienceMap';
 import { InnovationSearch } from './InnovationSearch';
 import { IndigenousDashboard } from './IndigenousDashboard';
+import IndigenousEconomicDashboard from './IndigenousEconomicDashboard';
 import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
@@ -53,6 +54,7 @@ const helpIdByTab: Record<string, string> = {
   Resilience: 'page.resilience',
   Innovation: 'page.innovation',
   Indigenous: 'page.indigenous',
+  IndigenousEconomic: 'page.indigenous-economic',
   Stakeholders: 'page.stakeholders',
   GridOptimization: 'page.gridops',
   Security: 'page.security',
@@ -215,6 +217,7 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
     { id: 'Indigenous', label: 'Indigenous', icon: Shield },
+    { id: 'IndigenousEconomic', label: 'Indigenous Economic Impact', icon: DollarSign },
     { id: 'Stakeholders', label: 'Stakeholders', icon: Zap },
     { id: 'GridOptimization', label: 'Grid Ops', icon: Activity },
     { id: 'Security', label: 'Security', icon: Lock },
@@ -1000,6 +1003,11 @@ export const EnergyDataDashboard: React.FC = () => {
                 </div>
                 <IndigenousDashboard />
               </div>
+            )}
+
+            {/* Indigenous Economic Impact Dashboard - Phase 2 (ESG/Reconciliation Priority) */}
+            {activeTab === 'IndigenousEconomic' && (
+              <IndigenousEconomicDashboard />
             )}
 
             {activeTab === 'Stakeholders' && (
