@@ -28,7 +28,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Factory } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
@@ -40,6 +40,7 @@ import StorageDispatchDashboard from './StorageDispatchDashboard';
 import AIDataCentreDashboard from './AIDataCentreDashboard';
 import HydrogenEconomyDashboard from './HydrogenEconomyDashboard';
 import CriticalMineralsSupplyChainDashboard from './CriticalMineralsSupplyChainDashboard';
+import CCUSProjectTracker from './CCUSProjectTracker';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -62,7 +63,8 @@ const helpIdByTab: Record<string, string> = {
   StorageDispatch: 'page.storage-dispatch',
   AIDataCentres: 'page.ai-datacentres',
   HydrogenHub: 'page.hydrogen-hub',
-  CriticalMinerals: 'page.critical-minerals'
+  CriticalMinerals: 'page.critical-minerals',
+  CCUS: 'page.ccus-tracker'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -199,6 +201,7 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'AIDataCentres', label: 'AI Data Centres', icon: Server },
     { id: 'HydrogenHub', label: 'Hydrogen Hub', icon: Fuel },
     { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package },
+    { id: 'CCUS', label: 'CCUS Tracker', icon: Factory },
     { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home }
   ];
 
@@ -1142,6 +1145,11 @@ export const EnergyDataDashboard: React.FC = () => {
             {/* Critical Minerals Supply Chain Dashboard - Phase 1A (Strategic Priority) */}
             {activeTab === 'CriticalMinerals' && (
               <CriticalMineralsSupplyChainDashboard />
+            )}
+
+            {/* CCUS Project Tracker - Phase 2 (Strategic Priority) */}
+            {activeTab === 'CCUS' && (
+              <CCUSProjectTracker />
             )}
 
             {/* Features Tab */}
