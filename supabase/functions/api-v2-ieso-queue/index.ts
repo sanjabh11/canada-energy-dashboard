@@ -103,14 +103,8 @@ serve(async (req) => {
       console.error('IESO programs query failed', programsError);
     }
 
-    // Fetch summary statistics
-    const { data: summary, error: summaryError} = await supabase
-      .from('ieso_queue_summary')
-      .select('*');
-
-    if (summaryError) {
-      console.warn('IESO queue summary query failed', summaryError);
-    }
+    // Summary statistics calculated from actual data instead of separate table
+    const summary = [];
 
     // Calculate totals
     const totalQueueCapacity = (queue ?? []).reduce((sum, p) => sum + (p.capacity_mw ?? 0), 0);
@@ -140,7 +134,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled IESO queue API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -72,18 +72,10 @@ serve(async (req) => {
   const status = url.searchParams.get('status');
 
   try {
-    // Fetch SMR projects
+    // Fetch SMR projects - simplified to only query the main table
     let query = supabase
       .from('smr_projects')
-      .select(`
-        *,
-        smr_regulatory_milestones (
-          milestone_type,
-          milestone_date,
-          milestone_status,
-          notes
-        )
-      `);
+      .select('*');
 
     if (projectId) {
       query = query.eq('id', projectId);
@@ -101,37 +93,34 @@ serve(async (req) => {
 
     if (projectsError) {
       console.error('SMR projects query failed', projectsError);
-      return new Response(JSON.stringify({ error: 'Failed to fetch SMR projects' }), {
+      return new Response(JSON.stringify({
+        error: 'Failed to fetch SMR projects',
+        details: projectsError.message
+      }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    // Fetch technology vendors
-    const { data: vendors, error: vendorsError } = await supabase
-      .from('smr_technology_vendors')
-      .select('*')
-      .order('vendor_name');
-
-    if (vendorsError) {
-      console.warn('Failed to fetch SMR vendors', vendorsError);
-    }
-
-    // Fetch summary statistics
-    const { data: summary, error: summaryError } = await supabase
-      .from('smr_projects_summary')
-      .select('*');
-
-    if (summaryError) {
-      console.warn('Failed to fetch SMR summary', summaryError);
-    }
+    // Calculate summary statistics from the projects data
+    const totalProjects = (projects ?? []).length;
+    const totalCapacity = (projects ?? []).reduce((sum, p) => sum + (p.capacity_mwe || 0), 0);
+    const totalInvestment = (projects ?? []).reduce((sum, p) => sum + (p.estimated_capex_cad || 0), 0);
 
     const payload = {
       projects: projects ?? [],
-      vendors: vendors ?? [],
-      summary: summary ?? [],
+      vendors: [], // Will be populated when smr_technology_vendors table is available
+      summary: [{
+        total_projects: totalProjects,
+        total_capacity_mw: totalCapacity,
+        total_investment_cad: totalInvestment,
+        projects_by_status: (projects ?? []).reduce((acc, p) => {
+          acc[p.status] = (acc[p.status] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>),
+      }],
       metadata: {
-        total_projects: (projects ?? []).length,
+        total_projects: totalProjects,
         source: 'CNSC, OPG, SaskPower, NB Power',
         last_updated: new Date().toISOString(),
       },
@@ -143,7 +132,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled SMR API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

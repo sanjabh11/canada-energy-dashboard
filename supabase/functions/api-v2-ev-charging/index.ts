@@ -108,25 +108,9 @@ serve(async (req) => {
       console.error('Networks query failed', networksError);
     }
 
-    // Fetch EV adoption tracking
-    const { data: adoption, error: adoptionError } = await supabase
-      .from('ev_adoption_tracking')
-      .select('*')
-      .order('tracking_period_end', { ascending: false })
-      .limit(10);
-
-    if (adoptionError) {
-      console.error('Adoption tracking query failed', adoptionError);
-    }
-
-    // Fetch infrastructure summary
-    const { data: summary, error: summaryError } = await supabase
-      .from('ev_charging_infrastructure_summary')
-      .select('*');
-
-    if (summaryError) {
-      console.warn('Infrastructure summary query failed', summaryError);
-    }
+    // Summary data to be populated when additional tables are created
+    const adoption = [];
+    const summary = [];
 
     // Calculate statistics
     const totalCapacity = (stations ?? []).reduce((sum, s) => sum + (s.total_site_capacity_kw ?? 0), 0);
@@ -156,7 +140,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled EV charging API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -92,56 +92,12 @@ serve(async (req) => {
       console.error('VPP platforms query failed', platformsError);
     }
 
-    // Fetch DER assets (limited for privacy)
-    const { data: derAssets, error: derError } = await supabase
-      .from('der_assets')
-      .select('der_type, province_code, rated_capacity_kw, active_participation')
-      .eq('active_participation', true)
-      .limit(1000);
-
-    if (derError) {
-      console.error('DER assets query failed', derError);
-    }
-
-    // Fetch recent dispatch events
-    const { data: dispatchEvents, error: dispatchError } = await supabase
-      .from('vpp_dispatch_events')
-      .select('*')
-      .order('event_start_time', { ascending: false })
-      .limit(20);
-
-    if (dispatchError) {
-      console.error('Dispatch events query failed', dispatchError);
-    }
-
-    // Fetch demand response programs
-    const { data: drPrograms, error: drError } = await supabase
-      .from('demand_response_programs')
-      .select('*')
-      .in('status', ['Active', 'Enrollment Open'])
-      .order('enrolled_capacity_mw', { ascending: false });
-
-    if (drError) {
-      console.error('DR programs query failed', drError);
-    }
-
-    // Fetch platform summary
-    const { data: summary, error: summaryError } = await supabase
-      .from('vpp_platform_summary')
-      .select('*');
-
-    if (summaryError) {
-      console.warn('Platform summary query failed', summaryError);
-    }
-
-    // Fetch DER fleet composition
-    const { data: fleetComposition, error: fleetError } = await supabase
-      .from('der_fleet_composition')
-      .select('*');
-
-    if (fleetError) {
-      console.warn('Fleet composition query failed', fleetError);
-    }
+    // Summary data to be populated when additional tables are created
+    const derAssets = [];
+    const dispatchEvents = [];
+    const drPrograms = [];
+    const summary = [];
+    const fleetComposition = [];
 
     // Calculate statistics
     const totalCapacity = (platforms ?? []).reduce((sum, p) => sum + (p.aggregated_capacity_mw ?? 0), 0);
@@ -179,7 +135,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled VPP platforms API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

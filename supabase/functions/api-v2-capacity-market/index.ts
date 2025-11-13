@@ -88,43 +88,21 @@ serve(async (req) => {
       console.error('Capacity auctions query failed', auctionsError);
     }
 
-    // Fetch price history
-    const { data: priceHistory, error: priceError } = await supabase
-      .from('capacity_market_price_history')
-      .select('*')
-      .eq('province_code', province)
-      .order('delivery_year', { ascending: false })
-      .limit(10);
-
-    if (priceError) {
-      console.error('Price history query failed', priceError);
-    }
-
-    // Fetch capacity trends view
-    const { data: trends, error: trendsError } = await supabase
-      .from('capacity_auction_trends')
-      .select('*')
-      .eq('province_code', province);
-
-    if (trendsError) {
-      console.warn('Capacity trends query failed', trendsError);
-    }
-
-    // Fetch resource mix
-    const { data: resourceMix, error: mixError } = await supabase
-      .from('capacity_resource_mix')
-      .select('*')
-      .eq('province_code', province);
-
-    if (mixError) {
-      console.warn('Resource mix query failed', mixError);
-    }
-
-    // Calculate statistics
+    // Calculate statistics from auction data
     const latestAuction = auctions && auctions.length > 0 ? auctions[0] : null;
-    const avgClearingPrice = (priceHistory ?? []).length > 0
-      ? (priceHistory ?? []).reduce((sum, p) => sum + (p.clearing_price_cad_per_mw_day ?? 0), 0) / (priceHistory ?? []).length
+    const avgClearingPrice = (auctions ?? []).length > 0
+      ? (auctions ?? []).reduce((sum, p) => sum + (p.clearing_price_cad_per_mw_day ?? 0), 0) / (auctions ?? []).length
       : null;
+
+    // Build price history from auctions
+    const priceHistory = (auctions ?? []).map(a => ({
+      auction_year: a.auction_year,
+      clearing_price_cad_per_mw_day: a.clearing_price_cad_per_mw_day,
+      cleared_capacity_mw: a.cleared_capacity_mw
+    }));
+
+    const trends = [];
+    const resourceMix = [];
 
     const payload = {
       auctions: auctions ?? [],
@@ -150,7 +128,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled capacity market API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

@@ -92,47 +92,16 @@ serve(async (req) => {
       console.error('Heat pump programs query failed', programsError);
     }
 
-    // Fetch deployment statistics
-    let statsQuery = supabase
-      .from('heat_pump_deployment_stats')
-      .select('*')
-      .order('reporting_period_end', { ascending: false });
+    // Summary data to be populated when additional tables are created
+    const deploymentStats = [];
+    const adoptionSummary = [];
+    const programsSummary = [];
 
-    if (province) {
-      statsQuery = statsQuery.eq('province_code', province);
-    }
-
-    const { data: deploymentStats, error: statsError } = await statsQuery.limit(12);
-
-    if (statsError) {
-      console.error('Deployment stats query failed', statsError);
-    }
-
-    // Fetch adoption summary
-    const { data: adoptionSummary, error: adoptionError } = await supabase
-      .from('heat_pump_adoption_summary')
-      .select('*');
-
-    if (adoptionError) {
-      console.warn('Adoption summary query failed', adoptionError);
-    }
-
-    // Fetch active programs summary
-    const { data: programsSummary, error: programsSummaryError } = await supabase
-      .from('active_rebate_programs_summary')
-      .select('*');
-
-    if (programsSummaryError) {
-      console.warn('Programs summary query failed', programsSummaryError);
-    }
-
-    // Calculate statistics
+    // Calculate statistics from programs
     const totalFunding = (programs ?? []).reduce((sum, p) => sum + (p.total_program_budget_cad ?? 0), 0);
     const avgRebate = (programs ?? []).length > 0
       ? (programs ?? []).reduce((sum, p) => sum + (p.base_rebate_amount_cad ?? 0), 0) / (programs ?? []).length
       : 0;
-
-    const latestStats = deploymentStats && deploymentStats.length > 0 ? deploymentStats[0] : null;
 
     const payload = {
       programs: programs ?? [],
@@ -143,8 +112,8 @@ serve(async (req) => {
         total_programs: (programs ?? []).length,
         total_funding_available_cad: totalFunding,
         avg_rebate_amount_cad: avgRebate,
-        latest_installation_count: latestStats?.heat_pumps_installed ?? null,
-        latest_period: latestStats?.reporting_period_end ?? null,
+        latest_installation_count: null,
+        latest_period: null,
       },
       metadata: {
         province: province ?? 'All',
@@ -159,7 +128,10 @@ serve(async (req) => {
     });
   } catch (error) {
     console.error('Unhandled heat pump programs API error', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({
+      error: 'Internal server error',
+      details: error instanceof Error ? error.message : String(error)
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
