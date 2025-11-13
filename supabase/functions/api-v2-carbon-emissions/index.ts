@@ -94,9 +94,7 @@ serve(async (req) => {
     }
 
     // Fetch emissions factors
-    const { data: emissionsFact
-
-ors, error: factorsError } = await supabase
+    const { data: emissionsFactors, error: factorsError } = await supabase
       .from('generation_source_emissions')
       .select('*')
       .order('lifecycle_emissions_gco2_per_kwh', { ascending: false });

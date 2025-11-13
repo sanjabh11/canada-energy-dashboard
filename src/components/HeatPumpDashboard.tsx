@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Thermometer, DollarSign, Home, Leaf, TrendingUp, Search } from 'lucide-react';
+import { Thermometer, DollarSign, Home, Leaf, TrendingUp, Search, BarChart3 as BarChartIcon } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 
 interface RebateProgram {
@@ -235,7 +235,7 @@ const HeatPumpDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart size={20} />
+            <BarChartIcon size={20} />
             Installations by Province
           </h3>
           <ResponsiveContainer width="100%" height={300}>

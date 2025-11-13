@@ -184,7 +184,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
     .reduce((sum, e) => sum + e.total_emissions_tco2e, 0) / 1000000;
 
   const cleanestProvince = provinceData.length > 0 ? provinceData[provinceData.length - 1] : null;
-  const dirtiest Province = provinceData.length > 0 ? provinceData[0] : null;
+  const dirtiestProvince = provinceData.length > 0 ? provinceData[0] : null;
 
   return (
     <div className="space-y-6 p-6">

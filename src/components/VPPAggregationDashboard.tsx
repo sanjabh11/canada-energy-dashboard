@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Activity, Zap, Users, Gauge, Radio } from 'lucide-react';
+import { Activity, Zap, Users, Gauge, Radio, BarChart3 as BarChartIcon } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 
 interface VPPPlatform {
@@ -170,7 +170,7 @@ const VPPAggregationDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChart size={20} />
+            <BarChartIcon size={20} />
             Capacity by Platform
           </h3>
           <ResponsiveContainer width="100%" height={300}>
