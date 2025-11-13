@@ -30,6 +30,31 @@ serve(async (req: Request) => {
   try {
     const url = new URL(req.url);
 
+    // Check if historical data is requested
+    const includeHistory = url.searchParams.get('history') === 'true';
+
+    // If history requested, fetch from aeso_queue_history table
+    if (includeHistory) {
+      const { data: history, error: historyError } = await supabase
+        .from('aeso_queue_history')
+        .select('*')
+        .order('snapshot_date', { ascending: true });
+
+      if (historyError) throw historyError;
+
+      return new Response(JSON.stringify({
+        history: history || [],
+        metadata: {
+          last_updated: new Date().toISOString(),
+          data_source: 'AESO Interconnection Queue Historical Snapshots',
+          snapshots_available: history?.length || 0,
+        }
+      }), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        status: 200,
+      });
+    }
+
     // Validate input parameters
     const projectType = validateEnum(url.searchParams.get('project_type'), VALID_PROJECT_TYPES, true);
     const studyPhase = validateEnum(url.searchParams.get('study_phase'), VALID_STUDY_PHASES, true);

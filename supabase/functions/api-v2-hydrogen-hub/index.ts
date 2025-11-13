@@ -105,6 +105,13 @@ serve(async (req: Request) => {
       .order('timestamp', { ascending: true })
       .limit(60); // 5 years monthly
 
+    // Fetch hydrogen price forecasts (2025-2035)
+    const { data: priceForecasts } = await supabase
+      .from('hydrogen_price_forecasts')
+      .select('*')
+      .order('forecast_year', { ascending: true })
+      .order('scenario', { ascending: true });
+
     // Calculate summary statistics
     const summary = {
       facilities: {
@@ -152,6 +159,7 @@ serve(async (req: Request) => {
       production: productionData,
       pricing: pricing || [],
       demand_forecast: demand || [],
+      price_forecasts: priceForecasts || [],
       summary,
       insights: {
         hub_status: {

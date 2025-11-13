@@ -24,3 +24,4 @@ canada-energy-dashboard/
 # Local Netlify folder
 .netlify
 docs/
+.archive/

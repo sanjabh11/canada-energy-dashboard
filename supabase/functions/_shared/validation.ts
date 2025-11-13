@@ -82,6 +82,36 @@ export const VALID_AESO_STATUSES = [
   'In Service'
 ] as const;
 
+// CCUS facility statuses
+export const VALID_CCUS_STATUSES = [
+  'Proposed',
+  'Under Development',
+  'Under Construction',
+  'Commissioning',
+  'Operational',
+  'Paused',
+  'Decommissioned'
+] as const;
+
+// CCUS storage types
+export const VALID_STORAGE_TYPES = [
+  'Saline Aquifer',
+  'Depleted Oil/Gas Reservoir',
+  'Enhanced Oil Recovery',
+  'Mineralization'
+] as const;
+
+// Pathways Alliance project statuses
+export const VALID_PATHWAYS_STATUSES = [
+  'Proposed',
+  'Awaiting Federal Decision',
+  'Approved',
+  'Under Construction',
+  'Operational',
+  'On Hold',
+  'Cancelled'
+] as const;
+
 /**
  * Validate province code
  */
