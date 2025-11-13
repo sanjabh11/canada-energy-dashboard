@@ -28,7 +28,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
@@ -40,6 +40,12 @@ import StorageDispatchDashboard from './StorageDispatchDashboard';
 import AIDataCentreDashboard from './AIDataCentreDashboard';
 import HydrogenEconomyDashboard from './HydrogenEconomyDashboard';
 import CriticalMineralsSupplyChainDashboard from './CriticalMineralsSupplyChainDashboard';
+import SMRDeploymentDashboard from './SMRDeploymentDashboard';
+import GridInterconnectionQueueDashboard from './GridInterconnectionQueueDashboard';
+import CapacityMarketDashboard from './CapacityMarketDashboard';
+import EVChargingDashboard from './EVChargingDashboard';
+import VPPAggregationDashboard from './VPPAggregationDashboard';
+import HeatPumpDashboard from './HeatPumpDashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -62,7 +68,13 @@ const helpIdByTab: Record<string, string> = {
   StorageDispatch: 'page.storage-dispatch',
   AIDataCentres: 'page.ai-datacentres',
   HydrogenHub: 'page.hydrogen-hub',
-  CriticalMinerals: 'page.critical-minerals'
+  CriticalMinerals: 'page.critical-minerals',
+  SMRDeployment: 'page.smr-deployment',
+  GridQueue: 'page.grid-queue',
+  CapacityMarket: 'page.capacity-market',
+  EVCharging: 'page.ev-charging',
+  VPPAggregation: 'page.vpp-aggregation',
+  HeatPumps: 'page.heat-pumps'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -208,6 +220,12 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
     { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
+    { id: 'SMRDeployment', label: 'SMR Tracker', icon: Atom },
+    { id: 'GridQueue', label: 'Grid Queue', icon: Cable },
+    { id: 'CapacityMarket', label: 'Capacity Market', icon: BarChart3 },
+    { id: 'EVCharging', label: 'EV Charging', icon: Car },
+    { id: 'VPPAggregation', label: 'VPP & DER', icon: Radio },
+    { id: 'HeatPumps', label: 'Heat Pumps', icon: Thermometer },
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
@@ -1144,13 +1162,43 @@ export const EnergyDataDashboard: React.FC = () => {
               <CriticalMineralsSupplyChainDashboard />
             )}
 
+            {/* SMR Deployment Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'SMRDeployment' && (
+              <SMRDeploymentDashboard />
+            )}
+
+            {/* Grid Interconnection Queue Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'GridQueue' && (
+              <GridInterconnectionQueueDashboard />
+            )}
+
+            {/* Capacity Market Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'CapacityMarket' && (
+              <CapacityMarketDashboard />
+            )}
+
+            {/* EV Charging Infrastructure Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'EVCharging' && (
+              <EVChargingDashboard />
+            )}
+
+            {/* VPP Aggregation Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'VPPAggregation' && (
+              <VPPAggregationDashboard />
+            )}
+
+            {/* Heat Pump Deployment Dashboard - Phase 2 Gap Analysis */}
+            {activeTab === 'HeatPumps' && (
+              <HeatPumpDashboard />
+            )}
+
             {/* Features Tab */}
             {activeTab === 'Features' && (
               <FeatureAvailability />
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps'].includes(activeTab) && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
