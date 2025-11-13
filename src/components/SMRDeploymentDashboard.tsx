@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Atom, Calendar, DollarSign, MapPin, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Atom, Calendar, DollarSign, MapPin, CheckCircle, Clock, AlertTriangle, Zap } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 
 interface SMRProject {
