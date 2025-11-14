@@ -28,7 +28,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
@@ -47,6 +47,7 @@ import EVChargingDashboard from './EVChargingDashboard';
 import VPPAggregationDashboard from './VPPAggregationDashboard';
 import HeatPumpDashboard from './HeatPumpDashboard';
 import CCUSProjectsDashboard from './CCUSProjectsDashboard';
+import CarbonEmissionsDashboard from './CarbonEmissionsDashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -76,7 +77,8 @@ const helpIdByTab: Record<string, string> = {
   EVCharging: 'page.ev-charging',
   VPPAggregation: 'page.vpp-aggregation',
   HeatPumps: 'page.heat-pumps',
-  CCUSProjects: 'page.ccus-projects'
+  CCUSProjects: 'page.ccus-projects',
+  CarbonDashboard: 'page.carbon-emissions'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -229,6 +231,7 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'VPPAggregation', label: 'VPP & DER', icon: Radio },
     { id: 'HeatPumps', label: 'Heat Pumps', icon: Thermometer },
     { id: 'CCUSProjects', label: 'CCUS Projects', icon: Factory },
+    { id: 'CarbonDashboard', label: 'Carbon Emissions', icon: Leaf },
     { id: 'Investment', label: 'Investment', icon: TrendingUp },
     { id: 'Resilience', label: 'Resilience', icon: Shield },
     { id: 'Innovation', label: 'Innovation', icon: Zap },
@@ -1200,13 +1203,18 @@ export const EnergyDataDashboard: React.FC = () => {
               <CCUSProjectsDashboard />
             )}
 
+            {/* Carbon Emissions Dashboard - Phase 8 */}
+            {activeTab === 'CarbonDashboard' && (
+              <CarbonEmissionsDashboard />
+            )}
+
             {/* Features Tab */}
             {activeTab === 'Features' && (
               <FeatureAvailability />
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard'].includes(activeTab) && (
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-blue-50 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
