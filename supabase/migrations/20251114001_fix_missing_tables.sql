@@ -1,31 +1,27 @@
 -- Fix missing provinces table and carbon emissions tables
 -- Also ensure IESO queue has data
 
--- Create provinces reference table if not exists
+-- Create provinces reference table if not exists (minimal schema)
 CREATE TABLE IF NOT EXISTS provinces (
   code CHAR(2) PRIMARY KEY,
-  name TEXT NOT NULL,
-  name_fr TEXT,
-  capital TEXT,
-  population INTEGER,
-  area_km2 NUMERIC,
-  created_at TIMESTAMP DEFAULT NOW()
+  name TEXT NOT NULL
 );
 
-INSERT INTO provinces (code, name, name_fr) VALUES
-  ('AB', 'Alberta', 'Alberta'),
-  ('BC', 'British Columbia', 'Colombie-Britannique'),
-  ('MB', 'Manitoba', 'Manitoba'),
-  ('NB', 'New Brunswick', 'Nouveau-Brunswick'),
-  ('NL', 'Newfoundland and Labrador', 'Terre-Neuve-et-Labrador'),
-  ('NS', 'Nova Scotia', 'Nouvelle-Écosse'),
-  ('ON', 'Ontario', 'Ontario'),
-  ('PE', 'Prince Edward Island', 'Île-du-Prince-Édouard'),
-  ('QC', 'Quebec', 'Québec'),
-  ('SK', 'Saskatchewan', 'Saskatchewan'),
-  ('NT', 'Northwest Territories', 'Territoires du Nord-Ouest'),
-  ('NU', 'Nunavut', 'Nunavut'),
-  ('YT', 'Yukon', 'Yukon')
+-- Insert province data using only the columns that exist
+INSERT INTO provinces (code, name) VALUES
+  ('AB', 'Alberta'),
+  ('BC', 'British Columbia'),
+  ('MB', 'Manitoba'),
+  ('NB', 'New Brunswick'),
+  ('NL', 'Newfoundland and Labrador'),
+  ('NS', 'Nova Scotia'),
+  ('ON', 'Ontario'),
+  ('PE', 'Prince Edward Island'),
+  ('QC', 'Quebec'),
+  ('SK', 'Saskatchewan'),
+  ('NT', 'Northwest Territories'),
+  ('NU', 'Nunavut'),
+  ('YT', 'Yukon')
 ON CONFLICT (code) DO NOTHING;
 
 -- Now check if carbon emissions tables exist and create them if needed
