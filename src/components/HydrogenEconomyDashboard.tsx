@@ -24,6 +24,7 @@ import {
   Truck, Calendar, Zap, Cloud, CheckCircle, AlertTriangle
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface HydrogenFacility {
   id: string;
@@ -265,11 +266,14 @@ export const HydrogenEconomyDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Fuel className="w-10 h-10 text-green-600" />
-          <h1 className="text-4xl font-bold text-slate-800">
-            Hydrogen Economy Hub Dashboard
-          </h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Fuel className="w-10 h-10 text-green-600" />
+            <h1 className="text-4xl font-bold text-slate-800">
+              Hydrogen Economy Hub Dashboard
+            </h1>
+          </div>
+          <HelpButton id="hydrogen.overview" />
         </div>
         <p className="text-lg text-slate-600 ml-13">
           $300M Federal Investment | Edmonton & Calgary Hubs
@@ -415,10 +419,13 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       {/* Hydrogen Color Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Cloud className="w-6 h-6 text-green-600" />
-            Hydrogen Color Distribution
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <Cloud className="w-6 h-6 text-green-600" />
+              Hydrogen Color Distribution
+            </h2>
+            <HelpButton id="hydrogen.colors" />
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
               <Pie
@@ -490,10 +497,13 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       {/* Pricing Trends */}
       {pricingTrend.length > 0 && (
         <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-green-600" />
-            Hydrogen Pricing Trends (Alberta)
-          </h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+              <DollarSign className="w-6 h-6 text-green-600" />
+              Hydrogen Pricing Trends (Alberta)
+            </h2>
+            <HelpButton id="hydrogen.pricing" />
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <ComposedChart data={pricingTrend}>
               <CartesianGrid strokeDasharray="3 3" />

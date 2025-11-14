@@ -416,6 +416,367 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
     relatedTopics: ['page.security', 'chart.provincial_generation']
   },
 
+  // ==================== AI DATA CENTRES ====================
+
+  'ai-datacentre.overview': {
+    id: 'ai-datacentre.overview',
+    title: 'AI Data Centre Energy Dashboard',
+    shortText: 'Track AI data centre power consumption and grid impact',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">AI Data Centres & Energy</h3>
+      <p class="mb-4">AI Data Centres are massive computing facilities that train and run artificial intelligence models. They consume enormous amounts of electricity!</p>
+
+      <h4 class="font-semibold mt-4 mb-2">Why AI Uses So Much Power:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>GPUs (Graphics Processing Units)</strong> - Each GPU can use 300-700 watts of power, and data centres have thousands of them</li>
+        <li><strong>Cooling Systems</strong> - All that computing generates massive heat, requiring 25-35% of total energy just for cooling</li>
+        <li><strong>24/7 Operation</strong> - Unlike offices, data centres never shut down</li>
+        <li><strong>Training Large Models</strong> - Training one AI model like GPT-3 uses ~1,300 MWh (enough to power 120 homes for a year)</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">What This Dashboard Shows:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li>Total AI data centre capacity in Alberta and other provinces</li>
+        <li>AESO interconnection queue (projects waiting to connect to the grid)</li>
+        <li>Phase 1 allocation status (1,200 MW government limit)</li>
+        <li>Power Usage Effectiveness (PUE) - efficiency metric</li>
+        <li>Grid impact as percentage of peak demand</li>
+      </ul>
+
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>💡 Alberta's $100B Strategy:</strong> Alberta is positioning itself as Canada's AI hub with cheap electricity from natural gas and renewables. This dashboard tracks the massive grid expansion needed to support it!</p>
+      </div>
+    `,
+    relatedTopics: ['ai-datacentre.pue', 'ai-datacentre.queue', 'ai-datacentre.phase1']
+  },
+
+  'ai-datacentre.pue': {
+    id: 'ai-datacentre.pue',
+    title: 'Power Usage Effectiveness (PUE)',
+    shortText: 'Efficiency metric for data centres',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">What is PUE?</h3>
+      <p class="mb-4"><strong>Power Usage Effectiveness (PUE)</strong> measures how efficiently a data centre uses energy. It's the ratio of total facility power to computing power.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">How PUE Works:</h4>
+      <div class="bg-slate-100 p-3 rounded mb-4 font-mono text-sm">
+        PUE = Total Facility Power / IT Equipment Power
+      </div>
+
+      <h4 class="font-semibold mt-4 mb-2">Understanding PUE Values:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>PUE = 1.0 (Perfect)</strong> - Impossible! Would mean zero overhead for cooling, lighting, etc.</li>
+        <li><strong>PUE = 1.2 (Excellent)</strong> - World-class efficiency. Google/Microsoft hyperscale facilities</li>
+        <li><strong>PUE = 1.5 (Good)</strong> - Industry average for modern data centres</li>
+        <li><strong>PUE = 2.0 (Poor)</strong> - For every 1W of computing, you waste 1W on overhead</li>
+        <li><strong>PUE = 3.0+ (Bad)</strong> - Old facilities, inefficient cooling</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">How to Improve PUE:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Free Air Cooling</strong> - Use cold outdoor air (works great in Canada!)</li>
+        <li><strong>Hot Aisle/Cold Aisle</strong> - Smart airflow management</li>
+        <li><strong>Liquid Cooling</strong> - Direct cooling for high-density GPU racks</li>
+        <li><strong>Waste Heat Recovery</strong> - Use excess heat for nearby buildings</li>
+      </ul>
+
+      <div class="bg-green-50 border-l-4 border-green-500 p-4 mt-4">
+        <p class="text-sm"><strong>🌍 Canadian Advantage:</strong> Canada's cold climate is perfect for data centres! Microsoft's Quebec facility achieves PUE 1.12 using 99% hydro power and natural cooling.</p>
+      </div>
+    `,
+    relatedTopics: ['ai-datacentre.overview', 'ai-datacentre.cooling']
+  },
+
+  'ai-datacentre.queue': {
+    id: 'ai-datacentre.queue',
+    title: 'AESO Interconnection Queue',
+    shortText: 'Projects waiting to connect to Alberta grid',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">What is the Interconnection Queue?</h3>
+      <p class="mb-4">The <strong>AESO (Alberta Electric System Operator) queue</strong> is a list of all energy projects waiting to connect to Alberta's electrical grid.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">Why Projects Queue:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Grid Capacity Limits</strong> - Can't add infinite load without upgrades</li>
+        <li><strong>Study Requirements</strong> - Must analyze impact on grid stability</li>
+        <li><strong>Transmission Upgrades</strong> - New lines and substations take years to build</li>
+        <li><strong>Phase 1 Limit</strong> - Alberta capped initial approvals at 1,200 MW</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Queue Breakdown:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Total Queue:</strong> 10+ GW requested (massive!)</li>
+        <li><strong>AI Data Centres:</strong> 30-40% of total queue capacity</li>
+        <li><strong>Renewable Energy:</strong> Wind and solar projects</li>
+        <li><strong>Bitcoin Mining:</strong> Also energy-intensive</li>
+        <li><strong>Industrial Loads:</strong> Oil sands, manufacturing</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Study Phases:</h4>
+      <ol class="list-decimal pl-5 space-y-1 mb-4">
+        <li><strong>Scoping Assessment</strong> - Initial feasibility (2-6 months)</li>
+        <li><strong>Facility Study</strong> - Detailed impact analysis (6-12 months)</li>
+        <li><strong>System Impact Study</strong> - Grid-wide effects (12+ months)</li>
+        <li><strong>Approval & Construction</strong> - Build transmission upgrades (2-5 years)</li>
+      </ol>
+
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-4">
+        <p class="text-sm"><strong>⚠️ Grid Crisis:</strong> The queue is now over 80% of Alberta's peak demand (12,100 MW). This is unprecedented and requires massive grid expansion!</p>
+      </div>
+    `,
+    relatedTopics: ['ai-datacentre.phase1', 'ai-datacentre.overview']
+  },
+
+  'ai-datacentre.phase1': {
+    id: 'ai-datacentre.phase1',
+    title: 'Phase 1 Allocation (1,200 MW Limit)',
+    shortText: 'Government cap on initial data centre approvals',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Why the 1,200 MW Limit?</h3>
+      <p class="mb-4">In 2024, Alberta's government imposed a <strong>Phase 1 limit of 1,200 MW</strong> for new large load connections to prevent grid instability while infrastructure catches up.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">The Problem:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Too Much, Too Fast</strong> - Over 10 GW of requests in 2 years (83% of peak demand!)</li>
+        <li><strong>Grid Not Ready</strong> - Transmission lines and substations can't handle it</li>
+        <li><strong>Reliability Risk</strong> - Adding too much load too quickly could cause blackouts</li>
+        <li><strong>Fairness</strong> - Need orderly process instead of first-come-first-served chaos</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Phase 1 Allocation Status:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Total Limit:</strong> 1,200 MW</li>
+        <li><strong>Allocated:</strong> ~1,150 MW (96% full)</li>
+        <li><strong>Remaining:</strong> ~50 MW</li>
+        <li><strong>Status:</strong> Nearly exhausted - new projects wait for Phase 2</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">What Happens After Phase 1?</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Phase 2 Review:</strong> Government will assess grid upgrades needed</li>
+        <li><strong>Transmission Build-Out:</strong> 3-5 year construction timeline</li>
+        <li><strong>Larger Allocations:</strong> Could approve 2-3 GW in Phase 2</li>
+        <li><strong>Cost Recovery:</strong> Proponents may need to fund grid upgrades</li>
+      </ul>
+
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>💰 Economic Impact:</strong> Every 100 MW of AI data centre capacity = ~$300M investment and 50-100 permanent jobs. The queue represents $30B+ in potential investment!</p>
+      </div>
+    `,
+    relatedTopics: ['ai-datacentre.queue', 'ai-datacentre.overview']
+  },
+
+  // ==================== HYDROGEN ECONOMY ====================
+
+  'hydrogen.overview': {
+    id: 'hydrogen.overview',
+    title: 'Hydrogen Economy Hub Dashboard',
+    shortText: 'Track Canada hydrogen production, pricing, and infrastructure',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">The Hydrogen Economy</h3>
+      <p class="mb-4">Hydrogen (H₂) is emerging as a clean fuel for heavy transportation, industry, and power generation. Canada is investing $300M to become a global hydrogen leader!</p>
+
+      <h4 class="font-semibold mt-4 mb-2">The 3 Colors of Hydrogen:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>💚 Green Hydrogen</strong> - Made using renewable electricity (wind, solar, hydro) to split water. Zero emissions!</li>
+        <li><strong>🔵 Blue Hydrogen</strong> - Made from natural gas with Carbon Capture and Storage (CCS). Low emissions (~85-95% captured)</li>
+        <li><strong>⚫ Grey Hydrogen</strong> - Made from natural gas without CCS. High emissions (not sustainable)</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Why Hydrogen Matters:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Hard-to-Decarbonize Sectors</strong> - Steel, cement, ammonia production can't easily use batteries</li>
+        <li><strong>Heavy Transport</strong> - Fuel cell trucks, trains, ships need long range and fast refueling</li>
+        <li><strong>Energy Storage</strong> - Store excess renewable energy as hydrogen for later</li>
+        <li><strong>Heating</strong> - Can blend into natural gas pipelines for cleaner heating</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">What This Dashboard Shows:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li>Edmonton vs Calgary hydrogen hubs (capacity, projects, investment)</li>
+        <li>Hydrogen production facilities and methods</li>
+        <li>Pricing trends ($/kg) and diesel equivalency</li>
+        <li>Refueling infrastructure rollout</li>
+        <li>Demand forecasts for transportation, industry, power</li>
+      </ul>
+
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>💡 Alberta Advantage:</strong> Alberta has cheap natural gas for blue hydrogen + strong wind/solar potential for green hydrogen. The province aims to produce 2.5 million tonnes/year by 2030!</p>
+      </div>
+    `,
+    relatedTopics: ['hydrogen.colors', 'hydrogen.production', 'hydrogen.pricing']
+  },
+
+  'hydrogen.colors': {
+    id: 'hydrogen.colors',
+    title: 'Hydrogen Color Classification',
+    shortText: 'Green vs Blue vs Grey hydrogen explained',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">The Hydrogen Rainbow</h3>
+      <p class="mb-4">Not all hydrogen is created equal! The "color" system helps us understand how clean the production process is.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">💚 Green Hydrogen (Cleanest)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>How It's Made:</strong> Electrolysis (electricity splits water into H₂ + O₂)</li>
+        <li><strong>Power Source:</strong> 100% renewable (wind, solar, hydro)</li>
+        <li><strong>Emissions:</strong> ZERO (only byproduct is oxygen!)</li>
+        <li><strong>Cost:</strong> $4-7/kg (expensive now, but dropping fast)</li>
+        <li><strong>Example:</strong> Quebec hydro-powered electrolyzer facilities</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">🔵 Blue Hydrogen (Low Emission)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>How It's Made:</strong> Steam Methane Reforming (SMR) of natural gas</li>
+        <li><strong>Carbon Capture:</strong> 85-95% of CO₂ captured and stored underground</li>
+        <li><strong>Emissions:</strong> Low (~1-2 kg CO₂/kg H₂ vs 10 kg without CCS)</li>
+        <li><strong>Cost:</strong> $2-3/kg (cheaper than green, for now)</li>
+        <li><strong>Example:</strong> Air Products' Alberta facility (1,500 tonnes/day)</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">⚫ Grey Hydrogen (High Emission)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>How It's Made:</strong> SMR without carbon capture</li>
+        <li><strong>Emissions:</strong> High (~10 kg CO₂/kg H₂)</li>
+        <li><strong>Cost:</strong> $1-2/kg (cheapest, but dirty)</li>
+        <li><strong>Status:</strong> 95% of today's hydrogen, but being phased out</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Other Colors (Bonus):</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Pink:</strong> Electrolysis powered by nuclear</li>
+        <li><strong>Turquoise:</strong> Methane pyrolysis (produces solid carbon, not CO₂)</li>
+      </ul>
+
+      <div class="bg-green-50 border-l-4 border-green-500 p-4 mt-4">
+        <p class="text-sm"><strong>🎯 The Goal:</strong> Transition from grey → blue → green by 2050. Canada aims for 30% green hydrogen by 2030!</p>
+      </div>
+    `,
+    relatedTopics: ['hydrogen.production', 'hydrogen.overview']
+  },
+
+  'hydrogen.production': {
+    id: 'hydrogen.production',
+    title: 'Hydrogen Production Methods',
+    shortText: 'How hydrogen is produced at scale',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Making Hydrogen</h3>
+      <p class="mb-4">There are two main ways to produce hydrogen at industrial scale: electrolysis (splitting water) and steam methane reforming (converting natural gas).</p>
+
+      <h4 class="font-semibold mt-4 mb-2">1. Electrolysis (Green Hydrogen)</h4>
+      <p class="mb-2">Using electricity to split water molecules:</p>
+      <div class="bg-slate-100 p-3 rounded mb-3 font-mono text-sm">
+        2H₂O + electricity → 2H₂ + O₂
+      </div>
+      <p class="mb-2"><strong>Types of Electrolyzers:</strong></p>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Alkaline (AEL):</strong> Mature tech, 60-70% efficient, $500-1,000/kW</li>
+        <li><strong>PEM (Proton Exchange Membrane):</strong> Faster response, 65-75% efficient, $1,000-1,500/kW</li>
+        <li><strong>SOEC (Solid Oxide):</strong> High-temp, 80-85% efficient (future tech)</li>
+      </ul>
+      <p class="mb-4"><strong>Energy Required:</strong> 50-55 kWh per kg of H₂ (enough to power 5 homes for a day)</p>
+
+      <h4 class="font-semibold mt-4 mb-2">2. Steam Methane Reforming (Blue/Grey Hydrogen)</h4>
+      <p class="mb-2">Reacting natural gas with high-temperature steam:</p>
+      <div class="bg-slate-100 p-3 rounded mb-3 font-mono text-sm">
+        CH₄ + 2H₂O → 4H₂ + CO₂
+      </div>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Process:</strong> Heat natural gas to 700-1,000°C with steam</li>
+        <li><strong>Efficiency:</strong> 70-80% (lower than electrolysis, but cheaper)</li>
+        <li><strong>CO₂ Byproduct:</strong> ~10 kg CO₂ per kg H₂ (must be captured for "blue" hydrogen)</li>
+        <li><strong>Cost:</strong> $1-3/kg depending on gas price and CCS</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Production Economics:</h4>
+      <table class="min-w-full border text-sm mb-4">
+        <thead>
+          <tr class="bg-slate-100">
+            <th class="border px-2 py-1">Method</th>
+            <th class="border px-2 py-1">Cost ($/kg)</th>
+            <th class="border px-2 py-1">CO₂ Emissions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="border px-2 py-1">Grey SMR</td>
+            <td class="border px-2 py-1">$1-2</td>
+            <td class="border px-2 py-1">10 kg CO₂/kg H₂</td>
+          </tr>
+          <tr>
+            <td class="border px-2 py-1">Blue SMR+CCS</td>
+            <td class="border px-2 py-1">$2-3</td>
+            <td class="border px-2 py-1">1-2 kg CO₂/kg H₂</td>
+          </tr>
+          <tr>
+            <td class="border px-2 py-1">Green Electrolysis</td>
+            <td class="border px-2 py-1">$4-7</td>
+            <td class="border px-2 py-1">0 kg CO₂/kg H₂</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-4">
+        <p class="text-sm"><strong>⚡ Fun Fact:</strong> One kilogram of hydrogen contains about the same energy as 3 litres of diesel, but only weighs 1kg vs 2.6kg for the diesel!</p>
+      </div>
+    `,
+    relatedTopics: ['hydrogen.colors', 'hydrogen.pricing', 'hydrogen.overview']
+  },
+
+  'hydrogen.pricing': {
+    id: 'hydrogen.pricing',
+    title: 'Hydrogen Pricing & Economics',
+    shortText: 'Understanding hydrogen costs and diesel equivalency',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">How Much Does Hydrogen Cost?</h3>
+      <p class="mb-4">Hydrogen pricing is evolving rapidly as production scales up and technology improves. Prices are typically measured in $/kg (dollars per kilogram).</p>
+
+      <h4 class="font-semibold mt-4 mb-2">Current Pricing (2024-2025):</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Grey H₂:</strong> $1-2/kg (natural gas price-dependent)</li>
+        <li><strong>Blue H₂:</strong> $2-3/kg (grey + CCS cost)</li>
+        <li><strong>Green H₂:</strong> $4-7/kg (dropping 8-10% annually)</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Diesel Equivalency:</h4>
+      <p class="mb-2">To compare hydrogen with diesel fuel:</p>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>1 kg H₂ ≈ 3 litres diesel</strong> (energy content)</li>
+        <li><strong>At $5/kg H₂:</strong> Equivalent to $1.67/litre diesel</li>
+        <li><strong>At $3/kg H₂:</strong> Equivalent to $1.00/litre diesel</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">What Affects Hydrogen Price?</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>Production Method:</strong> Green costs 2-3× more than grey (for now)</li>
+        <li><strong>Electricity Costs:</strong> Green H₂ needs ~55 kWh/kg → cheap power = cheap hydrogen</li>
+        <li><strong>Natural Gas Prices:</strong> Affects grey/blue hydrogen costs</li>
+        <li><strong>Carbon Pricing:</strong> $170/tonne carbon tax adds ~$1/kg to grey H₂</li>
+        <li><strong>Scale:</strong> Gigawatt-scale production → 30-40% cost reduction</li>
+        <li><strong>Technology Learning:</strong> Electrolyzer costs dropping 10-15%/year</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Price Forecasts:</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li><strong>2025:</strong> Green H₂ at $4-6/kg</li>
+        <li><strong>2030:</strong> Green H₂ reaches parity with blue at $2-3/kg</li>
+        <li><strong>2050:</strong> Green H₂ below $1.50/kg (competitive with fossil fuels)</li>
+      </ul>
+
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>💰 Investment Opportunity:</strong> Canada's Hydrogen Strategy aims for $50B in economic activity by 2050. Early movers in production, infrastructure, and fuel cells could capture massive value!</p>
+      </div>
+    `,
+    relatedTopics: ['hydrogen.production', 'hydrogen.overview']
+  },
+
   // ==================== ADD MORE AS NEEDED ====================
 };
 
