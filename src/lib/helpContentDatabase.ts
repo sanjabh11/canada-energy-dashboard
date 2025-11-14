@@ -519,7 +519,474 @@ That's nearly HALF of all homes in Ontario powered by just this one station, run
       'Low CF can still be valuable if generation matches peak demand',
       'Grid needs a mix of high-CF baseload and flexible generation'
     ]
+  },
+
+  //
+  // ========== NEW HELP TOPICS ==========
+  //
+
+  'ai-datacentre-energy': {
+    id: 'ai-datacentre-energy',
+    title: 'AI Data Centres & Energy',
+    category: 'Clean Technology',
+    explanations: {
+      beginner: `AI Data Centres are like giant computer buildings that run artificial intelligence! Think of them as huge brain warehouses where:
+
+🖥️ **What they do:**
+- Run ChatGPT, Google Search, Netflix recommendations
+- Process millions of calculations per second
+- Store and analyze massive amounts of data
+
+⚡ **Why they use SO MUCH energy:**
+- Thousands of powerful computers running 24/7
+- Need cooling (like air conditioning) to prevent overheating
+- A large AI data center uses as much power as a small city!
+
+Think of it like this: Your laptop gets warm when you use it for a while. Now imagine 10,000 laptops running at full speed all day, every day - that's a data center!`,
+
+      intermediate: `AI Data Centres house the computing infrastructure for artificial intelligence applications, consuming significant energy for:
+
+**Power Breakdown:**
+- Computing (GPUs/TPUs): 60-70% of total energy
+- Cooling systems: 25-35%
+- Networking & storage: 5-10%
+
+**Why AI Uses More Energy:**
+- Training large language models (LLMs) requires massive computation
+- Deep learning = billions of mathematical operations
+- GPUs (graphics processors) are 100x more power-hungry than regular CPUs
+- 24/7 operation with no downtime
+
+**Energy Intensity:**
+- Traditional data center: 100-200 W per square foot
+- AI data center: 250-400 W per square foot (2-4x higher!)
+- Training GPT-3: ~1,300 MWh (enough to power 120 homes for a year)
+
+**Power Usage Effectiveness (PUE):**
+- Best practice: PUE of 1.1-1.2 (only 10-20% wasted on cooling)
+- Industry average: PUE of 1.5 (50% extra for cooling)`,
+
+      expert: `AI Data Centres present unique energy challenges due to high-density computing and thermal management requirements:
+
+**Architecture & Power Density:**
+- GPU-accelerated compute: NVIDIA H100 (700W TDP), AMD MI300X (750W)
+- Rack density: 30-50 kW/rack (vs. 5-10 kW traditional)
+- Hot aisle containment, liquid cooling increasingly necessary
+- Facility total load: 10-100+ MW per facility
+
+**PUE Optimization Strategies:**
+PUE = Total Facility Power / IT Equipment Power
+
+1. **Advanced Cooling:**
+   - Direct-to-chip liquid cooling (COP 30-40 vs. 3-5 air)
+   - Free cooling (economizers): Ambient when T < 18°C
+   - Adiabatic cooling, evaporative systems
+   - Immersion cooling for ultra-high density
+
+2. **Power Infrastructure:**
+   - 480V DC distribution (3-5% efficiency gain)
+   - On-site generation: Natural gas turbines, fuel cells
+   - Energy storage for demand response
+   - Grid-interactive UPS systems
+
+**AI Workload Characteristics:**
+- Training: Predictable, schedulable, batch processing
+  → Can shift to low-cost / high-renewable periods
+- Inference: Latency-sensitive, real-time demand
+  → Requires continuous availability
+
+**Carbon Impact:**
+- Model training carbon footprint varies by:
+  - Hardware efficiency (FLOPS/Watt)
+  - Grid carbon intensity (location-dependent)
+  - Training duration & model size
+- GPT-3 training: ~500 tonnes CO2e (using average US grid)
+- Strategies: Green PPAs, carbon-aware workload scheduling
+
+**Demand Response & Grid Integration:**
+- AI training workloads are flexible → ideal for DR programs
+- Curtailment during grid stress events
+- Potential for providing ancillary services (frequency regulation)
+- Challenges: Cooling thermal inertia limits rapid power changes`
+    },
+    realWorldExample: `**Microsoft's Quebec AI Data Center:**
+
+Microsoft built a massive AI data center in Quebec specifically because:
+1. **99% hydro power** - Nearly carbon-free electricity
+2. **Cold climate** - Free cooling 8+ months/year
+3. **Low electricity costs** - $0.05/kWh (vs $0.12 US average)
+
+**The Numbers:**
+- Power consumption: 50 MW (enough for 40,000 homes)
+- PUE achieved: 1.12 (vs. 1.6 industry average)
+- Carbon savings: 95% lower than coal-powered equivalent
+- Annual CO2 avoided: ~200,000 tonnes
+
+Result? They can train AI models faster AND cheaper AND cleaner than almost anywhere else in the world!`,
+    funFact: `🤯 Training ONE large AI model (like GPT-4) can use as much electricity as 120 Canadian homes consume in an entire year! That's why tech companies are racing to build data centers near hydroelectric dams in Quebec and Norway - for clean, cheap power.`,
+    keyTakeaways: [
+      'AI data centers use 2-4x more power than traditional data centers',
+      'GPUs for AI training are extremely power-hungry (700W each)',
+      'Cooling accounts for 25-35% of total energy use',
+      'Location matters: Quebec hydro power = 95% lower carbon',
+      'AI workloads are flexible and can be scheduled during low-cost periods',
+      'Future: Liquid cooling and renewable energy integration critical'
+    ],
+    relatedConcepts: [
+      { id: 'pue-metric', title: 'Power Usage Effectiveness (PUE)' },
+      { id: 'renewable-energy', title: 'Renewable Energy' },
+      { id: 'carbon-emissions', title: 'Carbon Emissions' }
+    ]
+  },
+
+  'hydrogen-production': {
+    id: 'hydrogen-production',
+    title: 'Hydrogen Production Methods',
+    category: 'Clean Technology',
+    explanations: {
+      beginner: `Hydrogen is like an invisible fuel that only creates water when it burns - no smoke or pollution! But we need to make it first.
+
+**The 3 Colors of Hydrogen:**
+
+💚 **Green Hydrogen** (Cleanest!)
+- Made using renewable energy (wind, solar, hydro)
+- Uses electricity to split water: H₂O → H₂ + O₂
+- Zero carbon emissions!
+
+🔵 **Blue Hydrogen** (Pretty Clean)
+- Made from natural gas
+- But captures the carbon (CCS technology)
+- 90% fewer emissions than grey
+
+⚫ **Grey Hydrogen** (Not Clean)
+- Made from natural gas without capturing carbon
+- Releases lots of CO₂
+- Cheapest but dirtiest
+
+Think of it like this: Green hydrogen is like growing your own vegetables (clean!), blue is like buying organic (better), and grey is like eating junk food (cheap but not good for you).`,
+
+      intermediate: `Hydrogen production methods are categorized by carbon intensity:
+
+**Green Hydrogen (Electrolysis):**
+Water + Renewable Electricity → Hydrogen + Oxygen
+- Process: H₂O + electricity → 2H₂ + O₂
+- Energy required: 50-55 kWh per kg H₂
+- Cost: $4-7/kg (2024, falling rapidly)
+- Emissions: 0-1 kg CO₂/kg H₂
+
+**Blue Hydrogen (SMR + CCS):**
+Natural Gas + Steam → Hydrogen + CO₂ (captured)
+- CH₄ + H₂O → CO + 3H₂ → 4H₂ + CO₂
+- 85-95% carbon capture rate
+- Cost: $2-3/kg
+- Emissions: 1-3 kg CO₂/kg H₂
+
+**Grey Hydrogen (SMR):**
+Natural Gas + Steam → Hydrogen (CO₂ vented)
+- No carbon capture
+- Cost: $1-2/kg (cheapest)
+- Emissions: 10-12 kg CO₂/kg H₂
+
+**Emerging Technologies:**
+- **Turquoise:** Methane pyrolysis (solid carbon output)
+- **Pink:** Nuclear-powered electrolysis
+- **Yellow:** Grid-powered electrolysis (mixed sources)
+
+**Key Metric: LCOH (Levelized Cost of Hydrogen)**
+Green H₂ becoming competitive with blue/grey by 2030 in many regions`,
+
+      expert: `Hydrogen Production Pathways & Techno-Economics:
+
+**1. Alkaline Electrolysis (AEL):**
+- Technology: Liquid KOH electrolyte, Ni-based electrodes
+- Efficiency: 60-70% (HHV), 50-60 kWh/kg H₂
+- Capex: $500-1,000/kW (declining)
+- Advantages: Mature, proven, 60K+ hours lifetime
+- Disadvantages: Slow startup, limited partial load operation
+- Best for: Baseload renewable integration (hydro, geothermal)
+
+**2. Proton Exchange Membrane (PEM) Electrolysis:**
+- Technology: Solid polymer electrolyte, Pt/Ir catalysts
+- Efficiency: 65-75% (HHV), 48-52 kWh/kg H₂
+- Capex: $1,000-1,800/kW
+- Advantages: Fast response (<1s), high current density, compact
+- Disadvantages: Expensive catalysts, acidic environment
+- Best for: Variable renewable integration (wind, solar)
+
+**3. Solid Oxide Electrolysis (SOEC):**
+- Technology: High-temperature (700-900°C) ceramic electrolyte
+- Efficiency: 80-90% (HHV) with waste heat integration
+- Capex: $1,500-2,500/kW (early stage)
+- Advantages: Highest efficiency, can run in reverse (fuel cell)
+- Disadvantages: Thermal cycling limits, early commercial stage
+- Best for: Industrial integration with waste heat
+
+**4. Steam Methane Reforming (SMR) + CCS:**
+- Reaction: CH₄ + H₂O ⇌ CO + 3H₂ (endothermic, 700-1,000°C)
+            CO + H₂O ⇌ CO₂ + H₂ (water-gas shift)
+- Capture: Post-combustion amine scrubbing (85-95% capture)
+- Economics: $1.5-2.5/kg with CCS (depending on gas price, CCS cost)
+- Challenge: Residual emissions (10-15%), methane leakage
+
+**5. Autothermal Reforming (ATR) + CCS:**
+- Partial oxidation + SMR hybrid
+- Advantages: Higher CO₂ concentration (easier capture), modular
+- 95%+ capture possible
+- Emerging as preferred "blue" pathway
+
+**LCOH Calculation:**
+LCOH = (CAPEX × CRF + OPEX_fixed) / Annual_Production + Electricity_Cost × Consumption + Feedstock_Cost
+
+Variables:
+- Electrolyzer CAPEX: $500-1,800/kW (technology dependent)
+- Capacity factor: 20-95% (depends on renewable availability)
+- Electricity cost: $20-60/MWh (critical driver for green H₂)
+- Stack replacement: Every 60,000-100,000 hours
+
+**Green Hydrogen Cost Competitiveness:**
+- By 2030: $2-3/kg in regions with cheap renewables
+- Parity with blue hydrogen when:
+  - Renewable electricity <$25/MWh AND
+  - Electrolyzer CAPEX <$500/kW AND
+  - Capacity factor >60%
+
+**Policy Support:**
+- US: IRA $3/kg production tax credit (clean H₂)
+- EU: €10B Hydrogen Bank, RFNBO mandates
+- Canada: Investment tax credits, Clean Fuel Regulations
+
+**Infrastructure Challenges:**
+- Hydrogen embrittlement in steel pipelines
+- Compression (350-700 bar) energy penalty (10-15% of energy content)
+- Storage: Geological (salt caverns), liquid (–253°C), metal hydrides
+- Transportation: Pipelines (dedicated or blended), trucks, ships (ammonia carrier)`
+    },
+    realWorldExample: `**Air Products' Net-Zero Hydrogen Energy Complex (Alberta):**
+
+The world's largest net-zero hydrogen production facility (2024):
+
+**Project Specs:**
+- Production: 1,500 tonnes/day of blue hydrogen
+- Feedstock: Natural gas from Alberta
+- CCS: 95% carbon capture → geological storage
+- CO₂ sequestered: 3 million tonnes/year (equal to 650,000 cars)
+- Cost: $1.6 billion CAD
+
+**Why Alberta?**
+1. Abundant natural gas supply
+2. Existing CCS infrastructure (oil sands experience)
+3. Hydrogen refining expertise
+4. Proximity to US hydrogen demand
+
+**Output Uses:**
+- Industrial ammonia production
+- Oil refinery upgrading (replacing grey H₂)
+- Future: Hydrogen fuel for trucks/buses
+
+This is Canada's bet on "blue before green" - using natural gas wealth to kickstart the hydrogen economy while green becomes affordable.`,
+    funFact: `🚀 The Space Shuttle used 500,000 liters of liquid hydrogen per launch! Hydrogen has 3x the energy per kilogram as jet fuel, which is why NASA loves it. The only emission? Pure water vapor - astronauts could literally drink the exhaust!`,
+    keyTakeaways: [
+      'Green hydrogen (renewable powered) is carbon-free but currently expensive',
+      'Blue hydrogen (gas + CCS) is 90% cleaner than grey, bridging to green',
+      'Grey hydrogen (no capture) accounts for 95% of today\'s production',
+      'Cost of green H₂ falling 50% by 2030 due to cheaper electrolyzers and renewables',
+      'Canada is investing heavily in both blue (Alberta) and green (Quebec) hydrogen',
+      'Hydrogen can store energy long-term, unlike batteries'
+    ],
+    relatedConcepts: [
+      { id: 'energy-storage', title: 'Energy Storage' },
+      { id: 'carbon-capture', title: 'Carbon Capture (CCS)' },
+      { id: 'renewable-energy', title: 'Renewable Energy' }
+    ]
+  },
+
+  'ev-charging-levels': {
+    id: 'ev-charging-levels',
+    title: 'EV Charging Levels',
+    category: 'Clean Technology',
+    explanations: {
+      beginner: `Electric Vehicle (EV) charging is like filling up with gas, but with electricity! There are 3 speeds:
+
+🐢 **Level 1 (Slow - Home outlet)**
+- Uses regular wall outlet (like your phone charger)
+- Speed: Adds 5-8 km of range per hour
+- Time for full charge: 20-40 hours
+- Best for: Overnight charging at home
+
+🚗 **Level 2 (Medium - Home/Public)**
+- Needs special 240V outlet (like an oven or dryer)
+- Speed: Adds 25-40 km per hour
+- Time for full charge: 4-8 hours
+- Best for: Home garage, workplace, shopping centers
+
+⚡ **Level 3 (Fast - DC Fast Charging)**
+- Special high-power stations
+- Speed: Adds 200-300 km in 30 minutes
+- Time for 80% charge: 20-45 minutes
+- Best for: Road trips, highway stops
+
+Think of it like this:
+- Level 1 = Filling a bathtub with a garden hose
+- Level 2 = Filling with a kitchen faucet
+- Level 3 = Filling with a fire hose!`,
+
+      intermediate: `EV Charging is categorized by power delivery and charging speed:
+
+**Level 1 (120V AC, 1.4-1.9 kW):**
+- Standard household outlet
+- Current: 12-16 amps
+- Range added: 5-8 km/hour (3-5 mi/hr)
+- Charging efficiency: 85-90%
+- Cost: $0 (outlet already exists)
+- Use case: Emergency/trickle charging
+
+**Level 2 (208-240V AC, 3.3-19.2 kW):**
+- Residential: 7.2 kW typical (30A @ 240V)
+- Public: 11-19.2 kW (up to 80A @ 240V)
+- Range added: 20-40 km/hour
+- Charging efficiency: 85-92%
+- Equipment cost: $500-2,000 installed
+- Networks: ChargePoint, FLO, Tesla Destination
+
+**Level 3 / DC Fast Charging (50-350+ kW):**
+- **CCS (Combined Charging System):** 50-350 kW
+  - Used by: Most non-Tesla EVs (GM, Ford, VW, etc.)
+- **Tesla Supercharger:** 150-250 kW (V3), 250+ kW (V4)
+  - Proprietary (but opening to others with adapter)
+- **CHAdeMO:** 50-100 kW
+  - Used by: Nissan Leaf, older EVs
+
+**Charging Curves:**
+- Fast charging rate decreases at high state of charge (SoC)
+- Typically charges to 80% quickly, then slows (protects battery)
+- 0-80%: 20-45 minutes
+- 80-100%: Additional 30-60 minutes (inefficient)
+
+**Grid Impact:**
+- Level 1: <2 kW → negligible
+- Level 2: 7 kW → equivalent to electric water heater
+- DC Fast: 150 kW → significant demand charge implications`,
+
+      expert: `EV Charging Infrastructure Technical Specifications & Grid Integration:
+
+**Power Electronics & Standards:**
+
+1. **AC Level 2 (SAE J1772 / IEC 62196):**
+   - Onboard Charger (OBC): 3.3-22 kW AC → DC conversion
+   - Power Factor: >0.95 (grid-friendly)
+   - Efficiency: 88-94% (heat losses in OBC)
+   - Smart charging protocols: ISO 15118, OCPP 1.6/2.0.1
+   - V2G capability: Bidirectional OBCs emerging (Nissan, Ford)
+
+2. **DC Fast Charging (CCS, CHAdeMO, NACS):**
+   - Off-board conversion: Grid AC → DC at station
+   - Voltage range: 200-1,000V DC
+   - Current: Up to 500A (CCS), 600A (NACS)
+   - Efficiency: 92-96% (station-side conversion)
+   - Thermal management: Liquid-cooled cables for 350+ kW
+
+**Charging Power Progression:**
+- CCS 1.0: 50 kW (2012)
+- CCS 2.0: 150 kW (2017)
+- CCS 3.0: 350 kW (2019, limited deployment)
+- Megawatt Charging (MCS): 1,000+ kW for trucks (2024+)
+
+**Battery Constraints on Charging Speed:**
+- C-rate: Charging current / Battery capacity
+  - 1C: 1-hour charge (e.g., 75 kWh battery at 75 kW)
+  - 2C: 30-minute charge (150 kW)
+  - 3C+: Battery thermal stress, degradation concerns
+
+- Charging curve optimization:
+  - Cold batteries: Pre-heating required (Tesla, others)
+  - Hot batteries: Thermal throttling reduces charging speed
+  - High SoC: Voltage limits reduce current acceptance
+
+**Grid Integration Challenges:**
+
+1. **Demand Charges:**
+   - DC fast charging: 15-minute peak demand billing
+   - $10-20/kW demand charge in some jurisdictions
+   - Example: 350 kW peak × $15/kW = $5,250/month demand charge
+   - Solution: On-site battery buffering to reduce peak
+
+2. **Transformer Loading:**
+   - Typical residential transformer: 25-100 kVA
+   - 5-10 homes with Level 2 charging → potential overload
+   - Distribution upgrades needed in high-EV-penetration areas
+
+3. **Voltage Regulation:**
+   - Large charging loads cause voltage drop
+   - Distribution voltage regulators, capacitor banks required
+
+**Smart Charging & Demand Response:**
+- **Managed Charging:** Utility controls start time (TOU optimization)
+- **V2G (Vehicle-to-Grid):**
+  - Bidirectional power flow: EV ← → Grid
+  - Frequency regulation (fast response, 0.25-2 Hz)
+  - Peak shaving, renewable integration
+  - Degradation concern: Additional cycles on battery
+
+- **V2H/V2B (Vehicle-to-Home/Building):**
+  - Backup power during outages
+  - Ford F-150 Lightning: 9.6 kW export, 3-10 days home power
+  - Cost offset: Arbitrage (charge off-peak, discharge on-peak)
+
+**Economics & Business Models:**
+- DCFC station CAPEX: $150K-300K per 150 kW dispenser
+- Operating costs: Electricity, demand charges, maintenance
+- Utilization challenge: <20% typical (highway corridors higher)
+- Break-even: 10-15% utilization with demand charge mitigation
+- Revenue models: Per-kWh, per-minute, membership, demand response
+
+**Future Trends:**
+- Wireless charging (inductive): 11-22 kW, 92% efficiency (2025+)
+- Dynamic wireless (in-road charging): Demonstration projects
+- Battery swapping: NIO (China) → 5 min swap vs. charging
+- Ultra-fast: 500+ kW "5-minute charge" by 2030 (solid-state batteries)`
+    },
+    realWorldExample: `**Petro-Canada's Electric Highway (Trans-Canada):**
+
+Canada's coast-to-coast EV fast charging network:
+
+**Coverage:**
+- 50+ DC fast charging stations
+- Every 250 km along the Trans-Canada Highway
+- From Victoria, BC to St. John's, NL
+
+**Technology:**
+- 200 kW DC fast chargers (CCS + CHAdeMO)
+- Tesla adapters available
+- Payment: Credit card, mobile app, RFID
+
+**Real-World Performance:**
+- Tesla Model 3: 0-80% in 25 minutes (adds 300 km range)
+- Ford F-150 Lightning: 0-80% in 40 minutes (adds 200 km range)
+- Cost: ~$15-25 for 80% charge (vs $60-80 for gas equivalent)
+
+**Grid Integration:**
+- On-site battery storage at select locations
+- Solar canopy pilots (reduce grid demand)
+- Load management during peak times
+
+This infrastructure makes cross-country EV road trips practical for the first time in Canada!`,
+    funFact: `⚡ The Porsche Taycan can charge at up to 270 kW! That's adding 100 km of range in just 5 minutes - faster than most people take to use the restroom at a highway rest stop. The future of "refueling" is here!`,
+    keyTakeaways: [
+      'Level 1 (120V): Slow, but works with any outlet - great for overnight',
+      'Level 2 (240V): Sweet spot for home/work - full charge in 4-8 hours',
+      'DC Fast (50-350 kW): Road trip ready - 80% charge in 20-45 minutes',
+      'Charging slows above 80% to protect battery life',
+      'Smart charging can save money by charging during off-peak hours',
+      'Vehicle-to-Grid (V2G) lets EVs support the grid and earn money'
+    ],
+    relatedConcepts: [
+      { id: 'grid-stability', title: 'Grid Stability' },
+      { id: 'energy-storage', title: 'Energy Storage' },
+      { id: 'peak-demand', title: 'Peak vs Off-Peak Demand' }
+    ]
   }
+
+  // Add more topics here (continuing to 24 total)
 };
 
 // Helper function to get content by ID
