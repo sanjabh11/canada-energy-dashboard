@@ -14,6 +14,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Thermometer, DollarSign, Home, Leaf, TrendingUp, Search, BarChart3 as BarChartIcon } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface RebateProgram {
   id: string;
@@ -112,9 +113,12 @@ const HeatPumpDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-orange-600 to-red-600 text-white rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Thermometer size={32} />
-          <h1 className="text-3xl font-bold">Heat Pump Deployment Tracker</h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Thermometer size={32} />
+            <h1 className="text-3xl font-bold">Heat Pump Deployment Tracker</h1>
+          </div>
+          <HelpButton id="heatpump.overview" />
         </div>
         <p className="text-orange-100">Residential heating electrification - Rebate programs and deployment statistics for building decarbonization</p>
       </div>
@@ -164,10 +168,13 @@ const HeatPumpDashboard: React.FC = () => {
 
       {/* Interactive Rebate Finder */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Search size={20} />
-          Rebate Program Finder
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Search size={20} />
+            Rebate Program Finder
+          </h3>
+          <HelpButton id="heatpump.rebates" />
+        </div>
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Select Province:</label>
           <select
