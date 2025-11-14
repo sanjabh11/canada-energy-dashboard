@@ -122,3 +122,21 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/api-v2-minerals-supply-chain/deno.json"
 entrypoint = "./functions/api-v2-minerals-supply-chain/index.ts"
+
+[functions.api-v2-ieso-queue]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-ieso-queue/deno.json"
+entrypoint = "./functions/api-v2-ieso-queue/index.ts"
+
+[functions.api-v2-capacity-market]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-capacity-market/deno.json"
+entrypoint = "./functions/api-v2-capacity-market/index.ts"
+
+[functions.api-v2-ev-charging]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-ev-charging/deno.json"
+entrypoint = "./functions/api-v2-ev-charging/index.ts"
