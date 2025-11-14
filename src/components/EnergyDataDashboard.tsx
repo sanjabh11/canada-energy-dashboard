@@ -28,9 +28,10 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
+import FooterSettingsMenu from './FooterSettingsMenu';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
 import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
 import AnalyticsTrendsDashboard from './AnalyticsTrendsDashboard';
@@ -208,38 +209,67 @@ export const EnergyDataDashboard: React.FC = () => {
     }
   }, [activeTab]);
 
-  // Base navigation tabs - Core 6 (prominently showing Phase 1 features) + More dropdown
+  // Navigation tabs reorganized by monetization priority (Top 12 visible, rest in dropdown)
+  // ⭐⭐⭐⭐⭐ = Premium (5-star), ⭐⭐⭐⭐ = Strong (4-star), ⭐⭐⭐ = Moderate (3-star)
   const coreNavigationTabs = [
-    { id: 'Home', label: 'Home', icon: Home },
-    { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 },
-    { id: 'AIDataCentres', label: 'AI Data Centres', icon: Server },
-    { id: 'HydrogenHub', label: 'Hydrogen Hub', icon: Fuel },
-    { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package },
-    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home }
+    { id: 'Home', label: 'Home', icon: Home }, // Gateway
+    { id: 'Dashboard', label: 'Dashboard', icon: BarChart3 }, // ⭐⭐⭐⭐⭐
+    { id: 'AIDataCentres', label: 'AI Data Centres', icon: Server }, // ⭐⭐⭐⭐⭐
+    { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'HydrogenHub', label: 'Hydrogen Hub', icon: Fuel }, // ⭐⭐⭐⭐⭐
+    { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package }, // ⭐⭐⭐⭐⭐
+    { id: 'EVCharging', label: 'EV Charging', icon: Car }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'CarbonDashboard', label: 'Carbon Emissions', icon: Leaf }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'CCUSProjects', label: 'CCUS Projects', icon: Factory }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'Investment', label: 'Investment', icon: TrendingUp }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun }, // ⭐⭐⭐⭐ PROMOTED
+    { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home } // ⭐⭐⭐
   ];
 
   const moreNavigationTabs = [
-    { id: 'Analytics', label: 'Analytics & Trends', icon: TrendingUp },
-    { id: 'Provinces', label: 'Provinces', icon: Globe },
-    { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun },
-    { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind },
-    { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery },
-    { id: 'SMRDeployment', label: 'SMR Tracker', icon: Atom },
-    { id: 'GridQueue', label: 'Grid Queue', icon: Cable },
-    { id: 'CapacityMarket', label: 'Capacity Market', icon: BarChart3 },
-    { id: 'EVCharging', label: 'EV Charging', icon: Car },
-    { id: 'VPPAggregation', label: 'VPP & DER', icon: Radio },
-    { id: 'HeatPumps', label: 'Heat Pumps', icon: Thermometer },
-    { id: 'CCUSProjects', label: 'CCUS Projects', icon: Factory },
-    { id: 'CarbonDashboard', label: 'Carbon Emissions', icon: Leaf },
-    { id: 'Investment', label: 'Investment', icon: TrendingUp },
-    { id: 'Resilience', label: 'Resilience', icon: Shield },
-    { id: 'Innovation', label: 'Innovation', icon: Zap },
-    { id: 'Indigenous', label: 'Indigenous', icon: Shield },
-    { id: 'Stakeholders', label: 'Stakeholders', icon: Zap },
-    { id: 'GridOptimization', label: 'Grid Ops', icon: Activity },
-    { id: 'Security', label: 'Security', icon: Lock },
-    { id: 'Features', label: 'Features', icon: Info }
+    // 4-Star Features (Strong monetization)
+    { id: 'StorageDispatch', label: 'Storage Dispatch', icon: Battery }, // ⭐⭐⭐⭐
+    { id: 'SMRDeployment', label: 'SMR Tracker', icon: Atom }, // ⭐⭐⭐⭐
+    { id: 'CapacityMarket', label: 'Capacity Market', icon: BarChart3 }, // ⭐⭐⭐⭐
+    { id: 'VPPAggregation', label: 'VPP & DER', icon: Radio }, // ⭐⭐⭐⭐
+    // 3-Star Features (Moderate monetization)
+    { id: 'Provinces', label: 'Provinces', icon: Globe }, // ⭐⭐⭐
+    { id: 'GridQueue', label: 'Grid Queue', icon: Cable }, // ⭐⭐⭐
+    { id: 'HeatPumps', label: 'Heat Pumps', icon: Thermometer }, // ⭐⭐⭐
+    { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind }, // ⭐⭐⭐
+    { id: 'GridOptimization', label: 'Grid Ops', icon: Activity }, // ⭐⭐⭐
+    // 2-Star Features (Limited monetization)
+    { id: 'Resilience', label: 'Resilience', icon: Shield }, // ⭐⭐
+    { id: 'Innovation', label: 'Innovation', icon: Zap } // ⭐⭐
+    // Moved to Footer/Settings: Indigenous, Stakeholders, Security, Features
+  ];
+
+  // Footer Settings Items - Low-priority/admin features (2-star and below)
+  const footerSettingsItems = [
+    {
+      id: 'Indigenous',
+      label: 'Indigenous Energy',
+      icon: Users,
+      description: 'First Nations energy sovereignty and projects'
+    },
+    {
+      id: 'Stakeholders',
+      label: 'Stakeholders',
+      icon: Users,
+      description: 'Multi-party coordination and collaboration'
+    },
+    {
+      id: 'Security',
+      label: 'Security',
+      icon: Lock,
+      description: 'Cybersecurity monitoring and assessment'
+    },
+    {
+      id: 'Features',
+      label: 'Features',
+      icon: Info,
+      description: 'Feature availability and status'
+    }
   ];
 
   // Add feature status badges and filter based on feature flags
@@ -1244,26 +1274,12 @@ export const EnergyDataDashboard: React.FC = () => {
         )}
       </div>
 
-      {/* Mobile Sticky CTA Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-lg z-50">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <BarChart3 className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <div className="font-semibold text-slate-800">Explore Analytics</div>
-              <div className="text-sm text-slate-600">Deep insights & trends</div>
-            </div>
-          </div>
-          <button
-            onClick={() => setActiveTab('Analytics')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors"
-          >
-            View Now
-          </button>
-        </div>
-      </div>
+      {/* Footer Settings Menu - Low-priority/admin features */}
+      <FooterSettingsMenu
+        items={footerSettingsItems}
+        activeItem={footerSettingsItems.some(item => item.id === activeTab) ? activeTab : undefined}
+        onSelect={setActiveTab}
+      />
     </div>
   );
 };

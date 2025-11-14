@@ -28,6 +28,17 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const [showMoreDropdown, setShowMoreDropdown] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile/tablet
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024); // lg breakpoint
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const scrollByAmount = (dx: number) => {
     const el = ribbonRef.current;
@@ -35,9 +46,11 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
     el.scrollBy({ left: dx, behavior: 'smooth' });
   };
 
-  // Show first 6 tabs as core, rest in dropdown
-  const coreTabs = tabs.slice(0, 6);
-  const moreTabs = tabs.slice(6);
+  // Show first 12 tabs as core on desktop (optimized for monetization)
+  // On mobile/tablet, show fewer tabs for better UX
+  const coreTabCount = isMobile ? 6 : 12;
+  const coreTabs = tabs.slice(0, coreTabCount);
+  const moreTabs = tabs.slice(coreTabCount);
 
   // Update dropdown position when it opens
   useEffect(() => {
