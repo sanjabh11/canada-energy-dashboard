@@ -86,7 +86,7 @@ serve(async (req) => {
     }
 
     const { data: queue, error: queueError } = await queueQuery
-      .order('proposed_in_service_date', { ascending: true })
+      .order('in_service_date', { ascending: true })
       .limit(100);
 
     if (queueError) {
