@@ -140,3 +140,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/api-v2-ev-charging/deno.json"
 entrypoint = "./functions/api-v2-ev-charging/index.ts"
+
+[functions.api-v2-carbon-emissions]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-carbon-emissions/deno.json"
+entrypoint = "./functions/api-v2-carbon-emissions/index.ts"
