@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity, TrendingDown, TrendingUp, Zap, Leaf, Factory, AlertCircle } from 'lucide-react';
+import { HelpButton } from './HelpButton';
 
 interface EmissionsData {
   province_code: string;
@@ -190,7 +191,10 @@ const CarbonEmissionsDashboard: React.FC = () => {
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-lg p-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">Carbon Emissions Tracking</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl font-bold">Carbon Emissions Tracking</h1>
+          <HelpButton id="carbon-emissions" />
+        </div>
         <p className="text-green-100">
           Greenhouse gas emissions from electricity generation across Canada
         </p>
@@ -250,12 +254,15 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avg Grid Intensity</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
-                {data.statistics.avg_grid_intensity_gco2_per_kwh?.toFixed(0) ?? 'N/A'}
-              </p>
-              <p className="text-xs text-gray-500 mt-1">gCO2/kWh</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-sm text-gray-600">Avg Grid Intensity</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">
+                  {data.statistics.avg_grid_intensity_gco2_per_kwh?.toFixed(0) ?? 'N/A'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">gCO2/kWh</p>
+              </div>
+              <HelpButton id="carbon.grid-intensity" className="ml-1" />
             </div>
             <Zap className="text-yellow-500" size={40} />
           </div>
@@ -278,12 +285,15 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avoided Emissions</p>
-              <p className="text-2xl font-bold text-teal-600 mt-1">
-                {(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt
-              </p>
-              <p className="text-xs text-gray-500 mt-1">From clean energy</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-sm text-gray-600">Avoided Emissions</p>
+                <p className="text-2xl font-bold text-teal-600 mt-1">
+                  {(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt
+                </p>
+                <p className="text-xs text-gray-500 mt-1">From clean energy</p>
+              </div>
+              <HelpButton id="carbon.avoided-emissions" className="ml-1" />
             </div>
             <TrendingDown className="text-teal-500" size={40} />
           </div>
