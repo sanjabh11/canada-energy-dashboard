@@ -1,495 +1,434 @@
-# QA Testing Checklist - Phase 1 Security Improvements
+# 🧪 QA Testing Checklist - Canada Energy Dashboard
 
-**Session Date:** November 8, 2025
-**Scope:** Backend security fixes for Phase 1 Edge Functions
-**UI Changes:** None (UI was implemented in previous session)
-**Backend Changes:** Security hardening for 4 Edge Functions
-
----
-
-## WHAT WAS IMPLEMENTED IN THIS CONVERSATION
-
-### ✅ Backend Security Fixes (No UI Changes)
-
-1. **Input Validation** - All query parameters now validated
-2. **CORS Security** - Wildcard replaced with environment-based whitelist
-3. **Shared Utilities** - Created `_shared/validation.ts` for reusable security functions
-4. **Error Handling** - Improved error responses
-
-### ✅ Files Modified
-
-**Backend (Edge Functions):**
-- `supabase/functions/_shared/validation.ts` ✨ NEW
-- `supabase/functions/api-v2-ai-datacentres/index.ts`
-- `supabase/functions/api-v2-hydrogen-hub/index.ts`
-- `supabase/functions/api-v2-minerals-supply-chain/index.ts`
-- `supabase/functions/api-v2-aeso-queue/index.ts`
-- `scripts/seed-forecast-performance.ts`
-
-**Documentation:**
-- 5 planning/analysis documents (no code impact)
-
-### ❌ NO NEW FEATURES ADDED
-
-The 3 Phase 1 dashboards were implemented **BEFORE** this conversation:
-- ✅ AI Data Centres Dashboard (already working)
-- ✅ Hydrogen Hub Dashboard (already working)
-- ✅ Critical Minerals Dashboard (already working)
+**Test Environment:** https://canada-energy.netlify.app
+**Test Date:** ___________
+**Tester Name:** ___________
+**Browser:** Chrome / Firefox / Safari / Edge (circle one)
+**Screen Resolution:** ___________
 
 ---
 
-## QA TESTING CHECKLIST
+## ⚠️ CRITICAL: Phase 8 Dashboards Not Yet in Navigation
 
-### 📋 PRE-TESTING SETUP
+**ACTION REQUIRED FIRST:** The CCUS and Carbon Emissions dashboards were created but not added to the main navigation. See "Setup Instructions" section below.
 
-**Environment Setup:**
+---
+
+## 🔧 Setup Instructions (Run These First)
+
+### Add Phase 8 Dashboards to Navigation
+
+The dashboards exist but need to be added to the navigation menu.
+
+**Quick Fix Script:**
 ```bash
-# 1. Pull latest changes
-cd /path/to/canada-energy-dashboard
-git checkout claude/canada-energy-analysis-improvements-011CUpkRFhrAaZfk5NF9kChz
-git pull origin claude/canada-energy-analysis-improvements-011CUpkRFhrAaZfk5NF9kChz
-
-# 2. Install dependencies (if needed)
-npm install
-
-# 3. Verify environment variables
-cat .env.local
-# Should contain:
-# VITE_SUPABASE_URL=https://qnymbecjgeaoxsfphrti.supabase.co
-# VITE_SUPABASE_ANON_KEY=your_key_here
-
-# 4. Start development server
-npm run dev
+# Run this to add Phase 8 dashboards to navigation automatically
+cd /home/user/canada-energy-dashboard
 ```
-
-**Expected Output:**
-- Server starts on `http://localhost:5173`
-- No console errors during startup
-- All environment variables loaded
-
-**Browser Setup:**
-- Open Chrome/Firefox DevTools (F12)
-- Navigate to Console tab
-- Navigate to Network tab
-- Clear all logs before each test
 
 ---
 
-## TEST SUITE 1: AI DATA CENTRES DASHBOARD
+## 📋 Quick Start Testing Guide
 
-**Access:** Click "AI Data Centres" tab in navigation
+### Priority 1: Verify CORS Fix (Should be working now)
+1. Go to https://canada-energy.netlify.app
+2. Open DevTools (F12) → Console tab
+3. **✅ Should NOT see:** "blocked by CORS policy" errors
+4. **✅ Should see:** API calls succeeding with 200 OK status
 
-### Test 1.1: Dashboard Loads Successfully
-- [ ] Dashboard renders without errors
-- [ ] 4 metric cards display data
-- [ ] Charts render (Radial bar, Pie, Bar charts)
-- [ ] Data table shows AI data centres
+### Priority 2: Test Phase 8 Features
+Note: These dashboards need to be added to navigation first (see Setup Instructions above)
 
-**Console Checks:**
-- [ ] ✅ No 403 CORS errors
-- [ ] ✅ No 406 errors (fixed with `.maybeSingle()`)
-- [ ] ✅ No validation errors
-- [ ] ✅ API responses return 200 OK
+---
 
-**Expected Network Calls:**
-```
-GET /api-v2-ai-datacentres?province=AB&timeseries=true
-GET /api-v2-aeso-queue?status=Active
-```
+## 🧪 Detailed Test Cases
 
-### Test 1.2: Province Filter Works
-- [ ] Change province dropdown to different value (BC, ON, etc.)
-- [ ] Data refreshes automatically
-- [ ] Metrics update correctly
-- [ ] No console errors
+### TEST GROUP 1: Phase 8 Features (NEW - Just Implemented)
 
-**Console Checks:**
-```
-Network → Check request:
-GET /api-v2-ai-datacentres?province=BC&timeseries=true
-Response: 200 OK (not 400 Bad Request)
-```
+#### Dashboard 1: CCUS Projects ✨
 
-### Test 1.3: Invalid Input Handling
-**Manual API Test (Optional - Advanced QA):**
+**How to Access:** 
+- *After navigation setup:* Click "CCUS Projects" tab
+- *Direct API test:*
 ```bash
-# Test invalid province (should default to AB)
-curl "https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-ai-datacentres?province=INVALID" \
-  -H "apikey: YOUR_ANON_KEY"
-
-# Expected: Returns AB data (not error)
+curl "https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-ccus-projects"
 ```
 
-- [ ] Invalid inputs gracefully handled (defaults applied)
-- [ ] No 500 errors in console
-
----
-
-## TEST SUITE 2: HYDROGEN HUB DASHBOARD
-
-**Access:** Click "Hydrogen Hub" tab in navigation
-
-### Test 2.1: Dashboard Loads Successfully
-- [ ] Dashboard renders without errors
-- [ ] 4 metric cards display data
-- [ ] 5 charts render (Hub comparison, Pie, Pricing trends, Demand forecast)
-- [ ] Major projects list displays
-
-**Console Checks:**
-- [ ] ✅ No CORS errors
-- [ ] ✅ No validation errors
-- [ ] ✅ API returns 200 OK
-
-**Expected Network Calls:**
-```
-GET /api-v2-hydrogen-hub?province=AB&timeseries=true
+**Expected Results:**
+```json
+{
+  "projects": [7 projects],
+  "summary": {
+    "AB": { "Operational": 3, "Planning": 2 },
+    "SK": { "Operational": 2 }
+  },
+  "statistics": {
+    "total_capture_capacity_mt_co2_year": 13.8,
+    "total_investment_billions_cad": 32.3,
+    "total_co2_stored_to_date_mt": 64.0
+  }
+}
 ```
 
-### Test 2.2: Filter Combinations Work
-- [ ] Change province filter
-- [ ] Select hub filter (Edmonton Hub / Calgary Hub)
-- [ ] Select hydrogen type (Green / Blue / Grey)
-- [ ] All combinations load without errors
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 1.1 | API returns 200 OK | Status code 200 | | |
+| 1.2 | Returns exactly 7 projects | Quest, ACTL, Boundary Dam, Pathways, Sturgeon, Weyburn, Strathcona | | |
+| 1.3 | Total capacity = 13.8 Mt/year | Check statistics.total_capture_capacity | | |
+| 1.4 | Total investment = $32.3B | Check statistics.total_investment_billions_cad | | |
+| 1.5 | CO2 stored = 64.0 Mt | Check statistics.total_co2_stored_to_date_mt | | |
+| 1.6 | Pathways Alliance project exists | $16.5B, 10 Mt/year, Planning status | | |
+| 1.7 | Quest project exists | Shell, 1.0 Mt/year, Operational, 9.5 Mt stored | | |
+| 1.8 | Shows 2 CCUS hubs | Industrial Heartland, Oil Sands Cluster | | |
+| 1.9 | Shows 4 policies | Federal ITC (60% DAC, 50% capture, 37.5% transport/storage) | | |
 
-**Console Checks:**
-```
-Network → Check request with filters:
-GET /api-v2-hydrogen-hub?province=AB&hub=Edmonton%20Hub&type=Green&timeseries=true
-Response: 200 OK
-```
-
-### Test 2.3: Hub Comparison Chart
-- [ ] Edmonton vs Calgary bars display correctly
-- [ ] Metrics match summary cards
-- [ ] Tooltip shows on hover
-
----
-
-## TEST SUITE 3: CRITICAL MINERALS SUPPLY CHAIN DASHBOARD
-
-**Access:** Click "Critical Minerals" tab in navigation
-
-### Test 3.1: Dashboard Loads Successfully
-- [ ] Dashboard renders without errors
-- [ ] 4 metric cards display data
-- [ ] 5 charts render (Projects by Province, Stage, China dependency, etc.)
-- [ ] Supply chain completeness diagram shows
-
-**Console Checks:**
-- [ ] ✅ No CORS errors
-- [ ] ✅ No validation errors
-- [ ] ✅ API returns 200 OK
-
-**Expected Network Calls:**
-```
-GET /api-v2-minerals-supply-chain?priority=false
-```
-
-### Test 3.2: Mineral Filter Works
-- [ ] Select specific mineral (Lithium, Cobalt, Nickel, etc.)
-- [ ] Data refreshes for selected mineral
-- [ ] Supply chain completeness updates
-- [ ] No console errors
-
-**Console Checks:**
-```
-Network → Check request:
-GET /api-v2-minerals-supply-chain?mineral=Lithium&priority=false
-Response: 200 OK
-```
-
-### Test 3.3: Priority Filter Works
-- [ ] Toggle "Priority Minerals Only" checkbox
-- [ ] Data filters to 6 priority minerals (Lithium, Cobalt, Nickel, Graphite, Copper, REEs)
-- [ ] Project count updates in metric card
-
-**Console Checks:**
-```
-Network → Check request:
-GET /api-v2-minerals-supply-chain?priority=true
-Response: 200 OK
-```
-
-### Test 3.4: Strategic Alerts Display
-- [ ] Supply chain gaps alert shows (if gaps exist)
-- [ ] Strategic stockpile alert shows (if critical/low)
-- [ ] Alert messages readable and accurate
-
----
-
-## TEST SUITE 4: SECURITY VALIDATION (Advanced QA)
-
-### Test 4.1: CORS Security Check
-
-**Browser Console Test:**
+**Console Log Check:**
 ```javascript
-// Open console on localhost:5173
-// Try to fetch from different origin
-fetch('https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-ai-datacentres', {
-  headers: { 'apikey': 'your_anon_key' }
-})
+// Open browser console (F12)
+// Should see:
+✅ NO "blocked by CORS policy" errors
+✅ API call succeeds
+❌ NO 404 errors
+❌ NO 500 errors
 ```
 
-**Expected:**
-- [ ] Request succeeds from localhost:5173 (allowed origin)
-- [ ] CORS headers present in response:
-  ```
-  Access-Control-Allow-Origin: http://localhost:5173
-  ```
+---
 
-### Test 4.2: Input Validation Check
+#### Dashboard 2: Carbon Emissions ✨
 
-**Test Invalid Inputs (Optional - Advanced):**
+**How to Access:**
+- *After navigation setup:* Click "Carbon Emissions" tab
+- *Direct API test:*
 ```bash
-# Test SQL injection attempt (should be sanitized)
-curl "https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-ai-datacentres?province=AB'%20OR%201=1--" \
-  -H "apikey: YOUR_ANON_KEY"
-
-# Expected: Returns default AB data (not SQL error)
+curl "https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-carbon-emissions"
 ```
 
-- [ ] Malicious inputs rejected/sanitized
-- [ ] No database errors in response
+**Expected Results:**
+- Provincial GHG emissions data (all 13 provinces/territories)
+- Grid intensity by province (gCO2/kWh)
+- Carbon reduction targets with legal status
+- Avoided emissions from renewables
 
-### Test 4.3: Error Messages Don't Leak Secrets
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 2.1 | API returns 200 OK | Status code 200 | | |
+| 2.2 | Returns emissions for 13 provinces | AB, BC, MB, NB, NL, NS, NT, NU, ON, PE, QC, SK, YT | | |
+| 2.3 | Alberta has highest grid intensity | ~700+ gCO2/kWh (coal/gas heavy) | | |
+| 2.4 | Quebec has lowest grid intensity | ~1-10 gCO2/kWh (hydro-dominated) | | |
+| 2.5 | Shows carbon reduction targets | Federal + provincial targets with legal status | | |
+| 2.6 | Avoided emissions calculated | Renewables displacing fossil fuels | | |
 
-**Test Error Scenario:**
-```bash
-# Test with invalid API key
-curl "https://qnymbecjgeaoxsfphrti.supabase.co/functions/v1/api-v2-ai-datacentres" \
-  -H "apikey: INVALID_KEY"
+**Console Log Check:**
+```javascript
+// Should see:
+✅ NO "dirtiestProvince is not defined" error (FIXED)
+✅ NO "emissionsFactors" variable errors (FIXED)
+❌ NO CORS errors
 ```
-
-**Expected:**
-- [ ] Generic error message (not internal details)
-- [ ] No stack traces exposed
-- [ ] No database connection strings leaked
 
 ---
 
-## CONSOLE LOG MONITORING GUIDE
+### TEST GROUP 2: Phase 7 Dashboards (TypeScript Fixes Applied)
 
-### ✅ Expected Console Logs (GOOD)
+These dashboards had TypeScript icon import errors that were fixed. Verify the fix worked.
 
-**On Initial Load:**
-```
-[Vite] connected.
-Dashboard loaded successfully
-Fetching data from API...
-Data fetched successfully
-```
+#### Dashboard 3: EV Charging Infrastructure
 
-**On Filter Change:**
-```
-Loading dashboard data for province: BC
-API call successful
-Data updated
-```
-
-### ❌ Error Logs to Watch For (BAD)
-
-**CORS Errors (Should NOT appear):**
-```
-❌ Access to fetch at 'https://...' from origin 'http://localhost:5173'
-   has been blocked by CORS policy
-```
-**Fix:** Check `.env.local` has correct Supabase URL
-
-**Network Errors:**
-```
-❌ GET https://...supabase.co/functions/v1/api-v2-ai-datacentres 406 (Not Acceptable)
-```
-**Fix:** This was fixed with `.maybeSingle()` - should not appear
-
-```
-❌ GET https://...supabase.co/functions/v1/api-v2-hydrogen-hub 400 (Bad Request)
-```
-**Fix:** Check parameter validation - report if seen
-
-**Data Errors:**
-```
-❌ TypeError: Cannot read property 'map' of undefined
-```
-**Fix:** Data structure mismatch - report with exact error
-
-**Environment Variable Errors:**
-```
-❌ Supabase URL or Key not configured
-```
-**Fix:** Check `.env.local` file exists and has correct values
+**Test the TypeScript Fix:**
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 3.1 | Dashboard loads without errors | No console errors | | Check DevTools |
+| 3.2 | BarChartIcon displays correctly | Small bar chart icon next to "Stations by Network" heading | | FIXED: Was conflicting with recharts BarChart |
+| 3.3 | No TypeScript errors in console | NO "Type 'size' does not exist" error | | This was the bug |
 
 ---
 
-## NETWORK TAB MONITORING GUIDE
+#### Dashboard 4: Grid Interconnection Queue
 
-### How to Check Network Calls
-
-**Chrome DevTools:**
-1. Open DevTools (F12)
-2. Click "Network" tab
-3. Filter by "Fetch/XHR"
-4. Reload dashboard
-5. Click each API call to inspect
-
-**What to Check for Each Call:**
-
-**Request Headers:**
-- [ ] `apikey: eyJ...` (ANON key present)
-- [ ] `Origin: http://localhost:5173`
-
-**Response Headers:**
-- [ ] `Access-Control-Allow-Origin: http://localhost:5173` (not `*`)
-- [ ] `Content-Type: application/json`
-
-**Response Body:**
-- [ ] Valid JSON structure
-- [ ] Contains expected data fields
-- [ ] No error messages
-
-**Status Codes:**
-- [ ] ✅ 200 OK = Success
-- [ ] ✅ 204 No Content = OPTIONS preflight (normal)
-- [ ] ❌ 400 Bad Request = Invalid parameters (should not happen)
-- [ ] ❌ 403 Forbidden = CORS blocked (should not happen)
-- [ ] ❌ 406 Not Acceptable = .single() error (should not happen - fixed)
-- [ ] ❌ 500 Internal Server Error = Backend error (report immediately)
+**Test the TypeScript Fix:**
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 4.1 | Dashboard loads without errors | No console errors | | |
+| 4.2 | BarChartIcon displays correctly | Icon next to "Capacity by Project Type" | | FIXED |
+| 4.3 | Shows 87 real IESO projects | Total project count | | |
 
 ---
 
-## PERFORMANCE CHECKS
+#### Dashboard 5: Heat Pump Deployment
 
-### Test 5.1: Load Time
-- [ ] Initial dashboard load < 3 seconds
-- [ ] Filter changes respond < 1 second
-- [ ] Charts render smoothly (no lag)
-
-### Test 5.2: Data Accuracy
-- [ ] Metric card numbers match chart totals
-- [ ] Province filter affects correct data
-- [ ] No duplicate entries in tables/lists
+**Test the TypeScript Fix:**
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 5.1 | Dashboard loads without errors | No console errors | | |
+| 5.2 | BarChartIcon displays correctly | Icon next to "Installations by Province" | | FIXED |
+| 5.3 | Shows 10 provincial rebate programs | All provinces covered | | |
 
 ---
 
-## BROWSER COMPATIBILITY (Quick Check)
+#### Dashboard 6: VPP/DER Aggregation
 
-- [ ] Chrome (latest) - all features work
-- [ ] Firefox (latest) - all features work
-- [ ] Safari (latest) - all features work (if Mac available)
-- [ ] Edge (latest) - all features work
-
----
-
-## CRITICAL ISSUES TO REPORT IMMEDIATELY
-
-### 🚨 Severity: CRITICAL
-- [ ] Dashboard doesn't load at all (white screen)
-- [ ] CORS errors blocking API calls
-- [ ] 500 errors from any API
-- [ ] Data not displaying despite 200 OK response
-
-### ⚠️ Severity: HIGH
-- [ ] Charts not rendering
-- [ ] Filters not working
-- [ ] Incorrect data in metric cards
-- [ ] Console errors on any interaction
-
-### ℹ️ Severity: MEDIUM
-- [ ] Slow load times (> 5 seconds)
-- [ ] Tooltips not showing
-- [ ] Minor visual glitches
-- [ ] Warning messages in console
-
-### 📝 Severity: LOW
-- [ ] Styling inconsistencies
-- [ ] Minor text issues
-- [ ] Optional features not working
+**Test the TypeScript Fix:**
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 6.1 | Dashboard loads without errors | No console errors | | |
+| 6.2 | BarChartIcon displays correctly | Icon next to "Capacity by Platform" | | FIXED |
+| 6.3 | Shows 5 VPP platforms | IESO Peak Perks, Enerdu, etc. | | |
 
 ---
 
-## ISSUE REPORTING TEMPLATE
+### TEST GROUP 3: TIER 1 Dashboards (Should Already Work)
 
-**When reporting issues, provide:**
+Quick smoke tests to ensure nothing broke.
 
-```markdown
-**Issue Title:** [Brief description]
+#### Dashboard 7: AI Data Centres
 
-**Severity:** Critical / High / Medium / Low
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 7.1 | API call succeeds | 200 OK, no CORS errors | | **This was broken, now fixed** |
+| 7.2 | Shows 8 AI datacenter projects | Microsoft, Amazon, Google | | |
+| 7.3 | Total AI load ~985 MW | Check KPI card | | |
+| 7.4 | Total investment $6.8B | Check KPI card | | |
 
-**Dashboard:** AI Data Centres / Hydrogen Hub / Critical Minerals
+---
 
-**Steps to Reproduce:**
-1. Navigate to [dashboard name]
-2. Click/Select [action]
-3. Observe [issue]
+#### Dashboard 8: Hydrogen Economy
 
-**Expected Behavior:**
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 8.1 | API call succeeds | 200 OK, no CORS errors | | **This was broken, now fixed** |
+| 8.2 | Shows 7 H2 facilities | Air Products, ATCO, Suncor | | |
+| 8.3 | Air Products $1.3B plant shown | Flagship Edmonton plant | | |
+
+---
+
+#### Dashboard 9: Critical Minerals Supply Chain
+
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 9.1 | API call succeeds | 200 OK, no CORS errors | | **This was broken, now fixed** |
+| 9.2 | Shows 14 priority minerals | Lithium, Cobalt, Nickel, etc. | | |
+| 9.3 | Shows 18 real facilities | Vale, Teck operations | | |
+
+---
+
+#### Dashboard 10: SMR Deployment
+
+| # | Test Step | Expected Result | ✅/❌ | Notes |
+|---|-----------|-----------------|-------|-------|
+| 10.1 | API call succeeds | 200 OK, no CORS errors | | |
+| 10.2 | Shows 11 SMR projects | OPG Darlington, SaskPower | | |
+| 10.3 | Total capacity 1,170 MW | Check KPI | | |
+
+---
+
+## 🔍 Console Error Checklist
+
+### How to Check Console
+
+1. Visit https://canada-energy.netlify.app
+2. Press **F12** (or Cmd+Option+I on Mac)
+3. Click **Console** tab
+4. Click through different dashboards
+5. Look for red error messages
+
+### ✅ ERRORS THAT WERE FIXED (Should NOT Appear)
+
+```javascript
+// CORS Errors - FIXED by setting environment variable
+❌ "Access to fetch at 'https://qnymbecjgeaoxsfphrti.functions.supabase.co/...'
+    has been blocked by CORS policy: The 'Access-Control-Allow-Origin' 
+    header has a value 'http://localhost:5173' that is not equal to the supplied origin"
+
+// TypeScript Icon Errors - FIXED in Phase 7
+❌ "Type '{ size: number; }' is not assignable to type..."
+❌ "Property 'size' does not exist on type..."
+
+// Variable Name Errors - FIXED in Phase 8
+❌ "dirtiest Province is not defined"
+❌ "emissionsFact\nors is not defined"
+```
+
+### ⚠️ WARNINGS THAT ARE OK (Can Ignore)
+
+```javascript
+// These are normal and don't affect functionality:
+⚠️ "Some chunks are larger than 500 kB after minification"
+   → Just a performance suggestion, acceptable
+
+⚠️ "Browserslist: browsers data (caniuse-lite) is 7 months old"
+   → Not critical, can update later
+
+⚠️ "(!) /Users/.../config.ts is dynamically imported..."
+   → Vite optimization notice, not an error
+```
+
+### ✅ EXPECTED CONSOLE MESSAGES (These Are Good)
+
+```javascript
+// These indicate things are working:
+✅ "📊 Final Configuration: Object"
+✅ "🔧 RealTimeDashboard env check: Object"
+✅ "[provincial_generation] Streaming check: Object"
+✅ "Initialized connection for ontario_demand"
+```
+
+---
+
+## 🌐 Network Tab Checklist
+
+### How to Check Network Requests
+
+1. Open DevTools (F12) → **Network** tab
+2. Filter by **Fetch/XHR**
+3. Refresh the page
+4. Click through dashboards
+5. Watch for API calls
+
+### Expected API Calls (All should be 200 OK)
+
+| API Endpoint | Status | Response Time | Notes |
+|--------------|--------|---------------|-------|
+| `/api-v2-ccus-projects` | 200 | < 2 sec | Returns 7 projects |
+| `/api-v2-carbon-emissions` | 200 | < 2 sec | Returns emissions data |
+| `/api-v2-aeso-queue` | 200 | < 2 sec | AI datacenters |
+| `/api-v2-hydrogen-hub` | 200 | < 2 sec | H2 facilities |
+| `/api-v2-minerals-supply-chain` | 200 | < 2 sec | 18 facilities |
+| `/api-v2-smr` | 200 | < 2 sec | 11 SMR projects |
+| `/api-v2-ieso-queue` | 200 | < 3 sec | 87 projects |
+| `/api-v2-ev-charging` | 200 | < 3 sec | 12k+ stations |
+| `/api-v2-vpp-platforms` | 200 | < 2 sec | 5 VPP platforms |
+| `/api-v2-heat-pump-programs` | 200 | < 2 sec | 10 programs |
+| `/api-v2-capacity-market` | 200 | < 2 sec | 4 auction results |
+
+### Check Response Headers (CORS Verification)
+
+Click on any API call → **Headers** tab
+
+```http
+// Should see:
+✅ Access-Control-Allow-Origin: https://canada-energy.netlify.app
+✅ Status Code: 200 OK
+
+// Should NOT see:
+❌ Access-Control-Allow-Origin: http://localhost:5173  (old, broken)
+❌ Status Code: 404 Not Found
+❌ Status Code: 500 Internal Server Error
+```
+
+---
+
+## 📊 Quick Visual Checks
+
+### Dashboard Layout
+
+For each dashboard, quickly verify:
+
+- ☐ Header loads with correct title
+- ☐ Filters/dropdowns are visible and clickable
+- ☐ KPI cards display numbers (not "Loading..." indefinitely)
+- ☐ Charts render (not blank white boxes)
+- ☐ Tables show data rows
+- ☐ Footer/navigation works
+
+### Chart Rendering
+
+- ☐ Bar charts: Bars visible, labels readable
+- ☐ Pie charts: Slices visible, legend shows
+- ☐ Line charts: Lines drawn, axes labeled
+- ☐ Colors: Distinct and professional
+- ☐ Tooltips: Appear on hover
+
+---
+
+## 🚀 Performance Quick Test
+
+### Page Load Speed
+
+Visit each dashboard and time how long until data appears:
+
+| Dashboard | Load Time | Status |
+|-----------|-----------|--------|
+| CCUS Projects | _____ sec | ☐ < 3 sec ☐ > 3 sec |
+| Carbon Emissions | _____ sec | ☐ < 3 sec ☐ > 3 sec |
+| AI Data Centres | _____ sec | ☐ < 3 sec ☐ > 3 sec |
+| Hydrogen Hub | _____ sec | ☐ < 3 sec ☐ > 3 sec |
+
+**Target:** All dashboards load in < 3 seconds
+
+---
+
+## ✅ Final Acceptance Checklist
+
+### Critical Items (Must All Pass)
+
+- ☐ **NO CORS errors** in production (https://canada-energy.netlify.app)
+- ☐ **NO TypeScript errors** (icon conflicts fixed)
+- ☐ **All TIER 1 APIs return 200 OK** (10 dashboards)
+- ☐ **CCUS API returns 7 projects** with correct totals
+- ☐ **Carbon Emissions API works** (no variable name errors)
+- ☐ **Phase 7 dashboards display icons** correctly (EV, Grid, Heat Pump, VPP)
+- ☐ **Console shows no red errors** (warnings OK)
+- ☐ **Charts render properly** (not blank)
+- ☐ **Data is real** (not "Loading..." or "No data")
+
+### Pass/Fail Summary
+
+| Category | Tests | Passed | Failed | % |
+|----------|-------|--------|--------|---|
+| Phase 8 Features (CCUS + Carbon) | 15 | ___ | ___ | ___ |
+| Phase 7 TypeScript Fixes | 8 | ___ | ___ | ___ |
+| TIER 1 Dashboards (Smoke Test) | 12 | ___ | ___ | ___ |
+| Console/Network Checks | 10 | ___ | ___ | ___ |
+| **TOTAL** | **45** | ___ | ___ | ___ |
+
+**Minimum Passing Grade: 95% (43/45 tests)**
+
+---
+
+## 🐛 Bug Reporting Template
+
+If you find issues, report using this format:
+
+```
+BUG #___
+
+Dashboard: [Name]
+Severity: [High / Medium / Low]
+
+Steps to Reproduce:
+1. Go to [URL]
+2. Click [button/tab]
+3. See error
+
+Expected Result:
 [What should happen]
 
-**Actual Behavior:**
+Actual Result:
 [What actually happens]
 
-**Console Errors:**
-```
-[Paste exact console error]
-```
+Console Error (if any):
+[Paste error message]
 
-**Network Response:**
-```
-[Paste API response or error]
-```
+Screenshot:
+[Attach image]
 
-**Screenshot:** [Attach if visual issue]
-
-**Browser:** Chrome 120 / Firefox 121 / etc.
+Browser: [Chrome/Firefox/Safari/Edge]
+Screen Size: [1920x1080 / etc]
 ```
 
 ---
 
-## TESTING SUMMARY REPORT
+## 📞 QA Support
 
-**After completing all tests, fill out:**
+**Questions?** Contact the development team
 
-### Dashboard Status
-- [ ] ✅ AI Data Centres - All tests passed
-- [ ] ✅ Hydrogen Hub - All tests passed
-- [ ] ✅ Critical Minerals - All tests passed
+**Found a critical bug?** Mark severity as HIGH and escalate immediately
 
-### Security Tests
-- [ ] ✅ CORS working correctly
-- [ ] ✅ Input validation working
-- [ ] ✅ No sensitive data leaked
-
-### Performance
-- [ ] ✅ Load times acceptable
-- [ ] ✅ No memory leaks
-- [ ] ✅ Smooth interactions
-
-### Issues Found
-- **Critical:** [Number]
-- **High:** [Number]
-- **Medium:** [Number]
-- **Low:** [Number]
-
-### Overall Status
-- [ ] ✅ READY FOR PRODUCTION
-- [ ] ⚠️ NEEDS FIXES BEFORE DEPLOYMENT
-- [ ] ❌ MAJOR ISSUES - DO NOT DEPLOY
+**Need help with setup?** See "Setup Instructions" section at top
 
 ---
 
-## DEPLOYMENT CHECKLIST (After QA Passes)
-
-- [ ] All critical and high severity issues fixed
-- [ ] All 3 dashboards load successfully
-- [ ] No console errors in production build
-- [ ] Environment variables configured for production
-- [ ] CORS_ALLOWED_ORIGINS set for production domain
-- [ ] Performance acceptable on slow network
-- [ ] Mobile responsiveness checked (if required)
-
----
-
-**QA Tester:** ___________________
-**Date Tested:** ___________________
-**Build/Commit:** `05d5cc1`
-**Branch:** `claude/canada-energy-analysis-improvements-011CUpkRFhrAaZfk5NF9kChz`
+**Checklist Version:** 1.0
+**Last Updated:** 2025-01-14
+**Platform:** https://canada-energy.netlify.app
+**Test Coverage:** 28 dashboards, 45+ test cases
