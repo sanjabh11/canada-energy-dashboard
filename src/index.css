@@ -1,6 +1,9 @@
 /* Glassmorphism Energy Design System */
 @import './styles/glassmorphism.css';
 
+/* Premium UI Styles - Phase 1-5 Enhancements */
+@import './styles/premium.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
