@@ -16,6 +16,16 @@ module.exports = {
 			},
 		},
 		extend: {
+			fontFamily: {
+				sans: ['DM Sans', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
+				display: ['Archivo', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+				mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+			},
+			letterSpacing: {
+				tighter: '-0.03em',
+				tight: '-0.02em',
+				normal: '-0.011em',
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
