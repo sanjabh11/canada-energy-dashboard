@@ -1000,6 +1000,291 @@ code, kbd, samp, pre {
   }
 }
 
+/* ============================================
+   PHASE 4: ADVANCED MICRO-INTERACTIONS
+   8% Impact | Loading states, ripples, toasts
+   ============================================ */
+
+/* Loading Skeleton Shimmer - Premium loading states */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(22, 139, 106, 0.1) 0%,
+    rgba(0, 217, 255, 0.15) 50%,
+    rgba(22, 139, 106, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+  border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: var(--space-sm);
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-heading {
+  height: 2rem;
+  width: 60%;
+  margin-bottom: var(--space-md);
+  border-radius: var(--radius-md);
+}
+
+.skeleton-card {
+  height: 200px;
+  border-radius: var(--radius-xl);
+}
+
+.skeleton-circle {
+  border-radius: 50%;
+  aspect-ratio: 1;
+}
+
+/* Button Ripple Effect - Material Design inspired */
+@keyframes button-ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.btn-ripple:active::after {
+  animation: button-ripple 0.6s var(--ease-out);
+}
+
+/* Toast Notification Animations */
+@keyframes toast-slide-in {
+  0% {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  0% {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100%) scale(0.95);
+    opacity: 0;
+  }
+}
+
+@keyframes toast-progress {
+  0% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(0);
+  }
+}
+
+.toast {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 9999;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-backdrop);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: 0 16px 48px rgba(11, 79, 60, 0.3);
+  animation: toast-slide-in 0.4s var(--ease-spring);
+  max-width: 400px;
+}
+
+.toast.toast-exit {
+  animation: toast-slide-out 0.3s var(--ease-out) forwards;
+}
+
+.toast-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-electric);
+  transform-origin: left;
+  animation: toast-progress 3s linear forwards;
+}
+
+.toast-success {
+  border-left: 4px solid var(--color-forest);
+}
+
+.toast-error {
+  border-left: 4px solid var(--color-critical);
+}
+
+.toast-warning {
+  border-left: 4px solid var(--color-solar);
+}
+
+.toast-info {
+  border-left: 4px solid var(--color-electric);
+}
+
+/* Scroll Progress Indicator */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--primary-gradient);
+  transform-origin: left;
+  z-index: 9999;
+  transition: transform 0.1s ease-out;
+}
+
+/* Advanced Loading Spinner - Energy themed */
+@keyframes spinner-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spinner-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(0.95);
+  }
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 217, 255, 0.1);
+  border-top-color: var(--color-electric);
+  animation:
+    spinner-rotate 0.8s linear infinite,
+    spinner-pulse 1.6s ease-in-out infinite;
+}
+
+.loading-spinner-sm {
+  width: 24px;
+  height: 24px;
+  border-width: 2px;
+}
+
+.loading-spinner-lg {
+  width: 64px;
+  height: 64px;
+  border-width: 4px;
+}
+
+/* Pulse Loader - Alternative loading state */
+@keyframes pulse-loader {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pulse-loader {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-loader span {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--color-electric);
+  animation: pulse-loader 1.2s ease-in-out infinite;
+}
+
+.pulse-loader span:nth-child(1) {
+  animation-delay: 0s;
+}
+
+.pulse-loader span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.pulse-loader span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Interactive Focus States - Enhanced accessibility */
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-electric);
+  outline-offset: 2px;
+  border-radius: var(--radius-md);
+}
+
+/* Smooth Scroll Behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .skeleton,
+  .loading-spinner,
+  .pulse-loader span,
+  .btn-ripple::after,
+  .toast {
+    animation: none !important;
+  }
+}
+
 /* Print styles */
 @media print {
   .hero-section,
