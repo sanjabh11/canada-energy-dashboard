@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Atom, Calendar, DollarSign, MapPin, CheckCircle, Clock, AlertTriangle, Zap, Activity } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface SMRProject {
   id: string;
@@ -100,9 +101,12 @@ const SMRDeploymentDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Atom size={32} />
-          <h1 className="text-3xl font-bold">SMR Deployment Tracker</h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Atom size={32} />
+            <h1 className="text-3xl font-bold">SMR Deployment Tracker</h1>
+          </div>
+          <HelpButton id="smr.overview" />
         </div>
         <p className="text-blue-100">Canada's Small Modular Reactor pipeline - OPG Darlington construction license issued April 2025</p>
       </div>
@@ -198,10 +202,13 @@ const SMRDeploymentDashboard: React.FC = () => {
 
       {/* Projects Table */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <MapPin size={20} />
-          Canadian SMR Projects
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <MapPin size={20} />
+            Canadian SMR Projects
+          </h3>
+          <HelpButton id="smr.projects" />
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">

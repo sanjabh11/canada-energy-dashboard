@@ -15,6 +15,7 @@ import {
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
+import { HelpButton } from './HelpButton';
 
 interface ComplianceRecord {
   id: string;
@@ -319,9 +320,12 @@ export const ComplianceDashboard: React.FC = () => {
             <div className="bg-green-500 p-3 rounded-lg">
               <Shield className="h-8 w-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-slate-800">Regulatory Compliance Monitoring</h1>
-              <p className="text-slate-600">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
+            <div className="flex items-center gap-3 flex-1">
+              <div className="flex-1">
+                <h1 className="text-2xl font-bold text-slate-800">Regulatory Compliance Monitoring</h1>
+                <p className="text-slate-600">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
+              </div>
+              <HelpButton id="compliance.overview" />
             </div>
           </div>
 

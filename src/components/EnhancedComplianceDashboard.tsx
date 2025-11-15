@@ -14,6 +14,7 @@ import {
   Archive, Settings, Star, Plus, Edit, Save, X, Download, Users, Calendar
 } from 'lucide-react';
 import { localStorageManager, type ComplianceRecord } from '../lib/localStorageManager';
+import { HelpButton } from './HelpButton';
 
 interface ComplianceMetrics {
   totalProjects: number;
@@ -274,9 +275,12 @@ export const EnhancedComplianceDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Regulatory Compliance Monitoring</h2>
-            <p className="text-slate-600">Automated compliance tracking with violation alerts and remediation workflows</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Regulatory Compliance Monitoring</h2>
+              <p className="text-slate-600">Automated compliance tracking with violation alerts and remediation workflows</p>
+            </div>
+            <HelpButton id="enhanced.compliance" />
           </div>
           <div className="flex items-center gap-3">
             <div className="flex bg-slate-100 rounded-lg p-1">

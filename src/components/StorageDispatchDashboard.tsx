@@ -11,6 +11,7 @@ import { Battery, TrendingUp, Zap, DollarSign, Activity, CheckCircle, AlertTrian
 import { supabase } from '../lib/supabaseClient';
 import { ProvenanceBadge, DataQualityBadge } from './ProvenanceBadge';
 import { cn } from '@/lib/utils';
+import { HelpButton } from './HelpButton';
 
 interface BatteryState {
   soc_percent: number;
@@ -129,9 +130,12 @@ const StorageDispatchDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900">Battery Storage Dispatch</h1>
-            <p className="text-slate-600 mt-2">Rule-Based Optimization for Curtailment Mitigation</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900">Battery Storage Dispatch</h1>
+              <p className="text-slate-600 mt-2">Rule-Based Optimization for Curtailment Mitigation</p>
+            </div>
+            <HelpButton id="storage.dispatch.overview" />
           </div>
           <select
             value={province}

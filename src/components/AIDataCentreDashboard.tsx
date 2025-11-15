@@ -23,6 +23,7 @@ import {
   MapPin, Activity, Gauge, Cloud, Thermometer, DollarSign
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface AIDataCentre {
   id: string;
@@ -275,11 +276,14 @@ export const AIDataCentreDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Server className="w-10 h-10 text-blue-600" />
-          <h1 className="text-4xl font-bold text-slate-800">
-            AI Data Centre Energy Dashboard
-          </h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Server className="w-10 h-10 text-blue-600" />
+            <h1 className="text-4xl font-bold text-slate-800">
+              AI Data Centre Energy Dashboard
+            </h1>
+          </div>
+          <HelpButton id="ai-datacentre.overview" />
         </div>
         <p className="text-lg text-slate-600 ml-13">
           Alberta's $100B AI Strategy | AESO Queue Crisis Management
@@ -410,10 +414,13 @@ export const AIDataCentreDashboard: React.FC = () => {
 
       {/* Phase 1 Allocation Status */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Gauge className="w-6 h-6 text-blue-600" />
-          AESO Phase 1 Allocation Status (1,200 MW Limit)
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Gauge className="w-6 h-6 text-blue-600" />
+            AESO Phase 1 Allocation Status (1,200 MW Limit)
+          </h2>
+          <HelpButton id="ai-datacentre.phase1" />
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
             <ResponsiveContainer width="100%" height={200}>
@@ -538,10 +545,13 @@ export const AIDataCentreDashboard: React.FC = () => {
 
       {/* AESO Queue Breakdown */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <Server className="w-6 h-6 text-blue-600" />
-          AESO Interconnection Queue Breakdown
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <Server className="w-6 h-6 text-blue-600" />
+            AESO Interconnection Queue Breakdown
+          </h2>
+          <HelpButton id="ai-datacentre.queue" />
+        </div>
         <div className="mb-4 p-4 bg-blue-50 rounded-lg">
           <h3 className="font-bold text-blue-800 mb-2">AI Data Centre Dominance</h3>
           <div className="grid grid-cols-3 gap-4 text-center">
@@ -580,10 +590,13 @@ export const AIDataCentreDashboard: React.FC = () => {
 
       {/* Data Centre Registry Table */}
       <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <MapPin className="w-6 h-6 text-blue-600" />
-          Alberta AI Data Centre Registry
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-blue-600" />
+            Alberta AI Data Centre Registry
+          </h2>
+          <HelpButton id="ai-datacentre.pue" className="ml-2" />
+        </div>
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-slate-50">

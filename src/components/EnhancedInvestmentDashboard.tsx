@@ -10,6 +10,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, ScatterChart, Scatter, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Shield, Leaf, Users, Plus, Edit, Save, X, Download, AlertTriangle, CheckCircle, Calculator, Target } from 'lucide-react';
 import { localStorageManager, type InvestmentProjectRecord } from '../lib/localStorageManager';
+import { HelpButton } from './HelpButton';
 
 interface FinancialMetrics {
   totalInvestment: number;
@@ -209,9 +210,12 @@ export const EnhancedInvestmentDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Investment Decision Support</h2>
-            <p className="text-slate-600">Multi-criteria analysis and portfolio optimization for energy projects</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Investment Decision Support</h2>
+              <p className="text-slate-600">Multi-criteria analysis and portfolio optimization for energy projects</p>
+            </div>
+            <HelpButton id="enhanced.investment" />
           </div>
           <div className="flex items-center gap-3">
             <div className="flex bg-slate-100 rounded-lg p-1">

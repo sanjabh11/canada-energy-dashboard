@@ -11,6 +11,7 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { AlertTriangle, TrendingUp, TrendingDown, Globe, Package, Zap, Shield, DollarSign, Plus, Edit, Save, X, Download, Upload, AlertCircle, CheckCircle, Database, Clock, MapPin, Eye, Activity, Info, Sparkles, Bell } from 'lucide-react';
 import { localStorageManager, type MineralsSupplyRecord } from '../lib/localStorageManager';
 import { enhancedDataService, type RealMineralsData } from '../lib/enhancedDataService';
+import { HelpButton } from './HelpButton';
 
 interface MineralsMetrics {
   totalMinerals: number;
@@ -312,9 +313,12 @@ export const EnhancedMineralsDashboard: React.FC = () => {
       {/* Header */}
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-slate-900">Critical Minerals Supply Chain Monitor</h2>
-            <p className="text-slate-600">Real-time monitoring of critical minerals supply, risk assessment, and market intelligence</p>
+          <div className="flex items-center gap-3">
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Critical Minerals Supply Chain Monitor</h2>
+              <p className="text-slate-600">Real-time monitoring of critical minerals supply, risk assessment, and market intelligence</p>
+            </div>
+            <HelpButton id="enhanced.minerals" />
           </div>
           <div className="flex items-center gap-3">
             <div className="flex bg-slate-100 rounded-lg p-1">

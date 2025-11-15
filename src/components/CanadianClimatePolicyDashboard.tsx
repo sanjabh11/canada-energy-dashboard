@@ -10,17 +10,18 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { LineChart, Line, BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { 
-  Leaf, TrendingDown, Target, DollarSign, Fuel, 
+import {
+  Leaf, TrendingDown, Target, DollarSign, Fuel,
   CheckCircle, AlertTriangle, Calendar, FileText,
   Globe, Factory, Zap, Download, Filter
 } from 'lucide-react';
-import { 
+import {
   canadianRegulatoryService,
   type CarbonPricingCompliance,
   type CleanFuelRegulationsCompliance,
   type NetZeroAccountabilityTracking
 } from '../lib/canadianRegulatory';
+import { HelpButton } from './HelpButton';
 
 interface ClimateMetrics {
   totalEmissionsReduction: number;
@@ -341,6 +342,7 @@ export const CanadianClimatePolicyDashboard: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
+            <HelpButton id="climate.policy.overview" />
             <div className="flex bg-white/10 rounded-lg p-1">
               {['overview', 'carbon_pricing', 'clean_fuel', 'net_zero'].map((mode) => (
                 <button

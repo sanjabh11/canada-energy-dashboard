@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Zap, MapPin, Car, Battery, TrendingUp, BarChart3 as BarChartIcon } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface ChargingStation {
   id: string;
@@ -122,9 +123,12 @@ const EVChargingDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Zap size={32} />
-          <h1 className="text-3xl font-bold">EV Charging Infrastructure</h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Zap size={32} />
+            <h1 className="text-3xl font-bold">EV Charging Infrastructure</h1>
+          </div>
+          <HelpButton id="ev-infrastructure.overview" />
         </div>
         <p className="text-blue-100">Electric vehicle charging network and adoption tracking - Federal mandate: 20% by 2026, 100% by 2035</p>
       </div>
@@ -153,9 +157,12 @@ const EVChargingDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">V2G-Capable Stations</p>
-              <p className="text-2xl font-bold">{v2gCapableStations}</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-sm text-gray-600">V2G-Capable Stations</p>
+                <p className="text-2xl font-bold">{v2gCapableStations}</p>
+              </div>
+              <HelpButton id="ev-infrastructure.v2g" className="ml-1" />
             </div>
             <Battery className="text-purple-500" size={24} />
           </div>
@@ -163,9 +170,12 @@ const EVChargingDashboard: React.FC = () => {
 
         <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">EV Market Share vs 2026 Target</p>
-              <p className="text-2xl font-bold">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <p className="text-sm text-gray-600">EV Market Share vs 2026 Target</p>
+                <p className="text-2xl font-bold">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
+              </div>
+              <HelpButton id="ev-infrastructure.adoption" className="ml-1" />
             </div>
             <Car className="text-orange-500" size={24} />
           </div>
@@ -175,10 +185,13 @@ const EVChargingDashboard: React.FC = () => {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <BarChartIcon size={20} />
-            Stations by Network
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <BarChartIcon size={20} />
+              Stations by Network
+            </h3>
+            <HelpButton id="ev-infrastructure.networks" />
+          </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={networkData}>
               <CartesianGrid strokeDasharray="3 3" />
@@ -211,10 +224,13 @@ const EVChargingDashboard: React.FC = () => {
 
       {/* Charger Type Distribution */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <Battery size={20} />
-          Charger Type Distribution
-        </h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Battery size={20} />
+            Charger Type Distribution
+          </h3>
+          <HelpButton id="ev-charging-levels" />
+        </div>
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie

@@ -9,6 +9,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Zap, TrendingUp, AlertTriangle, CheckCircle, Settings, Battery, Gauge, Target, Activity, Wifi, WifiOff, Download } from 'lucide-react';
 import { enhancedDataService, type RealGridStatus } from '../lib/enhancedDataService';
+import { HelpButton } from './HelpButton';
 
 interface GridMetrics {
   totalDemand: number;
@@ -116,9 +117,12 @@ export const EnhancedGridOptimizationDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <Zap className="text-yellow-300" size={32} />
-            <div>
-              <h1 className="text-2xl font-bold">Grid Optimization Dashboard</h1>
-              <p className="text-blue-200">Real-time Canadian Grid Monitoring • AI-Powered Optimization</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h1 className="text-2xl font-bold">Grid Optimization Dashboard</h1>
+                <p className="text-blue-200">Real-time Canadian Grid Monitoring • AI-Powered Optimization</p>
+              </div>
+              <HelpButton id="enhanced.grid" />
             </div>
           </div>
           

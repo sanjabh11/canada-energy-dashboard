@@ -14,6 +14,7 @@ import {
   Shield, TrendingUp, Battery, Factory, Home
 } from 'lucide-react';
 import { digitalTwin, type SystemState, type SimulationScenario, type SimulationResult } from '../lib/digitalTwin';
+import { HelpButton } from './HelpButton';
 
 interface DigitalTwinState {
   isRunning: boolean;
@@ -273,6 +274,7 @@ export const DigitalTwinDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold">Digital Twin Energy Ecosystem</h1>
               <p className="text-purple-200">Virtual Canada Energy System • Real-time Simulation • Predictive Modeling</p>
             </div>
+            <HelpButton id="digitaltwin.overview" />
           </div>
           
           <div className="flex items-center gap-4">

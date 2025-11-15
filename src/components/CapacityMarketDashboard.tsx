@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { DollarSign, TrendingUp, BarChart3, Calendar, Activity } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface Auction {
   id: string;
@@ -101,9 +102,12 @@ const CapacityMarketDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <BarChart3 size={32} />
-          <h1 className="text-3xl font-bold">Capacity Market Analytics</h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <BarChart3 size={32} />
+            <h1 className="text-3xl font-bold">Capacity Market Analytics</h1>
+          </div>
+          <HelpButton id="capacity.overview" />
         </div>
         <p className="text-purple-100">IESO capacity auction results - Grid reliability pricing and resource adequacy tracking</p>
       </div>

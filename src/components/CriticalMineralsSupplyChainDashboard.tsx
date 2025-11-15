@@ -26,6 +26,7 @@ import {
   Shield, DollarSign, Zap, MapPin, Activity, ChevronRight, CheckCircle, XCircle
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface DashboardData {
   projects: any[];
@@ -244,11 +245,14 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <Package className="w-10 h-10 text-purple-600" />
-          <h1 className="text-4xl font-bold text-slate-800">
-            Critical Minerals Supply Chain Intelligence
-          </h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Package className="w-10 h-10 text-purple-600" />
+            <h1 className="text-4xl font-bold text-slate-800">
+              Critical Minerals Supply Chain Intelligence
+            </h1>
+          </div>
+          <HelpButton id="minerals.overview" />
         </div>
         <p className="text-lg text-slate-600 ml-13">
           $6.4B Federal Investment | 30% Tax Credit | National Security Priority

@@ -8,16 +8,17 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { 
-  Shield, AlertTriangle, CheckCircle, Clock, FileText, 
+import {
+  Shield, AlertTriangle, CheckCircle, Clock, FileText,
   MapPin, Factory, Zap, Gauge, TrendingUp, Eye, Search,
   Filter, Download, Calendar, Users, Settings, Package as PackageIcon
 } from 'lucide-react';
-import { 
-  canadianRegulatoryService, 
-  type CERComplianceRecord, 
-  type CERMarketOversight 
+import {
+  canadianRegulatoryService,
+  type CERComplianceRecord,
+  type CERMarketOversight
 } from '../lib/canadianRegulatory';
+import { HelpButton } from './HelpButton';
 
 interface ComplianceMetrics {
   totalFacilities: number;
@@ -333,6 +334,7 @@ export const CERComplianceDashboard: React.FC = () => {
               <h1 className="text-2xl font-bold text-slate-900">CER Compliance Dashboard</h1>
               <p className="text-slate-600">Canada Energy Regulator • Regulatory Compliance Monitoring</p>
             </div>
+            <HelpButton id="cer.overview" />
           </div>
           
           <div className="flex items-center gap-3">
