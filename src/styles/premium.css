@@ -144,6 +144,15 @@
   --duration-fast: 0.15s;
   --duration-normal: 0.3s;
   --duration-slow: 0.5s;
+  --duration-slower: 0.8s;
+  --duration-page-load: 1.2s;
+
+  /* Spring Physics Easing (for premium feel) */
+  --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
   
   /* Z-Index Scale */
   --z-dropdown: 1000;
@@ -248,7 +257,7 @@ code, kbd, samp, pre {
   font-feature-settings: 'tnum' 1;
 }
 
-/* Premium Glassmorphism Components */
+/* Premium Glassmorphism Components - Enhanced with Spring Physics */
 .glass-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-backdrop);
@@ -256,12 +265,13 @@ code, kbd, samp, pre {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   box-shadow: var(--glass-shadow);
-  transition: all var(--duration-normal) ease;
+  transition: all var(--duration-slow) var(--ease-spring);
+  will-change: transform;
 }
 
 .glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 16px 48px 0 rgba(11, 79, 60, 0.4), 0 0 0 1px rgba(0, 217, 255, 0.1);
 }
 
 .glass-card-dark {
@@ -345,7 +355,7 @@ code, kbd, samp, pre {
   animation: fadeInUp 1s ease 0.3s forwards;
 }
 
-/* Premium Button Styles */
+/* Premium Button Styles - Spring Physics */
 .btn-premium {
   display: inline-flex;
   align-items: center;
@@ -359,20 +369,24 @@ code, kbd, samp, pre {
   color: white;
   font-weight: 600;
   text-decoration: none;
-  transition: all var(--duration-normal) ease;
+  transition: all var(--duration-slow) var(--ease-spring);
   box-shadow: var(--glass-shadow);
   opacity: 0;
-  animation: fadeInUp 1s ease 0.6s forwards;
+  animation: fadeInUp 1s var(--ease-spring) 0.6s forwards;
+  will-change: transform;
+  cursor: pointer;
 }
 
 .btn-premium:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
-  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 16px 48px 0 rgba(11, 79, 60, 0.4), 0 0 0 1px rgba(0, 217, 255, 0.3);
+  background: rgba(0, 217, 255, 0.15);
+  border-color: var(--color-electric);
 }
 
 .btn-premium:active {
-  transform: translateY(0);
+  transform: translateY(-1px) scale(0.98);
+  transition-duration: var(--duration-fast);
 }
 
 /* Dashboard Container Styles - Energy-Themed */
@@ -413,7 +427,7 @@ code, kbd, samp, pre {
   margin: 0 auto;
 }
 
-/* Enhanced Card Styles */
+/* Enhanced Card Styles - Spring Physics */
 .premium-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
@@ -422,9 +436,10 @@ code, kbd, samp, pre {
   border-radius: var(--radius-2xl);
   padding: var(--space-xl);
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  transition: all var(--duration-normal) ease;
+  transition: all var(--duration-slow) var(--ease-spring);
   position: relative;
   overflow: hidden;
+  will-change: transform;
 }
 
 .premium-card::before {
@@ -436,14 +451,19 @@ code, kbd, samp, pre {
   height: 4px;
   background: var(--primary-gradient);
   border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
+  transition: height var(--duration-normal) var(--ease-spring);
 }
 
 .premium-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.15);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 32px 64px rgba(11, 79, 60, 0.2), 0 0 0 1px rgba(0, 217, 255, 0.1);
 }
 
-/* Metric Cards */
+.premium-card:hover::before {
+  height: 6px;
+}
+
+/* Metric Cards - Enhanced with Animations */
 .metric-card {
   background: var(--glass-bg);
   backdrop-filter: var(--glass-backdrop);
@@ -452,9 +472,16 @@ code, kbd, samp, pre {
   border-radius: var(--radius-xl);
   padding: var(--space-lg);
   text-align: center;
-  transition: all var(--duration-normal) ease;
+  transition: all var(--duration-slow) var(--ease-spring);
   position: relative;
   overflow: hidden;
+  will-change: transform;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px) scale(1.02);
+  border-color: var(--color-electric);
+  box-shadow: 0 8px 24px rgba(0, 217, 255, 0.2);
 }
 
 .metric-card::before {
@@ -498,7 +525,21 @@ code, kbd, samp, pre {
   line-height: var(--leading-tight);
 }
 
-/* Animation Classes */
+/* Animation Classes - Orchestrated Page Load */
+
+/* Staggered Card Reveal - Main entrance animation */
+@keyframes slideUpFade {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Legacy support */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -507,6 +548,91 @@ code, kbd, samp, pre {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/* Metric Counter Animation - Numbers scale in */
+@keyframes countUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  60% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Pulse Glow - For data updates */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(0, 217, 255, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 217, 255, 0);
+  }
+}
+
+/* Shimmer - Loading state */
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+/* Chart Animations */
+@keyframes barGrow {
+  0% {
+    transform: scaleY(0);
+    transform-origin: bottom;
+  }
+  100% {
+    transform: scaleY(1);
+    transform-origin: bottom;
+  }
+}
+
+@keyframes lineDrawIn {
+  0% {
+    stroke-dashoffset: 1000;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes pieSliceIn {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes numberChange {
+  0% {
+    opacity: 0.5;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -590,12 +716,87 @@ code, kbd, samp, pre {
 .scroll-animate {
   opacity: 0;
   transform: translateY(30px);
-  transition: all 0.6s ease;
+  transition: all 0.6s var(--ease-spring);
 }
 
 .scroll-animate.in-view {
   opacity: 1;
   transform: translateY(0);
+}
+
+/* Orchestrated Page Load - Staggered Reveals */
+.stagger-fade-in {
+  opacity: 0;
+  animation: slideUpFade 0.6s var(--ease-spring) forwards;
+}
+
+/* Stagger delays for choreographed entrance */
+.stagger-1 { animation-delay: 0.1s; }
+.stagger-2 { animation-delay: 0.2s; }
+.stagger-3 { animation-delay: 0.3s; }
+.stagger-4 { animation-delay: 0.4s; }
+.stagger-5 { animation-delay: 0.5s; }
+.stagger-6 { animation-delay: 0.6s; }
+.stagger-7 { animation-delay: 0.7s; }
+.stagger-8 { animation-delay: 0.8s; }
+
+/* Metric animations */
+.metric-animate {
+  animation: countUp 1.2s var(--ease-spring) forwards;
+}
+
+.metric-animate-delayed {
+  animation: countUp 1.2s var(--ease-spring) 0.3s forwards;
+}
+
+/* Data update pulse */
+.data-updated {
+  animation: pulseGlow 1s var(--ease-spring);
+}
+
+/* Loading shimmer */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(0, 217, 255, 0.2) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Chart Animation Classes */
+.chart-bar-animate {
+  animation: barGrow 0.8s var(--ease-spring) forwards;
+}
+
+.chart-line-animate {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: lineDrawIn 1.5s var(--ease-smooth) forwards;
+}
+
+.chart-pie-animate {
+  animation: pieSliceIn 0.6s var(--ease-bounce) forwards;
+}
+
+.number-change {
+  animation: numberChange 0.4s var(--ease-spring);
+}
+
+/* Recharts element animations */
+.recharts-bar-rectangle {
+  animation: barGrow 0.8s var(--ease-spring) forwards;
+}
+
+.recharts-line-curve,
+.recharts-area-curve {
+  animation: lineDrawIn 1.5s var(--ease-smooth) forwards;
+}
+
+.recharts-pie-sector {
+  animation: pieSliceIn 0.6s var(--ease-spring) forwards;
 }
 
 /* Typography Utility Classes */
