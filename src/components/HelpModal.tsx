@@ -143,18 +143,18 @@ export const HelpModal: React.FC<HelpModalProps> = ({
         </div>
 
         {/* Content */}
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 bg-slate-800">
           {/* Main content area */}
           <div
             id="help-modal-content"
-            className="prose prose-slate prose-invert max-w-none"
+            className="prose prose-slate prose-invert max-w-none [&>*]:bg-transparent [&_*]:bg-transparent [&_p]:text-slate-200 [&_h1]:text-slate-100 [&_h2]:text-slate-100 [&_h3]:text-slate-200 [&_h4]:text-slate-200 [&_li]:text-slate-200 [&_td]:text-slate-200 [&_th]:text-slate-200 [&_strong]:text-slate-100 [&_code]:bg-slate-900 [&_code]:text-cyan-400 [&_pre]:bg-slate-900"
           >
             {content ? (
-              <div className="text-slate-200 space-y-4">
+              <div className="text-slate-200 space-y-4 bg-transparent">
                 {content}
               </div>
             ) : (
-              <div className="text-slate-400 text-center py-8">
+              <div className="text-slate-400 text-center py-8 bg-transparent">
                 Help content not available.
               </div>
             )}
@@ -177,7 +177,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({
 
           {/* Provenance section */}
           {provenance && provenance.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-slate-700">
+            <div className="mt-6 pt-4 border-t border-slate-700 bg-transparent">
               <h3 className="text-sm font-medium text-slate-200 mb-2">Data Sources:</h3>
               <ul className="space-y-1">
                 {provenance.map((item, index) => (
@@ -191,7 +191,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end items-center space-x-3 px-6 py-4 border-t border-slate-700">
+        <div className="flex justify-end items-center space-x-3 px-6 py-4 border-t border-slate-700 bg-slate-800">
           <button
             onClick={onClose}
             className="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600 transition-colors text-sm font-medium"
