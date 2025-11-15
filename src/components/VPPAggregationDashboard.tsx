@@ -13,6 +13,7 @@ import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Activity, Zap, Users, Gauge, Radio, BarChart3 as BarChartIcon } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { HelpButton } from './HelpButton';
 
 interface VPPPlatform {
   id: string;
@@ -116,9 +117,12 @@ const VPPAggregationDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-lg p-6">
-        <div className="flex items-center gap-3 mb-2">
-          <Radio size={32} />
-          <h1 className="text-3xl font-bold">VPP & DER Aggregation</h1>
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <div className="flex items-center gap-3">
+            <Radio size={32} />
+            <h1 className="text-3xl font-bold">VPP & DER Aggregation</h1>
+          </div>
+          <HelpButton id="vpp.overview" />
         </div>
         <p className="text-indigo-100">Virtual Power Plant platforms and Distributed Energy Resource fleet tracking - Grid flexibility and demand response</p>
       </div>
