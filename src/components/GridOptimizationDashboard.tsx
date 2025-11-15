@@ -7,6 +7,7 @@ import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { realDataService } from '../lib/realDataService';
 import { PartialFeatureWarning } from './FeatureStatusBadge';
+import { HelpButton } from './HelpButton';
 
 // Interfaces for Grid Optimization Dashboard
 export interface GridStatus {
@@ -306,9 +307,12 @@ const GridOptimizationDashboard: React.FC = () => {
         <PartialFeatureWarning featureId="grid_optimization" />
         
         <header className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Grid Optimization Dashboard
-          </h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-3xl font-bold text-slate-900">
+              Grid Optimization Dashboard
+            </h1>
+            <HelpButton id="grid.optimization.overview" />
+          </div>
           <p className="text-slate-600">
             Real-time grid monitoring, stability analysis, and optimization recommendations
           </p>
