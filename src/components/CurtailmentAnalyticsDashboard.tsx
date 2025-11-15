@@ -33,6 +33,7 @@ import { supabase } from '../lib/supabaseClient';
 import type { CurtailmentEvent, CurtailmentReductionRecommendation } from '@/lib/types/renewableForecast';
 import { cn } from '@/lib/utils';
 import { ProvenanceBadge, DataQualityBadge } from './ProvenanceBadge';
+import { HelpButton } from './HelpButton';
 
 const COLORS = {
   oversupply: '#ef4444',
@@ -251,9 +252,12 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-slate-900">Curtailment Reduction Analytics</h1>
-            <p className="text-slate-600 mt-2">Phase 2: AI-Powered Curtailment Mitigation</p>
+          <div className="flex items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold text-slate-900">Curtailment Reduction Analytics</h1>
+              <p className="text-slate-600 mt-2">Phase 2: AI-Powered Curtailment Mitigation</p>
+            </div>
+            <HelpButton id="curtailment.overview" />
           </div>
           <div className="flex gap-4 items-center">
             <select
