@@ -22,6 +22,7 @@ import {
   FileText, Award, CheckCircle, AlertTriangle, Home
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
+import { HelpButton } from './HelpButton';
 
 // Supabase client
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
@@ -200,6 +201,7 @@ const IndigenousEconomicDashboard: React.FC = () => {
         <div className="flex items-center gap-3 mb-2">
           <Users className="h-8 w-8 text-purple-600" />
           <h1 className="text-3xl font-bold text-gray-900">Indigenous Economic Impact</h1>
+          <HelpButton id="indigenous.overview" />
         </div>
         <p className="text-gray-600 text-lg">
           Equity Ownership, Revenue Agreements & Economic Benefits Tracking
