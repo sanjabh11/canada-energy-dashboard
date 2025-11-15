@@ -172,24 +172,34 @@
   border: 1px solid rgba(255, 255, 255, 0.125);
 }
 
-/* Shader gradient backgrounds */
+/* Shader gradient backgrounds - Energy-Themed */
 .shader-bg-primary {
-  background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+  background: linear-gradient(-45deg, #0B4F3C, #168B6A, #00D9FF, #1FAA7A);
   background-size: 400% 400%;
 }
 
 .shader-bg-secondary {
-  background: linear-gradient(-45deg, #667eea, #764ba2, #f093fb, #f5576c);
+  background: linear-gradient(-45deg, #00D9FF, #168B6A, #00FFD1, #10B981);
   background-size: 400% 400%;
 }
 
 .shader-bg-accent {
-  background: linear-gradient(-45deg, #ff9a9e, #fecfef, #fecfef, #ff9a9e);
+  background: linear-gradient(-45deg, #FFB627, #FFCD3C, #FFA500, #E69500);
   background-size: 400% 400%;
 }
 
 .shader-bg-energy {
-  background: linear-gradient(-45deg, #667eea, #764ba2, #667eea, #764ba2);
+  background: linear-gradient(-45deg, #0B4F3C, #168B6A, #00D9FF, #168B6A);
+  background-size: 400% 400%;
+}
+
+.shader-bg-night {
+  background: linear-gradient(-45deg, #062D23, #0B4F3C, #2C3E50, #168B6A);
+  background-size: 400% 400%;
+}
+
+.shader-bg-critical {
+  background: linear-gradient(-45deg, #FF4757, #D63447, #FFB627, #FF6B7A);
   background-size: 400% 400%;
 }
 
