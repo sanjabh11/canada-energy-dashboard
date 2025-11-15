@@ -13,6 +13,7 @@ import { getMarketBrief, type MarketBriefResponse } from '../lib/llmClient';
 import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
 import { PartialFeatureWarning } from './FeatureStatusBadge';
+import { HelpButton } from './HelpButton';
 
 interface MineralsData {
   supplyStatus: Array<{
@@ -283,9 +284,12 @@ export const MineralsDashboard: React.FC = () => {
           <div className="bg-purple-500 p-3 rounded-lg">
             <Globe className="h-8 w-8 text-white" />
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800">Critical Minerals Supply Chain Monitor</h1>
-            <p className="text-slate-600">Global supply chain risk assessment and market intelligence for critical minerals</p>
+          <div className="flex items-center gap-3 flex-1">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold text-slate-800">Critical Minerals Supply Chain Monitor</h1>
+              <p className="text-slate-600">Global supply chain risk assessment and market intelligence for critical minerals</p>
+            </div>
+            <HelpButton id="minerals.overview" />
           </div>
         </div>
 
