@@ -16,6 +16,7 @@ import { DatasetSelector } from './DatasetSelector';
 import { ConnectionStatusPanel } from './ConnectionStatusPanel';
 import { DataVisualization } from './DataVisualization';
 import { HelpButton } from './HelpButton';
+import { AuthButton } from './auth';
 import { DataTable } from './DataTable';
 import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -398,6 +399,9 @@ export const EnergyDataDashboard: React.FC = () => {
               <div className="text-tertiary text-small">Total Records</div>
               <div className="metric-value text-electric">
                 {state.filteredData.length.toLocaleString()}
+              </div>
+              <div className="ml-4">
+                <AuthButton />
               </div>
             </div>
             <button
