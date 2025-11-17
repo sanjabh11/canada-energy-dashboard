@@ -1,9 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth, ProtectedRoute } from './auth';
-import { User, Award, CreditCard, Settings, Mail, MapPin, Shield, TrendingUp } from 'lucide-react';
+import { ProgressTracker } from './badges';
+import { getBadgeProgress, BadgeProgress } from '../lib/gamificationService';
+import { User, Award, CreditCard, Settings, Mail, MapPin, Shield, TrendingUp, Loader } from 'lucide-react';
 
 function ProfilePageContent() {
   const { user, edubizUser } = useAuth();
+  const [badgeProgress, setBadgeProgress] = useState<BadgeProgress[]>([]);
+  const [loadingBadges, setLoadingBadges] = useState(true);
+
+  useEffect(() => {
+    if (user?.id) {
+      loadBadgeProgress();
+    }
+  }, [user]);
+
+  async function loadBadgeProgress() {
+    if (!user?.id) return;
+    setLoadingBadges(true);
+    const { progress } = await getBadgeProgress(user.id);
+    setBadgeProgress(progress);
+    setLoadingBadges(false);
+  }
 
   // Tier display configuration
   const tierConfig = {
@@ -157,16 +175,23 @@ function ProfilePageContent() {
               </div>
             )}
 
-            {/* Badges Section - Placeholder for Week 1 Fri-Sun */}
-            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
-              <div className="flex items-center mb-4">
-                <Award className="h-6 w-6 text-cyan-400 mr-3" />
-                <h2 className="text-xl font-semibold text-white">My Badges</h2>
-              </div>
-              <div className="text-center py-8">
-                <div className="text-6xl mb-4">🏆</div>
-                <p className="text-slate-400 mb-2">Badge display coming soon!</p>
-                <p className="text-sm text-slate-500">Week 1 (Fri-Sun): Badge components & celebration modals</p>
+            {/* Badges Section */}
+            <div>
+              {loadingBadges ? (
+                <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6 text-center">
+                  <Loader className="h-8 w-8 text-cyan-400 animate-spin mx-auto mb-3" />
+                  <p className="text-slate-400 text-sm">Loading badges...</p>
+                </div>
+              ) : (
+                <ProgressTracker badgeProgress={badgeProgress} showDetailed={false} />
+              )}
+              <div className="mt-4 text-center">
+                <a
+                  href="/badges"
+                  className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+                >
+                  View All Badges →
+                </a>
               </div>
             </div>
           </div>
