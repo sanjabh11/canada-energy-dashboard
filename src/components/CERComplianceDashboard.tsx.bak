@@ -297,20 +297,20 @@ export const CERComplianceDashboard: React.FC = () => {
 
   const getComplianceStatusColor = (status: string) => {
     switch (status) {
-      case 'compliant': return 'text-success bg-secondary border-green-200';
-      case 'non_compliant': return 'text-danger bg-secondary border-red-200';
-      case 'under_review': return 'text-warning bg-secondary border-yellow-200';
-      case 'conditional': return 'text-electric bg-secondary border-purple-200';
+      case 'compliant': return 'text-green-600 bg-green-50 border-green-200';
+      case 'non_compliant': return 'text-red-600 bg-red-50 border-red-200';
+      case 'under_review': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'conditional': return 'text-purple-600 bg-purple-50 border-purple-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
 
   const getSafetyRatingColor = (rating: string) => {
     switch (rating) {
-      case 'excellent': return 'text-success';
-      case 'good': return 'text-electric';
-      case 'needs_improvement': return 'text-warning';
-      case 'poor': return 'text-danger';
+      case 'excellent': return 'text-green-600';
+      case 'good': return 'text-blue-600';
+      case 'needs_improvement': return 'text-yellow-600';
+      case 'poor': return 'text-red-600';
       default: return 'text-gray-600';
     }
   };
@@ -318,7 +318,7 @@ export const CERComplianceDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -326,34 +326,34 @@ export const CERComplianceDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <Shield className="text-danger" size={32} />
+            <Shield className="text-red-600" size={32} />
             <div>
-              <h1 className="text-2xl font-bold text-primary">CER Compliance Dashboard</h1>
-              <p className="text-secondary">Canada Energy Regulator • Regulatory Compliance Monitoring</p>
+              <h1 className="text-2xl font-bold text-slate-900">CER Compliance Dashboard</h1>
+              <p className="text-slate-600">Canada Energy Regulator • Regulatory Compliance Monitoring</p>
             </div>
             <HelpButton id="cer.overview" />
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="flex bg-secondary rounded-lg p-1">
+            <div className="flex bg-slate-100 rounded-lg p-1">
               {['overview', 'facilities', 'violations', 'market'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode as any)}
                   className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                     viewMode === mode
-                      ? 'bg-white text-electric shadow-sm'
-                      : 'text-secondary hover:text-primary'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
                 </button>
               ))}
             </div>
-            <button className="flex items-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Download size={16} />
               Export Report
             </button>
@@ -362,31 +362,31 @@ export const CERComplianceDashboard: React.FC = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-blue-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <Factory className="text-electric" size={24} />
+              <Factory className="text-blue-600" size={24} />
               <div>
-                <p className="text-sm text-electric font-medium">Total Facilities</p>
+                <p className="text-sm text-blue-600 font-medium">Total Facilities</p>
                 <p className="text-2xl font-bold text-blue-900">{metrics.totalFacilities}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-green-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="text-success" size={24} />
+              <CheckCircle className="text-green-600" size={24} />
               <div>
-                <p className="text-sm text-success font-medium">Compliance Rate</p>
+                <p className="text-sm text-green-600 font-medium">Compliance Rate</p>
                 <p className="text-2xl font-bold text-green-900">{metrics.complianceRate.toFixed(1)}%</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-red-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-danger" size={24} />
+              <AlertTriangle className="text-red-600" size={24} />
               <div>
-                <p className="text-sm text-danger font-medium">Critical Violations</p>
+                <p className="text-sm text-red-600 font-medium">Critical Violations</p>
                 <p className="text-2xl font-bold text-red-900">{metrics.criticalViolations}</p>
               </div>
             </div>
@@ -408,8 +408,8 @@ export const CERComplianceDashboard: React.FC = () => {
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Compliance Status Distribution */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Compliance Status Distribution</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Compliance Status Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -440,8 +440,8 @@ export const CERComplianceDashboard: React.FC = () => {
           </div>
 
           {/* Safety Performance Trends */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Safety Performance by Facility Type</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Safety Performance by Facility Type</h3>
             <div className="space-y-3">
               {['pipeline', 'power_line', 'processing_plant', 'storage_facility'].map((type) => {
                 const facilities = complianceRecords.filter(r => r.facility_type === type);
@@ -450,14 +450,14 @@ export const CERComplianceDashboard: React.FC = () => {
                   : 0;
                 
                 return (
-                  <div key={type} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                  <div key={type} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                     <div className="flex items-center gap-2">
                       <span className="capitalize font-medium">{type.replace('_', ' ')}</span>
-                      <span className="text-sm text-secondary">({facilities.length} facilities)</span>
+                      <span className="text-sm text-slate-600">({facilities.length} facilities)</span>
                     </div>
                     <div className="text-right">
                       <p className="font-medium">{avgIncidents.toFixed(1)} incidents/year</p>
-                      <p className="text-sm text-secondary">Average</p>
+                      <p className="text-sm text-slate-600">Average</p>
                     </div>
                   </div>
                 );
@@ -468,16 +468,16 @@ export const CERComplianceDashboard: React.FC = () => {
       )}
 
       {viewMode === 'facilities' && (
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-primary">Facility Compliance Status</h3>
+            <h3 className="text-lg font-semibold text-slate-900">Facility Compliance Status</h3>
             
             {/* Filters */}
             <div className="flex items-center gap-3">
               <select
                 value={filters.province}
                 onChange={(e) => setFilters({...filters, province: e.target.value})}
-                className="px-3 py-2 border border-[var(--border-medium)] rounded-lg text-sm"
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
               >
                 <option value="">All Provinces</option>
                 <option value="Alberta">Alberta</option>
@@ -491,7 +491,7 @@ export const CERComplianceDashboard: React.FC = () => {
               <select
                 value={filters.facilityType}
                 onChange={(e) => setFilters({...filters, facilityType: e.target.value})}
-                className="px-3 py-2 border border-[var(--border-medium)] rounded-lg text-sm"
+                className="px-3 py-2 border border-slate-300 rounded-lg text-sm"
               >
                 <option value="">All Types</option>
                 <option value="pipeline">Pipeline</option>
@@ -504,17 +504,17 @@ export const CERComplianceDashboard: React.FC = () => {
 
           <div className="space-y-4">
             {filteredRecords.map((record) => (
-              <div key={record.id} className="border border-[var(--border-subtle)] rounded-lg p-4 hover:border-[var(--border-medium)] transition-colors">
+              <div key={record.id} className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <h4 className="font-medium text-primary">{record.facility_name}</h4>
+                      <h4 className="font-medium text-slate-900">{record.facility_name}</h4>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium border ${getComplianceStatusColor(record.compliance_status)}`}>
                         {record.compliance_status.replace('_', ' ').toUpperCase()}
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-secondary mb-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600 mb-3">
                       <div>
                         <p className="font-medium">Operator</p>
                         <p>{record.operator}</p>
@@ -545,7 +545,7 @@ export const CERComplianceDashboard: React.FC = () => {
                   
                   <button
                     onClick={() => setSelectedRecord(record)}
-                    className="flex items-center gap-2 px-3 py-2 text-sm bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <Eye size={14} />
                     Details
@@ -560,12 +560,12 @@ export const CERComplianceDashboard: React.FC = () => {
       {/* Facility Details Modal */}
       {selectedRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold">{selectedRecord.facility_name} - Compliance Details</h4>
               <button
                 onClick={() => setSelectedRecord(null)}
-                className="text-tertiary hover:text-secondary"
+                className="text-slate-400 hover:text-slate-600"
               >
                 ×
               </button>
@@ -574,11 +574,11 @@ export const CERComplianceDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Violations */}
               <div>
-                <h5 className="font-medium text-primary mb-3">Violations ({selectedRecord.violations.length})</h5>
+                <h5 className="font-medium text-slate-900 mb-3">Violations ({selectedRecord.violations.length})</h5>
                 {selectedRecord.violations.length > 0 ? (
                   <div className="space-y-3">
                     {selectedRecord.violations.map((violation) => (
-                      <div key={violation.violation_id} className="border border-[var(--border-subtle)] rounded-lg p-3">
+                      <div key={violation.violation_id} className="border border-slate-200 rounded-lg p-3">
                         <div className="flex items-center justify-between mb-2">
                           <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                             violation.severity === 'critical' ? 'bg-red-100 text-red-800' :
@@ -596,8 +596,8 @@ export const CERComplianceDashboard: React.FC = () => {
                           </span>
                         </div>
                         <p className="text-sm font-medium">{violation.regulation_section}</p>
-                        <p className="text-sm text-secondary mb-2">{violation.description}</p>
-                        <div className="text-xs text-tertiary">
+                        <p className="text-sm text-slate-600 mb-2">{violation.description}</p>
+                        <div className="text-xs text-slate-500">
                           <p>Identified: {new Date(violation.date_identified).toLocaleDateString()}</p>
                           <p>Deadline: {new Date(violation.remediation_deadline).toLocaleDateString()}</p>
                         </div>
@@ -605,16 +605,16 @@ export const CERComplianceDashboard: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-tertiary text-sm">No violations recorded</p>
+                  <p className="text-slate-500 text-sm">No violations recorded</p>
                 )}
               </div>
 
               {/* Environmental Conditions */}
               <div>
-                <h5 className="font-medium text-primary mb-3">Environmental Conditions</h5>
+                <h5 className="font-medium text-slate-900 mb-3">Environmental Conditions</h5>
                 <div className="space-y-3">
                   {selectedRecord.environmental_conditions.map((condition) => (
-                    <div key={condition.condition_id} className="border border-[var(--border-subtle)] rounded-lg p-3">
+                    <div key={condition.condition_id} className="border border-slate-200 rounded-lg p-3">
                       <div className="flex items-center justify-between mb-2">
                         <span className="font-medium text-sm">{condition.description}</span>
                         <span className={`px-2 py-1 text-xs rounded-full font-medium ${
@@ -625,7 +625,7 @@ export const CERComplianceDashboard: React.FC = () => {
                           {condition.compliance_status.replace('_', ' ').toUpperCase()}
                         </span>
                       </div>
-                      <div className="text-xs text-tertiary">
+                      <div className="text-xs text-slate-500">
                         <p>Frequency: {condition.monitoring_frequency}</p>
                         <p>Last Reported: {new Date(condition.last_reported).toLocaleDateString()}</p>
                       </div>

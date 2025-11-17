@@ -60,11 +60,11 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="bg-secondary border border-red-200 rounded-lg p-4 text-danger">{error}</div>;
+    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>;
   }
 
   if (!data || !data.queue) {
-    return <div className="bg-secondary border border-yellow-200 rounded-lg p-4">No queue data available</div>;
+    return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">No queue data available</div>;
   }
 
   const queue = data.queue || [];
@@ -108,7 +108,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Queue Capacity</p>
@@ -118,7 +118,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Battery Storage Pipeline</p>
@@ -128,7 +128,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Projects in Queue</p>
@@ -138,7 +138,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Procurement Value</p>
@@ -151,7 +151,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <BarChartIcon size={20} />
             Capacity by Project Type
@@ -168,7 +168,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp size={20} />
             LT RFP Procurement Programs
@@ -177,7 +177,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
             {programs.slice(0, 4).map((program: ProcurementProgram, idx: number) => (
               <div key={idx} className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-semibold text-electric">{program.program_name}</h4>
+                  <h4 className="font-semibold text-blue-600">{program.program_name}</h4>
                   <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                     program.status === 'Awarded' ? 'bg-green-100 text-green-800' :
                     program.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
@@ -192,7 +192,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
                 </div>
                 <div className="mt-2 bg-gray-200 rounded-full h-2">
                   <div
-                    className="bg-secondary0 h-2 rounded-full"
+                    className="bg-green-500 h-2 rounded-full"
                     style={{ width: `${Math.min(100, ((program.contracted_capacity_mw || 0) / program.target_capacity_mw) * 100)}%` }}
                   />
                 </div>
@@ -203,7 +203,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
       </div>
 
       {/* Projects Table */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Calendar size={20} />
           Interconnection Queue Projects
@@ -220,7 +220,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">In-Service Date</th>
               </tr>
             </thead>
-            <tbody className="bg-secondary divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {queue.slice(0, 20).map((project: QueueProject) => (
                 <tr key={project.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{project.project_name}</td>

@@ -69,11 +69,11 @@ const VPPAggregationDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="bg-secondary border border-red-200 rounded-lg p-4 text-danger">{error}</div>;
+    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>;
   }
 
   if (!data || !data.platforms) {
-    return <div className="bg-secondary border border-yellow-200 rounded-lg p-4">No VPP platform data available</div>;
+    return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">No VPP platform data available</div>;
   }
 
   const platforms = data.platforms || [];
@@ -129,7 +129,7 @@ const VPPAggregationDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Aggregated Capacity</p>
@@ -139,7 +139,7 @@ const VPPAggregationDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Enrolled Assets</p>
@@ -149,7 +149,7 @@ const VPPAggregationDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Active Platforms</p>
@@ -159,7 +159,7 @@ const VPPAggregationDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Recent Dispatch Events</p>
@@ -172,7 +172,7 @@ const VPPAggregationDashboard: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <BarChartIcon size={20} />
             Capacity by Platform
@@ -189,7 +189,7 @@ const VPPAggregationDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <Gauge size={20} />
             DER Asset Type Distribution
@@ -217,7 +217,7 @@ const VPPAggregationDashboard: React.FC = () => {
       </div>
 
       {/* Dispatch Performance */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Activity size={20} />
           Dispatch Event Performance
@@ -235,7 +235,7 @@ const VPPAggregationDashboard: React.FC = () => {
       </div>
 
       {/* Platform Details Table */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Radio size={20} />
           VPP Platform Details
@@ -252,7 +252,7 @@ const VPPAggregationDashboard: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-secondary divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {platforms.map((platform: VPPPlatform) => (
                 <tr key={platform.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{platform.platform_name}</td>
@@ -277,7 +277,7 @@ const VPPAggregationDashboard: React.FC = () => {
       </div>
 
       {/* Demand Response Programs */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Users size={20} />
           Demand Response Programs
@@ -286,7 +286,7 @@ const VPPAggregationDashboard: React.FC = () => {
           {drPrograms.map((program: DRProgram, idx: number) => (
             <div key={idx} className="border rounded-lg p-4">
               <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-electric">{program.program_name}</h4>
+                <h4 className="font-semibold text-blue-600">{program.program_name}</h4>
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   program.status === 'Active' ? 'bg-green-100 text-green-800' :
                   program.status === 'Enrollment Open' ? 'bg-blue-100 text-blue-800' :

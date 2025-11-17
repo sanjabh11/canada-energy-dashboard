@@ -303,7 +303,7 @@ export const EnhancedMineralsDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -311,25 +311,25 @@ export const EnhancedMineralsDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-primary">Critical Minerals Supply Chain Monitor</h2>
-              <p className="text-secondary">Real-time monitoring of critical minerals supply, risk assessment, and market intelligence</p>
+              <h2 className="text-2xl font-bold text-slate-900">Critical Minerals Supply Chain Monitor</h2>
+              <p className="text-slate-600">Real-time monitoring of critical minerals supply, risk assessment, and market intelligence</p>
             </div>
             <HelpButton id="enhanced.minerals" />
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex bg-secondary rounded-lg p-1">
+            <div className="flex bg-slate-100 rounded-lg p-1">
               {['overview', 'supply', 'risk'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode as any)}
                   className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                     viewMode === mode
-                      ? 'bg-white text-electric shadow-sm'
-                      : 'text-secondary hover:text-primary'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -338,7 +338,7 @@ export const EnhancedMineralsDashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setShowAddMineral(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={16} />
               Add Mineral
@@ -355,21 +355,21 @@ export const EnhancedMineralsDashboard: React.FC = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-blue-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <Package className="text-electric" size={24} />
+              <Package className="text-blue-600" size={24} />
               <div>
-                <p className="text-sm text-electric font-medium">Total Minerals</p>
+                <p className="text-sm text-blue-600 font-medium">Total Minerals</p>
                 <p className="text-2xl font-bold text-blue-900">{metrics.totalMinerals}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-red-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-danger" size={24} />
+              <AlertTriangle className="text-red-600" size={24} />
               <div>
-                <p className="text-sm text-danger font-medium">Critical Minerals</p>
+                <p className="text-sm text-red-600 font-medium">Critical Minerals</p>
                 <p className="text-2xl font-bold text-red-900">{metrics.criticalMinerals}</p>
               </div>
             </div>
@@ -385,11 +385,11 @@ export const EnhancedMineralsDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-green-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <DollarSign className="text-success" size={24} />
+              <DollarSign className="text-green-600" size={24} />
               <div>
-                <p className="text-sm text-success font-medium">Import Value</p>
+                <p className="text-sm text-green-600 font-medium">Import Value</p>
                 <p className="text-2xl font-bold text-green-900">${(metrics.totalImportValue / 1000000).toFixed(1)}M</p>
               </div>
             </div>
@@ -405,15 +405,15 @@ export const EnhancedMineralsDashboard: React.FC = () => {
         <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-lg shadow-lg p-6 border-2 border-red-200">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <Bell className="text-danger animate-pulse" size={24} />
+              <Bell className="text-red-600 animate-pulse" size={24} />
               <div>
                 <h3 className="text-lg font-bold text-red-900">Critical Supply Chain Alerts</h3>
-                <p className="text-sm text-danger">High-risk minerals requiring immediate attention</p>
+                <p className="text-sm text-red-700">High-risk minerals requiring immediate attention</p>
               </div>
             </div>
             <button
               onClick={() => setShowRiskAlerts(false)}
-              className="text-red-400 hover:text-danger"
+              className="text-red-400 hover:text-red-600"
             >
               <X size={20} />
             </button>
@@ -429,15 +429,15 @@ export const EnhancedMineralsDashboard: React.FC = () => {
               .map((mineral, idx) => {
                 const avgRisk = mineral.primary_suppliers.reduce((sum, s) => sum + s.risk_score, 0) / mineral.primary_suppliers.length;
                 return (
-                  <div key={idx} className="card p-4 border-l-4 border-red-500">
+                  <div key={idx} className="bg-white rounded-lg p-4 border-l-4 border-red-500">
                     <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-bold text-primary">{mineral.mineral}</h4>
+                      <h4 className="font-bold text-slate-900">{mineral.mineral}</h4>
                       {getRiskBadge(avgRisk)}
                     </div>
-                    <p className="text-xs text-secondary mb-2">
+                    <p className="text-xs text-slate-600 mb-2">
                       Strategic Importance: <span className="font-medium uppercase">{mineral.strategic_importance}</span>
                     </p>
-                    <div className="text-xs text-secondary space-y-1">
+                    <div className="text-xs text-slate-700 space-y-1">
                       <p className="font-medium">Top Risk Factors:</p>
                       <ul className="list-disc list-inside">
                         {mineral.supply_risk_factors.slice(0, 2).map((factor, i) => (
@@ -462,26 +462,26 @@ export const EnhancedMineralsDashboard: React.FC = () => {
           
           {/* AI Risk Analysis Panel */}
           {(analyzingRisk || aiRiskAnalysis) && selectedMineral && (
-            <div className="mt-6 card p-6 border-2 border-purple-200">
+            <div className="mt-6 bg-white rounded-lg p-6 border-2 border-purple-200">
               <div className="flex items-center gap-2 mb-4">
-                <Sparkles className="text-electric" size={20} />
+                <Sparkles className="text-purple-600" size={20} />
                 <h4 className="font-bold text-purple-900">
                   AI Geopolitical Risk Analysis: {selectedMineral.mineral}
                 </h4>
               </div>
               
               {analyzingRisk ? (
-                <div className="flex items-center gap-3 text-electric">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-electric"></div>
+                <div className="flex items-center gap-3 text-purple-700">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
                   <span>Analyzing supply chain risks, geopolitical factors, and mitigation strategies...</span>
                 </div>
               ) : (
                 <div className="prose prose-sm max-w-none">
-                  <p className="text-secondary whitespace-pre-wrap">{aiRiskAnalysis}</p>
+                  <p className="text-slate-700 whitespace-pre-wrap">{aiRiskAnalysis}</p>
                   <div className="mt-4 flex gap-2">
                     <button
                       onClick={() => setAiRiskAnalysis('')}
-                      className="px-4 py-2 bg-slate-200 text-secondary rounded hover:bg-slate-300 text-sm"
+                      className="px-4 py-2 bg-slate-200 text-slate-700 rounded hover:bg-slate-300 text-sm"
                     >
                       Close Analysis
                     </button>
@@ -503,8 +503,8 @@ export const EnhancedMineralsDashboard: React.FC = () => {
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Strategic Importance Distribution */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Strategic Importance</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Strategic Importance</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -527,8 +527,8 @@ export const EnhancedMineralsDashboard: React.FC = () => {
           </div>
 
           {/* Supply Risk Distribution */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Supply Risk Distribution</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Supply Risk Distribution</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={metrics.supplyRiskDistribution}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -541,25 +541,25 @@ export const EnhancedMineralsDashboard: React.FC = () => {
           </div>
 
           {/* Top Suppliers */}
-          <div className="card shadow p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-primary mb-4">Top Suppliers by Import Value</h3>
+          <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Top Suppliers by Import Value</h3>
             <div className="space-y-3">
               {metrics.topSuppliers.map((supplier, index) => (
-                <div key={supplier.country} className="flex items-center justify-between p-3 bg-secondary rounded-lg">
+                <div key={supplier.country} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
                   <div className="flex items-center gap-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold ${
-                      index === 0 ? 'bg-secondary0' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-secondary0'
+                      index === 0 ? 'bg-yellow-500' : index === 1 ? 'bg-gray-400' : index === 2 ? 'bg-orange-600' : 'bg-slate-500'
                     }`}>
                       {index + 1}
                     </div>
                     <div>
-                      <h4 className="font-medium text-primary">{supplier.country}</h4>
-                      <p className="text-sm text-secondary">{supplier.minerals} minerals supplied</p>
+                      <h4 className="font-medium text-slate-900">{supplier.country}</h4>
+                      <p className="text-sm text-slate-600">{supplier.minerals} minerals supplied</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-primary">${(supplier.totalValue / 1000000).toFixed(1)}M</p>
-                    <p className="text-sm text-secondary">Import Value</p>
+                    <p className="font-medium text-slate-900">${(supplier.totalValue / 1000000).toFixed(1)}M</p>
+                    <p className="text-sm text-slate-600">Import Value</p>
                   </div>
                 </div>
               ))}
@@ -569,15 +569,15 @@ export const EnhancedMineralsDashboard: React.FC = () => {
       )}
 
       {viewMode === 'supply' && (
-        <div className="card shadow p-6">
-          <h3 className="text-lg font-semibold text-primary mb-4">Minerals Supply Status</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Minerals Supply Status</h3>
           <div className="space-y-4">
             {mineralsRecords.map((mineral) => (
-              <div key={mineral.id} className="border border-[var(--border-subtle)] rounded-lg p-4 hover:border-[var(--border-medium)] transition-colors">
+              <div key={mineral.id} className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-medium text-primary">{mineral.mineral}</h4>
+                      <h4 className="font-medium text-slate-900">{mineral.mineral}</h4>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
                         mineral.strategic_importance === 'critical' ? 'bg-red-100 text-red-800' :
                         mineral.strategic_importance === 'important' ? 'bg-orange-100 text-orange-800' :
@@ -588,7 +588,7 @@ export const EnhancedMineralsDashboard: React.FC = () => {
                       </span>
                     </div>
                     
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-secondary">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-slate-600">
                       <div>
                         <p className="font-medium">Production</p>
                         <p>{mineral.production_tonnes_annually.toLocaleString()} tonnes/year</p>
@@ -608,12 +608,12 @@ export const EnhancedMineralsDashboard: React.FC = () => {
                     </div>
 
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-secondary mb-1">Primary Suppliers:</p>
+                      <p className="text-sm font-medium text-slate-700 mb-1">Primary Suppliers:</p>
                       <div className="flex flex-wrap gap-2">
                         {mineral.primary_suppliers.map((supplier, index) => (
                           <div key={index} className="flex items-center gap-1 text-sm">
-                            <span className="text-secondary">{supplier.country}</span>
-                            <span className="text-tertiary">({supplier.percentage_of_supply}%)</span>
+                            <span className="text-slate-600">{supplier.country}</span>
+                            <span className="text-slate-400">({supplier.percentage_of_supply}%)</span>
                             {getRiskBadge(supplier.risk_score)}
                           </div>
                         ))}
@@ -624,14 +624,14 @@ export const EnhancedMineralsDashboard: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedMineral(mineral)}
-                      className="p-2 text-tertiary hover:text-secondary transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                       title="View Details"
                     >
                       <Eye size={16} />
                     </button>
                     <button
                       onClick={() => setEditingMineral(mineral.id)}
-                      className="p-2 text-tertiary hover:text-secondary transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                       title="Edit Mineral"
                     >
                       <Edit size={16} />
@@ -642,7 +642,7 @@ export const EnhancedMineralsDashboard: React.FC = () => {
             ))}
 
             {mineralsRecords.length === 0 && (
-              <div className="text-center py-8 text-tertiary">
+              <div className="text-center py-8 text-slate-500">
                 <Package size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No minerals data recorded yet.</p>
                 <p className="text-sm">Add your first mineral to start monitoring supply chain risks.</p>
@@ -655,12 +655,12 @@ export const EnhancedMineralsDashboard: React.FC = () => {
       {/* Add Mineral Modal */}
       {showAddMineral && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold">Add Critical Mineral</h4>
               <button
                 onClick={() => setShowAddMineral(false)}
-                className="text-tertiary hover:text-secondary"
+                className="text-slate-400 hover:text-slate-600"
               >
                 <X size={20} />
               </button>
@@ -668,26 +668,26 @@ export const EnhancedMineralsDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Mineral Name *
                 </label>
                 <input
                   type="text"
                   value={newMineral.mineral}
                   onChange={(e) => setNewMineral({...newMineral, mineral: e.target.value})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Lithium"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Strategic Importance
                 </label>
                 <select
                   value={newMineral.strategic_importance}
                   onChange={(e) => setNewMineral({...newMineral, strategic_importance: e.target.value as any})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="critical">Critical</option>
                   <option value="important">Important</option>
@@ -697,50 +697,50 @@ export const EnhancedMineralsDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Production (tonnes/year)
                 </label>
                 <input
                   type="number"
                   value={newMineral.production_tonnes_annually}
                   onChange={(e) => setNewMineral({...newMineral, production_tonnes_annually: Number(e.target.value)})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Imports (tonnes/year)
                 </label>
                 <input
                   type="number"
                   value={newMineral.import_tonnes_annually}
                   onChange={(e) => setNewMineral({...newMineral, import_tonnes_annually: Number(e.target.value)})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Exports (tonnes/year)
                 </label>
                 <input
                   type="number"
                   value={newMineral.export_tonnes_annually}
                   onChange={(e) => setNewMineral({...newMineral, export_tonnes_annually: Number(e.target.value)})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Price (CAD/tonne) *
                 </label>
                 <input
                   type="number"
                   value={newMineral.price_cad_per_tonne}
                   onChange={(e) => setNewMineral({...newMineral, price_cad_per_tonne: Number(e.target.value)})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
@@ -748,14 +748,14 @@ export const EnhancedMineralsDashboard: React.FC = () => {
             <div className="flex items-center gap-3 mt-6">
               <button
                 onClick={handleAddMineral}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Save size={16} />
                 Save Mineral
               </button>
               <button
                 onClick={() => setShowAddMineral(false)}
-                className="px-4 py-2 text-secondary border border-[var(--border-medium)] rounded-lg hover:bg-secondary transition-colors"
+                className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>

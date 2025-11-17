@@ -101,10 +101,10 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center">
           <Package className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-pulse" />
-          <p className="text-lg text-secondary">Loading Critical Minerals Dashboard...</p>
+          <p className="text-lg text-slate-600">Loading Critical Minerals Dashboard...</p>
         </div>
       </div>
     );
@@ -112,13 +112,13 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-          <p className="text-lg text-danger">{error || 'No data available'}</p>
+          <p className="text-lg text-red-600">{error || 'No data available'}</p>
           <button
             onClick={loadDashboardData}
-            className="mt-4 px-6 py-2 bg-secondary0 text-white rounded-lg hover:bg-electric"
+            className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             Retry
           </button>
@@ -242,25 +242,25 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
   })).sort((a, b) => b.exports - a.exports);
 
   return (
-    <div className="min-h-screen bg-primary p-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-purple-50 p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-3">
-            <Package className="w-10 h-10 text-electric" />
-            <h1 className="text-4xl font-bold text-primary">
+            <Package className="w-10 h-10 text-purple-600" />
+            <h1 className="text-4xl font-bold text-slate-800">
               Critical Minerals Supply Chain Intelligence
             </h1>
           </div>
           <HelpButton id="minerals.overview" />
         </div>
-        <p className="text-lg text-secondary ml-13">
+        <p className="text-lg text-slate-600 ml-13">
           $6.4B Federal Investment | 30% Tax Credit | National Security Priority
         </p>
       </div>
 
       {/* Filters */}
-      <div className="card p-4 mb-8">
+      <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -274,7 +274,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           <select
             value={selectedMineral || ''}
             onChange={(e) => setSelectedMineral(e.target.value || null)}
-            className="px-4 py-2 border border-[var(--border-medium)] rounded-lg text-sm"
+            className="px-4 py-2 border border-slate-300 rounded-lg text-sm"
           >
             <option value="">All Minerals</option>
             {PRIORITY_MINERALS.map(mineral => (
@@ -286,16 +286,16 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Critical Alerts */}
       {data.summary.stockpile && (data.summary.stockpile.critical_status_count > 0 || data.summary.stockpile.low_status_count > 0) && (
-        <div className="mb-6 p-4 bg-secondary border-l-4 border-red-500 rounded-lg">
+        <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
           <div className="flex items-start gap-3">
-            <Shield className="w-6 h-6 text-danger flex-shrink-0 mt-0.5" />
+            <Shield className="w-6 h-6 text-red-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-red-800 mb-1">STRATEGIC STOCKPILE ALERT</h3>
-              <p className="text-danger">
+              <p className="text-red-700">
                 {data.summary.stockpile.critical_status_count} minerals at CRITICAL stockpile levels,{' '}
                 {data.summary.stockpile.low_status_count} at LOW levels
               </p>
-              <p className="text-sm text-danger mt-1">
+              <p className="text-sm text-red-600 mt-1">
                 National security vulnerability - immediate action required
               </p>
             </div>
@@ -307,7 +307,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       {data.insights.supply_chain_gaps.length > 0 && (
         <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
           <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+            <AlertTriangle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-0.5" />
             <div>
               <h3 className="font-bold text-amber-800 mb-1">SUPPLY CHAIN GAPS IDENTIFIED</h3>
               <ul className="text-amber-700 text-sm space-y-1">
@@ -354,9 +354,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Supply Chain Completeness (if mineral selected) */}
       {selectedMineral && supplyChainCompletenessData.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Activity className="w-6 h-6 text-purple-600" />
             {selectedMineral} Supply Chain Completeness
           </h2>
           <div className="grid grid-cols-6 gap-2 mb-6">
@@ -370,23 +370,23 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
                   <div
                     className={`p-4 rounded-lg border-2 ${
                       hasGap
-                        ? 'bg-secondary border-red-500'
+                        ? 'bg-red-50 border-red-500'
                         : hasCapacity
-                        ? 'bg-secondary border-green-500'
-                        : 'bg-secondary border-[var(--border-medium)]'
+                        ? 'bg-green-50 border-green-500'
+                        : 'bg-slate-50 border-slate-300'
                     }`}
                   >
                     {hasGap ? (
-                      <XCircle className="w-8 h-8 mx-auto text-danger" />
+                      <XCircle className="w-8 h-8 mx-auto text-red-600" />
                     ) : hasCapacity ? (
-                      <CheckCircle className="w-8 h-8 mx-auto text-success" />
+                      <CheckCircle className="w-8 h-8 mx-auto text-green-600" />
                     ) : (
                       <div className="w-8 h-8 mx-auto rounded-full bg-slate-300" />
                     )}
                     <div className="text-xs font-semibold mt-2">{stage}</div>
                   </div>
                   {idx < SUPPLY_CHAIN_STAGES.length - 1 && (
-                    <ChevronRight className="w-4 h-4 mx-auto text-tertiary my-2" />
+                    <ChevronRight className="w-4 h-4 mx-auto text-slate-400 my-2" />
                   )}
                 </div>
               );
@@ -394,11 +394,11 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           </div>
           <div className="flex items-center justify-center gap-6 text-sm">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-success" />
+              <CheckCircle className="w-4 h-4 text-green-600" />
               <span>Domestic Capacity</span>
             </div>
             <div className="flex items-center gap-2">
-              <XCircle className="w-4 h-4 text-danger" />
+              <XCircle className="w-4 h-4 text-red-600" />
               <span>Critical Gap</span>
             </div>
             <div className="flex items-center gap-2">
@@ -411,9 +411,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Projects Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="card p-6">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <MapPin className="w-6 h-6 text-purple-600" />
             Projects by Province
           </h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -429,9 +429,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="card p-6">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Activity className="w-6 h-6 text-purple-600" />
             Projects by Development Stage
           </h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -458,9 +458,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* China Dependency Analysis */}
       {chinaDependencyData.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Globe className="w-6 h-6 text-danger" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Globe className="w-6 h-6 text-red-600" />
             China Import Dependency Analysis
           </h2>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -484,13 +484,13 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
               </PieChart>
             </ResponsiveContainer>
             <div className="flex flex-col justify-center">
-              <div className="p-4 bg-secondary border border-red-200 rounded-lg mb-4">
-                <div className="text-4xl font-bold text-danger mb-2">
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg mb-4">
+                <div className="text-4xl font-bold text-red-600 mb-2">
                   {data.summary.trade?.china_dependency || 0}%
                 </div>
-                <div className="text-sm text-danger">Import Dependency on China</div>
+                <div className="text-sm text-red-700">Import Dependency on China</div>
               </div>
-              <div className="text-sm text-secondary space-y-2">
+              <div className="text-sm text-slate-600 space-y-2">
                 <p>
                   <strong>Risk Assessment:</strong>{' '}
                   {data.summary.trade.china_dependency > 70 ? 'CRITICAL' :
@@ -509,9 +509,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Battery Supply Chain Linkage */}
       {batteryMineralsDemand.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Zap className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Zap className="w-6 h-6 text-purple-600" />
             Battery Facilities Minerals Demand
           </h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -525,29 +525,29 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
             </BarChart>
           </ResponsiveContainer>
           <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="p-3 bg-secondary rounded-lg text-center">
-              <div className="text-2xl font-bold text-electric">
+            <div className="p-3 bg-purple-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-purple-600">
                 {data.summary.battery_facilities.total_count}
               </div>
-              <div className="text-xs text-secondary">Battery Facilities</div>
+              <div className="text-xs text-slate-600">Battery Facilities</div>
             </div>
-            <div className="p-3 bg-secondary rounded-lg text-center">
-              <div className="text-2xl font-bold text-electric">
+            <div className="p-3 bg-blue-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-blue-600">
                 {Math.round(data.summary.battery_facilities.total_capacity_gwh)} GWh
               </div>
-              <div className="text-xs text-secondary">Total Capacity</div>
+              <div className="text-xs text-slate-600">Total Capacity</div>
             </div>
-            <div className="p-3 bg-secondary rounded-lg text-center">
-              <div className="text-2xl font-bold text-success">
+            <div className="p-3 bg-green-50 rounded-lg text-center">
+              <div className="text-2xl font-bold text-green-600">
                 {data.summary.battery_facilities.domestic_sourcing_avg}%
               </div>
-              <div className="text-xs text-secondary">Avg Domestic Sourcing</div>
+              <div className="text-xs text-slate-600">Avg Domestic Sourcing</div>
             </div>
             <div className="p-3 bg-amber-50 rounded-lg text-center">
-              <div className="text-2xl font-bold text-warning">
+              <div className="text-2xl font-bold text-amber-600">
                 ${(data.summary.battery_facilities.total_capacity_gwh * 0.15).toFixed(1)}B
               </div>
-              <div className="text-xs text-secondary">Estimated Value</div>
+              <div className="text-xs text-slate-600">Estimated Value</div>
             </div>
           </div>
         </div>
@@ -555,9 +555,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Mineral Prices Time-Series Chart */}
       {mineralPricesChart.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-success" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" />
             Mineral Prices (Monthly Trend)
           </h2>
           <ResponsiveContainer width="100%" height={350}>
@@ -585,7 +585,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
               ))}
             </LineChart>
           </ResponsiveContainer>
-          <p className="text-sm text-secondary mt-4">
+          <p className="text-sm text-slate-600 mt-4">
             <strong>Data Quality Note:</strong> Displaying last 12 months of price data. January 2024 Lithium price is shown for consistency testing.
           </p>
         </div>
@@ -593,9 +593,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Trade Flows Chart */}
       {tradeFlowsChart.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Globe className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Globe className="w-6 h-6 text-blue-600" />
             Trade Flows (Imports vs Exports)
           </h2>
           <ResponsiveContainer width="100%" height={300}>
@@ -611,18 +611,18 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           </ResponsiveContainer>
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             {tradeFlowsChart.slice(0, 3).map((item: any) => (
-              <div key={item.mineral} className="p-3 bg-secondary rounded-lg">
-                <div className="text-sm font-semibold text-secondary">{item.mineral}</div>
-                <div className="text-xs text-secondary mt-1">
+              <div key={item.mineral} className="p-3 bg-slate-50 rounded-lg">
+                <div className="text-sm font-semibold text-slate-700">{item.mineral}</div>
+                <div className="text-xs text-slate-600 mt-1">
                   Net Balance: {item.netBalance > 0 ? '+' : ''}{item.netBalance.toLocaleString()}k tonnes
-                  <span className={`ml-2 font-semibold ${item.netBalance > 0 ? 'text-success' : 'text-danger'}`}>
+                  <span className={`ml-2 font-semibold ${item.netBalance > 0 ? 'text-green-600' : 'text-red-600'}`}>
                     ({item.netBalance > 0 ? 'Net Exporter' : 'Net Importer'})
                   </span>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-sm text-secondary mt-4">
+          <p className="text-sm text-slate-600 mt-4">
             <strong>Interpretation:</strong> Positive net balance indicates net exporter status. Negative indicates import dependency.
           </p>
         </div>
@@ -630,9 +630,9 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Price Volatility */}
       {priceVolatility.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-6 h-6 text-purple-600" />
             Price Volatility Index (Coefficient of Variation %)
           </h2>
           <ResponsiveContainer width="100%" height={250}>
@@ -644,7 +644,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
               <Bar dataKey="volatility" fill={COLORS.warning} />
             </BarChart>
           </ResponsiveContainer>
-          <p className="text-sm text-secondary mt-4">
+          <p className="text-sm text-slate-600 mt-4">
             <strong>Interpretation:</strong> Higher values indicate greater price instability. Values &gt;30% suggest high market risk.
           </p>
         </div>
@@ -652,16 +652,16 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Strategic Recommendations */}
       {data.insights.strategic_recommendations.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Shield className="w-6 h-6 text-electric" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Shield className="w-6 h-6 text-purple-600" />
             Strategic Recommendations
           </h2>
           <ul className="space-y-3">
             {data.insights.strategic_recommendations.map((rec: string, idx: number) => (
-              <li key={idx} className="flex items-start gap-3 p-3 bg-secondary rounded-lg">
-                <AlertTriangle className="w-5 h-5 text-electric flex-shrink-0 mt-0.5" />
-                <span className="text-sm text-secondary">{rec}</span>
+              <li key={idx} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span className="text-sm text-slate-700">{rec}</span>
               </li>
             ))}
           </ul>
@@ -670,20 +670,20 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Investment Opportunities */}
       {data.insights.investment_opportunities.length > 0 && (
-        <div className="card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <DollarSign className="w-6 h-6 text-success" />
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <DollarSign className="w-6 h-6 text-green-600" />
             Investment Opportunities
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {data.insights.investment_opportunities.map((opp: any, idx: number) => (
-              <div key={idx} className="p-4 border border-green-200 bg-secondary rounded-lg">
+              <div key={idx} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                 <h3 className="font-bold text-green-800 mb-2">{opp.mineral}</h3>
-                <p className="text-sm text-success mb-2">{opp.reason}</p>
+                <p className="text-sm text-green-700 mb-2">{opp.reason}</p>
                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  opp.priority === 'High' ? 'bg-red-100 text-danger' :
+                  opp.priority === 'High' ? 'bg-red-100 text-red-700' :
                   opp.priority === 'Medium' ? 'bg-amber-100 text-amber-700' :
-                  'bg-blue-100 text-electric'
+                  'bg-blue-100 text-blue-700'
                 }`}>
                   {opp.priority} Priority
                 </span>
@@ -694,7 +694,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       )}
 
       {/* Footer */}
-      <div className="text-center text-sm text-tertiary mt-8">
+      <div className="text-center text-sm text-slate-500 mt-8">
         <p>Data Source: NRCan Critical Minerals Projects, Statistics Canada, Battery Supply Chain Data</p>
         <p className="mt-1">Strategic Context: $6.4B Federal Investment, 30% Exploration Tax Credit, National Security Priority (2025)</p>
       </div>
@@ -712,17 +712,17 @@ interface MetricCardProps {
 
 const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color }) => {
   const colorClasses = {
-    purple: 'bg-secondary text-electric border-purple-200',
-    green: 'bg-secondary text-success border-green-200',
-    blue: 'bg-secondary text-electric border-blue-200',
-    red: 'bg-secondary text-danger border-red-200',
+    purple: 'bg-purple-50 text-purple-600 border-purple-200',
+    green: 'bg-green-50 text-green-600 border-green-200',
+    blue: 'bg-blue-50 text-blue-600 border-blue-200',
+    red: 'bg-red-50 text-red-600 border-red-200',
   };
 
   return (
     <div className={`${colorClasses[color]} border rounded-xl p-6 shadow-md`}>
       <div className="flex items-center gap-3 mb-3">
         {icon}
-        <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+        <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{title}</h3>
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
       <p className="text-sm opacity-80">{subtitle}</p>

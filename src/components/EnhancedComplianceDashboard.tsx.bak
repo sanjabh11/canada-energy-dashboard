@@ -265,7 +265,7 @@ export const EnhancedComplianceDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
@@ -273,25 +273,25 @@ export const EnhancedComplianceDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div>
-              <h2 className="text-2xl font-bold text-primary">Regulatory Compliance Monitoring</h2>
-              <p className="text-secondary">Automated compliance tracking with violation alerts and remediation workflows</p>
+              <h2 className="text-2xl font-bold text-slate-900">Regulatory Compliance Monitoring</h2>
+              <p className="text-slate-600">Automated compliance tracking with violation alerts and remediation workflows</p>
             </div>
             <HelpButton id="enhanced.compliance" />
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex bg-secondary rounded-lg p-1">
+            <div className="flex bg-slate-100 rounded-lg p-1">
               {['overview', 'violations', 'audit'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode as any)}
                   className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                     viewMode === mode
-                      ? 'bg-white text-electric shadow-sm'
-                      : 'text-secondary hover:text-primary'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   {mode.charAt(0).toUpperCase() + mode.slice(1)}
@@ -300,7 +300,7 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             </div>
             <button
               onClick={() => setShowAddRecord(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={16} />
               Add Record
@@ -317,11 +317,11 @@ export const EnhancedComplianceDashboard: React.FC = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-blue-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <Shield className="text-electric" size={24} />
+              <Shield className="text-blue-600" size={24} />
               <div>
-                <p className="text-sm text-electric font-medium">Compliance Rate</p>
+                <p className="text-sm text-blue-600 font-medium">Compliance Rate</p>
                 <p className="text-2xl font-bold text-blue-900">
                   {metrics.complianceRate.toFixed(1)}%
                 </p>
@@ -329,11 +329,11 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-green-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <CheckCircle className="text-success" size={24} />
+              <CheckCircle className="text-green-600" size={24} />
               <div>
-                <p className="text-sm text-success font-medium">Compliant Projects</p>
+                <p className="text-sm text-green-600 font-medium">Compliant Projects</p>
                 <p className="text-2xl font-bold text-green-900">
                   {metrics.compliantProjects}
                 </p>
@@ -341,11 +341,11 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-red-50 rounded-lg p-4">
             <div className="flex items-center gap-3">
-              <AlertTriangle className="text-danger" size={24} />
+              <AlertTriangle className="text-red-600" size={24} />
               <div>
-                <p className="text-sm text-danger font-medium">Active Violations</p>
+                <p className="text-sm text-red-600 font-medium">Active Violations</p>
                 <p className="text-2xl font-bold text-red-900">
                   {metrics.activeViolations}
                 </p>
@@ -368,14 +368,14 @@ export const EnhancedComplianceDashboard: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="card shadow p-4">
+      <div className="bg-white rounded-lg shadow p-4">
         <div className="flex items-center gap-4">
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Jurisdiction</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Jurisdiction</label>
             <select
               value={filterJurisdiction}
               onChange={(e) => setFilterJurisdiction(e.target.value)}
-              className="px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Jurisdictions</option>
               <option value="federal">Federal</option>
@@ -385,11 +385,11 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Severity</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Severity</label>
             <select
               value={filterSeverity}
               onChange={(e) => setFilterSeverity(e.target.value)}
-              className="px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Severities</option>
               <option value="low">Low</option>
@@ -405,8 +405,8 @@ export const EnhancedComplianceDashboard: React.FC = () => {
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Compliance Trend */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Compliance Trend</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Compliance Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={metrics.complianceTrend}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -419,8 +419,8 @@ export const EnhancedComplianceDashboard: React.FC = () => {
           </div>
 
           {/* Violations by Severity */}
-          <div className="card shadow p-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Violations by Severity</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Violations by Severity</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -443,8 +443,8 @@ export const EnhancedComplianceDashboard: React.FC = () => {
           </div>
 
           {/* Violations by Jurisdiction */}
-          <div className="card shadow p-6 lg:col-span-2">
-            <h3 className="text-lg font-semibold text-primary mb-4">Violations by Jurisdiction</h3>
+          <div className="bg-white rounded-lg shadow p-6 lg:col-span-2">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Violations by Jurisdiction</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={metrics.violationsByJurisdiction}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -459,20 +459,20 @@ export const EnhancedComplianceDashboard: React.FC = () => {
       )}
 
       {viewMode === 'violations' && (
-        <div className="card shadow p-6">
-          <h3 className="text-lg font-semibold text-primary mb-4">Compliance Records</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Compliance Records</h3>
           <div className="space-y-4">
             {filteredRecords.map((record) => (
-              <div key={record.id} className="border border-[var(--border-subtle)] rounded-lg p-4 hover:border-[var(--border-medium)] transition-colors">
+              <div key={record.id} className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition-colors">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       {getStatusIcon(record.compliance_status)}
-                      <h4 className="font-medium text-primary">{record.project_name}</h4>
+                      <h4 className="font-medium text-slate-900">{record.project_name}</h4>
                       {getSeverityBadge(record.severity)}
                     </div>
                     
-                    <div className="text-sm text-secondary space-y-1">
+                    <div className="text-sm text-slate-600 space-y-1">
                       <p><span className="font-medium">Regulator:</span> {record.regulator}</p>
                       <p><span className="font-medium">Jurisdiction:</span> {record.jurisdiction}</p>
                       <p><span className="font-medium">Regulation:</span> {record.regulation_reference}</p>
@@ -489,8 +489,8 @@ export const EnhancedComplianceDashboard: React.FC = () => {
 
                     {record.remediation_plan && record.remediation_plan.length > 0 && (
                       <div className="mt-3">
-                        <p className="text-sm font-medium text-secondary mb-1">Remediation Plan:</p>
-                        <ul className="text-sm text-secondary list-disc list-inside space-y-1">
+                        <p className="text-sm font-medium text-slate-700 mb-1">Remediation Plan:</p>
+                        <ul className="text-sm text-slate-600 list-disc list-inside space-y-1">
                           {record.remediation_plan.map((step, index) => (
                             <li key={index}>{step}</li>
                           ))}
@@ -502,14 +502,14 @@ export const EnhancedComplianceDashboard: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setSelectedRecord(record)}
-                      className="p-2 text-tertiary hover:text-secondary transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                       title="View Details"
                     >
                       <Eye size={16} />
                     </button>
                     <button
                       onClick={() => setEditingRecord(record.id)}
-                      className="p-2 text-tertiary hover:text-secondary transition-colors"
+                      className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                       title="Edit Record"
                     >
                       <Edit size={16} />
@@ -520,7 +520,7 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             ))}
 
             {filteredRecords.length === 0 && (
-              <div className="text-center py-8 text-tertiary">
+              <div className="text-center py-8 text-slate-500">
                 <Shield size={48} className="mx-auto mb-4 text-slate-300" />
                 <p>No compliance records found.</p>
                 <p className="text-sm">Add your first compliance record to start monitoring regulatory compliance.</p>
@@ -533,12 +533,12 @@ export const EnhancedComplianceDashboard: React.FC = () => {
       {/* Add Record Modal */}
       {showAddRecord && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold">Add Compliance Record</h4>
               <button
                 onClick={() => setShowAddRecord(false)}
-                className="text-tertiary hover:text-secondary"
+                className="text-slate-400 hover:text-slate-600"
               >
                 <X size={20} />
               </button>
@@ -546,39 +546,39 @@ export const EnhancedComplianceDashboard: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Project Name *
                 </label>
                 <input
                   type="text"
                   value={newRecord.project_name}
                   onChange={(e) => setNewRecord({...newRecord, project_name: e.target.value})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Ontario Wind Farm Expansion"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Regulator *
                 </label>
                 <input
                   type="text"
                   value={newRecord.regulator}
                   onChange={(e) => setNewRecord({...newRecord, regulator: e.target.value})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., Environment and Climate Change Canada"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Jurisdiction
                 </label>
                 <select
                   value={newRecord.jurisdiction}
                   onChange={(e) => setNewRecord({...newRecord, jurisdiction: e.target.value as any})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="federal">Federal</option>
                   <option value="provincial">Provincial</option>
@@ -588,13 +588,13 @@ export const EnhancedComplianceDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Compliance Status
                 </label>
                 <select
                   value={newRecord.compliance_status}
                   onChange={(e) => setNewRecord({...newRecord, compliance_status: e.target.value as any})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="compliant">Compliant</option>
                   <option value="non_compliant">Non-Compliant</option>
@@ -604,13 +604,13 @@ export const EnhancedComplianceDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Severity
                 </label>
                 <select
                   value={newRecord.severity}
                   onChange={(e) => setNewRecord({...newRecord, severity: e.target.value as any})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="low">Low</option>
                   <option value="medium">Medium</option>
@@ -620,39 +620,39 @@ export const EnhancedComplianceDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">
+                <label className="block text-sm font-medium text-slate-700 mb-1">
                   Due Date
                 </label>
                 <input
                   type="date"
                   value={newRecord.due_date}
                   onChange={(e) => setNewRecord({...newRecord, due_date: e.target.value})}
-                  className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 />
               </div>
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm font-medium text-secondary mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Regulation Reference *
               </label>
               <input
                 type="text"
                 value={newRecord.regulation_reference}
                 onChange={(e) => setNewRecord({...newRecord, regulation_reference: e.target.value})}
-                className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="e.g., CEAA 2012 - Environmental Assessment"
               />
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm font-medium text-secondary mb-1">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Violation Details
               </label>
               <textarea
                 value={newRecord.violation_details}
                 onChange={(e) => setNewRecord({...newRecord, violation_details: e.target.value})}
-                className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 rows={3}
                 placeholder="Describe the compliance issue or violation..."
               />
@@ -661,14 +661,14 @@ export const EnhancedComplianceDashboard: React.FC = () => {
             <div className="flex items-center gap-3 mt-6">
               <button
                 onClick={handleAddRecord}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Save size={16} />
                 Save Record
               </button>
               <button
                 onClick={() => setShowAddRecord(false)}
-                className="px-4 py-2 text-secondary border border-[var(--border-medium)] rounded-lg hover:bg-secondary transition-colors"
+                className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>

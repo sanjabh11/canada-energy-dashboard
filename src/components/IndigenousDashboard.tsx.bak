@@ -460,13 +460,13 @@ export const IndigenousDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="indigenous_dashboard" />
@@ -475,24 +475,24 @@ export const IndigenousDashboard: React.FC = () => {
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
             <div>
               <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-primary">
+                <h1 className="text-3xl font-bold text-slate-900">
                   Indigenous Energy Sovereignty Dashboard
                 </h1>
                 <HelpButton id="module.indigenous.overview" />
               </div>
-              <p className="text-secondary mt-2">
+              <p className="text-slate-600 mt-2">
                 Track consultations, traditional knowledge, and territory management
               </p>
             </div>
             <div className="self-start">
-              <HelpButton id="module.indigenous.governance" className="text-warning hover:bg-amber-500 border-amber-500" />
+              <HelpButton id="module.indigenous.governance" className="bg-amber-600 hover:bg-amber-500 border-amber-500" />
             </div>
           </div>
 
           {/* Governance Notice */}
           <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
             <div className="flex items-start">
-              <AlertTriangle className="h-5 w-5 text-warning mt-0.5 mr-3 flex-shrink-0" />
+              <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 mr-3 flex-shrink-0" />
               <div>
                 <h3 className="font-semibold text-amber-800 mb-2">Governance & Data Sovereignty Notice</h3>
                 <p className="text-amber-700 text-sm">
@@ -508,36 +508,36 @@ export const IndigenousDashboard: React.FC = () => {
 
         {/* Dashboard Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Total Territories</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Total Territories</h3>
               <HelpButton id="metric.indigenous.total_territories" />
             </div>
-            <p className="text-3xl font-bold text-electric mt-4">{dashboardMetrics.totalTerritories}</p>
+            <p className="text-3xl font-bold text-blue-600 mt-4">{dashboardMetrics.totalTerritories}</p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Ongoing Consultations</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Ongoing Consultations</h3>
               <HelpButton id="metric.indigenous.ongoing_consultations" />
             </div>
-            <p className="text-3xl font-bold text-warning mt-4">{dashboardMetrics.ongoingConsultations}</p>
+            <p className="text-3xl font-bold text-yellow-600 mt-4">{dashboardMetrics.ongoingConsultations}</p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Completed</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Completed</h3>
               <HelpButton id="metric.indigenous.completed_consultations" />
             </div>
-            <p className="text-3xl font-bold text-success mt-4">{dashboardMetrics.completedConsultations}</p>
+            <p className="text-3xl font-bold text-green-600 mt-4">{dashboardMetrics.completedConsultations}</p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Completion Rate</h3>
+              <h3 className="text-lg font-semibold text-slate-900">Completion Rate</h3>
               <HelpButton id="metric.indigenous.completion_rate" />
             </div>
-            <p className="text-3xl font-bold text-electric mt-4">
+            <p className="text-3xl font-bold text-purple-600 mt-4">
               {dashboardMetrics.completionRate.toFixed(1)}%
             </p>
           </div>
@@ -545,9 +545,9 @@ export const IndigenousDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Consultation Status Chart */}
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold text-primary">Consultation Status</h3>
+              <h3 className="text-xl font-semibold text-slate-900">Consultation Status</h3>
               <HelpButton id="chart.indigenous.consultation_status" />
             </div>
             <ResponsiveContainer width="100%" height={300}>
@@ -573,9 +573,9 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
 
           {/* TEK Categories Chart */}
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold text-primary">Traditional Ecological Knowledge</h3>
+              <h3 className="text-xl font-semibold text-slate-900">Traditional Ecological Knowledge</h3>
               <HelpButton id="chart.indigenous.tek_categories" />
             </div>
             <ResponsiveContainer width="100%" height={300}>
@@ -593,9 +593,9 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Territory Map and Lists */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
           {/* Territory Map */}
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-start justify-between mb-4">
-              <h3 className="text-xl font-semibold text-primary">Territory Map</h3>
+              <h3 className="text-xl font-semibold text-slate-900">Territory Map</h3>
               <HelpButton id="module.indigenous.map" />
             </div>
             <div className="h-96">
@@ -627,11 +627,11 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
 
           {/* Territories List */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">Territories</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Territories</h3>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {territoryList.length === 0 ? (
-                <div className="text-center text-tertiary text-sm">
+                <div className="text-center text-slate-500 text-sm">
                   No Indigenous territories available. Confirm Supabase seed ran.
                 </div>
               ) : territoryList.map((territory) => (
@@ -639,13 +639,13 @@ export const IndigenousDashboard: React.FC = () => {
                   key={territory.id}
                   className={`p-4 rounded-lg border cursor-pointer transition-colors ${
                     selectedTerritory?.id === territory.id
-                      ? 'border-blue-500 bg-secondary'
-                      : 'border-[var(--border-subtle)] hover-border-[var(--border-medium)]'
+                      ? 'border-blue-500 bg-blue-50'
+                      : 'border-slate-200 hover-border-slate-300'
                   }`}
                   onClick={() => setSelectedTerritory(territory)}
                 >
-                  <h4 className="font-medium text-primary">{territory.name}</h4>
-                  <p className="text-sm text-secondary">{territory.community || 'Community TBD'}</p>
+                  <h4 className="font-medium text-slate-900">{territory.name}</h4>
+                  <p className="text-sm text-slate-600">{territory.community || 'Community TBD'}</p>
                   <div className="flex items-center justify-between mt-2">
                     <span className={`px-2 py-1 text-xs rounded-full ${
                       territory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
@@ -655,7 +655,7 @@ export const IndigenousDashboard: React.FC = () => {
                     }`}>
                       {territory.consultationStatus.replace('_', ' ').toUpperCase()}
                     </span>
-                    <span className="text-xs text-tertiary">
+                    <span className="text-xs text-slate-500">
                       {territory.lastActivity
                         ? new Date(territory.lastActivity).toLocaleDateString('en-CA')
                         : 'Date TBD'}
@@ -667,20 +667,20 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
 
           {/* Territory Details */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">
               {selectedTerritory ? selectedTerritory.name : 'Select a Territory'}
             </h3>
 
             {selectedTerritory && (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Community</label>
-                  <p className="text-primary">{selectedTerritory.community}</p>
+                  <label className="block text-sm font-medium text-slate-700">Community</label>
+                  <p className="text-slate-900">{selectedTerritory.community}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Consultation Status</label>
+                  <label className="block text-sm font-medium text-slate-700">Consultation Status</label>
                   <span className={`inline-block px-2 py-1 text-xs rounded-full mt-1 ${
                     selectedTerritory.consultationStatus === 'completed' ? 'bg-green-100 text-green-800' :
                     selectedTerritory.consultationStatus === 'ongoing' ? 'bg-yellow-100 text-yellow-800' :
@@ -692,13 +692,13 @@ export const IndigenousDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Traditional Territory</label>
-                  <p className="text-primary">{selectedTerritory.traditionalTerritory}</p>
+                  <label className="block text-sm font-medium text-slate-700">Traditional Territory</label>
+                  <p className="text-slate-900">{selectedTerritory.traditionalTerritory}</p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary">Last Activity</label>
-                  <p className="text-primary">
+                  <label className="block text-sm font-medium text-slate-700">Last Activity</label>
+                  <p className="text-slate-900">
                     {new Date(selectedTerritory.lastActivity).toLocaleDateString('en-CA')}
                   </p>
                 </div>
@@ -707,18 +707,18 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
 
           {/* TEK Latest Entries */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">Recent TEK Entries</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Recent TEK Entries</h3>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {tekEntries.slice(0, 5).map((entry) => (
                 <div key={entry.id} className="border-l-4 border-purple-500 pl-4">
-                  <h4 className="font-medium text-primary">{entry.title}</h4>
-                  <p className="text-sm text-secondary line-clamp-2">{entry.description}</p>
-                  <div className="flex items-center justify-between mt-2 text-xs text-tertiary">
+                  <h4 className="font-medium text-slate-900">{entry.title}</h4>
+                  <p className="text-sm text-slate-600 line-clamp-2">{entry.description}</p>
+                  <div className="flex items-center justify-between mt-2 text-xs text-slate-500">
                     <span>{entry.community}</span>
                     <span>{entry.category}</span>
                   </div>
-                  <p className="text-xs text-tertiary mt-1">
+                  <p className="text-xs text-slate-400 mt-1">
                     {new Date(entry.dateRecorded).toLocaleDateString()}
                   </p>
                 </div>
@@ -728,29 +728,29 @@ export const IndigenousDashboard: React.FC = () => {
         </div>
 
         {/* Cultural Protocol Section */}
-        <div className="mt-8 card shadow p-6">
-          <h3 className="text-xl font-semibold text-primary mb-4">
+        <div className="mt-8 bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-semibold text-slate-900 mb-4">
             Cultural Protocol & FPIC Status
           </h3>
 
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-secondary">
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Territory</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Stage</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Status</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Participants</th>
-                  <th className="px-4 py-2 text-left text-sm font-medium text-secondary">Last Updated</th>
+                <tr className="bg-slate-50">
+                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-700">Territory</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-700">Stage</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-700">Status</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-700">Participants</th>
+                  <th className="px-4 py-2 text-left text-sm font-medium text-slate-700">Last Updated</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[var(--border-subtle)]">
+              <tbody className="divide-y divide-slate-200">
                 {fpicWorkflows.slice(0, 10).map((workflow) => (
-                  <tr key={workflow.id} className="hover:bg-secondary">
-                    <td className="px-4 py-2 text-sm text-primary">
+                  <tr key={workflow.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-2 text-sm text-slate-900">
                       {territories.find(t => t.id === workflow.territoryId)?.name || 'Unknown'}
                     </td>
-                    <td className="px-4 py-2 text-sm text-secondary">
+                    <td className="px-4 py-2 text-sm text-slate-600">
                       {workflow.stage.replace('_', ' ').toUpperCase()}
                     </td>
                     <td className="px-4 py-2">
@@ -763,10 +763,10 @@ export const IndigenousDashboard: React.FC = () => {
                         {workflow.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-secondary">
+                    <td className="px-4 py-2 text-sm text-slate-600">
                       {workflow.participants.length} participants
                     </td>
-                    <td className="px-4 py-2 text-sm text-tertiary">
+                    <td className="px-4 py-2 text-sm text-slate-500">
                       {new Date(workflow.lastUpdated).toLocaleDateString()}
                     </td>
                   </tr>
@@ -780,17 +780,17 @@ export const IndigenousDashboard: React.FC = () => {
         <div className="mt-4 flex items-center justify-end space-x-4">
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              wsConnected ? 'bg-secondary0' : 'bg-secondary0'
+              wsConnected ? 'bg-green-500' : 'bg-yellow-500'
             }`}></span>
-            <span className="text-secondary">
+            <span className="text-slate-600">
               {wsConnected ? 'WebSocket Connected' : 'WebSocket Offline'}
             </span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
+              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
             }`}></span>
-            <span className="text-secondary">
+            <span className="text-slate-600">
               {connectionStatus === 'connected' ? 'Data Stream Active' : 'Data Stream Offline'}
             </span>
           </div>
@@ -798,13 +798,13 @@ export const IndigenousDashboard: React.FC = () => {
       </div>
 
       {/* Enhanced Project Management Section */}
-      <div className="card shadow p-6 mt-6">
+      <div className="bg-white rounded-lg shadow p-6 mt-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-semibold text-primary">Indigenous Energy Projects</h3>
+          <h3 className="text-xl font-semibold text-slate-900">Indigenous Energy Projects</h3>
           <div className="flex gap-2">
             <button
               onClick={() => setShowAddProject(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus size={16} />
               Add Project
@@ -822,12 +822,12 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Project List */}
         <div className="space-y-4">
           {indigenousProjects.map((project) => (
-            <div key={project.id} className="border border-[var(--border-subtle)] rounded-lg p-4">
+            <div key={project.id} className="border border-slate-200 rounded-lg p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <h4 className="font-medium text-primary">{project.name}</h4>
-                  <p className="text-sm text-secondary mt-1">{project.community}</p>
-                  <p className="text-sm text-tertiary">{project.territory_name}</p>
+                  <h4 className="font-medium text-slate-900">{project.name}</h4>
+                  <p className="text-sm text-slate-600 mt-1">{project.community}</p>
+                  <p className="text-sm text-slate-500">{project.territory_name}</p>
                   
                   <div className="flex items-center gap-4 mt-3">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -860,7 +860,7 @@ export const IndigenousDashboard: React.FC = () => {
                   </div>
 
                   {project.benefit_sharing.revenue_share_percent && (
-                    <p className="text-sm text-secondary mt-2">
+                    <p className="text-sm text-slate-600 mt-2">
                       Revenue Share: {project.benefit_sharing.revenue_share_percent}%
                     </p>
                   )}
@@ -869,7 +869,7 @@ export const IndigenousDashboard: React.FC = () => {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setEditingProject(project.id)}
-                    className="p-2 text-tertiary hover:text-secondary transition-colors"
+                    className="p-2 text-slate-400 hover:text-slate-600 transition-colors"
                   >
                     <Edit size={16} />
                   </button>
@@ -879,17 +879,17 @@ export const IndigenousDashboard: React.FC = () => {
               {/* Consultation Log */}
               {project.consultation_log.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-slate-100">
-                  <h5 className="font-medium text-secondary mb-2">Recent Consultations</h5>
+                  <h5 className="font-medium text-slate-700 mb-2">Recent Consultations</h5>
                   <div className="space-y-2">
                     {project.consultation_log.slice(-2).map((log, index) => (
                       <div key={index} className="text-sm">
-                        <div className="flex items-center gap-2 text-secondary">
+                        <div className="flex items-center gap-2 text-slate-600">
                           <Calendar size={14} />
                           {new Date(log.date).toLocaleDateString()}
                           <Users size={14} />
                           {log.participants.length} participants
                         </div>
-                        <p className="text-tertiary mt-1">{log.outcomes.join('; ')}</p>
+                        <p className="text-slate-500 mt-1">{log.outcomes.join('; ')}</p>
                       </div>
                     ))}
                   </div>
@@ -899,7 +899,7 @@ export const IndigenousDashboard: React.FC = () => {
           ))}
 
           {indigenousProjects.length === 0 && (
-            <div className="text-center py-8 text-tertiary">
+            <div className="text-center py-8 text-slate-500">
               <Shield size={48} className="mx-auto mb-4 text-slate-300" />
               <p>No Indigenous energy projects recorded yet.</p>
               <p className="text-sm">Add your first project to start tracking consultation and benefit-sharing.</p>
@@ -910,12 +910,12 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Add Project Modal */}
         {showAddProject && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="card p-6 w-full max-w-md mx-4">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-semibold">Add Indigenous Energy Project</h4>
                 <button
                   onClick={() => setShowAddProject(false)}
-                  className="text-tertiary hover:text-secondary"
+                  className="text-slate-400 hover:text-slate-600"
                 >
                   <X size={20} />
                 </button>
@@ -923,52 +923,52 @@ export const IndigenousDashboard: React.FC = () => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Project Name *
                   </label>
                   <input
                     type="text"
                     value={newProject.name || ''}
                     onChange={(e) => setNewProject({...newProject, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Treaty 5 Wind Energy Partnership"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Territory Name *
                   </label>
                   <input
                     type="text"
                     value={newProject.territory_name || ''}
                     onChange={(e) => setNewProject({...newProject, territory_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Treaty 5 Territory"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Community *
                   </label>
                   <input
                     type="text"
                     value={newProject.community || ''}
                     onChange={(e) => setNewProject({...newProject, community: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="e.g., Cree, Ojibwe, Dene"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     Consultation Status
                   </label>
                   <select
                     value={newProject.consultation_status || 'not_started'}
                     onChange={(e) => setNewProject({...newProject, consultation_status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="not_started">Not Started</option>
                     <option value="ongoing">Ongoing</option>
@@ -978,13 +978,13 @@ export const IndigenousDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
                     FPIC Status
                   </label>
                   <select
                     value={newProject.fpic_status || 'required'}
                     onChange={(e) => setNewProject({...newProject, fpic_status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value="required">Required</option>
                     <option value="in_progress">In Progress</option>
@@ -997,14 +997,14 @@ export const IndigenousDashboard: React.FC = () => {
               <div className="flex items-center gap-3 mt-6">
                 <button
                   onClick={handleAddProject}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <Save size={16} />
                   Save Project
                 </button>
                 <button
                   onClick={() => setShowAddProject(false)}
-                  className="px-4 py-2 text-secondary border border-[var(--border-medium)] rounded-lg hover:bg-secondary transition-colors"
+                  className="px-4 py-2 text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
                 >
                   Cancel
                 </button>

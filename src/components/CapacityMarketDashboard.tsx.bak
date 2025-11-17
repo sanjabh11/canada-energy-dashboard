@@ -60,11 +60,11 @@ const CapacityMarketDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="bg-secondary border border-red-200 rounded-lg p-4 text-danger">{error}</div>;
+    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>;
   }
 
   if (!data || !data.auctions) {
-    return <div className="bg-secondary border border-yellow-200 rounded-lg p-4">No capacity market data available</div>;
+    return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">No capacity market data available</div>;
   }
 
   const auctions = data.auctions || [];
@@ -114,7 +114,7 @@ const CapacityMarketDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Latest Clearing Price</p>
@@ -124,7 +124,7 @@ const CapacityMarketDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Capacity Cleared</p>
@@ -134,11 +134,11 @@ const CapacityMarketDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Price Change vs Previous</p>
-              <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-danger' : 'text-success'}`}>
+              <p className={`text-2xl font-bold ${priceChange >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                 {priceChange >= 0 ? '+' : ''}{priceChange.toFixed(1)}%
               </p>
             </div>
@@ -146,7 +146,7 @@ const CapacityMarketDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Auction Value</p>
@@ -159,7 +159,7 @@ const CapacityMarketDashboard: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp size={20} />
             Clearing Price Trends
@@ -176,7 +176,7 @@ const CapacityMarketDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <BarChart3 size={20} />
             Resource Mix Breakdown
@@ -204,7 +204,7 @@ const CapacityMarketDashboard: React.FC = () => {
       </div>
 
       {/* Cleared Capacity Bar Chart */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Activity size={20} />
           Cleared Capacity by Resource Type
@@ -222,7 +222,7 @@ const CapacityMarketDashboard: React.FC = () => {
       </div>
 
       {/* Auction History Table */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Calendar size={20} />
           Auction History
@@ -240,7 +240,7 @@ const CapacityMarketDashboard: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-secondary divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {auctions.map((auction: Auction) => (
                 <tr key={auction.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{auction.auction_year}</td>

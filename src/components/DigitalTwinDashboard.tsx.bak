@@ -228,19 +228,19 @@ export const DigitalTwinDashboard: React.FC = () => {
 
   const getHealthColor = (health: string) => {
     switch (health) {
-      case 'optimal': return 'text-success bg-secondary';
-      case 'good': return 'text-electric bg-secondary';
-      case 'warning': return 'text-warning bg-secondary';
-      case 'critical': return 'text-danger bg-secondary';
+      case 'optimal': return 'text-green-600 bg-green-50';
+      case 'good': return 'text-blue-600 bg-blue-50';
+      case 'warning': return 'text-yellow-600 bg-yellow-50';
+      case 'critical': return 'text-red-600 bg-red-50';
       default: return 'text-gray-600 bg-gray-50';
     }
   };
 
   const getStabilityColor = (stability: string) => {
     switch (stability) {
-      case 'stable': return 'text-success';
-      case 'stressed': return 'text-warning';
-      case 'critical': return 'text-danger';
+      case 'stable': return 'text-green-600';
+      case 'stressed': return 'text-yellow-600';
+      case 'critical': return 'text-red-600';
       case 'emergency': return 'text-red-800';
       default: return 'text-gray-600';
     }
@@ -250,9 +250,9 @@ export const DigitalTwinDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-electric mx-auto mb-4"></div>
-          <p className="text-secondary">Initializing Digital Twin...</p>
-          <p className="text-sm text-tertiary">Loading real-time system state</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Initializing Digital Twin...</p>
+          <p className="text-sm text-slate-500">Loading real-time system state</p>
         </div>
       </div>
     );
@@ -369,10 +369,10 @@ export const DigitalTwinDashboard: React.FC = () => {
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Real-time System Visualization */}
-        <div className="lg:col-span-2 card shadow p-6">
+        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-primary">Real-time System State</h3>
-            <div className="flex items-center gap-2 text-sm text-secondary">
+            <h3 className="text-lg font-semibold text-slate-900">Real-time System State</h3>
+            <div className="flex items-center gap-2 text-sm text-slate-600">
               <Activity size={14} />
               <span className={getStabilityColor(metrics.systemStability)}>
                 {metrics.systemStability.toUpperCase()}
@@ -397,17 +397,17 @@ export const DigitalTwinDashboard: React.FC = () => {
         </div>
 
         {/* Scenario Control Panel */}
-        <div className="card shadow p-6">
-          <h3 className="text-lg font-semibold text-primary mb-4">Scenario Testing</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Scenario Testing</h3>
           
           <div className="space-y-4">
             {/* Scenario Selection */}
             <div>
-              <label className="block text-sm font-medium text-secondary mb-2">Active Scenario</label>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Active Scenario</label>
               <select
                 value={selectedScenario}
                 onChange={(e) => setSelectedScenario(e.target.value)}
-                className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="normal_operations">Normal Operations</option>
                 <option value="extreme_cold">Extreme Cold Weather</option>
@@ -420,7 +420,7 @@ export const DigitalTwinDashboard: React.FC = () => {
 
             {/* Stress Test Controls */}
             <div>
-              <h4 className="font-medium text-primary mb-3">Stress Testing</h4>
+              <h4 className="font-medium text-slate-900 mb-3">Stress Testing</h4>
               <div className="grid grid-cols-1 gap-2">
                 <button
                   onClick={() => runStressTest('extreme_weather')}
@@ -456,7 +456,7 @@ export const DigitalTwinDashboard: React.FC = () => {
               <button
                 onClick={() => runScenarioAnalysis(selectedScenario)}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? (
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -471,44 +471,44 @@ export const DigitalTwinDashboard: React.FC = () => {
       </div>
 
       {/* System Components Overview */}
-      <div className="card shadow p-6">
-        <h3 className="text-lg font-semibold text-primary mb-4">System Components Status</h3>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold text-slate-900 mb-4">System Components Status</h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-blue-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Factory className="text-electric" size={20} />
+                <Factory className="text-blue-600" size={20} />
                 <span className="font-medium text-blue-900">Generation</span>
               </div>
-              <div className="w-2 h-2 bg-secondary0 rounded-full"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
             <div className="text-2xl font-bold text-blue-900">247</div>
-            <div className="text-sm text-electric">Active Units</div>
+            <div className="text-sm text-blue-700">Active Units</div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-green-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Network className="text-success" size={20} />
+                <Network className="text-green-600" size={20} />
                 <span className="font-medium text-green-900">Transmission</span>
               </div>
-              <div className="w-2 h-2 bg-secondary0 rounded-full"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
             <div className="text-2xl font-bold text-green-900">1,247</div>
-            <div className="text-sm text-success">Lines Active</div>
+            <div className="text-sm text-green-700">Lines Active</div>
           </div>
 
-          <div className="bg-secondary rounded-lg p-4">
+          <div className="bg-purple-50 rounded-lg p-4">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <Battery className="text-electric" size={20} />
+                <Battery className="text-purple-600" size={20} />
                 <span className="font-medium text-purple-900">Storage</span>
               </div>
-              <div className="w-2 h-2 bg-secondary0 rounded-full"></div>
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
             </div>
             <div className="text-2xl font-bold text-purple-900">89</div>
-            <div className="text-sm text-electric">Systems Online</div>
+            <div className="text-sm text-purple-700">Systems Online</div>
           </div>
 
           <div className="bg-orange-50 rounded-lg p-4">
@@ -517,7 +517,7 @@ export const DigitalTwinDashboard: React.FC = () => {
                 <Network className="text-orange-600" size={20} />
                 <span className="font-medium text-orange-900">Control</span>
               </div>
-              <div className="w-2 h-2 bg-secondary0 rounded-full"></div>
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
             </div>
             <div className="text-2xl font-bold text-orange-900">12</div>
             <div className="text-sm text-orange-700">Centers Active</div>
@@ -527,32 +527,32 @@ export const DigitalTwinDashboard: React.FC = () => {
 
       {/* Simulation Results */}
       {simulationResults.length > 0 && (
-        <div className="card shadow p-6">
-          <h3 className="text-lg font-semibold text-primary mb-4">Recent Simulation Results</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-slate-900 mb-4">Recent Simulation Results</h3>
           
           <div className="space-y-4">
             {simulationResults.slice(0, 3).map((result, index) => (
-              <div key={index} className="border border-[var(--border-subtle)] rounded-lg p-4">
+              <div key={index} className="border border-slate-200 rounded-lg p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <h4 className="font-medium text-primary">Scenario: {result.scenario_id}</h4>
-                  <span className="text-sm text-secondary">{new Date(result.execution_time).toLocaleString()}</span>
+                  <h4 className="font-medium text-slate-900">Scenario: {result.scenario_id}</h4>
+                  <span className="text-sm text-slate-600">{new Date(result.execution_time).toLocaleString()}</span>
                 </div>
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                   <div>
-                    <span className="text-secondary">Peak Demand:</span>
+                    <span className="text-slate-600">Peak Demand:</span>
                     <div className="font-medium">{result.key_metrics.peak_demand_mw.toFixed(0)} MW</div>
                   </div>
                   <div>
-                    <span className="text-secondary">Total Cost:</span>
+                    <span className="text-slate-600">Total Cost:</span>
                     <div className="font-medium">${(result.key_metrics.total_cost_cad / 1000000).toFixed(1)}M</div>
                   </div>
                   <div>
-                    <span className="text-secondary">Emissions:</span>
+                    <span className="text-slate-600">Emissions:</span>
                     <div className="font-medium">{(result.key_metrics.total_emissions_co2e / 1000).toFixed(0)}k tCO₂e</div>
                   </div>
                   <div>
-                    <span className="text-secondary">Events:</span>
+                    <span className="text-slate-600">Events:</span>
                     <div className="font-medium">{result.key_metrics.reliability_events}</div>
                   </div>
                 </div>

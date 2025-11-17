@@ -244,7 +244,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
   const buttonBaseClass = 'px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed';
   const badgeClass = 'inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium';
-  const cardClass = 'rounded-xl border border-[var(--border-subtle)] bg-white shadow-sm';
+  const cardClass = 'rounded-xl border border-slate-200 bg-white shadow-sm';
   const alertClass = 'rounded-lg border border-amber-200 bg-amber-50 p-4';
 
   return (
@@ -254,8 +254,8 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div>
-              <h1 className="text-4xl font-bold text-primary">Curtailment Reduction Analytics</h1>
-              <p className="text-secondary mt-2">Phase 2: AI-Powered Curtailment Mitigation</p>
+              <h1 className="text-4xl font-bold text-slate-900">Curtailment Reduction Analytics</h1>
+              <p className="text-slate-600 mt-2">Phase 2: AI-Powered Curtailment Mitigation</p>
             </div>
             <HelpButton id="curtailment.overview" />
           </div>
@@ -273,7 +273,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
               type="button"
               onClick={fetchCurtailmentData}
               disabled={loading}
-              className={cn(buttonBaseClass, 'bg-electric text-white hover:bg-blue-700')}
+              className={cn(buttonBaseClass, 'bg-blue-600 text-white hover:bg-blue-700')}
             >
               {loading ? 'Loading...' : 'Refresh Data'}
             </button>
@@ -293,13 +293,13 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className={cn(cardClass, 'border-l-4 border-l-orange-500')}> 
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-secondary">Total Events (30d)</div>
+                <div className="text-sm font-medium text-slate-600">Total Events (30d)</div>
               </div>
               <div className="px-4 py-5">
-                <div className="text-3xl font-bold text-primary">
+                <div className="text-3xl font-bold text-slate-900">
                   {apiStatistics?.total_events || statistics?.total_events || 0}
                 </div>
-                <p className="text-xs text-tertiary mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {(apiStatistics?.total_curtailed_mwh || statistics?.total_curtailed_mwh || 0).toFixed(0)} MWh curtailed
                 </p>
                 {apiStatistics?.provenance && (
@@ -316,18 +316,18 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
             <div className={cn(cardClass, 'border-l-4 border-l-green-500')}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-secondary">Monthly Curtailment Avoided</div>
+                <div className="text-sm font-medium text-slate-600">Monthly Curtailment Avoided</div>
               </div>
               <div className="px-4 py-5">
-                <div className="text-3xl font-bold text-success">
+                <div className="text-3xl font-bold text-green-600">
                   {(apiStatistics?.monthly_curtailment_avoided_mwh || statistics?.total_mwh_saved || 0).toFixed(0)} MWh
                 </div>
-                <p className="text-xs text-tertiary mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {(apiStatistics?.curtailment_reduction_percent || statistics?.curtailment_reduction_percent || 0).toFixed(1)}% reduction
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   {(apiStatistics?.monthly_curtailment_avoided_mwh || 0) >= 300 && (
-                    <span className={cn(badgeClass, 'bg-secondary0 text-white')}>Award Target Met! 🏆</span>
+                    <span className={cn(badgeClass, 'bg-green-500 text-white')}>Award Target Met! 🏆</span>
                   )}
                   <DataQualityBadge completeness={apiStatistics?.data_completeness_percent || 95} compact />
                 </div>
@@ -336,13 +336,13 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
             <div className={cn(cardClass, 'border-l-4 border-l-blue-500')}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-secondary">Monthly Opportunity Cost Saved</div>
+                <div className="text-sm font-medium text-slate-600">Monthly Opportunity Cost Saved</div>
               </div>
               <div className="px-4 py-5">
-                <div className="text-3xl font-bold text-electric">
+                <div className="text-3xl font-bold text-blue-600">
                   {formatCurrency(apiStatistics?.monthly_opportunity_cost_saved_cad || (statistics?.total_revenue_cad - statistics?.total_cost_cad) || 0)}
                 </div>
-                <p className="text-xs text-tertiary mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {((apiStatistics?.monthly_opportunity_cost_saved_cad || 0) / Math.max(apiStatistics?.total_opportunity_cost_cad || 1, 1) * 100).toFixed(1)}% recovered
                 </p>
               </div>
@@ -350,18 +350,18 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
             <div className={cn(cardClass, 'border-l-4 border-l-purple-500')}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <div className="text-sm font-medium text-secondary">ROI (Benefit/Cost)</div>
+                <div className="text-sm font-medium text-slate-600">ROI (Benefit/Cost)</div>
               </div>
               <div className="px-4 py-5">
-                <div className="text-3xl font-bold text-electric">
+                <div className="text-3xl font-bold text-purple-600">
                   {(apiStatistics?.roi_benefit_cost || (statistics?.total_revenue_cad / Math.max(statistics?.total_cost_cad, 1)) || 0).toFixed(1)}x
                 </div>
-                <p className="text-xs text-tertiary mt-1">
+                <p className="text-xs text-slate-500 mt-1">
                   {(apiStatistics?.roi_benefit_cost || 0) >= 1.0 ? '✅ Positive ROI' : '⚠️ Below target'}
                 </p>
                 {apiStatistics?.provenance === 'historical' && (
                   <div className="mt-2">
-                    <span className={cn(badgeClass, 'bg-secondary0 text-white')}>Historical Data</span>
+                    <span className={cn(badgeClass, 'bg-blue-500 text-white')}>Historical Data</span>
                   </div>
                 )}
               </div>
@@ -379,8 +379,8 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                 className={cn(
                   'flex items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors',
                   activeTab === tab.id
-                    ? 'bg-electric text-white border-electric'
-                    : 'bg-white text-secondary border-[var(--border-subtle)] hover:bg-secondary'
+                    ? 'bg-blue-600 text-white border-blue-600'
+                    : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-100'
                 )}
               >
                 <tab.icon className="w-4 h-4" />
@@ -393,8 +393,8 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
           {activeTab === 'events' && (
             <div className={cn(cardClass)}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <h2 className="text-lg font-semibold text-primary">Recent Curtailment Events</h2>
-                <p className="text-sm text-tertiary">Last 30 days of curtailment activity</p>
+                <h2 className="text-lg font-semibold text-slate-800">Recent Curtailment Events</h2>
+                <p className="text-sm text-slate-500">Last 30 days of curtailment activity</p>
               </div>
               <div className="px-4 py-5 space-y-4">
                 {events.length === 0 ? (
@@ -406,7 +406,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                   </div>
                 ) : (
                   events.slice(0, 10).map(event => (
-                    <div key={event.id} className="rounded-lg border border-[var(--border-subtle)] p-4 shadow-sm">
+                    <div key={event.id} className="rounded-lg border border-slate-200 p-4 shadow-sm">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
                         <span
                           className={cn(badgeClass, 'text-white')}
@@ -414,31 +414,31 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                         >
                           {event.reason.replace(/_/g, ' ')}
                         </span>
-                        <span className={cn(badgeClass, 'border border-[var(--border-medium)] bg-white text-secondary')}>
+                        <span className={cn(badgeClass, 'border border-slate-300 bg-white text-slate-600')}>
                           {event.source_type}
                         </span>
-                        <span className="text-sm text-tertiary">{formatDate(event.occurred_at)}</span>
+                        <span className="text-sm text-slate-500">{formatDate(event.occurred_at)}</span>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <div className="text-secondary">Curtailed</div>
+                          <div className="text-slate-600">Curtailed</div>
                           <div className="font-semibold">{event.curtailed_mw.toFixed(1)} MW</div>
                         </div>
                         <div>
-                          <div className="text-secondary">Percentage</div>
+                          <div className="text-slate-600">Percentage</div>
                           <div className="font-semibold">{event.curtailment_percent?.toFixed(1) ?? '—'}%</div>
                         </div>
                         <div>
-                          <div className="text-secondary">Duration</div>
+                          <div className="text-slate-600">Duration</div>
                           <div className="font-semibold">{event.duration_hours?.toFixed(1) ?? '—'}h</div>
                         </div>
                         <div>
-                          <div className="text-secondary">Cost</div>
-                          <div className="font-semibold text-danger">{formatCurrency(event.opportunity_cost_cad || 0)}</div>
+                          <div className="text-slate-600">Cost</div>
+                          <div className="font-semibold text-red-600">{formatCurrency(event.opportunity_cost_cad || 0)}</div>
                         </div>
                       </div>
                       {event.reason_detail && (
-                        <p className="text-sm text-secondary mt-3">{event.reason_detail}</p>
+                        <p className="text-sm text-slate-600 mt-3">{event.reason_detail}</p>
                       )}
                     </div>
                   ))
@@ -451,8 +451,8 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
           {activeTab === 'recommendations' && (
             <div className={cn(cardClass)}>
               <div className="border-b border-slate-100 px-4 py-3">
-                <h2 className="text-lg font-semibold text-primary">AI-Generated Recommendations</h2>
-                <p className="text-sm text-tertiary">Curtailment mitigation strategies ranked by effectiveness</p>
+                <h2 className="text-lg font-semibold text-slate-800">AI-Generated Recommendations</h2>
+                <p className="text-sm text-slate-500">Curtailment mitigation strategies ranked by effectiveness</p>
               </div>
               <div className="px-4 py-5 space-y-4">
                 {recommendations.length === 0 ? (
@@ -476,7 +476,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                     const responsible = details.responsible_party ?? 'Unassigned';
 
                     return (
-                      <div key={rec.id} className="rounded-lg border border-[var(--border-subtle)] p-4 shadow-sm space-y-3">
+                      <div key={rec.id} className="rounded-lg border border-slate-200 p-4 shadow-sm space-y-3">
                         <div className="flex flex-wrap items-start justify-between gap-3">
                           <div className="flex flex-wrap items-center gap-2">
                             <span
@@ -485,43 +485,43 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                             >
                               {rec.priority} priority
                             </span>
-                            <span className={cn(badgeClass, 'border border-[var(--border-medium)] bg-white text-secondary')}>
+                            <span className={cn(badgeClass, 'border border-slate-300 bg-white text-slate-600')}>
                               {rec.recommendation_type.replace(/_/g, ' ')}
                             </span>
                             {isImplemented && (
-                              <span className={cn(badgeClass, 'bg-secondary0 text-white')}>Implemented ✓</span>
+                              <span className={cn(badgeClass, 'bg-green-500 text-white')}>Implemented ✓</span>
                             )}
                           </div>
                           <div className="text-right">
-                            <div className="text-sm text-secondary">Confidence</div>
+                            <div className="text-sm text-slate-600">Confidence</div>
                             <div className="font-semibold">{confidence.toFixed(0)}%</div>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                           <div>
-                            <div className="text-secondary">MWh Saved</div>
-                            <div className="font-semibold text-success">{estimatedSaved.toFixed(1)} MWh</div>
+                            <div className="text-slate-600">MWh Saved</div>
+                            <div className="font-semibold text-green-600">{estimatedSaved.toFixed(1)} MWh</div>
                           </div>
                           <div>
-                            <div className="text-secondary">Cost</div>
+                            <div className="text-slate-600">Cost</div>
                             <div className="font-semibold">{formatCurrency(estimatedCost)}</div>
                           </div>
                           <div>
-                            <div className="text-secondary">Benefit/Cost</div>
-                            <div className="font-semibold text-electric">{costBenefit.toFixed(1)}x</div>
+                            <div className="text-slate-600">Benefit/Cost</div>
+                            <div className="font-semibold text-blue-600">{costBenefit.toFixed(1)}x</div>
                           </div>
                         </div>
 
-                        <div className="rounded-lg bg-secondary p-3">
+                        <div className="rounded-lg bg-blue-50 p-3">
                           <div className="text-sm font-medium text-blue-900 mb-1">AI Reasoning</div>
                           <p className="text-sm text-blue-800">{reasoning}</p>
                         </div>
 
                         {actions.length > 0 && (
                           <div>
-                            <div className="text-sm font-medium text-secondary mb-2">Recommended Actions</div>
-                            <ul className="list-disc list-inside space-y-1 text-sm text-secondary">
+                            <div className="text-sm font-medium text-slate-700 mb-2">Recommended Actions</div>
+                            <ul className="list-disc list-inside space-y-1 text-sm text-slate-600">
                               {actions.map((action: string, idx: number) => (
                                 <li key={idx}>{action}</li>
                               ))}
@@ -529,7 +529,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                           </div>
                         )}
 
-                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-tertiary">
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
                           <span>
                             <Clock className="inline h-4 w-4 mr-1" /> Implementation: {timeline}
                           </span>
@@ -548,7 +548,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className={cardClass}>
                 <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-lg font-semibold text-primary">Curtailment by Reason</h2>
+                  <h2 className="text-lg font-semibold text-slate-800">Curtailment by Reason</h2>
                 </div>
                 <div className="px-4 py-5">
                   <ResponsiveContainer width="100%" height={300}>
@@ -575,7 +575,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
               <div className={cardClass}>
                 <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-lg font-semibold text-primary">Events by Reason</h2>
+                  <h2 className="text-lg font-semibold text-slate-800">Events by Reason</h2>
                 </div>
                 <div className="px-4 py-5">
                   <ResponsiveContainer width="100%" height={300}>
@@ -593,7 +593,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
               <div className={cn(cardClass, 'lg:col-span-2')}>
                 <div className="border-b border-slate-100 px-4 py-3">
-                  <h2 className="text-lg font-semibold text-primary">Curtailment Timeline</h2>
+                  <h2 className="text-lg font-semibold text-slate-800">Curtailment Timeline</h2>
                 </div>
                 <div className="px-4 py-5">
                   <ResponsiveContainer width="100%" height={300}>
@@ -633,16 +633,16 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold">Target Metric: &gt;500 MWh/month curtailment avoided</h3>
-                  <div className="text-4xl font-bold text-success">
+                  <div className="text-4xl font-bold text-green-600">
                     {statistics.total_mwh_saved.toFixed(0)} MWh
                   </div>
-                  <div className="text-sm text-secondary">
+                  <div className="text-sm text-slate-600">
                     {statistics.curtailment_reduction_percent.toFixed(1)}% reduction vs baseline
                   </div>
                   {statistics.total_mwh_saved > 500 ? (
-                    <span className={cn(badgeClass, 'bg-secondary0 text-white')}>✓ Award Target Exceeded</span>
+                    <span className={cn(badgeClass, 'bg-green-500 text-white')}>✓ Award Target Exceeded</span>
                   ) : (
-                    <span className={cn(badgeClass, 'border border-[var(--border-medium)] bg-white text-secondary')}>
+                    <span className={cn(badgeClass, 'border border-slate-300 bg-white text-slate-600')}>
                       {((statistics.total_mwh_saved / 500) * 100).toFixed(0)}% of target
                     </span>
                   )}
@@ -650,15 +650,15 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
 
                 <div className="space-y-2">
                   <h3 className="text-lg font-semibold">Economic Impact</h3>
-                  <div className="text-4xl font-bold text-electric">
+                  <div className="text-4xl font-bold text-blue-600">
                     {formatCurrency(statistics.total_revenue_cad - statistics.total_cost_cad)}
                   </div>
-                  <div className="text-sm text-secondary">Net benefit from AI recommendations</div>
+                  <div className="text-sm text-slate-600">Net benefit from AI recommendations</div>
                   <div className="text-sm">ROI: <span className="font-semibold">{(statistics.total_revenue_cad / Math.max(statistics.total_cost_cad, 1)).toFixed(1)}x</span></div>
                 </div>
               </div>
 
-              <div className="rounded-lg bg-secondary p-4 text-sm text-secondary space-y-2">
+              <div className="rounded-lg bg-blue-50 p-4 text-sm text-slate-700 space-y-2">
                 <div className="flex justify-between">
                   <span>Total curtailment events detected:</span>
                   <span className="font-semibold">{statistics.total_events}</span>
@@ -669,7 +669,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                 </div>
                 <div className="flex justify-between">
                   <span>Energy saved through AI recommendations:</span>
-                  <span className="font-semibold text-success">{statistics.total_mwh_saved.toFixed(0)} MWh</span>
+                  <span className="font-semibold text-green-600">{statistics.total_mwh_saved.toFixed(0)} MWh</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Opportunity cost avoided:</span>
@@ -681,16 +681,16 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
                 </div>
                 <div className="flex justify-between border-t border-blue-100 pt-2 mt-2">
                   <span className="font-semibold">Net Economic Benefit:</span>
-                  <span className="font-semibold text-success">{formatCurrency(statistics.total_revenue_cad - statistics.total_cost_cad)}</span>
+                  <span className="font-semibold text-green-600">{formatCurrency(statistics.total_revenue_cad - statistics.total_cost_cad)}</span>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-green-200 bg-secondary p-4">
-                <div className="flex items-center gap-2 text-success">
+              <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                <div className="flex items-center gap-2 text-green-700">
                   <CheckCircle2 className="h-4 w-4" />
                   <span className="font-semibold">Phase 2 Status</span>
                 </div>
-                <p className="mt-2 text-sm text-success">
+                <p className="mt-2 text-sm text-green-700">
                   {statistics.total_mwh_saved > 500
                     ? '✅ Award target exceeded! Ready for nomination submission.'
                     : `🟡 ${(500 - statistics.total_mwh_saved).toFixed(0)} MWh needed to reach 500 MWh/month target. Continue data collection.`}

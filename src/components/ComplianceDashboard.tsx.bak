@@ -280,11 +280,11 @@ export const ComplianceDashboard: React.FC = () => {
 
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'text-danger border-red-200 bg-secondary';
+      case 'critical': return 'text-red-600 border-red-200 bg-red-50';
       case 'high': return 'text-orange-600 border-orange-200 bg-orange-50';
-      case 'medium': return 'text-warning border-yellow-200 bg-secondary';
-      case 'low': return 'text-electric border-blue-200 bg-secondary';
-      default: return 'text-secondary border-[var(--border-subtle)] bg-secondary';
+      case 'medium': return 'text-yellow-600 border-yellow-200 bg-yellow-50';
+      case 'low': return 'text-blue-600 border-blue-200 bg-blue-50';
+      default: return 'text-slate-600 border-slate-200 bg-slate-50';
     }
   };
 
@@ -295,17 +295,17 @@ export const ComplianceDashboard: React.FC = () => {
       case 'high': return <AlertTriangle className={`${className} text-orange-500`} />;
       case 'medium': return <AlertCircle className={`${className} text-yellow-500`} />;
       case 'low': return <CheckCircle className={`${className} text-blue-500`} />;
-      default: return <Clock className={`${className} text-tertiary`} />;
+      default: return <Clock className={`${className} text-slate-500`} />;
     }
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'compliant': return <span className="px-2 py-1 text-xs bg-green-100 text-success rounded-full">Compliant</span>;
-      case 'non_compliant': return <span className="px-2 py-1 text-xs bg-red-100 text-danger rounded-full">Non-compliant</span>;
-      case 'pending': return <span className="px-2 py-1 text-xs bg-yellow-100 text-warning rounded-full">Pending</span>;
-      case 'review': return <span className="px-2 py-1 text-xs bg-blue-100 text-electric rounded-full">Under Review</span>;
-      default: return <span className="px-2 py-1 text-xs bg-secondary text-secondary rounded-full">Unknown</span>;
+      case 'compliant': return <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Compliant</span>;
+      case 'non_compliant': return <span className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded-full">Non-compliant</span>;
+      case 'pending': return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded-full">Pending</span>;
+      case 'review': return <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">Under Review</span>;
+      default: return <span className="px-2 py-1 text-xs bg-slate-100 text-slate-700 rounded-full">Unknown</span>;
     }
   };
 
@@ -315,26 +315,26 @@ export const ComplianceDashboard: React.FC = () => {
       <AcceptableFeatureInfo featureId="compliance_monitoring" />
       
       {/* Dashboard Header */}
-        <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center space-x-4 mb-4">
-            <div className="bg-secondary0 p-3 rounded-lg">
+            <div className="bg-green-500 p-3 rounded-lg">
               <Shield className="h-8 w-8 text-white" />
             </div>
             <div className="flex items-center gap-3 flex-1">
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-primary">Regulatory Compliance Monitoring</h1>
-                <p className="text-secondary">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
+                <h1 className="text-2xl font-bold text-slate-800">Regulatory Compliance Monitoring</h1>
+                <p className="text-slate-600">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
               </div>
               <HelpButton id="compliance.overview" />
             </div>
           </div>
 
           {/* Data Source Notice */}
-          <div className="bg-secondary border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
             <div className="flex items-start">
-              <Database className="h-4 w-4 text-electric mt-0.5 mr-2 flex-shrink-0" />
+              <Database className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
               <div>
-                <p className="text-electric text-sm">
+                <p className="text-blue-700 text-sm">
                   <strong>Data Source:</strong> Currently using enhanced mock data for demonstration.
                   Production deployment will integrate with Environment Canada and Provincial regulator APIs.
                 </p>
@@ -344,38 +344,38 @@ export const ComplianceDashboard: React.FC = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <CheckCircle className="h-6 w-6 text-success" />
+          <div className="flex items-center space-x-3 p-4 bg-green-50 rounded-lg">
+            <CheckCircle className="h-6 w-6 text-green-600" />
             <div>
-              <div className="text-sm text-success font-medium">Compliant Projects</div>
+              <div className="text-sm text-green-600 font-medium">Compliant Projects</div>
               <div className="text-xl font-bold text-green-800">
                 {data.projects.filter(p => p.complianceScore > 80).length}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <XCircle className="h-6 w-6 text-danger" />
+          <div className="flex items-center space-x-3 p-4 bg-red-50 rounded-lg">
+            <XCircle className="h-6 w-6 text-red-600" />
             <div>
-              <div className="text-sm text-danger font-medium">Critical Violations</div>
+              <div className="text-sm text-red-600 font-medium">Critical Violations</div>
               <div className="text-xl font-bold text-red-800">
                 {data.violations.filter(v => v.severity === 'critical').length}
               </div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <FileText className="h-6 w-6 text-electric" />
+          <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+            <FileText className="h-6 w-6 text-blue-600" />
             <div>
-              <div className="text-sm text-electric font-medium">Active Audits</div>
+              <div className="text-sm text-blue-600 font-medium">Active Audits</div>
               <div className="text-xl font-bold text-blue-800">3</div>
             </div>
           </div>
 
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <Clock className="h-6 w-6 text-electric" />
+          <div className="flex items-center space-x-3 p-4 bg-purple-50 rounded-lg">
+            <Clock className="h-6 w-6 text-purple-600" />
             <div>
-              <div className="text-sm text-electric font-medium">Avg Resolution Time</div>
+              <div className="text-sm text-purple-600 font-medium">Avg Resolution Time</div>
               <div className="text-xl font-bold text-purple-800">12 days</div>
             </div>
           </div>
@@ -384,26 +384,26 @@ export const ComplianceDashboard: React.FC = () => {
 
       {/* Active Alerts */}
       {data.alerts.filter(a => a.status === 'active').length > 0 && (
-        <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
           <div className="flex items-center space-x-2 mb-4">
             <Bell className="h-5 w-5 text-red-500" />
-            <h2 className="text-lg font-semibold text-primary">Active Violation Alerts</h2>
-            <span className="bg-red-100 text-danger px-2 py-1 rounded-full text-sm">
+            <h2 className="text-lg font-semibold text-slate-800">Active Violation Alerts</h2>
+            <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-sm">
               {data.alerts.filter(a => a.status === 'active').length} new
             </span>
           </div>
           <div className="space-y-3">
             {data.alerts.filter(a => a.status === 'active').map((alert) => (
-              <div key={alert.id} className="p-4 rounded-lg border border-red-200 bg-secondary">
+              <div key={alert.id} className="p-4 rounded-lg border border-red-200 bg-red-50">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     {getSeverityIcon(alert.severity)}
                     <div className="flex-1">
-                      <div className="font-semibold text-primary">
+                      <div className="font-semibold text-slate-800">
                         {data.violations.find(v => v.ruleId === alert.ruleId)?.ruleName}
                       </div>
-                      <div className="text-sm text-secondary mt-1">{alert.message}</div>
-                      <div className="text-xs text-tertiary mt-2">
+                      <div className="text-sm text-slate-600 mt-1">{alert.message}</div>
+                      <div className="text-xs text-slate-500 mt-2">
                         {new Date(alert.timestamp).toLocaleString()}
                       </div>
                     </div>
@@ -419,9 +419,9 @@ export const ComplianceDashboard: React.FC = () => {
       )}
 
       {/* Main Dashboard Content */}
-      <div className="card border border-[var(--border-subtle)] p-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
         {/* Tabs */}
-        <div className="flex space-x-4 mb-6 border-b border-[var(--border-subtle)]">
+        <div className="flex space-x-4 mb-6 border-b border-slate-200">
           {[
             { id: 'overview', label: 'Overview', icon: Eye },
             { id: 'violations', label: 'Violations', icon: AlertTriangle },
@@ -434,8 +434,8 @@ export const ComplianceDashboard: React.FC = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center space-x-2 py-3 px-4 font-medium ${
                   activeTab === tab.id
-                    ? 'border-b-2 border-blue-500 text-electric'
-                    : 'text-tertiary hover:text-secondary'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 <Icon className="h-4 w-4" />
@@ -450,36 +450,36 @@ export const ComplianceDashboard: React.FC = () => {
 
             {/* Project Compliance Scores */}
             <div>
-              <h3 className="text-lg font-semibold text-primary mb-4">Project Compliance Scores</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Project Compliance Scores</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {data.projects.map((project) => (
-                  <div key={project.id} className="p-4 bg-secondary rounded-lg">
+                  <div key={project.id} className="p-4 bg-slate-50 rounded-lg">
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="font-medium text-primary">{project.projectName}</h4>
+                      <h4 className="font-medium text-slate-800">{project.projectName}</h4>
                       <Star className="h-4 w-4 text-yellow-500" />
                     </div>
                     <div className="space-y-3">
                       <div>
                         <div className="flex justify-between text-sm mb-1">
                           <span>Compliance Score</span>
-                          <span className={project.complianceScore > 80 ? 'text-success' : 'text-danger'}>
+                          <span className={project.complianceScore > 80 ? 'text-green-600' : 'text-red-600'}>
                             {project.complianceScore}%
                           </span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2">
                           <div
                             className={`h-2 rounded-full ${
-                              project.complianceScore > 80 ? 'bg-secondary0' : 'bg-secondary0'
+                              project.complianceScore > 80 ? 'bg-green-500' : 'bg-red-500'
                             }`}
                             style={{ width: `${project.complianceScore}%` }}
                           />
                         </div>
                       </div>
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-secondary">Violations</span>
-                        <span className="font-semibold text-danger">{project.violations}</span>
+                        <span className="text-sm text-slate-600">Violations</span>
+                        <span className="font-semibold text-red-600">{project.violations}</span>
                       </div>
-                      <div className="text-xs text-tertiary">
+                      <div className="text-xs text-slate-500">
                         Last audit: {new Date(project.lastAudit).toLocaleDateString()}
                       </div>
                     </div>
@@ -490,7 +490,7 @@ export const ComplianceDashboard: React.FC = () => {
 
             {/* Violation Severity Chart */}
             <div>
-              <h3 className="text-lg font-semibold text-primary mb-4">Violation Distribution by Severity</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Violation Distribution by Severity</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={severityChartData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -510,11 +510,11 @@ export const ComplianceDashboard: React.FC = () => {
             {/* Filters */}
             <div className="flex flex-wrap gap-4 mb-4">
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">Project</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Project</label>
                 <select
                   value={selectedProject}
                   onChange={(e) => setSelectedProject(e.target.value)}
-                  className="border border-[var(--border-medium)] rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Projects</option>
                   {data.projects.map((project) => (
@@ -524,11 +524,11 @@ export const ComplianceDashboard: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-secondary mb-1">Severity</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Severity</label>
                 <select
                   value={filterSeverity}
                   onChange={(e) => setFilterSeverity(e.target.value)}
-                  className="border border-[var(--border-medium)] rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 >
                   <option value="all">All Severities</option>
                   <option value="critical">Critical</option>
@@ -542,7 +542,7 @@ export const ComplianceDashboard: React.FC = () => {
             {/* Violations List */}
             <div className="space-y-4">
               {filteredViolations.length === 0 ? (
-                <div className="text-center py-8 text-tertiary">
+                <div className="text-center py-8 text-slate-500">
                   <CheckCircle className="h-12 w-12 text-green-500 mx-auto mb-4" />
                   <div>No violations found matching the filters.</div>
                 </div>
@@ -557,11 +557,11 @@ export const ComplianceDashboard: React.FC = () => {
                         {getSeverityIcon(violation.severity)}
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-semibold text-primary">{violation.ruleName}</h4>
+                            <h4 className="font-semibold text-slate-800">{violation.ruleName}</h4>
                             {getStatusBadge(violation.status)}
                           </div>
-                          <div className="text-secondary mb-1">{violation.description}</div>
-                          <div className="text-sm text-tertiary">
+                          <div className="text-slate-600 mb-1">{violation.description}</div>
+                          <div className="text-sm text-slate-500">
                             <div>Project: {violation.projectName}</div>
                             <div>Assigned to: {violation.assignedTo}</div>
                             <div>Due: {new Date(violation.dueDate).toLocaleDateString()}</div>
@@ -574,20 +574,20 @@ export const ComplianceDashboard: React.FC = () => {
                       <div className="mt-4">
                         <button
                           onClick={() => loadRemediationAdvice(violation.id)}
-                          className="text-sm text-electric hover:text-blue-800 mb-2 flex items-center"
+                          className="text-sm text-blue-600 hover:text-blue-800 mb-2 flex items-center"
                         >
                           <Eye className="h-4 w-4 mr-1" />
                           AI Remediation Guidance
                         </button>
 
                         {loadingAdvice ? (
-                          <div className="text-secondary">Loading AI recommendations...</div>
+                          <div className="text-slate-600">Loading AI recommendations...</div>
                         ) : (
                           <div>
-                            <div className="text-sm font-medium text-secondary mb-2">Remediation Steps:</div>
+                            <div className="text-sm font-medium text-slate-700 mb-2">Remediation Steps:</div>
                             <ul className="space-y-1">
                               {violation.remediationSteps.map((step, index) => (
-                                <li key={index} className="text-sm text-secondary flex items-start">
+                                <li key={index} className="text-sm text-slate-600 flex items-start">
                                   <CheckCircle className="h-4 w-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
                                   {step}
                                 </li>
@@ -606,16 +606,16 @@ export const ComplianceDashboard: React.FC = () => {
 
         {activeTab === 'audit' && (
           <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-primary mb-4">Audit Trail</h3>
-            <div className="bg-secondary rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
+            <h3 className="text-lg font-semibold text-slate-800 mb-4">Audit Trail</h3>
+            <div className="bg-slate-50 rounded-lg p-4 space-y-3 max-h-96 overflow-y-auto">
               {data.auditLog.map((entry) => (
                 <div key={entry.id} className="flex items-start space-x-3 p-3 bg-white rounded-md">
-                  <Archive className="h-4 w-4 text-electric mt-1" />
+                  <Archive className="h-4 w-4 text-blue-600 mt-1" />
                   <div className="flex-1">
-                    <div className="text-sm font-medium text-primary">{entry.action}</div>
-                    <div className="text-sm text-secondary">Resource: {entry.resource}</div>
-                    <div className="text-xs text-tertiary mt-1">{entry.details}</div>
-                    <div className="text-xs text-tertiary mt-1">
+                    <div className="text-sm font-medium text-slate-800">{entry.action}</div>
+                    <div className="text-sm text-slate-600">Resource: {entry.resource}</div>
+                    <div className="text-xs text-slate-500 mt-1">{entry.details}</div>
+                    <div className="text-xs text-slate-400 mt-1">
                       {new Date(entry.timestamp).toLocaleString()} • {entry.userId}
                     </div>
                   </div>

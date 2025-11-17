@@ -295,25 +295,25 @@ const GridOptimizationDashboard: React.FC = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-slate-50">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="grid_optimization" />
         
         <header className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-primary">
+            <h1 className="text-3xl font-bold text-slate-900">
               Grid Optimization Dashboard
             </h1>
             <HelpButton id="grid.optimization.overview" />
           </div>
-          <p className="text-secondary">
+          <p className="text-slate-600">
             Real-time grid monitoring, stability analysis, and optimization recommendations
           </p>
           {error && (
@@ -321,12 +321,12 @@ const GridOptimizationDashboard: React.FC = () => {
               className={`mt-4 rounded-lg p-4 ${
                 isFallbackData
                   ? 'bg-amber-50 border border-amber-200 text-amber-700'
-                  : 'bg-secondary border border-red-200 text-danger'
+                  : 'bg-red-50 border border-red-200 text-red-700'
               }`}
             >
               <div className="flex items-start space-x-3">
                 <AlertTriangle
-                  className={`h-5 w-5 ${isFallbackData ? 'text-warning' : 'text-danger'}`}
+                  className={`h-5 w-5 ${isFallbackData ? 'text-amber-600' : 'text-red-600'}`}
                 />
                 <div>
                   <h3
@@ -336,7 +336,7 @@ const GridOptimizationDashboard: React.FC = () => {
                   >
                     {isFallbackData ? 'Fallback Dataset Active' : 'Data Load Issue'}
                   </h3>
-                  <p className={`${isFallbackData ? 'text-amber-700' : 'text-danger'} text-sm`}>{error}</p>
+                  <p className={`${isFallbackData ? 'text-amber-700' : 'text-red-700'} text-sm`}>{error}</p>
                 </div>
               </div>
             </div>
@@ -345,15 +345,15 @@ const GridOptimizationDashboard: React.FC = () => {
 
         {/* Status Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-100 rounded-lg">
-                <Zap className="h-6 w-6 text-electric" />
+                <Zap className="h-6 w-6 text-blue-600" />
               </div>
               <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
+                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? 'bg-green-100 text-green-700' :
+                dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'bg-yellow-100 text-yellow-700' :
+                'bg-red-100 text-red-700'
               }`}>
                 {dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 10 ? <CheckCircle className="h-3 w-3" /> :
                  dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? <AlertTriangle className="h-3 w-3" /> :
@@ -362,79 +362,79 @@ const GridOptimizationDashboard: React.FC = () => {
                        dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'MONITOR' : 'CRITICAL'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Reserve Margin</h3>
-            <p className="text-3xl font-bold text-electric">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Reserve Margin</h3>
+            <p className="text-3xl font-bold text-blue-600">
               {dashboardMetrics?.reserveMargin?.toFixed(1)}%
             </p>
-            <p className="text-sm text-secondary mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               {dashboardMetrics?.currentSupply?.toLocaleString()} MW supply vs {dashboardMetrics?.currentDemand?.toLocaleString()} MW demand
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-green-100 rounded-lg">
-                <Gauge className="h-6 w-6 text-success" />
+                <Gauge className="h-6 w-6 text-green-600" />
               </div>
               <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.1 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
+                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'bg-green-100 text-green-700' :
+                dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.1 ? 'bg-yellow-100 text-yellow-700' :
+                'bg-red-100 text-red-700'
               }`}>
                 {dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? <CheckCircle className="h-3 w-3" /> :
                  <AlertTriangle className="h-3 w-3" />}
                 <span>{dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'STABLE' : 'DEVIATION'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Frequency</h3>
-            <p className="text-3xl font-bold text-success">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Frequency</h3>
+            <p className="text-3xl font-bold text-green-600">
               {gridStatus[0]?.frequency?.toFixed(3)} Hz
             </p>
-            <p className="text-sm text-secondary mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               Target: 60.000 Hz
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 rounded-lg">
-                <Target className="h-6 w-6 text-electric" />
+                <Target className="h-6 w-6 text-purple-600" />
               </div>
               <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                dashboardMetrics?.criticalAlerts === 0 ? 'bg-green-100 text-success' :
-                dashboardMetrics?.criticalAlerts && dashboardMetrics.criticalAlerts < 3 ? 'bg-yellow-100 text-warning' :
-                'bg-red-100 text-danger'
+                dashboardMetrics?.criticalAlerts === 0 ? 'bg-green-100 text-green-700' :
+                dashboardMetrics?.criticalAlerts && dashboardMetrics.criticalAlerts < 3 ? 'bg-yellow-100 text-yellow-700' :
+                'bg-red-100 text-red-700'
               }`}>
                 <AlertTriangle className="h-3 w-3" />
                 <span>{dashboardMetrics?.criticalAlerts || 0} CRITICAL</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Active Alerts</h3>
-            <p className="text-3xl font-bold text-electric">
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Active Alerts</h3>
+            <p className="text-3xl font-bold text-purple-600">
               {recommendations.length}
             </p>
-            <p className="text-sm text-secondary mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               {dashboardMetrics?.highPriorityActions || 0} high priority actions needed
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="bg-white rounded-lg shadow p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Activity className="h-6 w-6 text-orange-600" />
               </div>
               <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                wsConnected ? 'bg-green-100 text-success' : 'bg-yellow-100 text-warning'
+                wsConnected ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
               }`}>
                 {wsConnected ? <Wifi className="h-3 w-3" /> : <WifiOff className="h-3 w-3" />}
                 <span>{wsConnected ? 'LIVE' : 'OFFLINE'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Data Source</h3>
+            <h3 className="text-lg font-semibold text-slate-900 mb-2">Data Source</h3>
             <p className="text-3xl font-bold text-orange-600">
               {isUsingRealData ? 'IESO' : 'MOCK'}
             </p>
-            <p className="text-sm text-secondary mt-1">
+            <p className="text-sm text-slate-600 mt-1">
               {connectionStatus === 'connected' ? 'Real-time streaming' : 'Cached data'}
             </p>
           </div>
@@ -442,8 +442,8 @@ const GridOptimizationDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Demand vs Supply Chart */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">Demand vs Supply (24h)</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Demand vs Supply (24h)</h3>
             <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={demandSupplyData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -458,8 +458,8 @@ const GridOptimizationDashboard: React.FC = () => {
           </div>
 
           {/* Stability Metrics Chart */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">Grid Stability Metrics</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Grid Stability Metrics</h3>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart data={stabilityData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -477,38 +477,38 @@ const GridOptimizationDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Optimization Recommendations */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">AI Optimization Recommendations</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">AI Optimization Recommendations</h3>
             <div className="space-y-4 max-h-96 overflow-y-auto">
               {recommendations.length === 0 ? (
-                <div className="text-center py-8 text-tertiary">
+                <div className="text-center py-8 text-slate-500">
                   <Target className="h-12 w-12 mx-auto mb-4 opacity-50" />
                   <p>No optimization recommendations at this time</p>
                 </div>
               ) : (
                 recommendations.slice(0, 5).map((rec) => (
                   <div key={rec.id} className={`p-4 rounded-lg border ${
-                    rec.priority === 'critical' ? 'border-red-200 bg-secondary' :
-                    rec.priority === 'high' ? 'border-yellow-200 bg-secondary' :
-                    rec.priority === 'medium' ? 'border-blue-200 bg-secondary' :
-                    'border-green-200 bg-secondary'
+                    rec.priority === 'critical' ? 'border-red-200 bg-red-50' :
+                    rec.priority === 'high' ? 'border-yellow-200 bg-yellow-50' :
+                    rec.priority === 'medium' ? 'border-blue-200 bg-blue-50' :
+                    'border-green-200 bg-green-50'
                   }`}>
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="font-medium text-primary">{rec.description}</h4>
+                      <h4 className="font-medium text-slate-900">{rec.description}</h4>
                       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
-                        rec.priority === 'critical' ? 'bg-red-100 text-danger' :
-                        rec.priority === 'high' ? 'bg-yellow-100 text-warning' :
-                        rec.priority === 'medium' ? 'bg-blue-100 text-electric' :
-                        'bg-green-100 text-success'
+                        rec.priority === 'critical' ? 'bg-red-100 text-red-700' :
+                        rec.priority === 'high' ? 'bg-yellow-100 text-yellow-700' :
+                        rec.priority === 'medium' ? 'bg-blue-100 text-blue-700' :
+                        'bg-green-100 text-green-700'
                       }`}>
                         {rec.priority.toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-secondary">
+                    <div className="flex items-center justify-between text-sm text-slate-600">
                       <span>Expected Impact: {rec.expectedImpact > 0 ? '+' : ''}{rec.expectedImpact}%</span>
                       <span>Time: {rec.implementationTime}min</span>
                     </div>
-                    <div className="mt-2 text-xs text-tertiary">
+                    <div className="mt-2 text-xs text-slate-500">
                       Confidence: {Math.round(rec.confidence * 100)}%
                     </div>
                   </div>
@@ -518,8 +518,8 @@ const GridOptimizationDashboard: React.FC = () => {
           </div>
 
           {/* Recommendations by Priority */}
-          <div className="card shadow p-6">
-            <h3 className="text-xl font-semibold text-primary mb-4">Recommendations by Priority</h3>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-slate-900 mb-4">Recommendations by Priority</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -546,17 +546,17 @@ const GridOptimizationDashboard: React.FC = () => {
         <div className="mt-4 flex items-center justify-end space-x-4">
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              wsConnected ? 'bg-secondary0' : 'bg-secondary0'
+              wsConnected ? 'bg-green-500' : 'bg-yellow-500'
             }`}></span>
-            <span className="text-secondary">
+            <span className="text-slate-600">
               {wsConnected ? 'Real-time WebSocket Connected' : 'WebSocket Offline'}
             </span>
           </div>
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
+              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-red-500'
             }`}></span>
-            <span className="text-secondary">
+            <span className="text-slate-600">
               {connectionStatus === 'connected' ? 'IESO Data Stream Active' : 'IESO Data Stream Offline'}
             </span>
           </div>

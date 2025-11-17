@@ -69,11 +69,11 @@ const EVChargingDashboard: React.FC = () => {
   }
 
   if (error) {
-    return <div className="bg-secondary border border-red-200 rounded-lg p-4 text-danger">{error}</div>;
+    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>;
   }
 
   if (!data || !data.stations) {
-    return <div className="bg-secondary border border-yellow-200 rounded-lg p-4">No EV charging data available</div>;
+    return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">No EV charging data available</div>;
   }
 
   const stations = data.stations || [];
@@ -135,7 +135,7 @@ const EVChargingDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Stations</p>
@@ -145,7 +145,7 @@ const EVChargingDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Capacity</p>
@@ -155,7 +155,7 @@ const EVChargingDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
@@ -168,7 +168,7 @@ const EVChargingDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
@@ -184,7 +184,7 @@ const EVChargingDashboard: React.FC = () => {
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold flex items-center gap-2">
               <BarChartIcon size={20} />
@@ -204,7 +204,7 @@ const EVChargingDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="bg-white rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
             <TrendingUp size={20} />
             EV Adoption Trends
@@ -223,7 +223,7 @@ const EVChargingDashboard: React.FC = () => {
       </div>
 
       {/* Charger Type Distribution */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <Battery size={20} />
@@ -253,7 +253,7 @@ const EVChargingDashboard: React.FC = () => {
       </div>
 
       {/* Stations Table */}
-      <div className="card shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <MapPin size={20} />
           Charging Station Details
@@ -272,7 +272,7 @@ const EVChargingDashboard: React.FC = () => {
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-secondary divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {stations.slice(0, 20).map((station: ChargingStation) => (
                 <tr key={station.id} className="hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium text-gray-900">{station.station_name}</td>
@@ -283,7 +283,7 @@ const EVChargingDashboard: React.FC = () => {
                   <td className="px-4 py-3 text-sm text-gray-600">{station.charger_count}</td>
                   <td className="px-4 py-3">
                     {station.v2g_capable ? (
-                      <span className="text-success font-medium">✓</span>
+                      <span className="text-green-600 font-medium">✓</span>
                     ) : (
                       <span className="text-gray-300">-</span>
                     )}
