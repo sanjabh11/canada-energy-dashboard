@@ -83,7 +83,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
       <button
         type="button"
         aria-label="Scroll left"
-        className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full p-2 border border-slate-200"
+        className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 bg-elevated hover:bg-[var(--bg-elevated)] shadow rounded-full p-2 border border-[var(--border-subtle)]"
         onClick={() => scrollByAmount(-240)}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -108,10 +108,10 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
               {tab.badge && (
                 <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${
                   tab.badge === 'Limited'
-                    ? 'bg-yellow-100 text-yellow-700'
+                    ? 'badge badge-warning'
                     : tab.badge === 'Soon'
-                    ? 'bg-gray-100 text-gray-600'
-                    : 'bg-blue-100 text-blue-700'
+                    ? 'badge badge-info'
+                    : 'badge badge-success'
                 }`}>
                   {tab.badge}
                 </span>
@@ -140,7 +140,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
       {showMoreDropdown && moreTabs.length > 0 && (
         <div
           ref={dropdownRef}
-          className="fixed bg-white border border-slate-200 rounded-lg shadow-xl z-[9999] min-w-[220px] max-w-[280px] max-h-[calc(100vh-100px)] overflow-y-auto"
+          className="fixed bg-elevated border border-[var(--border-medium)] rounded-lg shadow-xl z-[9999] min-w-[220px] max-w-[280px] max-h-[calc(100vh-100px)] overflow-y-auto"
           style={{
             top: `${dropdownPosition.top}px`,
             right: `${dropdownPosition.right}px`
@@ -156,8 +156,8 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
                   onSelect(tab.id);
                   setShowMoreDropdown(false);
                 }}
-                className={`w-full text-left px-4 py-3 hover:bg-slate-50 flex items-center transition-colors border-b border-slate-100 last:border-b-0 ${
-                  isActive ? 'bg-blue-50 text-blue-700 font-medium' : 'text-slate-700'
+                className={`w-full text-left px-4 py-3 hover:bg-[var(--bg-primary)] flex items-center transition-colors border-b border-[var(--border-subtle)] last:border-b-0 ${
+                  isActive ? 'bg-[rgba(0,217,255,0.1)] text-electric font-medium' : 'text-secondary'
                 }`}
               >
                 {Icon ? <Icon className="h-4 w-4 mr-3 flex-shrink-0" /> : null}
@@ -165,10 +165,10 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
                 {tab.badge && (
                   <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${
                     tab.badge === 'Limited'
-                      ? 'bg-yellow-100 text-yellow-700'
+                      ? 'badge badge-warning'
                       : tab.badge === 'Soon'
-                      ? 'bg-gray-100 text-gray-600'
-                      : 'bg-blue-100 text-blue-700'
+                      ? 'badge badge-info'
+                      : 'badge badge-success'
                   }`}>
                     {tab.badge}
                   </span>
@@ -183,7 +183,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
       <button
         type="button"
         aria-label="Scroll right"
-        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white shadow rounded-full p-2 border border-slate-200"
+        className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 bg-elevated hover:bg-[var(--bg-elevated)] shadow rounded-full p-2 border border-[var(--border-subtle)]"
         onClick={() => scrollByAmount(240)}
       >
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

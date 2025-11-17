@@ -4,6 +4,9 @@
 /* Premium UI Styles - Phase 1-5 Enhancements */
 @import './styles/premium.css';
 
+/* Canada Energy Design System */
+@import '../docs/UI_redesign.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

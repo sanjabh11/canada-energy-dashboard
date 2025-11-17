@@ -168,88 +168,94 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
 
   // Compact variant - small card
   if (variant === 'compact') {
+    const overallBadgeClass =
+      overallStatus === 'healthy'
+        ? 'badge badge-success'
+        : overallStatus === 'degraded'
+          ? 'badge badge-warning'
+          : 'badge badge-danger';
+
     return (
-      <div className={`border-2 rounded-lg p-4 ${
-        overallStatus === 'healthy' ? 'bg-green-50 border-green-200' :
-        overallStatus === 'degraded' ? 'bg-yellow-50 border-yellow-200' :
-        'bg-red-50 border-red-200'
-      }`}>
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Activity className={
-              overallStatus === 'healthy' ? 'text-green-600' :
-              overallStatus === 'degraded' ? 'text-yellow-600' :
-              'text-red-600'
-            } size={20} />
-            <h3 className="font-semibold text-gray-900">Ops Health</h3>
-          </div>
-          <div className="flex items-center gap-2">
-            {metrics.monitoring_status && (
-              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                metrics.monitoring_status === 'Active' ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-200 text-gray-800'
-              }`}>
-                Monitoring: {metrics.monitoring_status === 'Offline' ? 'Standby' : String(metrics.monitoring_status)}
+      <div className="card">
+        <div className="card-header">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-sm">
+              <Activity
+                className={
+                  overallStatus === 'healthy'
+                    ? 'text-success'
+                    : overallStatus === 'degraded'
+                      ? 'text-warning'
+                      : 'text-danger'
+                }
+                size={18}
+              />
+              <h3 className="card-title">Ops Health</h3>
+            </div>
+            <div className="flex items-center gap-sm">
+              {metrics.monitoring_status && (
+                <span className="badge badge-success text-xs">
+                  Monitoring: {metrics.monitoring_status === 'Offline' ? 'Standby' : String(metrics.monitoring_status)}
+                </span>
+              )}
+              <span className={overallBadgeClass}>
+                {overallStatus.toUpperCase()}
               </span>
-            )}
-            <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-              overallStatus === 'healthy' ? 'bg-green-200 text-green-800' :
-              overallStatus === 'degraded' ? 'bg-yellow-200 text-yellow-800' :
-              'bg-red-200 text-red-800'
-            }`}>
-              {overallStatus.toUpperCase()}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
-              {getStatusIcon(metrics.slo_status.ingestion)}
-              <span>Ingestion</span>
-            </div>
-            <div className="font-semibold text-gray-900">
-              {metrics.ingestion_uptime_percent.toFixed(1)}%
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
-              {getStatusIcon(metrics.slo_status.forecast)}
-              <span>Forecasts</span>
-            </div>
-            <div className="font-semibold text-gray-900">
-              {metrics.forecast_job_success_rate.toFixed(1)}%
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
-              {getStatusIcon(metrics.slo_status.latency)}
-              <span>Latency</span>
-            </div>
-            <div className="font-semibold text-gray-900">
-              {metrics.avg_job_latency_ms}ms
-            </div>
-          </div>
-
-          <div>
-            <div className="flex items-center gap-1 text-gray-600 mb-1">
-              {getStatusIcon(metrics.slo_status.freshness)}
-              <span>Freshness</span>
-            </div>
-            <div className="font-semibold text-gray-900">
-              {metrics.data_freshness_minutes < 60
-                ? `${metrics.data_freshness_minutes}min`
-                : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
             </div>
           </div>
         </div>
 
-        {lastUpdate && (
-          <div className="mt-3 pt-3 border-t border-gray-200 text-xs text-gray-500">
-            Updated: {lastUpdate.toLocaleTimeString()}
+        <div className="card-body">
+          <div className="grid grid-cols-2 gap-md text-sm">
+            <div className="space-y-1">
+              <div className="flex items-center gap-sm text-tertiary text-xs uppercase tracking-wide">
+                {getStatusIcon(metrics.slo_status.ingestion)}
+                <span>Ingestion</span>
+              </div>
+              <div className="metric-value text-lg">
+                {metrics.ingestion_uptime_percent.toFixed(1)}%
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-sm text-tertiary text-xs uppercase tracking-wide">
+                {getStatusIcon(metrics.slo_status.forecast)}
+                <span>Forecasts</span>
+              </div>
+              <div className="metric-value text-lg">
+                {metrics.forecast_job_success_rate.toFixed(1)}%
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-sm text-tertiary text-xs uppercase tracking-wide">
+                {getStatusIcon(metrics.slo_status.latency)}
+                <span>Latency</span>
+              </div>
+              <div className="metric-value text-lg">
+                {metrics.avg_job_latency_ms}ms
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-sm text-tertiary text-xs uppercase tracking-wide">
+                {getStatusIcon(metrics.slo_status.freshness)}
+                <span>Freshness</span>
+              </div>
+              <div className="metric-value text-lg">
+                {metrics.data_freshness_minutes < 60
+                  ? `${metrics.data_freshness_minutes}min`
+                  : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
+              </div>
+            </div>
           </div>
-        )}
+
+          {lastUpdate && (
+            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] text-xs text-tertiary">
+              Updated: {lastUpdate.toLocaleTimeString()}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

@@ -387,53 +387,48 @@ export const RealTimeDashboard: React.FC = () => {
   console.log('🔧 RealTimeDashboard env check:', envDebug);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-      {/* Hero Section with Glassmorphic Design */}
-      <div className="hero-glass relative overflow-hidden">
-        <div className={`${CONTAINER_CLASSES.page} py-24 lg:py-32 relative z-10`}>
-          <div className="text-center">
-            <h1 className="hero-title text-5xl lg:text-7xl font-serif font-light mb-6 tracking-tight animate-fade-in">
-              Real-Time Energy
-              <span className="hero-title-accent block font-medium shimmer">
-                Dashboard
-              </span>
-            </h1>
+    <div className="min-h-screen bg-primary">
+      {/* Hero Section */}
+      <section className="hero-section">
+        <div className="hero-content">
+          <h1 className="hero-title">
+            Real-Time Energy Dashboard
+          </h1>
+          <p className="hero-subtitle">
+            Live monitoring of Canadian energy systems with{' '}
+            <span className="badge badge-live">Live</span> insights
+          </p>
 
-            <p className="hero-subtitle text-xl lg:text-2xl font-light max-w-3xl mx-auto leading-relaxed animate-fade-in-delayed">
-              Live monitoring of Canadian energy systems with <span className="live-indicator text-emerald-300 font-semibold">LIVE</span> insights
-            </p>
+          {/* Key Stats */}
+          <div className="grid grid-auto gap-md mt-6">
+            <div className="card card-metric">
+              <Database className="h-10 w-10 text-electric mx-auto mb-3" />
+              <span className="metric-value">{connectedSources}</span>
+              <span className="metric-label">Active Data Sources</span>
+            </div>
 
-            {/* Enhanced Glassmorphic Stats Cards */}
-            <div className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-6 max-w-5xl mx-auto">
-              <div className="metric-card-glass glass-card-hover float-animation">
-                <Database className="h-10 w-10 text-cyan-400 mx-auto mb-3 glow-electric-pulse" />
-                <div className="text-3xl font-bold text-white mb-1">{connectedSources}</div>
-                <div className="text-sm text-blue-200 font-medium">Active Data Sources</div>
-              </div>
+            <div className="card card-metric">
+              <MapPin className="h-10 w-10 text-success mx-auto mb-3" />
+              <span className="metric-value">{stats.coverage}</span>
+              <span className="metric-label">Provinces Covered</span>
+            </div>
 
-              <div className="metric-card-glass glass-card-hover float-animation-delayed">
-                <MapPin className="h-10 w-10 text-emerald-400 mx-auto mb-3 glow-renewable-pulse" />
-                <div className="text-3xl font-bold text-white mb-1">{stats.coverage}</div>
-                <div className="text-sm text-green-200 font-medium">Provinces Covered</div>
-              </div>
+            <div className="card card-metric">
+              <Activity className="h-10 w-10 text-electric mx-auto mb-3" />
+              <span className="metric-value">{stats.updateFreq}</span>
+              <span className="metric-label">Update Frequency</span>
+            </div>
 
-              <div className="metric-card-glass glass-card-hover float-animation">
-                <Activity className="h-10 w-10 text-purple-400 mx-auto mb-3" />
-                <div className="text-3xl font-bold text-white mb-1">{stats.updateFreq}</div>
-                <div className="text-sm text-purple-200 font-medium">Update Frequency</div>
-              </div>
-
-              <div className="metric-card-glass glass-card-hover float-animation-delayed">
-                <CheckCircle className="h-10 w-10 text-emerald-400 mx-auto mb-3" />
-                <div className="text-3xl font-bold text-white mb-1">{stats.architecture}</div>
-                <div className="text-sm text-emerald-200 font-medium">Architecture</div>
-              </div>
+            <div className="card card-metric">
+              <CheckCircle className="h-10 w-10 text-success mx-auto mb-3" />
+              <span className="metric-value">{stats.architecture}</span>
+              <span className="metric-label">Architecture</span>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className={`${CONTAINER_CLASSES.page} space-y-8 animate-fade-in-slow`}>
+      <div className={`${CONTAINER_CLASSES.page} space-y-8 animate-fade-in`}>
 
       {/* Phase III.0: Peak Alert Banner */}
       <PeakAlertBanner
@@ -464,14 +459,10 @@ export const RealTimeDashboard: React.FC = () => {
               showBreakdown={false}
             />
           ) : (
-            <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
-              </div>
-              <div className="text-center py-8">
-                <div className="text-gray-400 text-sm">Data unavailable</div>
-                <div className="text-xs text-gray-500 mt-1">No valid generation data</div>
-              </div>
+            <div className="card text-center">
+              <div className="text-sm font-semibold text-secondary mb-2">CO₂ Emissions</div>
+              <div className="text-sm text-muted">Data unavailable</div>
+              <div className="text-xs text-tertiary mt-1">No valid generation data</div>
             </div>
           )}
         </div>
@@ -487,104 +478,109 @@ export const RealTimeDashboard: React.FC = () => {
 
       {/* 4-Panel Dashboard Grid */}
       {/* Transition KPIs / Analytics quick tiles */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-4 bg-indigo-50 rounded-lg">
-          <div className="text-sm text-indigo-600">Total Generation (sample)</div>
-          <div className="text-2xl font-bold text-indigo-800">{
-            kpis?.kpis?.total_mwh !== null && kpis?.kpis?.total_mwh !== undefined
-              ? Math.round(kpis.kpis.total_mwh).toLocaleString()
-              : (typeof totalGenerationGwh === 'number' ? Math.round(totalGenerationGwh * 1000).toLocaleString() : '—')
-          } MWh</div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+        <div className="card card-metric">
+          <span className="metric-label">Total Generation</span>
+          <span className="metric-value">
+            {
+              kpis?.kpis?.total_mwh !== null && kpis?.kpis?.total_mwh !== undefined
+                ? Math.round(kpis.kpis.total_mwh).toLocaleString()
+                : (typeof totalGenerationGwh === 'number' ? Math.round(totalGenerationGwh * 1000).toLocaleString() : '—')
+            } MWh
+          </span>
         </div>
-        <div className="p-4 bg-emerald-50 rounded-lg">
-          <div className="text-sm text-emerald-600">Top Source</div>
-          <div className="text-2xl font-bold text-emerald-800">{
-            (() => {
-              const topFromKpi = kpis?.kpis?.top_source?.type?.toUpperCase() ?? null;
-              const topFromApi = topSourceFromAPI ? String(topSourceFromAPI).toUpperCase() : null;
-              const top = topFromApi || topFromKpi || '—';
-              if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(top)) return '—';
-              return top;
-            })()
-          }</div>
+        <div className="card card-metric">
+          <span className="metric-label">Top Source</span>
+          <span className="metric-value">
+            {
+              (() => {
+                const topFromKpi = kpis?.kpis?.top_source?.type?.toUpperCase() ?? null;
+                const topFromApi = topSourceFromAPI ? String(topSourceFromAPI).toUpperCase() : null;
+                const top = topFromApi || topFromKpi || '—';
+                if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(top)) return '—';
+                return top;
+              })()
+            }
+          </span>
         </div>
-        <div className="p-4 bg-amber-50 rounded-lg">
-          <div className="text-sm text-amber-600">Renewable Share</div>
-          <div className="text-2xl font-bold text-amber-800">{
-            (() => {
-              const shareFromApi = (typeof renewableShareFromAPI === 'number') ? renewableShareFromAPI : null;
-              const shareFromKpi = (typeof kpis?.kpis?.renewable_share === 'number') ? (kpis!.kpis!.renewable_share * 100) : null;
-              const pct = shareFromApi !== null ? shareFromApi : (shareFromKpi !== null ? shareFromKpi : null);
-              return pct !== null ? `${pct.toFixed(1)}%` : '—';
-            })()
-          }</div>
+        <div className="card card-metric">
+          <span className="metric-label">Renewable Share</span>
+          <span className="metric-value">
+            {
+              (() => {
+                const shareFromApi = (typeof renewableShareFromAPI === 'number') ? renewableShareFromAPI : null;
+                const shareFromKpi = (typeof kpis?.kpis?.renewable_share === 'number') ? (kpis!.kpis!.renewable_share * 100) : null;
+                const pct = shareFromApi !== null ? shareFromApi : (shareFromKpi !== null ? shareFromKpi : null);
+                return pct !== null ? `${pct.toFixed(1)}%` : '—';
+              })()
+            }
+          </span>
         </div>
       </div>
 
       <div className="space-y-6">
-        {/* Dashboard Header with Glassmorphic Design */}
-        <div className="glass-card glass-card-electric glass-card-hover">
-          <div className={CONTAINER_CLASSES.cardHeader}>
-            <div className={CONTAINER_CLASSES.flexBetween}>
-              <div className={CONTAINER_CLASSES.flexCenter}>
-                <Database className="h-6 w-6 text-cyan-400 mr-3 glow-electric" />
-                <h2 className={`${TEXT_CLASSES.heading2} text-white`}>Real-Time Energy Dashboard</h2>
+        {/* Dashboard Header with Dark Card */}
+        <div className="card">
+          <div className="card-header">
+            <div className="flex justify-between">
+              <div className="flex items-center">
+                <Database className="h-6 w-6 text-electric mr-3" />
+                <h2 className="card-title">Real-Time Energy Dashboard</h2>
               </div>
-              <div className={`${CONTAINER_CLASSES.flexCenter} space-x-4`}>
-                <div className={`badge-glass ${
+              <div className="flex items-center space-x-4">
+                <div className={`badge ${
                   connectionStatuses.some(s => s.status === 'connected')
-                    ? 'badge-glass-success'
-                    : 'badge-glass-warning'
+                    ? 'badge-success'
+                    : 'badge-warning'
                 }`}>
-                  <div className={`w-2 h-2 rounded-full ${
-                    connectionStatuses.some(s => s.status === 'connected') ? 'bg-emerald-400 glow-renewable' : 'bg-yellow-400'
-                  }`}></div>
-                  <span>{connectionStatuses.filter(s => s.status === 'connected').length}/{connectionStatuses.length} Connected</span>
+                  <span>
+                    {connectionStatuses.filter(s => s.status === 'connected').length}/{connectionStatuses.length} Connected
+                  </span>
                 </div>
                 <HelpButton id="dashboard.overview" />
               </div>
             </div>
           </div>
 
-          <div className={CONTAINER_CLASSES.cardBody}>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="glass-card glass-card-electric text-center p-4 glass-card-hover">
-                <div className="text-xs text-cyan-300 font-semibold uppercase tracking-wide mb-2">Data Sources</div>
-                <div className="text-3xl font-bold text-white">{stats.dataSources}</div>
+          <div className="card-body">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
+              <div className="card-metric">
+                <span className="metric-label">Data Sources</span>
+                <span className="metric-value">{stats.dataSources}</span>
               </div>
-              <div className="glass-card glass-card-electric text-center p-4 glass-card-hover">
-                <div className="text-xs text-cyan-300 font-semibold uppercase tracking-wide mb-2">Ontario Demand</div>
-                <div className="text-3xl font-bold text-white">
+              <div className="card-metric">
+                <span className="metric-label">Ontario Demand</span>
+                <span className="metric-value">
                   {typeof currentDemand === 'number'
                     ? `${Math.round(currentDemand).toLocaleString()} MW`
                     : '—'}
-                </div>
+                </span>
               </div>
-              <div className="glass-card glass-card-solar text-center p-4 glass-card-hover">
-                <div className="text-xs text-orange-300 font-semibold uppercase tracking-wide mb-2">Alberta Price</div>
-                <div className="text-3xl font-bold text-white">
+              <div className="card-metric">
+                <span className="metric-label">Alberta Price</span>
+                <span className="metric-value">
                   {currentPrice !== null && currentPrice !== undefined ? `$${currentPrice.toFixed(2)}` : '—'}
-                </div>
+                </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Main Dashboard Charts with Glassmorphic Grid */}
-        <div className={CHART_CONFIGS.dashboardGrid.charts}>
+        {/* Main Dashboard Charts with Dark Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
           {/* Panel 1: Ontario Hourly Demand */}
-          <div className="glass-card glass-card-hover">
-            <div className={CONTAINER_CLASSES.cardHeader}>
-              <div className={CONTAINER_CLASSES.flexBetween}>
-                <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
-                  <Activity className="h-5 w-5 mr-2 text-blue-600" />
+          <div className="card">
+            <div className="card-header">
+              <div className="flex justify-between">
+                <h3 className="text-lg font-semibold text-primary mb-2">
+                  <Activity className="h-5 w-5 mr-2 text-electric" />
                   Ontario Hourly Demand
                 </h3>
-                <div className="border-b border-slate-100 px-4 py-3">
+                <div className="px-4 py-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h2 className={`${TEXT_CLASSES.heading2} text-slate-800`}>Ontario Demand</h2>
-                      <p className={`${TEXT_CLASSES.caption} text-slate-500`}>Real-time electricity demand</p>
+                      <h2 className="text-lg font-semibold text-primary">Ontario Demand</h2>
+                      <p className="text-sm text-secondary">Real-time electricity demand</p>
                     </div>
                     <DataQualityBadge
                       provenance={createProvenance('real_stream', 'IESO', 0.95, { completeness: data.ontarioDemand.length / 96 })}
@@ -594,8 +590,8 @@ export const RealTimeDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Current Demand</div>
-                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>
+                  <div className="text-sm text-secondary">Current Demand</div>
+                  <div className="text-lg font-semibold text-electric">
                     {typeof currentDemand === 'number'
                       ? `${Math.round(currentDemand).toLocaleString()} MW`
                       : '—'}
@@ -603,7 +599,7 @@ export const RealTimeDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className={CONTAINER_CLASSES.cardBody}>
+            <div className="card-body">
               <div className="chart-container">
                 <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
                   <LineChart data={ontarioDemandChartData}>
@@ -611,11 +607,11 @@ export const RealTimeDashboard: React.FC = () => {
                     <XAxis dataKey="time" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} />
+                    <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
+              <div className="text-sm text-center mt-2 text-secondary">
                 {data.ontarioDemand.length > 0 
                   ? `Data: ${data.ontarioDemand.length} records • Source: ${sourceText('ontario_demand')}`
                   : loading 
@@ -626,13 +622,13 @@ export const RealTimeDashboard: React.FC = () => {
           </div>
 
           {/* Panel 2: Provincial Generation Mix */}
-          <div className={CONTAINER_CLASSES.card}>
-            <div className={CONTAINER_CLASSES.cardHeader}>
-              <div className={CONTAINER_CLASSES.flexBetween}>
+          <div className="card">
+            <div className="card-header">
+              <div className="flex justify-between">
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
-                      <Zap className="h-5 w-5 mr-2 text-green-600" />
+                    <h3 className="text-lg font-semibold text-primary mb-2">
+                      <Zap className="h-5 w-5 mr-2 text-success" />
                       Provincial Generation Mix
                     </h3>
                     <DataQualityBadge
@@ -648,8 +644,8 @@ export const RealTimeDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right ml-4">
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>2-Day Total Generation</div>
-                  <div className={`${TEXT_CLASSES.metric} text-green-600`}>
+                  <div className="text-sm text-secondary">2-Day Total Generation</div>
+                  <div className="text-lg font-semibold text-success">
                     {totalGenerationGwh !== null && totalGenerationGwh !== undefined && totalGenerationGwh > 0
                       ? `${Math.round(totalGenerationGwh).toLocaleString()} GWh`
                       : '—'}
@@ -660,19 +656,19 @@ export const RealTimeDashboard: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className={CONTAINER_CLASSES.cardBody}>
+            <div className="card-body">
               <div className="chart-container">
-                <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
+                <ResponsiveContainer width="100%" height={300}>
                   <BarChart data={generationChartSeries} layout="horizontal">
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis type="number" />
                     <YAxis dataKey="type" type="category" width={120} />
                     <Tooltip />
-                    <Bar dataKey="gwh" fill="#10b981" name="Generation (GWh)" />
+                    <Bar dataKey="gwh" fill="var(--chart-renewable)" name="Generation (GWh)" />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
+              <div className="text-sm text-center mt-2">
                 {(provinceMetrics?.period?.start || nationalOverview?.metadata?.window?.start)
                   ? `Data window: ${provinceMetrics?.period?.start ?? nationalOverview?.metadata?.window?.start} → ${provinceMetrics?.period?.end ?? nationalOverview?.metadata?.window?.end}`
                   : data.provincialGeneration.length > 0
@@ -685,11 +681,11 @@ export const RealTimeDashboard: React.FC = () => {
           </div>
 
           {/* Panel 3: Alberta Supply & Demand / Ontario Demand Trend */}
-          <div className={CONTAINER_CLASSES.card}>
-            <div className={CONTAINER_CLASSES.cardHeader}>
-              <div className={CONTAINER_CLASSES.flexBetween}>
-                <h3 className={`${TEXT_CLASSES.heading3} flex items-center`}>
-                  <Activity className="h-5 w-5 mr-2 text-purple-600" />
+          <div className="card">
+            <div className="card-header">
+              <div className="flex justify-between">
+                <h3 className="text-lg font-semibold text-primary mb-2">
+                  <Activity className="h-5 w-5 mr-2 text-electric" />
                   {hasDemandTrend ? 'Ontario Demand Trend' : 'Alberta Supply & Demand'}
                 </h3>
                 <div className="col-span-3 flex justify-end">
@@ -698,14 +694,14 @@ export const RealTimeDashboard: React.FC = () => {
               </div>
               <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Supply</div>
-                  <div className={`${TEXT_CLASSES.metric} text-purple-600`}>
+                  <div className="text-sm text-secondary">Supply</div>
+                  <div className="text-lg font-semibold text-success">
                     {typeof currentSupply === 'number' ? `${Math.round(currentSupply).toLocaleString()} MW` : '—'}
                   </div>
                 </div>
                 <div>
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Demand</div>
-                  <div className={`${TEXT_CLASSES.metric} text-blue-600`}>
+                  <div className="text-sm text-secondary">Demand</div>
+                  <div className="text-lg font-semibold text-electric">
                     {typeof currentDemandAlberta === 'number'
                       ? `${Math.round(currentDemandAlberta).toLocaleString()} MW`
                       : hasDemandTrend && supplyDemandChartData.length
@@ -714,16 +710,16 @@ export const RealTimeDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div>
-                  <div className={`${TEXT_CLASSES.bodySmall} text-slate-600`}>Price</div>
-                  <div className={`${TEXT_CLASSES.metric} text-orange-600`}>
+                  <div className="text-sm text-secondary">Price</div>
+                  <div className="text-lg font-semibold text-warning">
                     {typeof currentPrice === 'number' ? `$${currentPrice.toFixed(2)}` : '—'}
                   </div>
                 </div>
               </div>
             </div>
-            <div className={CONTAINER_CLASSES.cardBody}>
+            <div className="card-body">
               <div className="chart-container">
-                <ResponsiveContainer width="100%" height={CHART_CONFIGS.dashboard}>
+                <ResponsiveContainer width="100%" height={300}>
                   <LineChart data={supplyDemandChartData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="label" />
@@ -731,17 +727,17 @@ export const RealTimeDashboard: React.FC = () => {
                     <Tooltip />
                     <Legend />
                     {hasDemandTrend ? (
-                      <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} name="Ontario Demand" />
+                      <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} name="Ontario Demand" />
                     ) : (
                       <>
-                        <Line type="monotone" dataKey="supply" stroke="#7c3aed" strokeWidth={2} name="Supply" />
-                        <Line type="monotone" dataKey="demand" stroke="#2563eb" strokeWidth={2} name="Demand" />
+                        <Line type="monotone" dataKey="supply" stroke="var(--chart-industrial)" strokeWidth={2} name="Supply" />
+                        <Line type="monotone" dataKey="demand" stroke="var(--chart-electric)" strokeWidth={2} name="Demand" />
                       </>
                     )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className={`${TEXT_CLASSES.caption} text-center mt-2`}>
+              <div className="text-sm text-center mt-2 text-secondary">
                 {hasDemandTrend
                   ? `Trend window: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • Completeness: ${typeof trends?.metadata?.completeness_pct === 'number' ? trends.metadata.completeness_pct.toFixed(1) + '%' : '—'} • Samples: ${trends?.metadata?.demand_sample_count ?? '—'} • Source: analytics trends API`
                   : `Data: ${data.ontarioPrices.length} records • Source: ${sourceText('ontario_prices')}`}
@@ -752,37 +748,34 @@ export const RealTimeDashboard: React.FC = () => {
         </div>
 
         {/* CTA to Analytics & Trends */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 border-2 border-indigo-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
-                Explore Historical Trends & AI Insights
-              </h3>
-              <p className="text-sm text-slate-600">
-                View 30-day trends, weather correlations, renewable penetration heatmaps, and AI-powered analytics
-              </p>
-            </div>
-            <button
-              onClick={() => window.location.hash = '#analytics'}
-              className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium whitespace-nowrap"
-            >
-              <TrendingUp size={20} />
-              View Analytics
-            </button>
+        <div className="card flex items-center justify-between gap-md">
+          <div>
+            <h3 className="text-lg font-semibold text-primary mb-2">
+              Explore Historical Trends & AI Insights
+            </h3>
+            <p className="text-sm text-secondary">
+              View 30-day trends, weather correlations, renewable penetration heatmaps, and AI-powered analytics
+            </p>
           </div>
+          <button
+            onClick={() => window.location.hash = '#analytics'}
+            className="btn btn-primary"
+          >
+            <TrendingUp size={20} />
+            View Analytics
+          </button>
         </div>
       </div>
 
       </div>
 
       {/* Status Footer */}
-      <div className="bg-slate-50 rounded-xl p-4 text-center">
-        <div className="flex items-center justify-center space-x-4 text-sm">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-            <span className="text-slate-600">
-              Last updated: {lastUpdate.toLocaleTimeString()} • 
-              {loading ? 'Refreshing...' : 'Live streaming active'}
+      <div className="card mt-4 text-center">
+        <div className="flex items-center justify-center gap-sm text-sm text-secondary">
+          <div className="flex items-center gap-sm">
+            <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+            <span>
+              Last updated: {lastUpdate.toLocaleTimeString()} • {loading ? 'Refreshing...' : 'Live streaming active'}
             </span>
           </div>
         </div>

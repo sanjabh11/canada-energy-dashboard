@@ -109,65 +109,85 @@ export const StorageMetricsCard: React.FC<StorageMetricsCardProps> = ({
                          alignmentPct >= 50 ? 'text-yellow-600' : 'text-orange-600';
 
   if (compact) {
+    const socToneClass =
+      socPercent >= 80
+        ? 'text-success'
+        : socPercent >= 50
+          ? 'text-electric'
+          : socPercent >= 20
+            ? 'text-warning'
+            : 'text-danger';
+
+    const alignmentToneClass =
+      alignmentPct >= 70
+        ? 'text-success'
+        : alignmentPct >= 50
+          ? 'text-warning'
+          : 'text-danger';
+
+    const healthBadgeClass = metrics.soc_bounds_ok ? 'badge badge-success' : 'badge badge-danger';
+
     return (
-      <div className="bg-white border-2 border-blue-200 rounded-lg p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Battery className="text-blue-600" size={20} />
-            <h3 className="font-semibold text-gray-900">Storage Dispatch</h3>
-          </div>
-          {metrics.soc_bounds_ok ? (
-            <CheckCircle className="text-green-600" size={16} />
-          ) : (
-            <AlertTriangle className="text-red-600" size={16} />
-          )}
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <div className="text-gray-600 mb-1">SoC</div>
-            <div className={`text-lg font-bold ${socColor}`}>
-              {(metrics.battery?.soc_percent ?? 0).toFixed(1)}%
+      <div className="card">
+        <div className="card-header">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-sm">
+              <Battery className={socToneClass} size={18} />
+              <h3 className="card-title">Storage Dispatch</h3>
             </div>
-            <div className="text-xs text-gray-500">
-              {(metrics.battery?.soc_mwh ?? 0).toFixed(1)} MWh
-            </div>
-          </div>
-
-          <div>
-            <div className="text-gray-600 mb-1">Alignment</div>
-            <div className={`text-lg font-bold ${alignmentColor}`}>
-              {(metrics.alignment_pct_renewable_absorption ?? 0).toFixed(1)}%
-            </div>
-            <div className="text-xs text-gray-500">
-              {metrics.actions_count ?? 0} actions
-            </div>
+            <span className={healthBadgeClass}>
+              {metrics.soc_bounds_ok ? 'Within Bounds' : 'Out of Bounds'}
+            </span>
           </div>
         </div>
 
-        {(metrics.expected_revenue_24h ?? 0) > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-200 space-y-1">
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-gray-600">Expected Revenue (24h):</span>
-              <span className="font-semibold text-green-600">
-                ${(metrics.expected_revenue_24h ?? 0).toFixed(2)}
+        <div className="card-body">
+          <div className="grid grid-cols-2 gap-md text-sm">
+            <div className="space-y-1">
+              <span className="text-tertiary text-xs uppercase tracking-wide">SoC</span>
+              <div className={`metric-value text-2xl ${socToneClass}`}>
+                {(metrics.battery?.soc_percent ?? 0).toFixed(1)}%
+              </div>
+              <span className="text-tertiary text-xs">
+                {(metrics.battery?.soc_mwh ?? 0).toFixed(1)} MWh
               </span>
             </div>
-            {metrics.expected_revenue_7d && (
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-600">Expected Revenue (7d):</span>
-                <span className="font-semibold text-green-700">
-                  ${Number(metrics.expected_revenue_7d).toFixed(0)}
+
+            <div className="space-y-1">
+              <span className="text-tertiary text-xs uppercase tracking-wide">Alignment</span>
+              <div className={`metric-value text-2xl ${alignmentToneClass}`}>
+                {(metrics.alignment_pct_renewable_absorption ?? 0).toFixed(1)}%
+              </div>
+              <span className="text-tertiary text-xs">
+                {metrics.actions_count ?? 0} actions
+              </span>
+            </div>
+          </div>
+
+          {(metrics.expected_revenue_24h ?? 0) > 0 && (
+            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] space-y-1 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-tertiary">Expected Revenue (24h)</span>
+                <span className="metric-value text-success">
+                  ${(metrics.expected_revenue_24h ?? 0).toFixed(2)}
                 </span>
               </div>
-            )}
-            {metrics.provenance && (
-              <div className="text-xs text-gray-500 mt-1">
-                Provenance: {metrics.provenance}
-              </div>
-            )}
-          </div>
-        )}
+              {metrics.expected_revenue_7d && (
+                <div className="flex items-center justify-between">
+                  <span className="text-tertiary">Expected Revenue (7d)</span>
+                  <span className="metric-value text-success">
+                    ${Number(metrics.expected_revenue_7d).toFixed(0)}
+                  </span>
+                </div>
+              )}
+              {metrics.provenance && (
+                <div className="text-tertiary mt-1">
+                  Provenance: {metrics.provenance}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

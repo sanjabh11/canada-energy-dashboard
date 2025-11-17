@@ -185,14 +185,16 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
   // Return unavailable card if no valid data
   if (co2Data.total_co2_tonnes_hour === 0 && co2Data.intensity_kg_per_mwh === 0) {
     return (
-      <div className="bg-white border-2 border-gray-200 rounded-lg p-4">
-        <div className="flex items-center gap-2 mb-2">
-          <Leaf className="h-5 w-5 text-gray-400" />
-          <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
+      <div className="card">
+        <div className="card-header">
+          <div className="flex items-center gap-sm">
+            <Leaf className="h-5 w-5 text-tertiary" />
+            <div className="card-title text-sm">CO₂ Emissions</div>
+          </div>
         </div>
-        <div className="text-center py-4">
-          <div className="text-gray-400 text-lg font-bold">Data unavailable</div>
-          <div className="text-xs text-gray-500 mt-1">No valid generation data</div>
+        <div className="card-body">
+          <div className="text-sm text-tertiary">Data unavailable</div>
+          <div className="text-xs text-tertiary mt-1">No valid generation data</div>
         </div>
       </div>
     );
@@ -213,20 +215,52 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
   };
 
   if (compact) {
+    const intensityToneClass =
+      co2Data.intensity_kg_per_mwh < 100
+        ? 'text-success'
+        : co2Data.intensity_kg_per_mwh < 300
+          ? 'text-warning'
+          : 'text-danger';
 
     return (
-      <div className={`${getIntensityBgColor(co2Data.intensity_kg_per_mwh)} border-2 rounded-lg p-4`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-2">
-            <Leaf className="h-5 w-5 text-gray-600" />
-            <div className="text-sm font-semibold text-gray-700">CO₂ Emissions</div>
-          </div>
-          <div className={`text-lg font-bold ${getIntensityColor(co2Data.intensity_kg_per_mwh)}`}>
-            {co2Data.total_co2_tonnes_hour.toFixed(1)} t/h
+      <div className="card">
+        <div className="card-header">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-sm">
+              <Leaf className={intensityToneClass} size={18} />
+              <h3 className="card-title">CO₂ Emissions</h3>
+            </div>
+            <div className="flex items-center gap-sm">
+              {co2Data.trend === 'up' && (
+                <TrendingUp className="text-danger h-4 w-4" />
+              )}
+              {co2Data.trend === 'down' && (
+                <TrendingDown className="text-success h-4 w-4" />
+              )}
+            </div>
           </div>
         </div>
-        <div className="text-xs text-gray-600">
-          Intensity: {Math.round(co2Data.intensity_kg_per_mwh)} kg/MWh
+        <div className="card-body">
+          <div className="grid grid-cols-2 gap-md">
+            <div className="space-y-1">
+              <span className="text-tertiary text-xs uppercase tracking-wide">
+                Total Emissions
+              </span>
+              <div className={`metric-value text-lg ${intensityToneClass}`}>
+                {co2Data.total_co2_tonnes_hour.toFixed(1)}
+                <span className="text-xs text-tertiary ml-1">t/h</span>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <span className="text-tertiary text-xs uppercase tracking-wide">
+                Intensity
+              </span>
+              <div className={`metric-value text-lg ${intensityToneClass}`}>
+                {co2Data.intensity_kg_per_mwh.toFixed(0)}
+                <span className="text-xs text-tertiary ml-1">kg/MWh</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
