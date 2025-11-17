@@ -34,9 +34,10 @@ export function HelpProvider({ children }: HelpProviderProps) {
       const data = await fetchHelpManifest();
       setManifest(data);
     } catch (err) {
-      console.error('Failed to load help manifest:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load help content');
-      // Don't throw - gracefully degrade to empty manifest
+      // Silently fail - help system is optional
+      // console.error('Failed to load help manifest:', err);
+      setError(null); // Don't show error to user
+      // Gracefully degrade to empty manifest
       setManifest([]);
     } finally {
       setLoading(false);
