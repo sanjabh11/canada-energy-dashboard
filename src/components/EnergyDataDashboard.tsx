@@ -16,6 +16,7 @@ import { DatasetSelector } from './DatasetSelector';
 import { ConnectionStatusPanel } from './ConnectionStatusPanel';
 import { DataVisualization } from './DataVisualization';
 import { HelpButton } from './HelpButton';
+import { AuthButton } from './auth';
 import { DataTable } from './DataTable';
 import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
@@ -393,6 +394,9 @@ export const EnergyDataDashboard: React.FC = () => {
               </button>
               <div className="ml-4">
                 <HelpButton id={helpIdByTab[activeTab] ?? 'dashboard.overview'} />
+              </div>
+              <div className="ml-4">
+                <AuthButton />
               </div>
             </div>
           </div>
