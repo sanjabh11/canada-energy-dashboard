@@ -456,64 +456,58 @@ export const EnergyDataDashboard: React.FC = () => {
         ) : activeTab === 'Home' ? (
           // Home Tab - Simplified Landing Page with Clear CTAs
           <div className="space-y-12 -mt-8">
-            {/* Simplified Hero Section */}
-            <div className="relative overflow-hidden -mx-8 lg:-mx-16">
-              <div className="absolute inset-0">
-                <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-900/40 via-indigo-900/30 to-purple-900/40 backdrop-blur-sm"></div>
-              </div>
-
-              <div className="relative z-10 px-8 lg:px-16 py-24 lg:py-32">
-                <div className="text-center max-w-4xl mx-auto">
-                  {/* Icon */}
-                  <div className="flex items-center justify-center mb-6 animate-fade-in">
-                    <div className="glass-card rounded-full p-6 shadow-xl">
-                      <Zap className="h-16 w-16 text-white animate-pulse-slow" />
-                    </div>
-                  </div>
-
-                  {/* Main Heading */}
-                  <h1 className="text-4xl lg:text-6xl font-serif font-light text-white mb-4 tracking-tight animate-fade-in leading-tight">
-                    Your Real-Time
-                    <span className="block font-medium mt-2 bg-gradient-to-r from-blue-200 via-cyan-200 to-teal-200 bg-clip-text text-transparent">
-                      Energy Pulse
-                    </span>
-                  </h1>
-
-                  {/* Subtitle */}
-                  <p className="text-lg lg:text-xl text-white/90 mb-8 animate-fade-in-delayed leading-relaxed max-w-2xl mx-auto">
-                    Monitor Canadian energy markets with live data, AI insights, and comprehensive analytics across all provinces.
-                  </p>
-
-                  {/* Primary CTA */}
-                  <div className="animate-fade-in-slow">
-                    <button
-                      onClick={() => setActiveTab('Analytics')}
-                      className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 rounded-lg font-semibold text-lg transition-all duration-300 hover:scale-105 shadow-lg"
-                    >
-                      Explore Trends
-                    </button>
-                    <p className="text-white/80 text-sm mt-3">See detailed analytics and AI-powered insights</p>
+            {/* Hero Section - Energy-Themed */}
+            <section className="hero-section -mx-8 lg:-mx-16">
+              <div className="hero-content text-center">
+                {/* Icon */}
+                <div className="flex items-center justify-center mb-6 animate-fade-in">
+                  <div className="glass-card rounded-full p-6 shadow-xl">
+                    <Zap className="h-16 w-16" style={{ color: 'var(--color-electric)' }} />
                   </div>
                 </div>
+
+                {/* Main Heading */}
+                <h1 className="hero-title">
+                  Your Real-Time
+                  <span className="block mt-2 text-electric">
+                    Energy Pulse
+                  </span>
+                </h1>
+
+                {/* Subtitle */}
+                <p className="hero-subtitle">
+                  Monitor Canadian energy markets with live data, AI insights, and comprehensive analytics across all provinces.
+                </p>
+
+                {/* Primary CTA */}
+                <div className="animate-fade-in-slow">
+                  <button
+                    onClick={() => setActiveTab('Analytics')}
+                    className="btn-premium"
+                  >
+                    <Activity className="h-5 w-5" />
+                    Explore Trends
+                  </button>
+                  <p className="text-secondary text-sm mt-3">See detailed analytics and AI-powered insights</p>
+                </div>
               </div>
-            </div>
+            </section>
 
             {/* Quick Insights Grid */}
             <div className="grid-responsive-cards px-4">
               {DATASETS.map((dataset, index) => {
                 const status = connectionStatuses.find(s => s.dataset === dataset.name);
                 return (
-                  <div key={dataset.key} className={`${CONTAINER_CLASSES.card} ${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 animate-fade-in group overflow-hidden`} style={{animationDelay: `${index * 100}ms`}}>
+                  <div key={dataset.key} className="premium-card animate-fade-in group overflow-hidden" style={{animationDelay: `${index * 100}ms`}}>
                     <div className={CONTAINER_CLASSES.cardHeader}>
                       <div className={CONTAINER_CLASSES.flexBetween}>
                         <div className={`p-3 rounded-lg`} style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}>
                           <Database className="h-6 w-6" />
                         </div>
                         <div className={`flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${
-                          status?.status === 'connected' ? `${COLOR_SCHEMES.success.bg} ${COLOR_SCHEMES.success.text}` :
-                          status?.status === 'connecting' ? `${COLOR_SCHEMES.primary.bg} ${COLOR_SCHEMES.primary.text}` :
-                          `${COLOR_SCHEMES.warning.bg} ${COLOR_SCHEMES.warning.text}`
+                          status?.status === 'connected' ? 'badge badge-success' :
+                          status?.status === 'connecting' ? 'badge badge-info' :
+                          'badge badge-warning'
                         }`}>
                           {status?.status === 'connected' ? <CheckCircle className="h-3 w-3" /> :
                            status?.status === 'connecting' ? <Clock className="h-3 w-3" /> :
@@ -524,8 +518,8 @@ export const EnergyDataDashboard: React.FC = () => {
                       </div>
                     </div>
                     <div className={CONTAINER_CLASSES.cardBody}>
-                      <h3 className={`${TEXT_CLASSES.heading4} ${COLOR_SCHEMES.primary.text} mb-1`} style={{ color: dataset.color }}>{dataset.name}</h3>
-                      <p className={`${TEXT_CLASSES.bodySmall} text-slate-600 mb-3`}>{dataset.description}</p>
+                      <h3 className={`${TEXT_CLASSES.heading4} mb-1`} style={{ color: dataset.color }}>{dataset.name}</h3>
+                      <p className={`${TEXT_CLASSES.bodySmall} mb-3`} style={{ color: 'var(--text-secondary, #B8E6D5)' }}>{dataset.description}</p>
                       <div className={`${TEXT_CLASSES.metric} font-bold`} style={{ color: dataset.color }}>
                         {status?.recordCount.toLocaleString() || '0'} records
                       </div>
@@ -536,23 +530,25 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
 
             {/* Key CTA Section */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 text-center">
+            <div className="premium-card p-8 text-center">
               <div className="max-w-2xl mx-auto">
-                <h2 className="text-2xl font-bold text-slate-800 mb-4">Ready for Deeper Insights?</h2>
-                <p className="text-slate-600 mb-6">
+                <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary, #FFFFFF)' }}>Ready for Deeper Insights?</h2>
+                <p className="mb-6" style={{ color: 'var(--text-secondary, #B8E6D5)' }}>
                   Explore advanced analytics, scenario modeling, and AI-powered recommendations to optimize your energy strategy.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <button
                     onClick={() => setActiveTab('Analytics')}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="btn-premium"
                   >
+                    <TrendingUp className="h-5 w-5" />
                     View Analytics
                   </button>
                   <button
                     onClick={() => setActiveTab('Dashboard')}
-                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="btn-premium"
                   >
+                    <Activity className="h-5 w-5" />
                     Live Dashboard
                   </button>
                 </div>
@@ -562,30 +558,35 @@ export const EnergyDataDashboard: React.FC = () => {
             {/* Map/Chart Previews */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Provincial Overview */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-200">
-                  <h3 className="text-xl font-semibold text-slate-800 flex items-center">
-                    <MapPin className="h-6 w-6 mr-3 text-blue-600" />
+              <div className="premium-card overflow-hidden">
+                <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
+                  <h3 className="text-xl font-semibold flex items-center" style={{ color: 'var(--text-primary, #FFFFFF)' }}>
+                    <MapPin className="h-6 w-6 mr-3" style={{ color: 'var(--color-electric)' }} />
                     Provincial Overview
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { province: 'Ontario', status: 'LIVE', color: 'text-green-600' },
-                      { province: 'Quebec', status: 'LIVE', color: 'text-green-600' },
-                      { province: 'Alberta', status: 'LIVE', color: 'text-green-600' },
-                      { province: 'BC', status: 'CONNECTING', color: 'text-blue-600' }
+                      { province: 'Ontario', status: 'LIVE', isLive: true },
+                      { province: 'Quebec', status: 'LIVE', isLive: true },
+                      { province: 'Alberta', status: 'LIVE', isLive: true },
+                      { province: 'BC', status: 'CONNECTING', isLive: false }
                     ].map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                        <span className="font-medium text-slate-800">{item.province}</span>
-                        <span className={`text-xs font-medium ${item.color}`}>{item.status}</span>
+                      <div key={index} className="flex items-center justify-between p-3 rounded-lg" style={{ backgroundColor: 'rgba(0, 217, 255, 0.05)' }}>
+                        <span className="font-medium" style={{ color: 'var(--text-primary, #FFFFFF)' }}>{item.province}</span>
+                        <span className={`text-xs font-medium ${item.isLive ? 'badge badge-success' : 'badge badge-info'}`}>{item.status}</span>
                       </div>
                     ))}
                   </div>
                   <button
                     onClick={() => setActiveTab('Provinces')}
-                    className="w-full mt-4 bg-blue-50 hover:bg-blue-100 text-blue-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                    className="w-full mt-4 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                    style={{
+                      backgroundColor: 'rgba(0, 217, 255, 0.1)',
+                      color: 'var(--color-electric)',
+                      border: '1px solid rgba(0, 217, 255, 0.3)'
+                    }}
                   >
                     View All Provinces
                   </button>
@@ -593,30 +594,35 @@ export const EnergyDataDashboard: React.FC = () => {
               </div>
 
               {/* Energy Mix Preview */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                <div className="p-6 border-b border-slate-200">
-                  <h3 className="text-xl font-semibold text-slate-800 flex items-center">
-                    <Gauge className="h-6 w-6 mr-3 text-purple-600" />
+              <div className="premium-card overflow-hidden">
+                <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
+                  <h3 className="text-xl font-semibold flex items-center" style={{ color: 'var(--text-primary, #FFFFFF)' }}>
+                    <Gauge className="h-6 w-6 mr-3" style={{ color: 'var(--color-forest)' }} />
                     Energy Mix
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Renewable</span>
-                      <span className="text-sm font-medium text-green-600">67%</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary, #B8E6D5)' }}>Renewable</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--color-forest)' }}>67%</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '67%' }}></div>
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: 'rgba(22, 139, 106, 0.2)' }}>
+                      <div className="h-2 rounded-full" style={{ width: '67%', backgroundColor: 'var(--color-forest)' }}></div>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">Traditional</span>
-                      <span className="text-sm font-medium text-slate-600">33%</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary, #B8E6D5)' }}>Traditional</span>
+                      <span className="text-sm font-medium" style={{ color: 'var(--color-industrial)' }}>33%</span>
                     </div>
                   </div>
                   <button
                     onClick={() => setActiveTab('Analytics')}
-                    className="w-full mt-4 bg-purple-50 hover:bg-purple-100 text-purple-700 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                    className="w-full mt-4 px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+                    style={{
+                      backgroundColor: 'rgba(22, 139, 106, 0.1)',
+                      color: 'var(--color-forest)',
+                      border: '1px solid rgba(22, 139, 106, 0.3)'
+                    }}
                   >
                     View Detailed Trends
                   </button>
@@ -625,26 +631,24 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
           </div>
         ) : activeTab === 'Provinces' ? (
-          // Provinces Tab - Real-time Streaming Showcase with Shader Effects
+          // Provinces Tab - Real-time Streaming Showcase
           <div className="space-y-8">
-            {/* Streaming Header with Shader Background */}
-            <div className="relative overflow-hidden rounded-2xl border border-slate-200/50">
-              <div className="absolute inset-0 shader-bg-energy animate-gradient-xy"></div>
-              <div className="absolute inset-0 bg-black/30"></div>
-              <div className="relative z-10 p-8">
+            {/* Streaming Header */}
+            <div className="premium-card">
+              <div className="p-8">
                 <div className="flex items-center justify-between">
                   <div className="animate-fade-in">
                     <div className="flex items-center space-x-3 mb-2">
-                      <div className="glass-card p-3 rounded-xl animate-float">
-                        <Radio className="h-8 w-8 text-white" />
+                      <div className="glass-card p-3 rounded-xl">
+                        <Radio className="h-8 w-8" style={{ color: 'var(--color-electric)' }} />
                       </div>
-                      <h1 className="text-3xl font-bold text-white">REAL-TIME STREAMING ARCHITECTURE</h1>
+                      <h1 className="text-3xl font-bold text-primary">REAL-TIME STREAMING ARCHITECTURE</h1>
                     </div>
-                    <p className="text-lg text-white/90">Live data streams from Canadian energy providers across all provinces</p>
+                    <p className="text-lg text-secondary">Live data streams from Canadian energy providers across all provinces</p>
                   </div>
-                  <div className="glass-card px-6 py-3 rounded-full animate-fade-in-delayed">
-                    <Signal className="h-5 w-5 text-green-400 animate-pulse mr-2" />
-                    <span className="text-white font-semibold">LIVE STREAMING</span>
+                  <div className="badge badge-live px-6 py-3">
+                    <Signal className="h-5 w-5" />
+                    <span className="font-semibold">LIVE STREAMING</span>
                   </div>
                 </div>
               </div>
@@ -653,47 +657,47 @@ export const EnergyDataDashboard: React.FC = () => {
             {/* Live Streaming Status Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Real-time Connection Status */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-6 border-b border-slate-200">
-                  <h2 className="text-xl font-semibold text-slate-800 flex items-center">
-                    <Wifi className="h-6 w-6 mr-3 text-blue-600" />
+              <div className="premium-card">
+                <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
+                  <h2 className="text-xl font-semibold text-primary flex items-center">
+                    <Wifi className="h-6 w-6 mr-3" style={{ color: 'var(--color-electric)' }} />
                     Live Connection Status
                   </h2>
                 </div>
                 <div className="p-6 space-y-4">
                   {connectionStatuses.map((status, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                    <div key={index} className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'rgba(0, 217, 255, 0.05)' }}>
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${
-                          status.status === 'connected' ? 'bg-green-500' : 
-                          status.status === 'connecting' ? 'bg-blue-500 animate-pulse' : 
-                          'bg-slate-400'
+                          status.status === 'connected' ? 'badge-success' :
+                          status.status === 'connecting' ? 'badge-info animate-pulse' :
+                          'badge-warning'
                         }`}>
-                          {status.status === 'connected' ? 
-                            <CheckCircle className="h-4 w-4 text-white" /> :
+                          {status.status === 'connected' ?
+                            <CheckCircle className="h-4 w-4" /> :
                             status.status === 'connecting' ?
-                            <Clock className="h-4 w-4 text-white" /> :
-                            <AlertCircle className="h-4 w-4 text-white" />
+                            <Clock className="h-4 w-4" /> :
+                            <AlertCircle className="h-4 w-4" />
                           }
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800">{status.dataset}</div>
+                          <div className="font-semibold text-primary">{status.dataset}</div>
                           <div className={`text-sm font-medium ${
-                            status.status === 'connected' ? 'text-green-600' : 
-                            status.status === 'connecting' ? 'text-blue-600' : 
-                            'text-slate-600'
+                            status.status === 'connected' ? 'text-success' :
+                            status.status === 'connecting' ? 'text-electric' :
+                            'text-secondary'
                           }`}>
-                            {status.status === 'connected' ? 'LIVE STREAM ACTIVE' : 
-                             status.status === 'connecting' ? 'CONNECTING TO STREAM' : 
+                            {status.status === 'connected' ? 'LIVE STREAM ACTIVE' :
+                             status.status === 'connecting' ? 'CONNECTING TO STREAM' :
                              'STREAM OFFLINE'}
                           </div>
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-lg font-bold text-slate-800">
+                        <div className="text-lg font-bold text-primary">
                           {status.recordCount.toLocaleString()}
                         </div>
-                        <div className="text-sm text-slate-600">records streaming</div>
+                        <div className="text-sm text-secondary">records streaming</div>
                       </div>
                     </div>
                   ))}
@@ -701,46 +705,46 @@ export const EnergyDataDashboard: React.FC = () => {
               </div>
 
               {/* Streaming Metrics */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-                <div className="p-6 border-b border-slate-200">
-                  <h2 className="text-xl font-semibold text-slate-800 flex items-center">
-                    <Gauge className="h-6 w-6 mr-3 text-purple-600" />
+              <div className="premium-card">
+                <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
+                  <h2 className="text-xl font-semibold text-primary flex items-center">
+                    <Gauge className="h-6 w-6 mr-3" style={{ color: 'var(--color-electric)' }} />
                     Streaming Metrics
                   </h2>
                 </div>
                 <div className="p-6 space-y-6">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-blue-600">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(0, 217, 255, 0.1)' }}>
+                      <div className="text-2xl font-bold text-electric">
                         {connectionStatuses.filter(s => s.status === 'connected').length}/{connectionStatuses.length}
                       </div>
-                      <div className="text-sm text-slate-600">Active Streams</div>
+                      <div className="text-sm text-secondary">Active Streams</div>
                     </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-green-600">
+                    <div className="p-4 rounded-lg" style={{ backgroundColor: 'rgba(22, 139, 106, 0.1)' }}>
+                      <div className="text-2xl font-bold text-forest">
                         {connectionStatuses.reduce((sum, s) => sum + s.recordCount, 0).toLocaleString()}
                       </div>
-                      <div className="text-sm text-slate-600">Total Records</div>
+                      <div className="text-sm text-secondary">Total Records</div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-600">Stream Health</span>
-                      <span className="text-sm font-bold text-green-600">98.2% Uptime</span>
+                      <span className="text-sm font-medium text-secondary">Stream Health</span>
+                      <span className="text-sm font-bold text-success">98.2% Uptime</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div className="bg-green-500 h-2 rounded-full" style={{ width: '98.2%' }}></div>
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: 'rgba(22, 139, 106, 0.2)' }}>
+                      <div className="h-2 rounded-full" style={{ width: '98.2%', backgroundColor: 'var(--color-forest)' }}></div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-600">Data Throughput</span>
-                      <span className="text-sm font-bold text-purple-600">1.2K records/min</span>
+                      <span className="text-sm font-medium text-secondary">Data Throughput</span>
+                      <span className="text-sm font-bold text-electric">1.2K records/min</span>
                     </div>
-                    <div className="w-full bg-slate-200 rounded-full h-2">
-                      <div className="bg-purple-500 h-2 rounded-full" style={{ width: '85%' }}></div>
+                    <div className="w-full rounded-full h-2" style={{ backgroundColor: 'rgba(0, 217, 255, 0.2)' }}>
+                      <div className="h-2 rounded-full" style={{ width: '85%', backgroundColor: 'var(--color-electric)' }}></div>
                     </div>
                   </div>
                 </div>
@@ -748,10 +752,10 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
 
             {/* Provincial Data Sources Map */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-6 border-b border-slate-200">
-                <h2 className="text-xl font-semibold text-slate-800 flex items-center">
-                  <MapPin className="h-6 w-6 mr-3 text-red-600" />
+            <div className="premium-card">
+              <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
+                <h2 className="text-xl font-semibold text-primary flex items-center">
+                  <MapPin className="h-6 w-6 mr-3" style={{ color: 'var(--color-critical)' }} />
                   Canadian Energy Data Sources
                 </h2>
               </div>
@@ -765,17 +769,15 @@ export const EnergyDataDashboard: React.FC = () => {
                     { province: 'Manitoba', source: 'Manitoba Hydro', status: 'connecting', datasets: 1 },
                     { province: 'Saskatchewan', source: 'SaskPower', status: 'connected', datasets: 1 }
                   ].map((item, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-4 bg-slate-50 rounded-lg">
+                    <div key={index} className="flex items-center space-x-3 p-4 rounded-lg" style={{ backgroundColor: 'rgba(0, 217, 255, 0.05)' }}>
                       <div className={`w-3 h-3 rounded-full ${
-                        item.status === 'connected' ? 'bg-green-500' : 'bg-blue-500 animate-pulse'
-                      }`}></div>
+                        item.status === 'connected' ? 'badge-success' : 'badge-info animate-pulse'
+                      }`} style={{ backgroundColor: item.status === 'connected' ? 'var(--color-forest)' : 'var(--color-electric)' }}></div>
                       <div className="flex-1">
-                        <div className="font-semibold text-slate-800">{item.province}</div>
-                        <div className="text-sm text-slate-600">{item.source} • {item.datasets} datasets</div>
+                        <div className="font-semibold text-primary">{item.province}</div>
+                        <div className="text-sm text-secondary">{item.source} • {item.datasets} datasets</div>
                       </div>
-                      <div className={`text-xs font-medium px-2 py-1 rounded-full ${
-                        item.status === 'connected' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'
-                      }`}>
+                      <div className={`badge ${item.status === 'connected' ? 'badge-success' : 'badge-info'}`}>
                         {item.status === 'connected' ? 'LIVE' : 'CONNECTING'}
                       </div>
                     </div>
@@ -785,30 +787,31 @@ export const EnergyDataDashboard: React.FC = () => {
             </div>
 
             {/* Live Data Stream Visualization */}
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200">
-              <div className="p-6 border-b border-slate-200">
+            <div className="premium-card">
+              <div className="p-6" style={{ borderBottom: '1px solid var(--dark-glass-border)' }}>
                 <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-semibold text-slate-800 flex items-center">
-                    <Signal className="h-6 w-6 mr-3 text-blue-600" />
+                  <h2 className="text-xl font-semibold text-primary flex items-center">
+                    <Signal className="h-6 w-6 mr-3" style={{ color: 'var(--color-electric)' }} />
                     Live Data Stream
                   </h2>
-                  <div className="flex items-center space-x-2 text-sm text-slate-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <div className="flex items-center space-x-2 text-sm text-secondary">
+                    <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: 'var(--color-forest)' }}></div>
                     <span>Updating every 30 seconds</span>
                   </div>
                 </div>
               </div>
               <div className="p-6">
                 <div className="text-center py-8">
-                  <div className="inline-flex items-center space-x-2 bg-blue-50 px-6 py-3 rounded-full">
-                    <Radio className="h-5 w-5 text-blue-600 animate-pulse" />
-                    <span className="font-medium text-blue-800">Real-time data streaming from {connectionStatuses.filter(s => s.status === 'connected').length} active sources</span>
+                  <div className="inline-flex items-center space-x-2 px-6 py-3 rounded-full badge badge-info">
+                    <Radio className="h-5 w-5 animate-pulse" />
+                    <span className="font-medium">Real-time data streaming from {connectionStatuses.filter(s => s.status === 'connected').length} active sources</span>
                   </div>
-                  <p className="mt-4 text-slate-600">Switch to Dashboard tab to interact with live streaming data visualizations</p>
+                  <p className="mt-4 text-secondary">Switch to Dashboard tab to interact with live streaming data visualizations</p>
                   <button
                     onClick={() => setActiveTab('Dashboard')}
-                    className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
+                    className="mt-4 btn-premium"
                   >
+                    <Activity className="h-5 w-5" />
                     View Live Dashboard
                   </button>
                 </div>
