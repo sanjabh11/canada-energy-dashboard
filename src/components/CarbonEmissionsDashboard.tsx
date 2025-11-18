@@ -207,7 +207,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
       <div className="premium-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               Province
             </label>
             <select
@@ -221,7 +221,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-secondary mb-2">
               Year
             </label>
             <select
@@ -242,13 +242,13 @@ const CarbonEmissionsDashboard: React.FC = () => {
         <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Emissions ({selectedYear})</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="text-sm text-secondary">Total Emissions ({selectedYear})</p>
+              <p className="text-2xl font-bold text-primary mt-1">
                 {currentYearEmissions.toFixed(1)} Mt
               </p>
-              <p className="text-xs text-gray-500 mt-1">Million tonnes CO2e</p>
+              <p className="text-xs text-tertiary mt-1">Million tonnes CO2e</p>
             </div>
-            <Factory className="text-gray-400" size={40} />
+            <Factory className="text-tertiary" size={40} />
           </div>
         </div>
 
@@ -256,30 +256,30 @@ const CarbonEmissionsDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">Avg Grid Intensity</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
+                <p className="text-sm text-secondary">Avg Grid Intensity</p>
+                <p className="text-2xl font-bold text-primary mt-1">
                   {data.statistics.avg_grid_intensity_gco2_per_kwh?.toFixed(0) ?? 'N/A'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">gCO2/kWh</p>
+                <p className="text-xs text-tertiary mt-1">gCO2/kWh</p>
               </div>
               <HelpButton id="carbon.grid-intensity" className="ml-1" />
             </div>
-            <Zap className="text-yellow-500" size={40} />
+            <Zap className="text-solar" size={40} />
           </div>
         </div>
 
         <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Cleanest Province</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">
+              <p className="text-sm text-secondary">Cleanest Province</p>
+              <p className="text-2xl font-bold text-success mt-1">
                 {cleanestProvince?.province ?? 'N/A'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-tertiary mt-1">
                 {cleanestProvince?.intensity.toFixed(0)} gCO2/kWh
               </p>
             </div>
-            <Leaf className="text-green-500" size={40} />
+            <Leaf className="text-forest" size={40} />
           </div>
         </div>
 
@@ -287,11 +287,11 @@ const CarbonEmissionsDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">Avoided Emissions</p>
+                <p className="text-sm text-secondary">Avoided Emissions</p>
                 <p className="text-2xl font-bold text-teal-600 mt-1">
                   {(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt
                 </p>
-                <p className="text-xs text-gray-500 mt-1">From clean energy</p>
+                <p className="text-xs text-tertiary mt-1">From clean energy</p>
               </div>
               <HelpButton id="carbon.avoided-emissions" className="ml-1" />
             </div>
@@ -387,33 +387,33 @@ const CarbonEmissionsDashboard: React.FC = () => {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Jurisdiction</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Target Year</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reduction %</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase">Jurisdiction</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase">Target Year</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase">Type</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase">Reduction %</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-tertiary uppercase">Legal Status</th>
                 </tr>
               </thead>
               <tbody style={{ backgroundColor: 'transparent' }}>
                 {data.targets.map((target, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-primary">
                       {target.jurisdiction}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
                       {target.target_year}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
                       {target.target_type}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-secondary">
                       {target.reduction_percentage ? `${target.reduction_percentage}%` : 'N/A'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs rounded-full ${
+                      <span className={`badge ${
                         target.legal_status === 'Legislated'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-yellow-100 text-yellow-800'
+                          ? 'badge-success'
+                          : 'badge-warning'
                       }`}>
                         {target.legal_status}
                       </span>

@@ -185,10 +185,10 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen bg-primary">
         <div className="text-center">
           <Fuel className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-pulse" />
-          <p className="text-lg text-slate-600">Loading Hydrogen Economy Dashboard...</p>
+          <p className="text-lg text-secondary">Loading Hydrogen Economy Dashboard...</p>
         </div>
       </div>
     );
@@ -196,7 +196,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
   if (error || !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-slate-50">
+      <div className="flex items-center justify-center min-h-screen bg-primary">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
           <p className="text-lg text-red-600">{error || 'No data available'}</p>
@@ -268,13 +268,13 @@ export const HydrogenEconomyDashboard: React.FC = () => {
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-3">
             <Fuel className="w-10 h-10 text-green-600" />
-            <h1 className="text-4xl font-bold text-slate-800">
+            <h1 className="text-4xl font-bold text-primary">
               Hydrogen Economy Hub Dashboard
             </h1>
           </div>
           <HelpButton id="hydrogen.overview" />
         </div>
-        <p className="text-lg text-slate-600 ml-13">
+        <p className="text-lg text-secondary ml-13">
           $300M Federal Investment | Edmonton & Calgary Hubs
         </p>
       </div>
@@ -358,7 +358,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Hub Comparison */}
       <div className="premium-card p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
           <MapPin className="w-6 h-6 text-green-600" />
           Edmonton vs Calgary Hub Comparison
         </h2>
@@ -380,15 +380,15 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <h3 className="font-bold text-green-800 mb-2">Edmonton Hub</h3>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-600">Capacity:</span>
+                <span className="text-secondary">Capacity:</span>
                 <span className="font-semibold">{(data.insights.hub_status.edmonton_hub.capacity_kg_per_day / 1000).toFixed(0)} t/day</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Projects:</span>
+                <span className="text-secondary">Projects:</span>
                 <span className="font-semibold">{data.insights.hub_status.edmonton_hub.project_count}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Investment:</span>
+                <span className="text-secondary">Investment:</span>
                 <span className="font-semibold">${(data.insights.hub_status.edmonton_hub.investment_cad / 1e9).toFixed(1)}B</span>
               </div>
             </div>
@@ -398,15 +398,15 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <h3 className="font-bold text-blue-800 mb-2">Calgary Hub</h3>
             <div className="space-y-1 text-sm">
               <div className="flex justify-between">
-                <span className="text-slate-600">Capacity:</span>
+                <span className="text-secondary">Capacity:</span>
                 <span className="font-semibold">{(data.insights.hub_status.calgary_hub.capacity_kg_per_day / 1000).toFixed(0)} t/day</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Projects:</span>
+                <span className="text-secondary">Projects:</span>
                 <span className="font-semibold">{data.insights.hub_status.calgary_hub.project_count}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Investment:</span>
+                <span className="text-secondary">Investment:</span>
                 <span className="font-semibold">${(data.insights.hub_status.calgary_hub.investment_cad / 1e9).toFixed(1)}B</span>
               </div>
             </div>
@@ -419,7 +419,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="premium-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
               <Cloud className="w-6 h-6 text-green-600" />
               Hydrogen Color Distribution
             </h2>
@@ -475,7 +475,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
         </div>
 
         <div className="premium-card p-6">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
             <Factory className="w-6 h-6 text-green-600" />
             Facilities by Type
           </h2>
@@ -497,7 +497,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       {pricingTrend.length > 0 && (
         <div className="premium-card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
               <DollarSign className="w-6 h-6 text-green-600" />
               Hydrogen Pricing Trends (Alberta)
             </h2>
@@ -518,15 +518,15 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           {data.summary.pricing && (
             <div className="grid grid-cols-3 gap-4 mt-4">
               <div className="p-3 bg-blue-50 rounded-lg">
-                <div className="text-xs text-slate-600">Current Price</div>
+                <div className="text-xs text-secondary">Current Price</div>
                 <div className="text-2xl font-bold text-blue-600">${data.summary.pricing.current_price_cad_per_kg.toFixed(2)}/kg</div>
               </div>
               <div className="p-3 bg-green-50 rounded-lg">
-                <div className="text-xs text-slate-600">Yearly Average</div>
+                <div className="text-xs text-secondary">Yearly Average</div>
                 <div className="text-2xl font-bold text-green-600">${data.summary.pricing.yearly_average.toFixed(2)}/kg</div>
               </div>
               <div className={`p-3 ${data.summary.pricing.weekly_change_percentage >= 0 ? 'bg-red-50' : 'bg-green-50'} rounded-lg`}>
-                <div className="text-xs text-slate-600">Weekly Change</div>
+                <div className="text-xs text-secondary">Weekly Change</div>
                 <div className={`text-2xl font-bold ${data.summary.pricing.weekly_change_percentage >= 0 ? 'text-red-600' : 'text-green-600'}`}>
                   {data.summary.pricing.weekly_change_percentage >= 0 ? '+' : ''}{data.summary.pricing.weekly_change_percentage.toFixed(1)}%
                 </div>
@@ -540,11 +540,11 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       {data.price_forecasts && data.price_forecasts.length > 0 && (
         <div className="premium-card p-6 mb-8">
           <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-600 rounded-lg">
-            <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <h2 className="text-2xl font-bold text-primary mb-2 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-green-600" />
               Hydrogen Price Forecasts: Path to Cost Parity (2025-2035)
             </h2>
-            <p className="text-slate-700 text-sm">
+            <p className="text-secondary text-sm">
               Scenario analysis showing green hydrogen achieving cost parity with blue hydrogen by 2030-2035.
               Forecasts based on technology learning curves, carbon pricing, and renewable energy cost reductions.
             </p>
@@ -554,7 +554,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
             {/* Green H2 Price Trajectory */}
             <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
                 <Zap className="w-5 h-5 text-green-600" />
                 Green Hydrogen Price Trajectory
               </h3>
@@ -597,10 +597,10 @@ export const HydrogenEconomyDashboard: React.FC = () => {
                 </LineChart>
               </ResponsiveContainer>
               <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-secondary">
                   <strong>2025:</strong> $6.50/kg | <strong>2030:</strong> $4.70/kg | <strong>2035:</strong> $3.20/kg (Base Case)
                 </p>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-xs text-secondary mt-1">
                   28% learning rate drives 51% cost reduction by 2035
                 </p>
               </div>
@@ -608,7 +608,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
             {/* Blue vs Green Cost Parity */}
             <div>
-              <h3 className="text-lg font-semibold text-slate-800 mb-3 flex items-center gap-2">
+              <h3 className="text-lg font-semibold text-primary mb-3 flex items-center gap-2">
                 <Factory className="w-5 h-5 text-blue-600" />
                 Cost Parity Analysis (Base Case)
               </h3>
@@ -647,10 +647,10 @@ export const HydrogenEconomyDashboard: React.FC = () => {
                 </LineChart>
               </ResponsiveContainer>
               <div className="mt-3 p-3 bg-blue-50 rounded-lg">
-                <p className="text-sm text-slate-700">
+                <p className="text-sm text-secondary">
                   <strong>Cost Parity:</strong> Green H₂ = Blue H₂ by 2035 at $3.20/kg
                 </p>
-                <p className="text-xs text-slate-600 mt-1">
+                <p className="text-xs text-secondary mt-1">
                   Grey H₂ uneconomic after 2030 due to $170+/t carbon pricing
                 </p>
               </div>
@@ -659,25 +659,25 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
           {/* Key Milestones Table */}
           <div className="mb-6">
-            <h3 className="text-lg font-semibold text-slate-800 mb-3">Key Price Milestones (Base Case)</h3>
+            <h3 className="text-lg font-semibold text-primary mb-3">Key Price Milestones (Base Case)</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-slate-200">
-                <thead className="bg-slate-50">
+                <thead className="bg-primary">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Year</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Green H₂</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Blue H₂</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Grey H₂</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 uppercase">Carbon Price</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 uppercase">Key Insight</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Year</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase">Green H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase">Blue H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase">Grey H₂</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase">Carbon Price</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Key Insight</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-slate-200">
                   {data.price_forecasts
                     .filter(f => f.scenario === 'Base Case' && [2025, 2027, 2030, 2032, 2035].includes(f.forecast_year))
                     .map((forecast, idx) => (
-                      <tr key={forecast.id} className={`hover:bg-slate-50 ${forecast.forecast_year === 2035 ? 'bg-green-50 font-semibold' : ''}`}>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-slate-900">
+                      <tr key={forecast.id} className={`hover:bg-primary ${forecast.forecast_year === 2035 ? 'bg-green-50 font-semibold' : ''}`}>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-primary">
                           {forecast.forecast_year}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-green-600 font-semibold">
@@ -686,13 +686,13 @@ export const HydrogenEconomyDashboard: React.FC = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-blue-600 font-semibold">
                           ${forecast.blue_h2_price_cad_per_kg.toFixed(2)}/kg
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-600">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-secondary">
                           ${forecast.grey_h2_price_cad_per_kg.toFixed(2)}/kg
                         </td>
-                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-slate-700">
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-secondary">
                           ${forecast.carbon_price_cad_per_tonne}/t
                         </td>
-                        <td className="px-4 py-3 text-xs text-slate-600 max-w-md">
+                        <td className="px-4 py-3 text-xs text-secondary max-w-md">
                           {forecast.notes.substring(0, 80)}{forecast.notes.length > 80 ? '...' : ''}
                         </td>
                       </tr>
@@ -712,8 +712,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
               <div className="text-2xl font-bold text-blue-600 mb-1">
                 ${data.price_forecasts.find(f => f.scenario === 'Optimistic' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
               </div>
-              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
-              <p className="text-xs text-slate-700 mt-2">
+              <p className="text-xs text-secondary">Green H₂ by 2035</p>
+              <p className="text-xs text-secondary mt-2">
                 Rapid learning curve, aggressive carbon pricing. Cost parity by 2030.
               </p>
             </div>
@@ -726,8 +726,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
               <div className="text-2xl font-bold text-green-600 mb-1">
                 ${data.price_forecasts.find(f => f.scenario === 'Base Case' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
               </div>
-              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
-              <p className="text-xs text-slate-700 mt-2">
+              <p className="text-xs text-secondary">Green H₂ by 2035</p>
+              <p className="text-xs text-secondary mt-2">
                 Moderate technology adoption, steady carbon price increases. Parity by 2035.
               </p>
             </div>
@@ -740,15 +740,15 @@ export const HydrogenEconomyDashboard: React.FC = () => {
               <div className="text-2xl font-bold text-red-600 mb-1">
                 ${data.price_forecasts.find(f => f.scenario === 'Pessimistic' && f.forecast_year === 2035)?.green_h2_price_cad_per_kg.toFixed(2)}/kg
               </div>
-              <p className="text-xs text-slate-600">Green H₂ by 2035</p>
-              <p className="text-xs text-slate-700 mt-2">
+              <p className="text-xs text-secondary">Green H₂ by 2035</p>
+              <p className="text-xs text-secondary mt-2">
                 Slow tech adoption, low carbon price. No cost parity by 2035.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 p-4 bg-slate-50 rounded-lg">
-            <p className="text-xs text-slate-600">
+          <div className="mt-6 p-4 bg-primary rounded-lg">
+            <p className="text-xs text-secondary">
               <strong>Data Sources:</strong> IEA Global Hydrogen Review 2024, NREL Hydrogen Production Cost Analysis, Canada Hydrogen Strategy (NRCan),
               Alberta Hydrogen Roadmap. Carbon pricing based on federal Clean Fuel Regulations and provincial policies.
             </p>
@@ -759,7 +759,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       {/* Demand Forecast */}
       {demandForecast.length > 0 && (
         <div className="premium-card p-6 mb-8">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-600" />
             Hydrogen Demand Forecast by Sector (5-Year Outlook)
           </h2>
@@ -780,7 +780,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Strategic Projects */}
       <div className="premium-card p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
           <Calendar className="w-6 h-6 text-green-600" />
           Major Hydrogen Projects
         </h2>
@@ -789,41 +789,41 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <div key={project.id} className="p-4 border border-slate-200 rounded-lg hover:shadow-md transition-shadow">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <h3 className="font-bold text-lg text-slate-800">{project.project_name}</h3>
-                  <p className="text-sm text-slate-600">{project.lead_proponent}</p>
+                  <h3 className="font-bold text-lg text-primary">{project.project_name}</h3>
+                  <p className="text-sm text-secondary">{project.lead_proponent}</p>
                 </div>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                   project.status === 'Operational' ? 'bg-green-100 text-green-700' :
                   project.status === 'Under Construction' ? 'bg-blue-100 text-blue-700' :
                   project.status === 'Planning' ? 'bg-amber-100 text-amber-700' :
-                  'bg-slate-100 text-slate-700'
+                  'bg-slate-100 text-secondary'
                 }`}>
                   {project.status}
                 </span>
               </div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <span className="text-slate-500">Type:</span>
+                  <span className="text-tertiary">Type:</span>
                   <div className="font-semibold">{project.project_type}</div>
                 </div>
                 <div>
-                  <span className="text-slate-500">H₂ Type:</span>
+                  <span className="text-tertiary">H₂ Type:</span>
                   <div className="font-semibold flex items-center gap-1">
                     <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: HYDROGEN_COLORS[project.hydrogen_type] || COLORS.grey }}></div>
                     {project.hydrogen_type}
                   </div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Investment:</span>
+                  <span className="text-tertiary">Investment:</span>
                   <div className="font-semibold">${(project.capital_investment_cad / 1e9).toFixed(2)}B</div>
                 </div>
                 <div>
-                  <span className="text-slate-500">Federal Funding:</span>
+                  <span className="text-tertiary">Federal Funding:</span>
                   <div className="font-semibold text-green-600">${(project.federal_funding_cad / 1e6).toFixed(0)}M</div>
                 </div>
               </div>
               {project.part_of_hub && (
-                <div className="mt-2 text-xs text-slate-500">
+                <div className="mt-2 text-xs text-tertiary">
                   📍 {project.part_of_hub}
                 </div>
               )}
@@ -834,7 +834,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Infrastructure Summary */}
       <div className="premium-card p-6 mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
           <Truck className="w-6 h-6 text-green-600" />
           Infrastructure Summary
         </h2>
@@ -843,8 +843,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <div className="text-4xl font-bold text-green-600 mb-2">
               {data.summary.infrastructure.refueling_stations}
             </div>
-            <div className="text-sm text-slate-600">Refueling Stations</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-secondary">Refueling Stations</div>
+            <div className="text-xs text-tertiary mt-1">
               {Math.round(data.summary.infrastructure.total_refueling_capacity / 1000)} t/day capacity
             </div>
           </div>
@@ -852,8 +852,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <div className="text-4xl font-bold text-blue-600 mb-2">
               {Math.round(data.summary.infrastructure.pipelines_km)}
             </div>
-            <div className="text-sm text-slate-600">Pipeline (km)</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-secondary">Pipeline (km)</div>
+            <div className="text-xs text-tertiary mt-1">
               Distribution network
             </div>
           </div>
@@ -861,8 +861,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             <div className="text-4xl font-bold text-purple-600 mb-2">
               {data.facilities.filter(f => f.facility_type === 'Storage').length}
             </div>
-            <div className="text-sm text-slate-600">Storage Facilities</div>
-            <div className="text-xs text-slate-500 mt-1">
+            <div className="text-sm text-secondary">Storage Facilities</div>
+            <div className="text-xs text-tertiary mt-1">
               Capacity buffer
             </div>
           </div>
@@ -870,7 +870,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       </div>
 
       {/* Footer */}
-      <div className="text-center text-sm text-slate-500 mt-8">
+      <div className="text-center text-sm text-tertiary mt-8">
         <p>Data Source: Alberta Hydrogen Roadmap, Air Products, ATCO, University of Alberta</p>
         <p className="mt-1">Strategic Context: $300M Federal Investment, Edmonton & Calgary Hydrogen Hubs (2025)</p>
       </div>
@@ -898,7 +898,7 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, c
     <div className={`${colorClasses[color]} border rounded-xl p-6 shadow-md`}>
       <div className="flex items-center gap-3 mb-3">
         {icon}
-        <h3 className="text-sm font-semibold text-slate-700 uppercase tracking-wide">{title}</h3>
+        <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
       <p className="text-sm opacity-80">{subtitle}</p>
