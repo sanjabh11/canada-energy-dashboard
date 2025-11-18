@@ -132,20 +132,19 @@ interface DashboardData {
 }
 
 const COLORS = {
-  green: '#10b981',
-  blue: '#3b82f6',
-  grey: '#6b7280',
-  yellow: '#fbbf24',
-  red: '#ef4444',
-  purple: '#8b5cf6',
-  teal: '#14b8a6',
+  green: '#168B6A',    // Forest green
+  blue: '#00D9FF',     // Electric cyan
+  grey: '#2C3E50',     // Industrial
+  yellow: '#FFB627',   // Solar
+  red: '#FF4757',      // Critical
+  teal: '#00D9FF',     // Electric (use same as blue)
 };
 
 const HYDROGEN_COLORS: Record<string, string> = {
   'Green': COLORS.green,
   'Blue': COLORS.blue,
   'Grey': COLORS.grey,
-  'Pink': '#ec4899',
+  'Pink': COLORS.red,     // Use critical color instead of pink
   'Turquoise': COLORS.teal,
 };
 
@@ -281,7 +280,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
+      <div className="premium-card p-4 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-green-600" />
@@ -358,7 +357,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       </div>
 
       {/* Hub Comparison */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <div className="premium-card p-6 mb-8">
         <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
           <MapPin className="w-6 h-6 text-green-600" />
           Edmonton vs Calgary Hub Comparison
@@ -418,7 +417,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Hydrogen Color Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <Cloud className="w-6 h-6 text-green-600" />
@@ -475,7 +474,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="premium-card p-6">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Factory className="w-6 h-6 text-green-600" />
             Facilities by Type
@@ -496,7 +495,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Pricing Trends */}
       {pricingTrend.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
               <DollarSign className="w-6 h-6 text-green-600" />
@@ -539,7 +538,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Price Forecasts (2025-2035) */}
       {data.price_forecasts && data.price_forecasts.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <div className="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border-l-4 border-green-600 rounded-lg">
             <h2 className="text-2xl font-bold text-slate-800 mb-2 flex items-center gap-2">
               <TrendingUp className="w-6 h-6 text-green-600" />
@@ -759,7 +758,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
       {/* Demand Forecast */}
       {demandForecast.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-green-600" />
             Hydrogen Demand Forecast by Sector (5-Year Outlook)
@@ -780,7 +779,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       )}
 
       {/* Strategic Projects */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <div className="premium-card p-6 mb-8">
         <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
           <Calendar className="w-6 h-6 text-green-600" />
           Major Hydrogen Projects
@@ -834,7 +833,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       </div>
 
       {/* Infrastructure Summary */}
-      <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+      <div className="premium-card p-6 mb-8">
         <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
           <Truck className="w-6 h-6 text-green-600" />
           Infrastructure Summary

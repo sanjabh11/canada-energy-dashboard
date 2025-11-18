@@ -52,13 +52,12 @@ interface DashboardData {
 }
 
 const COLORS = {
-  primary: '#3b82f6',
-  success: '#10b981',
-  warning: '#f59e0b',
-  danger: '#ef4444',
-  purple: '#8b5cf6',
-  teal: '#14b8a6',
-  pink: '#ec4899',
+  primary: '#00D9FF',    // Electric cyan
+  success: '#168B6A',    // Forest green
+  warning: '#FFB627',    // Solar
+  danger: '#FF4757',     // Critical
+  teal: '#00D9FF',       // Electric (same as primary)
+  pink: '#FF4757',       // Use critical instead of pink
 };
 
 const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 'Rare Earth Elements'];
@@ -260,7 +259,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-4 mb-8">
+      <div className="premium-card p-4 mb-8">
         <div className="flex flex-wrap items-center gap-4">
           <label className="flex items-center gap-2">
             <input
@@ -354,7 +353,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Supply Chain Completeness (if mineral selected) */}
       {selectedMineral && supplyChainCompletenessData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Activity className="w-6 h-6 text-purple-600" />
             {selectedMineral} Supply Chain Completeness
@@ -411,7 +410,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Projects Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="premium-card p-6">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <MapPin className="w-6 h-6 text-purple-600" />
             Projects by Province
@@ -429,7 +428,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="premium-card p-6">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Activity className="w-6 h-6 text-purple-600" />
             Projects by Development Stage
@@ -458,7 +457,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* China Dependency Analysis */}
       {chinaDependencyData.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Globe className="w-6 h-6 text-red-600" />
             China Import Dependency Analysis
@@ -509,7 +508,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Battery Supply Chain Linkage */}
       {batteryMineralsDemand.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Zap className="w-6 h-6 text-purple-600" />
             Battery Facilities Minerals Demand
@@ -555,7 +554,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Mineral Prices Time-Series Chart */}
       {mineralPricesChart.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <DollarSign className="w-6 h-6 text-green-600" />
             Mineral Prices (Monthly Trend)
@@ -593,7 +592,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Trade Flows Chart */}
       {tradeFlowsChart.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Globe className="w-6 h-6 text-blue-600" />
             Trade Flows (Imports vs Exports)
@@ -630,7 +629,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Price Volatility */}
       {priceVolatility.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <TrendingUp className="w-6 h-6 text-purple-600" />
             Price Volatility Index (Coefficient of Variation %)
@@ -652,7 +651,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Strategic Recommendations */}
       {data.insights.strategic_recommendations.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <Shield className="w-6 h-6 text-purple-600" />
             Strategic Recommendations
@@ -670,7 +669,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Investment Opportunities */}
       {data.insights.investment_opportunities.length > 0 && (
-        <div className="bg-white rounded-xl shadow-lg p-6 mb-8">
+        <div className="premium-card p-6 mb-8">
           <h2 className="text-2xl font-bold text-slate-800 mb-4 flex items-center gap-2">
             <DollarSign className="w-6 h-6 text-green-600" />
             Investment Opportunities

@@ -65,15 +65,15 @@ const EVChargingDashboard: React.FC = () => {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="text-lg">Loading EV charging data...</div></div>;
+    return <div className="flex items-center justify-center h-64"><div className="text-lg text-secondary">Loading EV charging data...</div></div>;
   }
 
   if (error) {
-    return <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">{error}</div>;
+    return <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-critical)' }}><span className="text-danger">{error}</span></div>;
   }
 
   if (!data || !data.stations) {
-    return <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">No EV charging data available</div>;
+    return <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-solar)' }}><span className="text-warning">No EV charging data available</span></div>;
   }
 
   const stations = data.stations || [];
@@ -117,116 +117,116 @@ const EVChargingDashboard: React.FC = () => {
       province: a.province_code,
     }));
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
+  const COLORS = ['#00D9FF', '#168B6A', '#FFB627', '#FF4757']; // Electric, Forest, Solar, Critical - NO PURPLE
 
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg p-6">
+      <div className="premium-card" style={{ background: 'linear-gradient(135deg, rgba(11, 79, 60, 0.95) 0%, rgba(22, 139, 106, 0.9) 50%, rgba(0, 217, 255, 0.85) 100%)' }}>
         <div className="flex items-center justify-between gap-3 mb-2">
           <div className="flex items-center gap-3">
-            <Zap size={32} />
-            <h1 className="text-3xl font-bold">EV Charging Infrastructure</h1>
+            <Zap size={32} style={{ color: 'var(--color-electric)' }} />
+            <h1 className="text-3xl font-bold text-primary">EV Charging Infrastructure</h1>
           </div>
           <HelpButton id="ev-infrastructure.overview" />
         </div>
-        <p className="text-blue-100">Electric vehicle charging network and adoption tracking - Federal mandate: 20% by 2026, 100% by 2035</p>
+        <p className="text-secondary">Electric vehicle charging network and adoption tracking - Federal mandate: 20% by 2026, 100% by 2035</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-electric)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Stations</p>
-              <p className="text-2xl font-bold">{totalStations.toLocaleString()}</p>
+              <p className="text-sm text-secondary">Total Stations</p>
+              <p className="text-2xl font-bold text-primary">{totalStations.toLocaleString()}</p>
             </div>
-            <MapPin className="text-blue-500" size={24} />
+            <MapPin className="text-electric" size={24} />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+        <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-forest)' }}>
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Capacity</p>
-              <p className="text-2xl font-bold">{(totalCapacity / 1000).toFixed(1)} MW</p>
+              <p className="text-sm text-secondary">Total Capacity</p>
+              <p className="text-2xl font-bold text-primary">{(totalCapacity / 1000).toFixed(1)} MW</p>
             </div>
-            <Zap className="text-green-500" size={24} />
+            <Zap className="text-forest" size={24} />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+        <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-electric)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">V2G-Capable Stations</p>
-                <p className="text-2xl font-bold">{v2gCapableStations}</p>
+                <p className="text-sm text-secondary">V2G-Capable Stations</p>
+                <p className="text-2xl font-bold text-primary">{v2gCapableStations}</p>
               </div>
               <HelpButton id="ev-infrastructure.v2g" className="ml-1" />
             </div>
-            <Battery className="text-purple-500" size={24} />
+            <Battery className="text-electric" size={24} />
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+        <div className="premium-card p-4" style={{ borderLeft: '4px solid var(--color-solar)' }}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">EV Market Share vs 2026 Target</p>
-                <p className="text-2xl font-bold">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
+                <p className="text-sm text-secondary">EV Market Share vs 2026 Target</p>
+                <p className="text-2xl font-bold text-primary">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
               </div>
               <HelpButton id="ev-infrastructure.adoption" className="ml-1" />
             </div>
-            <Car className="text-orange-500" size={24} />
+            <Car className="text-solar" size={24} />
           </div>
         </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold flex items-center gap-2">
-              <BarChartIcon size={20} />
+            <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+              <BarChartIcon size={20} className="text-electric" />
               Stations by Network
             </h3>
             <HelpButton id="ev-infrastructure.networks" />
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={networkData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" angle={-15} textAnchor="end" height={80} />
-              <YAxis label={{ value: 'Stations', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 217, 255, 0.15)" />
+              <XAxis dataKey="name" angle={-15} textAnchor="end" height={80} stroke="var(--text-secondary)" />
+              <YAxis label={{ value: 'Stations', angle: -90, position: 'insideLeft' }} stroke="var(--text-secondary)" />
+              <Tooltip contentStyle={{ backgroundColor: 'rgba(26, 58, 46, 0.95)', border: '1px solid rgba(0, 217, 255, 0.3)' }} />
               <Legend />
-              <Bar dataKey="stations" fill="#3b82f6" name="Stations" />
+              <Bar dataKey="stations" fill="#00D9FF" name="Stations" />
             </BarChart>
           </ResponsiveContainer>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-            <TrendingUp size={20} />
+        <div className="premium-card p-6">
+          <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+            <TrendingUp size={20} className="text-forest" />
             EV Adoption Trends
           </h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={adoptionTrendData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis label={{ value: 'Market Share (%)', angle: -90, position: 'insideLeft' }} />
-              <Tooltip />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(0, 217, 255, 0.15)" />
+              <XAxis dataKey="date" stroke="var(--text-secondary)" />
+              <YAxis label={{ value: 'Market Share (%)', angle: -90, position: 'insideLeft' }} stroke="var(--text-secondary)" />
+              <Tooltip contentStyle={{ backgroundColor: 'rgba(26, 58, 46, 0.95)', border: '1px solid rgba(0, 217, 255, 0.3)' }} />
               <Legend />
-              <Line type="monotone" dataKey="share" stroke="#10b981" name="EV Market Share %" strokeWidth={2} />
+              <Line type="monotone" dataKey="share" stroke="#168B6A" name="EV Market Share %" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Charger Type Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="premium-card p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold flex items-center gap-2">
-            <Battery size={20} />
+          <h3 className="text-lg font-semibold text-primary flex items-center gap-2">
+            <Battery size={20} className="text-electric" />
             Charger Type Distribution
           </h3>
           <HelpButton id="ev-charging-levels" />
@@ -240,59 +240,59 @@ const EVChargingDashboard: React.FC = () => {
               labelLine={false}
               label={({ type, count }) => `${type} (${count})`}
               outerRadius={100}
-              fill="#8884d8"
+              fill="#00D9FF"
               dataKey="count"
             >
               {chargerTypeData.map((entry: any, index: number) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip />
+            <Tooltip contentStyle={{ backgroundColor: 'rgba(26, 58, 46, 0.95)', border: '1px solid rgba(0, 217, 255, 0.3)' }} />
           </PieChart>
         </ResponsiveContainer>
       </div>
 
       {/* Stations Table */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-          <MapPin size={20} />
+      <div className="premium-card p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4 flex items-center gap-2">
+          <MapPin size={20} className="text-electric" />
           Charging Station Details
         </h3>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y border-subtle" style={{ borderColor: 'rgba(0, 217, 255, 0.15)' }}>
+            <thead style={{ backgroundColor: 'rgba(0, 217, 255, 0.05)' }}>
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Station Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Network</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Location</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Charger Type</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Power (kW)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Chargers</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">V2G</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Station Name</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Network</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Location</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Charger Type</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Power (kW)</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Chargers</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">V2G</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-secondary uppercase">Status</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody style={{ backgroundColor: 'transparent' }}>
               {stations.slice(0, 20).map((station: ChargingStation) => (
-                <tr key={station.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{station.station_name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{station.network}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{station.city}, {station.province_code}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{station.charger_type}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{station.max_power_kw}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{station.charger_count}</td>
+                <tr key={station.id} className="hover:bg-opacity-10" style={{ borderTop: '1px solid rgba(0, 217, 255, 0.1)' }}>
+                  <td className="px-4 py-3 text-sm font-medium text-primary">{station.station_name}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{station.network}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{station.city}, {station.province_code}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{station.charger_type}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{station.max_power_kw}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{station.charger_count}</td>
                   <td className="px-4 py-3">
                     {station.v2g_capable ? (
-                      <span className="text-green-600 font-medium">✓</span>
+                      <span className="text-success font-medium">✓</span>
                     ) : (
-                      <span className="text-gray-300">-</span>
+                      <span className="text-muted">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      station.status === 'Operational' ? 'bg-green-100 text-green-800' :
-                      station.status === 'Under Construction' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
+                    <span className={`badge ${
+                      station.status === 'Operational' ? 'badge-success' :
+                      station.status === 'Under Construction' ? 'badge-info' :
+                      'badge-warning'
                     }`}>
                       {station.status}
                     </span>
@@ -305,7 +305,7 @@ const EVChargingDashboard: React.FC = () => {
       </div>
 
       {/* Data Source */}
-      <div className="text-sm text-gray-500 text-center">
+      <div className="text-sm text-secondary text-center">
         Data Source: {data.metadata?.source || 'NRCan, Tesla, Electrify Canada, FLO, ChargePoint'} | Last Updated: {new Date().toLocaleDateString()}
       </div>
     </div>

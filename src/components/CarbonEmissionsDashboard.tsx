@@ -101,8 +101,8 @@ const CarbonEmissionsDashboard: React.FC = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading carbon emissions data...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric mx-auto mb-4"></div>
+          <p className="text-secondary">Loading carbon emissions data...</p>
         </div>
       </div>
     );
@@ -110,12 +110,12 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+      <div className="premium-card p-6" style={{ borderLeft: '4px solid var(--color-critical)' }}>
         <div className="flex items-center gap-3">
-          <AlertCircle className="text-red-600" size={24} />
+          <AlertCircle className="text-danger" size={24} />
           <div>
-            <h3 className="font-semibold text-red-900">Error Loading Data</h3>
-            <p className="text-red-700">{error}</p>
+            <h3 className="font-semibold text-primary">Error Loading Data</h3>
+            <p className="text-danger">{error}</p>
           </div>
         </div>
       </div>
@@ -124,7 +124,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="text-center text-gray-600 p-8">
+      <div className="text-center text-secondary p-8">
         No data available
       </div>
     );
@@ -177,7 +177,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
     cleanGen: a.clean_generation_gwh,
   }));
 
-  const COLORS = ['#DC2626', '#EA580C', '#F59E0B', '#84CC16', '#10B981', '#06B6D4', '#3B82F6', '#8B5CF6'];
+  const COLORS = ['#FF4757', '#FFB627', '#168B6A', '#00D9FF']; // Critical, Solar, Forest, Electric - NO PURPLE
 
   // Calculate key metrics
   const currentYearEmissions = data.emissions
@@ -190,12 +190,12 @@ const CarbonEmissionsDashboard: React.FC = () => {
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-lg p-6 text-white">
+      <div className="premium-card" style={{ background: 'linear-gradient(135deg, rgba(11, 79, 60, 0.95) 0%, rgba(22, 139, 106, 0.9) 50%, rgba(0, 217, 255, 0.85) 100%)' }}>
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">Carbon Emissions Tracking</h1>
+          <h1 className="text-3xl font-bold text-primary">Carbon Emissions Tracking</h1>
           <HelpButton id="carbon-emissions" />
         </div>
-        <p className="text-green-100">
+        <p className="text-secondary">
           Greenhouse gas emissions from electricity generation across Canada
         </p>
         <p className="text-sm text-green-200 mt-2">
@@ -204,7 +204,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="premium-card p-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -239,7 +239,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Emissions ({selectedYear})</p>
@@ -252,7 +252,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
@@ -268,7 +268,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Cleanest Province</p>
@@ -283,7 +283,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
@@ -303,7 +303,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Province Comparison - Grid Intensity */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <h3 className="text-lg font-semibold mb-4">Grid Intensity by Province ({selectedYear})</h3>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={provinceData}>
@@ -317,7 +317,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
         </div>
 
         {/* Emissions Factors by Fuel Type */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="premium-card p-6">
           <h3 className="text-lg font-semibold mb-4">Lifecycle Emissions by Fuel Type</h3>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -342,7 +342,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
         {/* Emissions Trend */}
         {trendData.length > 1 && (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="premium-card p-6">
             <h3 className="text-lg font-semibold mb-4">
               Emissions Trend {selectedProvince !== 'All' ? `(${selectedProvince})` : '(All Provinces)'}
             </h3>
@@ -362,7 +362,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
         {/* Avoided Emissions by Province */}
         {avoidedData.length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="premium-card p-6">
             <h3 className="text-lg font-semibold mb-4">Avoided Emissions by Province (2023)</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={avoidedData}>
@@ -379,7 +379,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
       {/* Carbon Reduction Targets Table */}
       {data.targets.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="premium-card overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold">Carbon Reduction Targets</h3>
           </div>
@@ -394,7 +394,7 @@ const CarbonEmissionsDashboard: React.FC = () => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Legal Status</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody style={{ backgroundColor: 'transparent' }}>
                 {data.targets.map((target, idx) => (
                   <tr key={idx} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
