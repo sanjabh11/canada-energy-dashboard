@@ -76,6 +76,23 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   const [insightError, setInsightError] = useState<string | null>(null);
   const insightAbortRef = useRef<AbortController | null>(null);
 
+  const handleBackToDashboard = () => {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+      return;
+    }
+
+    const { origin } = window.location;
+    const referrer = document.referrer;
+    const hasSameOriginReferrer = !!referrer && referrer.startsWith(origin);
+
+    if (hasSameOriginReferrer && window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.assign('/');
+  };
+
   // Load analytics data
   const loadAnalyticsData = useCallback(async () => {
     loadAbortRef.current?.abort();
@@ -224,7 +241,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary">
       {/* Hero Section */}
-      <section className="hero-section">
+      <section className="hero-section" aria-labelledby="analytics-hero-title">
         <div className="hero-content">
           <div className="flex items-center justify-between">
             <div>
@@ -232,7 +249,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{background: 'rgba(0, 217, 255, 0.1)'}}>
                   <TrendingUp className="h-6 w-6 text-electric" />
                 </div>
-                <h1 className="hero-title">Analytics & Trends</h1>
+                <h1 id="analytics-hero-title" className="hero-title">Analytics & Trends</h1>
               </div>
               <p className="hero-subtitle">
                 Explore historical patterns, correlations, and AI-powered insights
@@ -246,7 +263,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
             </div>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => window.history.back()}
+                onClick={handleBackToDashboard}
                 className="btn btn-secondary"
               >
                 <ArrowLeft size={20} />
@@ -341,20 +358,23 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
         </div>
 
         {/* Back to Dashboard CTA */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-6 border-2 border-indigo-200 text-center">
-          <h3 className="text-lg font-semibold text-primary mb-2">
-            Ready to monitor real-time data?
-          </h3>
-          <p className="text-sm text-secondary mb-4">
-            Return to the main dashboard for live energy metrics and alerts
-          </p>
-          <button
-            onClick={() => window.history.back()}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
-          >
-            <ArrowLeft size={20} />
-            Back to Real-Time Dashboard
-          </button>
+        <div className="card relative overflow-hidden text-center border border-[var(--border-subtle)]">
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-slate-900/40 pointer-events-none" />
+          <div className="relative z-10 p-6">
+            <h3 className="text-lg font-semibold text-primary mb-2">
+              Ready to monitor real-time data?
+            </h3>
+            <p className="text-sm text-secondary mb-4">
+              Return to the main dashboard for live energy metrics and alerts
+            </p>
+            <button
+              onClick={handleBackToDashboard}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
+            >
+              <ArrowLeft size={20} />
+              Back to Real-Time Dashboard
+            </button>
+          </div>
         </div>
       </div>
     </div>

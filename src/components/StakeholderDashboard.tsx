@@ -289,52 +289,57 @@ export const StakeholderDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-primary">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="stakeholder_coordination" />
-        
-        <header className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-primary">Stakeholder Coordination Dashboard</h1>
-                <HelpButton id="module.stakeholder.overview" />
+
+        <section className="hero-section mb-8">
+          <div className="hero-content">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="hero-title">Stakeholder Coordination Dashboard</h1>
+                  <HelpButton id="module.stakeholder.overview" />
+                </div>
+                <p className="hero-subtitle mt-2">
+                  Manage consultations, track feedback, and collaborate in real-time
+                </p>
               </div>
-              <p className="text-secondary mt-2">
-                Manage consultations, track feedback, and collaborate in real-time
-              </p>
-            </div>
-            <div className="self-start">
-              <HelpButton id="module.stakeholder.protocols" className="bg-indigo-600 hover:bg-indigo-500 border-indigo-500" />
+              <div className="self-start">
+                <HelpButton
+                  id="module.stakeholder.protocols"
+                  className="bg-indigo-600 hover:bg-indigo-500 border-indigo-500"
+                />
+              </div>
             </div>
           </div>
-        </header>
+        </section>
 
         {/* Dashboard Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Total Stakeholders</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Total Stakeholders</h3>
               <HelpButton id="metric.stakeholder.total" />
             </div>
-            <p className="text-3xl font-bold text-electric">{dashboardMetrics.totalStakeholders}</p>
+            <p className="text-3xl font-bold text-electric metric-value">{dashboardMetrics.totalStakeholders}</p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Upcoming Meetings</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Upcoming Meetings</h3>
               <HelpButton id="metric.stakeholder.upcoming_meetings" />
             </div>
-            <p className="text-3xl font-bold text-success">{dashboardMetrics.upcomingMeetings}</p>
+            <p className="text-3xl font-bold text-success metric-value">{dashboardMetrics.upcomingMeetings}</p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Average Sentiment</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Average Sentiment</h3>
               <HelpButton id="metric.stakeholder.average_sentiment" />
             </div>
-            <p className={`text-3xl font-bold ${
+            <p className={`text-3xl font-bold metric-value ${
               dashboardMetrics.averageSentiment > 0.3 ? 'text-success' :
               dashboardMetrics.averageSentiment < -0.3 ? 'text-danger' :
               'text-warning'
@@ -343,12 +348,12 @@ export const StakeholderDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Feedback Entries</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Feedback Entries</h3>
               <HelpButton id="metric.stakeholder.feedback_entries" />
             </div>
-            <p className="text-3xl font-bold text-electric">{dashboardMetrics.feedbackEntries}</p>
+            <p className="text-3xl font-bold text-electric metric-value">{dashboardMetrics.feedbackEntries}</p>
           </div>
         </div>
 

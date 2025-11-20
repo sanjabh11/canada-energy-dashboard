@@ -26,6 +26,7 @@ import {
   CheckCircle, Clock, Building2, Award, FileText, Shield, Info
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { CardTable } from './CardTable';
 
 // ============================================================================
 // INTERFACES
@@ -197,11 +198,11 @@ const SMRDeploymentTracker: React.FC = () => {
   const provinces = ['All', ...Array.from(new Set(data.projects.map(p => p.province))).sort()];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-primary p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">SMR Deployment Tracker</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-primary mb-2">SMR Deployment Tracker</h1>
+        <p className="text-secondary">
           Canada's Small Modular Reactor Pipeline - Real-time tracking of $30B+ SMR investments
         </p>
       </div>
@@ -303,13 +304,13 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle }) => (
-  <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+  <div className="card p-6">
     <div className="flex items-center justify-between mb-4">
       {icon}
     </div>
-    <h3 className="text-sm font-medium text-gray-500 mb-1">{title}</h3>
-    <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-    <p className="text-sm text-gray-600">{subtitle}</p>
+    <h3 className="text-sm font-medium text-tertiary mb-1">{title}</h3>
+    <div className="text-2xl font-bold text-primary mb-1">{value}</div>
+    <p className="text-sm text-secondary">{subtitle}</p>
   </div>
 );
 
@@ -524,69 +525,62 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ projects }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          SMR Projects Registry ({projects.length} projects)
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Operator</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Province</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technology</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Investment</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Target Date</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{project.project_name}</div>
-                    {project.location_city && (
-                      <div className="text-xs text-gray-500">{project.location_city}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{project.operator}</td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">{project.province}</td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm text-gray-900">{project.reactor_model}</div>
-                    <div className="text-xs text-gray-500">{project.reactor_vendor}</div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {project.number_of_units > 1 && <span className="text-gray-500">{project.number_of_units}×</span>}
-                    {project.unit_capacity_mw} MW
-                    {project.number_of_units > 1 && (
-                      <div className="text-xs text-gray-500">= {project.total_capacity_mw} MW total</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(project.status)}`}>
-                      {project.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {project.estimated_capex_cad
-                      ? `$${(project.estimated_capex_cad / 1e9).toFixed(1)}B`
-                      : 'TBD'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
-                    {project.target_operational_date
-                      ? new Date(project.target_operational_date).getFullYear()
-                      : 'TBD'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <CardTable title={`SMR Projects Registry (${projects.length} projects)`}>
+      <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+        <thead className="bg-secondary">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Project</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Operator</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Province</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Technology</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Capacity</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Status</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Investment</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">Target Date</th>
+          </tr>
+        </thead>
+        <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+          {projects.map((project) => (
+            <tr key={project.id} className="hover:bg-secondary">
+              <td className="px-4 py-4 whitespace-nowrap">
+                <div className="text-sm font-medium text-primary">{project.project_name}</div>
+                {project.location_city && (
+                  <div className="text-xs text-tertiary">{project.location_city}</div>
+                )}
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">{project.operator}</td>
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">{project.province}</td>
+              <td className="px-4 py-4">
+                <div className="text-sm text-primary">{project.reactor_model}</div>
+                <div className="text-xs text-tertiary">{project.reactor_vendor}</div>
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                {project.number_of_units > 1 && <span className="text-tertiary">{project.number_of_units}×</span>}
+                {project.unit_capacity_mw} MW
+                {project.number_of_units > 1 && (
+                  <div className="text-xs text-tertiary">= {project.total_capacity_mw} MW total</div>
+                )}
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap">
+                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(project.status)}`}>
+                  {project.status}
+                </span>
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                {project.estimated_capex_cad
+                  ? `$${(project.estimated_capex_cad / 1e9).toFixed(1)}B`
+                  : 'TBD'}
+              </td>
+              <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                {project.target_operational_date
+                  ? new Date(project.target_operational_date).getFullYear()
+                  : 'TBD'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </CardTable>
   );
 };
 

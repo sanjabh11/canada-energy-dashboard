@@ -6,6 +6,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader, Bot, User, Sparkles } from 'lucide-react';
 import { generateHouseholdAdvisorPrompt, extractUserIntent, getQuickSuggestions } from '../lib/householdAdvisorPrompt';
+import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import type { 
   HouseholdProfile, 
   MonthlyUsage, 
@@ -48,8 +49,6 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
   // Generate AI response using household-advisor edge function
   const generateAIResponse = async (userMessage: string): Promise<string> => {
     try {
-      const { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } = await import('../lib/config');
-      
       if (!isEdgeFetchEnabled()) {
         console.warn('Edge functions disabled, using fallback response');
         return getFallbackResponse(userMessage);
@@ -245,10 +244,10 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
   const quickSuggestions = getQuickSuggestions(profile);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-300px)] min-h-[500px] bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col h-[calc(100vh-300px)] min-h-[500px] card">
       {/* Chat Header */}
       <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-500 to-blue-600">
-        <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
+        <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
           <Bot className="w-6 h-6 text-green-600" />
         </div>
         <div className="flex-1">
@@ -280,11 +279,11 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
               <div className={`inline-block p-3 rounded-lg ${
                 message.role === 'user'
                   ? 'bg-blue-600 text-white rounded-br-none'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-bl-none'
+                  : 'bg-secondary text-primary rounded-bl-none'
               }`}>
                 <p className="text-sm whitespace-pre-wrap">{message.content}</p>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-xs text-tertiary mt-1">
                 {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
@@ -296,11 +295,11 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-blue-600 flex items-center justify-center">
               <Bot className="w-5 h-5 text-white" />
             </div>
-            <div className="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg rounded-bl-none">
+            <div className="bg-secondary p-3 rounded-lg rounded-bl-none">
               <div className="flex gap-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
           </div>
@@ -311,14 +310,14 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
 
       {/* Quick Suggestions */}
       {messages.length === 1 && (
-        <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700">
-          <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">Quick questions:</p>
+        <div className="px-4 py-2 border-t border-[var(--border-subtle)]">
+          <p className="text-xs text-tertiary mb-2">Quick questions:</p>
           <div className="flex flex-wrap gap-2">
             {quickSuggestions.map((suggestion, index) => (
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="text-xs px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full transition-colors"
+                className="text-xs px-3 py-1.5 bg-secondary hover:bg-[var(--bg-secondary-hover)] text-primary rounded-full transition-colors"
               >
                 {suggestion}
               </button>
@@ -328,7 +327,7 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
       )}
 
       {/* Input */}
-      <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+      <div className="p-4 border-t border-[var(--border-subtle)]">
         <div className="flex gap-2">
           <input
             type="text"
@@ -337,7 +336,7 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
             onKeyPress={handleKeyPress}
             placeholder="Ask me anything about your energy usage..."
             disabled={isLoading}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
+            className="flex-1 px-4 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-secondary text-primary disabled:opacity-50"
           />
           <button
             onClick={handleSendMessage}
@@ -351,7 +350,7 @@ const EnergyAdvisorChat: React.FC<EnergyAdvisorChatProps> = ({
             )}
           </button>
         </div>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+        <p className="text-xs text-tertiary mt-2">
           💡 Tip: I can help with bills, savings, rebates, and more. Just ask!
         </p>
       </div>

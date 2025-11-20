@@ -265,20 +265,27 @@ export const HydrogenEconomyDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Fuel className="w-10 h-10 text-success" />
-            <h1 className="text-4xl font-bold text-primary">
-              Hydrogen Economy Hub Dashboard
-            </h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34, 197, 94, 0.12)' }}
+                >
+                  <Fuel className="h-6 w-6 text-success" />
+                </div>
+                <h1 className="hero-title">Hydrogen Economy Hub Dashboard</h1>
+              </div>
+              <p className="hero-subtitle">
+                $300M federal investment · Edmonton & Calgary hydrogen hubs
+              </p>
+            </div>
+            <HelpButton id="hydrogen.overview" />
           </div>
-          <HelpButton id="hydrogen.overview" />
         </div>
-        <p className="text-lg text-secondary ml-13">
-          $300M Federal Investment | Edmonton & Calgary Hubs
-        </p>
-      </div>
+      </section>
 
       {/* Filters */}
       <div className="card p-4 mb-8">

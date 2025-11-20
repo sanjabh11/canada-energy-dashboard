@@ -93,58 +93,69 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-primary p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-lg p-6">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Cable size={32} />
-            <h1 className="text-3xl font-bold">Grid Interconnection Queue</h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(34, 197, 94, 0.12)' }}
+                >
+                  <Cable className="h-6 w-6 text-success" />
+                </div>
+                <h1 className="hero-title">Grid Interconnection Queue</h1>
+              </div>
+              <p className="hero-subtitle">
+                Ontario's renewable energy and battery storage project pipeline - IESO procurement tracking
+              </p>
+            </div>
+            <HelpButton id="queue.overview" />
           </div>
-          <HelpButton id="queue.overview" />
         </div>
-        <p className="text-green-100">Ontario's renewable energy and battery storage project pipeline - IESO procurement tracking</p>
-      </div>
+      </section>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Queue Capacity</p>
-              <p className="text-2xl font-bold">{totalCapacity.toLocaleString()} MW</p>
+              <p className="metric-label">Total Queue Capacity</p>
+              <p className="metric-value">{totalCapacity.toLocaleString()} MW</p>
             </div>
-            <Cable className="text-blue-500" size={24} />
+            <Cable className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Battery Storage Pipeline</p>
-              <p className="text-2xl font-bold">{batteryCapacity.toLocaleString()} MW</p>
+              <p className="metric-label">Battery Storage Pipeline</p>
+              <p className="metric-value">{batteryCapacity.toLocaleString()} MW</p>
             </div>
-            <Battery className="text-green-500" size={24} />
+            <Battery className="h-6 w-6 text-success" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Projects in Queue</p>
-              <p className="text-2xl font-bold">{queue.length}</p>
+              <p className="metric-label">Projects in Queue</p>
+              <p className="metric-value">{queue.length}</p>
             </div>
-            <TrendingUp className="text-purple-500" size={24} />
+            <TrendingUp className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Procurement Value</p>
-              <p className="text-2xl font-bold">${totalProcurementValue.toFixed(1)}B</p>
+              <p className="metric-label">Total Procurement Value</p>
+              <p className="metric-value">${totalProcurementValue.toFixed(1)}B</p>
             </div>
-            <CheckCircle className="text-orange-500" size={24} />
+            <CheckCircle className="h-6 w-6 text-success" />
           </div>
         </div>
       </div>
@@ -186,7 +197,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
                     {program.status}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm text-gray-600">
+                <div className="flex justify-between text-sm text-secondary">
                   <span>Target: {program.target_capacity_mw} MW</span>
                   <span>Contracted: {program.contracted_capacity_mw || 0} MW</span>
                 </div>
@@ -223,8 +234,8 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
             <tbody className="bg-secondary divide-y divide-gray-200">
               {queue.slice(0, 20).map((project: QueueProject) => (
                 <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{project.project_name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm font-medium text-primary">{project.project_name}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">
                     <span className="flex items-center gap-1">
                       {project.project_type === 'Battery Storage' && <Battery size={16} />}
                       {project.project_type === 'Solar' && <Sun size={16} />}
@@ -232,8 +243,8 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
                       {project.project_type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.capacity_mw}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.developer}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.capacity_mw}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.developer}</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       project.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
@@ -243,7 +254,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
                       {project.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-secondary">
                     {project.in_service_date ? new Date(project.in_service_date).toLocaleDateString() : 'TBD'}
                   </td>
                 </tr>
@@ -254,7 +265,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
       </div>
 
       {/* Data Source */}
-      <div className="text-sm text-gray-500 text-center">
+      <div className="text-sm text-tertiary text-center">
         Data Source: {data.metadata?.source || 'IESO'} | Last Updated: {new Date().toLocaleDateString()}
       </div>
     </div>

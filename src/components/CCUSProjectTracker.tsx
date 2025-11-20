@@ -25,6 +25,7 @@ import {
   Zap, Building2, Pipette
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
+import { CardTable } from './CardTable';
 
 // ============================================================================
 // INTERFACES
@@ -166,14 +167,14 @@ const CCUSProjectTracker: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-primary p-6">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <Factory className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">CCUS Project Tracker</h1>
+          <h1 className="text-3xl font-bold text-primary">CCUS Project Tracker</h1>
         </div>
-        <p className="text-gray-600 text-lg">
+        <p className="text-secondary text-lg">
           Alberta's $30B Carbon Capture & Storage Corridor
         </p>
       </div>
@@ -211,8 +212,8 @@ const CCUSProjectTracker: React.FC = () => {
       </div>
 
       {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow mb-6">
-        <div className="border-b border-gray-200">
+      <div className="card mb-6">
+        <div className="border-b border-[var(--border-subtle)]">
           <nav className="flex -mb-px">
             <TabButton
               active={activeTab === 'pathways'}
@@ -266,20 +267,20 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle, color }) => {
   const colorClasses = {
-    green: 'bg-green-50 text-green-600 border-green-200',
-    blue: 'bg-blue-50 text-blue-600 border-blue-200',
-    purple: 'bg-purple-50 text-purple-600 border-purple-200',
-    red: 'bg-red-50 text-red-600 border-red-200'
+    green: 'bg-emerald-900/40 text-success border-emerald-500/40',
+    blue: 'bg-sky-900/40 text-electric border-sky-500/40',
+    purple: 'bg-violet-900/40 text-electric border-violet-500/40',
+    red: 'bg-rose-900/40 text-danger border-rose-500/40'
   };
 
   return (
-    <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
-      <div className={`inline-flex p-3 rounded-lg ${colorClasses[color]} mb-4`}>
+    <div className="card p-6">
+      <div className={`inline-flex p-3 rounded-lg border ${colorClasses[color]} mb-4`}>
         {icon}
       </div>
-      <h3 className="text-sm font-medium text-gray-600 mb-1">{title}</h3>
-      <p className="text-2xl font-bold text-gray-900 mb-1">{value}</p>
-      <p className="text-sm text-gray-500">{subtitle}</p>
+      <h3 className="text-sm font-medium text-tertiary mb-1">{title}</h3>
+      <p className="text-2xl font-bold text-primary mb-1">{value}</p>
+      <p className="text-sm text-secondary">{subtitle}</p>
     </div>
   );
 };
@@ -399,53 +400,50 @@ const PathwaysAllianceSection: React.FC<{ data: CCUSDashboardData }> = ({ data }
       </div>
 
       {/* Projects Table */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Member Company Projects</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 text-left text-sm text-gray-600">
-                <th className="pb-3 font-medium">Company</th>
-                <th className="pb-3 font-medium">Project</th>
-                <th className="pb-3 font-medium">Type</th>
-                <th className="pb-3 font-medium text-right">Capacity (Mt/year)</th>
-                <th className="pb-3 font-medium text-right">CapEx</th>
-                <th className="pb-3 font-medium text-right">Tax Credit</th>
-                <th className="pb-3 font-medium">Target Date</th>
-                <th className="pb-3 font-medium">ACTL</th>
+      <CardTable title="Member Company Projects">
+        <table className="w-full divide-y divide-[var(--border-subtle)]">
+          <thead className="bg-secondary">
+            <tr className="text-left text-sm text-tertiary">
+              <th className="pb-3 font-medium">Company</th>
+              <th className="pb-3 font-medium">Project</th>
+              <th className="pb-3 font-medium">Type</th>
+              <th className="pb-3 font-medium text-right">Capacity (Mt/year)</th>
+              <th className="pb-3 font-medium text-right">CapEx</th>
+              <th className="pb-3 font-medium text-right">Tax Credit</th>
+              <th className="pb-3 font-medium">Target Date</th>
+              <th className="pb-3 font-medium">ACTL</th>
+            </tr>
+          </thead>
+          <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+            {pathways.projects.map((project) => (
+              <tr key={project.id} className="text-sm hover:bg-secondary">
+                <td className="py-3 font-medium text-primary">{project.member_company}</td>
+                <td className="py-3 text-secondary">{project.project_name}</td>
+                <td className="py-3 text-secondary">{project.facility_type}</td>
+                <td className="py-3 text-right font-semibold text-primary">
+                  {project.capture_capacity_mt_per_year.toFixed(1)}
+                </td>
+                <td className="py-3 text-right text-primary">
+                  ${(project.capex_cad / 1e9).toFixed(1)}B
+                </td>
+                <td className="py-3 text-right text-primary">
+                  ${(project.federal_tax_credit_requested_cad / 1e9).toFixed(2)}B
+                </td>
+                <td className="py-3 text-secondary">
+                  {new Date(project.target_operational_date).getFullYear()}
+                </td>
+                <td className="py-3">
+                  {project.connected_to_actl ? (
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  ) : (
+                    <span className="text-xs text-tertiary">No</span>
+                  )}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {pathways.projects.map((project) => (
-                <tr key={project.id} className="border-b border-gray-100 text-sm">
-                  <td className="py-3 font-medium text-gray-900">{project.member_company}</td>
-                  <td className="py-3 text-gray-700">{project.project_name}</td>
-                  <td className="py-3 text-gray-600">{project.facility_type}</td>
-                  <td className="py-3 text-right font-semibold text-gray-900">
-                    {project.capture_capacity_mt_per_year.toFixed(1)}
-                  </td>
-                  <td className="py-3 text-right text-gray-900">
-                    ${(project.capex_cad / 1e9).toFixed(1)}B
-                  </td>
-                  <td className="py-3 text-right text-gray-900">
-                    ${(project.federal_tax_credit_requested_cad / 1e9).toFixed(2)}B
-                  </td>
-                  <td className="py-3 text-gray-600">
-                    {new Date(project.target_operational_date).getFullYear()}
-                  </td>
-                  <td className="py-3">
-                    {project.connected_to_actl ? (
-                      <CheckCircle className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <span className="text-xs text-gray-400">No</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </CardTable>
 
       {/* Capacity Chart */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
@@ -562,42 +560,40 @@ const OverviewSection: React.FC<{ data: CCUSDashboardData }> = ({ data }) => {
 const FacilitiesSection: React.FC<{ data: CCUSDashboardData }> = ({ data }) => {
   return (
     <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr className="text-left text-sm text-gray-600">
-                <th className="px-4 py-3 font-medium">Facility</th>
-                <th className="px-4 py-3 font-medium">Operator</th>
-                <th className="px-4 py-3 font-medium">Location</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Technology</th>
-                <th className="px-4 py-3 font-medium text-right">Capacity (Mt/year)</th>
-                <th className="px-4 py-3 font-medium text-right">Stored (Mt)</th>
+      <CardTable className="overflow-hidden">
+        <table className="w-full divide-y divide-[var(--border-subtle)]">
+          <thead className="bg-secondary">
+            <tr className="text-left text-sm text-tertiary">
+              <th className="px-4 py-3 font-medium">Facility</th>
+              <th className="px-4 py-3 font-medium">Operator</th>
+              <th className="px-4 py-3 font-medium">Location</th>
+              <th className="px-4 py-3 font-medium">Status</th>
+              <th className="px-4 py-3 font-medium">Technology</th>
+              <th className="px-4 py-3 font-medium text-right">Capacity (Mt/year)</th>
+              <th className="px-4 py-3 font-medium text-right">Stored (Mt)</th>
+            </tr>
+          </thead>
+          <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+            {data.facilities.map((facility) => (
+              <tr key={facility.id} className="text-sm hover:bg-secondary">
+                <td className="px-4 py-3 font-medium text-primary">{facility.facility_name}</td>
+                <td className="px-4 py-3 text-secondary">{facility.operator}</td>
+                <td className="px-4 py-3 text-secondary">{facility.location_city}, {facility.province}</td>
+                <td className="px-4 py-3">
+                  <StatusBadge status={facility.status} />
+                </td>
+                <td className="px-4 py-3 text-secondary text-xs">{facility.capture_technology}</td>
+                <td className="px-4 py-3 text-right font-semibold text-primary">
+                  {facility.current_capture_capacity_mt_per_year?.toFixed(1) || facility.design_capture_capacity_mt_per_year.toFixed(1)}
+                </td>
+                <td className="px-4 py-3 text-right text-secondary">
+                  {facility.cumulative_stored_mt?.toFixed(1) || '—'}
+                </td>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {data.facilities.map((facility) => (
-                <tr key={facility.id} className="text-sm hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{facility.facility_name}</td>
-                  <td className="px-4 py-3 text-gray-700">{facility.operator}</td>
-                  <td className="px-4 py-3 text-gray-600">{facility.location_city}, {facility.province}</td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={facility.status} />
-                  </td>
-                  <td className="px-4 py-3 text-gray-600 text-xs">{facility.capture_technology}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                    {facility.current_capture_capacity_mt_per_year?.toFixed(1) || facility.design_capture_capacity_mt_per_year.toFixed(1)}
-                  </td>
-                  <td className="px-4 py-3 text-right text-gray-700">
-                    {facility.cumulative_stored_mt?.toFixed(1) || '—'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </CardTable>
     </div>
   );
 };

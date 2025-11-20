@@ -301,51 +301,56 @@ const GridOptimizationDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-primary">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="grid_optimization" />
         
-        <header className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-3xl font-bold text-primary">
-              Grid Optimization Dashboard
-            </h1>
-            <HelpButton id="grid.optimization.overview" />
+        <section className="hero-section mb-8">
+          <div className="hero-content">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <h1 className="hero-title">
+                  Grid Optimization Dashboard
+                </h1>
+                <p className="hero-subtitle mt-2">
+                  Real-time grid monitoring, stability analysis, and optimization recommendations
+                </p>
+              </div>
+              <HelpButton id="grid.optimization.overview" />
+            </div>
           </div>
-          <p className="text-secondary">
-            Real-time grid monitoring, stability analysis, and optimization recommendations
-          </p>
-          {error && (
-            <div
-              className={`mt-4 rounded-lg p-4 ${
-                isFallbackData
-                  ? 'bg-amber-50 border border-amber-200 text-amber-700'
-                  : 'bg-secondary border border-red-200 text-danger'
-              }`}
-            >
-              <div className="flex items-start space-x-3">
-                <AlertTriangle
-                  className={`h-5 w-5 ${isFallbackData ? 'text-warning' : 'text-danger'}`}
-                />
-                <div>
-                  <h3
-                    className={`font-semibold mb-1 ${
-                      isFallbackData ? 'text-amber-800' : 'text-red-800'
-                    }`}
-                  >
-                    {isFallbackData ? 'Fallback Dataset Active' : 'Data Load Issue'}
-                  </h3>
-                  <p className={`${isFallbackData ? 'text-amber-700' : 'text-danger'} text-sm`}>{error}</p>
-                </div>
+        </section>
+
+        {error && (
+          <div
+            className={`mb-8 rounded-lg p-4 ${
+              isFallbackData
+                ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                : 'bg-secondary border border-red-200 text-danger'
+            }`}
+          >
+            <div className="flex items-start space-x-3">
+              <AlertTriangle
+                className={`h-5 w-5 ${isFallbackData ? 'text-warning' : 'text-danger'}`}
+              />
+              <div>
+                <h3
+                  className={`font-semibold mb-1 ${
+                    isFallbackData ? 'text-amber-800' : 'text-red-800'
+                  }`}
+                >
+                  {isFallbackData ? 'Fallback Dataset Active' : 'Data Load Issue'}
+                </h3>
+                <p className={`${isFallbackData ? 'text-amber-700' : 'text-danger'} text-sm`}>{error}</p>
               </div>
             </div>
-          )}
-        </header>
+          </div>
+        )}
 
         {/* Status Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card shadow p-6">
+          <div className="card card-metric p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-blue-100 rounded-lg">
                 <Zap className="h-6 w-6 text-electric" />
@@ -362,8 +367,8 @@ const GridOptimizationDashboard: React.FC = () => {
                        dashboardMetrics?.reserveMargin && dashboardMetrics.reserveMargin > 5 ? 'MONITOR' : 'CRITICAL'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Reserve Margin</h3>
-            <p className="text-3xl font-bold text-electric">
+            <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Reserve Margin</h3>
+            <p className="text-3xl font-bold text-electric metric-value">
               {dashboardMetrics?.reserveMargin?.toFixed(1)}%
             </p>
             <p className="text-sm text-secondary mt-1">
@@ -371,7 +376,7 @@ const GridOptimizationDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="card card-metric p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-green-100 rounded-lg">
                 <Gauge className="h-6 w-6 text-success" />
@@ -386,8 +391,8 @@ const GridOptimizationDashboard: React.FC = () => {
                 <span>{dashboardMetrics?.frequencyDeviation && dashboardMetrics.frequencyDeviation < 0.05 ? 'STABLE' : 'DEVIATION'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Frequency</h3>
-            <p className="text-3xl font-bold text-success">
+            <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Frequency</h3>
+            <p className="text-3xl font-bold text-success metric-value">
               {gridStatus[0]?.frequency?.toFixed(3)} Hz
             </p>
             <p className="text-sm text-secondary mt-1">
@@ -395,7 +400,7 @@ const GridOptimizationDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="card card-metric p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-purple-100 rounded-lg">
                 <Target className="h-6 w-6 text-electric" />
@@ -409,8 +414,8 @@ const GridOptimizationDashboard: React.FC = () => {
                 <span>{dashboardMetrics?.criticalAlerts || 0} CRITICAL</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Active Alerts</h3>
-            <p className="text-3xl font-bold text-electric">
+            <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Active Alerts</h3>
+            <p className="text-3xl font-bold text-electric metric-value">
               {recommendations.length}
             </p>
             <p className="text-sm text-secondary mt-1">
@@ -418,7 +423,7 @@ const GridOptimizationDashboard: React.FC = () => {
             </p>
           </div>
 
-          <div className="card shadow p-6">
+          <div className="card card-metric p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="p-3 bg-orange-100 rounded-lg">
                 <Activity className="h-6 w-6 text-orange-600" />
@@ -430,8 +435,8 @@ const GridOptimizationDashboard: React.FC = () => {
                 <span>{wsConnected ? 'LIVE' : 'OFFLINE'}</span>
               </div>
             </div>
-            <h3 className="text-lg font-semibold text-primary mb-2">Data Source</h3>
-            <p className="text-3xl font-bold text-orange-600">
+            <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Data Source</h3>
+            <p className="text-3xl font-bold text-orange-600 metric-value">
               {isUsingRealData ? 'IESO' : 'MOCK'}
             </p>
             <p className="text-sm text-secondary mt-1">

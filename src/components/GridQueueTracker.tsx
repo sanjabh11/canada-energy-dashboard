@@ -26,6 +26,7 @@ import {
   Clock, Filter, Info, Building2, Sun, Wind, Battery, Activity
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+import { CardTable } from './CardTable';
 
 // ============================================================================
 // INTERFACES
@@ -193,11 +194,11 @@ const GridQueueTracker: React.FC = () => {
   const statuses = ['All', ...Array.from(new Set(data.projects.map(p => p.queue_status).filter(Boolean))).sort()];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-primary p-6">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Multi-Province Grid Connection Queue</h1>
-        <p className="text-gray-600">
+        <h1 className="text-3xl font-bold text-primary mb-2">Multi-Province Grid Connection Queue</h1>
+        <p className="text-secondary">
           Real-time tracking of renewable energy projects across Canadian grid queues
         </p>
       </div>
@@ -305,13 +306,13 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ icon, title, value, subtitle }) => (
-  <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+  <div className="card p-6">
     <div className="flex items-center justify-between mb-4">
       {icon}
     </div>
-    <h3 className="text-sm font-medium text-gray-500 mb-1">{title}</h3>
-    <div className="text-2xl font-bold text-gray-900 mb-1">{value}</div>
-    <p className="text-sm text-gray-600">{subtitle}</p>
+    <h3 className="text-sm font-medium text-tertiary mb-1">{title}</h3>
+    <div className="text-2xl font-bold text-primary mb-1">{value}</div>
+    <p className="text-sm text-secondary">{subtitle}</p>
   </div>
 );
 
@@ -537,64 +538,59 @@ const ProjectsSection: React.FC<ProjectsSectionProps> = ({ projects }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-200">
-      <div className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Grid Queue Projects ({projects.length} projects, {(projects.reduce((sum, p) => sum + p.capacity_mw, 0) / 1000).toFixed(1)} GW)
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Project</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Proponent</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Province</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Technology</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expected COD</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {projects.map((project) => (
-                <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4">
-                    <div className="text-sm font-medium text-gray-900">{project.project_name}</div>
-                    {project.region && <div className="text-xs text-gray-500">{project.region}</div>}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{project.proponent || 'N/A'}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{project.province}</td>
-                  <td className="px-4 py-4">
-                    <div className="text-sm text-gray-900">{project.fuel_type}</div>
-                    {project.technology_detail && (
-                      <div className="text-xs text-gray-500">{project.technology_detail}</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">
-                    {project.capacity_mw} MW
-                    {project.storage_duration_hours && (
-                      <div className="text-xs text-gray-500">{project.storage_duration_hours}h storage</div>
-                    )}
-                  </td>
-                  <td className="px-4 py-4">
-                    <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(project.queue_status)}`}>
-                      {project.queue_status || 'Unknown'}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 text-sm text-gray-700">
-                    {project.expected_in_service_date
-                      ? new Date(project.expected_in_service_date).toLocaleDateString()
-                      : project.actual_in_service_date
-                      ? new Date(project.actual_in_service_date).toLocaleDateString()
-                      : 'TBD'}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
+    <CardTable
+      title={`Grid Queue Projects (${projects.length} projects, ${(projects.reduce((sum, p) => sum + p.capacity_mw, 0) / 1000).toFixed(1)} GW)`}
+    >
+      <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+        <thead className="bg-secondary">
+          <tr>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Project</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Proponent</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Province</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Technology</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Capacity</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Status</th>
+            <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Expected COD</th>
+          </tr>
+        </thead>
+        <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+          {projects.map((project) => (
+            <tr key={project.id} className="hover:bg-secondary">
+              <td className="px-4 py-4">
+                <div className="text-sm font-medium text-primary">{project.project_name}</div>
+                {project.region && <div className="text-xs text-tertiary">{project.region}</div>}
+              </td>
+              <td className="px-4 py-4 text-sm text-secondary">{project.proponent || 'N/A'}</td>
+              <td className="px-4 py-4 text-sm text-secondary">{project.province}</td>
+              <td className="px-4 py-4">
+                <div className="text-sm text-primary">{project.fuel_type}</div>
+                {project.technology_detail && (
+                  <div className="text-xs text-tertiary">{project.technology_detail}</div>
+                )}
+              </td>
+              <td className="px-4 py-4 text-sm text-secondary">
+                {project.capacity_mw} MW
+                {project.storage_duration_hours && (
+                  <div className="text-xs text-tertiary">{project.storage_duration_hours}h storage</div>
+                )}
+              </td>
+              <td className="px-4 py-4">
+                <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusBadge(project.queue_status)}`}>
+                  {project.queue_status || 'Unknown'}
+                </span>
+              </td>
+              <td className="px-4 py-4 text-sm text-secondary">
+                {project.expected_in_service_date
+                  ? new Date(project.expected_in_service_date).toLocaleDateString()
+                  : project.actual_in_service_date
+                  ? new Date(project.actual_in_service_date).toLocaleDateString()
+                  : 'TBD'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </CardTable>
   );
 };
 
@@ -638,8 +634,8 @@ const TechnologySection: React.FC<TechnologySectionProps> = ({ projects }) => {
   return (
     <div className="space-y-6">
       {/* Total by Technology */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Total Capacity by Technology (GW)</h3>
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Total Capacity by Technology (GW)</h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={techTotal}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -652,31 +648,28 @@ const TechnologySection: React.FC<TechnologySectionProps> = ({ projects }) => {
       </div>
 
       {/* Technology by Province */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Technology Mix by Province</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Province</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Technology</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Projects</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity (GW)</th>
+      <CardTable title="Technology Mix by Province">
+        <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+          <thead className="bg-secondary">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Province</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Technology</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Projects</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Capacity (GW)</th>
+            </tr>
+          </thead>
+          <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+            {techData.map((item, idx) => (
+              <tr key={idx} className="hover:bg-secondary">
+                <td className="px-4 py-4 text-sm font-medium text-primary">{item.province}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.technology}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.count}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.capacity.toFixed(2)} GW</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {techData.map((item, idx) => (
-                <tr key={idx} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900">{item.province}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.technology}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.count}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.capacity.toFixed(2)} GW</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </CardTable>
     </div>
   );
 };
@@ -716,8 +709,8 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({ projects }) => {
   return (
     <div className="space-y-6">
       {/* Annual Additions */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Expected Annual Capacity Additions (GW)</h3>
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Expected Annual Capacity Additions (GW)</h3>
         <ResponsiveContainer width="100%" height={400}>
           <ComposedChart data={cumulativeData}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -733,29 +726,26 @@ const TimelineSection: React.FC<TimelineSectionProps> = ({ projects }) => {
       </div>
 
       {/* Projects by Year Table */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Deployment Timeline</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Year</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Projects</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Capacity (GW)</th>
+      <CardTable title="Deployment Timeline">
+        <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+          <thead className="bg-secondary">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Year</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Projects</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Capacity (GW)</th>
+            </tr>
+          </thead>
+          <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+            {timelineData.map((item) => (
+              <tr key={item.year} className="hover:bg-secondary">
+                <td className="px-4 py-4 text-sm font-medium text-primary">{item.year}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.count}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.capacity.toFixed(2)} GW</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {timelineData.map((item) => (
-                <tr key={item.year} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900">{item.year}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.count}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.capacity.toFixed(2)} GW</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </CardTable>
     </div>
   );
 };
@@ -799,8 +789,8 @@ const ProvincialSection: React.FC<ProvincialSectionProps> = ({ statistics, proje
   return (
     <div className="space-y-6">
       {/* Provincial Comparison Chart */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Provincial Queue Comparison (GW)</h3>
+      <div className="card p-6">
+        <h3 className="text-lg font-semibold text-primary mb-4">Provincial Queue Comparison (GW)</h3>
         <ResponsiveContainer width="100%" height={400}>
           <BarChart data={provincialSummary}>
             <CartesianGrid strokeDasharray="3 3" />
@@ -816,35 +806,32 @@ const ProvincialSection: React.FC<ProvincialSectionProps> = ({ statistics, proje
       </div>
 
       {/* Provincial Summary Table */}
-      <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Provincial Summary</h3>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Province</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Grid Operator</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Projects</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Queue (GW)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Active (GW)</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">In-Service (GW)</th>
+      <CardTable title="Provincial Summary">
+        <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+          <thead className="bg-secondary">
+            <tr>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Province</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Grid Operator</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Projects</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Total Queue (GW)</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">Active (GW)</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase">In-Service (GW)</th>
+            </tr>
+          </thead>
+          <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+            {provincialSummary.map((item) => (
+              <tr key={item.province} className="hover:bg-secondary">
+                <td className="px-4 py-4 text-sm font-medium text-primary">{item.province}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.operator}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.projects}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.capacity.toFixed(2)}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.active.toFixed(2)}</td>
+                <td className="px-4 py-4 text-sm text-secondary">{item.in_service.toFixed(2)}</td>
               </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {provincialSummary.map((item) => (
-                <tr key={item.province} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 text-sm font-medium text-gray-900">{item.province}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.operator}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.projects}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.capacity.toFixed(2)}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.active.toFixed(2)}</td>
-                  <td className="px-4 py-4 text-sm text-gray-700">{item.in_service.toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+            ))}
+          </tbody>
+        </table>
+      </CardTable>
     </div>
   );
 };

@@ -351,14 +351,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
           </div>
           
           <div className="flex items-center gap-3">
-            <div className="flex bg-white/10 rounded-lg p-1">
+            <div className="flex bg-slate-900/40 rounded-lg p-1 border border-white/15">
               {['overview', 'communities', 'transitions', 'resilience', 'optimizer'].map((mode) => (
                 <button
                   key={mode}
                   onClick={() => setViewMode(mode as any)}
                   className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
                     viewMode === mode
-                      ? 'bg-white text-blue-600 shadow-sm'
+                      ? 'bg-elevated text-electric shadow-sm'
                       : 'text-white/80 hover:text-white'
                   }`}
                 >
@@ -369,7 +369,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <select
               value={selectedTerritory}
               onChange={(e) => setSelectedTerritory(e.target.value)}
-              className="px-3 py-2 bg-white/10 text-white border border-white/20 rounded-lg text-sm"
+              className="px-3 py-2 bg-slate-900/40 text-white border border-white/20 rounded-lg text-sm"
             >
               <option value="" className="text-black">All Territories</option>
               <option value="Nunavut" className="text-black">Nunavut</option>
@@ -378,7 +378,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
               <option value="Northern Ontario" className="text-black">Northern Ontario</option>
               <option value="Northern Quebec" className="text-black">Northern Quebec</option>
             </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-white text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+            <button className="flex items-center gap-2 px-4 py-2 bg-electric text-slate-900 rounded-lg hover:bg-electric/80 transition-colors">
               <Download size={16} />
               Arctic Report
             </button>
@@ -387,7 +387,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <MapPin size={16} className="text-blue-300" />
               <span className="text-sm font-medium">Communities</span>
@@ -395,7 +395,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="text-lg font-bold">{metrics.totalCommunities}</div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <Fuel size={16} className="text-red-300" />
               <span className="text-sm font-medium">Diesel Dependent</span>
@@ -403,7 +403,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="text-lg font-bold">{metrics.dieselDependentCommunities}</div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <Zap size={16} className="text-green-300" />
               <span className="text-sm font-medium">Renewable Projects</span>
@@ -411,7 +411,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="text-lg font-bold">{metrics.renewableTransitionProjects}</div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <Clock size={16} className="text-yellow-300" />
               <span className="text-sm font-medium">Avg Fuel Security</span>
@@ -419,7 +419,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="text-lg font-bold">{metrics.averageFuelSecurity.toFixed(0)} days</div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <Leaf size={16} className="text-emerald-300" />
               <span className="text-sm font-medium">Traditional Knowledge</span>
@@ -427,7 +427,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="text-lg font-bold">{metrics.traditionalKnowledgeIntegration.toFixed(0)}%</div>
           </div>
           
-          <div className="bg-white/10 rounded-lg p-3">
+          <div className="bg-slate-900/40 rounded-lg p-3 border border-white/15">
             <div className="flex items-center gap-2 mb-1">
               <Thermometer size={16} className="text-purple-300" />
               <span className="text-sm font-medium">Climate Resilience</span>
@@ -441,7 +441,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
       {viewMode === 'overview' && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Energy Source Distribution */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="card p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Primary Energy Sources</h3>
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
@@ -469,7 +469,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
           </div>
 
           {/* Renewable Transition Progress */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="card p-6">
             <h3 className="text-lg font-semibold text-slate-900 mb-4">Renewable Transition Progress</h3>
             <div className="space-y-4">
               {filteredCommunities.map((community) => (
@@ -561,7 +561,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
       {/* Optimizer View */}
       {viewMode === 'optimizer' && (
         <div className="space-y-6">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="card shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Diesel-to-Renewable Optimization Engine</h2>

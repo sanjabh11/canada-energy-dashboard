@@ -98,6 +98,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
           return (
             <button
               key={tab.id}
+              type="button"
               role="tab"
               aria-selected={isActive}
               onClick={() => onSelect(tab.id)}
@@ -125,6 +126,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
           <>
             <button
               ref={moreButtonRef}
+              type="button"
               onClick={() => setShowMoreDropdown(!showMoreDropdown)}
               className={`ribbon-item ${moreTabs.some(tab => tab.id === activeTab) ? 'ribbon-item-active' : ''}`}
             >
@@ -152,6 +154,7 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => {
                   onSelect(tab.id);
                   setShowMoreDropdown(false);

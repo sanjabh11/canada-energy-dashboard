@@ -366,13 +366,17 @@ export const EnergyDataDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Primary Navigation Header */}
-      <header className="nav-header">
+      <header className="nav-header" role="banner">
         <div className="nav-container">
-          <a href="/" className="nav-logo flex items-center gap-sm">
+          <a
+            href="/"
+            className="nav-logo flex items-center gap-sm"
+            aria-label="Canada Energy Intelligence home"
+          >
             <Zap className="h-6 w-6 text-electric" />
             <span>Canada Energy Intelligence</span>
           </a>
-          <ul className="nav-menu">
+          <ul className="nav-menu" role="navigation" aria-label="Site links">
             <li>
               <a href="/about" className="nav-link">
                 About
@@ -446,9 +450,12 @@ export const EnergyDataDashboard: React.FC = () => {
           // Home Tab - Simplified Landing Page with Clear CTAs
           <div className="space-y-12 -mt-8">
             {/* Simplified Hero Section */}
-            <section className="hero-section -mx-8 lg:-mx-16">
+            <section
+              className="hero-section -mx-8 lg:-mx-16"
+              aria-labelledby="home-hero-title"
+            >
               <div className="hero-content text-center">
-                <h1 className="hero-title">
+                <h1 id="home-hero-title" className="hero-title">
                   Canada Energy Intelligence Platform
                 </h1>
                 <p className="hero-subtitle max-w-3xl mx-auto">

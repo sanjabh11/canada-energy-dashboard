@@ -269,7 +269,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex items-center space-x-3">
           <Zap className="h-6 w-6 animate-spin text-blue-600" />
-          <span className="text-slate-600">Evaluating technology readiness...</span>
+          <span className="text-secondary">Evaluating technology readiness...</span>
         </div>
       </div>
     );
@@ -278,14 +278,14 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <div className="card p-6">
         <div className="flex items-center space-x-4 mb-4">
           <div className="bg-purple-500 p-3 rounded-lg">
             <Lightbulb className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">Energy Innovation Hub</h1>
-            <p className="text-slate-600">TRL assessment and investment readiness evaluation</p>
+            <h1 className="text-2xl font-bold text-primary">Energy Innovation Hub</h1>
+            <p className="text-secondary">TRL assessment and investment readiness evaluation</p>
           </div>
         </div>
 
@@ -293,13 +293,13 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-tertiary h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search innovations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                className="pl-10 w-full border border-[var(--border-medium)] rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-secondary text-primary"
               />
             </div>
           </div>
@@ -308,7 +308,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value as InnovationCategory)}
-              className="w-full border border-slate-300 rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500"
+              className="w-full border border-[var(--border-medium)] rounded-md px-3 py-2 focus:ring-2 focus:ring-purple-500 bg-secondary text-primary"
             >
               <option value="all">All Categories</option>
               {categories.map((category) => (
@@ -320,8 +320,8 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
           </div>
 
           <div className="flex items-center space-x-2">
-            <span className="text-sm text-slate-600">Results:</span>
-            <span className="font-semibold text-slate-800">{filteredInnovations.length}</span>
+            <span className="text-sm text-secondary">Results:</span>
+            <span className="font-semibold text-primary">{filteredInnovations.length}</span>
           </div>
         </div>
       </div>
@@ -335,30 +335,30 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
           return (
             <div
               key={innovation.name}
-              className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden"
+              className="card shadow-sm overflow-hidden"
             >
               {/* Header */}
-              <div className="p-4 border-b border-slate-200">
+              <div className="p-4 border-b border-[var(--border-subtle)]">
                 <div className="flex items-start justify-between mb-3">
                   <div>
-                    <h3 className="text-lg font-semibold text-slate-800 mb-1">
+                    <h3 className="text-lg font-semibold text-primary mb-1">
                       {innovation.name}
                     </h3>
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTRLColor(evaluation?.trlScore || 1)}`}>
                       TRL {evaluation?.trlScore || '?'}
                     </span>
                   </div>
-                  <div className="text-right text-xs text-slate-500">
+                  <div className="text-right text-xs text-tertiary">
                     {innovation.yearsOfDevelopment}y dev
                   </div>
                 </div>
 
-                <p className="text-sm text-slate-600 line-clamp-2 mb-3">
+                <p className="text-sm text-secondary line-clamp-2 mb-3">
                   {innovation.description}
                 </p>
 
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">
+                  <span className="text-tertiary">
                     {category.replace('_', ' ').toUpperCase()}
                   </span>
                   <div className="flex items-center space-x-1">
@@ -374,14 +374,14 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
                   <div className="text-lg font-bold text-green-600">
                     ${innovation.fundingSecured?.toLocaleString() || '0'}
                   </div>
-                  <div className="text-xs text-slate-500">Funding Secured</div>
+                  <div className="text-xs text-tertiary">Funding Secured</div>
                 </div>
 
                 <div className="text-center">
                   <div className="text-lg font-bold text-blue-600">
                     {innovation.partnerships}
                   </div>
-                  <div className="text-xs text-slate-500">Partners</div>
+                  <div className="text-xs text-tertiary">Partners</div>
                 </div>
               </div>
 
@@ -392,7 +392,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
                     <span>Prototypes</span>
                     <span>{innovation.prototypesBuilt}/5</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="w-full bg-[var(--border-subtle)] rounded-full h-2">
                     <div
                       className="bg-blue-500 h-2 rounded-full"
                       style={{ width: `${(innovation.prototypesBuilt / 5) * 100}%` }}
@@ -405,7 +405,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
                     <span>Pilots</span>
                     <span>{innovation.pilotProjects}/3</span>
                   </div>
-                  <div className="w-full bg-slate-200 rounded-full h-2">
+                  <div className="w-full bg-[var(--border-subtle)] rounded-full h-2">
                     <div
                       className="bg-purple-500 h-2 rounded-full"
                       style={{ width: `${(innovation.pilotProjects / 3) * 100}%` }}
@@ -415,7 +415,7 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
               </div>
 
               {/* Actions */}
-              <div className="p-4 bg-slate-50 border-t border-slate-200">
+              <div className="p-4 bg-secondary border-t border-[var(--border-subtle)]">
                 <div className="flex space-x-2">
                   <button
                     onClick={() => setSelectedInnovation(innovation.name)}
@@ -440,13 +440,13 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
       {/* Pitch Generation Modal */}
       {showPitchGeneration && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[80vh] overflow-hidden">
-            <div className="p-6 border-b border-slate-200">
+          <div className="card max-w-4xl w-full max-h-[80vh] overflow-hidden">
+            <div className="p-6 border-b border-[var(--border-subtle)]">
               <div className="flex items-center justify-between">
-                <h2 className="text-xl font-bold text-slate-800">Investment Pitch Document</h2>
+                <h2 className="text-xl font-bold text-primary">Investment Pitch Document</h2>
                 <button
                   onClick={() => setShowPitchGeneration(false)}
-                  className="text-slate-400 hover:text-slate-600"
+                  className="text-tertiary hover:text-secondary"
                 >
                   <Zap className="h-6 w-6" />
                 </button>
@@ -454,16 +454,16 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
             </div>
 
             <div className="p-6 overflow-y-auto max-h-96">
-              <pre className="whitespace-pre-wrap font-mono text-sm text-slate-800">
+              <pre className="whitespace-pre-wrap font-mono text-sm text-primary">
                 {generatedPitch}
               </pre>
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-200">
+            <div className="p-6 bg-secondary border-t border-[var(--border-subtle)]">
               <div className="flex justify-between">
                 <button
                   onClick={() => setShowPitchGeneration(false)}
-                  className="px-4 py-2 text-slate-600 hover:text-slate-800"
+                  className="px-4 py-2 text-secondary hover:text-primary"
                 >
                   Close
                 </button>
@@ -478,12 +478,12 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
 
       {/* Innovation Details Panel */}
       {selectedInnovation && (
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200 overflow-hidden">
+        <div className="card p-6 shadow-sm overflow-hidden">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-slate-800">Technology Details</h2>
+            <h2 className="text-xl font-bold text-primary">Technology Details</h2>
             <button
               onClick={() => setSelectedInnovation(null)}
-              className="text-slate-400 hover:text-slate-600"
+              className="text-tertiary hover:text-secondary"
             >
               <Zap className="h-6 w-6" />
             </button>
@@ -498,40 +498,40 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
             return (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">{innovation.name}</h3>
-                  <p className="text-slate-600 mb-4">{innovation.description}</p>
+                  <h3 className="text-lg font-semibold text-primary mb-3">{innovation.name}</h3>
+                  <p className="text-secondary mb-4">{innovation.description}</p>
 
                   <div className="space-y-3">
                     <div className="flex justify-between">
-                      <span className="text-slate-600">TRL Score:</span>
-                      <span className="font-semibold">{evaluation?.trlScore || '?'}</span>
+                      <span className="text-secondary">TRL Score:</span>
+                      <span className="font-semibold text-primary">{evaluation?.trlScore || '?'}</span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Confidence:</span>
-                      <span className="font-semibold">{evaluation?.confidence || '0'}%</span>
+                      <span className="text-secondary">Confidence:</span>
+                      <span className="font-semibold text-primary">{evaluation?.confidence || '0'}%</span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Funding Secured:</span>
-                      <span className="font-semibold">${innovation.fundingSecured?.toLocaleString() || '0'}</span>
+                      <span className="text-secondary">Funding Secured:</span>
+                      <span className="font-semibold text-primary">${innovation.fundingSecured?.toLocaleString() || '0'}</span>
                     </div>
 
                     <div className="flex justify-between">
-                      <span className="text-slate-600">Publications:</span>
-                      <span className="font-semibold">{innovation.publications}</span>
+                      <span className="text-secondary">Publications:</span>
+                      <span className="font-semibold text-primary">{innovation.publications}</span>
                     </div>
                   </div>
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-semibold mb-3">Evidence Description</h4>
-                  <p className="text-sm text-slate-700 bg-blue-50 p-3 rounded-lg">
+                  <h4 className="text-lg font-semibold text-primary mb-3">Evidence Description</h4>
+                  <p className="text-sm text-secondary bg-secondary p-3 rounded-lg">
                     {evaluation?.evidenceDescription || 'Assessment in progress'}
                   </p>
 
                   <div className="mt-4">
-                    <h4 className="text-lg font-semibold mb-2">Regulatory & Certifications</h4>
+                    <h4 className="text-lg font-semibold text-primary mb-2">Regulatory & Certifications</h4>
                     <div className="flex flex-wrap gap-2">
                       {[...(innovation.regulatoryApprovals || []), ...(innovation.certifications || [])].map((item, index) => (
                         <span

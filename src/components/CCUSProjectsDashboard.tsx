@@ -117,7 +117,7 @@ const CCUSProjectsDashboard: React.FC = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-electric mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading CCUS project data...</p>
+          <p className="text-secondary">Loading CCUS project data...</p>
         </div>
       </div>
     );
@@ -139,7 +139,7 @@ const CCUSProjectsDashboard: React.FC = () => {
 
   if (!data) {
     return (
-      <div className="text-center text-gray-600 p-8">
+      <div className="text-center text-secondary p-8">
         No data available
       </div>
     );
@@ -195,20 +195,32 @@ const CCUSProjectsDashboard: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-primary p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">CCUS Project Tracker</h1>
-          <HelpButton id="ccus.overview" />
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(56, 189, 248, 0.12)' }}
+                >
+                  <Factory className="h-6 w-6 text-electric" />
+                </div>
+                <h1 className="hero-title">CCUS Project Tracker</h1>
+              </div>
+              <p className="hero-subtitle">
+                Carbon Capture, Utilization & Storage projects across Canada
+              </p>
+              <p className="text-sm text-tertiary mt-2">
+                Alberta's $30B investment strategy · Pathways Alliance · Quest · ACTL
+              </p>
+            </div>
+            <HelpButton id="ccus.overview" />
+          </div>
         </div>
-        <p className="text-blue-100">
-          Carbon Capture, Utilization & Storage Projects Across Canada
-        </p>
-        <p className="text-sm text-blue-200 mt-2">
-          Alberta's $30B Investment Strategy | Pathways Alliance | Quest | ACTL
-        </p>
-      </div>
+      </section>
 
       {/* Filters */}
       <div className="card shadow p-4">
@@ -246,11 +258,11 @@ const CCUSProjectsDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Capture Capacity</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="metric-label text-tertiary">Total Capture Capacity</p>
+              <p className="metric-value text-primary mt-1">
                 {data.statistics.total_capture_capacity_mt_co2_year.toFixed(1)} Mt/yr
               </p>
               <p className="text-xs text-success mt-1">
@@ -261,11 +273,11 @@ const CCUSProjectsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Investment</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="metric-label text-tertiary">Total Investment</p>
+              <p className="metric-value text-primary mt-1">
                 ${data.statistics.total_investment_billions_cad.toFixed(1)}B
               </p>
               <p className="text-xs text-electric mt-1">
@@ -276,11 +288,11 @@ const CCUSProjectsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">CO2 Stored to Date</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="metric-label text-tertiary">CO2 Stored to Date</p>
+              <p className="metric-value text-primary mt-1">
                 {data.statistics.total_co2_stored_to_date_mt.toFixed(1)} Mt
               </p>
               <p className="text-xs text-teal-600 mt-1">
@@ -291,11 +303,11 @@ const CCUSProjectsDashboard: React.FC = () => {
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Avg Cost per Tonne</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="metric-label text-tertiary">Avg Cost per Tonne</p>
+              <p className="metric-value text-primary mt-1">
                 ${data.statistics.avg_cost_per_tonne_cad?.toFixed(0) ?? 'N/A'}
               </p>
               <p className="text-xs text-indigo-600 mt-1">
@@ -384,7 +396,7 @@ const CCUSProjectsDashboard: React.FC = () => {
             <tbody className="bg-secondary divide-y divide-gray-200">
               {data.projects.map((project) => (
                 <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-medium text-primary">
                     <div className="flex items-center gap-2">
                       {project.status === 'Operational' && <CheckCircle className="text-green-500" size={16} />}
                       {project.status === 'Planning' && <Clock className="text-yellow-500" size={16} />}
@@ -462,7 +474,7 @@ const CCUSProjectsDashboard: React.FC = () => {
               <tbody className="bg-secondary divide-y divide-gray-200">
                 {data.hubs.map((hub) => (
                   <tr key={hub.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900">{hub.hub_name}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-primary">{hub.hub_name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{hub.province_code}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 text-xs rounded-full ${getStatusColor(hub.status)}`}>
@@ -484,12 +496,12 @@ const CCUSProjectsDashboard: React.FC = () => {
       )}
 
       {/* Federal ITC Notice */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-6">
+      <div className="card border border-indigo-500/60 p-6">
         <div className="flex items-start gap-3">
-          <Award className="text-indigo-600 mt-0.5" size={24} />
+          <Award className="text-indigo-400 mt-0.5" size={24} />
           <div className="flex-1">
-            <h4 className="text-indigo-900 font-semibold mb-2">Federal CCUS Investment Tax Credit</h4>
-            <p className="text-sm text-indigo-800">
+            <h4 className="text-primary font-semibold mb-2">Federal CCUS Investment Tax Credit</h4>
+            <p className="text-sm text-secondary">
               The federal government offers refundable tax credits for CCUS projects: <strong>60% for Direct Air Capture</strong>,
               <strong> 50% for CO2 capture equipment</strong>, and <strong>37.5% for transport & storage infrastructure</strong>.
               {data.statistics.itc_eligible_count} projects ({((data.statistics.itc_eligible_count / data.statistics.total_projects) * 100).toFixed(0)}%) are ITC-eligible,
@@ -504,7 +516,7 @@ const CCUSProjectsDashboard: React.FC = () => {
         <div className="flex items-start gap-3">
           <CheckCircle className="text-success mt-0.5" size={20} />
           <div className="flex-1">
-            <p className="text-sm text-green-900 font-medium">Data Quality: {data.metadata.data_quality}</p>
+            <p className="text-sm text-success font-medium">Data Quality: {data.metadata.data_quality}</p>
             <p className="text-sm text-success mt-1">
               {data.metadata.source}.
               Includes Quest (operational since 2015), Alberta Carbon Trunk Line (world's largest CO2 pipeline),

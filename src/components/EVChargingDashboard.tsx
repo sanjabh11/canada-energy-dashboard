@@ -120,64 +120,75 @@ const EVChargingDashboard: React.FC = () => {
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-primary p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white rounded-lg p-6">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Zap size={32} />
-            <h1 className="text-3xl font-bold">EV Charging Infrastructure</h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(0, 217, 255, 0.1)' }}
+                >
+                  <Zap className="h-6 w-6 text-electric" />
+                </div>
+                <h1 className="hero-title">EV Charging Infrastructure</h1>
+              </div>
+              <p className="hero-subtitle">
+                Electric vehicle charging network and adoption tracking - Federal mandate: 20% by 2026, 100% by 2035
+              </p>
+            </div>
+            <HelpButton id="ev-infrastructure.overview" />
           </div>
-          <HelpButton id="ev-infrastructure.overview" />
         </div>
-        <p className="text-blue-100">Electric vehicle charging network and adoption tracking - Federal mandate: 20% by 2026, 100% by 2035</p>
-      </div>
+      </section>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Stations</p>
-              <p className="text-2xl font-bold">{totalStations.toLocaleString()}</p>
+              <p className="metric-label">Total Stations</p>
+              <p className="metric-value">{totalStations.toLocaleString()}</p>
             </div>
-            <MapPin className="text-blue-500" size={24} />
+            <MapPin className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Capacity</p>
-              <p className="text-2xl font-bold">{(totalCapacity / 1000).toFixed(1)} MW</p>
+              <p className="metric-label">Total Capacity</p>
+              <p className="metric-value">{(totalCapacity / 1000).toFixed(1)} MW</p>
             </div>
-            <Zap className="text-green-500" size={24} />
+            <Zap className="h-6 w-6 text-success" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">V2G-Capable Stations</p>
-                <p className="text-2xl font-bold">{v2gCapableStations}</p>
+                <p className="metric-label">V2G-Capable Stations</p>
+                <p className="metric-value">{v2gCapableStations}</p>
               </div>
               <HelpButton id="ev-infrastructure.v2g" className="ml-1" />
             </div>
-            <Battery className="text-purple-500" size={24} />
+            <Battery className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">EV Market Share vs 2026 Target</p>
-                <p className="text-2xl font-bold">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
+                <p className="metric-label">EV Market Share vs 2026 Target</p>
+                <p className="metric-value">{evMarketShare.toFixed(1)}% / {targetShare}%</p>
               </div>
               <HelpButton id="ev-infrastructure.adoption" className="ml-1" />
             </div>
-            <Car className="text-orange-500" size={24} />
+            <Car className="h-6 w-6 text-warning" />
           </div>
         </div>
       </div>

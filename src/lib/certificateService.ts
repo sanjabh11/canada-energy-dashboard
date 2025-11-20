@@ -348,15 +348,19 @@ export async function completeModule(
     }
 
     // Award badge for module completion (if criteria met)
-    const { awarded, badge } = await awardBadge(
+    const { userBadge, alreadyEarned, error: badgeError } = await awardBadge(
       userId,
       certificateIssued ? 'certificate-complete' : 'module-complete',
       { moduleId, trackSlug: module.track_slug }
     );
 
+    if (badgeError) {
+      throw badgeError;
+    }
+
     return {
       success: true,
-      badgeAwarded: awarded ? badge : undefined,
+      badgeAwarded: !alreadyEarned ? userBadge : undefined,
       error: null
     };
   } catch (error) {

@@ -89,7 +89,7 @@ export const DataQualityBadgeCompact: React.FC<{
   
   return (
     <span 
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-gray-100"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-secondary text-primary"
       title={`${badge.label}: ${badge.description}`}
     >
       <span>{badge.icon}</span>
@@ -129,36 +129,36 @@ export const DataQualitySummary: React.FC<DataQualitySummaryProps> = ({
                      qualityGrade === 'C' ? 'text-yellow-600' : 'text-red-600';
   
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-4">
+    <div className="card p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900">Data Quality</h3>
+        <h3 className="font-semibold text-primary">Data Quality</h3>
         <span className={`text-2xl font-bold ${gradeColor}`}>{qualityGrade}</span>
       </div>
       
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-600">Total Records:</span>
-          <span className="font-medium">{totalRecords.toLocaleString()}</span>
+          <span className="text-secondary">Total Records:</span>
+          <span className="font-medium text-primary">{totalRecords.toLocaleString()}</span>
         </div>
         
         <div className="flex justify-between">
-          <span className="text-gray-600">Completeness:</span>
-          <span className="font-medium">{(avgCompleteness * 100).toFixed(1)}%</span>
+          <span className="text-secondary">Completeness:</span>
+          <span className="font-medium text-primary">{(avgCompleteness * 100).toFixed(1)}%</span>
         </div>
         
         <div className="flex justify-between">
-          <span className="text-gray-600">Confidence:</span>
-          <span className="font-medium">{(avgConfidence * 100).toFixed(1)}%</span>
+          <span className="text-secondary">Confidence:</span>
+          <span className="font-medium text-primary">{(avgConfidence * 100).toFixed(1)}%</span>
         </div>
         
         <div className="flex justify-between">
-          <span className="text-gray-600">Period:</span>
-          <span className="font-medium">{period}</span>
+          <span className="text-secondary">Period:</span>
+          <span className="font-medium text-primary">{period}</span>
         </div>
       </div>
       
-      <div className="mt-4 pt-3 border-t border-gray-200">
-        <div className="text-xs text-gray-600 mb-2">Data Sources:</div>
+      <div className="mt-4 pt-3 border-t border-[var(--border-subtle)]">
+        <div className="text-xs text-tertiary mb-2">Data Sources:</div>
         <div className="space-y-1">
           {Object.entries(provenanceBreakdown).map(([type, count]) => {
             const badge = getProvenanceBadge(type as any);
@@ -168,11 +168,11 @@ export const DataQualitySummary: React.FC<DataQualitySummaryProps> = ({
             
             return (
               <div key={type} className="flex items-center justify-between text-xs">
-                <span className="flex items-center gap-1">
+                <span className="flex items-center gap-1 text-secondary">
                   <span>{badge.icon}</span>
                   <span>{badge.label}</span>
                 </span>
-                <span className="text-gray-500">
+                <span className="text-tertiary">
                   {count} ({percentage}%)
                 </span>
               </div>

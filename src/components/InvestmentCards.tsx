@@ -181,15 +181,15 @@ export const InvestmentCards: React.FC = () => {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex items-center space-x-3">
-          <Activity className="h-6 w-6 animate-spin text-blue-600" />
-          <span className="text-slate-600">Loading investment analysis...</span>
+          <Activity className="h-6 w-6 animate-spin text-electric" />
+          <span className="text-secondary">Loading investment analysis...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-primary">
       {/* Hero Section with Improved Layout */}
       <div className="relative overflow-hidden bg-gradient-to-r from-emerald-900 via-green-900 to-teal-900">
         <div className="absolute inset-0">
@@ -216,48 +216,48 @@ export const InvestmentCards: React.FC = () => {
       <div className={CONTAINER_CLASSES.page}>
         {/* Portfolio Key Metrics with Improved Grid */}
         <div className={CONTAINER_CLASSES.gridDashboard}>
-          <div className={`${COLOR_SCHEMES.success.bg} p-6 rounded-xl border ${COLOR_SCHEMES.success.border} hover:shadow-lg transition-all duration-300`}>
+          <div className="card p-6">
             <div className="flex items-center space-x-4">
               <TrendingUp className={`h-8 w-8 ${COLOR_SCHEMES.success.accent}`} />
               <div>
                 <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.success.accent}`}>Total NPV</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>
+                <div className={TEXT_CLASSES.metric}>
                   ${(portfolioMetrics.totalNPV / 1000000).toFixed(1)}M
                 </div>
               </div>
             </div>
           </div>
 
-          <div className={`${COLOR_SCHEMES.primary.bg} p-6 rounded-xl border ${COLOR_SCHEMES.primary.border} hover:shadow-lg transition-all duration-300`}>
+          <div className="card p-6">
             <div className="flex items-center space-x-4">
               <Activity className={`h-8 w-8 ${COLOR_SCHEMES.primary.accent}`} />
               <div>
                 <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.primary.accent}`}>Total Investment</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.primary.text}`}>
+                <div className={TEXT_CLASSES.metric}>
                   ${(portfolioMetrics.totalInvestment / 1000000).toFixed(1)}M
                 </div>
               </div>
             </div>
           </div>
 
-          <div className={`${COLOR_SCHEMES.info.bg} p-6 rounded-xl border ${COLOR_SCHEMES.info.border} hover:shadow-lg transition-all duration-300`}>
+          <div className="card p-6">
             <div className="flex items-center space-x-4">
               <Briefcase className={`h-8 w-8 ${COLOR_SCHEMES.info.accent}`} />
               <div>
                 <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.info.accent}`}>Net Return</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.info.text}`}>
+                <div className={TEXT_CLASSES.metric}>
                   ${(portfolioMetrics.netReturn / 1000000).toFixed(1)}M
                 </div>
               </div>
             </div>
           </div>
 
-          <div className={`${COLOR_SCHEMES.warning.bg} p-6 rounded-xl border ${COLOR_SCHEMES.warning.border} hover:shadow-lg transition-all duration-300`}>
+          <div className="card p-6">
             <div className="flex items-center space-x-4">
               <TrendingUp className={`h-8 w-8 ${COLOR_SCHEMES.warning.accent}`} />
               <div>
                 <div className={`${TEXT_CLASSES.metricLabel} ${COLOR_SCHEMES.warning.accent}`}>Portfolio Health</div>
-                <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.warning.text}`}>
+                <div className={TEXT_CLASSES.metric}>
                   {portfolioMetrics.totalNPV > 0 ? 'Strong' : 'Attention Needed'}
                 </div>
               </div>
@@ -266,40 +266,42 @@ export const InvestmentCards: React.FC = () => {
         </div>
 
         {/* AI Risk Analysis Summary with Improved Layout */}
-        <div className={`${COLOR_SCHEMES.info.bg} p-6 rounded-xl border ${COLOR_SCHEMES.info.border} mb-8`}>
-          <h3 className={`${TEXT_CLASSES.heading3} ${COLOR_SCHEMES.info.text} mb-4`}>AI Risk Analysis Summary</h3>
+        <div className="card p-6 mb-8">
+          <h3 className={`${TEXT_CLASSES.heading3} mb-4`}>AI Risk Analysis Summary</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Market Risk</div>
-              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Low - Strong renewable demand</div>
+              <div className={TEXT_CLASSES.body}>Low - Strong renewable demand</div>
             </div>
             <div className="space-y-2">
               <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Regulatory Risk</div>
-              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Medium - Policy changes possible</div>
+              <div className={TEXT_CLASSES.body}>Medium - Policy changes possible</div>
             </div>
             <div className="space-y-2">
               <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.info.accent}`}>Technology Risk</div>
-              <div className={`${TEXT_CLASSES.body} ${COLOR_SCHEMES.info.text}`}>Low - Proven technologies in use</div>
+              <div className={TEXT_CLASSES.body}>Low - Proven technologies in use</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Real-time Data Status with Enhanced Layout */}
-      <div className={`px-6 py-4 rounded-lg text-sm border mx-6 mb-6 ${
-        isUsingRealData && connectionStatus === 'connected'
-          ? `${COLOR_SCHEMES.success.bg} border ${COLOR_SCHEMES.success.border} ${COLOR_SCHEMES.success.text}`
-          : fallbackMode
-            ? `${COLOR_SCHEMES.primary.bg} border ${COLOR_SCHEMES.primary.border} ${COLOR_SCHEMES.primary.text}`
-            : `${COLOR_SCHEMES.warning.bg} border ${COLOR_SCHEMES.warning.border} ${COLOR_SCHEMES.warning.text}`
-      }`}>
+      <div
+        className={`px-6 py-4 rounded-lg text-sm mx-6 mb-6 bg-secondary border ${
+          isUsingRealData && connectionStatus === 'connected'
+            ? 'border-green-500/60 text-secondary'
+            : fallbackMode
+              ? 'border-electric/60 text-secondary'
+              : 'border-yellow-500/70 text-secondary'
+        }`}
+      >
         <div className={CONTAINER_CLASSES.flexBetween}>
           {isUsingRealData && connectionStatus === 'connected' ? (
             <>
               <Wifi className={`h-5 w-5 ${COLOR_SCHEMES.success.accent}`} />
               <div className="flex-1 ml-4">
-                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.success.text}`}>🎯 LIVE Ontario Market Data</div>
-                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.success.text} opacity-80`}>
+                <div className={`${TEXT_CLASSES.body} font-semibold text-success`}>🎯 LIVE Ontario Market Data</div>
+                <div className={`${TEXT_CLASSES.bodySmall} text-success opacity-80`}>
                   Investments calculated from real-time IESO demand data
                   {demandData.length > 0 && demandData[demandData.length - 1] &&
                     ` (${demandData[demandData.length - 1].values.demand_mw?.toLocaleString() || '0'} MW demand)`
@@ -311,8 +313,8 @@ export const InvestmentCards: React.FC = () => {
             <>
               <Briefcase className={`h-5 w-5 ${COLOR_SCHEMES.primary.accent}`} />
               <div className="flex-1 ml-4">
-                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.primary.text}`}>💡 Enhanced Analysis Mode</div>
-                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.primary.text} opacity-80`}>
+                <div className={`${TEXT_CLASSES.body} font-semibold text-primary`}>💡 Enhanced Analysis Mode</div>
+                <div className={`${TEXT_CLASSES.bodySmall} text-secondary opacity-80`}>
                   Using calculated models with Ontario market conditions
                 </div>
               </div>
@@ -321,10 +323,10 @@ export const InvestmentCards: React.FC = () => {
             <>
               <WifiOff className={`h-5 w-5 ${COLOR_SCHEMES.warning.accent}`} />
               <div className="flex-1 ml-4">
-                <div className={`${TEXT_CLASSES.body} font-semibold ${COLOR_SCHEMES.warning.text}`}>
+                <div className={`${TEXT_CLASSES.body} font-semibold text-warning`}>
                   {connectionStatus === 'connecting' ? '🔄 Connecting...' : '⚠️ Connection Issue'}
                 </div>
-                <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.warning.text} opacity-80`}>
+                <div className={`${TEXT_CLASSES.bodySmall} text-secondary opacity-80`}>
                   {connectionStatus === 'connecting'
                     ? 'Establishing connection to live market data'
                     : 'Using enhanced calculation models'

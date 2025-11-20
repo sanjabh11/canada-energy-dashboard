@@ -127,10 +127,10 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
 
   if (loading) {
     return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="card p-4">
         <div className="flex items-center gap-2">
           <Activity className="animate-spin text-gray-400" size={20} />
-          <span className="text-sm text-gray-600">Loading ops health...</span>
+          <span className="text-sm text-secondary">Loading ops health...</span>
         </div>
       </div>
     );
@@ -152,14 +152,14 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   // Inline variant - single line status
   if (variant === 'inline') {
     return (
-      <div className="inline-flex items-center gap-2 px-3 py-1 bg-white border rounded-full text-sm">
+      <div className="inline-flex items-center gap-2 px-3 py-1 bg-secondary border border-[var(--border-subtle)] rounded-full text-sm">
         {overallStatus === 'healthy' && <CheckCircle className="text-green-600" size={14} />}
         {overallStatus === 'degraded' && <AlertTriangle className="text-yellow-600" size={14} />}
         {overallStatus === 'critical' && <XCircle className="text-red-600" size={14} />}
-        <span className="font-medium">
+        <span className="font-medium text-primary">
           Ops: {overallStatus === 'healthy' ? 'Healthy' : overallStatus === 'degraded' ? 'Degraded' : 'Critical'}
         </span>
-        <span className="text-xs text-gray-500">
+        <span className="text-xs text-tertiary">
           {metrics.ingestion_uptime_percent.toFixed(1)}% uptime
         </span>
       </div>
@@ -262,8 +262,8 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
 
   // Full variant - detailed card
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm">
-      <div className="border-b border-gray-200 p-4">
+    <div className="card shadow-sm">
+      <div className="border-b border-[var(--border-subtle)] p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-lg ${
@@ -278,8 +278,8 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
               } size={24} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Operations Health</h2>
-              <p className="text-sm text-gray-500">SLO Metrics & System Status</p>
+              <h2 className="text-lg font-semibold text-primary">Operations Health</h2>
+              <p className="text-sm text-secondary">SLO Metrics & System Status</p>
             </div>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -298,12 +298,12 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
           <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.ingestion)}`}>
             <div className="flex items-center gap-2 mb-2">
               <Database className={getStatusColor(metrics.slo_status.ingestion)} size={20} />
-              <span className="font-medium text-gray-900">Ingestion Uptime</span>
+              <span className="font-medium text-primary">Ingestion Uptime</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="text-3xl font-bold text-primary mb-1">
               {metrics.ingestion_uptime_percent.toFixed(2)}%
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-secondary">
               Target: ≥99.5% • Data freshness: {metrics.data_freshness_minutes < 60
                 ? `${metrics.data_freshness_minutes}min`
                 : `${Math.floor(metrics.data_freshness_minutes / 60)}h ${metrics.data_freshness_minutes % 60}min`}
@@ -314,12 +314,12 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
           <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.forecast)}`}>
             <div className="flex items-center gap-2 mb-2">
               <TrendingUp className={getStatusColor(metrics.slo_status.forecast)} size={20} />
-              <span className="font-medium text-gray-900">Forecast Success</span>
+              <span className="font-medium text-primary">Forecast Success</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="text-3xl font-bold text-primary mb-1">
               {metrics.forecast_job_success_rate.toFixed(1)}%
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-secondary">
               Target: ≥98% • Error rate: {metrics.error_rate_percent.toFixed(1)}%
             </div>
           </div>
@@ -328,41 +328,41 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
           <div className={`border-2 rounded-lg p-4 ${getStatusBgColor(metrics.slo_status.latency)}`}>
             <div className="flex items-center gap-2 mb-2">
               <Zap className={getStatusColor(metrics.slo_status.latency)} size={20} />
-              <span className="font-medium text-gray-900">Avg Job Latency</span>
+              <span className="font-medium text-primary">Avg Job Latency</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="text-3xl font-bold text-primary mb-1">
               {metrics.avg_job_latency_ms}ms
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-secondary">
               Target: ≤500ms
             </div>
           </div>
 
           {/* Last 24h Jobs */}
-          <div className="border-2 border-gray-200 rounded-lg p-4 bg-gray-50">
+          <div className="border-2 border-[var(--border-subtle)] rounded-lg p-4 bg-secondary">
             <div className="flex items-center gap-2 mb-2">
-              <Clock className="text-gray-600" size={20} />
-              <span className="font-medium text-gray-900">Last 24h Jobs</span>
+              <Clock className="text-secondary" size={20} />
+              <span className="font-medium text-primary">Last 24h Jobs</span>
             </div>
-            <div className="text-3xl font-bold text-gray-900 mb-1">
+            <div className="text-3xl font-bold text-primary mb-1">
               {metrics.last_24h_jobs.successful}/{metrics.last_24h_jobs.total}
             </div>
-            <div className="text-xs text-gray-600">
+            <div className="text-xs text-secondary">
               Failed: {metrics.last_24h_jobs.failed}
             </div>
           </div>
         </div>
 
         {/* Last Purge Run */}
-        <div className="border-t border-gray-200 pt-4">
+        <div className="border-t border-[var(--border-subtle)] pt-4">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Last Data Purge:</span>
-            <span className="font-medium text-gray-900">
+            <span className="text-secondary">Last Data Purge:</span>
+            <span className="font-medium text-primary">
               {new Date(metrics.last_purge_run).toLocaleString()}
             </span>
           </div>
           {lastUpdate && (
-            <div className="flex items-center justify-between text-xs text-gray-500 mt-2">
+            <div className="flex items-center justify-between text-xs text-tertiary mt-2">
               <span>Last Updated:</span>
               <span>{lastUpdate.toLocaleString()}</span>
             </div>

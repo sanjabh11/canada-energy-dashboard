@@ -126,37 +126,51 @@ const StorageDispatchDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-primary p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-4xl font-bold text-primary">Battery Storage Dispatch</h1>
-              <p className="text-secondary mt-2">Rule-Based Optimization for Curtailment Mitigation</p>
+        <section className="hero-section">
+          <div className="hero-content">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{ background: 'rgba(56, 189, 248, 0.12)' }}
+                  >
+                    <Battery className="h-6 w-6 text-electric" />
+                  </div>
+                  <h1 className="hero-title">Battery Storage Dispatch</h1>
+                </div>
+                <p className="hero-subtitle">
+                  Rule-based optimization for curtailment mitigation
+                </p>
+              </div>
+              <div className="flex items-center gap-4">
+                <HelpButton id="storage.dispatch.overview" />
+                <select
+                  value={province}
+                  onChange={(e) => setProvince(e.target.value)}
+                  className="px-3 py-2 border border-[var(--border-medium)] rounded-lg bg-transparent text-primary text-sm focus:outline-none focus:ring-2 focus:ring-electric"
+                >
+                  {provinces.map((p) => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <HelpButton id="storage.dispatch.overview" />
           </div>
-          <select
-            value={province}
-            onChange={(e) => setProvince(e.target.value)}
-            className="px-4 py-2 border rounded-lg bg-white"
-          >
-            {provinces.map(p => (
-              <option key={p} value={p}>{p}</option>
-            ))}
-          </select>
-        </div>
+        </section>
 
         {/* Current State KPIs */}
         {batteryState && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="card border border-[var(--border-subtle)] shadow-sm p-6">
+            <div className="card card-metric border border-[var(--border-subtle)] shadow-sm p-6">
               <div className="flex items-center justify-between mb-2">
                 <Battery className="h-8 w-8 text-electric" />
-                <span className="text-sm text-secondary">Current SoC</span>
+                <span className="text-sm text-secondary metric-label">Current SoC</span>
               </div>
-              <div className="text-3xl font-bold text-electric">{batteryState.soc_percent.toFixed(1)}%</div>
+              <div className="text-3xl font-bold text-electric metric-value">{batteryState.soc_percent.toFixed(1)}%</div>
               <div className="text-sm text-tertiary mt-1">{batteryState.soc_mwh.toFixed(1)} / {batteryState.capacity_mwh} MWh</div>
               {alignmentMetrics?.soc_bounds_ok !== undefined && (
                 <div className="mt-2">
@@ -173,12 +187,12 @@ const StorageDispatchDashboard: React.FC = () => {
               )}
             </div>
 
-            <div className="card border border-[var(--border-subtle)] shadow-sm p-6">
+            <div className="card card-metric border border-[var(--border-subtle)] shadow-sm p-6">
               <div className="flex items-center justify-between mb-2">
                 <TrendingUp className="h-8 w-8 text-success" />
-                <span className="text-sm text-secondary">Renewable Alignment</span>
+                <span className="text-sm text-secondary metric-label">Renewable Alignment</span>
               </div>
-              <div className="text-3xl font-bold text-success">
+              <div className="text-3xl font-bold text-success metric-value">
                 {alignmentMetrics?.alignment_pct?.toFixed(1) || '0.0'}%
               </div>
               <div className="text-sm text-tertiary mt-1">
@@ -193,23 +207,23 @@ const StorageDispatchDashboard: React.FC = () => {
               )}
             </div>
 
-            <div className="card border border-[var(--border-subtle)] shadow-sm p-6">
+            <div className="card card-metric border border-[var(--border-subtle)] shadow-sm p-6">
               <div className="flex items-center justify-between mb-2">
                 <Activity className="h-8 w-8 text-electric" />
-                <span className="text-sm text-secondary">Total Actions</span>
+                <span className="text-sm text-secondary metric-label">Total Actions</span>
               </div>
-              <div className="text-3xl font-bold text-electric">
+              <div className="text-3xl font-bold text-electric metric-value">
                 {alignmentMetrics?.actions_count || logs.length}
               </div>
               <div className="text-sm text-tertiary mt-1">{chargeEvents} charge, {dischargeEvents} discharge</div>
             </div>
 
-            <div className="card border border-[var(--border-subtle)] shadow-sm p-6">
+            <div className="card card-metric border border-[var(--border-subtle)] shadow-sm p-6">
               <div className="flex items-center justify-between mb-2">
                 <DollarSign className="h-8 w-8 text-orange-600" />
-                <span className="text-sm text-secondary">Total Revenue</span>
+                <span className="text-sm text-secondary metric-label">Total Revenue</span>
               </div>
-              <div className="text-3xl font-bold text-orange-600">${totalRevenue.toFixed(0)}</div>
+              <div className="text-3xl font-bold text-orange-600 metric-value">${totalRevenue.toFixed(0)}</div>
               <div className="text-sm text-tertiary mt-1">Expected arbitrage</div>
             </div>
           </div>
@@ -287,7 +301,7 @@ const StorageDispatchDashboard: React.FC = () => {
                 <div className="flex items-start space-x-3">
                   {log.action === 'charge' && <Battery className="h-5 w-5 text-success mt-0.5" />}
                   {log.action === 'discharge' && <Zap className="h-5 w-5 text-orange-600 mt-0.5" />}
-                  {log.action === 'hold' && <Activity className="h-5 w-5 text-gray-600 mt-0.5" />}
+                  {log.action === 'hold' && <Activity className="h-5 w-5 text-secondary mt-0.5" />}
                   <div>
                     <div className="font-medium text-primary capitalize">{log.action} - {log.power_mw.toFixed(1)} MW</div>
                     <div className="text-sm text-secondary">{log.reason}</div>

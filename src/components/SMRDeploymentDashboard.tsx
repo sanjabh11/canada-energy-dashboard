@@ -98,58 +98,69 @@ const SMRDeploymentDashboard: React.FC = () => {
   const federalFunding = projects.reduce((sum: number, p: SMRProject) => sum + (p.federal_funding_cad || 0), 0);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-primary p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Atom size={32} />
-            <h1 className="text-3xl font-bold">SMR Deployment Tracker</h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(139, 92, 246, 0.12)' }}
+                >
+                  <Atom className="h-6 w-6 text-purple-400" />
+                </div>
+                <h1 className="hero-title">SMR Deployment Tracker</h1>
+              </div>
+              <p className="hero-subtitle">
+                Canada's Small Modular Reactor pipeline - OPG Darlington construction license issued April 2025
+              </p>
+            </div>
+            <HelpButton id="smr.overview" />
           </div>
-          <HelpButton id="smr.overview" />
         </div>
-        <p className="text-blue-100">Canada's Small Modular Reactor pipeline - OPG Darlington construction license issued April 2025</p>
-      </div>
+      </section>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="card shadow p-4 border-l-4 border-blue-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Projects</p>
-              <p className="text-2xl font-bold">{projects.length}</p>
+              <p className="metric-label">Total Projects</p>
+              <p className="metric-value">{projects.length}</p>
             </div>
-            <Atom className="text-blue-500" size={24} />
+            <Atom className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-green-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Capacity</p>
-              <p className="text-2xl font-bold">{totalCapacity} MW</p>
+              <p className="metric-label">Total Capacity</p>
+              <p className="metric-value">{totalCapacity} MW</p>
             </div>
-            <Zap className="text-green-500" size={24} />
+            <Zap className="h-6 w-6 text-success" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-purple-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Investment</p>
-              <p className="text-2xl font-bold">${(totalInvestment / 1000000000).toFixed(1)}B</p>
+              <p className="metric-label">Total Investment</p>
+              <p className="metric-value">${(totalInvestment / 1000000000).toFixed(1)}B</p>
             </div>
-            <DollarSign className="text-purple-500" size={24} />
+            <DollarSign className="h-6 w-6 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-4 border-l-4 border-orange-500">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Federal Funding</p>
-              <p className="text-2xl font-bold">${(federalFunding / 1000000).toFixed(0)}M</p>
+              <p className="metric-label">Federal Funding</p>
+              <p className="metric-value">${(federalFunding / 1000000).toFixed(0)}M</p>
             </div>
-            <CheckCircle className="text-orange-500" size={24} />
+            <CheckCircle className="h-6 w-6 text-success" />
           </div>
         </div>
       </div>
@@ -226,11 +237,11 @@ const SMRDeploymentDashboard: React.FC = () => {
             <tbody className="bg-secondary divide-y divide-gray-200">
               {projects.map((project: SMRProject) => (
                 <tr key={project.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-sm font-medium text-gray-900">{project.project_name}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.province_code}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.operator}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.reactor_model}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.capacity_mwe} MW</td>
+                  <td className="px-4 py-3 text-sm font-medium text-primary">{project.project_name}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.province_code}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.operator}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.reactor_model}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">{project.capacity_mwe} MW</td>
                   <td className="px-4 py-3">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                       project.status === 'Construction License Issued' ? 'bg-green-100 text-green-800' :
@@ -240,8 +251,8 @@ const SMRDeploymentDashboard: React.FC = () => {
                       {project.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-600">{project.cnsc_license_stage || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-600">
+                  <td className="px-4 py-3 text-sm text-secondary">{project.cnsc_license_stage || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm text-secondary">
                     {project.target_commercial_operation ? new Date(project.target_commercial_operation).getFullYear() : 'TBD'}
                   </td>
                 </tr>
@@ -258,17 +269,17 @@ const SMRDeploymentDashboard: React.FC = () => {
           {vendors.map((vendor: any) => (
             <div key={vendor.id} className="border rounded-lg p-4">
               <h4 className="font-semibold text-electric mb-2">{vendor.vendor_name}</h4>
-              <p className="text-sm text-gray-600 mb-1"><strong>Design:</strong> {vendor.reactor_design}</p>
-              <p className="text-sm text-gray-600 mb-1"><strong>Capacity:</strong> {vendor.capacity_mwe} MW</p>
-              <p className="text-sm text-gray-600 mb-1"><strong>CNSC VDR:</strong> {vendor.cnsc_vdr_status}</p>
-              <p className="text-sm text-gray-600"><strong>Generation:</strong> {vendor.reactor_generation}</p>
+              <p className="text-sm text-secondary mb-1"><strong>Design:</strong> {vendor.reactor_design}</p>
+              <p className="text-sm text-secondary mb-1"><strong>Capacity:</strong> {vendor.capacity_mwe} MW</p>
+              <p className="text-sm text-secondary mb-1"><strong>CNSC VDR:</strong> {vendor.cnsc_vdr_status}</p>
+              <p className="text-sm text-secondary"><strong>Generation:</strong> {vendor.reactor_generation}</p>
             </div>
           ))}
         </div>
       </div>
 
       {/* Data Source */}
-      <div className="text-sm text-gray-500 text-center">
+      <div className="text-sm text-tertiary text-center">
         Data Source: {data.metadata?.source || 'CNSC, OPG, SaskPower, NB Power'} | Last Updated: {new Date().toLocaleDateString()}
       </div>
     </div>

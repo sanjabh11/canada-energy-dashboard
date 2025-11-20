@@ -70,21 +70,21 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
 
       // Default professional error UI
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-          <div className="max-w-2xl w-full bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+        <div className="min-h-screen bg-primary flex items-center justify-center p-4">
+          <div className="max-w-2xl w-full card p-8">
             {/* Error Icon */}
             <div className="flex justify-center mb-6">
-              <div className="bg-red-50 p-4 rounded-full">
-                <AlertTriangle className="h-12 w-12 text-red-600" />
+              <div className="bg-red-900/20 p-4 rounded-full">
+                <AlertTriangle className="h-12 w-12 text-red-500" />
               </div>
             </div>
 
             {/* Error Message */}
             <div className="text-center mb-6">
-              <h1 className="text-2xl font-bold text-slate-900 mb-2">
+              <h1 className="text-2xl font-bold text-primary mb-2">
                 Something Went Wrong
               </h1>
-              <p className="text-slate-600">
+              <p className="text-secondary">
                 We encountered an unexpected error. Your work has been preserved,
                 and you can try reloading the page.
               </p>
@@ -101,7 +101,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               </button>
               <button
                 onClick={this.handleGoHome}
-                className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors"
+                className="flex items-center justify-center gap-2 bg-secondary hover:bg-[var(--bg-secondary-hover)] text-primary px-6 py-3 rounded-lg font-medium transition-colors"
               >
                 <Home className="h-4 w-4" />
                 Go to Home
@@ -111,15 +111,15 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             {/* Error Details (Collapsible) */}
             {import.meta.env.DEV && this.state.error && (
               <details className="mt-6">
-                <summary className="cursor-pointer text-sm font-medium text-slate-700 hover:text-slate-900">
+                <summary className="cursor-pointer text-sm font-medium text-secondary hover:text-primary">
                   Show Error Details (Development Mode)
                 </summary>
-                <div className="mt-3 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <pre className="text-xs text-slate-800 overflow-auto max-h-64">
+                <div className="mt-3 p-4 bg-secondary rounded-lg border border-[var(--border-subtle)]">
+                  <pre className="text-xs text-primary overflow-auto max-h-64">
                     {serializeError(this.state.error)}
                   </pre>
                   {this.state.errorInfo && (
-                    <pre className="text-xs text-slate-600 mt-3 overflow-auto max-h-32">
+                    <pre className="text-xs text-secondary mt-3 overflow-auto max-h-32">
                       {this.state.errorInfo.componentStack}
                     </pre>
                   )}
@@ -128,8 +128,8 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             )}
 
             {/* Support Info */}
-            <div className="mt-6 pt-6 border-t border-slate-200 text-center">
-              <p className="text-sm text-slate-500">
+            <div className="mt-6 pt-6 border-t border-[var(--border-subtle)] text-center">
+              <p className="text-sm text-tertiary">
                 If this problem persists, please contact support with the error details above.
               </p>
             </div>

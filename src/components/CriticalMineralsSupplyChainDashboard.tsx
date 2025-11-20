@@ -244,20 +244,27 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Package className="w-10 h-10 text-electric" />
-            <h1 className="text-4xl font-bold text-primary">
-              Critical Minerals Supply Chain Intelligence
-            </h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(56, 189, 248, 0.12)' }}
+                >
+                  <Package className="h-6 w-6 text-electric" />
+                </div>
+                <h1 className="hero-title">Critical Minerals Supply Chain Intelligence</h1>
+              </div>
+              <p className="hero-subtitle">
+                $6.4B federal investment · 30% tax credit · National security priority
+              </p>
+            </div>
+            <HelpButton id="minerals.overview" />
           </div>
-          <HelpButton id="minerals.overview" />
         </div>
-        <p className="text-lg text-secondary ml-13">
-          $6.4B Federal Investment | 30% Tax Credit | National Security Priority
-        </p>
-      </div>
+      </section>
 
       {/* Filters */}
       <div className="card p-4 mb-8">

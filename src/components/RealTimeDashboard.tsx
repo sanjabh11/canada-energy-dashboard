@@ -389,9 +389,9 @@ export const RealTimeDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary">
       {/* Hero Section */}
-      <section className="hero-section">
+      <section className="hero-section" aria-labelledby="realtime-hero-title">
         <div className="hero-content">
-          <h1 className="hero-title">
+          <h1 id="realtime-hero-title" className="hero-title">
             Real-Time Energy Dashboard
           </h1>
           <p className="hero-subtitle">

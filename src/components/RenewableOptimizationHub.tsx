@@ -391,16 +391,16 @@ const RenewableOptimizationHub: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-primary">
       <div className={CONTAINER_CLASSES.page}>
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              <h1 className="text-3xl font-bold text-primary mb-2">
                 Renewable Energy Optimization Hub
               </h1>
-              <p className="text-slate-600">
+              <p className="text-secondary">
                 AI-Powered Solar/Wind Forecasting, Curtailment Reduction & Storage Dispatch
               </p>
             </div>
@@ -429,7 +429,7 @@ const RenewableOptimizationHub: React.FC = () => {
 
           {/* Award Evidence Banner */}
           {awardMetrics && (
-            <div className="mt-6 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-200 rounded-lg p-6">
+            <div className="mt-6 bg-gradient-to-r from-blue-950/60 to-emerald-900/60 border border-blue-500/40 rounded-lg p-6">
               <div className="flex items-start space-x-3 mb-4">
                 <Target className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
@@ -439,8 +439,8 @@ const RenewableOptimizationHub: React.FC = () => {
               </div>
               
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-sm text-slate-600 mb-1">Solar Forecast MAE</div>
+                <div className="card p-4">
+                  <div className="text-sm text-secondary mb-1">Solar Forecast MAE</div>
                   <div className="text-2xl font-bold text-blue-600">{awardMetrics.solar_forecast_mae_percent}%</div>
                   <div className="text-xs text-green-600 flex items-center mt-1">
                     {awardMetrics.solar_forecast_mae_percent < 6 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
@@ -448,8 +448,8 @@ const RenewableOptimizationHub: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-sm text-slate-600 mb-1">Wind Forecast MAE</div>
+                <div className="card p-4">
+                  <div className="text-sm text-secondary mb-1">Wind Forecast MAE</div>
                   <div className="text-2xl font-bold text-green-600">{awardMetrics.wind_forecast_mae_percent}%</div>
                   <div className="text-xs text-green-600 flex items-center mt-1">
                     {awardMetrics.wind_forecast_mae_percent < 8 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
@@ -457,8 +457,8 @@ const RenewableOptimizationHub: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-sm text-slate-600 mb-1">Curtailment Saved</div>
+                <div className="card p-4">
+                  <div className="text-sm text-secondary mb-1">Curtailment Saved</div>
                   <div className="text-2xl font-bold text-purple-600">{awardMetrics.monthly_curtailment_avoided_mwh} MWh/mo</div>
                   <div className="text-xs text-green-600 flex items-center mt-1">
                     {awardMetrics.monthly_curtailment_avoided_mwh > 500 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
@@ -466,8 +466,8 @@ const RenewableOptimizationHub: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="bg-white rounded-lg p-4">
-                  <div className="text-sm text-slate-600 mb-1">Storage Efficiency</div>
+                <div className="card p-4">
+                  <div className="text-sm text-secondary mb-1">Storage Efficiency</div>
                   <div className="text-2xl font-bold text-orange-600">{awardMetrics.avg_round_trip_efficiency_percent}%</div>
                   <div className="text-xs text-green-600 flex items-center mt-1">
                     {awardMetrics.avg_round_trip_efficiency_percent > 88 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
@@ -517,8 +517,8 @@ const RenewableOptimizationHub: React.FC = () => {
         {activeTab === 'forecasts' && (
           <div className="space-y-8">
             {windAccuracyStats.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h3 className="text-xl font-semibold text-slate-900 mb-4">Wind Forecast Accuracy</h3>
+              <div className="card p-6">
+                <h3 className="text-xl font-semibold text-primary mb-4">Wind Forecast Accuracy</h3>
                 <ForecastAccuracyPanel
                   resourceType="wind"
                   province={province}
@@ -528,14 +528,16 @@ const RenewableOptimizationHub: React.FC = () => {
             )}
 
             {/* Forecast Chart */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-xl font-semibold text-slate-900 mb-4">Generation Forecasts by Horizon</h3>
+            <div className="card p-6">
+              <h3 className="text-xl font-semibold text-primary mb-4">Generation Forecasts by Horizon</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={forecastChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="horizon" />
-                  <YAxis label={{ value: 'MW', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip formatter={(value: number) => [`${value.toFixed(1)} MW`, '']} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
+                  <XAxis dataKey="horizon" stroke="#9ca3af" />
+                  <YAxis stroke="#9ca3af" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: '#1f2937', color: '#e5e7eb' }}
+                  />
                   <Legend />
                   <Bar dataKey="solar" fill="#f59e0b" name="Solar" />
                   <Bar dataKey="wind" fill="#10b981" name="Wind" />
@@ -546,7 +548,7 @@ const RenewableOptimizationHub: React.FC = () => {
             {/* Forecast Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {forecasts.slice(0, 4).map((forecast, index) => (
-                <div key={forecast.id || `forecast-${index}`} className="bg-white rounded-lg shadow p-6">
+                <div key={forecast.id || `forecast-${index}`} className="card p-6">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
                       {forecast.source_type === 'solar' ? (
@@ -554,7 +556,7 @@ const RenewableOptimizationHub: React.FC = () => {
                       ) : (
                         <Wind className="h-5 w-5 text-green-500" />
                       )}
-                      <span className="font-semibold text-slate-900 capitalize">
+                      <span className="font-semibold text-primary capitalize">
                         {forecast.source_type} - {forecast.forecast_horizon_hours}h
                       </span>
                     </div>
@@ -571,13 +573,13 @@ const RenewableOptimizationHub: React.FC = () => {
                     <div className="text-3xl font-bold text-blue-600">
                       {forecast.predicted_output_mw.toFixed(1)} MW
                     </div>
-                    <div className="text-sm text-slate-600 mt-1">
+                    <div className="text-sm text-secondary mt-1">
                       Range: {forecast.confidence_interval_lower_mw?.toFixed(1)} - {forecast.confidence_interval_upper_mw?.toFixed(1)} MW
                     </div>
                   </div>
                   
                   {forecast.weather_data && (
-                    <div className="text-xs text-slate-500 space-y-1">
+                    <div className="text-xs text-tertiary space-y-1">
                       {forecast.source_type === 'solar' && (
                         <>
                           <div>Cloud Cover: {forecast.weather_data.cloud_cover_pct?.toFixed(0)}%</div>
@@ -672,8 +674,8 @@ const RenewableOptimizationHub: React.FC = () => {
         )}
 
         {activeTab === 'curtailment' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-6">Curtailment Reduction Impact</h3>
+          <div className="card p-6">
+            <h3 className="text-xl font-semibold text-primary mb-6">Curtailment Reduction Impact</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-6">
@@ -698,8 +700,8 @@ const RenewableOptimizationHub: React.FC = () => {
         )}
 
         {activeTab === 'storage' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-xl font-semibold text-slate-900 mb-6">Battery Storage Optimization</h3>
+          <div className="card p-6">
+            <h3 className="text-xl font-semibold text-primary mb-6">Battery Storage Optimization</h3>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6">

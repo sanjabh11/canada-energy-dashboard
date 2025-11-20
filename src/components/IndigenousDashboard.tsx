@@ -466,31 +466,36 @@ export const IndigenousDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-primary">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="indigenous_dashboard" />
-        
-        <header className="mb-8">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold text-primary">
-                  Indigenous Energy Sovereignty Dashboard
-                </h1>
-                <HelpButton id="module.indigenous.overview" />
+
+        <section className="hero-section mb-8">
+          <div className="hero-content">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="hero-title">
+                    Indigenous Energy Sovereignty Dashboard
+                  </h1>
+                  <HelpButton id="module.indigenous.overview" />
+                </div>
+                <p className="hero-subtitle mt-2">
+                  Track consultations, traditional knowledge, and territory management
+                </p>
               </div>
-              <p className="text-secondary mt-2">
-                Track consultations, traditional knowledge, and territory management
-              </p>
-            </div>
-            <div className="self-start">
-              <HelpButton id="module.indigenous.governance" className="text-warning hover:bg-amber-500 border-amber-500" />
+              <div className="self-start">
+                <HelpButton
+                  id="module.indigenous.governance"
+                  className="text-warning hover:bg-amber-500 border-amber-500"
+                />
+              </div>
             </div>
           </div>
 
           {/* Governance Notice */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mt-4">
             <div className="flex items-start">
               <AlertTriangle className="h-5 w-5 text-warning mt-0.5 mr-3 flex-shrink-0" />
               <div>
@@ -504,40 +509,40 @@ export const IndigenousDashboard: React.FC = () => {
               </div>
             </div>
           </div>
-        </header>
+        </section>
 
         {/* Dashboard Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Total Territories</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Total Territories</h3>
               <HelpButton id="metric.indigenous.total_territories" />
             </div>
-            <p className="text-3xl font-bold text-electric mt-4">{dashboardMetrics.totalTerritories}</p>
+            <p className="text-3xl font-bold text-electric mt-2 metric-value">{dashboardMetrics.totalTerritories}</p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Ongoing Consultations</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Ongoing Consultations</h3>
               <HelpButton id="metric.indigenous.ongoing_consultations" />
             </div>
-            <p className="text-3xl font-bold text-warning mt-4">{dashboardMetrics.ongoingConsultations}</p>
+            <p className="text-3xl font-bold text-warning mt-2 metric-value">{dashboardMetrics.ongoingConsultations}</p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Completed</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Completed</h3>
               <HelpButton id="metric.indigenous.completed_consultations" />
             </div>
-            <p className="text-3xl font-bold text-success mt-4">{dashboardMetrics.completedConsultations}</p>
+            <p className="text-3xl font-bold text-success mt-2 metric-value">{dashboardMetrics.completedConsultations}</p>
           </div>
 
-          <div className="card shadow p-6">
-            <div className="flex items-start justify-between">
-              <h3 className="text-lg font-semibold text-primary">Completion Rate</h3>
+          <div className="card card-metric p-6">
+            <div className="flex items-start justify-between mb-2">
+              <h3 className="text-lg font-semibold text-primary metric-label">Completion Rate</h3>
               <HelpButton id="metric.indigenous.completion_rate" />
             </div>
-            <p className="text-3xl font-bold text-electric mt-4">
+            <p className="text-3xl font-bold text-electric mt-2 metric-value">
               {dashboardMetrics.completionRate.toFixed(1)}%
             </p>
           </div>

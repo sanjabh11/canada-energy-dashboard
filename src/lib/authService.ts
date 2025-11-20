@@ -17,6 +17,7 @@ export interface EdubizUser {
   ai_queries_today: number;
   stripe_customer_id?: string;
   subscription_status?: string;
+  trial_ends_at?: string;
   created_at: string;
 }
 

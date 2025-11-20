@@ -42,10 +42,10 @@ export const CONTAINER_CLASSES = {
   sectionSpacious: 'space-y-8',
 
   // Card containers
-  card: 'bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden',
-  cardHeader: 'p-6 border-b border-slate-200',
+  card: 'card overflow-hidden',
+  cardHeader: 'px-6 py-4 border-b border-[var(--border-subtle)]',
   cardBody: 'p-6',
-  cardFooter: 'p-6 border-t border-slate-200 bg-slate-50',
+  cardFooter: 'px-6 py-4 border-t border-[var(--border-subtle)] bg-secondary/60',
 
   // Grid layouts
   grid12: 'grid grid-cols-12 gap-6',
@@ -99,22 +99,22 @@ export const CHART_CONFIGS = {
 
 // Typography and text utilities
 export const TEXT_CLASSES = {
-  heading1: 'text-3xl lg:text-4xl font-bold text-slate-800 mb-4',
-  heading2: 'text-2xl lg:text-3xl font-semibold text-slate-800 mb-3',
-  heading3: 'text-xl font-semibold text-slate-800 mb-2',
-  heading4: 'text-lg font-semibold text-slate-800 mb-2',
+  heading1: 'text-3xl lg:text-4xl font-bold text-primary mb-4',
+  heading2: 'text-2xl lg:text-3xl font-semibold text-primary mb-3',
+  heading3: 'text-xl font-semibold text-primary mb-2',
+  heading4: 'text-lg font-semibold text-primary mb-2',
 
-  body: 'text-slate-700 leading-relaxed',
-  bodySmall: 'text-sm text-slate-600',
-  caption: 'text-xs text-slate-500',
+  body: 'text-secondary leading-relaxed',
+  bodySmall: 'text-sm text-tertiary',
+  caption: 'text-xs text-tertiary',
 
   // Status and data text
-  metric: 'text-2xl font-bold text-slate-800',
-  metricLabel: 'text-sm text-slate-600 font-medium',
+  metric: 'text-2xl font-bold text-primary',
+  metricLabel: 'text-sm text-secondary font-medium',
   status: 'text-sm font-medium',
 
   // Link and interactive text
-  link: 'text-blue-600 hover:text-blue-800 transition-colors',
+  link: 'text-electric hover:text-electric/80 transition-colors',
   button: 'text-sm font-medium'
 } as const;
 

@@ -188,20 +188,32 @@ const CarbonEmissionsDashboard: React.FC = () => {
   const dirtiestProvince = provinceData.length > 0 ? provinceData[0] : null;
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="min-h-screen bg-primary p-6 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-600 to-teal-600 rounded-lg p-6 text-white">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-3xl font-bold">Carbon Emissions Tracking</h1>
-          <HelpButton id="carbon-emissions" />
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(16, 185, 129, 0.12)' }}
+                >
+                  <Activity className="h-6 w-6 text-success" />
+                </div>
+                <h1 className="hero-title">Carbon Emissions Tracking</h1>
+              </div>
+              <p className="hero-subtitle">
+                Greenhouse gas emissions from electricity generation across Canada
+              </p>
+              <p className="text-sm text-tertiary mt-2">
+                Data Source: {data.metadata.source}
+              </p>
+            </div>
+            <HelpButton id="carbon-emissions" />
+          </div>
         </div>
-        <p className="text-green-100">
-          Greenhouse gas emissions from electricity generation across Canada
-        </p>
-        <p className="text-sm text-green-200 mt-2">
-          Data Source: {data.metadata.source}
-        </p>
-      </div>
+      </section>
 
       {/* Filters */}
       <div className="card shadow p-4">
@@ -239,63 +251,63 @@ const CarbonEmissionsDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Emissions ({selectedYear})</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">
+              <p className="metric-label">Total Emissions ({selectedYear})</p>
+              <p className="metric-value">
                 {currentYearEmissions.toFixed(1)} Mt
               </p>
-              <p className="text-xs text-gray-500 mt-1">Million tonnes CO2e</p>
+              <p className="text-xs text-tertiary mt-1">Million tonnes CO2e</p>
             </div>
-            <Factory className="text-gray-400" size={40} />
+            <Factory className="h-10 w-10 text-danger" />
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">Avg Grid Intensity</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">
+                <p className="metric-label">Avg Grid Intensity</p>
+                <p className="metric-value">
                   {data.statistics.avg_grid_intensity_gco2_per_kwh?.toFixed(0) ?? 'N/A'}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">gCO2/kWh</p>
+                <p className="text-xs text-tertiary mt-1">gCO2/kWh</p>
               </div>
               <HelpButton id="carbon.grid-intensity" className="ml-1" />
             </div>
-            <Zap className="text-yellow-500" size={40} />
+            <Zap className="h-10 w-10 text-electric" />
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Cleanest Province</p>
-              <p className="text-2xl font-bold text-success mt-1">
+              <p className="metric-label">Cleanest Province</p>
+              <p className="metric-value text-success">
                 {cleanestProvince?.province ?? 'N/A'}
               </p>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-tertiary mt-1">
                 {cleanestProvince?.intensity.toFixed(0)} gCO2/kWh
               </p>
             </div>
-            <Leaf className="text-green-500" size={40} />
+            <Leaf className="h-10 w-10 text-success" />
           </div>
         </div>
 
-        <div className="card shadow p-6">
+        <div className="card card-metric">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div>
-                <p className="text-sm text-gray-600">Avoided Emissions</p>
-                <p className="text-2xl font-bold text-teal-600 mt-1">
+                <p className="metric-label">Avoided Emissions</p>
+                <p className="metric-value text-electric">
                   {(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt
                 </p>
-                <p className="text-xs text-gray-500 mt-1">From clean energy</p>
+                <p className="text-xs text-tertiary mt-1">From clean energy</p>
               </div>
               <HelpButton id="carbon.avoided-emissions" className="ml-1" />
             </div>
-            <TrendingDown className="text-teal-500" size={40} />
+            <TrendingDown className="h-10 w-10 text-electric" />
           </div>
         </div>
       </div>

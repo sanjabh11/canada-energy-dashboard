@@ -275,20 +275,27 @@ export const AIDataCentreDashboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between gap-3 mb-2">
-          <div className="flex items-center gap-3">
-            <Server className="w-10 h-10 text-electric" />
-            <h1 className="text-4xl font-bold text-primary">
-              AI Data Centre Energy Dashboard
-            </h1>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(56, 189, 248, 0.12)' }}
+                >
+                  <Server className="h-6 w-6 text-electric" />
+                </div>
+                <h1 className="hero-title">AI Data Centre Energy Dashboard</h1>
+              </div>
+              <p className="hero-subtitle">
+                Alberta's $100B AI Strategy · AESO interconnection queue crisis management
+              </p>
+            </div>
+            <HelpButton id="ai-datacentre.overview" />
           </div>
-          <HelpButton id="ai-datacentre.overview" />
         </div>
-        <p className="text-lg text-secondary ml-13">
-          Alberta's $100B AI Strategy | AESO Queue Crisis Management
-        </p>
-      </div>
+      </section>
 
       {/* Filters and Tab Switcher */}
       <div className="card p-4 mb-8">

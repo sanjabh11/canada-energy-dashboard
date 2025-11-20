@@ -279,55 +279,70 @@ export const MineralsDashboard: React.FC = () => {
       <PartialFeatureWarning featureId="minerals_supply_chain" />
       
       {/* Dashboard Header */}
-      <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="bg-secondary0 p-3 rounded-lg">
-            <Globe className="h-8 w-8 text-white" />
-          </div>
-          <div className="flex items-center gap-3 flex-1">
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-primary">Critical Minerals Supply Chain Monitor</h1>
-              <p className="text-secondary">Global supply chain risk assessment and market intelligence for critical minerals</p>
+      <section className="hero-section">
+        <div className="hero-content">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-3 mb-3">
+                <div
+                  className="w-12 h-12 rounded-lg flex items-center justify-center"
+                  style={{ background: 'rgba(56, 189, 248, 0.12)' }}
+                >
+                  <Globe className="h-6 w-6 text-electric" />
+                </div>
+                <h1 className="hero-title">Critical Minerals Supply Chain Monitor</h1>
+              </div>
+              <p className="hero-subtitle">
+                Global supply chain risk assessment and market intelligence for critical minerals
+              </p>
             </div>
             <HelpButton id="minerals.overview" />
           </div>
+
+          {/* Key Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card card-metric">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="metric-label">Total Minerals</p>
+                  <p className="metric-value">{stats.totalMinerals}</p>
+                </div>
+                <Database className="h-6 w-6 text-electric" />
+              </div>
+            </div>
+
+            <div className="card card-metric">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="metric-label">High Risk</p>
+                  <p className="metric-value text-danger">{stats.highRiskCount}</p>
+                </div>
+                <AlertTriangle className="h-6 w-6 text-danger" />
+              </div>
+            </div>
+
+            <div className="card card-metric">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="metric-label">Avg Risk Score</p>
+                  <p className="metric-value text-warning">{stats.averageRiskScore}/10</p>
+                </div>
+                <TrendingUp className="h-6 w-6 text-warning" />
+              </div>
+            </div>
+
+            <div className="card card-metric">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="metric-label">Last Update</p>
+                  <p className="metric-value text-sm">{stats.lastUpdate}</p>
+                </div>
+                <Clock className="h-6 w-6 text-electric" />
+              </div>
+            </div>
+          </div>
         </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <Database className="h-6 w-6 text-electric" />
-            <div>
-              <div className="text-sm text-electric font-medium">Total Minerals</div>
-              <div className="text-xl font-bold text-purple-800">{stats.totalMinerals}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <AlertTriangle className="h-6 w-6 text-danger" />
-            <div>
-              <div className="text-sm text-danger font-medium">High Risk</div>
-              <div className="text-xl font-bold text-red-800">{stats.highRiskCount}</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-orange-50 rounded-lg">
-            <TrendingUp className="h-6 w-6 text-orange-600" />
-            <div>
-              <div className="text-sm text-orange-600 font-medium">Avg Risk Score</div>
-              <div className="text-xl font-bold text-orange-800">{stats.averageRiskScore}/10</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <Clock className="h-6 w-6 text-electric" />
-            <div>
-              <div className="text-sm text-electric font-medium">Last Update</div>
-              <div className="text-sm font-bold text-blue-800">{stats.lastUpdate}</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      </section>
 
       {/* Active Alerts */}
       {data.alerts.length > 0 && (
@@ -378,7 +393,7 @@ export const MineralsDashboard: React.FC = () => {
                     className={`px-3 py-1 rounded-full text-sm border ${
                       selectedMineral === item.mineral
                         ? 'bg-secondary0 text-white border-purple-500'
-                        : 'bg-white text-secondary border-[var(--border-subtle)] hover:bg-secondary'
+                        : 'bg-elevated text-secondary border-[var(--border-subtle)] hover:bg-secondary'
                     }`}
                   >
                     {item.mineral}

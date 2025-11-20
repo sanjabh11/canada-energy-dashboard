@@ -107,7 +107,7 @@ export const ContactPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-primary">
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white shadow-lg">
         <div className={`${CONTAINER_CLASSES.page} py-16`}>
@@ -140,16 +140,16 @@ export const ContactPage: React.FC = () => {
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-8">
             <div>
-              <h2 className="text-2xl font-bold text-slate-800 mb-6">Get In Touch</h2>
+              <h2 className="text-2xl font-bold text-primary mb-6">Get In Touch</h2>
               <div className="space-y-6">
                 <div className="flex items-start gap-4">
                   <div className="bg-blue-100 p-3 rounded-lg">
                     <Mail className="h-6 w-6 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Email</h3>
-                    <p className="text-slate-600 mb-1">info@canada-energy.net</p>
-                    <p className="text-sm text-slate-500">We respond within 24 hours</p>
+                    <h3 className="font-semibold text-primary mb-1">Email</h3>
+                    <p className="text-secondary mb-1">info@canada-energy.net</p>
+                    <p className="text-sm text-tertiary">We respond within 24 hours</p>
                   </div>
                 </div>
 
@@ -158,9 +158,9 @@ export const ContactPage: React.FC = () => {
                     <Phone className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Phone</h3>
-                    <p className="text-slate-600 mb-1">+1 (555) 123-4567</p>
-                    <p className="text-sm text-slate-500">Mon-Fri, 9AM-6PM EST</p>
+                    <h3 className="font-semibold text-primary mb-1">Phone</h3>
+                    <p className="text-secondary mb-1">+1 (555) 123-4567</p>
+                    <p className="text-sm text-tertiary">Mon-Fri, 9AM-6PM EST</p>
                   </div>
                 </div>
 
@@ -169,9 +169,9 @@ export const ContactPage: React.FC = () => {
                     <MapPin className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Office</h3>
-                    <p className="text-slate-600 mb-1">Toronto, Ontario, Canada</p>
-                    <p className="text-sm text-slate-500">Serving all Canadian provinces</p>
+                    <h3 className="font-semibold text-primary mb-1">Office</h3>
+                    <p className="text-secondary mb-1">Toronto, Ontario, Canada</p>
+                    <p className="text-sm text-tertiary">Serving all Canadian provinces</p>
                   </div>
                 </div>
 
@@ -180,37 +180,37 @@ export const ContactPage: React.FC = () => {
                     <Clock className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-slate-800 mb-1">Response Time</h3>
-                    <p className="text-slate-600 mb-1">Within 24 hours</p>
-                    <p className="text-sm text-slate-500">Emergency support available</p>
+                    <h3 className="font-semibold text-primary mb-1">Response Time</h3>
+                    <p className="text-secondary mb-1">Within 24 hours</p>
+                    <p className="text-sm text-tertiary">Emergency support available</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Quick Contact Options */}
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Quick Options</h3>
+            <div className="card p-6">
+              <h3 className="text-lg font-semibold text-primary mb-4">Quick Options</h3>
               <div className="space-y-3">
-                <button className="w-full flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors text-left">
+                <button className="w-full flex items-center gap-3 p-3 border border-[var(--border-subtle)] rounded-lg hover:bg-secondary transition-colors text-left">
                   <FileText className="h-5 w-5 text-blue-600" />
                   <div>
-                    <div className="font-medium text-slate-800">Request API Access</div>
-                    <div className="text-sm text-slate-500">For developers and enterprises</div>
+                    <div className="font-medium text-primary">Request API Access</div>
+                    <div className="text-sm text-tertiary">For developers and enterprises</div>
                   </div>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors text-left">
+                <button className="w-full flex items-center gap-3 p-3 border border-[var(--border-subtle)] rounded-lg hover:bg-secondary transition-colors text-left">
                   <Users className="h-5 w-5 text-green-600" />
                   <div>
-                    <div className="font-medium text-slate-800">Partnership Inquiry</div>
-                    <div className="text-sm text-slate-500">For government and industry</div>
+                    <div className="font-medium text-primary">Partnership Inquiry</div>
+                    <div className="text-sm text-tertiary">For government and industry</div>
                   </div>
                 </button>
-                <button className="w-full flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:border-slate-300 hover:bg-slate-50 transition-colors text-left">
+                <button className="w-full flex items-center gap-3 p-3 border border-[var(--border-subtle)] rounded-lg hover:bg-secondary transition-colors text-left">
                   <MessageSquare className="h-5 w-5 text-purple-600" />
                   <div>
-                    <div className="font-medium text-slate-800">Technical Support</div>
-                    <div className="text-sm text-slate-500">For platform issues</div>
+                    <div className="font-medium text-primary">Technical Support</div>
+                    <div className="text-sm text-tertiary">For platform issues</div>
                   </div>
                 </button>
               </div>
@@ -219,8 +219,8 @@ export const ContactPage: React.FC = () => {
 
           {/* Contact Form */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-8 border border-slate-200">
-              <h2 className="text-2xl font-bold text-slate-800 mb-6">Send us a Message</h2>
+            <div className="card p-8">
+              <h2 className="text-2xl font-bold text-primary mb-6">Send us a Message</h2>
 
               {submitStatus === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
@@ -245,15 +245,15 @@ export const ContactPage: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-secondary mb-2">
                       Full Name *
                     </label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.name ? 'border-red-300' : 'border-slate-300'
+                      className={`w-full px-4 py-3 rounded-lg bg-secondary text-primary placeholder:text-tertiary focus:ring-2 focus:ring-electric focus:border-transparent transition-colors border ${
+                        errors.name ? 'border-red-400' : 'border-[var(--border-medium)]'
                       }`}
                       placeholder="Your full name"
                     />
@@ -261,15 +261,15 @@ export const ContactPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-secondary mb-2">
                       Email Address *
                     </label>
                     <input
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                        errors.email ? 'border-red-300' : 'border-slate-300'
+                      className={`w-full px-4 py-3 rounded-lg bg-secondary text-primary placeholder:text-tertiary focus:ring-2 focus:ring-electric focus:border-transparent transition-colors border ${
+                        errors.email ? 'border-red-400' : 'border-[var(--border-medium)]'
                       }`}
                       placeholder="your.email@example.com"
                     />
@@ -279,26 +279,26 @@ export const ContactPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-secondary mb-2">
                       Company/Organization
                     </label>
                     <input
                       type="text"
                       value={formData.company}
                       onChange={(e) => handleInputChange('company', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 rounded-lg bg-secondary text-primary placeholder:text-tertiary border border-[var(--border-medium)] focus:ring-2 focus:ring-electric focus:border-transparent transition-colors"
                       placeholder="Your organization"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-2">
+                    <label className="block text-sm font-medium text-secondary mb-2">
                       Inquiry Type
                     </label>
                     <select
                       value={formData.inquiryType}
                       onChange={(e) => handleInputChange('inquiryType', e.target.value)}
-                      className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      className="w-full px-4 py-3 rounded-lg bg-secondary text-primary border border-[var(--border-medium)] focus:ring-2 focus:ring-electric focus:border-transparent transition-colors"
                     >
                       <option value="general">General Inquiry</option>
                       <option value="technical">Technical Support</option>
@@ -310,15 +310,15 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-secondary mb-2">
                     Subject *
                   </label>
                   <input
                     type="text"
                     value={formData.subject}
                     onChange={(e) => handleInputChange('subject', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.subject ? 'border-red-300' : 'border-slate-300'
+                    className={`w-full px-4 py-3 rounded-lg bg-secondary text-primary placeholder:text-tertiary focus:ring-2 focus:ring-electric focus:border-transparent transition-colors border ${
+                      errors.subject ? 'border-red-400' : 'border-[var(--border-medium)]'
                     }`}
                     placeholder="Brief subject line"
                   />
@@ -326,15 +326,15 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-secondary mb-2">
                     Message *
                   </label>
                   <textarea
                     rows={6}
                     value={formData.message}
                     onChange={(e) => handleInputChange('message', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors ${
-                      errors.message ? 'border-red-300' : 'border-slate-300'
+                    className={`w-full px-4 py-3 rounded-lg bg-secondary text-primary placeholder:text-tertiary focus:ring-2 focus:ring-electric focus:border-transparent transition-colors border ${
+                      errors.message ? 'border-red-400' : 'border-[var(--border-medium)]'
                     }`}
                     placeholder="Please describe your inquiry in detail..."
                   />
@@ -366,37 +366,40 @@ export const ContactPage: React.FC = () => {
         {/* FAQ Section */}
         <div className="mt-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-slate-800 mb-4">Frequently Asked Questions</h2>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            <h2 className="text-3xl font-bold text-primary mb-4">Frequently Asked Questions</h2>
+            <p className="text-lg text-secondary max-w-2xl mx-auto">
               Find quick answers to common questions about our platform and services.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {faqs.map((faq, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 hover:shadow-md transition-shadow">
-                <h3 className="font-semibold text-slate-800 mb-3">{faq.question}</h3>
-                <p className="text-slate-600 text-sm leading-relaxed">{faq.answer}</p>
+              <div
+                key={index}
+                className="card p-6 hover:shadow-md transition-shadow text-left"
+              >
+                <h3 className="font-semibold text-primary mb-3">{faq.question}</h3>
+                <p className="text-secondary text-sm leading-relaxed">{faq.answer}</p>
               </div>
             ))}
           </div>
         </div>
 
         {/* Support Resources */}
-        <div className="mt-16 bg-white rounded-2xl shadow-lg p-8 border border-slate-200 text-center">
-          <h2 className="text-2xl font-bold text-slate-800 mb-4">Need More Help?</h2>
-          <p className="text-slate-600 mb-6 max-w-2xl mx-auto">
+        <div className="mt-16 card text-center p-8">
+          <h2 className="text-2xl font-bold text-primary mb-4">Need More Help?</h2>
+          <p className="text-secondary mb-6 max-w-2xl mx-auto">
             Explore our comprehensive documentation, API guides, and community resources
             to get the most out of the platform.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-lg font-medium transition-colors">
+            <button className="bg-secondary hover:bg-secondary/80 text-primary px-6 py-3 rounded-lg font-medium transition-colors border border-[var(--border-subtle)]">
               View Documentation
             </button>
-            <button className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-6 py-3 rounded-lg font-medium transition-colors">
+            <button className="bg-secondary hover:bg-secondary/80 text-electric px-6 py-3 rounded-lg font-medium transition-colors border border-[var(--border-subtle)]">
               API Reference
             </button>
-            <button className="bg-green-100 hover:bg-green-200 text-green-700 px-6 py-3 rounded-lg font-medium transition-colors">
+            <button className="bg-secondary hover:bg-secondary/80 text-success px-6 py-3 rounded-lg font-medium transition-colors border border-[var(--border-subtle)]">
               Community Forum
             </button>
           </div>

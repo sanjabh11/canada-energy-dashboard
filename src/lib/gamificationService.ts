@@ -181,7 +181,14 @@ export async function getBadgeProgress(userId: string): Promise<{ progress: Badg
 export async function awardBadge(
   userId: string,
   badgeSlug: string,
-  progressData?: { current?: number; total?: number; completed_ids?: string[] }
+  progressData?: {
+    current?: number;
+    total?: number;
+    completed_ids?: string[];
+    moduleId?: string;
+    trackSlug?: string;
+    trackId?: string;
+  }
 ): Promise<{ userBadge: UserBadge | null; alreadyEarned: boolean; error: Error | null }> {
   try {
     // Get badge by slug

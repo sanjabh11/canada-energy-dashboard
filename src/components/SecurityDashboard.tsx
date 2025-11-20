@@ -332,22 +332,32 @@ const SecurityDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-secondary">
+    <div className="min-h-screen bg-primary">
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="security_assessment" />
-        
-        <header className="mb-8">
-          <div className="flex items-center gap-4 mb-2">
-            <h1 className="text-3xl font-bold text-primary">
-              Security Assessment Dashboard
-            </h1>
-            <HelpButton id="security.overview" />
+
+        <section className="hero-section">
+          <div className="hero-content">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center"
+                    style={{ background: 'rgba(248, 113, 113, 0.12)' }}
+                  >
+                    <Shield className="h-6 w-6 text-danger" />
+                  </div>
+                  <h1 className="hero-title">Security Assessment Dashboard</h1>
+                </div>
+                <p className="hero-subtitle">
+                  Threat modeling, incident monitoring, and security mitigation strategies
+                </p>
+              </div>
+              <HelpButton id="security.overview" />
+            </div>
           </div>
-          <p className="text-secondary">
-            Threat modeling, incident monitoring, and security mitigation strategies
-          </p>
-        </header>
+        </section>
 
         {/* Security Status Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

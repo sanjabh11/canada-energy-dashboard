@@ -116,7 +116,7 @@ export function ProtectedRoute({
         <UpgradeModal
           isOpen={showUpgradeModal}
           onClose={() => setShowUpgradeModal(false)}
-          targetTier={requiredTier}
+          targetTier={requiredTier === 'free' ? 'edubiz' : requiredTier}
         />
       </>
     );
