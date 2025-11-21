@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { logApiUsage } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -27,6 +28,27 @@ function getCorsHeaders(req: Request) {
   };
 }
 
+function isApiKeyValid(req: Request): boolean {
+  const headerKey = req.headers.get('apikey') || '';
+  const authHeader = req.headers.get('authorization') || '';
+  let token = '';
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    token = authHeader.slice(7).trim();
+  }
+
+  const allowedKeys = [
+    Deno.env.get('EDGE_SUPABASE_ANON_KEY') || '',
+    Deno.env.get('SUPABASE_ANON_KEY') || '',
+  ].filter(Boolean);
+
+  if (allowedKeys.length === 0) {
+    // If no public anon key is configured, do not hard-fail on API key
+    return true;
+  }
+
+  return allowedKeys.includes(headerKey) || (token && allowedKeys.includes(token));
+}
+
 // Input validation
 function validateProvince(input: string | null): string {
   const province = (input || 'AB').toUpperCase().trim();
@@ -44,13 +66,59 @@ function validateStatus(input: string | null): string | null {
 
 serve(async (req: Request) => {
   const corsHeaders = getCorsHeaders(req);
+  const start = Date.now();
+  const url = new URL(req.url);
+  const ipAddress =
+    req.headers.get('x-forwarded-for') ||
+    req.headers.get('cf-connecting-ip') ||
+    null;
+  const apiKey = req.headers.get('apikey');
+
+  async function safeLog(statusCode: number, extra?: Record<string, unknown>) {
+    try {
+      await logApiUsage({
+        endpoint: 'api-v2-ai-datacentres',
+        method: req.method,
+        statusCode,
+        apiKey: apiKey || null,
+        ipAddress,
+        responseTimeMs: Date.now() - start,
+        extra: {
+          province: url.searchParams.get('province') || undefined,
+          status: url.searchParams.get('status') || undefined,
+          ...extra,
+        },
+      });
+    } catch (_err) {
+      // Logging failures should never affect the main response path
+    }
+  }
 
   if (req.method === 'OPTIONS') {
+    await safeLog(204);
     return new Response(null, { headers: corsHeaders, status: 204 });
   }
 
+  if (req.method !== 'GET') {
+    await safeLog(405);
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 405,
+    });
+  }
+
+  if (!isApiKeyValid(req)) {
+    await safeLog(401);
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      message: 'Missing or invalid API key',
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 401,
+    });
+  }
+
   try {
-    const url = new URL(req.url);
 
     // Validate inputs
     const province = validateProvince(url.searchParams.get('province'));
@@ -130,6 +198,9 @@ serve(async (req: Request) => {
         strategic_context: 'Alberta $100B AI Data Centre Strategy',
       }
     };
+    await safeLog(200, {
+      data_centres_count: dataCentres?.length || 0,
+    });
 
     return new Response(JSON.stringify(response), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -137,8 +208,9 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('AI Data Centres API error:', err);
+    await safeLog(500, { error: String(err) });
     return new Response(JSON.stringify({
-      error: String(err),
+      error: 'Internal server error',
       message: 'Failed to fetch AI data centres data'
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },

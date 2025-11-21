@@ -5,6 +5,20 @@ A comprehensive real-time energy data visualization platform for Canadian energy
 
 ---
 
+## 🎯 **Latest Implementation Status (November 21, 2025 – Regulatory Intelligence & Security)**
+
+- **Regulatory Intelligence Module**: four hardened v2 Edge APIs for AI data centres, carbon emissions, IESO interconnection queue, and CER compliance (`api-v2-ai-datacentres`, `api-v2-carbon-emissions`, `api-v2-ieso-queue`, `api-v2-cer-compliance`).
+- **Stage 1 – API key & input validation**: anon key–based access checks (`apikey` + `Authorization: Bearer`) and strict parameter validation (province, year, status, type) on all four endpoints.
+- **Stage 2 – RLS + read-only posture**: Row Level Security enabled and SELECT-only policies on underlying tables (`ai_data_centres`, `ai_dc_power_consumption`, `aeso_interconnection_queue`, `alberta_grid_capacity`, `ai_dc_emissions`, `provincial_ghg_emissions`, `generation_source_emissions`, `carbon_reduction_targets`, `avoided_emissions`, `ieso_interconnection_queue`, `ieso_procurement_programs`, `provincial_interconnection_queues`, `cer_compliance_records`, `climate_policies`, `api_cache`).
+- **Stage 3 – telemetry scaffold**: `api_usage` table + `_shared/rateLimit.ts` helper added; logging-only integration live for `api-v2-ai-datacentres` (per-request endpoint, status code, IP, and basic filters).
+- **Climate Policy integration**: `CERComplianceDashboard` exposed as a named sub-view inside `CanadianClimatePolicyDashboard` (Regulatory Intelligence cluster: Climate Policy + Carbon + CER).
+
+**Pending (Stage 3 – can be implemented post-deploy):**
+
+- Enforced per-IP / per-user rate limits (HTTP 429) for v2 APIs.
+- JWT-based user authentication for non-public / per-account features (current v2 regulatory APIs are public-but-keyed open data).
+- Extending telemetry logging to `api-v2-carbon-emissions`, `api-v2-ieso-queue`, and `api-v2-cer-compliance`.
+
 ## 🎯 **Latest Implementation Status (November 13, 2025)**
 
 ### 🏆 **PHASE 8: TIER 1 COMPLETION - 80% PARETO THRESHOLD ACHIEVED** ✅ NEW
@@ -219,6 +233,21 @@ http://localhost:5173
    - 5 programs: Federal OHPA ($15,000), Ontario GHPP ($7,100), BC CleanBC ($6,000), Quebec Chauffez Vert ($17,775), Alberta Program ($1,000)
    - Columns: program_name, province_code, max_rebate_amount, eligibility_criteria, program_type, launch_date, funding_remaining
    - Real data: ✅ From federal and provincial government websites
+
+**Regulatory Intelligence & Climate Policy Tables (Stage 2 – Nov 21, 2025):**
+
+1. `provincial_ghg_emissions` – Annual/quarterly GHG emissions by province/sector (feeds `api-v2-carbon-emissions`).
+2. `generation_source_emissions` – Lifecycle emissions factors by generation source (coal, gas, hydro, nuclear, etc.).
+3. `carbon_reduction_targets` – Federal and provincial carbon targets and interim milestones.
+4. `avoided_emissions` – Estimated avoided emissions from clean energy and efficiency programs.
+5. `provincial_emissions_summary` – Materialized summary view for emissions dashboards.
+6. `ieso_interconnection_queue` – Ontario interconnection queue entries powering AI + grid dashboards and `api-v2-ieso-queue`.
+7. `ieso_procurement_programs` – IESO LT1 / E-LT1 / LT2 program metadata and contracted capacity.
+8. `provincial_interconnection_queues` – Normalized interconnection queue data for non-IESO provinces.
+9. `cer_compliance_records` – Canada Energy Regulator compliance and enforcement records (feeds `api-v2-cer-compliance`).
+10. `climate_policies` – Structured climate policy catalogue for the Canadian Climate Policy dashboard.
+11. `api_cache` – JSON cache layer for CER compliance and other high-latency external sources.
+12. `api_usage` – API telemetry table for future rate limiting and usage analytics (Stage 3 scaffold).
 
 **IMPORTANT:** Run SQL fix scripts before production:
 ```sql

@@ -26,15 +26,58 @@ interface ComplianceRecord {
   source: string;
 }
 
+function isApiKeyValid(req: Request): boolean {
+  const headerKey = req.headers.get('apikey') || '';
+  const authHeader = req.headers.get('authorization') || '';
+  let token = '';
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    token = authHeader.slice(7).trim();
+  }
+
+  const allowedKeys = [
+    Deno.env.get('EDGE_SUPABASE_ANON_KEY') || '',
+    Deno.env.get('SUPABASE_ANON_KEY') || '',
+  ].filter(Boolean);
+
+  if (allowedKeys.length === 0) {
+    // If no public anon key is configured, do not hard-fail on API key
+    return true;
+  }
+
+  return allowedKeys.includes(headerKey) || (token && allowedKeys.includes(token));
+}
+
 serve(async (req: Request) => {
+  const allowedOrigins = (Deno.env.get('CORS_ALLOWED_ORIGINS') || 'http://localhost:5173').split(',');
+  const origin = req.headers.get('origin') || '';
+  const isAllowed = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
+
   const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': isAllowed ? (origin || allowedOrigins[0]) : allowedOrigins[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Vary': 'Origin',
   };
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders, status: 204 });
+  }
+
+  if (req.method !== 'GET') {
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 405,
+    });
+  }
+
+  if (!isApiKeyValid(req)) {
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      message: 'Missing or invalid API key',
+    }), {
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
+      status: 401,
+    });
   }
 
   try {
@@ -44,6 +87,21 @@ serve(async (req: Request) => {
     const province = url.searchParams.get('province');
     const incidentType = url.searchParams.get('type');
     const useCache = url.searchParams.get('cache') !== 'false';
+
+    const textParamPattern = /^[A-Za-z0-9_\-\s]{0,64}$/;
+    if (province && !textParamPattern.test(province)) {
+      return new Response(JSON.stringify({ error: 'Invalid province parameter' }), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        status: 400,
+      });
+    }
+
+    if (incidentType && !textParamPattern.test(incidentType)) {
+      return new Response(JSON.stringify({ error: 'Invalid type parameter' }), {
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
+        status: 400,
+      });
+    }
 
     // Check cache first (1 hour TTL for compliance data)
     if (useCache) {
@@ -103,7 +161,7 @@ serve(async (req: Request) => {
   } catch (err) {
     console.error('CER Compliance API error:', err);
     return new Response(JSON.stringify({ 
-      error: String(err),
+      error: 'Internal server error',
       message: 'Failed to fetch CER compliance data'
     }), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
