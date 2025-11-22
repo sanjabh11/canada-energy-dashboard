@@ -14,6 +14,7 @@ import {
   Shield, TrendingUp, Battery, Factory, Home
 } from 'lucide-react';
 import { digitalTwin, type SystemState, type SimulationScenario, type SimulationResult } from '../lib/digitalTwin';
+import { getGridOptimizationRecommendations, type GridOptimizationResponse } from '../lib/llmClient';
 import { HelpButton } from './HelpButton';
 
 interface DigitalTwinState {
@@ -49,6 +50,12 @@ export const DigitalTwinDashboard: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<string>('normal_operations');
   const [stressTestActive, setStressTestActive] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [aiGoal, setAiGoal] = useState<'reliability' | 'emissions' | 'cost' | 'balanced'>('balanced');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiInsights, setAiInsights] = useState<GridOptimizationResponse | null>(null);
   
   // Real-time system metrics
   const [metrics, setMetrics] = useState<SystemMetrics>({
@@ -95,50 +102,83 @@ export const DigitalTwinDashboard: React.FC = () => {
 
   const loadInitialSystemState = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Simulate loading real system state
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const mockSystemState: SystemState = {
-        timestamp: new Date().toISOString(),
-        total_generation_mw: 18500,
-        total_demand_mw: 17200,
-        reserve_margin_percent: 7.6,
-        frequency_hz: 60.02,
-        system_stability: 'stable',
-        renewable_percentage: 68.5,
-        carbon_intensity_g_co2_per_kwh: 145,
-        economic_dispatch_cost_cad: 2850000,
-        nodes: [],
-        flows: [],
-        weather_impact: {
-          temperature_effect_mw: -450,
-          wind_generation_mw: 3200,
-          solar_generation_mw: 1800,
-          precipitation_impact: 0.02
-        }
-      };
-
-      setSystemState(mockSystemState);
-      updateMetrics(mockSystemState);
-      
-      // Initialize time series data
-      const initialData = Array.from({ length: 24 }, (_, i) => ({
-        time: `${i.toString().padStart(2, '0')}:00`,
-        generation: 18500 + Math.random() * 2000 - 1000,
-        demand: 17200 + Math.random() * 1500 - 750,
-        renewable: 68.5 + Math.random() * 10 - 5,
-        frequency: 60.0 + Math.random() * 0.1 - 0.05,
-        cost: 2850000 + Math.random() * 500000 - 250000
+      const state = await digitalTwin.getCurrentSystemState('canada');
+      setSystemState(state);
+      updateMetrics(state);
+      setTwinState(prev => ({
+        ...prev,
+        systemHealth:
+          state.system_stability === 'stable'
+            ? 'optimal'
+            : state.system_stability === 'stressed'
+              ? 'warning'
+              : 'critical'
       }));
-      setTimeSeriesData(initialData);
-      
-    } catch (error) {
-      console.error('Error loading system state:', error);
+
+      const initialPoint = {
+        time: new Date(state.timestamp).toLocaleTimeString(),
+        generation: state.total_generation_mw,
+        demand: state.total_demand_mw,
+        renewable: state.renewable_percentage,
+        frequency: state.frequency_hz,
+        cost: state.economic_dispatch_cost_cad
+      };
+      setTimeSeriesData([initialPoint]);
+      setIsDemoMode(false);
+    } catch (err) {
+      console.error('Error loading system state:', err);
+      setError(err instanceof Error ? err.message : String(err));
+
+      if (!systemState) {
+        const now = new Date();
+        const demoState: SystemState = {
+          timestamp: now.toISOString(),
+          total_generation_mw: 18500,
+          total_demand_mw: 17200,
+          reserve_margin_percent: 7.6,
+          frequency_hz: 60.0,
+          system_stability: 'stable',
+          renewable_percentage: 68.5,
+          carbon_intensity_g_co2_per_kwh: 145,
+          economic_dispatch_cost_cad: 2850000,
+          nodes: [],
+          flows: [],
+          weather_impact: {
+            temperature_effect_mw: 0,
+            wind_generation_mw: 0,
+            solar_generation_mw: 0,
+            precipitation_impact: 0
+          }
+        };
+
+        setSystemState(demoState);
+        updateMetrics(demoState);
+        setTwinState(prev => ({
+          ...prev,
+          systemHealth: 'good'
+        }));
+
+        const initialData = Array.from({ length: 24 }, (_, i) => ({
+          time: `${i.toString().padStart(2, '0')}:00`,
+          generation: demoState.total_generation_mw + Math.random() * 2000 - 1000,
+          demand: demoState.total_demand_mw + Math.random() * 1500 - 750,
+          renewable: demoState.renewable_percentage + Math.random() * 10 - 5,
+          frequency: demoState.frequency_hz + Math.random() * 0.1 - 0.05,
+          cost: demoState.economic_dispatch_cost_cad + Math.random() * 500000 - 250000
+        }));
+        setTimeSeriesData(initialData);
+        setIsDemoMode(true);
+      }
     } finally {
       setLoading(false);
     }
   }, [updateMetrics]);
+
+  useEffect(() => {
+    loadInitialSystemState();
+  }, [loadInitialSystemState]);
 
   const startSimulation = useCallback(() => {
     stopSimulation();
@@ -176,6 +216,18 @@ export const DigitalTwinDashboard: React.FC = () => {
       }));
     }, interval);
   }, [stopSimulation, twinState.simulationSpeed]);
+
+  useEffect(() => {
+    if (twinState.isRunning) {
+      startSimulation();
+    } else {
+      stopSimulation();
+    }
+
+    return () => {
+      stopSimulation();
+    };
+  }, [twinState.isRunning, twinState.simulationSpeed, startSimulation, stopSimulation]);
 
   const runStressTest = async (stressType: 'extreme_weather' | 'cyber_attack' | 'equipment_failure') => {
     setStressTestActive(true);
@@ -225,6 +277,40 @@ export const DigitalTwinDashboard: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const generateAiInsights = useCallback(async () => {
+    setAiLoading(true);
+    setAiError(null);
+    console.log('[DT_LLM] Requesting grid optimization', {
+      goal: aiGoal,
+      scenario: selectedScenario,
+      region: 'canada'
+    });
+
+    try {
+      const result = await getGridOptimizationRecommendations(
+        'digital_twin/system_state',
+        'now',
+        {
+          goal: aiGoal,
+          scenario: selectedScenario,
+          region: 'canada'
+        }
+      );
+      setAiInsights(result);
+      console.log('[DT_LLM] Grid optimization result', result);
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        setAiLoading(false);
+        return;
+      }
+      console.error('[DT_LLM] Grid optimization error', err);
+      setAiError(err instanceof Error ? err.message : String(err));
+      setAiInsights(null);
+    } finally {
+      setAiLoading(false);
+    }
+  }, [aiGoal, selectedScenario]);
 
   const getHealthColor = (health: string) => {
     switch (health) {
@@ -313,6 +399,17 @@ export const DigitalTwinDashboard: React.FC = () => {
             </div>
           </div>
         </div>
+
+        {error && (
+          <div className="mt-2 text-sm text-yellow-200">
+            <p>Digital Twin live data unavailable; running in demo simulation mode.</p>
+          </div>
+        )}
+        {!error && isDemoMode && (
+          <div className="mt-2 text-sm text-yellow-200">
+            <p>Digital Twin running in demo simulation mode (no live backend connection).</p>
+          </div>
+        )}
 
         {/* Real-time System Metrics */}
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -465,6 +562,76 @@ export const DigitalTwinDashboard: React.FC = () => {
                 )}
                 {loading ? 'Analyzing...' : 'Run Analysis'}
               </button>
+            </div>
+
+            <div className="mt-6 border-t border-[var(--border-subtle)] pt-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-medium text-primary">AI Optimization Insights</h4>
+                <select
+                  value={aiGoal}
+                  onChange={(e) => setAiGoal(e.target.value as 'reliability' | 'emissions' | 'cost' | 'balanced')}
+                  className="px-2 py-1 border border-[var(--border-medium)] rounded-lg text-sm"
+                >
+                  <option value="balanced" className="text-black">Balanced</option>
+                  <option value="reliability" className="text-black">Reliability</option>
+                  <option value="emissions" className="text-black">Emissions</option>
+                  <option value="cost" className="text-black">Cost</option>
+                </select>
+              </div>
+              <button
+                onClick={generateAiInsights}
+                disabled={aiLoading}
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors mb-3"
+              >
+                {aiLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <Target size={16} />
+                )}
+                {aiLoading ? 'Generating insights...' : 'Generate AI Insights'}
+              </button>
+              {aiError && (
+                <div className="text-xs text-yellow-700 bg-yellow-50 border border-yellow-200 rounded px-2 py-1 mb-2">
+                  {aiError}
+                </div>
+              )}
+              {!aiError && aiInsights && (
+                <div className="space-y-3 max-h-56 overflow-y-auto text-sm">
+                  <p className="text-secondary">{aiInsights.summary}</p>
+                  {Array.isArray(aiInsights.recommendations) && aiInsights.recommendations.length > 0 && (
+                    <ul className="space-y-2">
+                      {aiInsights.recommendations.map((rec) => (
+                        <li key={rec.id} className="border border-[var(--border-subtle)] rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-primary">{rec.type}</span>
+                            <span className={`px-2 py-1 text-xs rounded-full font-medium ${
+                              rec.priority === 'high'
+                                ? 'bg-red-100 text-red-800'
+                                : rec.priority === 'medium'
+                                  ? 'bg-yellow-100 text-yellow-800'
+                                  : 'bg-green-100 text-green-800'
+                            }`}>
+                              {rec.priority.toUpperCase()} PRIORITY
+                            </span>
+                          </div>
+                          <p className="text-xs text-secondary mb-2">{rec.description}</p>
+                          <div className="flex flex-wrap items-center gap-2 text-[11px] text-secondary">
+                            <span className="px-2 py-0.5 bg-secondary rounded-full">
+                              Impact: {rec.expectedImpact}
+                            </span>
+                            <span className="px-2 py-0.5 bg-secondary rounded-full">
+                              Time: {rec.implementationTime}h
+                            </span>
+                            <span className="px-2 py-0.5 bg-secondary rounded-full">
+                              Confidence: {Math.round(rec.confidence)}%
+                            </span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

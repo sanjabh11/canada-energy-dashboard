@@ -152,3 +152,39 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/api-v2-ccus-projects/deno.json"
 entrypoint = "./functions/api-v2-ccus-projects/index.ts"
+
+[functions.llm]
+enabled = true
+verify_jwt = false
+import_map = "./functions/llm/deno.json"
+entrypoint = "./functions/llm/index.ts"
+
+[functions.llm-lite]
+enabled = true
+verify_jwt = false
+import_map = "./functions/llm-lite/deno.json"
+entrypoint = "./functions/llm-lite/index.ts"
+
+[functions.household-advisor]
+enabled = true
+verify_jwt = false
+import_map = "./functions/household-advisor/deno.json"
+entrypoint = "./functions/household-advisor/index.ts"
+
+[functions.digital-twin]
+enabled = true
+verify_jwt = false
+import_map = "./functions/digital-twin/deno.json"
+entrypoint = "./functions/digital-twin/index.ts"
+
+[functions.api-v2-climate-policy]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-climate-policy/deno.json"
+entrypoint = "./functions/api-v2-climate-policy/index.ts"
+
+[functions.api-v2-ccus]
+enabled = true
+verify_jwt = false
+import_map = "./functions/api-v2-ccus/deno.json"
+entrypoint = "./functions/api-v2-ccus/index.ts"

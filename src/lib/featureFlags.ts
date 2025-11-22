@@ -168,6 +168,21 @@ export const FEATURE_REGISTRY: Record<string, FeatureConfig> = {
     route: '/dashboard',
     component: 'EnergyDataDashboard',
   },
+
+  householdAdvisor: {
+    id: 'household_advisor',
+    name: 'My Energy AI Advisor',
+    status: 'acceptable',
+    rating: 4.2,
+    enabled: true,
+    limitations: [
+      'Household profile and usage history stored in local browser storage only',
+      'Gemini API integration depends on environment configuration',
+      'Onboarding flow required before full recommendations are available',
+    ],
+    route: '/my-energy-ai',
+    component: 'HouseholdEnergyAdvisor',
+  },
   
   stakeholderCoordination: {
     id: 'stakeholder_coordination',
@@ -279,6 +294,36 @@ export const FEATURE_REGISTRY: Record<string, FeatureConfig> = {
     ],
     route: '/grid',
     component: 'GridOptimizationDashboard',
+  },
+
+  digitalTwin: {
+    id: 'digital_twin',
+    name: 'Digital Twin Energy Ecosystem',
+    status: 'partial',
+    rating: 3.8,
+    enabled: true,
+    limitations: [
+      'Uses real system state from provincial generation and demand tables but scenario simulations are still simplified',
+      'Stress testing scenarios do not yet feed back into operational controls',
+      'AI optimization panel depends on LLM edge function configuration',
+    ],
+    route: '/digital-twin',
+    component: 'DigitalTwinDashboard',
+  },
+
+  climatePolicy: {
+    id: 'climate_policy',
+    name: 'Canadian Climate Policy Dashboard',
+    status: 'partial',
+    rating: 3.7,
+    enabled: true,
+    limitations: [
+      'Policy catalog coverage is focused on federal and major provincial instruments',
+      'Some sectoral policies are summarized, not fully modeled',
+      'Alignment with real-time emissions data still in progress',
+    ],
+    route: '/climate-policy',
+    component: 'CanadianClimatePolicyDashboard',
   },
 
   // ========== DEFERRED (<3.5/5) - Not Available in Phase 1 ==========

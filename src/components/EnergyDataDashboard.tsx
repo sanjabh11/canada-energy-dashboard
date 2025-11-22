@@ -29,7 +29,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
@@ -50,6 +50,8 @@ import VPPAggregationDashboard from './VPPAggregationDashboard';
 import HeatPumpDashboard from './HeatPumpDashboard';
 import CCUSProjectsDashboard from './CCUSProjectsDashboard';
 import CarbonEmissionsDashboard from './CarbonEmissionsDashboard';
+import DigitalTwinDashboard from './DigitalTwinDashboard';
+import CanadianClimatePolicyDashboard from './CanadianClimatePolicyDashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -80,7 +82,9 @@ const helpIdByTab: Record<string, string> = {
   VPPAggregation: 'page.vpp-aggregation',
   HeatPumps: 'page.heat-pumps',
   CCUSProjects: 'page.ccus-projects',
-  CarbonDashboard: 'page.carbon-emissions'
+  CarbonDashboard: 'page.carbon-emissions',
+  DigitalTwin: 'page.digital-twin',
+  ClimatePolicy: 'page.climate-policy'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -96,6 +100,9 @@ const tabToFeatureMap: Record<string, string> = {
   'Stakeholders': 'stakeholder_coordination',
   'GridOptimization': 'grid_optimization',
   'Security': 'security_assessment',
+  'DigitalTwin': 'digital_twin',
+  'HouseholdAdvisor': 'household_advisor',
+  'ClimatePolicy': 'climate_policy',
   // Home, Provinces, Trends, Features always shown
 };
 
@@ -114,7 +121,11 @@ interface FilterOptions {
   selectedFields?: Record<string, string[]>;
 }
 
-export const EnergyDataDashboard: React.FC = () => {
+interface EnergyDataDashboardProps {
+  initialTab?: string;
+}
+
+export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initialTab }) => {
   const [state, setState] = useState<DashboardState>({
     activeDataset: 'provincial_generation',
     data: [],
@@ -128,7 +139,7 @@ export const EnergyDataDashboard: React.FC = () => {
   const [filters, setFilters] = useState<FilterOptions>({});
   const [showFilters, setShowFilters] = useState(false);
   const [maxRows, setMaxRows] = useState(5000);
-  const [activeTab, setActiveTab] = useState<string>('Dashboard');
+  const [activeTab, setActiveTab] = useState<string>(initialTab || 'Dashboard');
 
   const loadDataset = useCallback(async (datasetKey: DatasetType, forceStream = false) => {
     setState(prev => ({
@@ -239,6 +250,8 @@ export const EnergyDataDashboard: React.FC = () => {
     { id: 'HeatPumps', label: 'Heat Pumps', icon: Thermometer }, // ⭐⭐⭐
     { id: 'CurtailmentAnalytics', label: 'Curtailment Reduction', icon: Wind }, // ⭐⭐⭐
     { id: 'GridOptimization', label: 'Grid Ops', icon: Activity }, // ⭐⭐⭐
+    { id: 'DigitalTwin', label: 'Digital Twin', icon: Cpu }, // ⭐⭐⭐
+    { id: 'ClimatePolicy', label: 'Climate Policy', icon: Scale }, // ⭐⭐⭐
     // 2-Star Features (Limited monetization)
     { id: 'Resilience', label: 'Resilience', icon: Shield }, // ⭐⭐
     { id: 'Innovation', label: 'Innovation', icon: Zap } // ⭐⭐
@@ -1247,13 +1260,23 @@ export const EnergyDataDashboard: React.FC = () => {
               <CarbonEmissionsDashboard />
             )}
 
+            {/* Digital Twin Dashboard */}
+            {activeTab === 'DigitalTwin' && (
+              <DigitalTwinDashboard />
+            )}
+
+            {/* Climate Policy Dashboard */}
+            {activeTab === 'ClimatePolicy' && (
+              <CanadianClimatePolicyDashboard />
+            )}
+
             {/* Features Tab */}
             {activeTab === 'Features' && (
               <FeatureAvailability />
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard', 'DigitalTwin', 'ClimatePolicy'].includes(activeTab) && (
               <div className="card border border-[var(--border-subtle)] p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-secondary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

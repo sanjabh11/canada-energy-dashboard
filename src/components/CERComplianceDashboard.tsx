@@ -18,6 +18,7 @@ import {
   type CERComplianceRecord,
   type CERMarketOversight
 } from '../lib/canadianRegulatory';
+import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
 
 interface ComplianceMetrics {
@@ -73,20 +74,9 @@ export const CERComplianceDashboard: React.FC = () => {
     setLoading(true);
     try {
       // Fetch from CER compliance API
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-cer-compliance?province=${filters.province || ''}&type=${filters.facilityType || ''}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API returned ${response.status}`);
-      }
-
-      const apiData = await response.json();
+      const { json: apiData } = await fetchEdgeJson([
+        `api-v2-cer-compliance?province=${filters.province || ''}&type=${filters.facilityType || ''}`
+      ]);
       console.log('[CER] Loaded from API:', apiData);
 
       // Transform API data to dashboard format

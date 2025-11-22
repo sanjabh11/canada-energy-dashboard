@@ -67,8 +67,13 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
     return <div className="bg-secondary border border-yellow-200 rounded-lg p-4">No queue data available</div>;
   }
 
-  const queue = data.queue || [];
-  const programs = data.procurement_programs || [];
+  const rawQueue = data.queue || [];
+  const queue: QueueProject[] = rawQueue.map((p: any) => ({
+    ...p,
+    developer: p.developer ?? p.proponent ?? '',
+    in_service_date: p.in_service_date ?? p.proposed_in_service_date ?? ''
+  }));
+  const programs: ProcurementProgram[] = (data.programs || data.procurement_programs || []) as ProcurementProgram[];
 
   // Capacity by project type
   const typeData = queue.reduce((acc: any[], p: QueueProject) => {
@@ -185,7 +190,7 @@ const GridInterconnectionQueueDashboard: React.FC = () => {
             LT RFP Procurement Programs
           </h3>
           <div className="space-y-4">
-            {programs.slice(0, 4).map((program: ProcurementProgram, idx: number) => (
+            {programs.map((program: ProcurementProgram, idx: number) => (
               <div key={idx} className="border rounded-lg p-4">
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="font-semibold text-electric">{program.program_name}</h4>

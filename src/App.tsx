@@ -23,6 +23,10 @@ function App() {
             <Routes>
               <Route path="/" element={<EnergyDataDashboard />} />
               <Route path="/dashboard" element={<EnergyDataDashboard />} />
+              <Route path="/digital-twin" element={<EnergyDataDashboard initialTab="DigitalTwin" />} />
+              <Route path="/climate-policy" element={<EnergyDataDashboard initialTab="ClimatePolicy" />} />
+              <Route path="/my-energy-ai" element={<EnergyDataDashboard initialTab="HouseholdAdvisor" />} />
+              <Route path="/household-advisor" element={<EnergyDataDashboard initialTab="HouseholdAdvisor" />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/profile" element={<ProfilePage />} />
