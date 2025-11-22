@@ -234,7 +234,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
     { id: 'CarbonDashboard', label: 'Carbon Emissions', icon: Leaf }, // ⭐⭐⭐⭐⭐ PROMOTED
     { id: 'CCUSProjects', label: 'CCUS Projects', icon: Factory }, // ⭐⭐⭐⭐⭐ PROMOTED
     { id: 'Investment', label: 'Investment', icon: TrendingUp }, // ⭐⭐⭐⭐⭐ PROMOTED
-    { id: 'RenewableOptimization', label: 'Renewable Forecasts', icon: Sun }, // ⭐⭐⭐⭐ PROMOTED
+    { id: 'RenewableOptimization', label: 'Renewable Energy Optimization Hub', icon: Sun }, // ⭐⭐⭐⭐ PROMOTED
     { id: 'HouseholdAdvisor', label: 'My Energy AI', icon: Home } // ⭐⭐⭐
   ];
 

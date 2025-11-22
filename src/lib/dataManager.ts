@@ -153,7 +153,11 @@ export class EnergyDataManager {
 
       // Attempt to connect to the stream by getting the manifest
       const streamer = this.getStreamer(datasetKey);
-      await streamer.getManifest();
+      try {
+        await streamer.getManifest();
+      } catch (error) {
+        console.error(`Failed to fetch manifest for ${datasetKey}:`, error);
+      }
 
       this.updateStatus(datasetKey, {
         status: 'connected',

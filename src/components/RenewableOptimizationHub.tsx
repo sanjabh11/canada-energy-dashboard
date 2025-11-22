@@ -391,7 +391,7 @@ const RenewableOptimizationHub: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-primary">
+    <div className="min-h-screen bg-slate-900 dashboard-analytics">
       <div className={CONTAINER_CLASSES.page}>
         {/* Header */}
         <header className="mb-8">

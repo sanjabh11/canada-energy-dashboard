@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Search, Lightbulb, Target, Zap, Eye, Briefcase, Clock, DollarSign, Users, Award } from 'lucide-react';
 import { trlEngine, type TRLEvaluation, InnovationCategory } from '../lib/technologyReadiness';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
 import { getSupabaseConfig } from '../lib/config';
 
 // Mock innovation data for demonstration
@@ -115,8 +115,6 @@ export const InnovationSearch: React.FC = () => {
           return;
         }
 
-        const supabase = createClient(url, anonKey);
-        
         // Fetch innovations from database
         const { data, error } = await supabase
           .from('innovations')

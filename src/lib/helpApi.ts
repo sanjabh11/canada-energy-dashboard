@@ -3,6 +3,13 @@
 // Provides typed interfaces and error handling
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from './config';
 
+const HELP_EDGE_ENABLED: boolean = (() => {
+  const raw = (import.meta as any)?.env?.VITE_ENABLE_HELP_FUNCTION;
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'string') return raw.toLowerCase() === 'true';
+  return false;
+})();
+
 export interface HelpManifestItem {
   id: string;
   short_text: string;
@@ -23,6 +30,14 @@ export interface HelpContent {
 export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
   const base = getEdgeBaseUrl();
   const isSupabaseBase = !!base && /supabase\.co\b/.test(base);
+
+  // If help edge function is not explicitly enabled, skip network calls entirely
+  if (!HELP_EDGE_ENABLED) {
+    if (import.meta.env.DEV) {
+      console.warn('Help manifest fetch skipped: VITE_ENABLE_HELP_FUNCTION is not enabled.');
+    }
+    return [];
+  }
 
   // Avoid noisy CORS errors in local dev when Supabase Edge is disabled
   if (isSupabaseBase && !isEdgeFetchEnabled()) {
@@ -54,6 +69,13 @@ export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
 export async function fetchHelpById(id: string): Promise<HelpContent | null> {
   const base = getEdgeBaseUrl();
   const isSupabaseBase = !!base && /supabase\.co\b/.test(base);
+
+  if (!HELP_EDGE_ENABLED) {
+    if (import.meta.env.DEV) {
+      console.warn(`Help content fetch skipped for ID "${id}": VITE_ENABLE_HELP_FUNCTION is not enabled.`);
+    }
+    return null;
+  }
 
   if (isSupabaseBase && !isEdgeFetchEnabled()) {
     if (import.meta.env.DEV) {

@@ -50,6 +50,15 @@ export function isEdgeFetchEnabled(): boolean {
   
   if (DEBUG) debug.log('isEdgeFetchEnabled - raw value:', raw, 'type:', typeof raw);
 
+  // Always disable Edge fetches on localhost to avoid noisy CORS failures during development
+  if (typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if (host === 'localhost' || host === '127.0.0.1') {
+      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, returning false');
+      return false;
+    }
+  }
+
   // If explicitly set, honor that setting (works for both localhost and production)
   if (typeof raw === 'boolean') {
     if (DEBUG) debug.log('isEdgeFetchEnabled - returning boolean:', raw);
@@ -59,15 +68,6 @@ export function isEdgeFetchEnabled(): boolean {
     const result = raw.toLowerCase() === 'true';
     if (DEBUG) debug.log('isEdgeFetchEnabled - returning string parsed:', result);
     return result;
-  }
-
-  // Default: disable in local dev to avoid noisy CORS failures unless explicitly opted-in
-  if (typeof window !== 'undefined') {
-    const host = window.location?.hostname || '';
-    if (host === 'localhost' || host === '127.0.0.1') {
-      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, returning false');
-      return false;
-    }
   }
 
   // For production deployments without explicit setting, enable if Supabase is configured

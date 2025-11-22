@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
+import { isEdgeFetchEnabled } from '../lib/config';
 
 interface HydrogenFacility {
   id: string;
@@ -159,6 +160,13 @@ export const HydrogenEconomyDashboard: React.FC = () => {
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    
+    if (!isEdgeFetchEnabled()) {
+      console.warn('HydrogenEconomyDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+      setLoading(false);
+      setData(null);
+      return;
+    }
 
     try {
       const queryParams = new URLSearchParams();
@@ -190,6 +198,22 @@ export const HydrogenEconomyDashboard: React.FC = () => {
         <div className="text-center">
           <Fuel className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-pulse" />
           <p className="text-lg text-secondary">Loading Hydrogen Economy Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isEdgeFetchEnabled() && !error && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary">
+        <div className="text-center">
+          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+          <p className="text-lg text-secondary">
+            Live Hydrogen Hub analytics are disabled in this environment (Supabase Edge offline or not configured).
+          </p>
+          <p className="text-sm text-secondary mt-2">
+            In production, configure Supabase Edge functions and set VITE_ENABLE_EDGE_FETCH=true to enable real data.
+          </p>
         </div>
       </div>
     );

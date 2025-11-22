@@ -11,9 +11,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Zap, MapPin, Car, Battery, TrendingUp, BarChart3 as BarChartIcon } from 'lucide-react';
+import { Zap, MapPin, Car, Battery, TrendingUp, BarChart3 as BarChartIcon, AlertTriangle } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
+import { isEdgeFetchEnabled } from '../lib/config';
 
 interface ChargingStation {
   id: string;
@@ -45,6 +46,7 @@ const EVChargingDashboard: React.FC = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [edgeDisabled, setEdgeDisabled] = useState(false);
 
   useEffect(() => {
     fetchEVData();
@@ -53,6 +55,16 @@ const EVChargingDashboard: React.FC = () => {
   const fetchEVData = async () => {
     try {
       setLoading(true);
+      setEdgeDisabled(false);
+
+      if (!isEdgeFetchEnabled()) {
+        console.warn('EVChargingDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+        setEdgeDisabled(true);
+        setError(null);
+        setLoading(false);
+        return;
+      }
+
       const result = await fetchEdgeJson(['api-v2-ev-charging', 'api/ev-charging'], {});
       setData(result.json);
       setError(null);
@@ -66,6 +78,19 @@ const EVChargingDashboard: React.FC = () => {
 
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="text-lg">Loading EV charging data...</div></div>;
+  }
+
+  if (edgeDisabled && !error) {
+    return (
+      <div className="bg-secondary border border-amber-200 rounded-lg p-4 alert-banner-warning">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="text-yellow-600" size={20} />
+          <span className="text-sm">
+            Live EV charging data is disabled in this environment (Supabase Edge offline or not configured). Configure Supabase Edge and set VITE_ENABLE_EDGE_FETCH=true to enable real data.
+          </span>
+        </div>
+      </div>
+    );
   }
 
   if (error) {

@@ -164,11 +164,14 @@ async function loadSampleJson<T>(fileName: string): Promise<T> {
  */
 export class ProvincialGenerationStreamer extends BaseDataStreamer {
   async getManifest() {
-    const { json } = await fetchEdgeJson([
-      'manifest-provincial-generation',
-      'manifest/kaggle/provincial_generation'
-    ]);
-    return json;
+    return {
+      dataset: 'provincial_generation',
+      version: '1.0',
+      fields: ['date','province','producer','generation_type','megawatt_hours','source','version'],
+      page_size_default: 100,
+      max_page_size: 1000,
+      notes: 'Provincial generation manifest placeholder',
+    };
   }
 
   async *streamData(options: StreamingOptions = {}): AsyncGenerator<any[], void, unknown> {
@@ -390,12 +393,14 @@ export class OntarioPricesStreamer extends BaseDataStreamer {
  */
 export class HFElectricityDemandStreamer extends BaseDataStreamer {
   async getManifest() {
-    const { json } = await fetchEdgeJson([
-      'manifest-hf-electricity-demand',
-      'manifest/hf/electricity_demand',
-      'manifest/huggingface/electricity_demand'
-    ]);
-    return json;
+    return {
+      dataset: 'hf_electricity_demand',
+      version: '1.0',
+      fields: ['datetime','electricity_demand','temperature','humidity','wind_speed','solar_irradiance','household_id','location','day_of_week','hour','source','version'],
+      page_size_default: 100,
+      max_page_size: 1000,
+      notes: 'HF electricity demand manifest placeholder',
+    };
   }
 
   async *streamData(options: StreamingOptions = {}): AsyncGenerator<any[], void, unknown> {

@@ -128,7 +128,7 @@ export const DigitalTwinDashboard: React.FC = () => {
       setTimeSeriesData([initialPoint]);
       setIsDemoMode(false);
     } catch (err) {
-      console.error('Error loading system state:', err);
+      console.warn('Error loading system state:', err);
       setError(err instanceof Error ? err.message : String(err));
 
       if (!systemState) {

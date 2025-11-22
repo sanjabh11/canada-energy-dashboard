@@ -21,13 +21,13 @@ import {
   Users, DollarSign, TrendingUp, Briefcase, Building2,
   FileText, Award, CheckCircle, AlertTriangle, Home
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient';
+import { getSupabaseConfig } from '../lib/config';
 import { HelpButton } from './HelpButton';
 
 // Supabase client
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-const supabase = supabaseUrl && supabaseKey ? createClient(supabaseUrl, supabaseKey) : null;
+const { url, anonKey } = getSupabaseConfig();
+const hasSupabaseConfig = Boolean(url && anonKey);
 
 // ============================================================================
 // INTERFACES
@@ -107,7 +107,7 @@ const IndigenousEconomicDashboard: React.FC = () => {
   }, []);
 
   async function fetchData() {
-    if (!supabase) {
+    if (!hasSupabaseConfig) {
       setError('Supabase not configured');
       setLoading(false);
       return;

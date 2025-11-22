@@ -23,6 +23,14 @@ const router = createBrowserRouter(
   [
     { path: '/', element: <EnergyDataDashboard /> },
     { path: '/dashboard', element: <EnergyDataDashboard /> },
+    // Renewable Energy Optimization Hub
+    { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
+    { path: '/renewable-hub', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
+    // Curtailment Reduction Analytics
+    { path: '/curtailment-reduction', element: <EnergyDataDashboard initialTab="CurtailmentAnalytics" /> },
+    // Infrastructure Resilience / Climate Scenario Modeling
+    { path: '/resilience', element: <EnergyDataDashboard initialTab="Resilience" /> },
+    // Existing feature routes
     { path: '/digital-twin', element: <EnergyDataDashboard initialTab="DigitalTwin" /> },
     { path: '/climate-policy', element: <EnergyDataDashboard initialTab="ClimatePolicy" /> },
     { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
@@ -35,10 +43,7 @@ const router = createBrowserRouter(
     { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
     { path: '/modules/:moduleId', element: <ModulePlayer /> },
     { path: '/pricing', element: <PricingPage /> }
-  ],
-  {
-    future: routerFutureConfig
-  }
+  ]
 );
 
 function App() {
@@ -46,7 +51,7 @@ function App() {
     <div className="App">
       <AuthProvider>
         <HelpProvider>
-          <RouterProvider router={router} />
+          <RouterProvider router={router} future={routerFutureConfig} />
         </HelpProvider>
       </AuthProvider>
     </div>

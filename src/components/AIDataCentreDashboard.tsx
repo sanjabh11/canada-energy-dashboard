@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
+import { isEdgeFetchEnabled } from '../lib/config';
 
 interface AIDataCentre {
   id: string;
@@ -165,14 +166,23 @@ export const AIDataCentreDashboard: React.FC = () => {
   const [queueHistory, setQueueHistory] = useState<QueueHistoryData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [edgeDisabled, setEdgeDisabled] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setEdgeDisabled(false);
 
     try {
+      if (!isEdgeFetchEnabled()) {
+        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+        setEdgeDisabled(true);
+        setLoading(false);
+        return;
+      }
+
       const [dcResponse, queueResponse, historyResponse] = await Promise.all([
         fetchEdgeJson([
           `api-v2-ai-datacentres?province=${selectedProvince}&timeseries=true`,
@@ -209,6 +219,22 @@ export const AIDataCentreDashboard: React.FC = () => {
         <div className="text-center">
           <Server className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-pulse" />
           <p className="text-lg text-secondary">Loading AI Data Centre Dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (edgeDisabled) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary">
+        <div className="text-center">
+          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+          <p className="text-lg text-secondary">
+            Live AI Data Centre analytics are disabled in this environment (Supabase Edge offline or not configured).
+          </p>
+          <p className="text-sm text-secondary mt-2">
+            In production, configure Supabase Edge functions and set VITE_ENABLE_EDGE_FETCH=true to enable real data.
+          </p>
         </div>
       </div>
     );

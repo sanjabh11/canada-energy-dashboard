@@ -6,18 +6,13 @@
  * and tracks effectiveness
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from './supabaseClient';
 import type {
   CurtailmentEvent,
   CurtailmentReductionRecommendation,
   RenewableForecast,
   WeatherObservation
 } from './types/renewableForecast';
-
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL || '',
-  import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-);
 
 /**
  * Curtailment detection options
