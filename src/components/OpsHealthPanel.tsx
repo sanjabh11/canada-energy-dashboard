@@ -13,6 +13,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, CheckCircle, AlertTriangle, XCircle, Clock, Zap, Database, TrendingUp } from 'lucide-react';
+import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 
 interface OpsHealthMetrics {
   ingestion_uptime_percent: number;
@@ -58,13 +59,24 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
     const controller = new AbortController();
     abortRef.current = controller;
 
+    const base = getEdgeBaseUrl();
+
+    // Avoid noisy CORS errors in local development when Supabase Edge is disabled
+    if (!base || !isEdgeFetchEnabled()) {
+      if (import.meta.env.DEV) {
+        console.warn('OpsHealthPanel: Supabase Edge disabled or not configured; skipping ops-health fetch.');
+      }
+      setLoading(false);
+      setMetrics(null);
+      setError(null);
+      return;
+    }
+
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/ops-health`,
+        `${base}/ops-health`,
         {
-          headers: {
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
-          },
+          headers: getEdgeHeaders(),
           signal: controller.signal
         }
       );

@@ -217,6 +217,13 @@ export async function getEdubizUser(userId: string): Promise<{
       .single();
 
     if (error) {
+      // Supabase returns PGRST116 / 406 when no rows are found for .single().
+      if ((error as any).code === 'PGRST116') {
+        // Treat "no profile yet" as a valid state: free user without an edubiz_users row.
+        console.warn('No edubiz_users record found for user; treating as null profile.');
+        return { edubizUser: null, error: null };
+      }
+
       console.error('Get edubiz user error:', error);
       return { edubizUser: null, error };
     }

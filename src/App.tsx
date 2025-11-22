@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { EnergyDataDashboard } from './components/EnergyDataDashboard';
 import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
@@ -14,29 +14,39 @@ import { AuthProvider } from './components/auth';
 import './App.css';
 import './styles/layout.css';
 
+const routerFutureConfig: any = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true
+};
+
+const router = createBrowserRouter(
+  [
+    { path: '/', element: <EnergyDataDashboard /> },
+    { path: '/dashboard', element: <EnergyDataDashboard /> },
+    { path: '/digital-twin', element: <EnergyDataDashboard initialTab="DigitalTwin" /> },
+    { path: '/climate-policy', element: <EnergyDataDashboard initialTab="ClimatePolicy" /> },
+    { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
+    { path: '/household-advisor', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
+    { path: '/about', element: <AboutPage /> },
+    { path: '/contact', element: <ContactPage /> },
+    { path: '/profile', element: <ProfilePage /> },
+    { path: '/badges', element: <BadgesPage /> },
+    { path: '/certificates', element: <CertificatesPage /> },
+    { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
+    { path: '/modules/:moduleId', element: <ModulePlayer /> },
+    { path: '/pricing', element: <PricingPage /> }
+  ],
+  {
+    future: routerFutureConfig
+  }
+);
+
 function App() {
   return (
     <div className="App">
       <AuthProvider>
         <HelpProvider>
-          <Router>
-            <Routes>
-              <Route path="/" element={<EnergyDataDashboard />} />
-              <Route path="/dashboard" element={<EnergyDataDashboard />} />
-              <Route path="/digital-twin" element={<EnergyDataDashboard initialTab="DigitalTwin" />} />
-              <Route path="/climate-policy" element={<EnergyDataDashboard initialTab="ClimatePolicy" />} />
-              <Route path="/my-energy-ai" element={<EnergyDataDashboard initialTab="HouseholdAdvisor" />} />
-              <Route path="/household-advisor" element={<EnergyDataDashboard initialTab="HouseholdAdvisor" />} />
-              <Route path="/about" element={<AboutPage />} />
-              <Route path="/contact" element={<ContactPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/badges" element={<BadgesPage />} />
-              <Route path="/certificates" element={<CertificatesPage />} />
-              <Route path="/certificates/:trackSlug" element={<CertificateTrackPage />} />
-              <Route path="/modules/:moduleId" element={<ModulePlayer />} />
-              <Route path="/pricing" element={<PricingPage />} />
-            </Routes>
-          </Router>
+          <RouterProvider router={router} />
         </HelpProvider>
       </AuthProvider>
     </div>

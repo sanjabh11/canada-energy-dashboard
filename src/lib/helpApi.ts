@@ -1,7 +1,7 @@
 // src/lib/helpApi.ts
 // Client-side helpers for interacting with the Help Edge Function endpoints
 // Provides typed interfaces and error handling
-import { getEdgeBaseUrl, getEdgeHeaders } from './config';
+import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from './config';
 
 export interface HelpManifestItem {
   id: string;
@@ -22,7 +22,17 @@ export interface HelpContent {
  */
 export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
   const base = getEdgeBaseUrl();
-  // Use the new simplified help function
+  const isSupabaseBase = !!base && /supabase\.co\b/.test(base);
+
+  // Avoid noisy CORS errors in local dev when Supabase Edge is disabled
+  if (isSupabaseBase && !isEdgeFetchEnabled()) {
+    if (import.meta.env.DEV) {
+      console.warn('Help manifest fetch skipped: Supabase Edge disabled in dev.');
+    }
+    return [];
+  }
+
+  // Use the new simplified help function when Edge is configured, otherwise fall back to local API route
   const url = base ? `${base}/help-simple/manifest` : '/api/help/manifest';
   const response = await fetch(url, {
     headers: getEdgeHeaders()
@@ -43,6 +53,15 @@ export async function fetchHelpManifest(): Promise<HelpManifestItem[]> {
  */
 export async function fetchHelpById(id: string): Promise<HelpContent | null> {
   const base = getEdgeBaseUrl();
+  const isSupabaseBase = !!base && /supabase\.co\b/.test(base);
+
+  if (isSupabaseBase && !isEdgeFetchEnabled()) {
+    if (import.meta.env.DEV) {
+      console.warn(`Help content fetch skipped for ID "${id}": Supabase Edge disabled in dev.`);
+    }
+    return null;
+  }
+
   const url = base ? `${base}/help-simple/${encodeURIComponent(id)}` : `/api/help/${encodeURIComponent(id)}`;
   const response = await fetch(url, {
     headers: getEdgeHeaders()

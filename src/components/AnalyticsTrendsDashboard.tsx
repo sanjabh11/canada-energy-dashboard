@@ -239,7 +239,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
       }));
 
   return (
-    <div className="min-h-screen bg-primary">
+    <div className="min-h-screen bg-slate-900 dashboard-analytics">
       {/* Hero Section */}
       <section className="hero-section" aria-labelledby="analytics-hero-title">
         <div className="hero-content">

@@ -139,10 +139,10 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
 
   if (compact) {
     return (
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="card p-4">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-slate-900">Renewable Penetration</h3>
-          <Zap className="text-green-600" size={20} />
+          <h3 className="font-semibold text-primary">Renewable Penetration</h3>
+          <Zap className="text-success" size={20} />
         </div>
         <div className="grid grid-cols-3 gap-2">
           {enrichedData.slice(0, 9).map((province) => (
@@ -161,17 +161,17 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+    <div className="card overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-b-2 border-green-200 p-6">
+      <div className="card-header bg-gradient-to-r from-emerald-900 via-emerald-800 to-teal-900 text-white">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="bg-green-100 p-3 rounded-xl border-2 border-green-200">
-              <Zap className="text-green-600" size={28} />
+            <div className="bg-black/20 p-3 rounded-xl border border-white/10">
+              <Zap className="text-electric" size={28} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Renewable Energy Penetration</h2>
-              <p className="text-sm text-slate-600">Provincial renewable share in electricity generation</p>
+              <h2 className="text-xl font-bold text-white">Renewable Energy Penetration</h2>
+              <p className="text-sm text-white/80">Provincial renewable share in electricity generation</p>
             </div>
           </div>
 
@@ -180,8 +180,8 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
               onClick={() => setViewMode(viewMode === 'heatmap' ? 'list' : 'heatmap')}
               className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
                 viewMode === 'heatmap' 
-                  ? 'bg-green-600 text-white' 
-                  : 'bg-white text-slate-700 hover:bg-green-50'
+                  ? 'bg-white text-emerald-900' 
+                  : 'bg-transparent border border-white/40 text-white hover:bg-white/10'
               }`}
             >
               <Eye size={16} className="inline mr-1" />
@@ -192,51 +192,51 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
 
         {/* National Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-4 border-2 border-green-200">
+          <div className="bg-white/10 rounded-lg p-4 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
-              <MapPin className="text-green-600" size={20} />
-              <span className="text-sm font-medium text-slate-700">National Average</span>
+              <MapPin className="text-emerald-200" size={20} />
+              <span className="text-sm font-medium text-emerald-100">National Average</span>
             </div>
-            <div className="text-3xl font-bold text-green-600">
+            <div className="text-3xl font-bold text-emerald-300">
               {nationalAverage.toFixed(1)}%
             </div>
-            <div className="text-xs text-slate-600 mt-1">Renewable share</div>
+            <div className="text-xs text-emerald-100 mt-1">Renewable share</div>
           </div>
 
-          <div className="bg-white rounded-lg p-4 border-2 border-green-200">
+          <div className="bg-white/10 rounded-lg p-4 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
-              <Award className="text-yellow-600" size={20} />
-              <span className="text-sm font-medium text-slate-700">Top Performer</span>
+              <Award className="text-yellow-200" size={20} />
+              <span className="text-sm font-medium text-emerald-100">Top Performer</span>
             </div>
             {topPerformers.length > 0 ? (
               <>
-                <div className="text-lg font-bold text-slate-900">
+                <div className="text-lg font-bold text-white">
                   {topPerformers[0].name}
                 </div>
-                <div className="text-sm text-green-600 font-medium">
+                <div className="text-sm text-emerald-200 font-medium">
                   {topPerformers[0].renewable_pct.toFixed(1)}% renewable
                 </div>
               </>
             ) : (
-              <div className="text-sm text-slate-500">No data available</div>
+              <div className="text-sm text-emerald-100/80">No data available</div>
             )}
           </div>
 
-          <div className="bg-white rounded-lg p-4 border-2 border-green-200">
+          <div className="bg-white/10 rounded-lg p-4 border border-white/10">
             <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="text-blue-600" size={20} />
-              <span className="text-sm font-medium text-slate-700">Provinces Tracked</span>
+              <TrendingUp className="text-sky-200" size={20} />
+              <span className="text-sm font-medium text-emerald-100">Provinces Tracked</span>
             </div>
-            <div className="text-3xl font-bold text-blue-600">
+            <div className="text-3xl font-bold text-sky-200">
               {enrichedData.filter(d => d.hasData).length}
             </div>
-            <div className="text-xs text-slate-600 mt-1">of 13 provinces/territories</div>
+            <div className="text-xs text-emerald-100 mt-1">of 13 provinces/territories</div>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="p-6">
+      <div className="card-body">
         {viewMode === 'heatmap' ? (
           <>
             {/* Color Legend */}

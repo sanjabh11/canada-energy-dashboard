@@ -221,16 +221,16 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-lg shadow-sm border border-slate-200 ${isFullscreen ? 'fixed inset-0 z-50 bg-white p-6' : ''}`}>
+    <div className={`card ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-6 overflow-auto' : ''}`}>
       {/* Chart Header */}
-      <div className="p-4 border-b border-slate-200 flex items-center justify-between">
+      <div className="card-header flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="bg-blue-100 p-2 rounded-lg">
-            <BarChart3 className="h-5 w-5 text-blue-600" />
+          <div className="bg-black/20 p-2 rounded-lg">
+            <BarChart3 className="h-5 w-5 text-electric" />
           </div>
           <div>
-            <h3 className="font-semibold text-slate-800">{title}</h3>
-            <p className="text-sm text-slate-500">{data.length} data points</p>
+            <h3 className="card-title">{title}</h3>
+            <p className="text-sm text-secondary">{data.length} data points</p>
           </div>
         </div>
 
@@ -271,7 +271,7 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
 
       {/* Data Key Toggles */}
       {interactive && dataKeys.length > 1 && (
-        <div className="p-4 border-b border-slate-200">
+        <div className="p-4 border-b border-[var(--border-subtle)]">
           <div className="flex flex-wrap gap-2">
             {dataKeys.map((key, index) => (
               <button
