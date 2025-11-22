@@ -471,7 +471,7 @@ export const IndigenousDashboard: React.FC = () => {
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="indigenous_dashboard" />
 
-        <section className="hero-section mb-8">
+        <section className="hero-section hero-section--compact mb-8">
           <div className="hero-content">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
               <div>

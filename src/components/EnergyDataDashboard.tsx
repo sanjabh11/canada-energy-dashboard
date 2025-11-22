@@ -464,7 +464,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
           <div className="space-y-12 -mt-8">
             {/* Simplified Hero Section */}
             <section
-              className="hero-section -mx-8 lg:-mx-16"
+              className="hero-section hero-section--full -mx-8 lg:-mx-16"
               aria-labelledby="home-hero-title"
             >
               <div className="hero-content text-center">
