@@ -312,7 +312,7 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
       {/* Supply Chain Gaps Alert */}
       {data.insights.supply_chain_gaps.length > 0 && (
-        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+        <div className="mb-6 alert-banner-warning border-l-4 border-amber-500">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
             <div>

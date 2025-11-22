@@ -463,7 +463,7 @@ export const ResilienceMap: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-slate-200">
+      <div className="card p-6">
         <div className="flex items-center space-x-4 mb-4">
           <div className="bg-red-500 p-3 rounded-lg">
             <Shield className="h-8 w-8 text-white" />
@@ -478,11 +478,11 @@ export const ResilienceMap: React.FC = () => {
 
         {error && (
           <div
-            className={`${
+            className={
               isFallbackData
-                ? 'bg-amber-50 border border-amber-200 text-amber-700'
-                : 'bg-red-50 border border-red-200 text-red-700'
-            } rounded-lg p-3 mb-4`}
+                ? 'alert-banner-warning mb-4'
+                : 'bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4'
+            }
           >
             {error}
           </div>
@@ -538,7 +538,7 @@ export const ResilienceMap: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-slate-50 rounded-lg p-4">
+        <div className="bg-slate-50 rounded-lg p-4 max-w-3xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
               <div className="text-2xl font-bold text-slate-800">
@@ -561,7 +561,7 @@ export const ResilienceMap: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+        <div className="card">
           <div className="p-4 border-b border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800 flex items-center">
               <MapPin className="h-5 w-5 mr-2 text-blue-600" />
@@ -652,7 +652,7 @@ export const ResilienceMap: React.FC = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 xl:col-span-3">
+        <div className="card xl:col-span-3">
           <div className="p-4 border-b border-slate-200">
             <h3 className="text-lg font-semibold text-slate-800">Climate Hazard Breakdown</h3>
           </div>

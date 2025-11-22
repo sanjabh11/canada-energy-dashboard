@@ -324,10 +324,10 @@ const GridOptimizationDashboard: React.FC = () => {
 
         {error && (
           <div
-            className={`mb-8 rounded-lg p-4 ${
+            className={`mb-8 ${
               isFallbackData
-                ? 'bg-amber-50 border border-amber-200 text-amber-700'
-                : 'bg-secondary border border-red-200 text-danger'
+                ? 'alert-banner-warning'
+                : 'bg-secondary border border-red-200 text-danger rounded-lg p-4'
             }`}
           >
             <div className="flex items-start space-x-3">
