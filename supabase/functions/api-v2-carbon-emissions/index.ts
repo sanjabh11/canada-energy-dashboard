@@ -45,6 +45,29 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
   : null;
 
+const VALID_PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'ON', 'PE', 'QC', 'SK'];
+
+function isApiKeyValid(req: Request): boolean {
+  const headerKey = req.headers.get('apikey') || '';
+  const authHeader = req.headers.get('authorization') || '';
+  let token = '';
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    token = authHeader.slice(7).trim();
+  }
+
+  const allowedKeys = [
+    Deno.env.get('EDGE_SUPABASE_ANON_KEY') || '',
+    Deno.env.get('SUPABASE_ANON_KEY') || '',
+  ].filter(Boolean);
+
+  if (allowedKeys.length === 0) {
+    // If no public anon key is configured, do not hard-fail on API key
+    return true;
+  }
+
+  return allowedKeys.includes(headerKey) || (token && allowedKeys.includes(token));
+}
+
 serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req.headers.get('origin'));
 
@@ -69,6 +92,33 @@ serve(async (req) => {
   const url = new URL(req.url);
   const province = url.searchParams.get('province');
   const year = url.searchParams.get('year');
+
+  if (!isApiKeyValid(req)) {
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      message: 'Missing or invalid API key',
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (province && !VALID_PROVINCES.includes(province)) {
+    return new Response(JSON.stringify({ error: 'Invalid province parameter' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (year) {
+    const parsedYear = parseInt(year, 10);
+    if (!Number.isFinite(parsedYear) || parsedYear < 2000 || parsedYear > 2100) {
+      return new Response(JSON.stringify({ error: 'Invalid year parameter' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+  }
 
   try {
     // Fetch provincial emissions

@@ -45,6 +45,61 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
   : null;
 
+const VALID_PROJECT_TYPES = [
+  'Solar',
+  'Wind - Onshore',
+  'Wind - Offshore',
+  'Battery Storage',
+  'Pumped Hydro Storage',
+  'Hydroelectric',
+  'Biomass',
+  'Biogas',
+  'Natural Gas - Simple Cycle',
+  'Natural Gas - Combined Cycle',
+  'Natural Gas - Cogeneration',
+  'Nuclear - SMR',
+  'Nuclear - Large Scale',
+  'Hydrogen',
+  'Hybrid (Solar + Storage)',
+  'Hybrid (Wind + Storage)',
+  'Other',
+];
+
+const VALID_STATUSES = [
+  'Early Development',
+  'Connection Assessment (CA)',
+  'System Impact Assessment (SIA)',
+  'Customer Impact Assessment (CIA)',
+  'Facilities Study',
+  'Connection Agreement Signed',
+  'Under Construction',
+  'In-Service',
+  'Withdrawn',
+  'On Hold',
+  'Rejected',
+];
+
+function isApiKeyValid(req: Request): boolean {
+  const headerKey = req.headers.get('apikey') || '';
+  const authHeader = req.headers.get('authorization') || '';
+  let token = '';
+  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+    token = authHeader.slice(7).trim();
+  }
+
+  const allowedKeys = [
+    Deno.env.get('EDGE_SUPABASE_ANON_KEY') || '',
+    Deno.env.get('SUPABASE_ANON_KEY') || '',
+  ].filter(Boolean);
+
+  if (allowedKeys.length === 0) {
+    // If no public anon key is configured, do not hard-fail on API key
+    return true;
+  }
+
+  return allowedKeys.includes(headerKey) || (token && allowedKeys.includes(token));
+}
+
 serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req.headers.get('origin'));
 
@@ -70,6 +125,30 @@ serve(async (req) => {
   const type = url.searchParams.get('type'); // 'queue' or 'programs'
   const projectType = url.searchParams.get('project_type');
   const status = url.searchParams.get('status');
+
+  if (!isApiKeyValid(req)) {
+    return new Response(JSON.stringify({
+      error: 'Unauthorized',
+      message: 'Missing or invalid API key',
+    }), {
+      status: 401,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (projectType && !VALID_PROJECT_TYPES.includes(projectType)) {
+    return new Response(JSON.stringify({ error: 'Invalid project_type parameter' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  if (status && !VALID_STATUSES.includes(status)) {
+    return new Response(JSON.stringify({ error: 'Invalid status parameter' }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     // Fetch IESO interconnection queue
