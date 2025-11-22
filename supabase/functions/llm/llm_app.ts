@@ -598,6 +598,138 @@ async function handleAnalyticsInsight(req: Request): Promise<Response> {
   }
 }
 
+async function handleGridOptimization(req: Request): Promise<Response> {
+  const body = await req.json().catch(() => ({}));
+  const { datasetPath, timeframe, goal, scenario, region } = body as {
+    datasetPath?: string;
+    timeframe?: string;
+    goal?: string;
+    scenario?: string;
+    region?: string;
+  };
+
+  if (!datasetPath) {
+    return new Response(JSON.stringify({ error: 'datasetPath required' }), { status: 400, headers: jsonHeaders });
+  }
+
+  if (!LLM_ENABLED) {
+    return new Response(JSON.stringify({ error: 'LLM disabled by operator. Try later.' }), { status: 503, headers: { ...jsonHeaders, 'X-LLM-Mode': 'disabled' } });
+  }
+
+  const userId = (req.headers.get('x-user-id') || 'anon').slice(0, 128);
+  const rl = await checkRateLimit(userId);
+  if (!rl.ok) {
+    return new Response(JSON.stringify({ error: 'Rate limit exceeded. Try later.' }), { status: 429, headers: { ...jsonHeaders, 'X-RateLimit-Remaining': String(0), 'X-RateLimit-Limit': String(rl.limit ?? '') } });
+  }
+
+  const manifest = await fetchManifest(datasetPath);
+  const sb = await ensureSupabase();
+  const gridContext = sb ? await fetchGridContext(sb) : null;
+  const gridContextStr = gridContext ? formatGridContext(gridContext) : '';
+  const opportunities = gridContext ? analyzeOpportunities(gridContext) : [];
+
+  const tf = timeframe || 'now';
+
+  const prompt = buildGridOptimizationPrompt(
+    gridContextStr,
+    opportunities,
+    manifest.dataset || datasetPath,
+    tf
+  );
+
+  const messages = [{ role: 'user', content: prompt }];
+  const { tokens, usd } = calcTokenCost(messages);
+
+  const startTime = Date.now();
+  try {
+    const llmResp = await callLLM({ messages, model: 'gemini-2.0-flash-exp', maxTokens: 1200 });
+    const responseText = extractTextFromLLM(llmResp) ?? (typeof llmResp === 'string' ? llmResp : '');
+
+    let result: any;
+    try {
+      result = JSON.parse(responseText);
+    } catch {
+      result = {
+        summary: responseText.slice(0, 200) || 'Grid optimization summary unavailable.',
+        recommendations: [],
+        confidence: 0.5
+      };
+    }
+
+    result.sources = gridContext ? getDataSources(gridContext) : [];
+    result.grid_context_used = !!gridContext;
+    result.llm_tokens = tokens;
+    result.llm_cost_usd = usd;
+    result.goal = goal || null;
+    result.scenario = scenario || null;
+    result.region = region || null;
+
+    const duration = Date.now() - startTime;
+    try {
+      logCall({
+        endpoint: 'grid-optimization',
+        dataset_path: datasetPath,
+        panel_id: null,
+        user_id: userId,
+        prompt: goal || null,
+        status_code: 200,
+        duration_ms: duration,
+        cost_usd: usd,
+        response_summary: result.summary || null,
+        provenance: result.sources || null,
+        meta: { timeframe: tf, scenario: scenario || null, region: region || null }
+      });
+    } catch (_) {
+      // best-effort logging only
+    }
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), {
+      headers: {
+        ...jsonHeaders,
+        'X-RateLimit-Remaining': String(rl.remaining ?? ''),
+        'X-RateLimit-Limit': String(rl.limit ?? ''),
+        'X-LLM-Mode': 'active'
+      }
+    });
+  } catch (error) {
+    console.error('LLM grid optimization failed:', error);
+    const duration = Date.now() - startTime;
+    try {
+      logCall({
+        endpoint: 'grid-optimization',
+        dataset_path: datasetPath,
+        panel_id: null,
+        user_id: userId,
+        prompt: goal || null,
+        status_code: 502,
+        duration_ms: duration,
+        cost_usd: 0,
+        response_summary: null,
+        provenance: null,
+        meta: { timeframe: tf, scenario: scenario || null, region: region || null }
+      });
+    } catch (_) {
+      // ignore
+    }
+
+    const result = {
+      summary: `Grid optimization insights for ${manifest.dataset || datasetPath} are temporarily unavailable.`,
+      recommendations: [],
+      confidence: 'low',
+      error: 'LLM temporarily unavailable'
+    };
+
+    return new Response(JSON.stringify({ dataset: manifest.dataset || datasetPath, result }), {
+      headers: {
+        ...jsonHeaders,
+        'X-RateLimit-Remaining': String(rl.remaining ?? ''),
+        'X-RateLimit-Limit': String(rl.limit ?? ''),
+        'X-LLM-Mode': 'fallback'
+      }
+    });
+  }
+}
+
 async function handleTransitionReport(req: Request): Promise<Response> {
   const body = await req.json().catch(() => ({}));
   const { datasetPath, timeframe, focus } = body;
@@ -795,6 +927,9 @@ export async function handleRequest(req: Request): Promise<Response> {
   }
   if (req.method === 'POST' && (path === '/insights' || url.pathname.endsWith('/insights'))) {
     return await handleAnalyticsInsight(req);
+  }
+  if (req.method === 'POST' && (path === '/grid-optimization' || url.pathname.endsWith('/grid-optimization'))) {
+    return await handleGridOptimization(req);
   }
 
   return new Response(JSON.stringify({ error: 'Route not implemented yet' }), { status: 503, headers: jsonHeaders });

@@ -218,14 +218,21 @@ export interface GridOptimizationResponse {
   sources?: Array<{ id: string; last_updated?: string; excerpt?: string; snippets?: Array<{ text: string; context?: string }> }>;
 }
 
+export interface GridOptimizationParams {
+  goal?: string;
+  scenario?: string;
+  region?: string;
+}
+
 export async function getGridOptimizationRecommendations(
   datasetPath: string,
   timeframe: string,
+  params: GridOptimizationParams = {},
   options: EdgeFetchOptions = {}
 ): Promise<GridOptimizationResponse> {
   const { json } = await fetchEdgePostJson(
     orderCandidates(ENDPOINTS.LLM.GRID_OPTIMIZATION, ENDPOINTS.LLM_LITE.GRID_OPTIMIZATION),
-    { datasetPath, timeframe },
+    { datasetPath, timeframe, ...params },
     options
   );
   const payload = (json && typeof json === 'object' && 'result' in json) ? (json as any).result : json;
