@@ -5266,6 +5266,86 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       </ul>
     `,
     relatedTopics: []
+  },
+
+  'page.esg-finance': {
+    id: 'page.esg-finance',
+    title: 'Sustainable Finance & ESG Dashboard',
+    shortText: 'Green bonds, ESG scores, sustainability-linked loans, and carbon pricing exposure for Canadian energy companies',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Sustainable Finance & ESG for Canadian Energy</h3>
+      <p class="mb-4">This dashboard brings together <strong>ESG scores</strong>, <strong>green bonds</strong>, <strong>sustainability-linked loans</strong>, and <strong>carbon pricing exposure</strong> for major Canadian energy companies. It is designed for analysts, regulators, and students who want a single view of how finance and climate risk intersect.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">How to Use the Dashboard:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Overview tab:</strong> High-level metrics including total green bond issuance, average ESG score, total sustainability-linked loan volume, and projected 2030 carbon costs.</li>
+        <li><strong>Green Bonds tab:</strong> Table of labelled green bonds with issuer, size, maturity, yield, and use of proceeds. Use this to benchmark who is funding what types of climate projects.</li>
+        <li><strong>ESG Ratings tab:</strong> Company-level ESG scores (0–10 scale) with sector breakdowns. Built initially from Yahoo Finance ESG data and designed to accommodate additional vendor scores (MSCI, Sustainalytics, S&amp;P).</li>
+        <li><strong>Sustainability-Linked Loans tab:</strong> Major sustainability-linked credit facilities, including KPIs, targets, rate adjustment spreads, and current status (on track, achieved, at risk).</li>
+        <li><strong>Carbon Exposure tab:</strong> Estimates of annual emissions, current and 2030 carbon costs, and revenue-at-risk percentages by company and sector.</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Working with Data &amp; CSV Export:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li>Each non-overview tab includes an <strong>Export CSV</strong> button that downloads exactly what you see in the table.</li>
+        <li>Use the CSV export to run your own regressions (e.g., ESG score vs. cost of capital) or to join with internal portfolios.</li>
+        <li>Filters such as <strong>sector</strong> are respected in the export, so you can easily build sector-specific datasets.</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Data Sources &amp; Refresh Cadence:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>ESG Ratings:</strong> Initial scores are sourced from <strong>Yahoo Finance ESG</strong> for Canadian tickers (SU.TO, CNQ.TO, IMO.TO, CPX.TO, TA.TO, ENB.TO, CVE.TO, TRP.TO, PPL.TO, BIR.TO). A GitHub Action refreshes these scores <strong>weekly</strong> into the <code>esg_ratings</code> table.</li>
+        <li><strong>Green Bonds:</strong> Intended to be populated from <strong>SEDAR+</strong>, <strong>Climate Bonds Initiative</strong>, and issuer disclosures. Seed data illustrates structure; production deployments should import a curated CSV of real deals.</li>
+        <li><strong>Sustainability-Linked Loans:</strong> Populated from <strong>bank and issuer press releases</strong> (e.g., TD, RBC, CIBC). The schema is optimized for manual/CSV imports and can be automated later with a news ingestion pipeline.</li>
+        <li><strong>Carbon Pricing Exposure:</strong> Calculated using company-reported emissions (Mt CO₂e) and Canada&apos;s carbon price schedule (current and projected 2030 price). Seed values demonstrate methodology; live deployments should tie these calculations to facility-level emissions and policy scenarios.</li>
+      </ul>
+
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mt-4">
+        <p class="text-sm"><strong>📊 Quality &amp; Interpretation:</strong> ESG data comes from multiple vendors and methodologies. Always read score definitions carefully, compare across time, and supplement dashboard metrics with issuer sustainability reports before making investment or policy decisions.</p>
+      </div>
+    `,
+    relatedTopics: ['esg_ratings', 'green_bonds', 'sustainability_linked_loans', 'carbon_pricing_exposure']
+  },
+
+  'page.industrial-decarb': {
+    id: 'page.industrial-decarb',
+    title: 'Industrial Decarbonization Dashboard',
+    shortText: 'Facility-level emissions, methane reductions, OBPS compliance, and efficiency projects across Canada',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Industrial Decarbonization in Canada</h3>
+      <p class="mb-4">This dashboard focuses on <strong>large industrial emitters</strong> (oil sands, refineries, gas processing, heavy industry) and how they are reducing greenhouse gas emissions over time.</p>
+
+      <h4 class="font-semibold mt-4 mb-2">What the Dashboard Shows:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Facility Emissions:</strong> Top emitting facilities by annual CO₂e, with filters for <strong>province</strong> and <strong>year</strong>. Use this to see which sites dominate regional emissions.</li>
+        <li><strong>Methane Reduction:</strong> Company-level progress vs. 2019 methane baselines, including whether they are on track for the 2030 75% reduction target.</li>
+        <li><strong>OBPS Compliance:</strong> Summary of surplus/deficit compliance units under provincial and federal Output-Based Pricing Systems, with associated financial value where market price data exists.</li>
+        <li><strong>Efficiency Projects:</strong> Major industrial energy efficiency and fuel-switching projects, including investment size, emissions avoided, and payback periods.</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Drill-Down Tables &amp; CSV Export:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li>Use the <strong>dataset buttons</strong> at the bottom of the page (Facility Emissions, Methane Reduction, OBPS Compliance, Efficiency Projects) to switch between detailed tables.</li>
+        <li>Each dataset can be filtered by <strong>province</strong> and <strong>year</strong> using the controls at the top of the page.</li>
+        <li>The <strong>Export CSV</strong> button downloads exactly what you see in the active table, making it easy to build custom analysis in Excel, R, or Python.</li>
+        <li>The "Top Emitting Facilities" chart also offers a dedicated export so you can quickly share headline numbers with stakeholders.</li>
+      </ul>
+
+      <h4 class="font-semibold mt-4 mb-2">Data Sources &amp; Quality Considerations:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Facility Emissions:</strong> Drawn from Canada&apos;s <strong>National Pollutant Release Inventory (NPRI)</strong> and related greenhouse gas reporting programs (ECCC). Data is typically reported annually with a ~1-year lag and is ingested into the <code>facility_emissions</code> table via a dedicated NPRI importer (edge function and/or CSV script).</li>
+        <li><strong>Methane Reduction:</strong> Based on company-reported methane baselines and current-year progress, supplemented by federal targets. Values may be updated less frequently and should be interpreted as directional rather than precise at the facility level.</li>
+        <li><strong>OBPS Compliance:</strong> Built from provincial and federal OBPS/TIER public reports, showing whether facilities are in surplus or deficit relative to their benchmarks. Where available, a carbon credit price is used to estimate financial value.</li>
+        <li><strong>Efficiency Projects:</strong> Compiled from <strong>EMRF</strong>, <strong>Emissions Reduction Alberta (ERA)</strong>, and company sustainability reports. Not all projects in Canada are captured; focus is on larger, high-impact initiatives.</li>
+      </ul>
+
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mt-4">
+        <p class="text-sm"><strong>📌 Analyst Tip:</strong> Always cross-check dashboard numbers with the underlying NPRI records, OBPS compliance reports, and company filings for formal reporting. Use this dashboard as a <em>starting point</em> for analysis, not the final authority for regulatory submissions or investment decisions.</p>
+      </div>
+    `,
+    relatedTopics: ['facility_emissions', 'methane_reduction_tracker', 'obps_compliance', 'efficiency_projects']
   }
 
 };

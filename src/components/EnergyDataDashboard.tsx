@@ -29,7 +29,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
@@ -52,6 +52,8 @@ import CCUSProjectsDashboard from './CCUSProjectsDashboard';
 import CarbonEmissionsDashboard from './CarbonEmissionsDashboard';
 import DigitalTwinDashboard from './DigitalTwinDashboard';
 import CanadianClimatePolicyDashboard from './CanadianClimatePolicyDashboard';
+import ESGFinanceDashboard from './ESGFinanceDashboard';
+import IndustrialDecarbDashboard from './IndustrialDecarbDashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -83,8 +85,10 @@ const helpIdByTab: Record<string, string> = {
   HeatPumps: 'page.heat-pumps',
   CCUSProjects: 'page.ccus-projects',
   CarbonDashboard: 'page.carbon-emissions',
+  ESGFinance: 'page.esg-finance',
   DigitalTwin: 'page.digital-twin',
-  ClimatePolicy: 'page.climate-policy'
+  ClimatePolicy: 'page.climate-policy',
+  IndustrialDecarb: 'page.industrial-decarb'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -103,6 +107,8 @@ const tabToFeatureMap: Record<string, string> = {
   'DigitalTwin': 'digital_twin',
   'HouseholdAdvisor': 'household_advisor',
   'ClimatePolicy': 'climate_policy',
+  'ESGFinance': 'esg_finance',
+  'IndustrialDecarb': 'industrial_decarb',
   // Home, Provinces, Trends, Features always shown
 };
 
@@ -232,6 +238,8 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
     { id: 'CriticalMinerals', label: 'Critical Minerals', icon: Package }, // ⭐⭐⭐⭐⭐
     { id: 'EVCharging', label: 'EV Charging', icon: Car }, // ⭐⭐⭐⭐⭐ PROMOTED
     { id: 'CarbonDashboard', label: 'Carbon Emissions', icon: Leaf }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'ESGFinance', label: 'Sustainable Finance & ESG', icon: DollarSign }, // ⭐⭐⭐⭐⭐ PROMOTED
+    { id: 'IndustrialDecarb', label: 'Industrial Decarb', icon: Factory }, // ⭐⭐⭐⭐ PROMOTED (paired with ESG)
     { id: 'CCUSProjects', label: 'CCUS Projects', icon: Factory }, // ⭐⭐⭐⭐⭐ PROMOTED
     { id: 'Investment', label: 'Investment', icon: TrendingUp }, // ⭐⭐⭐⭐⭐ PROMOTED
     { id: 'RenewableOptimization', label: 'Renewable Energy Optimization Hub', icon: Sun }, // ⭐⭐⭐⭐ PROMOTED
@@ -1260,6 +1268,16 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
               <CarbonEmissionsDashboard />
             )}
 
+            {/* Sustainable Finance & ESG Dashboard */}
+            {activeTab === 'ESGFinance' && (
+              <ESGFinanceDashboard />
+            )}
+
+            {/* Industrial Decarbonization Dashboard */}
+            {activeTab === 'IndustrialDecarb' && (
+              <IndustrialDecarbDashboard />
+            )}
+
             {/* Digital Twin Dashboard */}
             {activeTab === 'DigitalTwin' && (
               <DigitalTwinDashboard />
@@ -1276,7 +1294,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard', 'DigitalTwin', 'ClimatePolicy'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard', 'ESGFinance', 'DigitalTwin', 'ClimatePolicy', 'IndustrialDecarb'].includes(activeTab) && (
               <div className="card border border-[var(--border-subtle)] p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-secondary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

@@ -169,6 +169,34 @@ export const FEATURE_REGISTRY: Record<string, FeatureConfig> = {
     component: 'EnergyDataDashboard',
   },
 
+  esgFinance: {
+    id: 'esg_finance',
+    name: 'Sustainable Finance & ESG',
+    status: 'acceptable',
+    rating: 4.2,
+    enabled: true,
+    limitations: [
+      'ESG datasets use seeded sample data for demonstration',
+      'Supabase Edge configuration required for live analytics',
+    ],
+    route: '/dashboard',
+    component: 'ESGFinanceDashboard',
+  },
+
+  industrialDecarb: {
+    id: 'industrial_decarb',
+    name: 'Industrial Decarbonization',
+    status: 'acceptable',
+    rating: 4.1,
+    enabled: true,
+    limitations: [
+      'Industrial decarbonization datasets use seeded sample data for demonstration',
+      'Supabase Edge configuration required for live industrial decarbonization analytics',
+    ],
+    route: '/dashboard',
+    component: 'IndustrialDecarbDashboard',
+  },
+
   householdAdvisor: {
     id: 'household_advisor',
     name: 'My Energy AI Advisor',

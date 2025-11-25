@@ -1,0 +1,45 @@
+name: NPRI Facility Emissions Import
+
+on:
+  # Manual trigger for now; you can later change this to an annual schedule
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Reporting year (e.g. 2023)"
+        required: true
+        default: "2023"
+      province:
+        description: "Province code filter (e.g. AB, or leave blank for all)"
+        required: false
+        default: "AB"
+
+jobs:
+  import-npri-facilities:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Call NPRI importer edge function
+        env:
+          NPRI_IMPORT_URL: ${{ secrets.NPRI_IMPORT_URL }}
+          NPRI_IMPORT_TOKEN: ${{ secrets.NPRI_IMPORT_TOKEN }}
+          YEAR: ${{ github.event.inputs.year }}
+          PROVINCE: ${{ github.event.inputs.province }}
+        run: |
+          if [ -z "$NPRI_IMPORT_URL" ]; then
+            echo "NPRI_IMPORT_URL secret not set" >&2
+            exit 1
+          fi
+
+          YEAR=${YEAR:-2023}
+          DATA="{\"year\": $YEAR}"
+          if [ -n "$PROVINCE" ]; then
+            DATA="{\"year\": $YEAR, \"province\": \"$PROVINCE\"}"
+          fi
+
+          curl -X POST "$NPRI_IMPORT_URL" \
+            -H "Content-Type: application/json" \
+            -H "x-import-token: $NPRI_IMPORT_TOKEN" \
+            -d "$DATA"
