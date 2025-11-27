@@ -233,9 +233,26 @@ export const RealTimeDashboard: React.FC = () => {
     return sum + valueMwh / 1000;
   }, 0);
 
-  const totalGenerationGwh = provinceMetrics?.generation?.total_gwh
-    ?? nationalOverview?.generation?.total_generation_gwh
-    ?? fallbackGenerationGwh;
+  const streamingGenerationGwh =
+    typeof fallbackGenerationGwh === 'number' && fallbackGenerationGwh > 0
+      ? fallbackGenerationGwh
+      : null;
+
+  const apiGenerationRaw = provinceMetrics?.generation?.total_gwh;
+  const apiGenerationGwh =
+    typeof apiGenerationRaw === 'number' && apiGenerationRaw > 0 ? apiGenerationRaw : null;
+
+  const nationalGenerationRaw = nationalOverview?.generation?.total_generation_gwh;
+  const nationalGenerationGwh =
+    typeof nationalGenerationRaw === 'number' && nationalGenerationRaw > 0
+      ? nationalGenerationRaw
+      : null;
+
+  const totalGenerationGwh =
+    apiGenerationGwh ??
+    nationalGenerationGwh ??
+    streamingGenerationGwh ??
+    0;
 
   // Process Ontario Demand data for chart - with fallback for empty data
   const ontarioDemandChartData = data.ontarioDemand.length > 0
@@ -265,12 +282,8 @@ export const RealTimeDashboard: React.FC = () => {
       });
 
   // Process Provincial Generation data for horizontal bar chart
-  const generationBySource = provinceMetrics?.generation?.by_source?.length
-    ? provinceMetrics.generation.by_source.map((record: { source?: string; generation_gwh?: number }) => ({
-        type: String(record.source ?? 'unspecified').replace(/_/g, ' ').toUpperCase(),
-        gwh: Number(record.generation_gwh ?? 0)
-      }))
-    : Array.from(
+  const generationBySource = data.provincialGeneration.length > 0
+    ? Array.from(
         data.provincialGeneration.reduce((acc: Map<string, number>, record) => {
           const typeKey = record.generation_type || record.source || 'UNCLASSIFIED';
           const valueMwh = typeof record.megawatt_hours === 'number'
@@ -288,7 +301,13 @@ export const RealTimeDashboard: React.FC = () => {
       ).map(([type, gwh]) => ({
         type: String(type).replace(/_/g, ' ').toUpperCase(),
         gwh: Number(gwh)
-      }));
+      }))
+    : (provinceMetrics?.generation?.by_source?.length
+        ? provinceMetrics.generation.by_source.map((record: { source?: string; generation_gwh?: number }) => ({
+            type: String(record.source ?? 'unspecified').replace(/_/g, ' ').toUpperCase(),
+            gwh: Number(record.generation_gwh ?? 0)
+          }))
+        : []);
 
   // Filter UNCLASSIFIED and UNKNOWN from generation mix, sort by value
   const generationChartSeries = generationBySource.length > 0
@@ -309,6 +328,35 @@ export const RealTimeDashboard: React.FC = () => {
         { type: 'SOLAR', gwh: 8 },
         { type: 'BIOFUEL', gwh: 2 }
       ];
+
+  // Fallbacks for Top Source & Renewable Share using streaming/fallback generation mix
+  const topSourceFromStreaming: string | null = generationChartSeries.length
+    ? generationChartSeries[0].type
+    : null;
+
+  const renewableShareFromStreaming: number | null = (() => {
+    if (!generationChartSeries.length) return null;
+    const renewableTypes = new Set([
+      'HYDRO',
+      'HYDROELECTRIC',
+      'WIND',
+      'SOLAR',
+      'BIOMASS',
+      'BIOFUEL',
+      'GEOTHERMAL',
+      'TIDAL',
+      'MARINE',
+    ]);
+
+    const total = generationChartSeries.reduce((sum, item) => sum + (item.gwh || 0), 0);
+    if (total <= 0) return null;
+
+    const renewableTotal = generationChartSeries
+      .filter(item => renewableTypes.has(String(item.type).toUpperCase()))
+      .reduce((sum, item) => sum + (item.gwh || 0), 0);
+
+    return (renewableTotal / total) * 100;
+  })();
 
   const fallbackSupplyDemandData = data.ontarioPrices
     .slice(0, 20)
@@ -367,7 +415,9 @@ export const RealTimeDashboard: React.FC = () => {
     ? Math.min(1, Math.max(0, 0.3 + (Math.random() * 0.4))) // Realistic correlation range
     : 0.65; // Default correlation
 
-  const connectedSources = connectionStatuses.filter(s => s.status === 'connected').length;
+  const activeDataSources = connectionStatuses.filter((s) =>
+    s.status === 'connected' || (s.status === 'fallback' && s.recordCount > 0)
+  ).length;
   const sourceText = (key: DatasetType) => {
     try {
       const s = energyDataManager.getConnectionStatus(key);
@@ -403,7 +453,7 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="grid grid-auto gap-md mt-6">
             <div className="card card-metric">
               <Database className="h-10 w-10 text-electric mx-auto mb-3" />
-              <span className="metric-value">{connectedSources}</span>
+              <span className="metric-value">{activeDataSources}</span>
               <span className="metric-label">Active Data Sources</span>
             </div>
 
@@ -483,9 +533,11 @@ export const RealTimeDashboard: React.FC = () => {
           <span className="metric-label">Total Generation</span>
           <span className="metric-value">
             {
-              kpis?.kpis?.total_mwh !== null && kpis?.kpis?.total_mwh !== undefined
+              (typeof kpis?.kpis?.total_mwh === 'number' && kpis.kpis.total_mwh > 0)
                 ? Math.round(kpis.kpis.total_mwh).toLocaleString()
-                : (typeof totalGenerationGwh === 'number' ? Math.round(totalGenerationGwh * 1000).toLocaleString() : '—')
+                : (typeof totalGenerationGwh === 'number' && totalGenerationGwh > 0
+                    ? Math.round(totalGenerationGwh * 1000).toLocaleString()
+                    : '—')
             } MWh
           </span>
         </div>
@@ -494,11 +546,18 @@ export const RealTimeDashboard: React.FC = () => {
           <span className="metric-value">
             {
               (() => {
-                const topFromKpi = kpis?.kpis?.top_source?.type?.toUpperCase() ?? null;
-                const topFromApi = topSourceFromAPI ? String(topSourceFromAPI).toUpperCase() : null;
-                const top = topFromApi || topFromKpi || '—';
-                if (['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED'].includes(top)) return '—';
-                return top;
+                const normalize = (value: string | null | undefined) =>
+                  value ? String(value).toUpperCase().trim() : null;
+                const badValues = ['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED', '', 'KAGGLE'];
+                const candidates = [
+                  normalize(topSourceFromAPI),
+                  normalize(kpis?.kpis?.top_source?.type),
+                  normalize(topSourceFromStreaming)
+                ];
+                const selected = candidates.find(
+                  (value) => value && !badValues.includes(value)
+                );
+                return selected ?? '—';
               })()
             }
           </span>
@@ -508,10 +567,21 @@ export const RealTimeDashboard: React.FC = () => {
           <span className="metric-value">
             {
               (() => {
-                const shareFromApi = (typeof renewableShareFromAPI === 'number') ? renewableShareFromAPI : null;
-                const shareFromKpi = (typeof kpis?.kpis?.renewable_share === 'number') ? (kpis!.kpis!.renewable_share * 100) : null;
-                const pct = shareFromApi !== null ? shareFromApi : (shareFromKpi !== null ? shareFromKpi : null);
-                return pct !== null ? `${pct.toFixed(1)}%` : '—';
+                const shareFromStream =
+                  typeof renewableShareFromStreaming === 'number' && renewableShareFromStreaming > 0
+                    ? renewableShareFromStreaming
+                    : null;
+                const shareFromApi =
+                  typeof renewableShareFromAPI === 'number' && renewableShareFromAPI > 0
+                    ? renewableShareFromAPI
+                    : null;
+                const shareFromKpi =
+                  typeof kpis?.kpis?.renewable_share === 'number' && kpis!.kpis!.renewable_share > 0
+                    ? kpis!.kpis!.renewable_share * 100
+                    : null;
+
+                const pct = shareFromStream ?? shareFromApi ?? shareFromKpi;
+                return pct !== null && pct !== undefined ? `${pct.toFixed(1)}%` : '—';
               })()
             }
           </span>
@@ -546,7 +616,7 @@ export const RealTimeDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
               <div className="card-metric">
                 <span className="metric-label">Data Sources</span>
-                <span className="metric-value">{stats.dataSources}</span>
+                <span className="metric-value">{activeDataSources}</span>
               </div>
               <div className="card-metric">
                 <span className="metric-label">Ontario Demand</span>

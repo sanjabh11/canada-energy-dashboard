@@ -75,6 +75,70 @@ export const EnhancedInvestmentDashboard: React.FC = () => {
     }
   });
 
+  // Sample projects for when local storage is empty
+  const SAMPLE_PROJECTS: InvestmentProjectRecord[] = [
+    {
+      id: 'sample_001',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data_source: 'user_input',
+      project_name: 'Ontario Solar Farm',
+      project_type: 'renewable',
+      total_investment_cad: 250000000,
+      funding_sources: [{ source: 'CIB', amount_cad: 100000000, type: 'loan' }],
+      financial_metrics: { npv_cad: 45000000, irr_percent: 8.5, payback_years: 12, lcoe_cad_per_mwh: 65 },
+      esg_scores: { environmental_score: 92, social_score: 78, governance_score: 85 },
+      risk_assessment: { market_risk: 'medium', technology_risk: 'low', regulatory_risk: 'low', overall_risk_score: 35 },
+      project_status: 'approved',
+      expected_ghg_reduction_tonnes_co2e: 125000
+    },
+    {
+      id: 'sample_002',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data_source: 'user_input',
+      project_name: 'Alberta Wind Farm',
+      project_type: 'renewable',
+      total_investment_cad: 180000000,
+      funding_sources: [{ source: 'Private Equity', amount_cad: 180000000, type: 'equity' }],
+      financial_metrics: { npv_cad: 32000000, irr_percent: 11.2, payback_years: 9, lcoe_cad_per_mwh: 48 },
+      esg_scores: { environmental_score: 88, social_score: 72, governance_score: 80 },
+      risk_assessment: { market_risk: 'low', technology_risk: 'low', regulatory_risk: 'medium', overall_risk_score: 28 },
+      project_status: 'operational',
+      expected_ghg_reduction_tonnes_co2e: 95000
+    },
+    {
+      id: 'sample_003',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data_source: 'user_input',
+      project_name: 'BC Hydro Upgrade',
+      project_type: 'grid',
+      total_investment_cad: 420000000,
+      funding_sources: [{ source: 'Government Grant', amount_cad: 200000000, type: 'grant' }],
+      financial_metrics: { npv_cad: 85000000, irr_percent: 7.8, payback_years: 15, lcoe_cad_per_mwh: 35 },
+      esg_scores: { environmental_score: 95, social_score: 82, governance_score: 90 },
+      risk_assessment: { market_risk: 'low', technology_risk: 'medium', regulatory_risk: 'low', overall_risk_score: 22 },
+      project_status: 'construction',
+      expected_ghg_reduction_tonnes_co2e: 180000
+    },
+    {
+      id: 'sample_004',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      data_source: 'user_input',
+      project_name: 'Quebec Battery Storage',
+      project_type: 'storage',
+      total_investment_cad: 95000000,
+      funding_sources: [{ source: 'Green Bond', amount_cad: 95000000, type: 'debt' }],
+      financial_metrics: { npv_cad: 18000000, irr_percent: 9.5, payback_years: 8, lcoe_cad_per_mwh: 120 },
+      esg_scores: { environmental_score: 85, social_score: 70, governance_score: 78 },
+      risk_assessment: { market_risk: 'medium', technology_risk: 'medium', regulatory_risk: 'low', overall_risk_score: 42 },
+      project_status: 'planning',
+      expected_ghg_reduction_tonnes_co2e: 45000
+    },
+  ];
+
   // Load projects from local storage
   useEffect(() => {
     loadProjects();
@@ -84,9 +148,16 @@ export const EnhancedInvestmentDashboard: React.FC = () => {
     setLoading(true);
     try {
       const investmentProjects = localStorageManager.getInvestmentProjects();
-      setProjects(investmentProjects);
+      // Use sample projects if local storage is empty
+      if (investmentProjects.length === 0) {
+        setProjects(SAMPLE_PROJECTS);
+      } else {
+        setProjects(investmentProjects);
+      }
     } catch (error) {
       console.error('Error loading investment projects:', error);
+      // Fallback to sample projects on error
+      setProjects(SAMPLE_PROJECTS);
     } finally {
       setLoading(false);
     }

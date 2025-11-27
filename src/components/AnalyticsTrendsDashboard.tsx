@@ -40,8 +40,9 @@ interface AnalyticsData {
   trends?: any;
 }
 
-// Realistic renewable penetration data based on Canadian public energy statistics
-const MOCK_RENEWABLE_PENETRATION = {
+// Fallback renewable penetration data based on Canadian public energy statistics
+// Used when real-time provincial_generation data is unavailable
+const FALLBACK_RENEWABLE_PENETRATION = {
   'ON': { renewable_pct: 92, sources: { hydro: 24, nuclear: 60, wind: 6, solar: 2, gas: 8 } },
   'QC': { renewable_pct: 99, sources: { hydro: 95, wind: 3, solar: 1 } },
   'BC': { renewable_pct: 98, sources: { hydro: 90, wind: 5, solar: 3 } },
@@ -50,6 +51,83 @@ const MOCK_RENEWABLE_PENETRATION = {
   'MB': { renewable_pct: 97, sources: { hydro: 95, wind: 2, gas: 3 } },
   'NS': { renewable_pct: 35, sources: { wind: 15, hydro: 10, biomass: 10, coal: 40, gas: 25 } },
   'NB': { renewable_pct: 40, sources: { hydro: 25, wind: 10, biomass: 5, nuclear: 30, oil: 30 } },
+};
+
+// Helper to compute renewable penetration from provincial_generation data
+// The ProvincialGenerationRecord has generation_type field to identify fuel source
+const computeRenewablePenetration = (provincialData: ProvincialGenerationRecord[]) => {
+  if (!provincialData || provincialData.length === 0) {
+    // Use fallback data when no real data is available
+    return Object.entries(FALLBACK_RENEWABLE_PENETRATION).map(([code, data]) => ({
+      province: code,
+      renewable_mw: (data.renewable_pct / 100) * 1000,
+      fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
+      total_mw: 1000,
+      renewable_pct: data.renewable_pct,
+      sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
+        acc[key] = (val / 100) * 1000;
+        return acc;
+      }, {} as Record<string, number>)
+    }));
+  }
+
+  // Renewable generation types
+  const RENEWABLE_TYPES = ['hydro', 'wind', 'solar', 'biomass', 'geothermal', 'tidal'];
+  
+  // Group by province and aggregate by generation type
+  const provinceMap = new Map<string, { renewable: number; fossil: number; total: number; sources: Record<string, number> }>();
+  
+  provincialData.forEach(record => {
+    const code = record.province_code || record.province || 'Unknown';
+    const genType = (record.generation_type || 'other').toLowerCase();
+    const mwh = record.megawatt_hours || (record.generation_gwh ? record.generation_gwh * 1000 : 0);
+    
+    if (!provinceMap.has(code)) {
+      provinceMap.set(code, { renewable: 0, fossil: 0, total: 0, sources: {} });
+    }
+    
+    const entry = provinceMap.get(code)!;
+    entry.total += mwh;
+    entry.sources[genType] = (entry.sources[genType] || 0) + mwh;
+    
+    if (RENEWABLE_TYPES.some(rt => genType.includes(rt))) {
+      entry.renewable += mwh;
+    } else {
+      entry.fossil += mwh;
+    }
+  });
+
+  // Convert to output format, merging with fallback for missing provinces
+  const result = Array.from(provinceMap.entries()).map(([code, data]) => ({
+    province: code,
+    renewable_mw: data.renewable,
+    fossil_mw: data.fossil,
+    total_mw: data.total,
+    renewable_pct: data.total > 0 ? (data.renewable / data.total) * 100 : 0,
+    sources: data.sources
+  }));
+
+  // If we have real data but fewer provinces, supplement with fallback
+  if (result.length < Object.keys(FALLBACK_RENEWABLE_PENETRATION).length) {
+    const existingCodes = new Set(result.map(r => r.province));
+    Object.entries(FALLBACK_RENEWABLE_PENETRATION).forEach(([code, data]) => {
+      if (!existingCodes.has(code)) {
+        result.push({
+          province: code,
+          renewable_mw: (data.renewable_pct / 100) * 1000,
+          fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
+          total_mw: 1000,
+          renewable_pct: data.renewable_pct,
+          sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
+            acc[key] = (val / 100) * 1000;
+            return acc;
+          }, {} as Record<string, number>)
+        });
+      }
+    });
+  }
+
+  return result;
 };
 
 export const AnalyticsTrendsDashboard: React.FC = () => {
@@ -277,23 +355,11 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 py-8`}>
         
-        {/* Renewable Penetration Heatmap */}
+        {/* Renewable Penetration Heatmap - Uses real data with fallback */}
         <RenewablePenetrationHeatmap
           provincialData={(() => {
-            // ALWAYS use mock data for now until we have proper real-time generation data
-            // The provincial_generation table contains historical aggregate data, not real-time capacity
-            // TODO: Integrate with real-time generation API when available
-            return Object.entries(MOCK_RENEWABLE_PENETRATION).map(([code, data]) => ({
-              province: code,
-              renewable_mw: (data.renewable_pct / 100) * 1000, // Assume 1000 MW baseline
-              fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
-              total_mw: 1000,
-              renewable_pct: data.renewable_pct,
-              sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
-                acc[key] = (val / 100) * 1000; // Convert % to MW
-                return acc;
-              }, {} as Record<string, number>)
-            }));
+            // Use real provincial_generation data with fallback to reference data
+            return computeRenewablePenetration(data.provincialGeneration);
           })()}
         />
 
@@ -327,11 +393,11 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
         {/* Provincial Energy Mix - Pie Chart */}
         <ModularChartWidget
           title="Provincial Energy Mix Distribution"
-          data={Object.entries(MOCK_RENEWABLE_PENETRATION).map(([province, data]) => ({
-            name: province,
-            value: data.renewable_pct,
-            renewable: data.renewable_pct,
-            fossil: 100 - data.renewable_pct
+          data={computeRenewablePenetration(data.provincialGeneration).map(item => ({
+            name: item.province,
+            value: item.renewable_pct,
+            renewable: item.renewable_pct,
+            fossil: 100 - item.renewable_pct
           }))}
           chartType="pie"
           dataKeys={['value']}

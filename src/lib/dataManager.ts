@@ -271,7 +271,8 @@ export class EnergyDataManager {
     })) {
       allRows.push(...batch.map(row => ({
         ...row,
-        source: DATASETS.find(d => d.key === datasetKey)?.source || 'kaggle',
+        // Preserve generation_type if present, don't overwrite source if it contains fuel type info
+        data_source: DATASETS.find(d => d.key === datasetKey)?.source || 'kaggle',
         version: '1.0-stream',
         ingested_at: new Date()
       })));

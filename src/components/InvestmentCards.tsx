@@ -77,11 +77,11 @@ export const InvestmentCards: React.FC = () => {
           : 'Large-scale photovoltaic installation',
         cashFlows: [
           { amount: -(demand * baseInvestmentPerMW * 0.8), period: 0, description: 'Capital investment' },
-          { amount: demand * baseRevenuePerMW * 0.15, period: 1, description: 'Year 1 revenue' },
-          { amount: demand * baseRevenuePerMW * 0.18, period: 2, description: 'Year 2 revenue' },
-          { amount: demand * baseRevenuePerMW * 0.22, period: 3, description: 'Year 3 revenue' },
-          { amount: demand * baseRevenuePerMW * 0.25, period: 4, description: 'Year 4 revenue' },
-          { amount: demand * baseRevenuePerMW * 0.28, period: 5, description: 'Year 5 revenue' },
+          { amount: demand * baseInvestmentPerMW * 0.18, period: 1, description: 'Year 1 revenue' },
+          { amount: demand * baseInvestmentPerMW * 0.20, period: 2, description: 'Year 2 revenue' },
+          { amount: demand * baseInvestmentPerMW * 0.22, period: 3, description: 'Year 3 revenue' },
+          { amount: demand * baseInvestmentPerMW * 0.24, period: 4, description: 'Year 4 revenue' },
+          { amount: demand * baseInvestmentPerMW * 0.26, period: 5, description: 'Year 5 revenue' },
         ],
         discountRate: 0.08,
         analysis: undefined
@@ -112,11 +112,11 @@ export const InvestmentCards: React.FC = () => {
           : 'Offshore wind farm with 50 turbines',
         cashFlows: [
           { amount: -(demand * 2000), period: 0, description: 'Wind farm development' },
-          { amount: demand * baseRevenuePerMW * 0.18, period: 1, description: 'Year 1 wind energy revenue' },
-          { amount: demand * baseRevenuePerMW * 0.20, period: 2, description: 'Year 2 wind energy revenue' },
-          { amount: demand * baseRevenuePerMW * 0.22, period: 3, description: 'Year 3 wind energy revenue' },
-          { amount: demand * baseRevenuePerMW * 0.24, period: 4, description: 'Year 4 wind energy revenue' },
-          { amount: demand * baseRevenuePerMW * 0.26, period: 5, description: 'Year 5 wind energy revenue' },
+          { amount: demand * 500, period: 1, description: 'Year 1 wind energy revenue' },
+          { amount: demand * 550, period: 2, description: 'Year 2 wind energy revenue' },
+          { amount: demand * 600, period: 3, description: 'Year 3 wind energy revenue' },
+          { amount: demand * 650, period: 4, description: 'Year 4 wind energy revenue' },
+          { amount: demand * 700, period: 5, description: 'Year 5 wind energy revenue' },
         ],
         discountRate: 0.12,
         analysis: undefined
@@ -363,14 +363,14 @@ export const InvestmentCards: React.FC = () => {
                     <div className={`text-center p-4 bg-gradient-to-br ${COLOR_SCHEMES.success.bg} rounded-xl border ${COLOR_SCHEMES.success.border} group-hover:shadow-md transition-all duration-300`}>
                       <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.success.accent} mb-2 font-semibold`}>NPV</div>
                       <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.success.text}`}>
-                        ${npv ? (npv / 1000000).toFixed(2) : '—'}M
+                        {npv !== null && npv !== undefined ? `${(npv / 1000000).toFixed(2)}M` : '—'}
                       </div>
                     </div>
 
                     <div className={`text-center p-4 bg-gradient-to-br ${COLOR_SCHEMES.primary.bg} rounded-xl border ${COLOR_SCHEMES.primary.border} group-hover:shadow-md transition-all duration-300`}>
                       <div className={`${TEXT_CLASSES.bodySmall} ${COLOR_SCHEMES.primary.accent} mb-2 font-semibold`}>IRR</div>
                       <div className={`${TEXT_CLASSES.metric} ${COLOR_SCHEMES.primary.text}`}>
-                        {irr ? `${(irr * 100).toFixed(1)}%` : '—'}
+                        {irr !== null && irr !== undefined ? `${(irr * 100).toFixed(1)}%` : '—'}
                       </div>
                     </div>
                   </div>

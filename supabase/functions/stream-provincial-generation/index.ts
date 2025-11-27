@@ -5,9 +5,13 @@ import { getProvincialGenerationSample, paginateSampleData } from "../_shared/sa
 
 type ProvincialGenerationRow = {
   date: string;
+  province: string;
   province_code: string;
-  source: string | null;
+  producer: string | null;
+  generation_type: string | null;
+  megawatt_hours: number;
   generation_gwh: number;
+  source: string | null;
   created_at: string | null;
   version: string;
 };
@@ -64,11 +68,17 @@ async function updateStreamHealth(
 }
 
 function mapRow(row: Record<string, unknown>): ProvincialGenerationRow {
+  const gwhValue = Number(row.generation_gwh ?? 0);
+  const mwhValue = Number(row.megawatt_hours ?? 0);
   return {
     date: String(row.date ?? ''),
+    province: String(row.province ?? row.province_code ?? ''),
     province_code: String(row.province_code ?? ''),
-    source: row.source ? String(row.source) : null,
-    generation_gwh: Number(row.generation_gwh ?? 0),
+    producer: row.producer ? String(row.producer) : null,
+    generation_type: row.generation_type ? String(row.generation_type) : null,
+    megawatt_hours: mwhValue > 0 ? mwhValue : gwhValue * 1000,
+    generation_gwh: gwhValue > 0 ? gwhValue : mwhValue / 1000,
+    source: row.source ? String(row.source) : 'kaggle',
     created_at: row.created_at ? new Date(String(row.created_at)).toISOString() : null,
     version: '1.0'
   };

@@ -50,7 +50,7 @@ const DEFAULT_CONFIG: Required<FinancialConfig> = {
   convergenceTolerance: 1e-6,
   maxIterations: 1000,
   minimumIRR: -0.99, // -99% minimum IRR
-  maximumIRR: 1.0    // 100% maximum IRR
+  maximumIRR: 5.0    // 500% maximum IRR for high-return scenarios
 };
 
 /**
@@ -235,42 +235,91 @@ export class FinancialEngine {
   ): number | null {
     if (!cashFlows || cashFlows.length < 2) return null;
 
-    // Check if there are both positive and negative cash flows
     const hasPositive = cashFlows.some(cf => cf.amount > 0);
     const hasNegative = cashFlows.some(cf => cf.amount < 0);
 
     if (!hasPositive || !hasNegative) return null;
 
-    let rate = guess;
-    let iteration = 0;
+    const tryGuess = (startGuess: number): number | null => {
+      let rate = startGuess;
+      let iteration = 0;
 
-    while (iteration < this.config.maxIterations) {
-      const npv = this.calculateNPV(cashFlows, rate);
-      const derivative = this.calculateNPVDerivative(cashFlows, rate);
+      while (iteration < this.config.maxIterations) {
+        const npv = this.calculateNPV(cashFlows, rate);
+        const derivative = this.calculateNPVDerivative(cashFlows, rate);
 
-      // Newton's method step
-      const newRate = rate - npv / derivative;
-
-      // Check for convergence
-      if (Math.abs(newRate - rate) < this.config.convergenceTolerance &&
-          Math.abs(npv) < this.config.convergenceTolerance) {
-        // Ensure IRR is within reasonable bounds
-        if (newRate >= this.config.minimumIRR && newRate <= this.config.maximumIRR) {
-          return parseFloat(newRate.toFixed(this.config.decimalPlaces));
+        if (!isFinite(derivative) || Math.abs(derivative) < 1e-12) {
+          return null;
         }
-        return null; // IRR out of bounds
+
+        const newRate = rate - npv / derivative;
+
+        if (Math.abs(newRate - rate) < this.config.convergenceTolerance &&
+            Math.abs(npv) < this.config.convergenceTolerance) {
+          if (newRate >= this.config.minimumIRR && newRate <= this.config.maximumIRR) {
+            return parseFloat(newRate.toFixed(this.config.decimalPlaces));
+          }
+          return null;
+        }
+
+        if (newRate < this.config.minimumIRR || newRate > this.config.maximumIRR) {
+          return null;
+        }
+
+        rate = newRate;
+        iteration++;
       }
 
-      // Check bounds for new rate
-      if (newRate < this.config.minimumIRR || newRate > this.config.maximumIRR) {
-        return null; // Irrational or impossible IRR
+      return null;
+    };
+
+    const guesses = [guess, 0.05, 0.15, 0.2, -0.1];
+    for (const g of guesses) {
+      const result = tryGuess(g);
+      if (result !== null) {
+        return result;
+      }
+    }
+
+    // Fallback: bisection search between minimumIRR and maximumIRR
+    let low = this.config.minimumIRR;
+    let high = this.config.maximumIRR;
+    let npvLow = this.calculateNPV(cashFlows, low);
+    let npvHigh = this.calculateNPV(cashFlows, high);
+
+    // If there's no sign change, IRR may be outside bounds or undefined
+    if (npvLow === 0) {
+      return parseFloat(low.toFixed(this.config.decimalPlaces));
+    }
+    if (npvHigh === 0) {
+      return parseFloat(high.toFixed(this.config.decimalPlaces));
+    }
+    if (npvLow * npvHigh > 0) {
+      return null;
+    }
+
+    let iteration = 0;
+    while (iteration < this.config.maxIterations) {
+      const mid = (low + high) / 2;
+      const npvMid = this.calculateNPV(cashFlows, mid);
+
+      if (Math.abs(npvMid) < this.config.convergenceTolerance) {
+        return parseFloat(mid.toFixed(this.config.decimalPlaces));
       }
 
-      rate = newRate;
+      if (npvLow * npvMid < 0) {
+        high = mid;
+        npvHigh = npvMid;
+      } else {
+        low = mid;
+        npvLow = npvMid;
+      }
+
       iteration++;
     }
 
-    return null; // Did not converge
+    const mid = (low + high) / 2;
+    return parseFloat(mid.toFixed(this.config.decimalPlaces));
   }
 
   /**

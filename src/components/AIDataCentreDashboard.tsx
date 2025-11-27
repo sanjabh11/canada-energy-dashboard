@@ -160,6 +160,26 @@ const STATUS_COLORS: Record<string, string> = {
   'Commissioning': COLORS.teal,
 };
 
+const PROVINCE_NAMES: Record<string, string> = {
+  'AB': 'Alberta',
+  'BC': 'British Columbia',
+  'ON': 'Ontario',
+  'QC': 'Quebec',
+  'MB': 'Manitoba',
+  'SK': 'Saskatchewan',
+  'NS': 'Nova Scotia',
+  'NB': 'New Brunswick',
+  'NL': 'Newfoundland and Labrador',
+  'PE': 'Prince Edward Island',
+  'NT': 'Northwest Territories',
+  'NU': 'Nunavut',
+  'YT': 'Yukon',
+};
+
+function getProvinceName(code: string): string {
+  return PROVINCE_NAMES[code] || code;
+}
+
 export const AIDataCentreDashboard: React.FC = () => {
   const [dcData, setDcData] = useState<DashboardData | null>(null);
   const [queueData, setQueueData] = useState<QueueData | null>(null);
@@ -259,6 +279,10 @@ export const AIDataCentreDashboard: React.FC = () => {
 
   if (!dcData || !queueData) return null;
 
+  // Check if province has data
+  const hasProvinceData = dcData.data_centres.length > 0 || dcData.summary.total_count > 0;
+  const isAlberta = selectedProvince === 'AB';
+
   // Prepare data for visualizations
   const statusData = Object.entries(dcData.summary.by_status).map(([status, count]) => ({
     status,
@@ -315,7 +339,10 @@ export const AIDataCentreDashboard: React.FC = () => {
                 <h1 className="hero-title">AI Data Centre Energy Dashboard</h1>
               </div>
               <p className="hero-subtitle">
-                Alberta's $100B AI Strategy · AESO interconnection queue crisis management
+                {selectedProvince === 'AB' 
+                  ? "Alberta's $100B AI Strategy · AESO interconnection queue crisis management"
+                  : `${getProvinceName(selectedProvince)} AI Data Centre Infrastructure`
+                }
               </p>
             </div>
             <HelpButton id="ai-datacentre.overview" />
@@ -381,8 +408,22 @@ export const AIDataCentreDashboard: React.FC = () => {
       {/* Current Queue View */}
       {activeTab === 'current' && (
         <>
-          {/* Critical Alerts Banner */}
-          {queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
+          {/* No Data Message for non-Alberta provinces */}
+          {!hasProvinceData && !isAlberta && (
+            <div className="mb-6 p-6 bg-secondary border border-[var(--border-subtle)] rounded-lg text-center">
+              <Server className="w-12 h-12 mx-auto mb-4 text-tertiary" />
+              <h3 className="text-lg font-semibold text-primary mb-2">
+                No AI Data Centre Data Available for {getProvinceName(selectedProvince)}
+              </h3>
+              <p className="text-secondary">
+                AI data centre tracking is currently focused on Alberta due to the $100B AI strategy initiative.
+                Data for other provinces will be added as projects are announced.
+              </p>
+            </div>
+          )}
+
+          {/* Critical Alerts Banner - Alberta only */}
+          {isAlberta && queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
         <div className="mb-6 p-4 bg-secondary border-l-4 border-red-500 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-danger flex-shrink-0 mt-0.5" />
@@ -399,7 +440,7 @@ export const AIDataCentreDashboard: React.FC = () => {
         </div>
       )}
 
-      {queueData.insights.phase1_allocation_status.is_fully_allocated && (
+      {isAlberta && queueData.insights.phase1_allocation_status.is_fully_allocated && (
         <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
@@ -445,7 +486,8 @@ export const AIDataCentreDashboard: React.FC = () => {
         />
       </div>
 
-      {/* Phase 1 Allocation Status */}
+      {/* Phase 1 Allocation Status - Alberta only */}
+      {isAlberta && (
       <div className="card p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
@@ -506,13 +548,15 @@ export const AIDataCentreDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
 
-      {/* Grid Impact Analysis */}
+      {/* Grid Impact Analysis - Show only when data exists */}
+      {(hasProvinceData || isAlberta) && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <div className="card p-6">
           <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
             <Activity className="w-6 h-6 text-electric" />
-            Grid Impact Analysis
+            {isAlberta ? 'Grid Impact Analysis' : `${getProvinceName(selectedProvince)} Grid Impact`}
           </h2>
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
@@ -575,8 +619,10 @@ export const AIDataCentreDashboard: React.FC = () => {
           </ResponsiveContainer>
         </div>
       </div>
+      )}
 
-      {/* AESO Queue Breakdown */}
+      {/* AESO Queue Breakdown - Alberta only */}
+      {isAlberta && (
       <div className="card p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
@@ -620,13 +666,15 @@ export const AIDataCentreDashboard: React.FC = () => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+      )}
 
       {/* Data Centre Registry Table */}
+      {hasProvinceData && (
       <div className="card p-6 mb-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
             <MapPin className="w-6 h-6 text-electric" />
-            Alberta AI Data Centre Registry
+            {getProvinceName(selectedProvince)} AI Data Centre Registry
           </h2>
           <HelpButton id="ai-datacentre.pue" className="ml-2" />
         </div>
@@ -702,6 +750,7 @@ export const AIDataCentreDashboard: React.FC = () => {
           </table>
         </div>
       </div>
+      )}
         </>
       )}
 
