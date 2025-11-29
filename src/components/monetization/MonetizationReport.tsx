@@ -1,8 +1,8 @@
 /**
  * MonetizationReport Component
  *
- * Comprehensive, world-class dashboard for displaying complete monetization analysis
- * with beautiful charts, metrics, and interactive elements. Stripe-level quality.
+ * Dashboard for displaying monetization analysis with charts, metrics,
+ * and interactive elements.
  */
 
 import React, { useState, useMemo } from 'react';

@@ -1,0 +1,37 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Canada Energy Intelligence Platform",
+  "description": "Real-time energy data analytics platform providing comprehensive insights into Canadian energy infrastructure, renewable forecasts, grid optimization, and Indigenous consultation tracking.",
+  "url": "https://canada-energy.netlify.app/",
+  "applicationCategory": "EnergyAnalytics",
+  "operatingSystem": "Web",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "CAD"
+  },
+  "provider": {
+    "@type": "Organization",
+    "name": "Canada Energy Intelligence Platform",
+    "url": "https://canada-energy.netlify.app/"
+  },
+  "audience": {
+    "@type": "Audience",
+    "audienceType": [
+      "Energy Professionals",
+      "Policy Makers",
+      "Researchers",
+      "Indigenous Communities"
+    ]
+  },
+  "featureList": [
+    "Real-time energy data streaming",
+    "Provincial energy analytics",
+    "Renewable energy forecasts",
+    "Grid optimization insights",
+    "Indigenous consultation tracking",
+    "Regulatory compliance monitoring",
+    "AI-powered recommendations"
+  ]
+}

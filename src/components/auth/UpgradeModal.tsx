@@ -6,8 +6,10 @@
  * Week 2: Will add Stripe Checkout integration
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { X, Check, Sparkles, Zap, Crown } from 'lucide-react';
+import { useAuth } from './AuthProvider';
+import { getEdgeBaseUrl } from '../../lib/config';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -67,10 +69,13 @@ const tierFeatures = {
 };
 
 export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: UpgradeModalProps) {
-  if (!isOpen) return null;
+  const { user, session } = useAuth();
+  const [loading, setLoading] = useState(false);
 
   const tier = tierFeatures[targetTier];
   const Icon = tier.icon;
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -119,14 +124,55 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
         {/* CTA */}
         <div className="space-y-3">
           <button
-            onClick={() => {
-              // TODO: Integrate Stripe Checkout in Week 2
-              alert('Stripe integration coming in Week 2!\n\nFor now, you can manually upgrade by:\n1. Contacting support\n2. Or wait for Stripe setup next week');
-              onClose();
+            type="button"
+            disabled={loading}
+            onClick={async () => {
+              if (!user || !session?.access_token) {
+                window.location.href = '/pricing';
+                return;
+              }
+
+              const base = getEdgeBaseUrl();
+              if (!base) {
+                alert('Billing is not yet configured. Please contact support.');
+                return;
+              }
+
+              try {
+                setLoading(true);
+                const res = await fetch(`${base}/stripe-create-checkout-session`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${session.access_token}`,
+                  },
+                  body: JSON.stringify({ tier: targetTier }),
+                });
+
+                const body = await res.json().catch(() => ({}));
+
+                if (!res.ok || !body?.url) {
+                  const message = body?.error || body?.message || 'Failed to start checkout. Please try again or contact support.';
+                  alert(message);
+                  return;
+                }
+
+                window.location.href = body.url as string;
+              } catch (err) {
+                console.error('Stripe checkout error (UpgradeModal)', err);
+                alert('Unexpected error while starting checkout. Please try again later.');
+              } finally {
+                setLoading(false);
+                onClose();
+              }
             }}
             className={`w-full py-4 bg-gradient-to-r from-${tier.color}-500 to-${tier.color}-600 text-white font-semibold rounded-lg hover:from-${tier.color}-600 hover:to-${tier.color}-700 focus:outline-none focus:ring-2 focus:ring-${tier.color}-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all`}
           >
-            {targetTier === 'edubiz' ? 'Start 7-Day Free Trial' : 'Contact Sales'}
+            {loading
+              ? 'Redirecting…'
+              : targetTier === 'edubiz'
+                ? 'Start 7-Day Free Trial'
+                : 'Contact Sales'}
           </button>
 
           <button

@@ -1,0 +1,265 @@
+/**
+ * Accessibility Fixes - WCAG 2.2 AA Compliance
+ * 
+ * Addresses Lighthouse audit findings:
+ * - Color contrast improvements (4.5:1 minimum ratio)
+ * - Focus indicators
+ * - Screen reader enhancements
+ * - Reduced motion support
+ */
+
+/* ===== COLOR CONTRAST FIXES ===== */
+
+/* Improve tertiary text contrast (was too light) */
+.text-tertiary {
+  color: #64748b !important; /* slate-500 - 4.6:1 contrast on white */
+}
+
+/* Dark mode tertiary text */
+.dark .text-tertiary,
+[data-theme="dark"] .text-tertiary {
+  color: #94a3b8 !important; /* slate-400 - 4.5:1 contrast on dark bg */
+}
+
+/* Badge contrast improvements */
+.badge {
+  font-weight: 600;
+}
+
+.badge-success {
+  background-color: #059669 !important; /* emerald-600 */
+  color: #ffffff !important;
+}
+
+.badge-warning {
+  background-color: #d97706 !important; /* amber-600 */
+  color: #ffffff !important;
+}
+
+.badge-error {
+  background-color: #dc2626 !important; /* red-600 */
+  color: #ffffff !important;
+}
+
+.badge-info {
+  background-color: #0284c7 !important; /* sky-600 */
+  color: #ffffff !important;
+}
+
+/* Card header text contrast */
+.card-header h3,
+.card-header .card-title {
+  color: #1e293b !important; /* slate-800 */
+}
+
+.dark .card-header h3,
+.dark .card-header .card-title,
+[data-theme="dark"] .card-header h3,
+[data-theme="dark"] .card-header .card-title {
+  color: #f1f5f9 !important; /* slate-100 */
+}
+
+/* ===== FOCUS INDICATORS ===== */
+
+/* Enhanced focus ring for all interactive elements */
+:focus-visible {
+  outline: 3px solid #3b82f6 !important; /* blue-500 */
+  outline-offset: 2px !important;
+}
+
+/* Button focus states */
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* Link focus states */
+a:focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 2px !important;
+  border-radius: 2px;
+}
+
+/* Input focus states */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: 0 !important;
+  border-color: #3b82f6 !important;
+}
+
+/* Tab focus states */
+[role="tab"]:focus-visible {
+  outline: 3px solid #3b82f6 !important;
+  outline-offset: -2px !important;
+}
+
+/* ===== SCREEN READER ENHANCEMENTS ===== */
+
+/* Visually hidden but accessible to screen readers */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+/* Skip to main content link */
+.skip-to-main {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 8px 16px;
+  z-index: 9999;
+  text-decoration: none;
+  font-weight: 600;
+  border-radius: 0 0 4px 0;
+  transition: top 0.2s ease;
+}
+
+.skip-to-main:focus {
+  top: 0;
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ===== REDUCED MOTION ===== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .animate-pulse,
+  .animate-spin,
+  .animate-bounce,
+  .animate-float,
+  .animate-gradient-xy {
+    animation: none !important;
+  }
+}
+
+/* ===== LINK ACCESSIBILITY ===== */
+
+/* Ensure links have visible underlines or other indicators */
+a:not(.btn):not([role="button"]):not(.nav-link) {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+}
+
+a:not(.btn):not([role="button"]):not(.nav-link):hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Icon-only links need aria-label - add visual indicator */
+a[aria-label]:not(:has(span)):not(:has(p)) {
+  position: relative;
+}
+
+/* ===== HEADING STRUCTURE ===== */
+
+/* Visual hierarchy reinforcement */
+h1 { font-size: 2.25rem; font-weight: 800; }
+h2 { font-size: 1.875rem; font-weight: 700; }
+h3 { font-size: 1.5rem; font-weight: 600; }
+h4 { font-size: 1.25rem; font-weight: 600; }
+h5 { font-size: 1.125rem; font-weight: 500; }
+h6 { font-size: 1rem; font-weight: 500; }
+
+/* ===== TOUCH TARGET SIZE ===== */
+
+/* Minimum 44x44px touch targets for mobile */
+@media (pointer: coarse) {
+  button,
+  [role="button"],
+  a,
+  input[type="checkbox"],
+  input[type="radio"],
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Ensure adequate spacing between touch targets */
+  .btn + .btn,
+  button + button {
+    margin-left: 8px;
+  }
+}
+
+/* ===== HIGH CONTRAST MODE ===== */
+
+@media (prefers-contrast: high) {
+  :root {
+    --color-electric: #00bfff;
+    --color-forest: #006644;
+  }
+  
+  .card {
+    border-width: 2px !important;
+  }
+  
+  button,
+  [role="button"] {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* ===== ARIA ROLE FIXES ===== */
+
+/* Ensure proper list structure */
+[role="list"] > * {
+  display: list-item;
+}
+
+/* Tab panel accessibility */
+[role="tabpanel"] {
+  outline: none;
+}
+
+[role="tabpanel"]:focus-visible {
+  outline: 3px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+/* ===== FORM ACCESSIBILITY ===== */
+
+/* Error state indicators */
+.input-error,
+input:invalid,
+select:invalid,
+textarea:invalid {
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 1px #dc2626 !important;
+}
+
+/* Required field indicator */
+label[data-required]::after,
+.label-required::after {
+  content: " *";
+  color: #dc2626;
+  font-weight: bold;
+}
+
+/* Disabled state */
+:disabled,
+[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

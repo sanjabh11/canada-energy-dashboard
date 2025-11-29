@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from './auth';
 import { Check, X, Zap, TrendingUp, ArrowRight, Crown, Star } from 'lucide-react';
+import { getEdgeBaseUrl } from '../lib/config';
 
 export function PricingPage() {
-  const { user, edubizUser } = useAuth();
+  const { user, edubizUser, session } = useAuth();
+  const [checkoutLoadingTier, setCheckoutLoadingTier] = useState<'edubiz' | 'pro' | null>(null);
   const currentTier = edubizUser?.tier || 'free';
 
   const tiers = [
@@ -79,6 +81,46 @@ export function PricingPage() {
       enterprise: true
     }
   ];
+
+  async function handleTierCheckout(tierId: 'edubiz' | 'pro') {
+    if (!user || !session?.access_token) {
+      window.location.href = '/signup';
+      return;
+    }
+
+    const base = getEdgeBaseUrl();
+    if (!base) {
+      alert('Billing is not yet configured. Please contact support.');
+      return;
+    }
+
+    try {
+      setCheckoutLoadingTier(tierId);
+      const res = await fetch(`${base}/stripe-create-checkout-session`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ tier: tierId }),
+      });
+
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok || !body?.url) {
+        const message = body?.error || body?.message || 'Failed to start checkout. Please try again or contact support.';
+        alert(message);
+        return;
+      }
+
+      window.location.href = body.url as string;
+    } catch (err) {
+      console.error('Stripe checkout error', err);
+      alert('Unexpected error while starting checkout. Please try again later.');
+    } finally {
+      setCheckoutLoadingTier(null);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -180,12 +222,23 @@ export function PricingPage() {
                       Current Plan
                     </button>
                   ) : canUpgrade ? (
-                    <a
-                      href={tier.enterprise ? '/contact-sales' : '/checkout'}
-                      className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
-                    >
-                      {tier.cta}
-                    </a>
+                    tier.enterprise ? (
+                      <a
+                        href="/contact-sales"
+                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
+                      >
+                        {tier.cta}
+                      </a>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => void handleTierCheckout(tier.id === 'pro' ? 'pro' : 'edubiz')}
+                        disabled={checkoutLoadingTier !== null}
+                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
+                      >
+                        {checkoutLoadingTier === (tier.id === 'pro' ? 'pro' : 'edubiz') ? 'Redirecting…' : tier.cta}
+                      </button>
+                    )
                   ) : tier.id === 'free' ? (
                     <button
                       disabled
@@ -194,12 +247,30 @@ export function PricingPage() {
                       Cannot Downgrade
                     </button>
                   ) : (
-                    <a
-                      href={tier.enterprise ? '/contact-sales' : user ? '/checkout' : '/signup'}
-                      className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
-                    >
-                      {tier.cta}
-                    </a>
+                    tier.enterprise ? (
+                      <a
+                        href="/contact-sales"
+                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
+                      >
+                        {tier.cta}
+                      </a>
+                    ) : user ? (
+                      <button
+                        type="button"
+                        onClick={() => void handleTierCheckout('edubiz')}
+                        disabled={checkoutLoadingTier !== null}
+                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
+                      >
+                        {checkoutLoadingTier === 'edubiz' ? 'Redirecting…' : tier.cta}
+                      </button>
+                    ) : (
+                      <a
+                        href="/signup"
+                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
+                      >
+                        {tier.cta}
+                      </a>
+                    )
                   )}
 
                   {tier.trial && !isCurrentTier && (

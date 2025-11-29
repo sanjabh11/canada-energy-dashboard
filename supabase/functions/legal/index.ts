@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Supabase Edge Function: legal
 // Provides privacy policy and legal information
 // Endpoints:

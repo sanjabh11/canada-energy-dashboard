@@ -1,8 +1,8 @@
 /**
- * AI Energy Oracle Dashboard - Revolutionary Predictive Intelligence
+ * AI Energy Oracle Dashboard - Predictive Intelligence
  * 
- * World-class AI-powered energy intelligence platform that transforms
- * reactive monitoring into predictive insights and autonomous decision support.
+ * AI-powered energy intelligence platform that supports predictive insights
+ * and decision support for energy monitoring.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';

@@ -107,15 +107,13 @@ serve(async (req: Request) => {
     const { data: tradeFlows } = await tradeQuery;
 
     // Fetch EV demand forecast
-    let evDemandQuery = supabase
+    const { data: evDemand } = await supabase
       .from('ev_minerals_demand_forecast')
       .select('*')
       .eq('scenario', 'Base Case')
       .gte('year', currentYear)
       .lte('year', currentYear + 10)
       .order('year');
-
-    const { data: evDemand } = await evDemandQuery;
 
     // Fetch strategic stockpile status
     const { data: stockpile } = await supabase

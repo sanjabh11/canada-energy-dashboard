@@ -29,10 +29,11 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
+import { LanguageSwitcher } from './LanguageSwitcher';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
 import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
 import AnalyticsTrendsDashboard from './AnalyticsTrendsDashboard';
@@ -54,6 +55,11 @@ import DigitalTwinDashboard from './DigitalTwinDashboard';
 import CanadianClimatePolicyDashboard from './CanadianClimatePolicyDashboard';
 import ESGFinanceDashboard from './ESGFinanceDashboard';
 import IndustrialDecarbDashboard from './IndustrialDecarbDashboard';
+import ArcticEnergySecurityMonitor from './ArcticEnergySecurityMonitor';
+import { useTranslation } from '../lib/i18n';
+import { ImpactMetricsDashboard } from './ImpactMetricsDashboard';
+import { CrisisScenarioSimulator } from './CrisisScenarioSimulator';
+import { SEOHead, SEO_CONFIGS } from './SEOHead';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -88,7 +94,8 @@ const helpIdByTab: Record<string, string> = {
   ESGFinance: 'page.esg-finance',
   DigitalTwin: 'page.digital-twin',
   ClimatePolicy: 'page.climate-policy',
-  IndustrialDecarb: 'page.industrial-decarb'
+  IndustrialDecarb: 'page.industrial-decarb',
+  ArcticEnergy: 'page.arctic-energy'
 };
 
 // Toggle debug logs via VITE_DEBUG_LOGS=true
@@ -131,7 +138,8 @@ interface EnergyDataDashboardProps {
   initialTab?: string;
 }
 
-export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initialTab }) => {
+export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDashboardProps) {
+  const { t } = useTranslation();
   const [state, setState] = useState<DashboardState>({
     activeDataset: 'provincial_generation',
     data: [],
@@ -260,6 +268,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
     { id: 'GridOptimization', label: 'Grid Ops', icon: Activity }, // ⭐⭐⭐
     { id: 'DigitalTwin', label: 'Digital Twin', icon: Cpu }, // ⭐⭐⭐
     { id: 'ClimatePolicy', label: 'Climate Policy', icon: Scale }, // ⭐⭐⭐
+    { id: 'ArcticEnergy', label: 'Arctic Energy Security', icon: Snowflake }, // ⭐⭐ Arctic & Northern
     // 2-Star Features (Limited monetization)
     { id: 'Resilience', label: 'Resilience', icon: Shield }, // ⭐⭐
     { id: 'Innovation', label: 'Innovation', icon: Zap } // ⭐⭐
@@ -384,28 +393,43 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
   const activeDatasetInfo = DATASETS.find(d => d.key === state.activeDataset)!;
   const activeStatus = connectionStatuses.find(s => s.dataset === activeDatasetInfo.name);
 
+  // Determine SEO config based on active tab
+  const getSEOConfig = () => {
+    switch (activeTab) {
+      case 'Indigenous': return SEO_CONFIGS.indigenous;
+      case 'ClimatePolicy': return SEO_CONFIGS.climatePolicy;
+      case 'AIDataCentre': return SEO_CONFIGS.aiDataCentre;
+      case 'Resilience': return SEO_CONFIGS.resilience;
+      default: return SEO_CONFIGS.dashboard;
+    }
+  };
+  const seoConfig = getSEOConfig();
+
   return (
     <div className="min-h-screen bg-slate-900">
+      {/* SEO Head - injects per-page meta tags */}
+      <SEOHead {...seoConfig} />
+      
       {/* Primary Navigation Header */}
       <header className="nav-header" role="banner">
         <div className="nav-container">
           <a
             href="/"
             className="nav-logo flex items-center gap-sm"
-            aria-label="Canada Energy Intelligence home"
+            aria-label={t.dashboard.title}
           >
             <Zap className="h-6 w-6 text-electric" />
-            <span>Canada Energy Intelligence</span>
+            <span>{t.dashboard.title}</span>
           </a>
           <ul className="nav-menu" role="navigation" aria-label="Site links">
             <li>
               <a href="/about" className="nav-link">
-                About
+                {t.nav.about}
               </a>
             </li>
             <li>
               <a href="/contact" className="nav-link">
-                Contact
+                {t.nav.contact}
               </a>
             </li>
             <li>
@@ -415,7 +439,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
                 rel="noopener noreferrer"
                 className="nav-link"
               >
-                Documentation
+                {t.nav.docs}
               </a>
             </li>
           </ul>
@@ -437,6 +461,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
               <Activity className="h-4 w-4" />
               <span>{state.loading ? 'Loading...' : 'Refresh'}</span>
             </button>
+            <LanguageSwitcher variant="toggle" compact={true} />
             <div className="ml-2">
               <HelpButton id={helpIdByTab[activeTab] ?? 'dashboard.overview'} />
             </div>
@@ -477,23 +502,23 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
             >
               <div className="hero-content text-center">
                 <h1 id="home-hero-title" className="hero-title">
-                  Canada Energy Intelligence Platform
+                  {t.home.heroTitle}
                 </h1>
                 <p className="hero-subtitle max-w-3xl mx-auto">
-                  Real-time monitoring and AI-powered insights for Canadian energy infrastructure.
+                  {t.home.heroSubtitle}
                 </p>
                 <div className="flex flex-col sm:flex-row gap-md justify-center mt-6">
                   <button
                     onClick={() => setActiveTab('Dashboard')}
                     className="btn btn-primary btn-lg"
                   >
-                    Explore Dashboard
+                    {t.home.ctaExploreDashboard}
                   </button>
                   <button
                     onClick={() => setActiveTab('Analytics')}
                     className="btn btn-secondary btn-lg"
                   >
-                    View Analytics
+                    {t.home.ctaViewAnalytics}
                   </button>
                 </div>
               </div>
@@ -997,6 +1022,8 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
                   </div>
                 </div>
                 <ResilienceMap />
+                {/* Crisis Scenario Simulator (Gap #15) */}
+                <CrisisScenarioSimulator />
               </div>
             )}
 
@@ -1270,12 +1297,21 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
 
             {/* Sustainable Finance & ESG Dashboard */}
             {activeTab === 'ESGFinance' && (
-              <ESGFinanceDashboard />
+              <div className="space-y-8">
+                <ESGFinanceDashboard />
+                {/* Impact Metrics Dashboard (Gap #12) */}
+                <ImpactMetricsDashboard showExport={true} />
+              </div>
             )}
 
             {/* Industrial Decarbonization Dashboard */}
             {activeTab === 'IndustrialDecarb' && (
               <IndustrialDecarbDashboard />
+            )}
+
+            {/* Arctic & Northern Energy Security Dashboard (Diesel-to-Renewable Optimizer) */}
+            {activeTab === 'ArcticEnergy' && (
+              <ArcticEnergySecurityMonitor />
             )}
 
             {/* Digital Twin Dashboard */}
@@ -1294,7 +1330,7 @@ export const EnergyDataDashboard: React.FC<EnergyDataDashboardProps> = ({ initia
             )}
 
             {/* Fallback for undefined tabs */}
-            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard', 'ESGFinance', 'DigitalTwin', 'ClimatePolicy', 'IndustrialDecarb'].includes(activeTab) && (
+            {!['Dashboard', 'Home', 'Provinces', 'Trends', 'Investment', 'Resilience', 'Innovation', 'Indigenous', 'Stakeholders', 'GridOptimization', 'Security', 'Features', 'Education', 'RenewableOptimization', 'CurtailmentAnalytics', 'StorageDispatch', 'Analytics', 'HouseholdAdvisor', 'AIDataCentres', 'HydrogenHub', 'CriticalMinerals', 'SMRDeployment', 'GridQueue', 'CapacityMarket', 'EVCharging', 'VPPAggregation', 'HeatPumps', 'CCUSProjects', 'CarbonDashboard', 'ESGFinance', 'DigitalTwin', 'ClimatePolicy', 'IndustrialDecarb', 'ArcticEnergy'].includes(activeTab) && (
               <div className="card border border-[var(--border-subtle)] p-8 text-center">
                 <div className="max-w-md mx-auto">
                   <div className="bg-secondary p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">

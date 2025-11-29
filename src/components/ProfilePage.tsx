@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuth, ProtectedRoute } from './auth';
 import { ProgressTracker } from './badges';
 import { getBadgeProgress, BadgeProgress } from '../lib/gamificationService';
-import { User, Award, CreditCard, Settings, Mail, MapPin, Shield, TrendingUp, Loader } from 'lucide-react';
+import { User, Users, Award, CreditCard, Settings, Mail, MapPin, Shield, TrendingUp, Loader, Key, Book } from 'lucide-react';
 
 function ProfilePageContent() {
   const { user, edubizUser } = useAuth();
@@ -300,6 +300,54 @@ function ProfilePageContent() {
                   You're on the highest tier! 🎉
                 </div>
               )}
+            </div>
+
+            {(currentTier === 'edubiz' || currentTier === 'pro') && (
+              <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-cyan-400 mr-2" />
+                    <h3 className="text-lg font-semibold text-white">Cohort Admin</h3>
+                  </div>
+                </div>
+                <p className="text-sm text-slate-300 mb-4">
+                  Launch and manage learning cohorts for your team or community.
+                </p>
+                <a
+                  href="/admin/cohorts"
+                  className="block w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-2.5 px-4 rounded-lg text-center text-sm transition-colors"
+                >
+                  Open Cohort Admin Panel
+                </a>
+              </div>
+            )}
+
+            {/* API Access Card */}
+            <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center">
+                  <Key className="h-5 w-5 text-emerald-400 mr-2" />
+                  <h3 className="text-lg font-semibold text-white">API Access</h3>
+                </div>
+              </div>
+              <p className="text-sm text-slate-300 mb-4">
+                Access Canada energy data programmatically via REST API.
+              </p>
+              <div className="space-y-2">
+                <a
+                  href="/api-keys"
+                  className="block w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-4 rounded-lg text-center text-sm transition-colors"
+                >
+                  Manage API Keys
+                </a>
+                <a
+                  href="/api-docs"
+                  className="flex items-center justify-center gap-2 w-full border border-slate-600 hover:border-emerald-500 text-slate-300 hover:text-emerald-300 font-medium py-2 px-4 rounded-lg text-center text-sm transition-colors"
+                >
+                  <Book className="h-4 w-4" />
+                  View API Docs
+                </a>
+              </div>
             </div>
 
             {/* Subscription Info (if applicable) */}

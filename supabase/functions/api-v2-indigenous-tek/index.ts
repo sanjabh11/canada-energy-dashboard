@@ -36,7 +36,8 @@ serve(async (req) => {
   try {
     const { data, error } = await supabase
       .from("indigenous_tek_entries")
-      .select("id, territory_id, title, category, description, custodians, recorded_at, governance_reference")
+      .select("id, territory_id, title, category, description, custodians, recorded_at, governance_reference, consent_type")
+      .neq("consent_type", "private")
       .order("recorded_at", { ascending: false, nullsFirst: false })
       .limit(200);
 

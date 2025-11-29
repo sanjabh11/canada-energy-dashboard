@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { logApiUsage } from "../_shared/rateLimit.ts";
 
 const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5173",
@@ -46,7 +47,6 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
   : null;
 
 const VALID_PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'ON', 'PE', 'QC', 'SK', 'YT', 'NT', 'NU'];
-
 async function validateApiKey(req: Request, supabaseClient: any): Promise<boolean> {
   const headerKey = req.headers.get('apikey') || '';
   const authHeader = req.headers.get('authorization') || '';
@@ -103,54 +103,37 @@ async function validateApiKey(req: Request, supabaseClient: any): Promise<boolea
   }
 }
 
-async function logApiUsage(
-  req: Request,
-  supabaseClient: any,
-  endpoint: string,
-  statusCode: number,
-  durationMs: number,
-  extra: Record<string, unknown> = {},
-): Promise<void> {
-  if (!supabaseClient) return;
-
-  try {
-    const headerKey = req.headers.get('apikey') || '';
-    const authHeader = req.headers.get('authorization') || '';
-    let token = '';
-    if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-      token = authHeader.slice(7).trim();
-    }
-
-    const apiKey = headerKey || token || null;
-    const ipAddress = req.headers.get('x-forwarded-for')
-      || req.headers.get('cf-connecting-ip')
-      || null;
-
-    const payload = {
-      endpoint,
-      api_key: apiKey,
-      ip_address: ipAddress,
-      method: req.method,
-      status_code: statusCode,
-      response_time_ms: Math.round(durationMs),
-      extra,
-    };
-
-    const { error } = await supabaseClient
-      .from('api_usage')
-      .insert(payload);
-
-    if (error) {
-      console.error('api_usage insert failed', error);
-    }
-  } catch (err) {
-    console.error('api_usage insert threw', err);
-  }
-}
-
 serve(async (req) => {
   const corsHeaders = buildCorsHeaders(req.headers.get('origin'));
   const startTime = Date.now();
+  const ipAddress = req.headers.get('x-forwarded-for')
+    || req.headers.get('cf-connecting-ip')
+    || null;
+
+  async function safeLog(statusCode: number, extra?: Record<string, unknown>) {
+    try {
+      const headerKey = req.headers.get('apikey') || '';
+      const authHeader = req.headers.get('authorization') || '';
+      let token = '';
+      if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
+        token = authHeader.slice(7).trim();
+      }
+
+      const apiKey = headerKey || token || null;
+
+      await logApiUsage({
+        endpoint: 'api-v2-industrial-decarb',
+        method: req.method,
+        statusCode,
+        apiKey,
+        ipAddress,
+        responseTimeMs: Date.now() - startTime,
+        extra,
+      });
+    } catch (_err) {
+      // Logging failures must never affect main response path
+    }
+  }
 
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -180,9 +163,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-    await logApiUsage(req, supabase, 'api-v2-industrial-decarb', statusCode, Date.now() - startTime, {
-      reason: 'unauthorized',
-    });
+    await safeLog(statusCode, { reason: 'unauthorized' });
 
     return response;
   }
@@ -409,7 +390,7 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-    await logApiUsage(req, supabase, 'api-v2-industrial-decarb', statusCode, Date.now() - startTime, {
+    await safeLog(statusCode, {
       type: dataType,
       province: province ?? null,
       year: year ?? null,

@@ -1,8 +1,8 @@
 /**
  * Digital Twin Energy Ecosystem Dashboard
  * 
- * Revolutionary virtual model of Canada's entire energy system
- * with real-time simulation, stress testing, and predictive modeling.
+ * Virtual model of Canada's energy system with real-time simulation,
+ * stress testing, and predictive modeling capabilities.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';

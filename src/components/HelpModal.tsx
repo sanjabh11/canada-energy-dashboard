@@ -35,8 +35,6 @@ export const HelpModal: React.FC<HelpModalProps> = ({
   methodology,
   limitations
 }) => {
-  if (!isOpen) return null;
-
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -48,18 +46,18 @@ export const HelpModal: React.FC<HelpModalProps> = ({
       }
     }
 
-    if (open) {
+    if (isOpen) {
       document.addEventListener('keydown', handleKey);
       // Focus the close button after a short delay for proper modal behavior
       setTimeout(() => closeButtonRef.current?.focus(), 50);
     }
 
     return () => document.removeEventListener('keydown', handleKey);
-  }, [open, onClose]);
+  }, [isOpen, onClose]);
 
   // Basic focus trap
   useEffect(() => {
-    if (!open) return;
+    if (!isOpen) return;
 
     const focusableElements = dialogRef.current?.querySelectorAll<HTMLElement>(
       'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
@@ -84,10 +82,10 @@ export const HelpModal: React.FC<HelpModalProps> = ({
 
     document.addEventListener('keydown', handleTab);
     return () => document.removeEventListener('keydown', handleTab);
-  }, [open]);
+  }, [isOpen]);
 
   // Don't render if modal is not open
-  if (!open) return null;
+  if (!isOpen) return null;
 
   return (
     // Backdrop

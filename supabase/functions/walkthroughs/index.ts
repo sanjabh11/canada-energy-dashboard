@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Supabase Edge Function: walkthroughs
 // Provides interactive guided walkthroughs for educational purposes
 // Endpoints:

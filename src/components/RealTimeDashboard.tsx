@@ -35,6 +35,9 @@ import { DataQualityBadge } from './DataQualityBadge';
 import { createProvenance } from '../lib/types/provenance';
 import OpsHealthPanel from './OpsHealthPanel';
 import StorageMetricsCard from './StorageMetricsCard';
+import { DataSource, COMMON_DATA_SOURCES } from './ui/DataSource';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import { SkeletonLoader, SkeletonChart, SkeletonMetricGrid } from './ui/SkeletonLoader';
 
 interface DashboardData {
   ontarioDemand: OntarioDemandRecord[];
@@ -198,7 +201,7 @@ export const RealTimeDashboard: React.FC = () => {
       clearInterval(interval);
       loadAbortRef.current?.abort();
     };
-  }, []); // Empty dependency array - only run once on mount
+  }, [loadDashboardData]);
 
   // Load Transition KPIs (server-side computation)
   useEffect(() => {
@@ -593,9 +596,18 @@ export const RealTimeDashboard: React.FC = () => {
         <div className="card">
           <div className="card-header">
             <div className="flex justify-between">
-              <div className="flex items-center">
-                <Database className="h-6 w-6 text-electric mr-3" />
-                <h2 className="card-title">Real-Time Energy Dashboard</h2>
+              <div className="flex items-center gap-4">
+                <div className="flex items-center">
+                  <Database className="h-6 w-6 text-electric mr-3" />
+                  <h2 className="card-title">Real-Time Energy Dashboard</h2>
+                </div>
+                <DataFreshnessBadge 
+                  timestamp={lastUpdate} 
+                  staleThresholdMinutes={5}
+                  showRefreshButton={true}
+                  onRefresh={loadDashboardData}
+                  isRefreshing={loading}
+                />
               </div>
               <div className="flex items-center space-x-4">
                 <div className={`badge ${
@@ -681,12 +693,19 @@ export const RealTimeDashboard: React.FC = () => {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="text-sm text-center mt-2 text-secondary">
-                {data.ontarioDemand.length > 0 
-                  ? `Data: ${data.ontarioDemand.length} records • Source: ${sourceText('ontario_demand')}`
-                  : loading 
-                    ? 'Loading data...'
-                    : 'Using sample data • Source: Fallback'}
+              <div className="flex items-center justify-center gap-4 mt-2">
+                <DataSource 
+                  {...COMMON_DATA_SOURCES.IESO_DEMAND}
+                  date={lastUpdate.toISOString()}
+                  compact={true}
+                />
+                <span className="text-xs text-slate-500">
+                  {data.ontarioDemand.length > 0 
+                    ? `${data.ontarioDemand.length} records`
+                    : loading 
+                      ? 'Loading...'
+                      : 'Sample data'}
+                </span>
               </div>
             </div>
           </div>
@@ -738,14 +757,20 @@ export const RealTimeDashboard: React.FC = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="text-sm text-center mt-2">
-                {(provinceMetrics?.period?.start || nationalOverview?.metadata?.window?.start)
-                  ? `Data window: ${provinceMetrics?.period?.start ?? nationalOverview?.metadata?.window?.start} → ${provinceMetrics?.period?.end ?? nationalOverview?.metadata?.window?.end}`
-                  : data.provincialGeneration.length > 0
-                    ? `Data: ${data.provincialGeneration.length} records • Source: ${sourceText('provincial_generation')}`
-                    : loading
-                      ? 'Loading data...'
-                      : '⚠️ Fallback: Sample Data (KAGGLE archive) • Prefer live/historical tables'}
+              <div className="flex items-center justify-center gap-4 mt-2">
+                <DataSource 
+                  dataset="Provincial Generation Mix"
+                  url="https://www.ieso.ca/en/Power-Data/Supply-Overview/Hourly-Ontario-Energy-Price"
+                  date={lastUpdate.toISOString()}
+                  compact={true}
+                />
+                <span className="text-xs text-slate-500">
+                  {data.provincialGeneration.length > 0 
+                    ? `${data.provincialGeneration.length} records`
+                    : loading 
+                      ? 'Loading...'
+                      : 'Sample data'}
+                </span>
               </div>
             </div>
           </div>
@@ -807,10 +832,19 @@ export const RealTimeDashboard: React.FC = () => {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-              <div className="text-sm text-center mt-2 text-secondary">
-                {hasDemandTrend
-                  ? `Trend window: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • Completeness: ${typeof trends?.metadata?.completeness_pct === 'number' ? trends.metadata.completeness_pct.toFixed(1) + '%' : '—'} • Samples: ${trends?.metadata?.demand_sample_count ?? '—'} • Source: analytics trends API`
-                  : `Data: ${data.ontarioPrices.length} records • Source: ${sourceText('ontario_prices')}`}
+              <div className="flex items-center justify-center gap-4 mt-2">
+                {!hasDemandTrend && (
+                  <DataSource 
+                    {...COMMON_DATA_SOURCES.AESO_DEMAND}
+                    date={lastUpdate.toISOString()}
+                    compact={true}
+                  />
+                )}
+                <span className="text-sm text-secondary">
+                  {hasDemandTrend
+                    ? `Trend: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • ${trends?.metadata?.demand_sample_count ?? '—'} samples`
+                    : `${data.ontarioPrices.length} records • ${sourceText('ontario_prices')}`}
+                </span>
               </div>
             </div>
           </div>

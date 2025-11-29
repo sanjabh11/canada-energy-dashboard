@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.tsx'
 import './index.css';
+import './styles/accessibility.css';
 import { debug } from '@/lib/debug';
 import { validateFeatureFlags, getDeploymentStats } from './lib/featureFlags'
 
@@ -61,6 +62,20 @@ if (typeof window !== 'undefined') {
     document.addEventListener('DOMContentLoaded', setupScrollAnimations, { once: true });
   } else {
     setupScrollAnimations();
+  }
+
+  // Register service worker in production builds only (PWA support)
+  if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          debug.log('[App] Service Worker registered:', registration.scope);
+        })
+        .catch((error) => {
+          debug.error('[App] Service Worker registration failed:', error);
+        });
+    });
   }
 
   // Validate feature flags on initialization

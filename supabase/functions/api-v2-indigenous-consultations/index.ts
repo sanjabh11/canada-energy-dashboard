@@ -36,7 +36,8 @@ serve(async (req) => {
   try {
     const { data, error } = await supabase
       .from("indigenous_consultations")
-      .select("id, territory_id, title, status, meeting_date, participants, outcomes, recorded_at")
+      .select("id, territory_id, title, status, meeting_date, participants, outcomes, recorded_at, consent_type")
+      .neq("consent_type", "private")
       .order("recorded_at", { ascending: false })
       .limit(200);
 

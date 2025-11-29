@@ -1,8 +1,7 @@
 /**
  * MonetizationBadge Component
  *
- * World-class, Stripe-level quality badge component for displaying
- * monetization ratings with beautiful animations and visual polish.
+ * Badge component for displaying monetization ratings with animations.
  */
 
 import React from 'react';

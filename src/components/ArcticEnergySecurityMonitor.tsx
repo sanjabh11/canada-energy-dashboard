@@ -80,6 +80,9 @@ const TERRITORY_COLORS = {
   'Northern Manitoba': '#FB923C'
 };
 
+type ScenarioKey = keyof typeof PRESET_SCENARIOS;
+type RenewableTechId = 'solar' | 'wind' | 'hydro' | 'battery_storage' | 'biomass';
+
 export const ArcticEnergySecurityMonitor: React.FC = () => {
   const [communityProfiles, setCommunityProfiles] = useState<CommunityEnergyProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -89,8 +92,13 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
   
   // Optimization engine state
   const [optimizationResult, setOptimizationResult] = useState<OptimizationResult | null>(null);
-  const [selectedScenario, setSelectedScenario] = useState('moderate_transition');
+  const [selectedScenario, setSelectedScenario] = useState<ScenarioKey | 'custom'>('moderate_transition');
   const [optimizing, setOptimizing] = useState(false);
+  const [customBudget, setCustomBudget] = useState<number>(PRESET_SCENARIOS.moderate_transition.budget_cad);
+  const [customDieselReduction, setCustomDieselReduction] = useState<number>(PRESET_SCENARIOS.moderate_transition.diesel_reduction_target_percent);
+  const [customMaxYears, setCustomMaxYears] = useState<number>(PRESET_SCENARIOS.moderate_transition.max_implementation_years);
+  const [customMinReliability, setCustomMinReliability] = useState<number>(PRESET_SCENARIOS.moderate_transition.min_reliability_hours);
+  const [selectedRenewables, setSelectedRenewables] = useState<RenewableTechId[]>(['solar', 'wind', 'battery_storage']);
 
   useEffect(() => {
     loadArcticEnergyData();
@@ -605,9 +613,10 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                       <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
                         <span>Budget (CAD)</span>
                         <span className="text-blue-600 font-bold">
-                          ${(selectedScenario === 'custom' ? 
-                            (PRESET_SCENARIOS.moderate_transition.budget_cad) : 
-                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.budget_cad || 2000000)
+                          ${(
+                            selectedScenario === 'custom'
+                              ? customBudget
+                              : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.budget_cad || 2000000)
                           ).toLocaleString()}
                         </span>
                       </label>
@@ -623,6 +632,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                             'linear-gradient(to right, #3b82f6 0%, #3b82f6 50%, #e2e8f0 50%, #e2e8f0 100%)' : 
                             '#e2e8f0'
                         }}
+                        value={selectedScenario === 'custom'
+                          ? customBudget
+                          : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.budget_cad || PRESET_SCENARIOS.moderate_transition.budget_cad)}
+                        onChange={(e) => {
+                          if (selectedScenario === 'custom') {
+                            setCustomBudget(Number(e.target.value));
+                          }
+                        }}
                       />
                       <div className="flex justify-between text-xs text-slate-500 mt-1">
                         <span>$100K</span>
@@ -635,9 +652,9 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                       <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
                         <span>Diesel Reduction Target</span>
                         <span className="text-green-600 font-bold">
-                          {selectedScenario === 'custom' ? 
-                            50 : 
-                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.diesel_reduction_target_percent || 50)
+                          {selectedScenario === 'custom' 
+                            ? customDieselReduction
+                            : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.diesel_reduction_target_percent || 50)
                           }%
                         </span>
                       </label>
@@ -648,6 +665,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                         step="5"
                         disabled={selectedScenario !== 'custom'}
                         className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        value={selectedScenario === 'custom'
+                          ? customDieselReduction
+                          : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.diesel_reduction_target_percent || 50)}
+                        onChange={(e) => {
+                          if (selectedScenario === 'custom') {
+                            setCustomDieselReduction(Number(e.target.value));
+                          }
+                        }}
                       />
                       <div className="flex justify-between text-xs text-slate-500 mt-1">
                         <span>0%</span>
@@ -660,9 +685,9 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                       <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
                         <span>Implementation Timeline</span>
                         <span className="text-purple-600 font-bold">
-                          {selectedScenario === 'custom' ? 
-                            5 : 
-                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.max_implementation_years || 5)
+                          {selectedScenario === 'custom' 
+                            ? customMaxYears
+                            : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.max_implementation_years || 5)
                           } years
                         </span>
                       </label>
@@ -673,6 +698,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                         step="1"
                         disabled={selectedScenario !== 'custom'}
                         className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        value={selectedScenario === 'custom'
+                          ? customMaxYears
+                          : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.max_implementation_years || 5)}
+                        onChange={(e) => {
+                          if (selectedScenario === 'custom') {
+                            setCustomMaxYears(Number(e.target.value));
+                          }
+                        }}
                       />
                       <div className="flex justify-between text-xs text-slate-500 mt-1">
                         <span>1 year</span>
@@ -685,9 +718,9 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                       <label className="flex items-center justify-between text-sm font-medium text-slate-700 mb-2">
                         <span>Min Backup Reliability</span>
                         <span className="text-orange-600 font-bold">
-                          {selectedScenario === 'custom' ? 
-                            72 : 
-                            (PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.min_reliability_hours || 72)
+                          {selectedScenario === 'custom' 
+                            ? customMinReliability
+                            : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.min_reliability_hours || 72)
                           } hours
                         </span>
                       </label>
@@ -698,6 +731,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                         step="24"
                         disabled={selectedScenario !== 'custom'}
                         className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                        value={selectedScenario === 'custom'
+                          ? customMinReliability
+                          : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.min_reliability_hours || 72)}
+                        onChange={(e) => {
+                          if (selectedScenario === 'custom') {
+                            setCustomMinReliability(Number(e.target.value));
+                          }
+                        }}
                       />
                       <div className="flex justify-between text-xs text-slate-500 mt-1">
                         <span>24h</span>
@@ -724,7 +765,17 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                           >
                             <input
                               type="checkbox"
-                              defaultChecked={['solar', 'wind', 'battery_storage'].includes(tech.id)}
+                              checked={selectedRenewables.includes(tech.id as RenewableTechId)}
+                              onChange={(e) => {
+                                const id = tech.id as RenewableTechId;
+                                setSelectedRenewables((prev) => {
+                                  if (e.target.checked) {
+                                    if (prev.includes(id)) return prev;
+                                    return [...prev, id];
+                                  }
+                                  return prev.filter((t) => t !== id);
+                                });
+                              }}
                               className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
                             />
                             <span className="text-lg">{tech.icon}</span>
@@ -742,7 +793,14 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                       {Object.entries(PRESET_SCENARIOS).map(([key, scenario]) => (
                         <button
                           key={key}
-                          onClick={() => setSelectedScenario(key)}
+                          onClick={() => {
+                            setSelectedScenario(key as ScenarioKey);
+                            const base = PRESET_SCENARIOS[key as ScenarioKey];
+                            setCustomBudget(base.budget_cad);
+                            setCustomDieselReduction(base.diesel_reduction_target_percent);
+                            setCustomMaxYears(base.max_implementation_years);
+                            setCustomMinReliability(base.min_reliability_hours);
+                          }}
                           className={`px-4 py-3 rounded-lg border-2 transition-all ${
                             selectedScenario === key
                               ? 'border-blue-600 bg-blue-50 text-blue-900'
@@ -755,6 +813,30 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                           </div>
                         </button>
                       ))}
+
+                      <button
+                        key="custom"
+                        onClick={() => {
+                          const base = selectedScenario === 'custom'
+                            ? PRESET_SCENARIOS.moderate_transition
+                            : (PRESET_SCENARIOS[selectedScenario as ScenarioKey] || PRESET_SCENARIOS.moderate_transition);
+                          setCustomBudget(base.budget_cad);
+                          setCustomDieselReduction(base.diesel_reduction_target_percent);
+                          setCustomMaxYears(base.max_implementation_years);
+                          setCustomMinReliability(base.min_reliability_hours);
+                          setSelectedScenario('custom');
+                        }}
+                        className={`px-4 py-3 rounded-lg border-2 transition-all ${
+                          selectedScenario === 'custom'
+                            ? 'border-indigo-600 bg-indigo-50 text-indigo-900'
+                            : 'border-dashed border-slate-300 bg-white text-slate-700 hover:border-indigo-300'
+                        }`}
+                      >
+                        <div className="font-bold text-sm">Custom Scenario</div>
+                        <div className="text-xs mt-1 opacity-75">
+                          Adjust sliders and technologies manually
+                        </div>
+                      </button>
                     </div>
                   </div>
 
@@ -763,6 +845,20 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                     onClick={() => {
                       setOptimizing(true);
                       setTimeout(() => {
+                        const constraints =
+                          selectedScenario === 'custom'
+                            ? {
+                                budget_cad: customBudget,
+                                diesel_reduction_target_percent: customDieselReduction,
+                                max_implementation_years: customMaxYears,
+                                min_reliability_hours: customMinReliability,
+                              }
+                            : (PRESET_SCENARIOS[selectedScenario as ScenarioKey] || PRESET_SCENARIOS.moderate_transition);
+
+                        const renewablesToUse = selectedRenewables.length > 0
+                          ? selectedRenewables
+                          : (['solar', 'wind', 'battery_storage'] as RenewableTechId[]);
+
                         const result = optimizeDieselToRenewable(
                           {
                             community_name: selectedCommunity.community_name,
@@ -772,8 +868,8 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                             current_renewable_capacity_kw: selectedCommunity.energy_system.renewable_capacity_kw,
                             grid_connected: selectedCommunity.energy_system.grid_connected
                           },
-                          PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS] || PRESET_SCENARIOS.moderate_transition,
-                          ['solar', 'wind', 'battery_storage']
+                          constraints,
+                          renewablesToUse
                         );
                         setOptimizationResult(result);
                         setOptimizing(false);
@@ -850,7 +946,10 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
                           <div className="flex mb-2 items-center justify-between">
                             <div>
                               <span className="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-green-600 bg-green-200">
-                                Target: {PRESET_SCENARIOS[selectedScenario as keyof typeof PRESET_SCENARIOS]?.diesel_reduction_target_percent || 50}%
+                                Target: {selectedScenario === 'custom'
+                                  ? customDieselReduction
+                                  : (PRESET_SCENARIOS[selectedScenario as ScenarioKey]?.diesel_reduction_target_percent || 50)
+                                }%
                               </span>
                             </div>
                             <div className="text-right">

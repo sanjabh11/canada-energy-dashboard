@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { data, error } = await supabase
+    const { data: projects, error } = await supabase
       .from("indigenous_projects_v2")
       .select("id, territory_id, name, community, energy_type, stage, consultation_status, fpic_status, governance_status, revenue_share_percent, updated_at")
       .order("updated_at", { ascending: false })
@@ -44,7 +44,50 @@ serve(async (req) => {
       throw error;
     }
 
-    return new Response(JSON.stringify({ projects: data ?? [] }), {
+    const projectList = projects ?? [];
+    const projectIds = projectList.map((p: any) => p.id).filter(Boolean);
+
+    let consentByProject: Record<string, { consent_type: string | null }> = {};
+
+    if (projectIds.length > 0) {
+      const { data: consents, error: consentError } = await supabase
+        .from("indigenous_project_consent")
+        .select("project_id, consent_type")
+       .in("project_id", projectIds);
+
+      if (!consentError && Array.isArray(consents)) {
+        consentByProject = consents.reduce((acc: Record<string, { consent_type: string | null }>, row: any) => {
+          if (row && row.project_id) {
+            acc[row.project_id as string] = { consent_type: row.consent_type ?? null };
+          }
+          return acc;
+        }, {});
+      }
+    }
+
+    const filtered = projectList
+      .filter((p: any) => {
+        const consent = consentByProject[p.id as string];
+        if (!consent || !consent.consent_type) {
+          // No explicit consent record yet: treat as public for current seed data
+          return true;
+        }
+        if (consent.consent_type === "private") {
+          return false;
+        }
+        // "public" or "aggregated" are currently both exposed; future work can
+        // implement aggregated views if needed.
+        return true;
+      })
+      .map((p: any) => {
+        const consent = consentByProject[p.id as string];
+        return {
+          ...p,
+          consent_type: consent?.consent_type ?? "public",
+        };
+      });
+
+    return new Response(JSON.stringify({ projects: filtered }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

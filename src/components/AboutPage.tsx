@@ -75,7 +75,7 @@ export const AboutPage: React.FC = () => {
                   <Award className="h-8 w-8 text-orange-600" />
                 </div>
                 <h3 className="font-semibold text-primary mb-2">Innovation</h3>
-                <p className="text-sm text-secondary">Cutting-edge AI and machine learning for predictive analytics and optimization</p>
+                <p className="text-sm text-secondary">AI and machine learning for predictive analytics and optimization</p>
               </div>
             </div>
           </div>

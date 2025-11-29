@@ -1,4 +1,3 @@
-// @ts-nocheck
 // Supabase Edge Function: historical
 // Handles paged historical data exports
 // Endpoints:

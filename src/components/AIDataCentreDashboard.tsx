@@ -25,6 +25,7 @@ import {
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
 import { isEdgeFetchEnabled } from '../lib/config';
+import { AIDemandScenarioSlider } from './AIDemandScenarioSlider';
 
 interface AIDataCentre {
   id: string;
@@ -1072,6 +1073,11 @@ export const AIDataCentreDashboard: React.FC = () => {
           )}
         </>
       )}
+
+      {/* AI Demand Scenario Slider (Gap #14) */}
+      <div className="mt-8">
+        <AIDemandScenarioSlider initialDemand={15} maxDemand={100} showDetails={true} />
+      </div>
 
       {/* Footer */}
       <div className="text-center text-sm text-tertiary mt-8">

@@ -6,6 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <meta name="theme-color" content="#667eea" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="CEIP" />
+  <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/favicon.svg" />
   <meta name="description" content="Real-time Canadian energy intelligence platform providing comprehensive analytics, renewable forecasts, grid optimization, and Indigenous consultation tracking. Access live data from all provinces with AI-powered insights." />
   <meta name="keywords" content="Canada energy, real-time analytics, renewable energy, grid optimization, Indigenous consultation, UNDRIP compliance, energy dashboard, provincial data, AI insights, energy intelligence" />
   <meta name="author" content="Canada Energy Intelligence Platform" />
@@ -14,6 +19,11 @@
   <meta name="geo.region" content="CA" />
   <meta name="geo.country" content="Canada" />
   <link rel="canonical" href="https://canada-energy.netlify.app/" />
+  
+  <!-- Hreflang for bilingual EN/FR support -->
+  <link rel="alternate" hreflang="en-CA" href="https://canada-energy.netlify.app/" />
+  <link rel="alternate" hreflang="fr-CA" href="https://canada-energy.netlify.app/fr/" />
+  <link rel="alternate" hreflang="x-default" href="https://canada-energy.netlify.app/" />
 
   <!-- Open Graph / Social Media -->
   <meta property="og:type" content="website" />
@@ -23,6 +33,7 @@
   <meta property="og:url" content="https://canada-energy.netlify.app/" />
   <meta property="og:site_name" content="Canada Energy Intelligence Platform" />
   <meta property="og:locale" content="en_CA" />
+  <meta property="og:locale:alternate" content="fr_CA" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -31,40 +42,7 @@
   <meta name="twitter:image" content="/favicon.svg" />
 
   <!-- Structured Data (JSON-LD) -->
-  <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "WebApplication",
-    "name": "Canada Energy Intelligence Platform",
-    "description": "Real-time energy data analytics platform providing comprehensive insights into Canadian energy infrastructure, renewable forecasts, grid optimization, and Indigenous consultation tracking.",
-    "url": "https://canada-energy.netlify.app/",
-    "applicationCategory": "EnergyAnalytics",
-    "operatingSystem": "Web",
-    "offers": {
-      "@type": "Offer",
-      "price": "0",
-      "priceCurrency": "CAD"
-    },
-    "provider": {
-      "@type": "Organization",
-      "name": "Canada Energy Intelligence Platform",
-      "url": "https://canada-energy.netlify.app/"
-    },
-    "audience": {
-      "@type": "Audience",
-      "audienceType": ["Energy Professionals", "Policy Makers", "Researchers", "Indigenous Communities"]
-    },
-    "featureList": [
-      "Real-time energy data streaming",
-      "Provincial energy analytics",
-      "Renewable energy forecasts",
-      "Grid optimization insights",
-      "Indigenous consultation tracking",
-      "Regulatory compliance monitoring",
-      "AI-powered recommendations"
-    ]
-  }
-  </script>
+  <script type="application/ld+json" src="/schema-webapp.jsonld"></script>
   
   <!-- Security: CSP for development (production headers set via public/_headers) -->
   <meta name="referrer" content="no-referrer" />

@@ -1,8 +1,8 @@
 /**
  * Digital Twin Energy Ecosystem
  * 
- * Revolutionary virtual model of Canada's entire energy system
- * with real-time simulation, predictive modeling, and scenario testing.
+ * Virtual model of Canada's energy system with real-time simulation,
+ * predictive modeling, and scenario testing capabilities.
  */
 
 import { fetchEdgePostJson, type EdgeFetchOptions } from './edge';

@@ -18,9 +18,13 @@ import {
   Pie
 } from 'recharts';
 import TerritorialMap, { type MapPoint, type TerritoryBoundary } from './TerritorialMap';
-import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save } from 'lucide-react';
+import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save, FileText, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
+import IndigenousProjectForm, { type EnhancedIndigenousProject } from './IndigenousProjectForm';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
+import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
+import { IndigenousCaseStudies } from './IndigenousCaseStudies';
 
 // Interfaces for Indigenous dashboard data
 export interface TerritoryData {
@@ -52,6 +56,31 @@ export interface TEKEntry {
   dateRecorded: string;
   custodians: string[];
   relatedTerritories: string[];
+}
+
+interface IndigenousEdgeProject {
+  id: string;
+  territory_id: string | null;
+  name: string;
+  community: string | null;
+  energy_type: string | null;
+  stage: string | null;
+  consultation_status: string | null;
+  fpic_status: string | null;
+  governance_status: string | null;
+  revenue_share_percent: number | null;
+  consent_type: string;
+}
+
+interface IndigenousReportingSummary {
+  summary: {
+    total_projects: number;
+    by_stage: Record<string, number>;
+    by_energy_type: Record<string, number>;
+    by_consultation_status: Record<string, number>;
+    by_fpic_status: Record<string, number>;
+    total_revenue_share_percent: number;
+  };
 }
 
 const CONSULTATION_STATUS_COLORS: Record<TerritoryData['consultationStatus'], string> = {
@@ -202,7 +231,9 @@ export const IndigenousDashboard: React.FC = () => {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
+  const [edgeProjects, setEdgeProjects] = useState<IndigenousEdgeProject[]>([]);
+  const [reportingSummary, setReportingSummary] = useState<IndigenousReportingSummary | null>(null);
+
   // Enhanced state for real data management
   const [indigenousProjects, setIndigenousProjects] = useState<IndigenousProjectRecord[]>([]);
   const [showAddProject, setShowAddProject] = useState(false);
@@ -214,6 +245,7 @@ export const IndigenousDashboard: React.FC = () => {
     consultation_status: 'not_started',
     fpic_status: 'required'
   });
+  const hasLoadedRef = React.useRef(false);
 
   // Use streaming data for real Indigenous data (governance-compliant sources)
   // IMPORTANT: Only use data that has been approved through proper governance processes
@@ -232,8 +264,10 @@ export const IndigenousDashboard: React.FC = () => {
     sendMessage: sendWsMessage
   } = useWebSocketConsultation('general-consultation');
 
-  // Load initial data from local storage
+  // Load initial data from local storage (guarded to avoid React StrictMode double-invoke)
   useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
     loadInitialData();
   }, []);
 
@@ -348,6 +382,58 @@ export const IndigenousDashboard: React.FC = () => {
       setFpicWorkflows(mockFpicWorkflows);
       setTekEntries(mockTekEntries);
 
+      // Enhance with live Indigenous API data when Edge fetch is enabled
+      try {
+        if (isEdgeFetchEnabled()) {
+          const base = getEdgeBaseUrl();
+          if (base) {
+            const edgeBase = base.replace(/\/$/, '');
+
+            const [territoriesRes, projectsRes, reportingRes] = await Promise.all([
+              fetch(`${edgeBase}/api-v2-indigenous-territories`, { headers: getEdgeHeaders() }),
+              fetch(`${edgeBase}/api-v2-indigenous-projects`, { headers: getEdgeHeaders() }),
+              fetch(`${edgeBase}/api-v2-indigenous-reporting`, { headers: getEdgeHeaders() }),
+            ]);
+
+            if (territoriesRes.ok) {
+              const tJson = await territoriesRes.json();
+              const apiTerritories: any[] = Array.isArray(tJson.territories) ? tJson.territories : [];
+              const mapped: TerritoryData[] = apiTerritories.map((t) => {
+                const lat = typeof t.latitude === 'number' ? t.latitude : null;
+                const lng = typeof t.longitude === 'number' ? t.longitude : null;
+                const coords: [number, number][] = lat != null && lng != null ? [[lat, lng]] : [];
+                return {
+                  id: t.id,
+                  name: t.name,
+                  coordinates: coords.length > 0 ? coords : [[55, -95]],
+                  consultationStatus: (t.consultation_status as TerritoryData['consultationStatus']) ?? 'not_started',
+                  community: t.community ?? '',
+                  traditionalTerritory: t.traditional_territory ?? t.name,
+                  lastActivity: t.updated_at ?? new Date().toISOString(),
+                };
+              });
+
+              if (mapped.length > 0) {
+                setTerritories(mapped);
+              }
+            }
+
+            if (projectsRes.ok) {
+              const pJson = await projectsRes.json();
+              const apiProjects: any[] = Array.isArray(pJson.projects) ? pJson.projects : [];
+              setEdgeProjects(apiProjects as IndigenousEdgeProject[]);
+            }
+
+            if (reportingRes.ok) {
+              const rJson = await reportingRes.json();
+              setReportingSummary(rJson as IndigenousReportingSummary);
+            }
+          }
+        }
+      } catch (edgeError) {
+        console.error('Failed to load Indigenous Edge data:', edgeError);
+      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error loading Indigenous dashboard data:', error);
@@ -456,6 +542,8 @@ export const IndigenousDashboard: React.FC = () => {
     { name: 'Spiritual', value: tekEntries.filter(e => e.category === 'spiritual').length },
     { name: 'Economic', value: tekEntries.filter(e => e.category === 'economic').length }
   ];
+
+  const funderSummary = reportingSummary?.summary;
 
   if (loading) {
     return (
@@ -707,6 +795,32 @@ export const IndigenousDashboard: React.FC = () => {
                     {new Date(selectedTerritory.lastActivity).toLocaleDateString('en-CA')}
                   </p>
                 </div>
+
+                {edgeProjects.length > 0 && (
+                  <div>
+                    <label className="block text-sm font-medium text-secondary">Projects in this Territory</label>
+                    {edgeProjects.filter(p => p.territory_id === selectedTerritory.id).length === 0 ? (
+                      <p className="text-sm text-tertiary mt-1">No projects from the central registry are linked to this territory yet.</p>
+                    ) : (
+                      <ul className="mt-2 space-y-1 text-sm">
+                        {edgeProjects
+                          .filter(p => p.territory_id === selectedTerritory.id)
+                          .slice(0, 5)
+                          .map((p) => (
+                            <li key={p.id} className="flex items-center justify-between">
+                              <div>
+                                <span className="font-medium text-primary">{p.name}</span>
+                                <span className="ml-2 text-xs text-tertiary">{p.energy_type || 'energy'}</span>
+                              </div>
+                              <span className="text-xs text-tertiary capitalize">
+                                {p.stage || 'planning'} • {p.consent_type || 'public'}
+                              </span>
+                            </li>
+                          ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -781,6 +895,82 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
         </div>
 
+        <div className="mt-8 card shadow p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-xl font-semibold text-primary">Funder View – Indigenous Projects</h3>
+              <p className="text-sm text-secondary mt-1">
+                High-level summary of Indigenous energy projects across the central registry for funders and
+                reconciliation partners.
+              </p>
+            </div>
+            <HelpButton id="module.indigenous.funder_view" />
+          </div>
+
+          {!funderSummary ? (
+            <div className="text-sm text-tertiary">
+              Reporting API (api-v2-indigenous-reporting) is currently unavailable from this environment. Once the
+              Edge function is deployed and CORS is configured, this card will populate with live project metrics.
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-xs font-medium text-secondary">Total Projects (registry)</p>
+                  <p className="text-2xl font-bold text-electric mt-1">
+                    {funderSummary.total_projects}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-secondary">By Stage</p>
+                  <p className="text-sm text-secondary mt-1">
+                    {Object.entries(funderSummary.by_stage || {})
+                      .map(([stage, count]) => `${stage}: ${count}`)
+                      .join(' • ') || 'N/A'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-secondary">Total Revenue Share % (sum)</p>
+                  <p className="text-2xl font-bold text-success mt-1">
+                    {funderSummary.total_revenue_share_percent.toFixed(1)}%
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-secondary">
+                <div>
+                  <p className="font-medium text-primary mb-1">Projects by Energy Type</p>
+                  <ul className="space-y-1">
+                    {Object.entries(funderSummary.by_energy_type || {}).map(([type, count]) => (
+                      <li key={type} className="flex items-center justify-between">
+                        <span className="capitalize">{type || 'unknown'}</span>
+                        <span className="font-medium">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <p className="font-medium text-primary mb-1">Consultation & FPIC Status</p>
+                  <ul className="space-y-1">
+                    {Object.entries(funderSummary.by_consultation_status || {}).map(([status, count]) => (
+                      <li key={`consult-${status}`} className="flex items-center justify-between">
+                        <span className="capitalize">Consultation: {status || 'unknown'}</span>
+                        <span className="font-medium">{count}</span>
+                      </li>
+                    ))}
+                    {Object.entries(funderSummary.by_fpic_status || {}).map(([status, count]) => (
+                      <li key={`fpic-${status}`} className="flex items-center justify-between">
+                        <span className="capitalize">FPIC: {status || 'unknown'}</span>
+                        <span className="font-medium">{count}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
         {/* Connection Status */}
         <div className="mt-4 flex items-center justify-end space-x-4">
           <div className="flex items-center space-x-2 text-sm">
@@ -807,6 +997,13 @@ export const IndigenousDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-semibold text-primary">Indigenous Energy Projects</h3>
           <div className="flex gap-2">
+            <Link
+              to="/funder-reporting"
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors"
+            >
+              <FileText size={16} />
+              Funder Reports
+            </Link>
             <button
               onClick={() => setShowAddProject(true)}
               className="flex items-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -912,10 +1109,15 @@ export const IndigenousDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Add Project Modal */}
+        {/* Indigenous Partnership Success Stories (Gap #11) */}
+        <div className="mt-8">
+          <IndigenousCaseStudies showTestimonials={true} />
+        </div>
+
+        {/* Add Project Modal - now uses the full IndigenousProjectForm wizard */}
         {showAddProject && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="card p-6 w-full max-w-md mx-4">
+            <div className="card p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-semibold">Add Indigenous Energy Project</h4>
                 <button
@@ -926,94 +1128,28 @@ export const IndigenousDashboard: React.FC = () => {
                 </button>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Project Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.name || ''}
-                    onChange={(e) => setNewProject({...newProject, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., Treaty 5 Wind Energy Partnership"
-                  />
-                </div>
+              <IndigenousProjectForm
+                onSubmit={(project: EnhancedIndigenousProject) => {
+                  const record: Omit<IndigenousProjectRecord, 'id' | 'created_at' | 'updated_at'> = {
+                    name: project.project_name,
+                    territory_id: `territory_${Date.now()}`,
+                    territory_name: project.traditional_territory || project.community_name,
+                    community: project.community_name,
+                    traditional_territory: project.traditional_territory,
+                    consultation_status: 'not_started',
+                    fpic_status: project.fpic_status,
+                    benefit_sharing: {},
+                    consultation_log: [],
+                    data_source: 'user_input',
+                    governance_status: 'pending'
+                  };
 
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Territory Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.territory_name || ''}
-                    onChange={(e) => setNewProject({...newProject, territory_name: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., Treaty 5 Territory"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Community *
-                  </label>
-                  <input
-                    type="text"
-                    value={newProject.community || ''}
-                    onChange={(e) => setNewProject({...newProject, community: e.target.value})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="e.g., Cree, Ojibwe, Dene"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Consultation Status
-                  </label>
-                  <select
-                    value={newProject.consultation_status || 'not_started'}
-                    onChange={(e) => setNewProject({...newProject, consultation_status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="not_started">Not Started</option>
-                    <option value="ongoing">Ongoing</option>
-                    <option value="completed">Completed</option>
-                    <option value="pending">Pending</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    FPIC Status
-                  </label>
-                  <select
-                    value={newProject.fpic_status || 'required'}
-                    onChange={(e) => setNewProject({...newProject, fpic_status: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-[var(--border-medium)] rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="required">Required</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="obtained">Obtained</option>
-                    <option value="declined">Declined</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-3 mt-6">
-                <button
-                  onClick={handleAddProject}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-electric text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Save size={16} />
-                  Save Project
-                </button>
-                <button
-                  onClick={() => setShowAddProject(false)}
-                  className="px-4 py-2 text-secondary border border-[var(--border-medium)] rounded-lg hover:bg-secondary transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
+                  localStorageManager.addIndigenousProject(record);
+                  loadInitialData();
+                  setShowAddProject(false);
+                }}
+                onCancel={() => setShowAddProject(false)}
+              />
             </div>
           </div>
         )}

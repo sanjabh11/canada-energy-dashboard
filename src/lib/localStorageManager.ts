@@ -24,7 +24,7 @@ export interface IndigenousProjectRecord extends LocalDataRecord {
   community: string;
   traditional_territory: string;
   consultation_status: 'not_started' | 'ongoing' | 'completed' | 'pending';
-  fpic_status: 'required' | 'obtained' | 'declined' | 'in_progress';
+  fpic_status: 'required' | 'obtained' | 'declined' | 'in_progress' | 'not_applicable';
   benefit_sharing: {
     revenue_share_percent?: number;
     employment_commitments?: string[];

@@ -1,8 +1,7 @@
 /**
  * Monetization Components
  *
- * World-class, Stripe-level quality components for displaying
- * feature monetization analysis and sponsor potential.
+ * Components for displaying feature monetization analysis and sponsor potential.
  */
 
 export { MonetizationBadge, MonetizationTierLabel, TIER_CONFIG } from './MonetizationBadge';

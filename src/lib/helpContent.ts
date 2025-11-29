@@ -468,7 +468,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       <h4 class="font-semibold mt-4 mb-2">Understanding PUE Values:</h4>
       <ul class="list-disc pl-5 space-y-2 mb-4">
         <li><strong>PUE = 1.0 (Perfect)</strong> - Impossible! Would mean zero overhead for cooling, lighting, etc.</li>
-        <li><strong>PUE = 1.2 (Excellent)</strong> - World-class efficiency. Google/Microsoft hyperscale facilities</li>
+        <li><strong>PUE = 1.2 (Excellent)</strong> - High efficiency. Google/Microsoft hyperscale facilities</li>
         <li><strong>PUE = 1.5 (Good)</strong> - Industry average for modern data centres</li>
         <li><strong>PUE = 2.0 (Poor)</strong> - For every 1W of computing, you waste 1W on overhead</li>
         <li><strong>PUE = 3.0+ (Bad)</strong> - Old facilities, inefficient cooling</li>
@@ -524,7 +524,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       </ol>
 
       <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-4">
-        <p class="text-sm"><strong>⚠️ Grid Crisis:</strong> The queue is now over 80% of Alberta's peak demand (12,100 MW). This is unprecedented and requires massive grid expansion!</p>
+        <p class="text-sm"><strong>⚠️ Grid Pressure:</strong> The queue is now over 80% of Alberta's peak demand (12,100 MW). This requires significant grid expansion.</p>
       </div>
     `,
     relatedTopics: ['ai-datacentre.phase1', 'ai-datacentre.overview']
@@ -1054,7 +1054,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       <h4 class="font-semibold mt-4 mb-2">Canada's Advantage:</h4>
       <ul class="list-disc pl-5 space-y-1 mb-4">
         <li>30% Investment Tax Credit for mining/processing</li>
-        <li>World-class reserves (top 5 for most minerals)</li>
+        <li>Significant reserves (top 5 globally for most minerals)</li>
         <li>Clean hydro power = lower carbon footprint</li>
         <li>Proximity to US market</li>
       </ul>
@@ -1793,7 +1793,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       <h4 class="font-semibold mt-4 mb-2">Canada's SMR Advantage:</h4>
       <ul class="list-disc pl-5 space-y-1 mb-4">
         <li>70 years nuclear expertise (CANDU reactors)</li>
-        <li>World-class regulator (CNSC) with SMR-specific licensing</li>
+        <li>Experienced regulator (CNSC) with SMR-specific licensing</li>
         <li>Domestic uranium supply (Cameco - 2nd largest globally)</li>
         <li>Federal SMR Action Plan: $1.2B+ funding committed</li>
         <li>3 vendors in CNSC Vendor Design Review (GE Hitachi, Westinghouse, X-energy)</li>
@@ -2318,7 +2318,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       </ul>
 
       <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-4">
-        <p class="text-sm"><strong>⚠️ Reality Check:</strong> Canada's emissions have been flat since 2005 despite multiple climate plans. Achieving 40-45% reduction by 2030 requires unprecedented policy implementation + $15-20B/year investment.</p>
+        <p class="text-sm"><strong>⚠️ Reality Check:</strong> Canada's emissions have been flat since 2005 despite multiple climate plans. Achieving 40-45% reduction by 2030 requires substantial policy implementation + $15-20B/year investment.</p>
       </div>
     `,
     relatedTopics: ['climate.carbon-pricing', 'climate.clean-fuel', 'climate.net-zero']
@@ -5346,7 +5346,327 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       </div>
     `,
     relatedTopics: ['facility_emissions', 'methane_reduction_tracker', 'obps_compliance', 'efficiency_projects']
-  }
+  },
+
+  // ==================== EMPLOYERS PAGE ====================
+  
+  'page.employers.overview': {
+    id: 'page.employers.overview',
+    title: 'For Employers - Overview',
+    shortText: 'Hire pre-qualified energy professionals',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Build Your Energy Transition Team</h3>
+      <p class="mb-4">This page helps employers connect with <strong>pre-qualified energy professionals</strong> who have completed CEIP certification tracks.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">What You'll Find:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Capability Profiles</strong> - Downloadable PDFs with NOC codes and salary benchmarks</li>
+        <li><strong>LMIA Support</strong> - Documentation aligned with Labour Market Impact Assessment requirements</li>
+        <li><strong>Verified Credentials</strong> - Blockchain-backed certificates and achievement badges</li>
+      </ul>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>💼 Employer Tip:</strong> Contact our sales team for bulk hiring packages and custom recruitment support.</p>
+      </div>
+    `,
+    relatedTopics: ['page.employers.profiles', 'page.employers.partnership']
+  },
+
+  'page.employers.partnership': {
+    id: 'page.employers.partnership',
+    title: 'Partnership Benefits',
+    shortText: 'Why partner with CEIP for hiring',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Why Partner With CEIP?</h3>
+      <p class="mb-4">CEIP provides a <strong>talent pipeline</strong> specifically trained for Canada's energy transition.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Key Benefits:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Pre-Qualified Talent</strong> - Candidates with verified competencies in grid analytics, ESG, and Indigenous consultation</li>
+        <li><strong>Digital Credentials</strong> - Instantly verifiable certificates and badges</li>
+        <li><strong>LMIA-Ready Documentation</strong> - Standardized profiles aligned with NOC codes</li>
+        <li><strong>Cross-Border Hiring</strong> - International talent familiar with Canadian regulations</li>
+      </ul>
+    `,
+    relatedTopics: ['page.employers.overview', 'page.employers.profiles']
+  },
+
+  'page.employers.profiles': {
+    id: 'page.employers.profiles',
+    title: 'Capability Profiles',
+    shortText: 'Download LMIA-ready role profiles',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Capability Profiles</h3>
+      <p class="mb-4">Download <strong>LMIA-ready role profiles</strong> with NOC codes and salary benchmarks for energy sector positions.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Available Profiles:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Energy Data Analyst</strong> - NOC 21211 - Grid analytics and demand forecasting</li>
+        <li><strong>Decarbonization Specialist</strong> - NOC 21110 - ESG compliance and sustainability</li>
+        <li><strong>Indigenous Energy Liaison</strong> - NOC 41401 - FPIC and community partnerships</li>
+        <li><strong>Grid Integration Engineer</strong> - NOC 21310 - Renewable integration and storage</li>
+      </ul>
+      
+      <div class="bg-green-50 border-l-4 border-green-500 p-4 mt-4">
+        <p class="text-sm"><strong>📄 Download:</strong> Each profile includes job description, required skills, salary range, and LMIA documentation guidance.</p>
+      </div>
+    `,
+    relatedTopics: ['page.employers.overview']
+  },
+
+  // ==================== INCUBATORS PAGE ====================
+  
+  'page.incubators.overview': {
+    id: 'page.incubators.overview',
+    title: 'For Incubators & CTNs',
+    shortText: 'Accelerate your energy tech program',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Accelerate Your Energy Tech Program</h3>
+      <p class="mb-4">Partner with CEIP to deliver <strong>credentialed training programs</strong> with measurable economic outcomes.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">What We Offer:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Cohort Management</strong> - Built-in admin panel for managing learners</li>
+        <li><strong>Economic Impact Tracking</strong> - Demonstrate significant economic benefit</li>
+        <li><strong>Priority Processing</strong> - Qualify for DIA-SOURCE priority assessment</li>
+        <li><strong>White-Label Solutions</strong> - Custom branding for your incubator</li>
+      </ul>
+      
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mt-4">
+        <p class="text-sm"><strong>🚀 CTN Tip:</strong> Use the Economic Benefit Calculator to estimate your program's impact for funding applications.</p>
+      </div>
+    `,
+    relatedTopics: ['page.incubators.calculator', 'page.incubators.tracks']
+  },
+
+  'page.incubators.benefits': {
+    id: 'page.incubators.benefits',
+    title: 'Incubator Benefits',
+    shortText: 'Why incubators choose CEIP',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Why Incubators Choose CEIP</h3>
+      <p class="mb-4">CEIP provides the infrastructure for <strong>high-impact energy training programs</strong>.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Key Benefits:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Measurable Impact</strong> - Track job creation, salary increases, and GDP contribution</li>
+        <li><strong>Priority Processing</strong> - Demonstrate eligibility for DIA-SOURCE priority assessment</li>
+        <li><strong>Cohort Tools</strong> - Manage learners, track completion, generate reports</li>
+        <li><strong>International Recognition</strong> - Credentials aligned with NOC codes</li>
+      </ul>
+    `,
+    relatedTopics: ['page.incubators.overview', 'page.incubators.calculator']
+  },
+
+  'page.incubators.calculator': {
+    id: 'page.incubators.calculator',
+    title: 'Economic Benefit Calculator',
+    shortText: 'Calculate your program\'s economic impact',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">DIA-SOURCE Economic Benefit Calculator</h3>
+      <p class="mb-4">Estimate the <strong>economic impact</strong> of your training program to demonstrate eligibility for priority processing.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Input Parameters:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Cohort Size</strong> - Number of participants in your program</li>
+        <li><strong>Program Duration</strong> - Length of training in months</li>
+        <li><strong>Salary Increase</strong> - Average annual salary increase for graduates</li>
+        <li><strong>Job Placement Rate</strong> - Percentage of graduates placed in jobs</li>
+        <li><strong>Capital Investment</strong> - Total program investment in CAD</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Output Metrics:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>5-Year Economic Impact</strong> - Total economic contribution</li>
+        <li><strong>Jobs Created</strong> - Number of new positions</li>
+        <li><strong>Tax Revenue</strong> - Estimated government revenue</li>
+        <li><strong>ROI</strong> - Return on investment percentage</li>
+      </ul>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>📊 Tip:</strong> Download the Impact Report PDF to include in funding applications.</p>
+      </div>
+    `,
+    relatedTopics: ['page.incubators.overview', 'page.incubators.tracks']
+  },
+
+  'page.incubators.tracks': {
+    id: 'page.incubators.tracks',
+    title: 'Training Tracks',
+    shortText: 'Available certification programs',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Available Training Tracks</h3>
+      <p class="mb-4">CEIP offers <strong>three specialized training tracks</strong> for energy sector professionals.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Grid Analytics Accelerator (12 weeks)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li>IESO/AESO data certification</li>
+        <li>Power BI mastery</li>
+        <li>Capstone project</li>
+        <li>85% job placement rate</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Decarbonization Bootcamp (16 weeks)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li>GHG Protocol certification</li>
+        <li>TCFD reporting</li>
+        <li>Net-zero pathway modeling</li>
+        <li>90% job placement rate</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Indigenous Energy Fellowship (20 weeks)</h4>
+      <ul class="list-disc pl-5 space-y-1 mb-4">
+        <li>FPIC/OCAP® certification</li>
+        <li>Consultation protocols</li>
+        <li>Community partnership</li>
+        <li>80% job placement rate</li>
+      </ul>
+    `,
+    relatedTopics: ['page.incubators.overview', 'page.incubators.calculator']
+  },
+
+  // ==================== IMPACT METRICS ====================
+  
+  'impact.metrics.overview': {
+    id: 'impact.metrics.overview',
+    title: 'Impact Metrics Dashboard',
+    shortText: 'Track ESG and sustainability KPIs',
+    difficulty: 'intermediate',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Impact Metrics Dashboard</h3>
+      <p class="mb-4">Real-time tracking of <strong>ESG and sustainability KPIs</strong> across all monitored energy projects.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Key Metrics:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Emissions Avoided</strong> - Total GHG emissions prevented through clean energy projects</li>
+        <li><strong>Clean Energy Jobs</strong> - Direct and indirect employment in tracked projects</li>
+        <li><strong>Indigenous Equity</strong> - Average ownership stake in partnership projects</li>
+        <li><strong>Investment Mobilized</strong> - Capital deployed in clean energy infrastructure</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Methodology:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li>Emissions factors from ECCC National Inventory Report 2024</li>
+        <li>Jobs data from StatsCan LMIA reports and industry surveys</li>
+        <li>Investment data from project filings and public announcements</li>
+      </ul>
+      
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mt-4">
+        <p class="text-sm"><strong>📊 Export:</strong> Download metrics as CSV for your own analysis and reporting.</p>
+      </div>
+    `,
+    relatedTopics: ['indigenous.case.studies', 'ai.demand.scenario']
+  },
+
+  // ==================== AI DEMAND SCENARIO ====================
+  
+  'ai.demand.scenario': {
+    id: 'ai.demand.scenario',
+    title: 'AI Data Center Demand Scenario',
+    shortText: 'Model AI infrastructure grid impacts',
+    difficulty: 'advanced',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">AI Data Center Demand Scenario</h3>
+      <p class="mb-4">Model the impact of <strong>AI data center growth</strong> on Canada's electricity grid.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">How to Use:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li>Adjust the <strong>slider</strong> to set projected AI demand (1-100 GW)</li>
+        <li>Select a <strong>target year</strong> (2030, 2035, 2040, 2050)</li>
+        <li>View <strong>grid stress</strong>, clean power requirements, and investment needs</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Key Outputs:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Clean Firm Power</strong> - 24/7 baseload generation required</li>
+        <li><strong>Emissions Risk</strong> - CO₂ if met with gas generation</li>
+        <li><strong>Investment Needed</strong> - Capital for clean energy infrastructure</li>
+        <li><strong>Jobs Created</strong> - Employment from new energy projects</li>
+      </ul>
+      
+      <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+        <p class="text-sm"><strong>📈 Context:</strong> IEA projects global AI data center demand could reach 362 GW by 2035. BC has already paused new data center connections due to grid constraints.</p>
+      </div>
+    `,
+    relatedTopics: ['crisis.scenario.simulator', 'impact.metrics.overview']
+  },
+
+  // ==================== CRISIS SCENARIO SIMULATOR ====================
+  
+  'crisis.scenario.simulator': {
+    id: 'crisis.scenario.simulator',
+    title: 'Crisis Scenario Simulator',
+    shortText: 'Model grid resilience under emergencies',
+    difficulty: 'advanced',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Crisis Scenario Simulator</h3>
+      <p class="mb-4">Simulate <strong>grid resilience</strong> under various emergency scenarios.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Available Scenarios:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Major Wildfire</strong> - Transmission damage and evacuations</li>
+        <li><strong>Extreme Heat Dome</strong> - Record cooling demand surge</li>
+        <li><strong>Polar Vortex</strong> - Heating demand and gas constraints</li>
+        <li><strong>Grid Cyberattack</strong> - Control system compromise</li>
+        <li><strong>Pipeline Disruption</strong> - Gas supply outage</li>
+        <li><strong>Cascading Failure</strong> - Major blackout event</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Simulation Outputs:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Blackout Risk</strong> - Low, Moderate, High, or Critical</li>
+        <li><strong>Customers Affected</strong> - Estimated outage impact</li>
+        <li><strong>Economic Impact</strong> - Lost load value in $M</li>
+        <li><strong>Recovery Time</strong> - Estimated restoration period</li>
+      </ul>
+      
+      <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mt-4">
+        <p class="text-sm"><strong>⚠️ Note:</strong> Simulations are based on historical precedents and grid modeling. Actual outcomes may vary based on specific conditions and response measures.</p>
+      </div>
+    `,
+    relatedTopics: ['ai.demand.scenario', 'impact.metrics.overview']
+  },
+
+  // ==================== INDIGENOUS CASE STUDIES ====================
+  
+  'indigenous.case.studies': {
+    id: 'indigenous.case.studies',
+    title: 'Indigenous Partnership Case Studies',
+    shortText: 'Real-world Indigenous energy success stories',
+    difficulty: 'beginner',
+    bodyHtml: `
+      <h3 class="text-lg font-semibold mb-3">Indigenous Partnership Success Stories</h3>
+      <p class="mb-4">Explore <strong>real-world examples</strong> of successful Indigenous energy partnerships across Canada.</p>
+      
+      <h4 class="font-semibold mt-4 mb-2">Featured Projects:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li><strong>Cedar LNG</strong> - Haisla Nation's 50% equity stake in LNG facility</li>
+        <li><strong>Wataynikaneyap Power</strong> - 24 First Nations connecting 17 communities to grid</li>
+        <li><strong>Cowessess Solar</strong> - 100% Indigenous-owned utility-scale solar</li>
+        <li><strong>Tu Deh-Kah Geothermal</strong> - Canada's first Indigenous geothermal project</li>
+      </ul>
+      
+      <h4 class="font-semibold mt-4 mb-2">Key Metrics Tracked:</h4>
+      <ul class="list-disc pl-5 space-y-2 mb-4">
+        <li>Equity ownership percentage</li>
+        <li>Jobs created for community members</li>
+        <li>Revenue sharing and community benefits</li>
+        <li>Environmental impact (diesel eliminated, emissions avoided)</li>
+      </ul>
+      
+      <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 mt-4">
+        <p class="text-sm"><strong>🤝 Partnership Model:</strong> These projects demonstrate that Indigenous communities can be majority owners and leaders in major energy infrastructure, not just stakeholders.</p>
+      </div>
+    `,
+    relatedTopics: ['impact.metrics.overview', 'page.incubators.overview']
+  },
 
 };
 

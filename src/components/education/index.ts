@@ -1,8 +1,8 @@
 /**
  * Educational Components
  *
- * World-class educational UX components for making complex energy data
- * accessible to everyone - from students to researchers.
+ * Educational UX components for making complex energy data accessible
+ * to a range of users, from students to researchers.
  */
 
 // Smart Help System

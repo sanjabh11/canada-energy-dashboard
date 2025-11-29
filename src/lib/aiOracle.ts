@@ -1,9 +1,8 @@
 /**
  * AI Energy Oracle - Advanced Predictive Intelligence Engine
  * 
- * Revolutionary AI system that transforms reactive energy monitoring
- * into predictive intelligence with real-time insights, forecasting,
- * and autonomous decision support.
+ * AI system that supports energy monitoring with predictive intelligence,
+ * real-time insights, forecasting, and decision support capabilities.
  */
 
 import { fetchEdgePostJson, type EdgeFetchOptions } from './edge';

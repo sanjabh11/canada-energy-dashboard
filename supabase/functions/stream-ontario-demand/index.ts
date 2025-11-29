@@ -454,7 +454,7 @@ serve(async (req: Request) => {
       const cursor = url.searchParams.get('cursor') || undefined;
       
       let data: any[] = [];
-      let source = 'IESO';
+      const source = 'IESO';
       let usedSample = false;
 
       // Try to get real IESO data first

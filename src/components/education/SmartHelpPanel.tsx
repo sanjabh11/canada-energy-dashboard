@@ -1,8 +1,8 @@
 /**
  * SmartHelpPanel Component
  *
- * World-class contextual help system with 3-level explanations
- * (Beginner, Intermediate, Expert) - inspired by Khan Academy and Stripe
+ * Contextual help system with 3-level explanations
+ * (Beginner, Intermediate, Expert).
  */
 
 import React, { useState, useEffect } from 'react';
