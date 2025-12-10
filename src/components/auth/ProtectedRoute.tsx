@@ -16,10 +16,19 @@ import React, { useState, useEffect } from 'react';
 import { useAuth, useHasTier } from './AuthProvider';
 import { AuthModal } from './AuthModal';
 import { UpgradeModal } from './UpgradeModal';
+import { type WhopTier } from '../../lib/whop';
+
+// Map legacy tier names to Whop tiers
+type LegacyTier = 'free' | 'edubiz' | 'pro';
+const legacyToWhopTier: Record<LegacyTier, WhopTier> = {
+  'free': 'free',
+  'edubiz': 'basic',
+  'pro': 'pro'
+};
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredTier?: 'free' | 'edubiz' | 'pro';
+  requiredTier?: LegacyTier; // Accept legacy tier names for backward compat
   fallback?: React.ReactNode;
 }
 
@@ -29,7 +38,8 @@ export function ProtectedRoute({
   fallback,
 }: ProtectedRouteProps) {
   const { user, loading, edubizUser } = useAuth();
-  const hasTier = useHasTier(requiredTier);
+  const whopTier = legacyToWhopTier[requiredTier];
+  const hasTier = useHasTier(whopTier);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
@@ -133,10 +143,11 @@ export function RequiresTier({
   fallback,
 }: {
   children: React.ReactNode;
-  requiredTier: 'free' | 'edubiz' | 'pro';
+  requiredTier: LegacyTier;
   fallback?: React.ReactNode;
 }) {
-  const hasTier = useHasTier(requiredTier);
+  const whopTier = legacyToWhopTier[requiredTier];
+  const hasTier = useHasTier(whopTier);
 
   if (!hasTier) {
     return <>{fallback || null}</>;

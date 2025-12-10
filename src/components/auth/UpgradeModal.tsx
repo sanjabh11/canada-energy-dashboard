@@ -69,7 +69,7 @@ const tierFeatures = {
 };
 
 export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: UpgradeModalProps) {
-  const { user, session } = useAuth();
+  const { user, isWhopUser } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const tier = tierFeatures[targetTier];
@@ -127,44 +127,27 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
             type="button"
             disabled={loading}
             onClick={async () => {
-              if (!user || !session?.access_token) {
+              if (!user) {
                 window.location.href = '/pricing';
+                return;
+              }
+
+              // For Whop users, redirect to Whop upgrade page
+              if (isWhopUser) {
+                window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${targetTier}`;
                 return;
               }
 
               const base = getEdgeBaseUrl();
               if (!base) {
-                alert('Billing is not yet configured. Please contact support.');
+                // No Stripe configured - redirect to pricing with message
+                window.location.href = '/pricing';
                 return;
               }
 
-              try {
-                setLoading(true);
-                const res = await fetch(`${base}/stripe-create-checkout-session`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${session.access_token}`,
-                  },
-                  body: JSON.stringify({ tier: targetTier }),
-                });
-
-                const body = await res.json().catch(() => ({}));
-
-                if (!res.ok || !body?.url) {
-                  const message = body?.error || body?.message || 'Failed to start checkout. Please try again or contact support.';
-                  alert(message);
-                  return;
-                }
-
-                window.location.href = body.url as string;
-              } catch (err) {
-                console.error('Stripe checkout error (UpgradeModal)', err);
-                alert('Unexpected error while starting checkout. Please try again later.');
-              } finally {
-                setLoading(false);
-                onClose();
-              }
+              // Legacy Stripe checkout will be deprecated - redirect to pricing
+              // Whop users should be using their Whop subscription instead
+              window.location.href = '/pricing';
             }}
             className={`w-full py-4 bg-gradient-to-r from-${tier.color}-500 to-${tier.color}-600 text-white font-semibold rounded-lg hover:from-${tier.color}-600 hover:to-${tier.color}-700 focus:outline-none focus:ring-2 focus:ring-${tier.color}-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all`}
           >

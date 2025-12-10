@@ -4,7 +4,7 @@ import { Check, X, Zap, TrendingUp, ArrowRight, Crown, Star } from 'lucide-react
 import { getEdgeBaseUrl } from '../lib/config';
 
 export function PricingPage() {
-  const { user, edubizUser, session } = useAuth();
+  const { user, edubizUser, isWhopUser } = useAuth();
   const [checkoutLoadingTier, setCheckoutLoadingTier] = useState<'edubiz' | 'pro' | null>(null);
   const currentTier = edubizUser?.tier || 'free';
 
@@ -83,43 +83,22 @@ export function PricingPage() {
   ];
 
   async function handleTierCheckout(tierId: 'edubiz' | 'pro') {
-    if (!user || !session?.access_token) {
-      window.location.href = '/signup';
+    if (!user) {
+      // Not logged in - open auth modal or redirect
+      window.location.href = '/';
       return;
     }
 
-    const base = getEdgeBaseUrl();
-    if (!base) {
-      alert('Billing is not yet configured. Please contact support.');
+    // For Whop users, redirect to Whop checkout
+    if (isWhopUser) {
+      const whopPlan = tierId === 'edubiz' ? 'basic' : tierId;
+      window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${whopPlan}`;
       return;
     }
 
-    try {
-      setCheckoutLoadingTier(tierId);
-      const res = await fetch(`${base}/stripe-create-checkout-session`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ tier: tierId }),
-      });
-
-      const body = await res.json().catch(() => ({}));
-
-      if (!res.ok || !body?.url) {
-        const message = body?.error || body?.message || 'Failed to start checkout. Please try again or contact support.';
-        alert(message);
-        return;
-      }
-
-      window.location.href = body.url as string;
-    } catch (err) {
-      console.error('Stripe checkout error', err);
-      alert('Unexpected error while starting checkout. Please try again later.');
-    } finally {
-      setCheckoutLoadingTier(null);
-    }
+    // For guest/standalone users, show Whop signup
+    const whopPlan = tierId === 'edubiz' ? 'basic' : tierId;
+    window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${whopPlan}`;
   }
 
   return (

@@ -20,6 +20,10 @@ import { EmployersPage } from './components/EmployersPage';
 import { IncubatorsPage } from './components/IncubatorsPage';
 import { HelpProvider } from './components/HelpProvider';
 import { AuthProvider } from './components/auth';
+// Whop Integration Pages
+import { WhopExperiencePage } from './components/WhopExperiencePage';
+import { WhopDashboardPage } from './components/WhopDashboardPage';
+import { WhopDiscoverPage } from './components/WhopDiscoverPage';
 import './App.css';
 import './styles/layout.css';
 
@@ -32,6 +36,14 @@ const router = createBrowserRouter(
   [
     { path: '/', element: <EnergyDataDashboard /> },
     { path: '/dashboard', element: <EnergyDataDashboard /> },
+
+    // Whop Integration Routes (CRITICAL for Whop App Store)
+    { path: '/whop/experience', element: <WhopExperiencePage /> },
+    { path: '/whop/experience/:experienceId', element: <WhopExperiencePage /> },
+    { path: '/whop/experience/:experienceId/*', element: <WhopExperiencePage /> },
+    { path: '/whop/dashboard', element: <WhopDashboardPage /> },
+    { path: '/whop/discover', element: <WhopDiscoverPage /> },
+
     // Renewable Energy Optimization Hub
     { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
     { path: '/renewable-hub', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },

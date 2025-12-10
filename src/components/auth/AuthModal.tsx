@@ -1,120 +1,85 @@
 /**
- * AuthModal - Login & Signup Modal
+ * AuthModal - Whop-Compliant Authentication Modal
  *
+ * CRITICAL FOR WHOP APPROVAL:
+ * - NO custom email/password login forms
+ * - Uses Whop OAuth or continues as guest
+ * - Supports standalone mode for non-Whop deployments
+ * 
  * Features:
- * - Tab-based UI (Login / Sign Up)
- * - Email + Password authentication
- * - Role selection for new users (student, teacher, homeowner, etc.)
- * - Province selection
- * - Error handling with friendly messages
- * - Loading states
+ * - Whop login redirect
+ * - Guest access option
+ * - Tier preview
+ * - Development simulation mode
  */
 
 import React, { useState } from 'react';
-import { X, Mail, Lock, User, MapPin, Users } from 'lucide-react';
-import { signIn, signUp, type SignUpData, type SignInData } from '../../lib/authService';
+import { X, LogIn, User, Zap, Crown, Users, ExternalLink } from 'lucide-react';
+import {
+  getWhopConfigStatus,
+  getWhopLoginUrl,
+  isStandaloneMode,
+  isWhopLiveMode,
+  whopClient,
+  type WhopTier,
+  WHOP_ACCESS_MATRIX
+} from '../../lib/whop';
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  defaultTab?: 'login' | 'signup';
   onSuccess?: () => void;
 }
 
-export function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuccess }: AuthModalProps) {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
+export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Login form state
-  const [loginEmail, setLoginEmail] = useState('');
-  const [loginPassword, setLoginPassword] = useState('');
-
-  // Signup form state
-  const [signupEmail, setSignupEmail] = useState('');
-  const [signupPassword, setSignupPassword] = useState('');
-  const [signupFullName, setSignupFullName] = useState('');
-  const [signupProvince, setSignupProvince] = useState('');
-  const [signupRole, setSignupRole] = useState<string>('');
+  const [showTierPicker, setShowTierPicker] = useState(false);
+  const config = getWhopConfigStatus();
 
   if (!isOpen) return null;
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const handleWhopLogin = () => {
+    const url = getWhopLoginUrl();
+    if (url && url !== '#') {
+      window.location.href = url;
+    } else {
+      // Fallback for unconfigured Whop
+      alert('Whop integration is not configured. Please set VITE_WHOP_CLIENT_ID.');
+    }
+  };
+
+  const handleGuestAccess = async () => {
     setLoading(true);
-
     try {
-      const data: SignInData = {
-        email: loginEmail,
-        password: loginPassword,
-      };
-
-      const { user, error: signInError } = await signIn(data);
-
-      if (signInError) {
-        setError(signInError.message || 'Failed to sign in. Please check your credentials.');
-        setLoading(false);
-        return;
-      }
-
-      if (user) {
-        console.log('Signed in successfully:', user.email);
-        onSuccess?.();
-        onClose();
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      whopClient.loginAsGuest();
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Guest login error:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+  const handleSimulatedLogin = async (tier: WhopTier) => {
     setLoading(true);
-
-    // Basic validation
-    if (signupPassword.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const data: SignUpData = {
-        email: signupEmail,
-        password: signupPassword,
-        full_name: signupFullName || undefined,
-        province_code: signupProvince || undefined,
-        role_preference: signupRole || undefined,
-      };
-
-      const { user, error: signUpError } = await signUp(data);
-
-      if (signUpError) {
-        setError(signUpError.message || 'Failed to create account. Please try again.');
-        setLoading(false);
-        return;
-      }
-
-      if (user) {
-        console.log('Signed up successfully:', user.email);
-        setError(null);
-        // Show success message
-        alert('Account created! Please check your email to confirm your account.');
-        onSuccess?.();
-        onClose();
-      }
-    } catch (err) {
-      console.error('Signup error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      await whopClient.simulateLogin(tier);
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      console.error('Simulated login error:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  const tierOptions: { tier: WhopTier; label: string; icon: React.ReactNode; description: string }[] = [
+    { tier: 'free', label: 'Free', icon: <User className="w-5 h-5" />, description: 'Public dashboards only' },
+    { tier: 'basic', label: 'Basic ($29/mo)', icon: <Zap className="w-5 h-5" />, description: 'Full data + Certificates' },
+    { tier: 'pro', label: 'Pro ($99/mo)', icon: <Crown className="w-5 h-5" />, description: 'AI Copilot + Cohorts' },
+    { tier: 'team', label: 'Team ($299/mo)', icon: <Users className="w-5 h-5" />, description: 'Full platform + API' },
+  ];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -129,217 +94,123 @@ export function AuthModal({ isOpen, onClose, defaultTab = 'login', onSuccess }: 
         </button>
 
         {/* Header */}
-        <div className="mb-6">
+        <div className="mb-6 text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl flex items-center justify-center">
+            <Zap className="w-8 h-8 text-white" />
+          </div>
           <h2 className="text-2xl font-bold text-white mb-2">
-            {activeTab === 'login' ? 'Welcome Back' : 'Create Account'}
+            Canada Energy Academy
           </h2>
           <p className="text-slate-400 text-sm">
-            {activeTab === 'login'
-              ? 'Sign in to access your energy learning dashboard'
-              : 'Start your journey to energy mastery'}
+            AI-powered energy education for your community
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-slate-800 p-1 rounded-lg">
-          <button
-            onClick={() => {
-              setActiveTab('login');
-              setError(null);
-            }}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-              activeTab === 'login'
-                ? 'bg-cyan-500 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Sign In
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('signup');
-              setError(null);
-            }}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-all ${
-              activeTab === 'signup'
-                ? 'bg-cyan-500 text-white shadow-lg'
-                : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            Sign Up
-          </button>
-        </div>
-
-        {/* Error message */}
-        {error && (
-          <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-            <p className="text-red-400 text-sm">{error}</p>
-          </div>
-        )}
-
-        {/* Login Form */}
-        {activeTab === 'login' && (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="email"
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="password"
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
-        )}
-
-        {/* Signup Form */}
-        {activeTab === 'signup' && (
-          <form onSubmit={handleSignup} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Full Name (Optional)
-              </label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={signupFullName}
-                  onChange={(e) => setSignupFullName(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="email"
-                  value={signupEmail}
-                  onChange={(e) => setSignupEmail(e.target.value)}
-                  required
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="you@example.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Password (min 8 characters)
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="password"
-                  value={signupPassword}
-                  onChange={(e) => setSignupPassword(e.target.value)}
-                  required
-                  minLength={8}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                I am a... (Optional)
-              </label>
-              <div className="relative">
-                <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <select
-                  value={signupRole}
-                  onChange={(e) => setSignupRole(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none"
-                >
-                  <option value="">Select your role</option>
-                  <option value="student">Student</option>
-                  <option value="teacher">Teacher / Educator</option>
-                  <option value="homeowner">Homeowner / Resident</option>
-                  <option value="researcher">Researcher / Professional</option>
-                  <option value="general">Just Curious!</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">
-                Province (Optional)
-              </label>
-              <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <select
-                  value={signupProvince}
-                  onChange={(e) => setSignupProvince(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent appearance-none"
-                >
-                  <option value="">Select your province</option>
-                  <option value="AB">Alberta</option>
-                  <option value="BC">British Columbia</option>
-                  <option value="MB">Manitoba</option>
-                  <option value="NB">New Brunswick</option>
-                  <option value="NL">Newfoundland and Labrador</option>
-                  <option value="NS">Nova Scotia</option>
-                  <option value="NT">Northwest Territories</option>
-                  <option value="NU">Nunavut</option>
-                  <option value="ON">Ontario</option>
-                  <option value="PE">Prince Edward Island</option>
-                  <option value="QC">Quebec</option>
-                  <option value="SK">Saskatchewan</option>
-                  <option value="YT">Yukon</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-            >
-              {loading ? 'Creating account...' : 'Create Account'}
-            </button>
-
-            <p className="text-xs text-slate-400 text-center">
-              By signing up, you agree to our Terms of Service and Privacy Policy
+        {/* Tier Picker (for simulation mode) */}
+        {showTierPicker && !isWhopLiveMode() ? (
+          <div className="space-y-3 mb-6">
+            <p className="text-sm text-slate-400 text-center mb-4">
+              Select a tier to simulate (Development Mode)
             </p>
-          </form>
+            {tierOptions.map(({ tier, label, icon, description }) => (
+              <button
+                key={tier}
+                onClick={() => handleSimulatedLogin(tier)}
+                disabled={loading}
+                className={`w-full p-4 rounded-xl border transition-all flex items-center gap-4 ${tier === 'pro'
+                    ? 'border-cyan-500 bg-cyan-500/10 hover:bg-cyan-500/20'
+                    : 'border-slate-700 bg-slate-800 hover:bg-slate-700'
+                  } disabled:opacity-50`}
+              >
+                <div className={`p-2 rounded-lg ${tier === 'pro' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-slate-700 text-slate-300'
+                  }`}>
+                  {icon}
+                </div>
+                <div className="text-left flex-1">
+                  <div className="font-medium text-white">{label}</div>
+                  <div className="text-sm text-slate-400">{description}</div>
+                </div>
+              </button>
+            ))}
+            <button
+              onClick={() => setShowTierPicker(false)}
+              className="w-full py-2 text-slate-400 hover:text-white text-sm transition-colors"
+            >
+              ← Back
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Mode indicator */}
+            <div className="mb-6 p-3 rounded-lg bg-slate-800 border border-slate-700">
+              <div className="flex items-center gap-2 text-sm">
+                <div className={`w-2 h-2 rounded-full ${config.mode === 'live' ? 'bg-green-500' :
+                    config.mode === 'simulated' ? 'bg-yellow-500' : 'bg-blue-500'
+                  }`} />
+                <span className="text-slate-400">{config.message}</span>
+              </div>
+            </div>
+
+            {/* Main Actions */}
+            <div className="space-y-4">
+              {/* Whop Login - Primary action when configured */}
+              {!isStandaloneMode() && (
+                <button
+                  onClick={handleWhopLogin}
+                  disabled={loading || !config.hasClientId}
+                  className="w-full py-4 px-6 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-xl hover:from-cyan-600 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+                >
+                  <LogIn className="w-5 h-5" />
+                  Continue with Whop
+                  <ExternalLink className="w-4 h-4 opacity-70" />
+                </button>
+              )}
+
+              {/* Guest Access - Always available */}
+              <button
+                onClick={handleGuestAccess}
+                disabled={loading}
+                className="w-full py-4 px-6 bg-slate-800 text-white font-medium rounded-xl border border-slate-700 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3"
+              >
+                <User className="w-5 h-5" />
+                {isStandaloneMode() ? 'Continue as Guest' : 'Browse as Guest (Free Tier)'}
+              </button>
+
+              {/* Simulation Mode Picker - Only in non-live mode */}
+              {!isWhopLiveMode() && (
+                <button
+                  onClick={() => setShowTierPicker(true)}
+                  className="w-full py-3 text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+                >
+                  🔧 Developer: Test Different Tiers
+                </button>
+              )}
+            </div>
+
+            {/* Feature Preview */}
+            <div className="mt-6 pt-6 border-t border-slate-700">
+              <h3 className="text-sm font-medium text-slate-300 mb-3">What you get:</h3>
+              <ul className="space-y-2 text-sm text-slate-400">
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Access to public energy dashboards
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-green-500">✓</span>
+                  Real-time grid data visualization
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="text-cyan-500">⬆</span>
+                  <span className="text-slate-500">Upgrade for certificates & AI tutoring</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Footer */}
+            <p className="mt-6 text-xs text-slate-500 text-center">
+              By continuing, you agree to our Terms of Service and Privacy Policy
+            </p>
+          </>
         )}
       </div>
     </div>

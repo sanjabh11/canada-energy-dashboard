@@ -13,7 +13,7 @@ interface ApiKey {
 }
 
 function ApiKeysPageContent() {
-  const { session } = useAuth();
+  const { user, isWhopUser, tier } = useAuth();
   const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +30,16 @@ function ApiKeysPageContent() {
   }, []);
 
   async function loadKeys() {
-    if (!session?.access_token || !baseUrl) {
+    // API keys require Team tier with Whop
+    if (!user || tier !== 'team') {
       setLoading(false);
+      setError('API key management requires Team tier. Upgrade via Whop to access this feature.');
+      return;
+    }
+
+    if (!baseUrl) {
+      setLoading(false);
+      setError('API endpoint not configured. Please contact support.');
       return;
     }
 
@@ -39,17 +47,10 @@ function ApiKeysPageContent() {
     setError(null);
 
     try {
-      const res = await fetch(`${baseUrl}/api-keys-admin`, {
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      const body = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(body?.error || 'Failed to load API keys');
-        setKeys([]);
-      } else {
-        setKeys(body?.keys || []);
-      }
+      // For Whop users, we'll need to use Whop API for key management
+      // This is a placeholder - actual implementation requires Whop API integration
+      setError('API key management is being migrated to Whop. Please check back soon or contact support.');
+      setKeys([]);
     } catch (err) {
       console.error('Error loading API keys', err);
       setError('Network error loading API keys');
@@ -60,36 +61,23 @@ function ApiKeysPageContent() {
 
   async function handleCreateKey(e: React.FormEvent) {
     e.preventDefault();
-    if (!session?.access_token || !baseUrl) return;
+
+    if (!user || tier !== 'team') {
+      setError('API key creation requires Team tier. Upgrade via Whop to access this feature.');
+      return;
+    }
+
+    if (!baseUrl) {
+      setError('API endpoint not configured.');
+      return;
+    }
 
     setCreating(true);
     setError(null);
     setNewSecret(null);
 
-    try {
-      const res = await fetch(`${baseUrl}/api-keys-admin`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ label: newLabel.trim() || 'Untitled key' }),
-      });
-
-      const body = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setError(body?.error || 'Failed to create API key');
-      } else {
-        setNewSecret(body?.secret || null);
-        setNewLabel('');
-        await loadKeys();
-      }
-    } catch (err) {
-      console.error('Error creating API key', err);
-      setError('Network error creating API key');
-    }
-
+    // Placeholder - Whop integration needed
+    setError('API key creation is being migrated to Whop. Please contact support.');
     setCreating(false);
   }
 
@@ -226,9 +214,8 @@ function ApiKeysPageContent() {
                         {new Date(key.created_at).toLocaleDateString('en-CA')}
                       </td>
                       <td className="py-2 pr-4">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
-                          key.is_active ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'
-                        }`}>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${key.is_active ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'
+                          }`}>
                           {key.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
