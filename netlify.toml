@@ -8,8 +8,8 @@
   # Publish directory (where built files are)
   publish = "dist"
   
-  # Node version
-  environment = { NODE_VERSION = "20" }
+  # Node version and cache bust
+  environment = { NODE_VERSION = "20", CACHE_BUSTER = "2025-12-11-v2-whop-fix" }
 
 [build.processing]
   # Skip processing - we handle it ourselves

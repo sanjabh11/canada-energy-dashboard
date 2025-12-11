@@ -18,6 +18,15 @@ import { AuthModal } from './AuthModal';
 import { type WhopTier } from '../../lib/whop';
 
 export function AuthButton() {
+  // CRITICAL: Hide ALL auth UI on Whop routes (required for Whop App Store approval)
+  // Whop apps must NOT have any login/signup buttons - they use Whop's native auth
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    if (path.startsWith('/whop/')) {
+      return null; // No auth button in Whop-embedded views
+    }
+  }
+
   const { user, tier, edubizUser, isWhopUser, isGuest, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
