@@ -7,8 +7,11 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5175",
   "http://localhost:5176",
   "https://canada-energy.netlify.app",
-  "https://*.netlify.app",
+  "https://whop.com",
 ];
+
+// Pattern for Whop dynamic subdomains like *.apps.whop.com
+const WHOP_DOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.apps\.whop\.com$/;
 
 const envAllowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
   .split(",")
@@ -20,10 +23,16 @@ const ALLOWED_ORIGINS = Array.from(new Set([
   ...DEFAULT_ALLOWED_ORIGINS,
 ]));
 
+function isAllowedOrigin(origin: string): boolean {
+  if (ALLOWED_ORIGINS.includes(origin)) return true;
+  if (WHOP_DOMAIN_PATTERN.test(origin)) return true;
+  return false;
+}
+
 function buildCorsHeaders(originHeader: string | null): Record<string, string> {
   const fallbackOrigin = ALLOWED_ORIGINS[0] ?? DEFAULT_ALLOWED_ORIGINS[0];
 
-  const origin = originHeader && ALLOWED_ORIGINS.includes(originHeader)
+  const origin = originHeader && isAllowedOrigin(originHeader)
     ? originHeader
     : fallbackOrigin;
 
