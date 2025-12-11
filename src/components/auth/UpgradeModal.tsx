@@ -138,21 +138,48 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
                 return;
               }
 
+              // Call Stripe checkout Edge Function
               const base = getEdgeBaseUrl();
               if (!base) {
-                // No Stripe configured - redirect to pricing with message
-                window.location.href = '/pricing';
+                alert('Payment service not configured. Please try again later.');
                 return;
               }
 
-              // Legacy Stripe checkout will be deprecated - redirect to pricing
-              // Whop users should be using their Whop subscription instead
-              window.location.href = '/pricing';
+              setLoading(true);
+              try {
+                const response = await fetch(`${base}/stripe-create-checkout-session`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    tier: targetTier,
+                    successBase: window.location.origin,
+                  }),
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                  throw new Error(data.error || 'Failed to create checkout session');
+                }
+
+                if (data.url) {
+                  // Redirect to Stripe Checkout
+                  window.location.href = data.url;
+                } else {
+                  throw new Error('No checkout URL returned');
+                }
+              } catch (error) {
+                console.error('Checkout error:', error);
+                alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+                setLoading(false);
+              }
             }}
-            className={`w-full py-4 bg-gradient-to-r from-${tier.color}-500 to-${tier.color}-600 text-white font-semibold rounded-lg hover:from-${tier.color}-600 hover:to-${tier.color}-700 focus:outline-none focus:ring-2 focus:ring-${tier.color}-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all`}
+            className={`w-full py-4 bg-gradient-to-r from-${tier.color}-500 to-${tier.color}-600 text-white font-semibold rounded-lg hover:from-${tier.color}-600 hover:to-${tier.color}-700 focus:outline-none focus:ring-2 focus:ring-${tier.color}-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {loading
-              ? 'Redirecting…'
+              ? 'Connecting to checkout…'
               : targetTier === 'edubiz'
                 ? 'Start 7-Day Free Trial'
                 : 'Contact Sales'}

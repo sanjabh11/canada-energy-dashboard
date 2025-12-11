@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ProtectedRoute, useAuth } from './auth';
 import { supabase } from '../lib/supabaseClient';
-import { Users, Calendar, Plus, Loader, AlertCircle } from 'lucide-react';
+import { Users, Calendar, Plus, Loader, AlertCircle, Upload, CheckCircle, XCircle } from 'lucide-react';
 
 interface Cohort {
   id: string;
@@ -39,9 +39,134 @@ function CohortAdminPageContent() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteName, setInviteName] = useState('');
 
+  // CSV Bulk Upload State
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [csvFile, setCsvFile] = useState<File | null>(null);
+  const [csvPreview, setCsvPreview] = useState<{ email: string; name: string }[]>([]);
+  const [csvError, setCsvError] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+
   useEffect(() => {
     loadCohorts();
   }, []);
+
+  // ... (previous loadCohorts code) ...
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'text/csv' && !file.name.endsWith('.csv')) {
+      setCsvError('Please upload a valid CSV file.');
+      return;
+    }
+
+    setCsvFile(file);
+    setCsvError(null);
+    setUploadSuccess(null);
+
+    // Parse CSV
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r\n|\n/).filter(line => line.trim());
+        const parsed: { email: string; name: string }[] = [];
+
+        // Skip header if present (heuristic: checks if first line has "email")
+        const startIndex = lines[0].toLowerCase().includes('email') ? 1 : 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const parts = lines[i].split(',');
+          // Assume format: email, name (optional)
+          const email = parts[0]?.trim();
+          const name = parts[1]?.trim() || '';
+
+          if (email && email.includes('@')) {
+            parsed.push({ email, name });
+          }
+        }
+
+        if (parsed.length === 0) {
+          setCsvError('No valid emails found in CSV.');
+        } else {
+          setCsvPreview(parsed.slice(0, 5)); // Preview first 5
+        }
+      } catch (err) {
+        setCsvError('Failed to parse CSV file.');
+        console.error(err);
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  async function handleBulkEnroll() {
+    if (!selectedCohort || !csvFile) return;
+
+    setUploading(true);
+    setCsvError(null);
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const text = event.target?.result as string;
+        const lines = text.split(/\r\n|\n/).filter(line => line.trim());
+        const membersToInsert: {
+          cohort_id: string;
+          learner_email: string;
+          learner_full_name: string | null;
+          role: string;
+        }[] = [];
+
+        // Skip header
+        const startIndex = lines[0].toLowerCase().includes('email') ? 1 : 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const parts = lines[i].split(',');
+          const email = parts[0]?.trim();
+          const name = parts[1]?.trim() || null;
+
+          if (email && email.includes('@')) {
+            membersToInsert.push({
+              cohort_id: selectedCohort.id,
+              learner_email: email,
+              learner_full_name: name,
+              role: 'learner'
+            });
+          }
+        }
+
+        if (membersToInsert.length === 0) {
+          setCsvError('No valid members to upload.');
+          setUploading(false);
+          return;
+        }
+
+        // Batch insert
+        const { error } = await supabase
+          .from('cohort_members')
+          .insert(membersToInsert);
+
+        if (error) {
+          console.error('Bulk upload error', error);
+          setCsvError('Failed to upload members. Some might already exist.');
+        } else {
+          setUploadSuccess(`Successfully invited ${membersToInsert.length} learners!`);
+          setCsvFile(null);
+          setCsvPreview([]);
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          await loadMembers(selectedCohort.id);
+        }
+      } catch (err) {
+        setCsvError('Error processing file.');
+        console.error(err);
+      } finally {
+        setUploading(false);
+      }
+    };
+    reader.readAsText(csvFile);
+  }
 
   async function loadCohorts() {
     setLoading(true);
@@ -239,9 +364,8 @@ function CohortAdminPageContent() {
               {cohorts.map(cohort => (
                 <div
                   key={cohort.id}
-                  className={`py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 ${
-                    selectedCohort?.id === cohort.id ? 'bg-slate-900/60 rounded-lg px-3 -mx-3' : ''
-                  }`}
+                  className={`py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3 ${selectedCohort?.id === cohort.id ? 'bg-slate-900/60 rounded-lg px-3 -mx-3' : ''
+                    }`}
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-1">
@@ -333,6 +457,87 @@ function CohortAdminPageContent() {
                 <span>{memberError}</span>
               </div>
             )}
+
+            {/* Bulk Upload Section */}
+            <div className="mt-8 pt-8 border-t border-slate-700">
+              <div className="flex items-center gap-2 mb-4">
+                <Upload className="h-5 w-5 text-sky-400" />
+                <h3 className="text-lg font-semibold text-white">Bulk Upload via CSV</h3>
+              </div>
+
+              <div className="bg-slate-900/50 rounded-lg border-2 border-dashed border-slate-600 p-6 text-center hover:border-sky-500 transition-colors">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  accept=".csv"
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="csv-upload"
+                />
+                <label
+                  htmlFor="csv-upload"
+                  className="cursor-pointer flex flex-col items-center justify-center gap-2"
+                >
+                  <Upload className="h-8 w-8 text-slate-400" />
+                  <span className="text-slate-300 font-medium">Click to upload CSV</span>
+                  <span className="text-xs text-slate-500">Format: email, name (optional) - one per line</span>
+                </label>
+              </div>
+
+              {csvFile && (
+                <div className="mt-4 bg-slate-900 rounded-lg p-4 border border-slate-700">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm text-white font-medium">Selected: {csvFile.name}</span>
+                    <button
+                      onClick={() => {
+                        setCsvFile(null);
+                        setCsvPreview([]);
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                      className="text-slate-400 hover:text-white"
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {csvError ? (
+                    <div className="text-amber-400 text-sm flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4" />
+                      {csvError}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-xs text-slate-400 mb-3">
+                        Previewing first {csvPreview.length} entries:
+                      </div>
+                      <div className="space-y-1 mb-4">
+                        {csvPreview.map((p, i) => (
+                          <div key={i} className="text-xs flex justify-between text-slate-300 border-b border-slate-800 pb-1 last:border-0">
+                            <span>{p.email}</span>
+                            <span className="text-slate-500">{p.name || '-'}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <button
+                        onClick={handleBulkEnroll}
+                        disabled={uploading}
+                        className="w-full py-2 bg-sky-600 hover:bg-sky-700 text-white rounded-lg text-sm font-semibold flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                      >
+                        {uploading ? <Loader className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                        {uploading ? 'Uploading...' : 'Upload Learners'}
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {uploadSuccess && (
+                <div className="mt-4 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg flex items-center gap-2 text-emerald-400 text-sm">
+                  <CheckCircle className="h-4 w-4" />
+                  {uploadSuccess}
+                </div>
+              )}
+            </div>
 
             {loadingMembers ? (
               <div className="py-6 flex items-center justify-center text-slate-400 text-sm">
