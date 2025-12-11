@@ -98,6 +98,65 @@ export async function getTrackBySlug(slug: string): Promise<{ track: Certificate
  */
 export async function getUserTrackProgress(userId: string): Promise<{ progress: TrackProgress[]; error: Error | null }> {
   try {
+    // Guest users cannot have track progress - return sample tracks for preview
+    if (!userId || userId.startsWith('guest_')) {
+      // Return sample tracks for guest users to preview the system
+      const sampleTracks: TrackProgress[] = [
+        {
+          track: {
+            id: 'sample-track-1',
+            slug: 'residential-energy',
+            name: 'Residential Energy Fundamentals',
+            description: 'Learn the basics of Canadian residential energy systems, efficiency, and sustainability.',
+            duration_hours: 6,
+            price_cad: 0,
+            required_tier: 'free',
+            module_count: 5
+          },
+          modules: [],
+          userProgress: [],
+          completedCount: 0,
+          totalCount: 5,
+          overallProgress: 0
+        },
+        {
+          track: {
+            id: 'sample-track-2',
+            slug: 'grid-operations',
+            name: 'Grid Operations & Markets',
+            description: 'Understand how Canadian electricity grids operate, including market dynamics and pricing.',
+            duration_hours: 8,
+            price_cad: 99,
+            required_tier: 'edubiz',
+            module_count: 8
+          },
+          modules: [],
+          userProgress: [],
+          completedCount: 0,
+          totalCount: 8,
+          overallProgress: 0
+        },
+        {
+          track: {
+            id: 'sample-track-3',
+            slug: 'policy-regulatory',
+            name: 'Energy Policy & Regulatory Frameworks',
+            description: 'Master Canadian energy policy, carbon pricing, and regulatory compliance.',
+            duration_hours: 10,
+            price_cad: 149,
+            required_tier: 'pro',
+            module_count: 10
+          },
+          modules: [],
+          userProgress: [],
+          completedCount: 0,
+          totalCount: 10,
+          overallProgress: 0
+        }
+      ];
+      return { progress: sampleTracks, error: null };
+    }
+
     // Fetch all tracks
     const { tracks, error: tracksError } = await getAllTracks();
     if (tracksError) throw tracksError;

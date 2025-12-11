@@ -95,6 +95,56 @@ export async function getUserBadges(userId: string): Promise<{ userBadges: UserB
  */
 export async function getBadgeProgress(userId: string): Promise<{ progress: BadgeProgress[]; error: Error | null }> {
   try {
+    // Guest users cannot have badge progress - return sample badges without progress
+    if (!userId || userId.startsWith('guest_')) {
+      // Return sample badges for guest users to preview the system
+      const sampleBadges: BadgeProgress[] = [
+        {
+          badge: {
+            id: 'sample-1',
+            slug: 'first-steps',
+            name: 'First Steps',
+            description: 'Complete the platform tour',
+            tier: 'bronze',
+            icon: '🚀',
+            criteria: { type: 'tour_complete', required_count: 1 },
+            points: 50
+          },
+          earned: false,
+          progress: { current: 0, total: 1, percentage: 0 }
+        },
+        {
+          badge: {
+            id: 'sample-2',
+            slug: 'energy-explorer',
+            name: 'Energy Explorer',
+            description: 'Complete 3 learning modules',
+            tier: 'silver',
+            icon: '⚡',
+            criteria: { type: 'module_complete', required_count: 3 },
+            points: 100
+          },
+          earned: false,
+          progress: { current: 0, total: 3, percentage: 0 }
+        },
+        {
+          badge: {
+            id: 'sample-3',
+            slug: 'certified-analyst',
+            name: 'Certified Analyst',
+            description: 'Earn your first certificate',
+            tier: 'gold',
+            icon: '📜',
+            criteria: { type: 'certificate_complete', required_count: 1 },
+            points: 200
+          },
+          earned: false,
+          progress: { current: 0, total: 1, percentage: 0 }
+        }
+      ];
+      return { progress: sampleBadges, error: null };
+    }
+
     // Fetch all badges
     const { badges, error: badgesError } = await getAllBadges();
     if (badgesError) throw badgesError;
