@@ -4,7 +4,7 @@ import { useAuth, ProtectedRoute } from './auth';
 import { GraduationCap, Clock, Award, TrendingUp, CheckCircle, Lock, Loader, ArrowRight } from 'lucide-react';
 import { getUserTrackProgress, TrackProgress } from '../lib/certificateService';
 
-function CertificatesPageContent() {
+export function CertificatesPageContent() {
   const { user, edubizUser } = useAuth();
   const navigate = useNavigate();
   const [trackProgress, setTrackProgress] = useState<TrackProgress[]>([]);

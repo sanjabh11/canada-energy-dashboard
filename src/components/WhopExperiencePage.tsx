@@ -15,6 +15,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { useAuth } from './auth';
 import { whopClient, verifyWhopToken, type WhopUser } from '../lib/whop';
+import { CertificatesPageContent } from './CertificatesPage';
 import { EnergyDataDashboard } from './EnergyDataDashboard';
 import { Zap, BookOpen, Award, Users, Loader } from 'lucide-react';
 
@@ -23,10 +24,13 @@ interface WhopExperiencePageProps {
     defaultView?: 'dashboard' | 'certificates' | 'cohorts';
 }
 
-export function WhopExperiencePage({ defaultView = 'dashboard' }: WhopExperiencePageProps) {
+export function WhopExperiencePage({ defaultView = 'certificates' }: WhopExperiencePageProps) {
     const { experienceId } = useParams<{ experienceId?: string }>();
     const [searchParams] = useSearchParams();
     const { user, loading: authLoading } = useAuth();
+
+    // View state
+    const [currentView, setCurrentView] = useState<'certificates' | 'dashboard' | 'cohorts'>(defaultView);
 
     const [isInIframe, setIsInIframe] = useState(false);
     const [whopLoading, setWhopLoading] = useState(true);
@@ -125,39 +129,47 @@ export function WhopExperiencePage({ defaultView = 'dashboard' }: WhopExperience
                         <div className="flex items-center gap-3">
                             <Zap className="w-5 h-5 text-cyan-400" />
                             <span className="text-white font-medium">
-                                Welcome to Canada Energy Academy
+                                Canada Energy Academy
                             </span>
                             {activeUser.name && (
-                                <span className="text-slate-400">• {activeUser.name}</span>
+                                <span className="text-slate-400">• Welcome back, {activeUser.name}</span>
                             )}
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-semibold ${tier === 'free' ? 'bg-slate-700 text-slate-300' :
-                                tier === 'basic' ? 'bg-cyan-500/20 text-cyan-300' :
-                                    tier === 'pro' ? 'bg-purple-500/20 text-purple-300' :
-                                        'bg-amber-500/20 text-amber-300'
+                            tier === 'basic' ? 'bg-cyan-500/20 text-cyan-300' :
+                                tier === 'pro' ? 'bg-purple-500/20 text-purple-300' :
+                                    'bg-amber-500/20 text-amber-300'
                             } capitalize`}>
-                            {tier} Tier
+                            {tier} Learner
                         </span>
                     </div>
                 </div>
             )}
 
-            {/* Quick Navigation (for iframe users) */}
+            {/* Quick Navigation / Tab Switcher (for iframe users) */}
             {isInIframe && (
                 <div className="bg-slate-800/50 border-b border-slate-700 px-4 py-2">
                     <div className="max-w-7xl mx-auto flex gap-4 overflow-x-auto">
-                        <a href="/whop/experience/" className="flex items-center gap-2 px-3 py-1 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-700">
-                            <Zap className="w-4 h-4" />
-                            Dashboard
-                        </a>
-                        <a href="/certificates" className="flex items-center gap-2 px-3 py-1 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-700">
+                        <button
+                            onClick={() => setCurrentView('certificates')}
+                            className={`flex items-center gap-2 px-3 py-1 rounded text-sm transition-colors ${currentView === 'certificates'
+                                ? 'bg-cyan-500/20 text-cyan-300 font-medium'
+                                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                                }`}
+                        >
                             <BookOpen className="w-4 h-4" />
-                            Certificates
-                        </a>
-                        <a href="/badges" className="flex items-center gap-2 px-3 py-1 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-700">
-                            <Award className="w-4 h-4" />
-                            Badges
-                        </a>
+                            My Learning
+                        </button>
+                        <button
+                            onClick={() => setCurrentView('dashboard')}
+                            className={`flex items-center gap-2 px-3 py-1 rounded text-sm transition-colors ${currentView === 'dashboard'
+                                ? 'bg-cyan-500/20 text-cyan-300 font-medium'
+                                : 'text-slate-300 hover:text-white hover:bg-slate-700'
+                                }`}
+                        >
+                            <Zap className="w-4 h-4" />
+                            Energy Dashboard
+                        </button>
                         {(tier === 'pro' || tier === 'team') && (
                             <a href="/whop/dashboard" className="flex items-center gap-2 px-3 py-1 rounded text-sm text-slate-300 hover:text-white hover:bg-slate-700">
                                 <Users className="w-4 h-4" />
@@ -168,8 +180,29 @@ export function WhopExperiencePage({ defaultView = 'dashboard' }: WhopExperience
                 </div>
             )}
 
-            {/* Main Content */}
-            <EnergyDataDashboard />
+            {/* Conditional Content Rendering */}
+            <div className="min-h-screen bg-slate-900">
+                {currentView === 'certificates' ? (
+                    <div className="pb-12">
+                        {/* Learning Hero Section */}
+                        <div className="relative overflow-hidden bg-slate-900 border-b border-slate-800">
+                            <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 to-purple-600/10" />
+                            <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
+                                <h1 className="text-4xl font-bold text-white mb-4">
+                                    Your Learning Journey
+                                </h1>
+                                <p className="text-xl text-slate-300 max-w-2xl">
+                                    Master Canada's energy systems through credentialed tracks.
+                                    {tier === 'free' && " Upgrade to earn verifying certificates."}
+                                </p>
+                            </div>
+                        </div>
+                        <CertificatesPageContent />
+                    </div>
+                ) : (
+                    <EnergyDataDashboard />
+                )}
+            </div>
         </div>
     );
 }

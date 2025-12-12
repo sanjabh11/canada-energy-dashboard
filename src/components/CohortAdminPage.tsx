@@ -2,6 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { ProtectedRoute, useAuth } from './auth';
 import { supabase } from '../lib/supabaseClient';
 import { Users, Calendar, Plus, Loader, AlertCircle, Upload, CheckCircle, XCircle } from 'lucide-react';
+import { getEdgeBaseUrl } from '../lib/config';
 
 interface Cohort {
   id: string;
@@ -51,7 +52,133 @@ function CohortAdminPageContent() {
     loadCohorts();
   }, []);
 
-  // ... (previous loadCohorts code) ...
+  async function loadCohorts() {
+    setLoading(true);
+    setError(null);
+    const { data, error } = await supabase
+      .from('cohorts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading cohorts', error);
+      setError('Failed to load cohorts. Please try again.');
+      setCohorts([]);
+    } else {
+      setCohorts((data as Cohort[]) || []);
+    }
+    setLoading(false);
+  }
+
+  async function handleCreateCohort(e: React.FormEvent) {
+    e.preventDefault();
+    if (!edubizUser?.id || !newName.trim()) return;
+
+    setCreating(true);
+    setError(null);
+
+    const { error } = await supabase.from('cohorts').insert({
+      owner_edubiz_user_id: edubizUser.id,
+      name: newName.trim(),
+      description: newDescription.trim() || null,
+      status: 'draft',
+    });
+
+    if (error) {
+      console.error('Error creating cohort', error);
+      setError('Failed to create cohort. Please try again.');
+    } else {
+      setNewName('');
+      setNewDescription('');
+      await loadCohorts();
+    }
+
+    setCreating(false);
+  }
+
+  async function loadMembers(cohortId: string) {
+    setLoadingMembers(true);
+    setMemberError(null);
+
+    const { data, error } = await supabase
+      .from('cohort_members')
+      .select('*')
+      .eq('cohort_id', cohortId)
+      .order('invited_at', { ascending: false });
+
+    if (error) {
+      console.error('Error loading cohort members', error);
+      setMemberError('Failed to load cohort members. Please try again.');
+      setMembers([]);
+    } else {
+      setMembers((data as CohortMember[]) || []);
+    }
+
+    setLoadingMembers(false);
+  }
+
+  async function handleSelectCohort(cohort: Cohort) {
+    setSelectedCohort(cohort);
+    await loadMembers(cohort.id);
+  }
+
+  // --- Email Invitation Logic ---
+  async function sendInvites(cohortId: string, emails: string[]) {
+    const base = getEdgeBaseUrl();
+    if (!base) return;
+
+    console.log('Sending invites to:', emails);
+
+    try {
+      await fetch(`${base}/cohort-invite-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || ''}`
+        },
+        body: JSON.stringify({
+          cohort_id: cohortId,
+          emails,
+          sender_name: edubizUser?.full_name || 'Your Instructor'
+        })
+      });
+    } catch (e) {
+      console.error('Failed to send invite emails', e);
+      // Non-blocking error
+    }
+  }
+
+  async function handleInviteMember(e: React.FormEvent) {
+    e.preventDefault();
+    if (!selectedCohort || !inviteEmail.trim()) return;
+
+    setInviting(true);
+    setMemberError(null);
+
+    const { error } = await supabase.from('cohort_members').insert({
+      cohort_id: selectedCohort.id,
+      learner_email: inviteEmail.trim(),
+      learner_full_name: inviteName.trim() || null,
+      role: 'learner',
+    });
+
+    if (error) {
+      console.error('Error inviting cohort member', error);
+      setMemberError('Failed to add learner. Please try again.');
+    } else {
+      const emailToSend = inviteEmail.trim();
+      setInviteEmail('');
+      setInviteName('');
+      await loadMembers(selectedCohort.id);
+
+      // Send invitation email
+      await sendInvites(selectedCohort.id, [emailToSend]);
+    }
+
+    setInviting(false);
+  }
+
+  // --- CSV Logic ---
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -153,6 +280,11 @@ function CohortAdminPageContent() {
           setCsvError('Failed to upload members. Some might already exist.');
         } else {
           setUploadSuccess(`Successfully invited ${membersToInsert.length} learners!`);
+
+          // Send emails in background
+          const emails = membersToInsert.map(m => m.learner_email);
+          sendInvites(selectedCohort.id, emails);
+
           setCsvFile(null);
           setCsvPreview([]);
           if (fileInputRef.current) fileInputRef.current.value = '';
@@ -166,102 +298,6 @@ function CohortAdminPageContent() {
       }
     };
     reader.readAsText(csvFile);
-  }
-
-  async function loadCohorts() {
-    setLoading(true);
-    setError(null);
-    const { data, error } = await supabase
-      .from('cohorts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error loading cohorts', error);
-      setError('Failed to load cohorts. Please try again.');
-      setCohorts([]);
-    } else {
-      setCohorts((data as Cohort[]) || []);
-    }
-    setLoading(false);
-  }
-
-  async function handleCreateCohort(e: React.FormEvent) {
-    e.preventDefault();
-    if (!edubizUser?.id || !newName.trim()) return;
-
-    setCreating(true);
-    setError(null);
-
-    const { error } = await supabase.from('cohorts').insert({
-      owner_edubiz_user_id: edubizUser.id,
-      name: newName.trim(),
-      description: newDescription.trim() || null,
-      status: 'draft',
-    });
-
-    if (error) {
-      console.error('Error creating cohort', error);
-      setError('Failed to create cohort. Please try again.');
-    } else {
-      setNewName('');
-      setNewDescription('');
-      await loadCohorts();
-    }
-
-    setCreating(false);
-  }
-
-  async function loadMembers(cohortId: string) {
-    setLoadingMembers(true);
-    setMemberError(null);
-
-    const { data, error } = await supabase
-      .from('cohort_members')
-      .select('*')
-      .eq('cohort_id', cohortId)
-      .order('invited_at', { ascending: false });
-
-    if (error) {
-      console.error('Error loading cohort members', error);
-      setMemberError('Failed to load cohort members. Please try again.');
-      setMembers([]);
-    } else {
-      setMembers((data as CohortMember[]) || []);
-    }
-
-    setLoadingMembers(false);
-  }
-
-  async function handleSelectCohort(cohort: Cohort) {
-    setSelectedCohort(cohort);
-    await loadMembers(cohort.id);
-  }
-
-  async function handleInviteMember(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedCohort || !inviteEmail.trim()) return;
-
-    setInviting(true);
-    setMemberError(null);
-
-    const { error } = await supabase.from('cohort_members').insert({
-      cohort_id: selectedCohort.id,
-      learner_email: inviteEmail.trim(),
-      learner_full_name: inviteName.trim() || null,
-      role: 'learner',
-    });
-
-    if (error) {
-      console.error('Error inviting cohort member', error);
-      setMemberError('Failed to add learner. Please try again.');
-    } else {
-      setInviteEmail('');
-      setInviteName('');
-      await loadMembers(selectedCohort.id);
-    }
-
-    setInviting(false);
   }
 
   return (
@@ -549,7 +585,7 @@ function CohortAdminPageContent() {
                 No learners in this cohort yet.
               </div>
             ) : (
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto mt-8">
                 <table className="min-w-full text-xs text-left text-slate-300">
                   <thead className="border-b border-slate-700 text-slate-400">
                     <tr>

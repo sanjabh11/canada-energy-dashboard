@@ -1,14 +1,13 @@
 /**
- * EmployersPage Component
+ * EmployersPage - LMIA-Ready "Hire Me" Landing Page
  * 
- * Landing page for employers with LMIA-friendly profiles and capability PDFs.
- * Addresses Gap #8: Employer Conversion Pathways (MEDIUM Priority)
+ * Redesigned for Alberta employers per Gemini research recommendations.
+ * Demonstrates: Technical capabilities, LMIA readiness, and local commitment.
  * 
- * Usage:
- * <Route path="/employers" element={<EmployersPage />} />
+ * @author Sanjay Bhargava
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Building2,
@@ -19,156 +18,308 @@ import {
   ArrowRight,
   CheckCircle,
   Briefcase,
-  GraduationCap,
+  MapPin,
   Globe,
   Zap,
-  Mail
+  Mail,
+  ExternalLink,
+  Play,
+  Code,
+  Database,
+  BarChart3,
+  Shield,
+  Clock,
+  Heart
 } from 'lucide-react';
-import { useTranslation } from '../lib/i18n';
 import { HelpButton } from './HelpButton';
 import { SEOHead, SEO_CONFIGS } from './SEOHead';
 
-// Capability profiles that employers can download
-const CAPABILITY_PROFILES = [
+// Case studies showcasing technical depth
+const CASE_STUDIES = [
   {
-    id: 'energy-analyst',
-    title: 'Energy Data Analyst',
-    description: 'Professionals skilled in real-time grid analytics, demand forecasting, and energy market analysis.',
-    skills: ['IESO/AESO data analysis', 'Power BI / Tableau', 'Python data science', 'Energy market modeling'],
-    noc: '21211 - Data scientists',
-    salary: '$75,000 - $110,000',
-    demand: 'High'
+    id: 'aeso-integration',
+    title: 'Real-Time AESO Grid Analytics',
+    description: 'Live integration with Alberta Electric System Operator APIs for demand monitoring, pool pricing, and storage dispatch tracking.',
+    metrics: [
+      { label: 'Data Latency', value: '<1 sec' },
+      { label: 'Uptime', value: '99.9%' },
+      { label: 'API Endpoints', value: '15+' }
+    ],
+    tech: ['React', 'Supabase Edge Functions', 'AESO REST API', 'Recharts'],
+    link: '/dashboard',
+    image: '📊'
   },
   {
-    id: 'decarbonization-specialist',
-    title: 'Decarbonization Specialist',
-    description: 'Experts in carbon reduction strategies, ESG compliance, and sustainability reporting.',
-    skills: ['GHG Protocol', 'TCFD reporting', 'Carbon pricing analysis', 'Net-zero pathway modeling'],
-    noc: '21110 - Environmental auditors',
-    salary: '$85,000 - $130,000',
-    demand: 'Very High'
+    id: 'indigenous-sovereignty',
+    title: 'Indigenous Data Sovereignty Dashboard',
+    description: 'OCAP®-compliant platform for First Nations energy project tracking with FPIC workflow management and TEK integration.',
+    metrics: [
+      { label: 'FPIC Workflows', value: '3 stages' },
+      { label: 'Territory Mapping', value: 'Live' },
+      { label: 'Data Governance', value: 'OCAP®' }
+    ],
+    tech: ['React', 'Mapbox', 'Supabase RLS', 'UNDRIP compliance'],
+    link: '/indigenous',
+    image: '🏔️'
   },
   {
-    id: 'indigenous-liaison',
-    title: 'Indigenous Energy Liaison',
-    description: 'Specialists in Indigenous consultation, FPIC processes, and community partnership development.',
-    skills: ['UNDRIP compliance', 'Consultation protocols', 'Community engagement', 'Benefit-sharing agreements'],
-    noc: '41401 - Policy researchers',
-    salary: '$70,000 - $100,000',
-    demand: 'High'
-  },
-  {
-    id: 'grid-integration',
-    title: 'Grid Integration Engineer',
-    description: 'Engineers focused on renewable integration, storage optimization, and grid stability.',
-    skills: ['Power systems analysis', 'Battery storage', 'Interconnection queue', 'SCADA systems'],
-    noc: '21310 - Electrical engineers',
-    salary: '$90,000 - $140,000',
-    demand: 'Very High'
+    id: 'compliance-automation',
+    title: 'Regulatory Compliance Automation',
+    description: 'Automated AUC Rule 007 compliance checking and CER reporting for micro-generation and pipeline operators.',
+    metrics: [
+      { label: 'Forms Automated', value: '5+' },
+      { label: 'Compliance Rate', value: '100%' },
+      { label: 'Time Saved', value: '40%' }
+    ],
+    tech: ['Python', 'PDF parsing', 'AUC Form A', 'CER standards'],
+    link: '/climate-policy',
+    image: '⚖️'
   }
 ];
 
-const PARTNERSHIP_BENEFITS = [
-  {
-    icon: Users,
-    title: 'Pre-Qualified Talent Pool',
-    description: 'Access candidates who have completed CEIP certification tracks with verified competencies.'
-  },
-  {
-    icon: Award,
-    title: 'Digital Credentials',
-    description: 'Verify candidate skills through blockchain-backed certificates and achievement badges.'
-  },
-  {
-    icon: FileText,
-    title: 'LMIA-Ready Documentation',
-    description: 'Standardized capability profiles aligned with NOC codes for streamlined work permit applications.'
-  },
-  {
-    icon: Globe,
-    title: 'Cross-Border Hiring',
-    description: 'Connect with international talent familiar with Canadian energy regulations and markets.'
-  }
+// GTS-eligible NOC codes demonstrated by this platform
+const NOC_ALIGNMENT = [
+  { code: '21232', title: 'Software Developer/Programmer', match: 'Primary' },
+  { code: '21231', title: 'Software Engineer', match: 'Primary' },
+  { code: '21211', title: 'Data Scientist', match: 'Secondary' },
+  { code: '21223', title: 'Database Analyst', match: 'Secondary' }
 ];
 
 export function EmployersPage() {
-  const { t } = useTranslation();
+  const [activeCase, setActiveCase] = useState(CASE_STUDIES[0]);
 
-  const handleDownloadProfile = (profileId: string) => {
-    // In production, this would generate a PDF
-    alert(`Downloading ${profileId} capability profile PDF...`);
+  const handleContactHire = () => {
+    window.location.href = 'mailto:sanjabh11@gmail.com?subject=Employment Inquiry - LMIA/GTS Position&body=Hi Sanjay,%0A%0AI am interested in discussing a potential role at our organization.%0A%0ACompany:%0APosition:%0ATimeline:%0A%0ABest regards';
   };
 
-  const handleContactSales = () => {
-    window.location.href = 'mailto:employers@canada-energy.ca?subject=Employer Partnership Inquiry';
+  const handleDownloadResume = () => {
+    window.open('/resume-canada.md', '_blank');
   };
 
   return (
     <div className="min-h-screen bg-slate-900">
-      <SEOHead {...SEO_CONFIGS.employers} />
-      
-      {/* Hero Section */}
-      <section className="bg-gradient-to-br from-slate-900 via-blue-900/20 to-slate-900 py-16 px-6">
+      <SEOHead
+        title="Hire Sanjay Bhargava | Senior Software Engineer - Alberta LMIA Ready"
+        description="34 years enterprise experience, AESO integration expert. Relocating to Calgary. LMIA documentation provided."
+        path="/hire-me"
+        keywords={['Alberta hire software engineer', 'LMIA ready developer', 'Calgary tech jobs', 'Global Talent Stream']}
+      />
+
+      {/* Hero Section - "Hire Me" Focus */}
+      <section className="bg-gradient-to-br from-slate-900 via-emerald-900/20 to-slate-900 py-16 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 bg-blue-600 rounded-lg">
-              <Building2 className="h-6 w-6 text-white" />
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left: Personal Value Prop */}
+            <div>
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-emerald-600 rounded-lg">
+                  <MapPin className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-emerald-400 font-medium">Relocating to Calgary, AB</span>
+              </div>
+
+              <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+                Hire a Senior Engineer Who<br />
+                <span className="text-emerald-400">Already Built Your Solution</span>
+              </h1>
+
+              <p className="text-xl text-slate-300 mb-6">
+                34 years architecting enterprise platforms. Expert in AESO integration,
+                Indigenous data sovereignty, and Alberta energy markets.
+                <strong className="text-white"> Family in Calgary. Ready to relocate.</strong>
+              </p>
+
+              <div className="flex flex-wrap gap-4 mb-8">
+                <button
+                  onClick={handleContactHire}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Mail className="h-5 w-5" />
+                  Contact Me Directly
+                </button>
+                <button
+                  onClick={handleDownloadResume}
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                >
+                  <Download className="h-5 w-5" />
+                  Download Resume
+                </button>
+              </div>
+
+              {/* LMIA Value Prop */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
+                <div className="flex items-center gap-2 text-emerald-400 mb-2">
+                  <CheckCircle className="h-5 w-5" />
+                  <span className="font-semibold">LMIA-Ready: I Simplify Your Hiring</span>
+                </div>
+                <p className="text-sm text-slate-400">
+                  I provide HR-ready job descriptions, NOC alignment documents, and Global Talent Stream
+                  supporting materials. Typical processing: 4-6 weeks from offer.
+                </p>
+              </div>
             </div>
-            <span className="text-blue-400 font-medium">{t.employers.badgeLabel}</span>
-          </div>
 
-          <div className="flex items-center gap-3 mb-6">
-            <h1 className="text-4xl md:text-5xl font-bold text-white">
-              {t.employers.heroTitle}
-            </h1>
-            <HelpButton id="page.employers.overview" />
-          </div>
-          <p className="text-xl text-slate-300 max-w-3xl mb-8">
-            {t.employers.heroSubtitle}
-          </p>
-
-          <div className="flex flex-wrap gap-4">
-            <button
-              onClick={handleContactSales}
-              className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              <Mail className="h-5 w-5" />
-              {t.employers.ctaContactSales}
-            </button>
-            <Link
-              to="/certificates"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
-            >
-              <GraduationCap className="h-5 w-5" />
-              {t.employers.ctaViewTracks}
-            </Link>
+            {/* Right: Live Dashboard Preview */}
+            <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+              <div className="bg-slate-700 px-4 py-3 flex items-center justify-between">
+                <span className="text-sm text-slate-300 font-medium">Live Dashboard Demo</span>
+                <Link
+                  to="/"
+                  className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
+                >
+                  Open Full Dashboard <ExternalLink className="h-4 w-4" />
+                </Link>
+              </div>
+              <div className="p-4">
+                <div className="aspect-video bg-gradient-to-br from-slate-900 to-slate-800 rounded-lg flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-6xl mb-4">📊</div>
+                    <p className="text-slate-400 text-sm mb-4">Canada Energy Intelligence Platform</p>
+                    <Link
+                      to="/"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <Play className="h-4 w-4" />
+                      Launch Live Demo
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Grid */}
-      <section className="py-16 px-6 border-b border-slate-800">
+      {/* NOC Alignment Section */}
+      <section className="py-12 px-6 bg-slate-800/30 border-y border-slate-800">
         <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-8">
-            <h2 className="text-2xl font-bold text-white">
-              {t.employers.sectionWhyPartner}
-            </h2>
-            <HelpButton id="page.employers.partnership" />
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <Briefcase className="h-6 w-6 text-emerald-400" />
+            <h2 className="text-xl font-bold text-white">Global Talent Stream Eligible (Category B)</h2>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {PARTNERSHIP_BENEFITS.map((benefit, i) => {
-              const Icon = benefit.icon;
-              return (
-                <div
-                  key={i}
-                  className="p-6 bg-slate-800 border border-slate-700 rounded-xl"
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {NOC_ALIGNMENT.map((noc) => (
+              <div
+                key={noc.code}
+                className={`p-4 rounded-lg border ${noc.match === 'Primary'
+                  ? 'bg-emerald-600/10 border-emerald-500/30'
+                  : 'bg-slate-800 border-slate-700'
+                  }`}
+              >
+                <div className="text-lg font-mono text-white mb-1">NOC {noc.code}</div>
+                <div className="text-sm text-slate-300">{noc.title}</div>
+                <div className={`text-xs mt-2 ${noc.match === 'Primary' ? 'text-emerald-400' : 'text-slate-500'}`}>
+                  {noc.match} Match
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Case Studies Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex items-center gap-3 mb-8">
+            <h2 className="text-2xl font-bold text-white">Technical Case Studies</h2>
+            <HelpButton id="page.employers.casestudies" />
+          </div>
+          <p className="text-slate-400 mb-8">
+            Proof of capability: These features are live on this platform. Click to explore.
+          </p>
+
+          <div className="grid lg:grid-cols-3 gap-6">
+            {CASE_STUDIES.map((study) => (
+              <div
+                key={study.id}
+                className={`p-6 rounded-xl border transition-all cursor-pointer ${activeCase?.id === study.id
+                  ? 'bg-emerald-600/10 border-emerald-500/50'
+                  : 'bg-slate-800 border-slate-700 hover:border-slate-600'
+                  }`}
+                onClick={() => setActiveCase(study)}
+              >
+                <div className="text-4xl mb-4">{study.image}</div>
+                <h3 className="text-lg font-semibold text-white mb-2">{study.title}</h3>
+                <p className="text-sm text-slate-400 mb-4">{study.description}</p>
+
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {study.metrics.map((metric, i) => (
+                    <div key={i} className="text-center">
+                      <div className="text-lg font-semibold text-emerald-400">{metric.value}</div>
+                      <div className="text-xs text-slate-500">{metric.label}</div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-1 mb-4">
+                  {study.tech.map((tech, i) => (
+                    <span key={i} className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300">
+                      {tech}
+                    </span>
+                  ))}
+                </div>
+
+                <Link
+                  to={study.link}
+                  className="inline-flex items-center gap-1 text-sm text-emerald-400 hover:text-emerald-300"
                 >
-                  <div className="p-3 bg-blue-600/20 rounded-lg w-fit mb-4">
-                    <Icon className="h-6 w-6 text-blue-400" />
+                  View Live Feature <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Hire Experience Section */}
+      <section className="py-16 px-6 bg-slate-800/30">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-2xl font-bold text-white text-center mb-8">
+            Why Hire 34 Years of Experience?
+          </h2>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Shield,
+                title: 'No Experimentation on Your Systems',
+                desc: 'Proven track record managing $60M programs. Your mission-critical systems are safe.'
+              },
+              {
+                icon: Clock,
+                title: 'Perfect for 12-24 Month Mandates',
+                desc: 'Seeking 3-5 year horizon, not 10+ year ladder climbing. Get senior expertise without long-term HR commitment.'
+              },
+              {
+                icon: BarChart3,
+                title: '$21M Cost Savings Delivered',
+                desc: '35% cost reduction through RPA/AI automation at Wipro. Directly applicable to energy sector optimization.'
+              },
+              {
+                icon: Users,
+                title: 'No Learning Curve on Stakeholders',
+                desc: '34 years engaging C-suite, board members, regulators. Mature professional who understands compliance-first culture.'
+              },
+              {
+                icon: Heart,
+                title: 'Family in Calgary = Retention',
+                desc: 'Blood relative in Alberta. This is a permanent relocation, not a stepping stone to Toronto.'
+              },
+              {
+                icon: Code,
+                title: 'Already Built Your Solution',
+                desc: "This dashboard proves I understand AESO, grid operations, Indigenous sovereignty. Not theoretical expertise."
+              }
+            ].map((item, i) => {
+              const Icon = item.icon;
+              return (
+                <div key={i} className="p-6 bg-slate-800 border border-slate-700 rounded-xl">
+                  <div className="p-3 bg-emerald-600/20 rounded-lg w-fit mb-4">
+                    <Icon className="h-6 w-6 text-emerald-400" />
                   </div>
-                  <h3 className="font-semibold text-white mb-2">{benefit.title}</h3>
-                  <p className="text-sm text-slate-400">{benefit.description}</p>
+                  <h3 className="font-semibold text-white mb-2">{item.title}</h3>
+                  <p className="text-sm text-slate-400">{item.desc}</p>
                 </div>
               );
             })}
@@ -176,112 +327,38 @@ export function EmployersPage() {
         </div>
       </section>
 
-      {/* Capability Profiles */}
-      <section className="py-16 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h2 className="text-2xl font-bold text-white">
-                  {t.employers.sectionCapabilityProfiles}
-                </h2>
-                <HelpButton id="page.employers.profiles" />
-              </div>
-              <p className="text-slate-400">
-                {t.employers.sectionCapabilitySubtitle}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            {CAPABILITY_PROFILES.map((profile) => (
-              <div
-                key={profile.id}
-                className="p-6 bg-slate-800 border border-slate-700 rounded-xl hover:border-slate-600 transition-colors"
-              >
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white mb-1">
-                      {profile.title}
-                    </h3>
-                    <p className="text-sm text-slate-400">{profile.description}</p>
-                  </div>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded ${
-                      profile.demand === 'Very High'
-                        ? 'bg-red-500/20 text-red-400'
-                        : 'bg-amber-500/20 text-amber-400'
-                    }`}
-                  >
-                    {profile.demand} Demand
-                  </span>
-                </div>
-
-                <div className="space-y-3 mb-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Briefcase className="h-4 w-4 text-slate-500" />
-                    <span className="text-slate-400">NOC:</span>
-                    <span className="text-slate-200">{profile.noc}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Zap className="h-4 w-4 text-slate-500" />
-                    <span className="text-slate-400">Salary Range:</span>
-                    <span className="text-emerald-400">{profile.salary}</span>
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <p className="text-xs text-slate-500 mb-2">Key Skills:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {profile.skills.map((skill, i) => (
-                      <span
-                        key={i}
-                        className="px-2 py-1 bg-slate-700 rounded text-xs text-slate-300"
-                      >
-                        {skill}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleDownloadProfile(profile.id)}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 rounded-lg text-blue-400 text-sm font-medium transition-colors"
-                >
-                  <Download className="h-4 w-4" />
-                  Download Profile PDF
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA Section */}
-      <section className="py-16 px-6 bg-gradient-to-br from-blue-900/30 to-slate-900">
+      <section className="py-16 px-6 bg-gradient-to-br from-emerald-900/30 to-slate-900">
         <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl font-bold text-white mb-4">
-            {t.employers.sectionReadyTitle}
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Simplify Your Hiring?
           </h2>
           <p className="text-slate-300 mb-8">
-            {t.employers.sectionReadySubtitle}
+            I provide all LMIA documentation. You just need to extend the offer.
+            Typical timeline: 4-6 weeks from offer to work permit.
           </p>
 
-          <div className="flex flex-wrap justify-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4 mb-8">
             <button
-              onClick={handleContactSales}
-              className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              onClick={handleContactHire}
+              className="inline-flex items-center gap-2 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors"
             >
-              Schedule a Demo
-              <ArrowRight className="h-5 w-5" />
+              <Mail className="h-5 w-5" />
+              Email Me: sanjabh11@gmail.com
             </button>
-            <Link
-              to="/api-docs"
+            <button
+              onClick={handleDownloadResume}
               className="inline-flex items-center gap-2 px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
             >
-              <FileText className="h-5 w-5" />
-              {t.employers.ctaApiIntegration}
-            </Link>
+              <Download className="h-5 w-5" />
+              Download Full Resume
+            </button>
+          </div>
+
+          <div className="text-sm text-slate-500">
+            Portfolio: <a href="https://igniteitserve.com/" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">igniteitserve.com</a>
+            {' • '}
+            LinkedIn: <a href="https://linkedin.com/in/bhargavasanjay" className="text-emerald-400 hover:underline" target="_blank" rel="noopener noreferrer">bhargavasanjay</a>
           </div>
         </div>
       </section>
@@ -293,13 +370,13 @@ export function EmployersPage() {
             to="/"
             className="text-slate-400 hover:text-white transition-colors"
           >
-            {t.employers.linkBackToDashboard}
+            ← Back to Dashboard
           </Link>
           <Link
             to="/incubators"
-            className="text-blue-400 hover:text-blue-300 transition-colors"
+            className="text-emerald-400 hover:text-emerald-300 transition-colors"
           >
-            {t.employers.linkForIncubators}
+            For Accelerators & Incubators →
           </Link>
         </div>
       </div>

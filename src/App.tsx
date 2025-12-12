@@ -24,6 +24,10 @@ import { AuthProvider } from './components/auth';
 import { WhopExperiencePage } from './components/WhopExperiencePage';
 import { WhopDashboardPage } from './components/WhopDashboardPage';
 import { WhopDiscoverPage } from './components/WhopDiscoverPage';
+// Gemini Strategy Features (Alberta-Focused)
+import { MicroGenWizard } from './components/MicroGenWizard';
+import { RROAlertSystem } from './components/RROAlertSystem';
+import { AICEIReportingModule } from './components/AICEIReportingModule';
 import './App.css';
 import './styles/layout.css';
 
@@ -78,7 +82,15 @@ const router = createBrowserRouter(
     { path: '/employers', element: <EmployersPage /> },
     { path: '/incubators', element: <IncubatorsPage /> },
     { path: '/for-employers', element: <EmployersPage /> },
-    { path: '/ctn', element: <IncubatorsPage /> }
+    { path: '/hire-me', element: <EmployersPage /> },
+    { path: '/ctn', element: <IncubatorsPage /> },
+    // Gemini Strategy: Alberta-Focused Tools
+    { path: '/solar-wizard', element: <MicroGenWizard /> },
+    { path: '/micro-gen', element: <MicroGenWizard /> },
+    { path: '/rate-alerts', element: <RROAlertSystem /> },
+    { path: '/rro', element: <RROAlertSystem /> },
+    { path: '/indigenous/aicei', element: <AICEIReportingModule /> },
+    { path: '/aicei', element: <AICEIReportingModule /> }
   ]
 );
 

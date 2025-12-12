@@ -20,15 +20,10 @@ import {
     ArrowRight, Loader, Lock
 } from 'lucide-react';
 
-interface CohortStats {
-    totalMembers: number;
-    activeMembers: number;
-    certificatesIssued: number;
-    avgCompletion: number;
-}
+import { getCohortStats, type CohortStats } from '../lib/cohortService';
 
 export function WhopDashboardPage() {
-    const { user, tier, hasTierAccess } = useAuth();
+    const { user, edubizUser, tier, hasTierAccess } = useAuth();
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState<CohortStats | null>(null);
 
@@ -36,25 +31,21 @@ export function WhopDashboardPage() {
     const hasCreatorAccess = hasTierAccess('pro');
 
     useEffect(() => {
-        // Simulate loading cohort stats
         const loadStats = async () => {
             setLoading(true);
-            // TODO: Replace with actual API call
-            await new Promise(resolve => setTimeout(resolve, 1000));
 
-            if (hasCreatorAccess) {
-                setStats({
-                    totalMembers: 47,
-                    activeMembers: 32,
-                    certificatesIssued: 15,
-                    avgCompletion: 68
-                });
+            if (hasCreatorAccess && edubizUser?.id) {
+                const data = await getCohortStats(edubizUser.id);
+                setStats(data);
             }
+
             setLoading(false);
         };
 
-        loadStats();
-    }, [hasCreatorAccess]);
+        if (edubizUser) {
+            loadStats();
+        }
+    }, [hasCreatorAccess, edubizUser]);
 
     // Access denied view
     if (!hasCreatorAccess) {
