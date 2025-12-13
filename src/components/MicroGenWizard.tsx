@@ -27,6 +27,7 @@ import {
     Leaf
 } from 'lucide-react';
 import { SEOHead } from './SEOHead';
+import { generatePermitPackagePDF, generateAUCFormPDF } from '../lib/pdfGenerator';
 
 // Wizard step interface
 interface WizardStep {
@@ -181,8 +182,21 @@ export function MicroGenWizard() {
     };
 
     const generatePermitPack = () => {
-        // In production, this would generate a PDF with AUC Form A
-        alert('Permit Pack generation coming soon! This will include:\n\n• Pre-filled AUC Form A\n• Site plan template\n• Single-line diagram\n• Interconnection checklist\n• Installer certification requirements');
+        try {
+            generatePermitPackagePDF(formData, calculations);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert('PDF generation requires jspdf library. Please install with: npm install jspdf');
+        }
+    };
+
+    const generateAUCFormOnly = () => {
+        try {
+            generateAUCFormPDF(formData, calculations);
+        } catch (error) {
+            console.error('PDF generation failed:', error);
+            alert('PDF generation requires jspdf library. Please install with: npm install jspdf');
+        }
     };
 
     return (
@@ -549,16 +563,26 @@ export function MicroGenWizard() {
                                 </div>
                             </div>
 
-                            <button
-                                onClick={generatePermitPack}
-                                className="w-full mt-6 flex items-center justify-center gap-2 px-6 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
-                            >
-                                <Download className="h-5 w-5" />
-                                Download Permit Package (PDF)
-                            </button>
+                            <div className="space-y-3 mt-6">
+                                <button
+                                    onClick={generatePermitPack}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-amber-500 hover:bg-amber-600 text-white rounded-lg font-medium transition-colors"
+                                >
+                                    <Download className="h-5 w-5" />
+                                    Download Complete Permit Package (5-page PDF)
+                                </button>
+                                
+                                <button
+                                    onClick={generateAUCFormOnly}
+                                    className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg font-medium transition-colors"
+                                >
+                                    <FileText className="h-5 w-5" />
+                                    Download AUC Form A Only
+                                </button>
+                            </div>
 
                             <p className="text-xs text-slate-500 text-center mt-4">
-                                Full permit pack coming soon. Will include AUC Form A, site plan, and installer checklist.
+                                Documents include pre-filled AUC Form A, site plan template, system summary, and installation checklist.
                             </p>
                         </div>
                     )}

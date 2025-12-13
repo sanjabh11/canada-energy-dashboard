@@ -1,13 +1,14 @@
 /**
- * AuthButton - Sign In / User Menu Button
+ * AuthButton - Get Started / User Menu Button
  *
- * UPDATED FOR WHOP INTEGRATION:
+ * UPDATED FOR WHOP INTEGRATION (Whop App Store Compliant):
  * - Works with WhopUser instead of Supabase User
  * - Shows tier from Whop subscription
  * - Supports guest users
+ * - Uses "Get Started" instead of "Sign In" for Whop compliance
  *
  * Shows:
- * - "Sign In" button when not authenticated
+ * - "Get Started" button when not authenticated (opens Whop/Guest modal)
  * - User menu with profile, tier, sign out when authenticated
  */
 
@@ -41,15 +42,17 @@ export function AuthButton() {
     setShowUserMenu(false);
   };
 
-  // Not authenticated - show Sign In button
+  // Not authenticated - show Whop/Guest entry button (NOT "Sign In")
+  // This is the fix for Whop App Store rejection
   if (!user) {
     return (
       <>
         <button
           onClick={() => setShowAuthModal(true)}
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all"
+          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all flex items-center gap-2"
         >
-          Sign In
+          <User className="w-4 h-4" />
+          Get Started
         </button>
         <AuthModal
           isOpen={showAuthModal}
@@ -123,7 +126,7 @@ export function AuthButton() {
                     }}
                     className="text-xs text-cyan-400 hover:text-cyan-300"
                   >
-                    Sign in with Whop
+                    Continue with Whop
                   </button>
                 )}
                 {tier === 'free' && !isGuest && (

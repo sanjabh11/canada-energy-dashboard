@@ -24,7 +24,10 @@ import {
     Clock,
     BarChart3,
     RefreshCw,
-    Mail
+    Mail,
+    Crown,
+    Lock,
+    Sparkles
 } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import {
@@ -131,17 +134,30 @@ export function RROAlertSystem() {
                 keywords={['Alberta RRO rate', 'electricity prices', 'ENMAX rates', 'EPCOR rates', 'Alberta power bill']}
             />
 
-            {/* Header */}
+            {/* Header - Whop Optimized */}
             <div className="bg-gradient-to-r from-blue-600 to-cyan-600 py-12 px-6">
                 <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-white/20 rounded-xl">
-                            <Zap className="h-8 w-8 text-white" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-white/20 rounded-xl">
+                                <Zap className="h-8 w-8 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-3xl font-bold text-white">Alberta Rate Watchdog</h1>
+                                <p className="text-blue-100">Never be surprised by electricity bill spikes again</p>
+                                <p className="text-xs text-blue-200 mt-1 flex items-center gap-1">
+                                    <Sparkles className="h-3 w-3" />
+                                    Powered by CEIP — Canada's Energy Intelligence Engine
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">Alberta Rate Watchdog</h1>
-                            <p className="text-blue-100">Never be surprised by electricity bill spikes again</p>
-                        </div>
+                        <Link
+                            to="/pricing"
+                            className="hidden md:flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors border border-white/30"
+                        >
+                            <Crown className="h-4 w-4" />
+                            Unlock CEIP Advanced
+                        </Link>
                     </div>
                 </div>
             </div>
@@ -424,14 +440,65 @@ export function RROAlertSystem() {
                 </div>
             </div>
 
+            {/* CEIP Advanced Upsell Banner */}
+            <div className="max-w-6xl mx-auto px-6 mb-8">
+                <div className="bg-gradient-to-r from-purple-900/30 to-indigo-900/30 border border-purple-500/30 rounded-xl p-6">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-purple-500/20 rounded-xl">
+                                <Crown className="h-8 w-8 text-purple-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Unlock CEIP Advanced</h3>
+                                <p className="text-sm text-slate-400">35+ professional dashboards, real-time grid analytics, AI insights</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <div className="text-right hidden sm:block">
+                                <div className="text-2xl font-bold text-white">$29<span className="text-sm text-slate-400">/mo</span></div>
+                                <div className="text-xs text-purple-400">7-day free trial</div>
+                            </div>
+                            <Link
+                                to="/pricing"
+                                className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+                            >
+                                <Sparkles className="h-5 w-5" />
+                                Upgrade Now
+                            </Link>
+                        </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-purple-500/20">
+                        {[
+                            { icon: '📊', label: '35+ Dashboards' },
+                            { icon: '⚡', label: 'Real-time Grid Data' },
+                            { icon: '🤖', label: 'AI Price Forecasts' },
+                            { icon: '📈', label: 'Export & API Access' }
+                        ].map((feature) => (
+                            <div key={feature.label} className="flex items-center gap-2 text-sm text-slate-300">
+                                <span>{feature.icon}</span>
+                                {feature.label}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
             {/* Footer */}
             <div className="py-8 px-6 border-t border-slate-800">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <Link to="/" className="text-slate-400 hover:text-white transition-colors">
-                        ← Back to Dashboard
-                    </Link>
-                    <div className="text-xs text-slate-500">
-                        Data sources: AESO Pool Price, UCA Retail Rates
+                <div className="max-w-6xl mx-auto">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-6">
+                            <Link to="/" className="text-slate-400 hover:text-white transition-colors">
+                                ← Back to Dashboard
+                            </Link>
+                            <Link to="/pricing" className="text-cyan-400 hover:text-cyan-300 transition-colors text-sm">
+                                View All Plans
+                            </Link>
+                        </div>
+                        <div className="text-center md:text-right">
+                            <div className="text-xs text-slate-500">Data sources: AESO Pool Price, UCA Retail Rates</div>
+                            <div className="text-xs text-slate-600 mt-1">Powered by CEIP — Canada's Energy Intelligence Engine</div>
+                        </div>
                     </div>
                 </div>
             </div>

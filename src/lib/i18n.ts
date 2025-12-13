@@ -189,7 +189,7 @@ export const en: Translations = {
     pricing: 'Pricing',
     profile: 'Profile',
     settings: 'Settings',
-    signIn: 'Sign In',
+    signIn: 'Get Started',
     signOut: 'Sign Out',
     docs: 'Documentation'
   },

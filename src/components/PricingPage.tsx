@@ -1,120 +1,133 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from './auth';
-import { Check, X, Zap, TrendingUp, ArrowRight, Crown, Star } from 'lucide-react';
+import { Check, X, Zap, TrendingUp, ArrowRight, Crown, Star, Sparkles } from 'lucide-react';
 import { getEdgeBaseUrl } from '../lib/config';
 
 export function PricingPage() {
   const { user, edubizUser, isWhopUser } = useAuth();
-  const [checkoutLoadingTier, setCheckoutLoadingTier] = useState<'edubiz' | 'pro' | null>(null);
+  const [checkoutLoadingTier, setCheckoutLoadingTier] = useState<'watchdog' | 'advanced' | 'enterprise' | null>(null);
   const currentTier = edubizUser?.tier || 'free';
 
+  // Whop-aligned pricing tiers (from whop_skill.md)
   const tiers = [
     {
-      id: 'free',
-      name: 'Free',
-      icon: '🆓',
-      price: 0,
-      period: 'forever',
-      description: 'Perfect for students and curious learners',
+      id: 'watchdog',
+      name: 'Rate Watchdog',
+      icon: '⚡',
+      price: 9,
+      period: 'month',
+      description: 'Alberta electricity price intelligence',
       features: [
-        { text: 'View-only dashboards', included: true },
-        { text: '10 AI queries per day', included: true },
-        { text: 'Community forums access', included: true },
-        { text: 'Basic data exports', included: true },
+        { text: 'Live RRO price monitoring', included: true },
+        { text: 'Daily price summaries', included: true },
+        { text: 'Threshold-based alerts', included: true },
+        { text: '3-day AI forecast', included: true },
+        { text: 'Retailer comparison', included: true },
+        { text: 'Email notifications', included: true },
+        { text: 'Full dashboard access', included: false },
         { text: 'Certificate tracks', included: false },
-        { text: 'Live webinars', included: false },
-        { text: 'Badge system', included: false },
-        { text: 'Unlimited AI queries', included: false },
-        { text: 'Green Button data import', included: false },
-        { text: 'Priority support', included: false }
+        { text: 'API access', included: false },
+        { text: 'Data exports', included: false }
       ],
-      cta: 'Current Plan',
-      ctaStyle: 'bg-slate-700 cursor-not-allowed',
-      popular: false
+      cta: 'Start for $9/mo',
+      ctaStyle: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600',
+      popular: false,
+      whopPlan: 'basic'
     },
     {
-      id: 'edubiz',
-      name: 'Edubiz',
-      icon: '🎓',
-      price: 99,
+      id: 'advanced',
+      name: 'CEIP Advanced',
+      icon: '🚀',
+      price: 29,
       period: 'month',
-      description: 'For professionals building energy expertise',
+      description: 'Full platform access for energy professionals',
       features: [
-        { text: 'Everything in Free', included: true },
+        { text: 'Everything in Rate Watchdog', included: true },
+        { text: '35+ professional dashboards', included: true },
         { text: 'All 3 certificate tracks (15 modules)', included: true },
         { text: 'Unlimited AI queries', included: true },
-        { text: 'Live webinars (monthly)', included: true },
-        { text: 'Badge & gamification system', included: true },
-        { text: 'Advanced analytics dashboards', included: true },
-        { text: 'Priority email support', included: true },
-        { text: 'Certificate PDFs', included: true },
-        { text: 'Green Button data import', included: false },
-        { text: 'Custom reports & API access', included: false }
+        { text: 'Real-time AESO/IESO grid data', included: true },
+        { text: 'Renewable & hydrogen analytics', included: true },
+        { text: 'ESG & emissions tracking', included: true },
+        { text: 'Data export (CSV, JSON)', included: true },
+        { text: 'Priority support', included: true },
+        { text: 'API access', included: false }
       ],
       cta: '7-Day Free Trial',
-      ctaStyle: 'bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600',
+      ctaStyle: 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600',
       popular: true,
-      trial: true
+      trial: true,
+      whopPlan: 'pro'
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      icon: '⭐',
-      price: 1500,
+      id: 'enterprise',
+      name: 'CEIP Enterprise',
+      icon: '👑',
+      price: 99,
       period: 'month',
-      description: 'Enterprise-grade for SME energy managers',
+      description: 'API access, cohorts & custom solutions',
       features: [
-        { text: 'Everything in Edubiz', included: true },
-        { text: 'Green Button data import', included: true },
-        { text: 'Compliance tracking & reporting', included: true },
-        { text: 'Custom dashboards & reports', included: true },
-        { text: 'API access & webhooks', included: true },
+        { text: 'Everything in CEIP Advanced', included: true },
+        { text: 'Full API access (v2 endpoints)', included: true },
+        { text: 'Cohort admin tools', included: true },
         { text: 'White-label certificates', included: true },
+        { text: 'Custom dashboards & reports', included: true },
+        { text: 'Regulatory analytics suite', included: true },
+        { text: 'Indigenous energy intelligence', included: true },
         { text: 'Dedicated account manager', included: true },
-        { text: '24/7 phone support', included: true },
-        { text: 'On-site training (1x/year)', included: true },
-        { text: 'Multi-user team accounts', included: true }
+        { text: 'Premium support (< 4hr response)', included: true },
+        { text: 'Custom integrations', included: true }
       ],
       cta: 'Contact Sales',
-      ctaStyle: 'bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600',
+      ctaStyle: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600',
       popular: false,
-      enterprise: true
+      enterprise: true,
+      whopPlan: 'enterprise'
     }
   ];
 
-  async function handleTierCheckout(tierId: 'edubiz' | 'pro') {
-    if (!user) {
-      // Not logged in - open auth modal or redirect
-      window.location.href = '/';
-      return;
-    }
+  // Legacy tier mapping for backward compatibility
+  const legacyTierMap: Record<string, string> = {
+    'free': 'free',
+    'edubiz': 'advanced',
+    'pro': 'enterprise',
+    'basic': 'watchdog',
+    'watchdog': 'watchdog',
+    'advanced': 'advanced',
+    'enterprise': 'enterprise'
+  };
+  const normalizedCurrentTier = legacyTierMap[currentTier] || 'free';
 
-    // For Whop users, redirect to Whop checkout
-    if (isWhopUser) {
-      const whopPlan = tierId === 'edubiz' ? 'basic' : tierId;
-      window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${whopPlan}`;
-      return;
-    }
-
-    // For guest/standalone users, show Whop signup
-    const whopPlan = tierId === 'edubiz' ? 'basic' : tierId;
+  async function handleTierCheckout(tierId: 'watchdog' | 'advanced' | 'enterprise') {
+    setCheckoutLoadingTier(tierId);
+    
+    // Map tier to Whop plan
+    const tier = tiers.find(t => t.id === tierId);
+    const whopPlan = tier?.whopPlan || tierId;
+    
+    // Redirect to Whop checkout (works for both logged in and guest users)
     window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${whopPlan}`;
   }
 
   return (
     <div className="min-h-screen bg-slate-900">
       {/* Header */}
-      <header className="bg-gradient-to-r from-blue-900 to-purple-800 text-white shadow-lg">
+      <header className="bg-gradient-to-r from-blue-900 via-purple-800 to-indigo-900 text-white shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-12 text-center">
-          <h1 className="text-4xl font-bold mb-4">Choose Your Plan</h1>
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <Sparkles className="h-6 w-6 text-purple-300" />
+            <span className="text-purple-200 text-sm">Powered by CEIP — Canada's Energy Intelligence Engine</span>
+          </div>
+          <h1 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h1>
           <p className="text-xl text-blue-100 max-w-3xl mx-auto">
-            Master Canadian energy systems with professional certificates, AI-powered insights, and live expert training
+            From Alberta rate alerts to full energy intelligence — choose the plan that fits your needs
           </p>
 
           {user && (
-            <div className="mt-6 inline-flex items-center gap-2 bg-blue-800/50 px-6 py-3 rounded-full">
+            <div className="mt-6 inline-flex items-center gap-2 bg-white/10 px-6 py-3 rounded-full border border-white/20">
               <span className="text-blue-200">Current plan:</span>
-              <span className="font-bold capitalize">{currentTier}</span>
+              <span className="font-bold capitalize">{normalizedCurrentTier === 'free' ? 'Free' : normalizedCurrentTier}</span>
             </div>
           )}
         </div>
@@ -124,11 +137,11 @@ export function PricingPage() {
         {/* Pricing cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {tiers.map(tier => {
-            const isCurrentTier = currentTier === tier.id;
-            const canUpgrade = (
-              (currentTier === 'free' && (tier.id === 'edubiz' || tier.id === 'pro')) ||
-              (currentTier === 'edubiz' && tier.id === 'pro')
-            );
+            const isCurrentTier = normalizedCurrentTier === tier.id;
+            const tierLevels: Record<string, number> = { free: 0, watchdog: 1, advanced: 2, enterprise: 3 };
+            const userLevel = tierLevels[normalizedCurrentTier] || 0;
+            const tierLevel = tierLevels[tier.id] || 0;
+            const canUpgrade = tierLevel > userLevel;
 
             return (
               <div
@@ -202,54 +215,29 @@ export function PricingPage() {
                     </button>
                   ) : canUpgrade ? (
                     tier.enterprise ? (
-                      <a
-                        href="/contact-sales"
+                      <Link
+                        to="/contact"
                         className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
                       >
                         {tier.cta}
-                      </a>
+                      </Link>
                     ) : (
                       <button
                         type="button"
-                        onClick={() => void handleTierCheckout(tier.id === 'pro' ? 'pro' : 'edubiz')}
+                        onClick={() => void handleTierCheckout(tier.id as 'watchdog' | 'advanced' | 'enterprise')}
                         disabled={checkoutLoadingTier !== null}
                         className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
                       >
-                        {checkoutLoadingTier === (tier.id === 'pro' ? 'pro' : 'edubiz') ? 'Redirecting…' : tier.cta}
+                        {checkoutLoadingTier === tier.id ? 'Redirecting…' : tier.cta}
                       </button>
                     )
-                  ) : tier.id === 'free' ? (
+                  ) : (
                     <button
                       disabled
                       className="w-full py-4 bg-slate-700 text-slate-500 font-bold rounded-lg cursor-not-allowed"
                     >
-                      Cannot Downgrade
+                      {tierLevel < userLevel ? 'Included in Your Plan' : 'Sign Up First'}
                     </button>
-                  ) : (
-                    tier.enterprise ? (
-                      <a
-                        href="/contact-sales"
-                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
-                      >
-                        {tier.cta}
-                      </a>
-                    ) : user ? (
-                      <button
-                        type="button"
-                        onClick={() => void handleTierCheckout('edubiz')}
-                        disabled={checkoutLoadingTier !== null}
-                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
-                      >
-                        {checkoutLoadingTier === 'edubiz' ? 'Redirecting…' : tier.cta}
-                      </button>
-                    ) : (
-                      <a
-                        href="/signup"
-                        className={`block w-full py-4 text-white font-bold rounded-lg transition-all text-center ${tier.ctaStyle}`}
-                      >
-                        {tier.cta}
-                      </a>
-                    )
                   )}
 
                   {tier.trial && !isCurrentTier && (

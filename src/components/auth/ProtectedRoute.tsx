@@ -67,7 +67,7 @@ export function ProtectedRoute({
     );
   }
 
-  // Show auth modal if not authenticated
+  // Show auth modal if not authenticated - Whop-friendly language
   if (!user) {
     return (
       <>
@@ -75,16 +75,16 @@ export function ProtectedRoute({
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center max-w-md">
               <h2 className="text-2xl font-bold text-white mb-4">
-                Sign in required
+                Get Started to Continue
               </h2>
               <p className="text-slate-400 mb-6">
-                Please sign in to access this feature
+                Continue with Whop or browse as a guest to access this feature
               </p>
               <button
                 onClick={() => setShowAuthModal(true)}
                 className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-semibold rounded-lg hover:from-cyan-600 hover:to-blue-600 transition-all"
               >
-                Sign In
+                Get Started
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import React from 'react';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import { I18nProvider } from './components/I18nProvider';
 import { SkipToMain } from './components/ui/SkipToMain';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { EnergyDataDashboard } from './components/EnergyDataDashboard';
 import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
@@ -18,6 +19,7 @@ import { ApiDocsPage } from './components/ApiDocsPage';
 import { FunderReportingDashboard } from './components/FunderReportingDashboard';
 import { EmployersPage } from './components/EmployersPage';
 import { IncubatorsPage } from './components/IncubatorsPage';
+import { TrainingCoordinatorsPage } from './components/TrainingCoordinatorsPage';
 import { HelpProvider } from './components/HelpProvider';
 import { AuthProvider } from './components/auth';
 // Whop Integration Pages
@@ -90,22 +92,28 @@ const router = createBrowserRouter(
     { path: '/rate-alerts', element: <RROAlertSystem /> },
     { path: '/rro', element: <RROAlertSystem /> },
     { path: '/indigenous/aicei', element: <AICEIReportingModule /> },
-    { path: '/aicei', element: <AICEIReportingModule /> }
+    { path: '/aicei', element: <AICEIReportingModule /> },
+    // Monetization Strategy: Training Coordinator Cohort Sales
+    { path: '/training-coordinators', element: <TrainingCoordinatorsPage /> },
+    { path: '/cohorts', element: <TrainingCoordinatorsPage /> },
+    { path: '/for-training', element: <TrainingCoordinatorsPage /> }
   ]
 );
 
 function App() {
   return (
-    <div className="App">
-      <I18nProvider>
-        <AuthProvider>
-          <HelpProvider>
-            <SkipToMain targetId="main-content" />
-            <RouterProvider router={router} future={routerFutureConfig} />
-          </HelpProvider>
-        </AuthProvider>
-      </I18nProvider>
-    </div>
+    <ErrorBoundary>
+      <div className="App">
+        <I18nProvider>
+          <AuthProvider>
+            <HelpProvider>
+              <SkipToMain targetId="main-content" />
+              <RouterProvider router={router} future={routerFutureConfig} />
+            </HelpProvider>
+          </AuthProvider>
+        </I18nProvider>
+      </div>
+    </ErrorBoundary>
   );
 }
 
