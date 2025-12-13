@@ -1,7 +1,126 @@
 /**
  * Advanced Prompt Templates for 5x Effectiveness
  * Centralized, reusable, versioned prompts with Chain-of-Thought reasoning
+ * 
+ * Version 2.0 - December 2025
+ * Improvements:
+ * - Few-shot examples for consistent output format
+ * - Confidence calibration framework
+ * - Enhanced provincial context injection
+ * - Indigenous energy sovereignty integration
+ * - Real-time rate intelligence
  */
+
+// ============ CONFIDENCE CALIBRATION FRAMEWORK ============
+export const CONFIDENCE_CALIBRATION = `
+**Confidence Scoring Guidelines:**
+When providing analysis, always include a confidence level:
+
+- **HIGH (>85%)**: Multiple corroborating sources, <24hr data age, strong historical patterns
+- **MEDIUM (60-85%)**: Single source, <7 day data age, some uncertainty
+- **LOW (<60%)**: No verification, >7 day data age, model extrapolation, limited data
+
+Always cite:
+1. Data timestamps and freshness
+2. Source reliability (government > industry > estimates)
+3. Any assumptions made
+`;
+
+// ============ PROVINCIAL CONTEXT FRAMEWORK ============
+export const PROVINCIAL_ENERGY_CONTEXT: Record<string, string> = {
+  AB: `**Alberta Energy Context:**
+- Market: Deregulated electricity market with RRO (Regulated Rate Option) as default
+- Grid Operator: AESO (Alberta Electric System Operator)
+- Current Mix: ~85% natural gas, ~10% renewables, ~5% coal (phasing out)
+- Key Programs: Micro-generation Rebate, Energy Efficiency Alberta
+- Unique Factors: Oil & gas sector dominates, largest GHG emitter in Canada
+- RRO Rates: Variable monthly, typically $0.12-0.20/kWh
+- Carbon Price: Federal backstop applies, ~$80/tonne (2024)`,
+
+  ON: `**Ontario Energy Context:**
+- Market: Regulated with OEB (Ontario Energy Board) oversight
+- Grid Operator: IESO (Independent Electricity System Operator)
+- Current Mix: ~60% nuclear, ~25% hydro, ~10% gas, ~5% wind/solar
+- Key Programs: Save on Energy, GreenON (ended), Home Efficiency Rebate Plus
+- Unique Factors: Time-of-Use pricing mandatory for most residential
+- TOU Rates: Off-peak 8.7¢, Mid-peak 12.2¢, On-peak 18.2¢/kWh
+- Global Adjustment: Major bill component (capacity payments)`,
+
+  BC: `**British Columbia Energy Context:**
+- Market: Regulated utility (BC Hydro)
+- Grid Operator: BC Hydro (vertically integrated)
+- Current Mix: ~95% hydro, ~5% other renewables
+- Key Programs: CleanBC, BC Hydro Rebates, Heat Pump incentives
+- Unique Factors: Cleanest grid in Canada, Site C dam under construction
+- Rates: Two-tier pricing (Step 1: 10.94¢, Step 2: 14.24¢/kWh)
+- Carbon Tax: Provincial ($65/tonne, increasing)`,
+
+  QC: `**Quebec Energy Context:**
+- Market: Regulated utility (Hydro-Québec)
+- Grid Operator: Hydro-Québec TransÉnergie
+- Current Mix: ~95% hydro, ~5% wind
+- Key Programs: Chauffez vert, Roulez vert, Économisez l'énergie
+- Unique Factors: Lowest electricity rates in North America, major exporter
+- Rates: ~7.3¢/kWh residential (lowest in Canada)
+- Climate: High heating demand, electric heat dominant`,
+
+  SK: `**Saskatchewan Energy Context:**
+- Market: Regulated utility (SaskPower)
+- Grid Operator: SaskPower
+- Current Mix: ~40% gas, ~20% coal, ~30% hydro, ~10% wind
+- Key Programs: Energy Efficiency programs, SMR investment
+- Unique Factors: SMR development at Estevan, potash industry major consumer
+- Rates: ~15¢/kWh residential
+- Transition: Coal phase-out by 2030`,
+
+  MB: `**Manitoba Energy Context:**
+- Market: Regulated utility (Manitoba Hydro)
+- Grid Operator: Manitoba Hydro
+- Current Mix: ~97% hydro
+- Key Programs: Power Smart, Affordable Energy Fund
+- Unique Factors: Major electricity exporter, very clean grid
+- Rates: ~10¢/kWh residential
+- Climate: Extreme cold, high heating demand`
+};
+
+// ============ FEW-SHOT EXAMPLES ============
+export const FEW_SHOT_ENERGY_ANALYSIS = `
+## EXAMPLE ANALYSIS (Follow this pattern exactly):
+
+**Input:** Ontario demand data showing 22,500 MW peak on July 15, 2024
+
+**Step 1 (Data Characterization):**
+- Dataset: Ontario hourly demand
+- Time: July 15, 2024, 16:00 EST
+- Peak: 22,500 MW
+- Context: Summer weekday, heat wave conditions (32°C)
+
+**Step 2 (Statistical Analysis):**
+- This peak is +15% above July average of 19,500 MW
+- Standard deviation: 2,100 MW, this reading is +1.4σ
+- Percentile: 92nd percentile for July historical data
+
+**Step 3 (Energy Domain Context):**
+- Heat waves drive AC load, causing demand spikes
+- Ontario's TOU pricing was on-peak (18.2¢/kWh) at 4 PM
+- Nuclear baseload (10,000 MW) + gas peakers + imports covered demand
+- Grid remained stable, no DR activations required
+
+**Step 4 (Insight Generation):**
+1. **Observation:** Summer peaks now approaching winter peaks
+   **Implication:** AC adoption increasing, grid planning must account for summer stress
+   **Recommendation:** Utilities should expand DR programs for summer
+   
+2. **Observation:** Peak occurred at 4 PM, not traditional 5-6 PM
+   **Implication:** Work-from-home patterns shifting demand curves
+   **Recommendation:** Update TOU schedules to reflect new patterns
+
+**Step 5 (Confidence):**
+- **Level: HIGH (90%)**
+- Data source: IESO real-time feed (<1 hour old)
+- Weather correlation confirmed via Environment Canada
+- Historical pattern consistent with past heat waves
+`;
 
 export interface PromptContext {
   datasetPath?: string;
@@ -19,14 +138,28 @@ export interface PromptTemplate {
 
 /**
  * Canadian Energy Data Analysis with Chain-of-Thought
+ * Enhanced with provincial context, confidence calibration, and few-shot examples
  */
 export function createCanadianEnergyAnalysisPrompt(
   context: PromptContext,
   data: any[]
 ): string {
+  // Inject provincial context if available
+  const provincialContext = context.userProvince 
+    ? PROVINCIAL_ENERGY_CONTEXT[context.userProvince] || ''
+    : '';
+
   return `You are an expert Canadian energy data analyst with deep knowledge of provincial energy systems, federal policies, and Indigenous energy sovereignty.
 
-ANALYSIS FRAMEWORK (Chain-of-Thought - follow these steps):
+${CONFIDENCE_CALIBRATION}
+
+${provincialContext ? `\n${provincialContext}\n` : ''}
+
+${FEW_SHOT_ENERGY_ANALYSIS}
+
+---
+
+NOW ANALYZE THIS DATA (follow the example pattern above):
 
 ## Step 1: DATA CHARACTERIZATION
 - Dataset: ${context.datasetPath || 'Unknown'}
