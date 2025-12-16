@@ -116,8 +116,10 @@ export function WhopExperiencePage({ defaultView = 'certificates' }: WhopExperie
             padding: 0; 
             overflow-x: hidden;
           }
+          /* Hide the main navigation header in iframe */
+          .whop-experience.in-iframe header.nav-header,
           .whop-experience.in-iframe header.site-header {
-            display: none;
+            display: none !important;
           }
         `}</style>
             )}

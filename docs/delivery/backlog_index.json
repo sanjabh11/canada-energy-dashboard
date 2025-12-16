@@ -1,0 +1,25 @@
+{
+  "pbis": [
+    {
+      "id": "PBI-Phase2-DarkTheme",
+      "title": "Phase 2: Dark Theme Finalization & Standardization",
+      "status": "Agreed",
+      "owner": "user",
+      "created_at": "2025-11-19"
+    },
+    {
+      "id": "PBI-Phase3-DesignSystem",
+      "title": "Phase 3: Design System & Component Library",
+      "status": "Agreed",
+      "owner": "user",
+      "created_at": "2025-11-19"
+    },
+    {
+      "id": "PBI-Phase3-UXA11y",
+      "title": "Phase 3: Interaction & Accessibility Polish",
+      "status": "Agreed",
+      "owner": "user",
+      "created_at": "2025-11-19"
+    }
+  ]
+}

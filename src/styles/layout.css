@@ -36,6 +36,77 @@
   --aspect-tall: 1.333;   /* 4:3 */
 }
 
+/* Light mode theme variables */
+html.light {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
+  --border-primary: #e2e8f0;
+  --border-secondary: #cbd5e1;
+  --accent-cyan: #0891b2;
+  --accent-blue: #2563eb;
+  color-scheme: light;
+}
+
+/* Dark mode theme variables (default) */
+html.dark, html:not(.light) {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-tertiary: #64748b;
+  --border-primary: #334155;
+  --border-secondary: #475569;
+  --accent-cyan: #22d3ee;
+  --accent-blue: #3b82f6;
+  color-scheme: dark;
+}
+
+/* Theme-aware body styles */
+html.light body {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+html.dark body, html:not(.light) body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+/* Theme-aware card styles */
+html.light .card,
+html.light .card-enhanced {
+  background: var(--bg-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+html.light .bg-slate-800 {
+  background-color: var(--bg-primary) !important;
+}
+
+html.light .bg-slate-900 {
+  background-color: var(--bg-secondary) !important;
+}
+
+html.light .text-white {
+  color: var(--text-primary) !important;
+}
+
+html.light .text-slate-400,
+html.light .text-slate-500 {
+  color: var(--text-secondary) !important;
+}
+
+html.light .border-slate-700,
+html.light .border-slate-800 {
+  border-color: var(--border-primary) !important;
+}
+
 /* Responsive container utilities */
 .container-responsive {
   width: 100%;

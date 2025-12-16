@@ -30,6 +30,13 @@ import { WhopDiscoverPage } from './components/WhopDiscoverPage';
 import { MicroGenWizard } from './components/MicroGenWizard';
 import { RROAlertSystem } from './components/RROAlertSystem';
 import { AICEIReportingModule } from './components/AICEIReportingModule';
+// Whop Quiz Pivot
+import { QuizApp } from './components/whop/QuizApp';
+import { QuizDashboard } from './components/whop/QuizDashboard';
+import { GuestQuizPlayer } from './components/whop/GuestQuizPlayer';
+import { WatchdogApp } from './components/whop/WatchdogApp';
+import { ThemeProvider } from './lib/ThemeContext';
+import { Navigate } from 'react-router-dom';
 import './App.css';
 import './styles/layout.css';
 
@@ -96,23 +103,40 @@ const router = createBrowserRouter(
     // Monetization Strategy: Training Coordinator Cohort Sales
     { path: '/training-coordinators', element: <TrainingCoordinatorsPage /> },
     { path: '/cohorts', element: <TrainingCoordinatorsPage /> },
-    { path: '/for-training', element: <TrainingCoordinatorsPage /> }
+    { path: '/for-training', element: <TrainingCoordinatorsPage /> },
+
+    // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
+    {
+      path: '/whop/quiz',
+      element: <QuizApp />,
+      children: [
+        { index: true, element: <QuizDashboard /> },
+        { path: 'modules/:moduleId', element: <GuestQuizPlayer /> }
+      ]
+    },
+    { path: '/whop-quiz', element: <Navigate to="/whop/quiz" replace /> },
+
+    // Whop "Alberta Rate Watchdog" - Primary Wedge Product
+    { path: '/whop/watchdog', element: <WatchdogApp /> },
+    { path: '/watchdog', element: <Navigate to="/whop/watchdog" replace /> }
   ]
 );
 
 function App() {
   return (
     <ErrorBoundary>
-      <div className="App">
-        <I18nProvider>
-          <AuthProvider>
-            <HelpProvider>
-              <SkipToMain targetId="main-content" />
-              <RouterProvider router={router} future={routerFutureConfig} />
-            </HelpProvider>
-          </AuthProvider>
-        </I18nProvider>
-      </div>
+      <ThemeProvider>
+        <div className="App">
+          <I18nProvider>
+            <AuthProvider>
+              <HelpProvider>
+                <SkipToMain targetId="main-content" />
+                <RouterProvider router={router} future={routerFutureConfig} />
+              </HelpProvider>
+            </AuthProvider>
+          </I18nProvider>
+        </div>
+      </ThemeProvider>
     </ErrorBoundary>
   );
 }
