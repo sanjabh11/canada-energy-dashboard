@@ -6,11 +6,11 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { 
-  energyDataManager, 
-  DATASETS, 
-  type DatasetType, 
-  type ConnectionStatus 
+import {
+  energyDataManager,
+  DATASETS,
+  type DatasetType,
+  type ConnectionStatus
 } from '../lib/dataManager';
 import { DatasetSelector } from './DatasetSelector';
 import { ConnectionStatusPanel } from './ConnectionStatusPanel';
@@ -34,6 +34,7 @@ import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
+import { ThemeToggle } from './ui/ThemeToggle';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
 import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
 import AnalyticsTrendsDashboard from './AnalyticsTrendsDashboard';
@@ -346,7 +347,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
     const initializeAllStreamers = async () => {
       // Get all dataset keys
       const datasetKeys = DATASETS.map(dataset => dataset.key as DatasetType);
-      
+
       // Initialize each streamer in the background
       datasetKeys.forEach(async (datasetKey) => {
         try {
@@ -361,7 +362,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
 
     // Call the initialization function
     initializeAllStreamers();
-    
+
     updateStatuses();
     const interval = setInterval(updateStatuses, 1000);
     return () => clearInterval(interval);
@@ -409,7 +410,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
     <div className="min-h-screen bg-slate-900">
       {/* SEO Head - injects per-page meta tags */}
       <SEOHead {...seoConfig} />
-      
+
       {/* Primary Navigation Header */}
       <header className="nav-header" role="banner">
         <div className="nav-container">
@@ -461,6 +462,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
               <Activity className="h-4 w-4" />
               <span>{state.loading ? 'Loading...' : 'Refresh'}</span>
             </button>
+            <ThemeToggle compact={true} />
             <LanguageSwitcher variant="toggle" compact={true} />
             <div className="ml-2">
               <HelpButton id={helpIdByTab[activeTab] ?? 'dashboard.overview'} />
@@ -543,13 +545,12 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                           <Database className="h-6 w-6" />
                         </div>
                         <div
-                          className={`badge ${
-                            status?.status === 'connected'
+                          className={`badge ${status?.status === 'connected'
                               ? 'badge-success'
                               : status?.status === 'connecting'
                                 ? 'badge-info'
                                 : 'badge-warning'
-                          }`}
+                            }`}
                         >
                           {status?.status === 'connected' ? (
                             <CheckCircle className="h-3 w-3" />
@@ -628,9 +629,8 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                       >
                         <span className="font-medium text-primary">{item.province}</span>
                         <span
-                          className={`text-xs font-medium ${
-                            item.tone === 'success' ? 'text-success' : 'text-electric'
-                          }`}
+                          className={`text-xs font-medium ${item.tone === 'success' ? 'text-success' : 'text-electric'
+                            }`}
                         >
                           {item.status}
                         </span>
@@ -689,7 +689,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
               <div className="card-header">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-md">
-                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{background: 'rgba(0, 217, 255, 0.1)'}}>
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0, 217, 255, 0.1)' }}>
                       <Radio className="h-6 w-6 text-electric" />
                     </div>
                     <div>
@@ -719,28 +719,26 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                   {connectionStatuses.map((status, index) => (
                     <div key={index} className="flex items-center justify-between p-4 bg-secondary rounded-lg">
                       <div className="flex items-center space-x-4">
-                        <div className={`p-2 rounded-full ${
-                          status.status === 'connected' ? 'bg-success/20' : 
-                          status.status === 'connecting' ? 'bg-electric/20 animate-pulse' : 
-                          'bg-tertiary/20'
-                        }`}>
-                          {status.status === 'connected' ? 
+                        <div className={`p-2 rounded-full ${status.status === 'connected' ? 'bg-success/20' :
+                            status.status === 'connecting' ? 'bg-electric/20 animate-pulse' :
+                              'bg-tertiary/20'
+                          }`}>
+                          {status.status === 'connected' ?
                             <CheckCircle className="h-4 w-4 text-success" /> :
                             status.status === 'connecting' ?
-                            <Clock className="h-4 w-4 text-electric" /> :
-                            <AlertCircle className="h-4 w-4 text-tertiary" />
+                              <Clock className="h-4 w-4 text-electric" /> :
+                              <AlertCircle className="h-4 w-4 text-tertiary" />
                           }
                         </div>
                         <div>
                           <div className="font-semibold text-primary">{status.dataset}</div>
-                          <div className={`text-sm font-medium ${
-                            status.status === 'connected' ? 'text-success' : 
-                            status.status === 'connecting' ? 'text-electric' : 
-                            'text-tertiary'
-                          }`}>
-                            {status.status === 'connected' ? 'LIVE STREAM ACTIVE' : 
-                             status.status === 'connecting' ? 'CONNECTING TO STREAM' : 
-                             'STREAM OFFLINE'}
+                          <div className={`text-sm font-medium ${status.status === 'connected' ? 'text-success' :
+                              status.status === 'connecting' ? 'text-electric' :
+                                'text-tertiary'
+                            }`}>
+                            {status.status === 'connected' ? 'LIVE STREAM ACTIVE' :
+                              status.status === 'connecting' ? 'CONNECTING TO STREAM' :
+                                'STREAM OFFLINE'}
                           </div>
                         </div>
                       </div>
@@ -778,7 +776,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                       <div className="text-sm text-tertiary">Total Records</div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-secondary">Stream Health</span>
@@ -788,7 +786,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                       <div className="bg-success h-2 rounded-full" style={{ width: '98.2%' }}></div>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-secondary">Data Throughput</span>
@@ -821,16 +819,14 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                     { province: 'Saskatchewan', source: 'SaskPower', status: 'connected', datasets: 1 }
                   ].map((item, index) => (
                     <div key={index} className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-                      <div className={`w-3 h-3 rounded-full ${
-                        item.status === 'connected' ? 'bg-success' : 'bg-electric animate-pulse'
-                      }`}></div>
+                      <div className={`w-3 h-3 rounded-full ${item.status === 'connected' ? 'bg-success' : 'bg-electric animate-pulse'
+                        }`}></div>
                       <div className="flex-1">
                         <div className="font-semibold text-primary">{item.province}</div>
                         <div className="text-sm text-tertiary">{item.source} • {item.datasets} datasets</div>
                       </div>
-                      <span className={`badge ${
-                        item.status === 'connected' ? 'badge-success' : 'badge-info'
-                      }`}>
+                      <span className={`badge ${item.status === 'connected' ? 'badge-success' : 'badge-info'
+                        }`}>
                         {item.status === 'connected' ? 'LIVE' : 'CONNECTING'}
                       </span>
                     </div>
@@ -926,7 +922,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                     Learn about Canadian energy systems, data sources, and streaming architecture
                   </p>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div>
                     <h3 className="text-xl font-semibold text-primary mb-4">Dataset Information</h3>
@@ -942,7 +938,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                       ))}
                     </div>
                   </div>
-                  
+
                   <div>
                     <h3 className="text-xl font-semibold text-primary mb-4">Technical Architecture</h3>
                     <div className="space-y-4">
@@ -953,7 +949,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                         </div>
                         <p className="text-sm text-secondary">Data streams continuously from multiple Canadian energy providers using resilient Supabase Edge Functions</p>
                       </div>
-                      
+
                       <div className="p-4 bg-secondary rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Database className="h-5 w-5 text-success" />
@@ -961,7 +957,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                         </div>
                         <p className="text-sm text-secondary">Advanced filtering, aggregation, and visualization capabilities with export functionality</p>
                       </div>
-                      
+
                       <div className="p-4 bg-secondary rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Gauge className="h-5 w-5 text-electric" />
@@ -972,7 +968,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="text-center mt-8">
                   <button
                     onClick={() => setActiveTab('Dashboard')}

@@ -60,7 +60,11 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
   const enrichedData = useMemo(() => {
     // Merge PROVINCES with actual data
     return PROVINCES.map(province => {
-      const data = provincialData.find(d => 
+      // Match by code first (fallback data uses codes like 'ON', 'QC')
+      // Then try matching by name
+      const data = provincialData.find(d =>
+        d.province === province.code ||
+        d.province.toUpperCase() === province.code ||
         d.province.toLowerCase().includes(province.name.toLowerCase()) ||
         province.name.toLowerCase().includes(d.province.toLowerCase())
       );
@@ -126,10 +130,10 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
   const nationalAverage = useMemo(() => {
     const dataWithValues = enrichedData.filter(d => d.hasData);
     if (dataWithValues.length === 0) return 0;
-    
+
     const totalRenewable = dataWithValues.reduce((sum, d) => sum + d.renewable_mw, 0);
     const totalGeneration = dataWithValues.reduce((sum, d) => sum + d.total_mw, 0);
-    
+
     return totalGeneration > 0 ? (totalRenewable / totalGeneration) * 100 : 0;
   }, [enrichedData]);
 
@@ -178,11 +182,10 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
           <div className="flex items-center gap-2">
             <button
               onClick={() => setViewMode(viewMode === 'heatmap' ? 'list' : 'heatmap')}
-              className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${
-                viewMode === 'heatmap' 
-                  ? 'bg-white text-emerald-900' 
-                  : 'bg-transparent border border-white/40 text-white hover:bg-white/10'
-              }`}
+              className={`px-3 py-2 rounded-lg transition-colors text-sm font-medium ${viewMode === 'heatmap'
+                ? 'bg-white text-emerald-900'
+                : 'bg-transparent border border-white/40 text-white hover:bg-white/10'
+                }`}
             >
               <Eye size={16} className="inline mr-1" />
               {viewMode === 'heatmap' ? 'Heatmap' : 'List'}
@@ -264,9 +267,8 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
                 <div
                   key={province.code}
                   onClick={() => setSelectedProvince(province.name)}
-                  className={`${getColorClass(province.renewable_pct)} rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105 ${
-                    !province.hasData ? 'opacity-50' : ''
-                  }`}
+                  className={`${getColorClass(province.renewable_pct)} rounded-lg p-4 cursor-pointer hover:shadow-lg transition-all transform hover:scale-105 ${!province.hasData ? 'opacity-50' : ''
+                    }`}
                 >
                   <div className="text-xs font-medium opacity-90 mb-1">{province.code}</div>
                   <div className="text-2xl font-bold mb-1">
@@ -304,7 +306,7 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
                       <div className="text-xs text-slate-600">{province.region} Canada</div>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3">
                     <div className="text-right">
                       <div className="text-2xl font-bold text-green-600">

@@ -4,6 +4,7 @@ import { I18nProvider } from './components/I18nProvider';
 import { SkipToMain } from './components/ui/SkipToMain';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { EnergyDataDashboard } from './components/EnergyDataDashboard';
+import AnalyticsTrendsDashboard from './components/AnalyticsTrendsDashboard';
 import { AboutPage } from './components/AboutPage';
 import { ContactPage } from './components/ContactPage';
 import { ProfilePage } from './components/ProfilePage';
@@ -54,6 +55,10 @@ const router = createBrowserRouter(
   [
     { path: '/', element: <EnergyDataDashboard /> },
     { path: '/dashboard', element: <EnergyDataDashboard /> },
+
+    // Analytics & Trends - Standalone Route
+    { path: '/analytics', element: <AnalyticsTrendsDashboard /> },
+    { path: '/analytics-trends', element: <AnalyticsTrendsDashboard /> },
 
     // Whop Integration Routes (CRITICAL for Whop App Store)
     { path: '/whop/experience', element: <WhopExperiencePage /> },

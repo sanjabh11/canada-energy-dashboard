@@ -181,6 +181,157 @@ function getProvinceName(code: string): string {
   return PROVINCE_NAMES[code] || code;
 }
 
+// Static fallback data for offline/demo mode - prevents "Unexpected Application Error"
+const STATIC_FALLBACK_DC_DATA: DashboardData = {
+  data_centres: [
+    {
+      id: 'demo-1',
+      facility_name: 'Aurora Data Campus',
+      operator: 'Amazon Web Services',
+      location_city: 'Calgary',
+      province: 'AB',
+      status: 'Operational',
+      contracted_capacity_mw: 250,
+      average_load_mw: 185,
+      pue_design: 1.25,
+      pue_actual: 1.28,
+      cooling_technology: 'Free-air cooling',
+      power_source: 'Grid + Solar PPA',
+      renewable_percentage: 45,
+      capital_investment_cad: 850000000,
+      offgrid: false,
+      latitude: 51.0447,
+      longitude: -114.0719,
+    },
+    {
+      id: 'demo-2',
+      facility_name: 'Chinook AI Facility',
+      operator: 'Google',
+      location_city: 'Edmonton',
+      province: 'AB',
+      status: 'Under Construction',
+      contracted_capacity_mw: 400,
+      average_load_mw: 0,
+      pue_design: 1.20,
+      pue_actual: 0,
+      cooling_technology: 'Evaporative cooling',
+      power_source: 'Grid + Wind PPA',
+      renewable_percentage: 60,
+      capital_investment_cad: 1200000000,
+      offgrid: false,
+      latitude: 53.5461,
+      longitude: -113.4937,
+    },
+    {
+      id: 'demo-3',
+      facility_name: 'Northern Lights DC',
+      operator: 'Microsoft',
+      location_city: 'Red Deer',
+      province: 'AB',
+      status: 'Interconnection Queue',
+      contracted_capacity_mw: 350,
+      average_load_mw: 0,
+      pue_design: 1.18,
+      pue_actual: 0,
+      cooling_technology: 'Liquid cooling',
+      power_source: 'Grid + Renewable PPAs',
+      renewable_percentage: 75,
+      capital_investment_cad: 980000000,
+      offgrid: false,
+      latitude: 52.2681,
+      longitude: -113.8112,
+    },
+    {
+      id: 'demo-4',
+      facility_name: 'Prairie AI Hub',
+      operator: 'Meta',
+      location_city: 'Lethbridge',
+      province: 'AB',
+      status: 'Proposed',
+      contracted_capacity_mw: 500,
+      average_load_mw: 0,
+      pue_design: 1.15,
+      pue_actual: 0,
+      cooling_technology: 'Immersion cooling',
+      power_source: 'Grid + Solar/Wind',
+      renewable_percentage: 80,
+      capital_investment_cad: 1500000000,
+      offgrid: false,
+      latitude: 49.6935,
+      longitude: -112.8418,
+    },
+  ],
+  summary: {
+    total_count: 12,
+    total_contracted_capacity_mw: 3850,
+    operational_capacity_mw: 1250,
+    queued_capacity_mw: 2600,
+    by_status: {
+      'Operational': 4,
+      'Under Construction': 3,
+      'Interconnection Queue': 3,
+      'Proposed': 2,
+    },
+    by_operator: {
+      'Amazon Web Services': { count: 3, total_capacity_mw: 750 },
+      'Google': { count: 2, total_capacity_mw: 600 },
+      'Microsoft': { count: 3, total_capacity_mw: 850 },
+      'Meta': { count: 2, total_capacity_mw: 900 },
+      'Other': { count: 2, total_capacity_mw: 750 },
+    },
+    average_pue: 1.28,
+  },
+  grid_impact: {
+    current_peak_demand_mw: 12100,
+    total_dc_load_mw: 425,
+    dc_percentage_of_peak: 3.51,
+    total_queue_mw: 10500,
+    dc_queue_mw: 4200,
+    reliability_rating: 'Strained',
+    phase1_allocated_mw: 1200,
+    phase1_remaining_mw: 0,
+  },
+  power_consumption: [],
+};
+
+const STATIC_FALLBACK_QUEUE_DATA: QueueData = {
+  queue: [],
+  summary: {
+    total_projects: 85,
+    total_requested_mw: 10500,
+    phase1_allocated_mw: 1200,
+    phase1_remaining_mw: 0,
+    by_type: {
+      'AI Data Centre': { count: 23, total_mw: 4200 },
+      'Solar': { count: 28, total_mw: 2100 },
+      'Wind': { count: 18, total_mw: 2500 },
+      'Battery Storage': { count: 16, total_mw: 1700 },
+    },
+    by_phase: {
+      'Phase 1 (1200 MW)': { count: 12, total_mw: 1200, allocated_mw: 1200 },
+      'Phase 2': { count: 73, total_mw: 9300, allocated_mw: 0 },
+    },
+  },
+  insights: {
+    data_centre_dominance: {
+      dc_projects: 23,
+      dc_mw: 4200,
+      dc_percentage_of_queue: 40,
+    },
+    phase1_allocation_status: {
+      limit_mw: 1200,
+      allocated_mw: 1200,
+      remaining_mw: 0,
+      utilization_percentage: 100,
+      is_fully_allocated: true,
+    },
+    grid_reliability_concern: {
+      queue_to_peak_ratio: 87,
+      message: 'Queue represents significant portion of provincial demand - reliability planning critical',
+    },
+  },
+};
+
 export const AIDataCentreDashboard: React.FC = () => {
   const [dcData, setDcData] = useState<DashboardData | null>(null);
   const [queueData, setQueueData] = useState<QueueData | null>(null);
@@ -198,7 +349,11 @@ export const AIDataCentreDashboard: React.FC = () => {
 
     try {
       if (!isEdgeFetchEnabled()) {
-        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; using demo data.');
+        // Use fallback data instead of showing empty state
+        setDcData(STATIC_FALLBACK_DC_DATA);
+        setQueueData(STATIC_FALLBACK_QUEUE_DATA);
+        setQueueHistory(null);
         setEdgeDisabled(true);
         setLoading(false);
         return;
@@ -224,7 +379,13 @@ export const AIDataCentreDashboard: React.FC = () => {
       setQueueHistory(historyResponse);
     } catch (err) {
       console.error('Failed to load AI Data Centre data:', err);
-      setError('Failed to load dashboard data. Please try again.');
+      // Use fallback data instead of showing error
+      console.warn('AIDataCentreDashboard: API call failed, using fallback demo data.');
+      setDcData(STATIC_FALLBACK_DC_DATA);
+      setQueueData(STATIC_FALLBACK_QUEUE_DATA);
+      setQueueHistory(null);
+      setEdgeDisabled(true); // Show demo mode indicator
+      setError(null); // Clear any error
     } finally {
       setLoading(false);
     }
@@ -245,38 +406,8 @@ export const AIDataCentreDashboard: React.FC = () => {
     );
   }
 
-  if (edgeDisabled) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
-        <div className="text-center">
-          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-          <p className="text-lg text-secondary">
-            Live AI Data Centre analytics are disabled in this environment (Supabase Edge offline or not configured).
-          </p>
-          <p className="text-sm text-secondary mt-2">
-            In production, configure Supabase Edge functions and set VITE_ENABLE_EDGE_FETCH=true to enable real data.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
-        <div className="text-center">
-          <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
-          <p className="text-lg text-danger">{error}</p>
-          <button
-            onClick={loadDashboardData}
-            className="mt-4 px-6 py-2 bg-secondary0 text-white rounded-lg hover:bg-electric"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
+  // No more early returns for edgeDisabled or error - we now use fallback data
+  // and show a banner instead
 
   if (!dcData || !queueData) return null;
 
@@ -340,7 +471,7 @@ export const AIDataCentreDashboard: React.FC = () => {
                 <h1 className="hero-title">AI Data Centre Energy Dashboard</h1>
               </div>
               <p className="hero-subtitle">
-                {selectedProvince === 'AB' 
+                {selectedProvince === 'AB'
                   ? "Alberta's $100B AI Strategy · AESO interconnection queue crisis management"
                   : `${getProvinceName(selectedProvince)} AI Data Centre Infrastructure`
                 }
@@ -350,6 +481,21 @@ export const AIDataCentreDashboard: React.FC = () => {
           </div>
         </div>
       </section>
+
+      {/* Demo Mode Banner - shown when API is unavailable */}
+      {edgeDisabled && (
+        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+          <div className="flex items-center gap-3">
+            <Cloud className="w-6 h-6 text-warning flex-shrink-0" />
+            <div>
+              <h3 className="font-semibold text-amber-800">Demo Mode Active</h3>
+              <p className="text-sm text-amber-700">
+                Showing sample data. Live analytics will be available when connected to AESO data feeds.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Filters and Tab Switcher */}
       <div className="card p-4 mb-8">
@@ -384,21 +530,19 @@ export const AIDataCentreDashboard: React.FC = () => {
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('current')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                activeTab === 'current'
-                  ? 'bg-electric text-white'
-                  : 'bg-secondary text-secondary hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'current'
+                ? 'bg-electric text-white'
+                : 'bg-secondary text-secondary hover:bg-slate-200'
+                }`}
             >
               Current Queue
             </button>
             <button
               onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                activeTab === 'history'
-                  ? 'bg-electric text-white'
-                  : 'bg-secondary text-secondary hover:bg-slate-200'
-              }`}
+              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'history'
+                ? 'bg-electric text-white'
+                : 'bg-secondary text-secondary hover:bg-slate-200'
+                }`}
             >
               Queue Growth (2023-2025)
             </button>
@@ -425,333 +569,332 @@ export const AIDataCentreDashboard: React.FC = () => {
 
           {/* Critical Alerts Banner - Alberta only */}
           {isAlberta && queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
-        <div className="mb-6 p-4 bg-secondary border-l-4 border-red-500 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-danger flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-bold text-red-800 mb-1">GRID RELIABILITY ALERT</h3>
-              <p className="text-danger">
-                {queueData.insights.grid_reliability_concern.message}
-              </p>
-              <p className="text-sm text-danger mt-1">
-                Queue requests = {queueData.insights.grid_reliability_concern.queue_to_peak_ratio}% of current provincial peak demand
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isAlberta && queueData.insights.phase1_allocation_status.is_fully_allocated && (
-        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-bold text-amber-800 mb-1">PHASE 1 CAPACITY FULLY ALLOCATED</h3>
-              <p className="text-amber-700">
-                AESO's Phase 1 limit of 1,200 MW has been reached. New projects must wait for Phase 2.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          icon={<Server className="w-8 h-8" />}
-          title="Total Facilities"
-          value={dcData.summary.total_count}
-          subtitle={`${dcData.summary.by_status['Operational'] || 0} operational`}
-          color="blue"
-        />
-        <MetricCard
-          icon={<Zap className="w-8 h-8" />}
-          title="Total Capacity"
-          value={`${Math.round(dcData.summary.total_contracted_capacity_mw)} MW`}
-          subtitle={`${Math.round(dcData.summary.operational_capacity_mw)} MW operational`}
-          color="green"
-        />
-        <MetricCard
-          icon={<Activity className="w-8 h-8" />}
-          title="Queue Requests"
-          value={`${Math.round(queueData.summary.total_requested_mw)} MW`}
-          subtitle={`${queueData.summary.total_projects} projects`}
-          color="amber"
-        />
-        <MetricCard
-          icon={<DollarSign className="w-8 h-8" />}
-          title="Total Investment"
-          value={`$${(dcData.data_centres.reduce((sum, dc) => sum + (dc.capital_investment_cad || 0), 0) / 1e9).toFixed(1)}B`}
-          subtitle="Capital committed"
-          color="purple"
-        />
-      </div>
-
-      {/* Phase 1 Allocation Status - Alberta only */}
-      {isAlberta && (
-      <div className="card p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Gauge className="w-6 h-6 text-electric" />
-            AESO Phase 1 Allocation Status (1,200 MW Limit)
-          </h2>
-          <HelpButton id="ai-datacentre.phase1" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <ResponsiveContainer width="100%" height={200}>
-              <RadialBarChart
-                innerRadius="30%"
-                outerRadius="100%"
-                data={[{
-                  name: 'Utilization',
-                  value: queueData.insights.phase1_allocation_status.utilization_percentage,
-                  fill: queueData.insights.phase1_allocation_status.utilization_percentage > 90
-                    ? COLORS.danger
-                    : queueData.insights.phase1_allocation_status.utilization_percentage > 70
-                    ? COLORS.warning
-                    : COLORS.success,
-                }]}
-                startAngle={180}
-                endAngle={0}
-              >
-                <RadialBar dataKey="value" cornerRadius={10} />
-                <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-3xl font-bold">
-                  {queueData.insights.phase1_allocation_status.utilization_percentage}%
-                </text>
-              </RadialBarChart>
-            </ResponsiveContainer>
-          </div>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center p-4 bg-secondary rounded-lg">
-              <span className="font-semibold text-secondary">Phase 1 Limit</span>
-              <span className="text-xl font-bold text-electric">1,200 MW</span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-amber-50 rounded-lg">
-              <span className="font-semibold text-secondary">Allocated</span>
-              <span className="text-xl font-bold text-warning">
-                {queueData.insights.phase1_allocation_status.allocated_mw} MW
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-4 bg-secondary rounded-lg">
-              <span className="font-semibold text-secondary">Remaining</span>
-              <span className="text-xl font-bold text-success">
-                {queueData.insights.phase1_allocation_status.remaining_mw} MW
-              </span>
-            </div>
-            {queueData.insights.phase1_allocation_status.is_fully_allocated && (
-              <div className="p-3 bg-secondary border border-red-200 rounded-lg">
-                <p className="text-sm text-danger font-medium">
-                  ⚠️ Capacity exhausted - projects moved to Phase 2
-                </p>
+            <div className="mb-6 p-4 bg-secondary border-l-4 border-red-500 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-danger flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-red-800 mb-1">GRID RELIABILITY ALERT</h3>
+                  <p className="text-danger">
+                    {queueData.insights.grid_reliability_concern.message}
+                  </p>
+                  <p className="text-sm text-danger mt-1">
+                    Queue requests = {queueData.insights.grid_reliability_concern.queue_to_peak_ratio}% of current provincial peak demand
+                  </p>
+                </div>
               </div>
-            )}
-          </div>
-        </div>
-      </div>
-      )}
-
-      {/* Grid Impact Analysis - Show only when data exists */}
-      {(hasProvinceData || isAlberta) && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="card p-6">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <Activity className="w-6 h-6 text-electric" />
-            {isAlberta ? 'Grid Impact Analysis' : `${getProvinceName(selectedProvince)} Grid Impact`}
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={gridImpactData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={(entry) => `${entry.name}: ${entry.value} MW`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {gridImpactData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.fill} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="mt-4 space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">Peak Demand</span>
-              <span className="font-bold">{dcData.grid_impact.current_peak_demand_mw} MW</span>
             </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">DC % of Peak</span>
-              <span className="font-bold text-electric">
-                {dcData.grid_impact.dc_percentage_of_peak?.toFixed(2)}%
-              </span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-secondary">Reliability Rating</span>
-              <span className={`font-bold ${
-                dcData.grid_impact.reliability_rating === 'Normal' ? 'text-success' :
-                dcData.grid_impact.reliability_rating === 'Adequate' ? 'text-electric' :
-                dcData.grid_impact.reliability_rating === 'Strained' ? 'text-warning' :
-                'text-danger'
-              }`}>
-                {dcData.grid_impact.reliability_rating}
-              </span>
-            </div>
-          </div>
-        </div>
+          )}
 
-        <div className="card p-6">
-          <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-electric" />
-            Data Centre Operators
-          </h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={operatorData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="operator" type="category" width={120} />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="capacity" name="Capacity (MW)" fill={COLORS.primary} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      )}
-
-      {/* AESO Queue Breakdown - Alberta only */}
-      {isAlberta && (
-      <div className="card p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <Server className="w-6 h-6 text-electric" />
-            AESO Interconnection Queue Breakdown
-          </h2>
-          <HelpButton id="ai-datacentre.queue" />
-        </div>
-        <div className="mb-4 p-4 bg-secondary rounded-lg">
-          <h3 className="font-bold text-blue-800 mb-2">AI Data Centre Dominance</h3>
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-3xl font-bold text-electric">
-                {queueData.insights.data_centre_dominance.dc_projects}
+          {isAlberta && queueData.insights.phase1_allocation_status.is_fully_allocated && (
+            <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-amber-800 mb-1">PHASE 1 CAPACITY FULLY ALLOCATED</h3>
+                  <p className="text-amber-700">
+                    AESO's Phase 1 limit of 1,200 MW has been reached. New projects must wait for Phase 2.
+                  </p>
+                </div>
               </div>
-              <div className="text-sm text-secondary">DC Projects</div>
             </div>
-            <div>
-              <div className="text-3xl font-bold text-electric">
-                {Math.round(queueData.insights.data_centre_dominance.dc_mw)} MW
-              </div>
-              <div className="text-sm text-secondary">DC Capacity</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-electric">
-                {queueData.insights.data_centre_dominance.dc_percentage_of_queue}%
-              </div>
-              <div className="text-sm text-secondary">% of Total Queue</div>
-            </div>
-          </div>
-        </div>
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={queueByType}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="type" />
-            <YAxis />
-            <Tooltip />
-            <Legend />
-            <Bar dataKey="capacity_mw" name="Requested Capacity (MW)" fill={COLORS.primary} />
-            <Bar dataKey="projects" name="Project Count" fill={COLORS.teal} />
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      )}
+          )}
 
-      {/* Data Centre Registry Table */}
-      {hasProvinceData && (
-      <div className="card p-6 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
-            <MapPin className="w-6 h-6 text-electric" />
-            {getProvinceName(selectedProvince)} AI Data Centre Registry
-          </h2>
-          <HelpButton id="ai-datacentre.pue" className="ml-2" />
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-[var(--border-subtle)]">
-            <thead className="bg-secondary">
-              <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Facility
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Operator
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Location
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Capacity (MW)
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                  PUE
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                  Power Source
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
-              {dcData.data_centres.map((dc) => (
-                <tr key={dc.id} className="hover:bg-secondary">
-                  <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-primary">
-                    {dc.facility_name}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
-                    {dc.operator}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
-                    {dc.location_city}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span
-                      className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
-                      style={{
-                        backgroundColor: STATUS_COLORS[dc.status] + '20',
-                        color: STATUS_COLORS[dc.status],
-                      }}
+          {/* Key Metrics Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <MetricCard
+              icon={<Server className="w-8 h-8" />}
+              title="Total Facilities"
+              value={dcData.summary.total_count}
+              subtitle={`${dcData.summary.by_status['Operational'] || 0} operational`}
+              color="blue"
+            />
+            <MetricCard
+              icon={<Zap className="w-8 h-8" />}
+              title="Total Capacity"
+              value={`${Math.round(dcData.summary.total_contracted_capacity_mw)} MW`}
+              subtitle={`${Math.round(dcData.summary.operational_capacity_mw)} MW operational`}
+              color="green"
+            />
+            <MetricCard
+              icon={<Activity className="w-8 h-8" />}
+              title="Queue Requests"
+              value={`${Math.round(queueData.summary.total_requested_mw)} MW`}
+              subtitle={`${queueData.summary.total_projects} projects`}
+              color="amber"
+            />
+            <MetricCard
+              icon={<DollarSign className="w-8 h-8" />}
+              title="Total Investment"
+              value={`$${(dcData.data_centres.reduce((sum, dc) => sum + (dc.capital_investment_cad || 0), 0) / 1e9).toFixed(1)}B`}
+              subtitle="Capital committed"
+              color="purple"
+            />
+          </div>
+
+          {/* Phase 1 Allocation Status - Alberta only */}
+          {isAlberta && (
+            <div className="card p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
+                  <Gauge className="w-6 h-6 text-electric" />
+                  AESO Phase 1 Allocation Status (1,200 MW Limit)
+                </h2>
+                <HelpButton id="ai-datacentre.phase1" />
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div>
+                  <ResponsiveContainer width="100%" height={200}>
+                    <RadialBarChart
+                      innerRadius="30%"
+                      outerRadius="100%"
+                      data={[{
+                        name: 'Utilization',
+                        value: queueData.insights.phase1_allocation_status.utilization_percentage,
+                        fill: queueData.insights.phase1_allocation_status.utilization_percentage > 90
+                          ? COLORS.danger
+                          : queueData.insights.phase1_allocation_status.utilization_percentage > 70
+                            ? COLORS.warning
+                            : COLORS.success,
+                      }]}
+                      startAngle={180}
+                      endAngle={0}
                     >
-                      {dc.status}
+                      <RadialBar dataKey="value" cornerRadius={10} />
+                      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-3xl font-bold">
+                        {queueData.insights.phase1_allocation_status.utilization_percentage}%
+                      </text>
+                    </RadialBarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center p-4 bg-secondary rounded-lg">
+                    <span className="font-semibold text-secondary">Phase 1 Limit</span>
+                    <span className="text-xl font-bold text-electric">1,200 MW</span>
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-amber-50 rounded-lg">
+                    <span className="font-semibold text-secondary">Allocated</span>
+                    <span className="text-xl font-bold text-warning">
+                      {queueData.insights.phase1_allocation_status.allocated_mw} MW
                     </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-primary">
-                    {Math.round(dc.contracted_capacity_mw)}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-secondary">
-                    {dc.pue_actual || dc.pue_design || 'N/A'}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
-                    <div className="flex items-center gap-2">
-                      {dc.power_source}
-                      {dc.renewable_percentage > 0 && (
-                        <span className="text-xs text-success font-medium">
-                          ({dc.renewable_percentage}% renewable)
-                        </span>
-                      )}
+                  </div>
+                  <div className="flex justify-between items-center p-4 bg-secondary rounded-lg">
+                    <span className="font-semibold text-secondary">Remaining</span>
+                    <span className="text-xl font-bold text-success">
+                      {queueData.insights.phase1_allocation_status.remaining_mw} MW
+                    </span>
+                  </div>
+                  {queueData.insights.phase1_allocation_status.is_fully_allocated && (
+                    <div className="p-3 bg-secondary border border-red-200 rounded-lg">
+                      <p className="text-sm text-danger font-medium">
+                        ⚠️ Capacity exhausted - projects moved to Phase 2
+                      </p>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      )}
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Grid Impact Analysis - Show only when data exists */}
+          {(hasProvinceData || isAlberta) && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <div className="card p-6">
+                <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                  <Activity className="w-6 h-6 text-electric" />
+                  {isAlberta ? 'Grid Impact Analysis' : `${getProvinceName(selectedProvince)} Grid Impact`}
+                </h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={gridImpactData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={(entry) => `${entry.name}: ${entry.value} MW`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {gridImpactData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">Peak Demand</span>
+                    <span className="font-bold">{dcData.grid_impact.current_peak_demand_mw} MW</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">DC % of Peak</span>
+                    <span className="font-bold text-electric">
+                      {dcData.grid_impact.dc_percentage_of_peak?.toFixed(2)}%
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-secondary">Reliability Rating</span>
+                    <span className={`font-bold ${dcData.grid_impact.reliability_rating === 'Normal' ? 'text-success' :
+                      dcData.grid_impact.reliability_rating === 'Adequate' ? 'text-electric' :
+                        dcData.grid_impact.reliability_rating === 'Strained' ? 'text-warning' :
+                          'text-danger'
+                      }`}>
+                      {dcData.grid_impact.reliability_rating}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card p-6">
+                <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-6 h-6 text-electric" />
+                  Data Centre Operators
+                </h2>
+                <ResponsiveContainer width="100%" height={300}>
+                  <BarChart data={operatorData} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis type="number" />
+                    <YAxis dataKey="operator" type="category" width={120} />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="capacity" name="Capacity (MW)" fill={COLORS.primary} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          )}
+
+          {/* AESO Queue Breakdown - Alberta only */}
+          {isAlberta && (
+            <div className="card p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
+                  <Server className="w-6 h-6 text-electric" />
+                  AESO Interconnection Queue Breakdown
+                </h2>
+                <HelpButton id="ai-datacentre.queue" />
+              </div>
+              <div className="mb-4 p-4 bg-secondary rounded-lg">
+                <h3 className="font-bold text-blue-800 mb-2">AI Data Centre Dominance</h3>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <div className="text-3xl font-bold text-electric">
+                      {queueData.insights.data_centre_dominance.dc_projects}
+                    </div>
+                    <div className="text-sm text-secondary">DC Projects</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold text-electric">
+                      {Math.round(queueData.insights.data_centre_dominance.dc_mw)} MW
+                    </div>
+                    <div className="text-sm text-secondary">DC Capacity</div>
+                  </div>
+                  <div>
+                    <div className="text-3xl font-bold text-electric">
+                      {queueData.insights.data_centre_dominance.dc_percentage_of_queue}%
+                    </div>
+                    <div className="text-sm text-secondary">% of Total Queue</div>
+                  </div>
+                </div>
+              </div>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={queueByType}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="type" />
+                  <YAxis />
+                  <Tooltip />
+                  <Legend />
+                  <Bar dataKey="capacity_mw" name="Requested Capacity (MW)" fill={COLORS.primary} />
+                  <Bar dataKey="projects" name="Project Count" fill={COLORS.teal} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+
+          {/* Data Centre Registry Table */}
+          {hasProvinceData && (
+            <div className="card p-6 mb-8">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
+                  <MapPin className="w-6 h-6 text-electric" />
+                  {getProvinceName(selectedProvince)} AI Data Centre Registry
+                </h2>
+                <HelpButton id="ai-datacentre.pue" className="ml-2" />
+              </div>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+                  <thead className="bg-secondary">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Facility
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Operator
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Location
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Capacity (MW)
+                      </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                        PUE
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Power Source
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+                    {dcData.data_centres.map((dc) => (
+                      <tr key={dc.id} className="hover:bg-secondary">
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-primary">
+                          {dc.facility_name}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                          {dc.operator}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                          {dc.location_city}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span
+                            className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                            style={{
+                              backgroundColor: STATUS_COLORS[dc.status] + '20',
+                              color: STATUS_COLORS[dc.status],
+                            }}
+                          >
+                            {dc.status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-primary">
+                          {Math.round(dc.contracted_capacity_mw)}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-secondary">
+                          {dc.pue_actual || dc.pue_design || 'N/A'}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
+                          <div className="flex items-center gap-2">
+                            {dc.power_source}
+                            {dc.renewable_percentage > 0 && (
+                              <span className="text-xs text-success font-medium">
+                                ({dc.renewable_percentage}% renewable)
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
 
@@ -781,294 +924,293 @@ export const AIDataCentreDashboard: React.FC = () => {
             </div>
           ) : (
             <>
-          {/* Historical Overview Banner */}
-          <div className="mb-6 p-6 bg-secondary border-l-4 border-electric rounded-lg">
-            <div className="flex items-start gap-3">
-              <TrendingUp className="w-8 h-8 text-electric flex-shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-xl font-bold text-primary mb-2">AESO Queue Growth: AI Boom Analysis (2023-2025)</h3>
-                <p className="text-secondary mb-3">
-                  Tracking the explosive growth of AI data centre interconnection requests following the ChatGPT launch and Alberta's $100B AI strategy.
-                </p>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-secondary p-3 rounded-lg">
-                    <div className="text-sm text-secondary">Snapshots Tracked</div>
-                    <div className="text-2xl font-bold text-electric">{queueHistory.metadata.snapshots_available}</div>
-                    <div className="text-xs text-tertiary">Jan 2023 - Mar 2025</div>
-                  </div>
-                  <div className="bg-secondary p-3 rounded-lg">
-                    <div className="text-sm text-secondary">AI DC Growth</div>
-                    <div className="text-2xl font-bold text-electric">
-                      {queueHistory.history[queueHistory.history.length - 1].dc_projects - queueHistory.history[0].dc_projects}×
+              {/* Historical Overview Banner */}
+              <div className="mb-6 p-6 bg-secondary border-l-4 border-electric rounded-lg">
+                <div className="flex items-start gap-3">
+                  <TrendingUp className="w-8 h-8 text-electric flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-xl font-bold text-primary mb-2">AESO Queue Growth: AI Boom Analysis (2023-2025)</h3>
+                    <p className="text-secondary mb-3">
+                      Tracking the explosive growth of AI data centre interconnection requests following the ChatGPT launch and Alberta's $100B AI strategy.
+                    </p>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-secondary p-3 rounded-lg">
+                        <div className="text-sm text-secondary">Snapshots Tracked</div>
+                        <div className="text-2xl font-bold text-electric">{queueHistory.metadata.snapshots_available}</div>
+                        <div className="text-xs text-tertiary">Jan 2023 - Mar 2025</div>
+                      </div>
+                      <div className="bg-secondary p-3 rounded-lg">
+                        <div className="text-sm text-secondary">AI DC Growth</div>
+                        <div className="text-2xl font-bold text-electric">
+                          {queueHistory.history[queueHistory.history.length - 1].dc_projects - queueHistory.history[0].dc_projects}×
+                        </div>
+                        <div className="text-xs text-tertiary">2 → {queueHistory.history[queueHistory.history.length - 1].dc_projects} projects</div>
+                      </div>
+                      <div className="bg-secondary p-3 rounded-lg">
+                        <div className="text-sm text-secondary">Queue Growth</div>
+                        <div className="text-2xl font-bold text-warning">
+                          {Math.round((queueHistory.history[queueHistory.history.length - 1].total_requested_mw / queueHistory.history[0].total_requested_mw - 1) * 100)}%
+                        </div>
+                        <div className="text-xs text-tertiary">6.8 GW → {(queueHistory.history[queueHistory.history.length - 1].total_requested_mw / 1000).toFixed(1)} GW</div>
+                      </div>
                     </div>
-                    <div className="text-xs text-tertiary">2 → {queueHistory.history[queueHistory.history.length - 1].dc_projects} projects</div>
-                  </div>
-                  <div className="bg-secondary p-3 rounded-lg">
-                    <div className="text-sm text-secondary">Queue Growth</div>
-                    <div className="text-2xl font-bold text-warning">
-                      {Math.round((queueHistory.history[queueHistory.history.length - 1].total_requested_mw / queueHistory.history[0].total_requested_mw - 1) * 100)}%
-                    </div>
-                    <div className="text-xs text-tertiary">6.8 GW → {(queueHistory.history[queueHistory.history.length - 1].total_requested_mw / 1000).toFixed(1)} GW</div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Historical Charts Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            {/* Total Queue Growth */}
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-                <TrendingUp className="w-6 h-6 text-electric" />
-                Total Queue Growth (GW)
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={queueHistory.history}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="snapshot_month"
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis label={{ value: 'Capacity (GW)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip
-                    formatter={(value: any) => `${(value / 1000).toFixed(2)} GW`}
-                    labelFormatter={(label) => `Month: ${label}`}
-                  />
-                  <Legend />
-                  <Area
-                    type="monotone"
-                    dataKey="total_requested_mw"
-                    name="Total Queue"
-                    fill={COLORS.primary}
-                    stroke={COLORS.primary}
-                    opacity={0.3}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="dc_requested_mw"
-                    name="AI Data Centres"
-                    stroke={COLORS.danger}
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-              <div className="mt-4 p-3 bg-secondary rounded-lg">
-                <p className="text-sm text-secondary">
-                  <strong>Key Insight:</strong> AI data centres grew from {queueHistory.history[0].dc_requested_mw} MW (Jan 2023)
-                  to {Math.round(queueHistory.history[queueHistory.history.length - 1].dc_requested_mw)} MW (Mar 2025),
-                  a {Math.round((queueHistory.history[queueHistory.history.length - 1].dc_requested_mw / queueHistory.history[0].dc_requested_mw - 1) * 100)}% increase.
-                </p>
+              {/* Historical Charts Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                {/* Total Queue Growth */}
+                <div className="card p-6">
+                  <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-electric" />
+                    Total Queue Growth (GW)
+                  </h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={queueHistory.history}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="snapshot_month"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis label={{ value: 'Capacity (GW)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip
+                        formatter={(value: any) => `${(value / 1000).toFixed(2)} GW`}
+                        labelFormatter={(label) => `Month: ${label}`}
+                      />
+                      <Legend />
+                      <Area
+                        type="monotone"
+                        dataKey="total_requested_mw"
+                        name="Total Queue"
+                        fill={COLORS.primary}
+                        stroke={COLORS.primary}
+                        opacity={0.3}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="dc_requested_mw"
+                        name="AI Data Centres"
+                        stroke={COLORS.danger}
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 p-3 bg-secondary rounded-lg">
+                    <p className="text-sm text-secondary">
+                      <strong>Key Insight:</strong> AI data centres grew from {queueHistory.history[0].dc_requested_mw} MW (Jan 2023)
+                      to {Math.round(queueHistory.history[queueHistory.history.length - 1].dc_requested_mw)} MW (Mar 2025),
+                      a {Math.round((queueHistory.history[queueHistory.history.length - 1].dc_requested_mw / queueHistory.history[0].dc_requested_mw - 1) * 100)}% increase.
+                    </p>
+                  </div>
+                </div>
+
+                {/* AI Data Centre Dominance */}
+                <div className="card p-6">
+                  <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                    <Server className="w-6 h-6 text-electric" />
+                    AI Data Centre Market Share
+                  </h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <ComposedChart data={queueHistory.history}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="snapshot_month"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis
+                        yAxisId="left"
+                        label={{ value: 'Projects', angle: -90, position: 'insideLeft' }}
+                      />
+                      <YAxis
+                        yAxisId="right"
+                        orientation="right"
+                        label={{ value: '% of Queue', angle: 90, position: 'insideRight' }}
+                      />
+                      <Tooltip />
+                      <Legend />
+                      <Bar
+                        yAxisId="left"
+                        dataKey="dc_projects"
+                        name="DC Projects"
+                        fill={COLORS.primary}
+                      />
+                      <Line
+                        yAxisId="right"
+                        type="monotone"
+                        dataKey="dc_percentage_of_queue"
+                        name="% of Total Queue"
+                        stroke={COLORS.danger}
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
+                      />
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 p-3 bg-secondary rounded-lg">
+                    <p className="text-sm text-secondary">
+                      <strong>Crisis Point:</strong> AI data centres now represent {queueHistory.history[queueHistory.history.length - 1].dc_percentage_of_queue}%
+                      of the total queue (up from {queueHistory.history[0].dc_percentage_of_queue}% in Jan 2023).
+                    </p>
+                  </div>
+                </div>
+
+                {/* Phase 1 Allocation Timeline */}
+                <div className="card p-6">
+                  <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                    <Gauge className="w-6 h-6 text-electric" />
+                    Phase 1 Allocation (1,200 MW Limit)
+                  </h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={queueHistory.history}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="snapshot_month"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis label={{ value: 'MW', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="phase1_allocated_mw" name="Allocated" fill={COLORS.warning} stackId="a" />
+                      <Bar dataKey="phase1_remaining_mw" name="Remaining" fill={COLORS.success} stackId="a" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 p-3 bg-amber-50 rounded-lg">
+                    <p className="text-sm text-secondary">
+                      <strong>Limit Reached:</strong> Phase 1 capacity fully allocated by {
+                        queueHistory.history.find(h => h.phase1_utilization_percent >= 100)?.snapshot_month || 'Q2 2024'
+                      }.
+                      New projects must wait for Phase 2 approval.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Queue to Peak Demand Ratio */}
+                <div className="card p-6">
+                  <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                    <AlertTriangle className="w-6 h-6 text-electric" />
+                    Grid Reliability Concern
+                  </h2>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <LineChart data={queueHistory.history}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis
+                        dataKey="snapshot_month"
+                        angle={-45}
+                        textAnchor="end"
+                        height={80}
+                        tick={{ fontSize: 12 }}
+                      />
+                      <YAxis label={{ value: 'Queue / Peak Demand (%)', angle: -90, position: 'insideLeft' }} />
+                      <Tooltip
+                        formatter={(value: any) => `${value}%`}
+                      />
+                      <Legend />
+                      <Line
+                        type="monotone"
+                        dataKey="queue_to_peak_ratio"
+                        name="Queue as % of Peak"
+                        stroke={COLORS.danger}
+                        strokeWidth={3}
+                        dot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey={() => 100}
+                        name="100% Threshold"
+                        stroke="#000"
+                        strokeDasharray="5 5"
+                        strokeWidth={2}
+                        dot={false}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                  <div className="mt-4 p-3 bg-secondary rounded-lg">
+                    <p className="text-sm text-secondary">
+                      <strong>Grid Crisis:</strong> Queue now at {queueHistory.history[queueHistory.history.length - 1].queue_to_peak_ratio}%
+                      of Alberta's peak demand (12,100 MW). Major grid expansion required.
+                    </p>
+                  </div>
+                </div>
               </div>
-            </div>
 
-            {/* AI Data Centre Dominance */}
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-                <Server className="w-6 h-6 text-electric" />
-                AI Data Centre Market Share
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <ComposedChart data={queueHistory.history}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="snapshot_month"
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis
-                    yAxisId="left"
-                    label={{ value: 'Projects', angle: -90, position: 'insideLeft' }}
-                  />
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    label={{ value: '% of Queue', angle: 90, position: 'insideRight' }}
-                  />
-                  <Tooltip />
-                  <Legend />
-                  <Bar
-                    yAxisId="left"
-                    dataKey="dc_projects"
-                    name="DC Projects"
-                    fill={COLORS.primary}
-                  />
-                  <Line
-                    yAxisId="right"
-                    type="monotone"
-                    dataKey="dc_percentage_of_queue"
-                    name="% of Total Queue"
-                    stroke={COLORS.danger}
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-              <div className="mt-4 p-3 bg-secondary rounded-lg">
-                <p className="text-sm text-secondary">
-                  <strong>Crisis Point:</strong> AI data centres now represent {queueHistory.history[queueHistory.history.length - 1].dc_percentage_of_queue}%
-                  of the total queue (up from {queueHistory.history[0].dc_percentage_of_queue}% in Jan 2023).
-                </p>
+              {/* Historical Data Table */}
+              <div className="card p-6 mb-8">
+                <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
+                  <MapPin className="w-6 h-6 text-electric" />
+                  Monthly Snapshot History
+                </h2>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-[var(--border-subtle)]">
+                    <thead className="bg-secondary">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                          Month
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                          Total Projects
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                          Total Queue (GW)
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                          DC Projects
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                          DC Capacity (GW)
+                        </th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                          DC % of Queue
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
+                          Notes
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
+                      {queueHistory.history.map((snapshot, idx) => (
+                        <tr key={snapshot.id} className={`hover:bg-secondary ${idx === queueHistory.history.length - 1 ? 'bg-secondary font-semibold' : ''}`}>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-primary">
+                            {snapshot.snapshot_month}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-primary">
+                            {snapshot.total_projects}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-primary">
+                            {(snapshot.total_requested_mw / 1000).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-electric">
+                            {snapshot.dc_projects}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-electric">
+                            {(snapshot.dc_requested_mw / 1000).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${snapshot.dc_percentage_of_queue > 30 ? 'bg-red-100 text-red-800' :
+                              snapshot.dc_percentage_of_queue > 15 ? 'bg-amber-100 text-amber-800' :
+                                'bg-green-100 text-green-800'
+                              }`}>
+                              {snapshot.dc_percentage_of_queue.toFixed(1)}%
+                            </span>
+                          </td>
+                          <td className="px-4 py-4 text-xs text-secondary max-w-md">
+                            {snapshot.notes}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
-
-            {/* Phase 1 Allocation Timeline */}
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-                <Gauge className="w-6 h-6 text-electric" />
-                Phase 1 Allocation (1,200 MW Limit)
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={queueHistory.history}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="snapshot_month"
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis label={{ value: 'MW', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="phase1_allocated_mw" name="Allocated" fill={COLORS.warning} stackId="a" />
-                  <Bar dataKey="phase1_remaining_mw" name="Remaining" fill={COLORS.success} stackId="a" />
-                </BarChart>
-              </ResponsiveContainer>
-              <div className="mt-4 p-3 bg-amber-50 rounded-lg">
-                <p className="text-sm text-secondary">
-                  <strong>Limit Reached:</strong> Phase 1 capacity fully allocated by {
-                    queueHistory.history.find(h => h.phase1_utilization_percent >= 100)?.snapshot_month || 'Q2 2024'
-                  }.
-                  New projects must wait for Phase 2 approval.
-                </p>
-              </div>
-            </div>
-
-            {/* Queue to Peak Demand Ratio */}
-            <div className="card p-6">
-              <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-                <AlertTriangle className="w-6 h-6 text-electric" />
-                Grid Reliability Concern
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={queueHistory.history}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="snapshot_month"
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    tick={{ fontSize: 12 }}
-                  />
-                  <YAxis label={{ value: 'Queue / Peak Demand (%)', angle: -90, position: 'insideLeft' }} />
-                  <Tooltip
-                    formatter={(value: any) => `${value}%`}
-                  />
-                  <Legend />
-                  <Line
-                    type="monotone"
-                    dataKey="queue_to_peak_ratio"
-                    name="Queue as % of Peak"
-                    stroke={COLORS.danger}
-                    strokeWidth={3}
-                    dot={{ r: 4 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey={() => 100}
-                    name="100% Threshold"
-                    stroke="#000"
-                    strokeDasharray="5 5"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-              <div className="mt-4 p-3 bg-secondary rounded-lg">
-                <p className="text-sm text-secondary">
-                  <strong>Grid Crisis:</strong> Queue now at {queueHistory.history[queueHistory.history.length - 1].queue_to_peak_ratio}%
-                  of Alberta's peak demand (12,100 MW). Major grid expansion required.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Historical Data Table */}
-          <div className="card p-6 mb-8">
-            <h2 className="text-2xl font-bold text-primary mb-4 flex items-center gap-2">
-              <MapPin className="w-6 h-6 text-electric" />
-              Monthly Snapshot History
-            </h2>
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-[var(--border-subtle)]">
-                <thead className="bg-secondary">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                      Month
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                      Total Projects
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                      Total Queue (GW)
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                      DC Projects
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                      DC Capacity (GW)
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
-                      DC % of Queue
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
-                      Notes
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
-                  {queueHistory.history.map((snapshot, idx) => (
-                    <tr key={snapshot.id} className={`hover:bg-secondary ${idx === queueHistory.history.length - 1 ? 'bg-secondary font-semibold' : ''}`}>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-primary">
-                        {snapshot.snapshot_month}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-primary">
-                        {snapshot.total_projects}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right text-primary">
-                        {(snapshot.total_requested_mw / 1000).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-electric">
-                        {snapshot.dc_projects}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right font-semibold text-electric">
-                        {(snapshot.dc_requested_mw / 1000).toFixed(2)}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          snapshot.dc_percentage_of_queue > 30 ? 'bg-red-100 text-red-800' :
-                          snapshot.dc_percentage_of_queue > 15 ? 'bg-amber-100 text-amber-800' :
-                          'bg-green-100 text-green-800'
-                        }`}>
-                          {snapshot.dc_percentage_of_queue.toFixed(1)}%
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 text-xs text-secondary max-w-md">
-                        {snapshot.notes}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
             </>
           )}
         </>
