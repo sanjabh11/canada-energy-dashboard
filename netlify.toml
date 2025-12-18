@@ -9,7 +9,17 @@
   publish = "dist"
   
   # Node version and cache bust
-  environment = { NODE_VERSION = "20", CACHE_BUSTER = "2025-12-11-v2-whop-fix" }
+  # CRITICAL: Vite replaces import.meta.env.VITE_* at BUILD time
+  # These variables MUST be present during Netlify build for streaming to work
+  [build.environment]
+    NODE_VERSION = "20"
+    CACHE_BUSTER = "2025-12-18-streaming-fix"
+    VITE_SUPABASE_URL = "https://qnymbecjgeaoxsfphrti.supabase.co"
+    VITE_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU"
+    VITE_USE_STREAMING_DATASETS = "true"
+    VITE_ENABLE_EDGE_FETCH = "true"
+    VITE_ENABLE_LIVE_STREAMING = "true"
+    VITE_SUPABASE_EDGE_BASE = "https://qnymbecjgeaoxsfphrti.functions.supabase.co"
 
 [build.processing]
   # Skip processing - we handle it ourselves
@@ -90,13 +100,6 @@
   for = "/*.css"
   [headers.values]
     Content-Type = "text/css; charset=utf-8"
-
-# Environment variables (set these in Netlify UI)
-# VITE_SUPABASE_URL
-# VITE_SUPABASE_ANON_KEY
-# VITE_USE_STREAMING_DATASETS=true
-# VITE_ENABLE_EDGE_FETCH=true
-
 # Plugin configuration
 [[plugins]]
   package = "@netlify/plugin-lighthouse"
