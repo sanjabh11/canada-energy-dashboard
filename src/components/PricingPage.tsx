@@ -3,11 +3,18 @@ import { Link } from 'react-router-dom';
 import { useAuth } from './auth';
 import { Check, X, Zap, TrendingUp, ArrowRight, Crown, Star, Sparkles } from 'lucide-react';
 import { getEdgeBaseUrl } from '../lib/config';
+import { EmailCaptureModal } from './billing/EmailCaptureModal';
+import { getBillingAdapter, BillingPlan } from '../lib/billingAdapter';
 
 export function PricingPage() {
   const { user, edubizUser, isWhopUser } = useAuth();
   const [checkoutLoadingTier, setCheckoutLoadingTier] = useState<'watchdog' | 'advanced' | 'enterprise' | null>(null);
+  const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<BillingPlan | null>(null);
   const currentTier = edubizUser?.tier || 'free';
+
+  // Get billing adapter for provider-agnostic checkout
+  const billingAdapter = getBillingAdapter();
 
   // Whop-aligned pricing tiers (from whop_skill.md)
   const tiers = [
@@ -33,7 +40,8 @@ export function PricingPage() {
       cta: 'Start for $9/mo',
       ctaStyle: 'bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600',
       popular: false,
-      whopPlan: 'basic'
+      whopPlan: 'basic',
+      adapterPlanId: 'whop_watchdog'
     },
     {
       id: 'advanced',
@@ -58,7 +66,8 @@ export function PricingPage() {
       ctaStyle: 'bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600',
       popular: true,
       trial: true,
-      whopPlan: 'pro'
+      whopPlan: 'pro',
+      adapterPlanId: 'whop_pro'
     },
     {
       id: 'enterprise',
@@ -83,7 +92,8 @@ export function PricingPage() {
       ctaStyle: 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600',
       popular: false,
       enterprise: true,
-      whopPlan: 'enterprise'
+      whopPlan: 'enterprise',
+      adapterPlanId: 'whop_team'
     }
   ];
 
@@ -99,15 +109,24 @@ export function PricingPage() {
   };
   const normalizedCurrentTier = legacyTierMap[currentTier] || 'free';
 
-  async function handleTierCheckout(tierId: 'watchdog' | 'advanced' | 'enterprise') {
-    setCheckoutLoadingTier(tierId);
-    
-    // Map tier to Whop plan
+  function handleTierCheckout(tierId: 'watchdog' | 'advanced' | 'enterprise') {
     const tier = tiers.find(t => t.id === tierId);
-    const whopPlan = tier?.whopPlan || tierId;
-    
-    // Redirect to Whop checkout (works for both logged in and guest users)
-    window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${whopPlan}`;
+    if (!tier) return;
+
+    // Get plan from billing adapter
+    const plan = billingAdapter.getPlan(tier.adapterPlanId) || {
+      id: tier.adapterPlanId,
+      name: tier.name,
+      tier: tier.whopPlan as 'basic' | 'pro' | 'team',
+      price: tier.price,
+      currency: 'USD',
+      interval: 'month' as const,
+      features: tier.features.filter(f => f.included).map(f => f.text)
+    };
+
+    // Open email capture modal (Dual Capture Pattern)
+    setSelectedPlan(plan);
+    setShowEmailCapture(true);
   }
 
   return (
@@ -334,6 +353,18 @@ export function PricingPage() {
           </p>
         </div>
       </div>
+
+      {/* Email Capture Modal (Dual Capture Pattern) */}
+      {selectedPlan && (
+        <EmailCaptureModal
+          plan={selectedPlan}
+          isOpen={showEmailCapture}
+          onClose={() => {
+            setShowEmailCapture(false);
+            setSelectedPlan(null);
+          }}
+        />
+      )}
     </div>
   );
 }

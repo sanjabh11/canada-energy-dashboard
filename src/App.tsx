@@ -37,6 +37,11 @@ import { GuestQuizPlayer } from './components/whop/GuestQuizPlayer';
 import { WatchdogApp } from './components/whop/WatchdogApp';
 import { ThemeProvider } from './lib/ThemeContext';
 import { Navigate } from 'react-router-dom';
+// Legal Pages (Whop Compliance)
+import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
+import { TermsOfService } from './components/legal/TermsOfService';
+// Enterprise (Bypasses Whop for B2B)
+import { EnterprisePage } from './components/enterprise/EnterprisePage';
 import './App.css';
 import './styles/layout.css';
 
@@ -118,7 +123,14 @@ const router = createBrowserRouter(
 
     // Whop "Alberta Rate Watchdog" - Primary Wedge Product
     { path: '/whop/watchdog', element: <WatchdogApp /> },
-    { path: '/watchdog', element: <Navigate to="/whop/watchdog" replace /> }
+    { path: '/watchdog', element: <Navigate to="/whop/watchdog" replace /> },
+
+    // Legal Pages (Whop Compliance - Criteria 14, 15)
+    { path: '/privacy', element: <PrivacyPolicy /> },
+    { path: '/terms', element: <TermsOfService /> },
+
+    // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)
+    { path: '/enterprise', element: <EnterprisePage /> }
   ]
 );
 

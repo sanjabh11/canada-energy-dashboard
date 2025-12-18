@@ -4,18 +4,35 @@
  * This is the "Wedge Product" per whop_skill.md strategy.
  * Lightweight wrapper that renders RROAlertSystem without heavy dashboard dependencies.
  * Includes persistent "Unlock CEIP Advanced" CTA for upsell.
+ * 
+ * PORTABILITY: Uses EmailCaptureModal for dual email capture before Whop checkout.
  */
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, TrendingUp, Lock, ArrowRight, X } from 'lucide-react';
+import { Zap, TrendingUp, Lock, ArrowRight, X, Calculator, Sparkles } from 'lucide-react';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { RROAlertSystem } from '../RROAlertSystem';
 import { ThemeToggle } from '../ui/ThemeToggle';
+import { EmailCaptureModal } from '../billing/EmailCaptureModal';
+import { getBillingAdapter } from '../../lib/billingAdapter';
+import { WelcomeModal } from './WelcomeModal';
 
 export function WatchdogApp() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [dismissed, setDismissed] = useState(false);
+
+    // Get the Pro plan from billing adapter
+    const billingAdapter = getBillingAdapter();
+    const proPlan = billingAdapter.getPlan('whop_pro') || {
+        id: 'whop_pro',
+        name: 'CEIP Pro',
+        tier: 'pro' as const,
+        price: 29,
+        currency: 'USD',
+        interval: 'month' as const,
+        features: ['35+ dashboards', 'Real-time IESO + AESO', 'Hydrogen, CCUS, ESG', 'Data export', 'API access']
+    };
 
     // Detect if in iframe (Whop context)
     const [isInIframe, setIsInIframe] = useState(false);
@@ -63,6 +80,31 @@ export function WatchdogApp() {
                     </div>
                 </header>
 
+                {/* Hero CTA - "Predict My Power Bill" (whop_skill.md Day 3) */}
+                <section className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border-b border-cyan-800">
+                    <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-cyan-500/20 rounded-xl">
+                                <Calculator className="h-8 w-8 text-cyan-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-xl font-bold text-white">Predict My Power Bill</h2>
+                                <p className="text-cyan-200 text-sm">See how today's prices affect your monthly electricity costs</p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => {
+                                // Scroll to the forecast section
+                                document.querySelector('.rro-forecast')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-medium rounded-lg transition-all flex items-center gap-2 whitespace-nowrap"
+                        >
+                            <Sparkles className="h-5 w-5" />
+                            Calculate Now
+                        </button>
+                    </div>
+                </section>
+
                 {/* Main Content - RRO Alert System */}
                 <main className="max-w-6xl mx-auto">
                     <RROAlertSystem />
@@ -99,78 +141,24 @@ export function WatchdogApp() {
                     </div>
                 )}
 
-                {/* Upgrade Modal */}
-                {showUpgradeModal && (
-                    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-                        <div className="bg-slate-800 rounded-2xl border border-slate-700 max-w-lg w-full overflow-hidden">
-                            <div className="p-6 border-b border-slate-700">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-bold text-white">Unlock CEIP Advanced</h2>
-                                    <button
-                                        onClick={() => setShowUpgradeModal(false)}
-                                        className="p-1 text-slate-400 hover:text-white"
-                                    >
-                                        <X className="h-5 w-5" />
-                                    </button>
-                                </div>
-                            </div>
-                            <div className="p-6 space-y-4">
-                                <p className="text-slate-300">
-                                    Get full access to Canada's most comprehensive energy intelligence platform.
-                                </p>
+                {/* Email Capture Modal - Dual Capture Pattern */}
+                <EmailCaptureModal
+                    plan={proPlan}
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                />
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <span className="text-cyan-400">✓</span>
-                                        35+ professional dashboards
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <span className="text-cyan-400">✓</span>
-                                        Real-time IESO + AESO grid mix
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <span className="text-cyan-400">✓</span>
-                                        Hydrogen, CCUS, ESG analytics
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <span className="text-cyan-400">✓</span>
-                                        Data export (CSV, JSON, PDF)
-                                    </div>
-                                    <div className="flex items-center gap-2 text-sm text-slate-300">
-                                        <span className="text-cyan-400">✓</span>
-                                        API access for developers
-                                    </div>
-                                </div>
-
-                                <div className="pt-4 border-t border-slate-700">
-                                    <div className="flex items-baseline gap-2 mb-4">
-                                        <span className="text-3xl font-bold text-white">$29</span>
-                                        <span className="text-slate-400">/month</span>
-                                    </div>
-
-                                    <a
-                                        href="https://whop.com/canada-energy-academy/?d2c=true&plan=pro"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full py-3 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2"
-                                    >
-                                        Upgrade Now
-                                        <ArrowRight className="h-4 w-4" />
-                                    </a>
-
-                                    <p className="text-center text-xs text-slate-500 mt-3">
-                                        Secure checkout via Whop. Cancel anytime.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Welcome Modal - First Run Experience */}
+                <WelcomeModal appName="watchdog" />
 
                 {/* Simple Footer */}
-                <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm mt-8">
+                <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm mt-8 pb-24">
                     <p>&copy; {new Date().getFullYear()} Canada Energy Intelligence Platform.</p>
                     <p className="mt-1">
+                        <Link to="/privacy" className="text-cyan-500 hover:text-cyan-400">Privacy</Link>
+                        {' • '}
+                        <Link to="/terms" className="text-cyan-500 hover:text-cyan-400">Terms</Link>
+                        {' • '}
                         <Link to="/hire-me" className="text-cyan-500 hover:text-cyan-400">Hire the developer</Link>
                         {' • '}
                         <Link to="/about" className="text-cyan-500 hover:text-cyan-400">About CEIP</Link>
