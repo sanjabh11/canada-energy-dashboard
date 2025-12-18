@@ -284,8 +284,8 @@ export const en: Translations = {
     gridFrequency: 'Grid Frequency'
   },
   home: {
-    heroTitle: 'Canada Energy Intelligence Platform',
-    heroSubtitle: 'Real-time monitoring and AI-powered insights for Canadian energy infrastructure.',
+    heroTitle: 'Advanced Energy Intelligence for Alberta Professionals',
+    heroSubtitle: 'Real-time grid analytics, AESO integration, and AI-powered insights. Built by a developer relocating to Calgary.',
     ctaExploreDashboard: 'Explore Dashboard',
     ctaViewAnalytics: 'View Analytics'
   },
@@ -443,9 +443,9 @@ export const fr: Translations = {
     gridFrequency: 'Fréquence du réseau'
   },
   home: {
-    heroTitle: 'Plateforme canadienne de renseignements énergétiques',
+    heroTitle: 'Intelligence énergétique avancée pour les professionnels albertains',
     heroSubtitle:
-      'Surveillance en temps réel et perspectives alimentées par l\'IA pour les infrastructures énergétiques canadiennes.',
+      'Analyses de réseau en temps réel, intégration AESO et perspectives alimentées par l\'IA. Développé par un ingénieur en relocalisation à Calgary.',
     ctaExploreDashboard: 'Explorer le tableau de bord',
     ctaViewAnalytics: 'Voir les analyses'
   },
@@ -508,7 +508,7 @@ export interface I18nContextValue {
 
 export const I18nContext = createContext<I18nContextValue>({
   language: 'en',
-  setLanguage: () => {},
+  setLanguage: () => { },
   t: en
 });
 

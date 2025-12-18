@@ -19,14 +19,11 @@ import { AuthModal } from './AuthModal';
 import { type WhopTier } from '../../lib/whop';
 
 export function AuthButton() {
-  // CRITICAL: Hide ALL auth UI on Whop routes (required for Whop App Store approval)
-  // Whop apps must NOT have any login/signup buttons - they use Whop's native auth
-  if (typeof window !== 'undefined') {
-    const path = window.location.pathname;
-    if (path.startsWith('/whop/')) {
-      return null; // No auth button in Whop-embedded views
-    }
-  }
+  // PORTFOLIO-FIRST STRATEGY: Remove all auth UI
+  // The dashboard is now fully public to demonstrate capability to recruiters and employers
+  // No sign-in, no guest login - just direct access to the platform
+  // This aligns with Gemini research recommendation: "Remove auth walls for instant capability proof"
+  return null;
 
   const { user, tier, edubizUser, isWhopUser, isGuest, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);

@@ -1,9 +1,31 @@
 # Canada Energy Intelligence Platform (CEIP)
-## Learning-Focused Energy Data Dashboard
 
-A comprehensive real-time energy data visualization platform for Canadian energy systems, featuring streaming data integration, **5x enhanced AI-powered analytics**, Indigenous energy sovereignty, and educational insights.
+## 🎯 **For Alberta Employers & Recruiters**
+
+**Live Demo**: [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
+
+> Built by **Sanjay Bhargava** – Senior Full-Stack Developer relocating to Calgary.  
+> 34 years experience | React/TypeScript | AESO Integration | Real-time Energy Analytics
+
+### Why This Matters for Your Team
+
+| Capability | Demonstrated Here |
+|------------|-------------------|
+| **AESO API Integration** | Live Alberta pool price monitoring |
+| **Real-Time Data Streaming** | Supabase Edge Functions + WebSocket patterns |
+| **React/TypeScript** | 20+ production dashboards with 100k+ lines |
+| **Energy Domain Expertise** | Indigenous OCAP® compliance, carbon tracking, hydrogen economy |
+| **Data Visualization** | Recharts, Mapbox, custom heatmaps |
+
+**NOC Code**: 21232 (Software Developer/Programmer)  
+**Status**: Ready for LMIA sponsorship | Family in Calgary
+
+📧 **Contact**: sanjabh11@gmail.com | [LinkedIn](https://linkedin.com/in/bhargavasanjay)
 
 ---
+
+## Learning-Focused Energy Data Dashboard
+
 
 ## 🎯 **Latest Implementation Status (December 18, 2025 – Whop Portability & Plan B)**
 
