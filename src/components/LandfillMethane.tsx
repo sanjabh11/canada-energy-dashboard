@@ -154,7 +154,7 @@ export function LandfillMethaneModule() {
     if (!result) return;
 
     const reportText = formatLandGEMResults(result);
-    const blob = new Blob([reportText], { type: 'text/plain' });
+    const blob = new Blob([JSON.stringify(reportText, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -224,10 +224,10 @@ export function LandfillMethaneModule() {
           {['facility', 'waste', 'capture', 'results'].map((step, idx) => (
             <div key={step} className="flex items-center flex-1">
               <div className={`flex items-center gap-2 ${currentStep === step ? 'text-emerald-400' :
-                  ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'text-slate-400' : 'text-slate-600'
+                ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'text-slate-400' : 'text-slate-600'
                 }`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === step ? 'border-emerald-400 bg-emerald-400/20' :
-                    ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'border-slate-400' : 'border-slate-600'
+                  ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'border-slate-400' : 'border-slate-600'
                   }`}>
                   {idx + 1}
                 </div>
@@ -446,8 +446,8 @@ export function LandfillMethaneModule() {
                         key={system.value}
                         onClick={() => setCaptureSystemType(system.value)}
                         className={`p-4 rounded-lg border-2 transition-colors text-left ${captureSystemType === system.value
-                            ? 'border-emerald-500 bg-emerald-500/10'
-                            : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
+                          ? 'border-emerald-500 bg-emerald-500/10'
+                          : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
                           }`}
                       >
                         <div className="font-bold">{system.label}</div>
@@ -547,7 +547,7 @@ export function LandfillMethaneModule() {
                       <div>
                         <div className="text-slate-500">Confidence</div>
                         <div className={`font-bold ${result.modelConfidence === 'high' ? 'text-emerald-400' :
-                            result.modelConfidence === 'medium' ? 'text-amber-400' : 'text-red-400'
+                          result.modelConfidence === 'medium' ? 'text-amber-400' : 'text-red-400'
                           }`}>
                           {result.modelConfidence.toUpperCase()} (±{result.uncertaintyRangePercent}%)
                         </div>

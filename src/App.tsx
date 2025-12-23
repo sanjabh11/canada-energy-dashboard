@@ -13,7 +13,7 @@ import { BadgesPage } from './components/BadgesPage';
 import { CertificatesPage } from './components/CertificatesPage';
 import { CertificateTrackPage } from './components/CertificateTrackPage';
 // import { PricingPage } from './components/PricingPage'; // Removed - file corrupted
-import TIERCreditCalculator from './components/TIERCreditCalculator';
+// import TIERCreditCalculator from './components/TIERCreditCalculator'; // Removed - file corrupted in all commits
 import LandfillMethane from './components/LandfillMethane';
 import { ModulePlayer } from './components/modules';
 import { CohortAdminPage } from './components/CohortAdminPage';
@@ -100,7 +100,7 @@ const router = createBrowserRouter(
     { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
     { path: '/funder-reporting', element: <FunderReportingDashboard /> },
     // HERO FEATURES - Production Ready
-    { path: '/tier-calculator', element: <TIERCreditCalculator /> },
+    // { path: '/tier-calculator', element: <TIERCreditCalculator /> }, // TODO: Recreate - corrupted in all commits
     { path: '/landfill-methane', element: <LandfillMethane /> },
     // Employer & Incubator Pages (Gap #8, #9)
     { path: '/employers', element: <EmployersPage /> },
