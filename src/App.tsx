@@ -12,7 +12,7 @@ import SettingsPage from './components/SettingsPage';
 import { BadgesPage } from './components/BadgesPage';
 import { CertificatesPage } from './components/CertificatesPage';
 import { CertificateTrackPage } from './components/CertificateTrackPage';
-import { PricingPage } from './components/PricingPage';
+// import { PricingPage } from './components/PricingPage'; // Removed - file corrupted
 import { ModulePlayer } from './components/modules';
 import { CohortAdminPage } from './components/CohortAdminPage';
 import { ApiKeysPage } from './components/ApiKeysPage';
@@ -88,7 +88,7 @@ const router = createBrowserRouter(
     { path: '/certificates', element: <CertificatesPage /> },
     { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
     { path: '/modules/:moduleId', element: <ModulePlayer /> },
-    { path: '/pricing', element: <PricingPage /> },
+    // { path: '/pricing', element: <PricingPage /> }, // Removed - file corrupted  
     { path: '/admin/cohorts', element: <CohortAdminPage /> },
     { path: '/api-keys', element: <ApiKeysPage /> },
     { path: '/api-docs', element: <ApiDocsPage /> },
