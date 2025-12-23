@@ -13,6 +13,8 @@ import { BadgesPage } from './components/BadgesPage';
 import { CertificatesPage } from './components/CertificatesPage';
 import { CertificateTrackPage } from './components/CertificateTrackPage';
 // import { PricingPage } from './components/PricingPage'; // Removed - file corrupted
+import TIERCreditCalculator from './components/TIERCreditCalculator';
+import LandfillMethane from './components/LandfillMethane';
 import { ModulePlayer } from './components/modules';
 import { CohortAdminPage } from './components/CohortAdminPage';
 import { ApiKeysPage } from './components/ApiKeysPage';
@@ -97,6 +99,9 @@ const router = createBrowserRouter(
     { path: '/indigenous', element: <EnergyDataDashboard initialTab="Indigenous" /> },
     { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
     { path: '/funder-reporting', element: <FunderReportingDashboard /> },
+    // HERO FEATURES - Production Ready
+    { path: '/tier-calculator', element: <TIERCreditCalculator /> },
+    { path: '/landfill-methane', element: <LandfillMethane /> },
     // Employer & Incubator Pages (Gap #8, #9)
     { path: '/employers', element: <EmployersPage /> },
     { path: '/incubators', element: <IncubatorsPage /> },
