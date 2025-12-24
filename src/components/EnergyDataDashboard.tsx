@@ -29,7 +29,7 @@ import { StakeholderDashboard } from './StakeholderDashboard';
 import GridOptimizationDashboard from './GridOptimizationDashboard';
 import SecurityDashboard from './SecurityDashboard';
 import { FeatureAvailability } from './FeatureAvailability';
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake, Recycle } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
@@ -261,6 +261,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
     { id: 'SMRDeployment', label: 'SMR Tracker', icon: Atom }, // ⭐⭐⭐⭐
     { id: 'CapacityMarket', label: 'Capacity Market', icon: BarChart3 }, // ⭐⭐⭐⭐
     { id: 'VPPAggregation', label: 'VPP & DER', icon: Radio }, // ⭐⭐⭐⭐
+    { id: 'LandfillMethane', label: 'Landfill Methane', icon: Recycle, path: '/landfill-methane' }, // ⭐⭐⭐⭐ NEW - EPA LandGEM Calculator
     // 3-Star Features (Moderate monetization)
     { id: 'Provinces', label: 'Provinces', icon: Globe }, // ⭐⭐⭐
     { id: 'GridQueue', label: 'Grid Queue', icon: Cable }, // ⭐⭐⭐
@@ -546,10 +547,10 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                         </div>
                         <div
                           className={`badge ${status?.status === 'connected'
-                              ? 'badge-success'
-                              : status?.status === 'connecting'
-                                ? 'badge-info'
-                                : 'badge-warning'
+                            ? 'badge-success'
+                            : status?.status === 'connecting'
+                              ? 'badge-info'
+                              : 'badge-warning'
                             }`}
                         >
                           {status?.status === 'connected' ? (
@@ -720,8 +721,8 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                     <div key={index} className="flex items-center justify-between p-4 bg-secondary rounded-lg">
                       <div className="flex items-center space-x-4">
                         <div className={`p-2 rounded-full ${status.status === 'connected' ? 'bg-success/20' :
-                            status.status === 'connecting' ? 'bg-electric/20 animate-pulse' :
-                              'bg-tertiary/20'
+                          status.status === 'connecting' ? 'bg-electric/20 animate-pulse' :
+                            'bg-tertiary/20'
                           }`}>
                           {status.status === 'connected' ?
                             <CheckCircle className="h-4 w-4 text-success" /> :
@@ -733,8 +734,8 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                         <div>
                           <div className="font-semibold text-primary">{status.dataset}</div>
                           <div className={`text-sm font-medium ${status.status === 'connected' ? 'text-success' :
-                              status.status === 'connecting' ? 'text-electric' :
-                                'text-tertiary'
+                            status.status === 'connecting' ? 'text-electric' :
+                              'text-tertiary'
                             }`}>
                             {status.status === 'connected' ? 'LIVE STREAM ACTIVE' :
                               status.status === 'connecting' ? 'CONNECTING TO STREAM' :

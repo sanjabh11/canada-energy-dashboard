@@ -29,6 +29,7 @@ export interface Translations {
     signIn: string;
     signOut: string;
     docs: string;
+    landfillMethane: string; // NEW - for More dropdown
   };
   // Common UI elements
   common: {
@@ -191,7 +192,8 @@ export const en: Translations = {
     settings: 'Settings',
     signIn: 'Get Started',
     signOut: 'Sign Out',
-    docs: 'Documentation'
+    docs: 'Documentation',
+    landfillMethane: 'Landfill Methane'
   },
   common: {
     loading: 'Loading...',
@@ -350,7 +352,8 @@ export const fr: Translations = {
     settings: 'Paramètres',
     signIn: 'Connexion',
     signOut: 'Déconnexion',
-    docs: 'Documentation'
+    docs: 'Documentation',
+    landfillMethane: 'Méthane des sites d\'enfouissement'
   },
   common: {
     loading: 'Chargement...',
