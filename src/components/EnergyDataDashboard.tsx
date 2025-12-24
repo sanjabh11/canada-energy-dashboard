@@ -480,7 +480,8 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
               id: t.id,
               label: t.label,
               icon: t.icon,
-              badge: t.badge
+              badge: t.badge,
+              ...(t as any).path && { path: (t as any).path } // Preserve external route paths
             }))}
             activeTab={activeTab}
             onSelect={setActiveTab}
