@@ -38,7 +38,7 @@ import {
   type LandGEMCalculationResult
 } from '../lib/landfillMethaneCalculations';
 
-type WizardStep = 'facility' | 'waste' | 'capture' | 'results';
+type WizardStep = 'facility' | 'waste' | 'climate' | 'results';
 
 const CAPTURE_SYSTEM_TYPES = [
   { value: 'none', label: 'No Capture System', efficiency: 0 },
@@ -58,6 +58,12 @@ const ENERGY_RECOVERY_OPTIONS = [
 export function LandfillMethaneModule() {
   // Wizard state
   const [currentStep, setCurrentStep] = useState<WizardStep>('facility');
+
+  // Validation errors
+  const [validationErrors, setValidationErrors] = useState<{
+    closureYear?: string;
+    tonnage?: Record<number, string>;
+  }>({});
 
   // Facility data
   const [landfillName, setLandfillName] = useState('');
@@ -166,14 +172,45 @@ export function LandfillMethaneModule() {
   };
 
   const nextStep = () => {
+    // Validate before proceeding
+    let hasErrors = false;
+
+    // Validate closure year in Step 1
+    if (currentStep === 'facility' && closureYear && closureYear < startYear) {
+      setValidationErrors(prev => ({
+        ...prev,
+        closureYear: `Closure year must be after start year (${startYear})`
+      }));
+      hasErrors = true;
+    }
+
+    // Validate tonnage in Step 2
+    if (currentStep === 'waste') {
+      const tonnageErrors: Record<number, string> = {};
+      wasteHistory.forEach((entry, idx) => {
+        if (entry.tonnesWaste < 0) {
+          tonnageErrors[idx] = 'Tonnage must be a positive number';
+          hasErrors = true;
+        }
+      });
+      if (Object.keys(tonnageErrors).length > 0) {
+        setValidationErrors(prev => ({ ...prev, tonnage: tonnageErrors }));
+      }
+    }
+
+    if (hasErrors) return; // Block navigation
+
+    // Clear errors and proceed
+    setValidationErrors({});
     if (currentStep === 'facility') setCurrentStep('waste');
-    else if (currentStep === 'waste') setCurrentStep('capture');
-    else if (currentStep === 'capture') setCurrentStep('results');
+    else if (currentStep === 'waste') setCurrentStep('climate');
+    else if (currentStep === 'climate') setCurrentStep('results');
   };
 
   const prevStep = () => {
-    if (currentStep === 'results') setCurrentStep('capture');
-    else if (currentStep === 'capture') setCurrentStep('waste');
+    setValidationErrors({}); // Clear errors when going back
+    if (currentStep === 'results') setCurrentStep('climate');
+    else if (currentStep === 'climate') setCurrentStep('waste');
     else if (currentStep === 'waste') setCurrentStep('facility');
   };
 
