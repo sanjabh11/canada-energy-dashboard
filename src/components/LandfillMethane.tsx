@@ -258,19 +258,24 @@ export function LandfillMethaneModule() {
       {/* Progress Steps */}
       <section className="max-w-5xl mx-auto px-6 mb-8">
         <div className="flex items-center justify-between">
-          {['facility', 'waste', 'capture', 'results'].map((step, idx) => (
-            <div key={step} className="flex items-center flex-1">
-              <div className={`flex items-center gap-2 ${currentStep === step ? 'text-emerald-400' :
-                ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'text-slate-400' : 'text-slate-600'
+          {[
+            { step: 'facility', label: 'Facility' },
+            { step: 'waste', label: 'Waste & Capture' },
+            { step: 'climate', label: 'Climate Data' },
+            { step: 'results', label: 'Results' }
+          ].map((stepInfo, idx) => (
+            <div key={stepInfo.step} className="flex items-center flex-1">
+              <div className={`flex items-center gap-2 ${currentStep === stepInfo.step ? 'text-emerald-400' :
+                ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'text-slate-400' : 'text-slate-600'
                 }`}>
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === step ? 'border-emerald-400 bg-emerald-400/20' :
-                  ['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'border-slate-400' : 'border-slate-600'
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${currentStep === stepInfo.step ? 'border-emerald-400 bg-emerald-400/20' :
+                  ['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'border-slate-400' : 'border-slate-600'
                   }`}>
                   {idx + 1}
                 </div>
-                <span className="text-sm capitalize hidden sm:inline">{step}</span>
+                <span className="text-sm hidden sm:inline">{stepInfo.label}</span>
               </div>
-              {idx < 3 && <div className={`flex-1 h-0.5 mx-2 ${['facility', 'waste', 'capture', 'results'].indexOf(currentStep) > idx ? 'bg-slate-400' : 'bg-slate-700'
+              {idx < 3 && <div className={`flex-1 h-0.5 mx-2 ${['facility', 'waste', 'climate', 'results'].indexOf(currentStep) > idx ? 'bg-slate-400' : 'bg-slate-700'
                 }`} />}
             </div>
           ))}
@@ -477,8 +482,8 @@ export function LandfillMethaneModule() {
                             key={system.value}
                             onClick={() => setCaptureSystemType(system.value)}
                             className={`p-4 rounded-lg border-2 transition-colors text-left ${captureSystemType === system.value
-                                ? 'border-emerald-500 bg-emerald-500/10'
-                                : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
+                              ? 'border-emerald-500 bg-emerald-500/10'
+                              : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
                               }`}
                           >
                             <div className="font-bold">{system.label}</div>
