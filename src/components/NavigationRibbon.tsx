@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { ChevronDown, MoreHorizontal } from 'lucide-react';
 
@@ -9,6 +10,8 @@ export interface RibbonTab {
   icon?: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   // Optional badge text (e.g., "Limited", "Soon")
   badge?: string | null;
+  // Optional path for external navigation (if set, navigates instead of calling onSelect)
+  path?: string;
 }
 
 interface NavigationRibbonProps {
@@ -23,6 +26,7 @@ interface NavigationRibbonProps {
  * Prevents vertical overflow by keeping items on a single row with horizontal scroll.
  */
 export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, activeTab, onSelect, className }) => {
+  const navigate = useNavigate();
   const ribbonRef = useRef<HTMLDivElement | null>(null);
   const moreButtonRef = useRef<HTMLButtonElement | null>(null);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -107,13 +111,12 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
               {Icon ? <Icon className="h-4 w-4 mr-2" /> : null}
               <span>{tab.label}</span>
               {tab.badge && (
-                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${
-                  tab.badge === 'Limited'
+                <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium ${tab.badge === 'Limited'
                     ? 'badge badge-warning'
                     : tab.badge === 'Soon'
-                    ? 'badge badge-info'
-                    : 'badge badge-success'
-                }`}>
+                      ? 'badge badge-info'
+                      : 'badge badge-success'
+                  }`}>
                   {tab.badge}
                 </span>
               )}
@@ -156,23 +159,27 @@ export const NavigationRibbon: React.FC<NavigationRibbonProps> = ({ tabs, active
                 key={tab.id}
                 type="button"
                 onClick={() => {
-                  onSelect(tab.id);
+                  if (tab.path) {
+                    // Navigate to external route
+                    navigate(tab.path);
+                  } else {
+                    // Set active tab in current dashboard
+                    onSelect(tab.id);
+                  }
                   setShowMoreDropdown(false);
                 }}
-                className={`w-full text-left px-4 py-3 hover:bg-[var(--bg-primary)] flex items-center transition-colors border-b border-[var(--border-subtle)] last:border-b-0 ${
-                  isActive ? 'bg-[rgba(0,217,255,0.1)] text-electric font-medium' : 'text-secondary'
-                }`}
+                className={`w-full text-left px-4 py-3 hover:bg-[var(--bg-primary)] flex items-center transition-colors border-b border-[var(--border-subtle)] last:border-b-0 ${isActive ? 'bg-[rgba(0,217,255,0.1)] text-electric font-medium' : 'text-secondary'
+                  }`}
               >
                 {Icon ? <Icon className="h-4 w-4 mr-3 flex-shrink-0" /> : null}
                 <span className="flex-1">{tab.label}</span>
                 {tab.badge && (
-                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${
-                    tab.badge === 'Limited'
+                  <span className={`ml-2 px-2 py-0.5 text-xs rounded-full font-medium flex-shrink-0 ${tab.badge === 'Limited'
                       ? 'badge badge-warning'
                       : tab.badge === 'Soon'
-                      ? 'badge badge-info'
-                      : 'badge badge-success'
-                  }`}>
+                        ? 'badge badge-info'
+                        : 'badge badge-success'
+                    }`}>
                     {tab.badge}
                   </span>
                 )}
