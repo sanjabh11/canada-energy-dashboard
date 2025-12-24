@@ -343,7 +343,10 @@ export function LandfillMethaneModule() {
                   </label>
 
                   {closureYear !== undefined && (
-                    <>
+                    <div className="mt-4">
+                      <label className="block text-sm font-medium text-slate-400 mb-2">
+                        Closure Year
+                      </label>
                       <input
                         type="number"
                         value={closureYear}
@@ -357,7 +360,7 @@ export function LandfillMethaneModule() {
                         }}
                         min={startYear}
                         max={currentYear}
-                        className={`mt-2 w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none ${validationErrors.closureYear ? 'border-red-500' : 'border-slate-700 focus:border-emerald-500'
+                        className={`w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none ${validationErrors.closureYear ? 'border-red-500' : 'border-slate-700 focus:border-emerald-500'
                           }`}
                         placeholder="Closure year"
                       />
@@ -367,7 +370,7 @@ export function LandfillMethaneModule() {
                           {validationErrors.closureYear}
                         </p>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
