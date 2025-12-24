@@ -305,6 +305,37 @@ export function RROAlertSystem() {
                     </div>
                 </div>
 
+                {/* NEW: RoLR Benchmark Card - Jan 2025 */}
+                <div className="bg-gradient-to-r from-cyan-900/30 to-blue-900/30 border border-cyan-500/30 rounded-xl p-6 mb-8">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="p-3 bg-cyan-500/20 rounded-xl">
+                                <Zap className="h-8 w-8 text-cyan-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-white">Rate of Last Resort (RoLR) Benchmark</h3>
+                                <p className="text-sm text-slate-400">Fixed at 12¢/kWh for 2025-2026 — Compare retailers against this rate</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-6">
+                            <div className="text-center">
+                                <div className="text-3xl font-bold text-cyan-400">12¢</div>
+                                <div className="text-xs text-slate-500">RoLR Fixed Rate</div>
+                            </div>
+                            <div className={`text-center px-4 py-2 rounded-lg ${lowestFixed < 12 ? 'bg-emerald-500/20 border border-emerald-500/30' : 'bg-amber-500/20 border border-amber-500/30'}`}>
+                                <div className={`text-xl font-bold ${lowestFixed < 12 ? 'text-emerald-400' : 'text-amber-400'}`}>
+                                    {lowestFixed < 12 ? '✓ SWITCH' : '≈ STAY'}
+                                </div>
+                                <div className="text-xs text-slate-400">
+                                    {lowestFixed < 12
+                                        ? `Save ${((12 - lowestFixed) * 12000 / 100).toFixed(0)} CAD/year`
+                                        : 'RoLR is competitive'}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 {/* Alert Banner */}
                 {shouldSwitch && (
                     <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-8 flex items-center justify-between">

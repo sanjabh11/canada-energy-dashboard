@@ -12,7 +12,8 @@ import SettingsPage from './components/SettingsPage';
 import { BadgesPage } from './components/BadgesPage';
 import { CertificatesPage } from './components/CertificatesPage';
 import { CertificateTrackPage } from './components/CertificateTrackPage';
-// import { PricingPage } from './components/PricingPage'; // Removed - file corrupted
+import { PricingPage } from './components/PricingPage';
+import { PaddleProvider } from './components/billing/PaddleProvider';
 // import TIERCreditCalculator from './components/TIERCreditCalculator'; // Removed - file corrupted in all commits
 import LandfillMethane from './components/LandfillMethane';
 import { ModulePlayer } from './components/modules';
@@ -45,6 +46,8 @@ import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 import { TermsOfService } from './components/legal/TermsOfService';
 // Enterprise (Bypasses Whop for B2B)
 import { EnterprisePage } from './components/enterprise/EnterprisePage';
+import { MunicipalLandingPage } from './components/MunicipalLandingPage';
+import { RetailerHedgingDashboard } from './components/RetailerHedgingDashboard';
 import './App.css';
 import './styles/layout.css';
 
@@ -90,7 +93,7 @@ const router = createBrowserRouter(
     { path: '/certificates', element: <CertificatesPage /> },
     { path: '/certificates/:trackSlug', element: <CertificateTrackPage /> },
     { path: '/modules/:moduleId', element: <ModulePlayer /> },
-    // { path: '/pricing', element: <PricingPage /> }, // Removed - file corrupted  
+    { path: '/pricing', element: <PricingPage /> },
     { path: '/admin/cohorts', element: <CohortAdminPage /> },
     { path: '/api-keys', element: <ApiKeysPage /> },
     { path: '/api-docs', element: <ApiDocsPage /> },
@@ -120,6 +123,12 @@ const router = createBrowserRouter(
     { path: '/cohorts', element: <TrainingCoordinatorsPage /> },
     { path: '/for-training', element: <TrainingCoordinatorsPage /> },
 
+    // B2G Municipal & B2B Utility Sales (Research-Driven)
+    { path: '/municipal', element: <MunicipalLandingPage /> },
+    { path: '/for-municipalities', element: <MunicipalLandingPage /> },
+    { path: '/hedging', element: <RetailerHedgingDashboard /> },
+    { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
+
     // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
     {
       path: '/whop/quiz',
@@ -148,16 +157,18 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider>
-        <div className="App">
-          <I18nProvider>
-            <AuthProvider>
-              <HelpProvider>
-                <SkipToMain targetId="main-content" />
-                <RouterProvider router={router} future={routerFutureConfig} />
-              </HelpProvider>
-            </AuthProvider>
-          </I18nProvider>
-        </div>
+        <PaddleProvider>
+          <div className="App">
+            <I18nProvider>
+              <AuthProvider>
+                <HelpProvider>
+                  <SkipToMain targetId="main-content" />
+                  <RouterProvider router={router} future={routerFutureConfig} />
+                </HelpProvider>
+              </AuthProvider>
+            </I18nProvider>
+          </div>
+        </PaddleProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

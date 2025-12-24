@@ -26,3 +26,10 @@ canada-energy-dashboard/
 #docs
 .archive/
 
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Temporary markdown files
+docs/archive/

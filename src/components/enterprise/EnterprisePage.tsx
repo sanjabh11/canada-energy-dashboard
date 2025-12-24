@@ -208,6 +208,47 @@ export function EnterprisePage() {
                 </div>
             </section>
 
+            {/* Grant Stacking Pathway - Research Validated */}
+            <section className="py-20 border-b border-slate-800">
+                <div className="max-w-4xl mx-auto px-6">
+                    <h2 className="text-3xl font-bold text-center mb-4">Municipal Funding Pathway</h2>
+                    <p className="text-slate-400 text-center mb-8">
+                        Validate with us, then unlock non-dilutive funding for deployment
+                    </p>
+
+                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-8">
+                        <div className="grid grid-cols-4 gap-4 mb-8">
+                            {[
+                                { step: '1', program: 'Pilot', amount: '$15k-$49k', desc: 'CEIP License' },
+                                { step: '2', program: 'DTP', amount: '$50k', desc: 'Validate & Scale' },
+                                { step: '3', program: 'Voucher', amount: '$100k', desc: 'Deployment' },
+                                { step: '4', program: 'ERA', amount: '$250k+', desc: 'Full Rollout' }
+                            ].map((stage, i) => (
+                                <div key={i} className="text-center relative">
+                                    <div className="w-12 h-12 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-400 font-bold text-xl mx-auto mb-3">
+                                        {stage.step}
+                                    </div>
+                                    <div className="text-sm font-medium text-white">{stage.program}</div>
+                                    <div className="text-lg font-bold text-amber-400">{stage.amount}</div>
+                                    <div className="text-xs text-slate-500">{stage.desc}</div>
+                                    {i < 3 && (
+                                        <ArrowRight className="absolute right-0 top-5 -mr-2 h-4 w-4 text-slate-600 hidden md:block" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-lg p-4">
+                            <p className="text-sm text-slate-300">
+                                <strong className="text-emerald-400">Procurement Tip:</strong> CEIP licenses under $75,000
+                                are below the NWPTA threshold, allowing municipalities to use sole-source procurement
+                                instead of lengthy RFP processes.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* Contact Form */}
             <section id="contact-form" className="py-20">
                 <div className="max-w-2xl mx-auto px-6">

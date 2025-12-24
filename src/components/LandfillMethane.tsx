@@ -1,15 +1,15 @@
 /**
- * Landfill Methane Module - LandGEM Methane Quantification
+ * Methane Compliance Engine - Municipal Landfill Quantification
  * 
- * Production UI for EPA Method 21 / LandGEM calculations
+ * Production UI for Alberta Quantification Protocol v3.0 / EPA LandGEM calculations
  * Integrates with landfillMethaneCalculations.ts engine
  * 
  * Features:
  * - Wizard-style input (facility → waste → gas capture → results)
- * - Real-time LandGEM calculations
+ * - Real-time LandGEM calculations per Alberta Protocol
  * - TIER credit potential display
  * - Actionable recommendations
- * - PDF export
+ * - PDF export for compliance reporting
  */
 
 import React, { useState, useEffect } from 'react';
@@ -37,6 +37,8 @@ import {
   type LandfillData,
   type LandGEMCalculationResult
 } from '../lib/landfillMethaneCalculations';
+import { TIERScenarioToggle } from './TIERScenarioToggle';
+import { DIPTracker } from './DIPTracker';
 
 type WizardStep = 'facility' | 'waste' | 'climate' | 'results';
 
@@ -231,26 +233,40 @@ export function LandfillMethaneModule() {
             <Flame className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Landfill Methane Quantification</h1>
-            <p className="text-slate-400">EPA LandGEM Model + TIER Credit Calculator</p>
+            <h1 className="text-3xl font-bold">Methane Compliance Engine</h1>
+            <p className="text-slate-400">Alberta Quantification Protocol v3.0 + TIER Credit Calculator</p>
           </div>
         </div>
         <p className="text-slate-300 max-w-2xl">
-          Quantify methane emissions using <strong>EPA's LandGEM first-order decay model</strong>.
-          Calculate TIER credit potential from gas capture systems (up to $2M+/year revenue).
+          Automated methane quantification per <strong>Alberta Quantification Protocol for Landfill Gas Capture and Combustion (Version 3.0)</strong>.
+          Calculate compliance baselines and TIER credit potential for municipal landfills.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">EPA LandGEM</span>
+          <span className="px-2 py-1 bg-slate-700 text-slate-300 rounded text-xs">TIER Regulation</span>
+          <span className="px-2 py-1 bg-emerald-900/50 text-emerald-400 rounded text-xs">58% of Canada landfills uncontrolled</span>
+        </div>
       </section>
 
-      {/* Alert: TIER Opportunity */}
+      {/* Alert: Regulatory Compliance */}
       <section className="max-w-5xl mx-auto px-6 mb-8">
         <div className="bg-orange-900/20 border border-orange-500/30 rounded-xl p-4 flex items-start gap-4">
-          <Info className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
+          <FileText className="h-5 w-5 text-orange-400 flex-shrink-0 mt-0.5" />
           <div className="text-sm">
-            <div className="font-bold text-orange-400 mb-1">Landfills = Hidden Revenue Opportunity</div>
+            <div className="font-bold text-orange-400 mb-1">Federal Methane Regulations Coming</div>
             <p className="text-slate-300">
-              Municipal landfills can generate <span className="font-bold">$500k-$2M+/year</span> in TIER credits by installing
-              gas capture systems. Typical payback: <span className="font-bold">6-18 months</span>.
+              New federal regulations (Canada Gazette 2024-06-29) require rigorous methane assessment for landfills.
+              <span className="font-bold"> 58% of Canadian landfill methane is currently uncontrolled</span>.
+              Get ahead of compliance while generating <span className="font-bold text-emerald-400">$500k-$2M+/year</span> in TIER credits.
             </p>
+            <div className="mt-2 flex gap-4 text-xs">
+              <a href="https://open.alberta.ca/publications/9781460141861" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1">
+                <FileText className="h-3 w-3" /> Alberta Protocol v3.0 ↗
+              </a>
+              <a href="https://gazette.gc.ca/rp-pr/p1/2024/2024-06-29/html/reg5-eng.html" target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline flex items-center gap-1">
+                <FileText className="h-3 w-3" /> Federal Regulations ↗
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -723,6 +739,17 @@ export function LandfillMethaneModule() {
                       </div>
                     </div>
                   </div>
+
+                  {/* TIER Scenario Toggle - Research Finding: $95 fund vs $20 market */}
+                  {result && (
+                    <TIERScenarioToggle
+                      emissionsTonnes={result.tierCreditPotentialTonnes}
+                      className="mb-6"
+                    />
+                  )}
+
+                  {/* Direct Investment Pathway Tracker - 2025 Amendment */}
+                  <DIPTracker tierCreditPrice={95} />
 
                   {/* Warnings */}
                   {result.warnings.length > 0 && (
