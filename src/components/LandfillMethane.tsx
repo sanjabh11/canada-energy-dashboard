@@ -338,54 +338,32 @@ export function LandfillMethaneModule() {
                   </label>
 
                   {closureYear !== undefined && (
-                    <input
-                      type="number"
-                      value={closureYear}
-                      onChange={(e) => setClosureYear(Number(e.target.value))}
-                      min={startYear}
-                      max={currentYear}
-                      className="mt-2 w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
-                      placeholder="Closure year"
-                    />
+                    <>
+                      <input
+                        type="number"
+                        value={closureYear}
+                        onChange={(e) => {
+                          const value = Number(e.target.value);
+                          setClosureYear(value);
+                          // Clear error on change
+                          if (value >= startYear) {
+                            setValidationErrors(prev => ({ ...prev, closureYear: undefined }));
+                          }
+                        }}
+                        min={startYear}
+                        max={currentYear}
+                        className={`mt-2 w-full px-4 py-2 bg-slate-900 border rounded-lg text-white focus:outline-none ${validationErrors.closureYear ? 'border-red-500' : 'border-slate-700 focus:border-emerald-500'
+                          }`}
+                        placeholder="Closure year"
+                      />
+                      {validationErrors.closureYear && (
+                        <p className="text-red-400 text-sm mt-1 flex items-center gap-1">
+                          <AlertCircle className="h-4 w-4" />
+                          {validationErrors.closureYear}
+                        </p>
+                      )}
+                    </>
                   )}
-                </div>
-
-                <div className="pt-4 border-t border-slate-700">
-                  <h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
-                    <Cloud className="h-4 w-4" />
-                    Climate Data (for LandGEM parameters)
-                  </h3>
-
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">
-                        Avg Annual Precipitation (mm)
-                      </label>
-                      <input
-                        type="number"
-                        value={avgPrecipitation}
-                        onChange={(e) => setAvgPrecipitation(Number(e.target.value))}
-                        min="0"
-                        step="10"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Alberta avg: ~450mm</p>
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-slate-400 mb-2">
-                        Avg Annual Temperature (°C)
-                      </label>
-                      <input
-                        type="number"
-                        value={avgTemperature}
-                        onChange={(e) => setAvgTemperature(Number(e.target.value))}
-                        step="0.5"
-                        className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
-                      />
-                      <p className="text-xs text-slate-500 mt-1">Alberta avg: ~4°C</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>
@@ -430,29 +408,49 @@ export function LandfillMethaneModule() {
 
                   <div className="space-y-2 max-h-96 overflow-y-auto">
                     {wasteHistory.sort((a, b) => b.year - a.year).map((waste, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          value={waste.year}
-                          onChange={(e) => updateWasteYear(idx, 'year', Number(e.target.value))}
-                          placeholder="Year"
-                          className="w-32 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm"
-                        />
-                        <input
-                          type="number"
-                          value={waste.tonnesWaste}
-                          onChange={(e) => updateWasteYear(idx, 'tonnesWaste', Number(e.target.value))}
-                          placeholder="Tonnes"
-                          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm"
-                        />
-                        <span className="text-sm text-slate-500 w-20">tonnes/yr</span>
-                        {wasteHistory.length > 1 && (
-                          <button
-                            onClick={() => removeWasteYear(idx)}
-                            className="px-3 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 rounded text-sm transition-colors"
-                          >
-                            Remove
-                          </button>
+                      <div key={idx}>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={waste.year}
+                            onChange={(e) => updateWasteYear(idx, 'year', Number(e.target.value))}
+                            placeholder="Year"
+                            className="w-32 px-3 py-2 bg-slate-900 border border-slate-700 rounded text-sm"
+                          />
+                          <input
+                            type="number"
+                            value={waste.tonnesWaste}
+                            onChange={(e) => {
+                              const value = Number(e.target.value);
+                              updateWasteYear(idx, 'tonnesWaste', value);
+                              // Clear error on change if valid
+                              if (value >= 0) {
+                                setValidationErrors(prev => ({
+                                  ...prev,
+                                  tonnage: { ...prev.tonnage, [idx]: undefined }
+                                }));
+                              }
+                            }}
+                            min="0"
+                            placeholder="Tonnes"
+                            className={`flex-1 px-3 py-2 bg-slate-900 border rounded text-sm ${validationErrors.tonnage?.[idx] ? 'border-red-500' : 'border-slate-700'
+                              }`}
+                          />
+                          <span className="text-sm text-slate-500 w-20">tonnes/yr</span>
+                          {wasteHistory.length > 1 && (
+                            <button
+                              onClick={() => removeWasteYear(idx)}
+                              className="px-3 py-2 bg-red-900/20 hover:bg-red-900/40 border border-red-500/30 rounded text-sm transition-colors"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
+                        {validationErrors.tonnage?.[idx] && (
+                          <p className="text-red-400 text-xs mt-1 ml-36 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            {validationErrors.tonnage[idx]}
+                          </p>
                         )}
                       </div>
                     ))}
@@ -462,77 +460,120 @@ export function LandfillMethaneModule() {
                     More years = higher accuracy. Minimum 1 year required.
                   </p>
                 </div>
+
+                {/* Gas Capture System (moved from Step 3) */}
+                <div className="pt-6 border-t border-slate-700">
+                  <h3 className="text-sm font-medium text-slate-400 mb-3 flex items-center gap-2">
+                    <Zap className="h-4 w-4" />
+                    Gas Capture System
+                  </h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-400 mb-3">Capture System Type</label>
+                      <div className="grid md:grid-cols-2 gap-3">
+                        {CAPTURE_SYSTEM_TYPES.map((system) => (
+                          <button
+                            key={system.value}
+                            onClick={() => setCaptureSystemType(system.value)}
+                            className={`p-4 rounded-lg border-2 transition-colors text-left ${captureSystemType === system.value
+                                ? 'border-emerald-500 bg-emerald-500/10'
+                                : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
+                              }`}
+                          >
+                            <div className="font-bold">{system.label}</div>
+                            <div className="text-sm text-slate-400">
+                              {system.efficiency * 100}% capture efficiency
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {captureSystemType !== 'none' && (
+                      <div>
+                        <label className="block text-sm font-medium text-slate-400 mb-3">
+                          Energy Recovery / Disposal Method
+                        </label>
+                        <select
+                          value={energyRecovery}
+                          onChange={(e) => setEnergyRecovery(e.target.value as typeof energyRecovery)}
+                          className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
+                        >
+                          {ENERGY_RECOVERY_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           )}
 
-          {/* Step 3: Gas Capture */}
-          {currentStep === 'capture' && (
+          {/* Step 3: Climate Data */}
+          {currentStep === 'climate' && (
             <div>
               <h2 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Zap className="h-5 w-5 text-emerald-400" />
-                Gas Capture System
+                <Cloud className="h-5 w-5 text-emerald-400" />
+                Climate Data
               </h2>
+              <p className="text-slate-400 mb-6">Climate parameters for LandGEM model calculations</p>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-3">Capture System Type</label>
-                  <div className="grid md:grid-cols-2 gap-3">
-                    {CAPTURE_SYSTEM_TYPES.map((system) => (
-                      <button
-                        key={system.value}
-                        onClick={() => setCaptureSystemType(system.value)}
-                        className={`p-4 rounded-lg border-2 transition-colors text-left ${captureSystemType === system.value
-                          ? 'border-emerald-500 bg-emerald-500/10'
-                          : 'border-slate-700 bg-slate-900/30 hover:border-slate-600'
-                          }`}
-                      >
-                        <div className="font-bold">{system.label}</div>
-                        <div className="text-sm text-slate-400">
-                          {system.efficiency * 100}% capture efficiency
-                        </div>
-                      </button>
-                    ))}
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                      Avg Annual Precipitation (mm)
+                    </label>
+                    <input
+                      type="number"
+                      value={avgPrecipitation}
+                      onChange={(e) => setAvgPrecipitation(Number(e.target.value))}
+                      min="0"
+                      step="10"
+                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Alberta avg: ~450mm</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-400 mb-2">
+                      Avg Annual Temperature (°C)
+                    </label>
+                    <input
+                      type="number"
+                      value={avgTemperature}
+                      onChange={(e) => setAvgTemperature(Number(e.target.value))}
+                      step="0.5"
+                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Alberta avg: ~4°C</p>
                   </div>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-slate-400 mb-2">
-                    Capture Efficiency (%)
+                    Organic Waste Content (%)
                   </label>
                   <input
                     type="range"
                     min="0"
                     max="100"
-                    value={captureEfficiency * 100}
-                    onChange={(e) => setCaptureEfficiency(Number(e.target.value) / 100)}
+                    value={organicPercent}
+                    onChange={(e) => setOrganicPercent(Number(e.target.value))}
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-slate-500 mt-1">
                     <span>0%</span>
-                    <span className="font-bold text-emerald-400">{(captureEfficiency * 100).toFixed(0)}%</span>
+                    <span className="font-bold text-emerald-400">{organicPercent}%</span>
                     <span>100%</span>
                   </div>
+                  <p className="text-xs text-slate-500 mt-1">Typical municipal waste: 40-50%</p>
                 </div>
-
-                {captureSystemType !== 'none' && (
-                  <div>
-                    <label className="block text-sm font-medium text-slate-400 mb-3">
-                      Energy Recovery / Disposal Method
-                    </label>
-                    <select
-                      value={energyRecovery}
-                      onChange={(e) => setEnergyRecovery(e.target.value as typeof energyRecovery)}
-                      className="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:outline-none"
-                    >
-                      {ENERGY_RECOVERY_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
               </div>
             </div>
           )}
