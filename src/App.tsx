@@ -41,9 +41,10 @@ import { GuestQuizPlayer } from './components/whop/GuestQuizPlayer';
 import { WatchdogApp } from './components/whop/WatchdogApp';
 import { ThemeProvider } from './lib/ThemeContext';
 import { Navigate } from 'react-router-dom';
-// Legal Pages (Whop Compliance)
+// Legal Pages (Whop Compliance - Criteria 14, 15)
 import { PrivacyPolicy } from './components/legal/PrivacyPolicy';
 import { TermsOfService } from './components/legal/TermsOfService';
+import { RefundPolicy } from './components/legal/RefundPolicy';
 // Enterprise (Bypasses Whop for B2B)
 import { EnterprisePage } from './components/enterprise/EnterprisePage';
 import { MunicipalLandingPage } from './components/MunicipalLandingPage';
@@ -147,6 +148,7 @@ const router = createBrowserRouter(
     // Legal Pages (Whop Compliance - Criteria 14, 15)
     { path: '/privacy', element: <PrivacyPolicy /> },
     { path: '/terms', element: <TermsOfService /> },
+    { path: '/refund', element: <RefundPolicy /> },
 
     // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)
     { path: '/enterprise', element: <EnterprisePage /> }
