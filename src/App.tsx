@@ -50,6 +50,11 @@ import { EnterprisePage } from './components/enterprise/EnterprisePage';
 import { MunicipalLandingPage } from './components/MunicipalLandingPage';
 import { RetailerHedgingDashboard } from './components/RetailerHedgingDashboard';
 import { TIERROICalculator } from './components/TIERROICalculator';
+// Value Prop Research Dec 2025 - MEDIUM Priority Features
+import { ShadowBillingModule } from './components/ShadowBillingModule';
+import { DIPAuditTrailGenerator } from './components/DIPAuditTrailGenerator';
+import { BankReadyExport } from './components/BankReadyExport';
+import { CompetitorComparison } from './components/CompetitorComparison';
 import './App.css';
 import './styles/layout.css';
 
@@ -135,6 +140,16 @@ const router = createBrowserRouter(
     { path: '/roi-calculator', element: <TIERROICalculator /> },
     { path: '/industrial', element: <TIERROICalculator /> },
     { path: '/tier-savings', element: <TIERROICalculator /> },
+
+    // Value Prop Research Dec 2025 - MEDIUM Priority Routes
+    { path: '/shadow-billing', element: <ShadowBillingModule /> },
+    { path: '/bill-comparison', element: <ShadowBillingModule /> },
+    { path: '/dip-audit', element: <DIPAuditTrailGenerator /> },
+    { path: '/direct-investment', element: <DIPAuditTrailGenerator /> },
+    { path: '/bank-export', element: <BankReadyExport /> },
+    { path: '/green-loan', element: <BankReadyExport /> },
+    { path: '/compare', element: <CompetitorComparison /> },
+    { path: '/vs-competitors', element: <CompetitorComparison /> },
 
     // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
     {
