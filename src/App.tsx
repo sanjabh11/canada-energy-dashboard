@@ -55,6 +55,9 @@ import { ShadowBillingModule } from './components/ShadowBillingModule';
 import { DIPAuditTrailGenerator } from './components/DIPAuditTrailGenerator';
 import { BankReadyExport } from './components/BankReadyExport';
 import { CompetitorComparison } from './components/CompetitorComparison';
+// Value Prop Research Dec 2025 - LOW Priority Features
+import { SovereignDataVault } from './components/SovereignDataVault';
+import { CreditBankingDashboard } from './components/CreditBankingDashboard';
 import './App.css';
 import './styles/layout.css';
 
@@ -150,6 +153,14 @@ const router = createBrowserRouter(
     { path: '/green-loan', element: <BankReadyExport /> },
     { path: '/compare', element: <CompetitorComparison /> },
     { path: '/vs-competitors', element: <CompetitorComparison /> },
+
+    // Value Prop Research Dec 2025 - LOW Priority Routes
+    { path: '/sovereign-vault', element: <SovereignDataVault /> },
+    { path: '/ocap-data', element: <SovereignDataVault /> },
+    { path: '/data-sovereignty', element: <SovereignDataVault /> },
+    { path: '/credit-banking', element: <CreditBankingDashboard /> },
+    { path: '/tier-credits', element: <CreditBankingDashboard /> },
+    { path: '/buy-credits', element: <CreditBankingDashboard /> },
 
     // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
     {
