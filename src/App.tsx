@@ -19,7 +19,6 @@ import LandfillMethane from './components/LandfillMethane';
 import { ModulePlayer } from './components/modules';
 import { CohortAdminPage } from './components/CohortAdminPage';
 import { ApiKeysPage } from './components/ApiKeysPage';
-import { ApiDocsPage } from './components/ApiDocsPage';
 import { FunderReportingDashboard } from './components/FunderReportingDashboard';
 import { EmployersPage } from './components/EmployersPage';
 import { IncubatorsPage } from './components/IncubatorsPage';
@@ -58,6 +57,8 @@ import { CompetitorComparison } from './components/CompetitorComparison';
 // Value Prop Research Dec 2025 - LOW Priority Features
 import { SovereignDataVault } from './components/SovereignDataVault';
 import { CreditBankingDashboard } from './components/CreditBankingDashboard';
+// Open API Documentation (Gartner Integration)
+import { OpenAPIDocsPage } from './components/OpenAPIDocsPage';
 import './App.css';
 import './styles/layout.css';
 
@@ -106,8 +107,6 @@ const router = createBrowserRouter(
     { path: '/pricing', element: <PricingPage /> },
     { path: '/admin/cohorts', element: <CohortAdminPage /> },
     { path: '/api-keys', element: <ApiKeysPage /> },
-    { path: '/api-docs', element: <ApiDocsPage /> },
-    { path: '/docs/api', element: <ApiDocsPage /> },
     // Indigenous Energy Platform
     { path: '/indigenous', element: <EnergyDataDashboard initialTab="Indigenous" /> },
     { path: '/indigenous/reporting', element: <FunderReportingDashboard /> },
@@ -161,6 +160,11 @@ const router = createBrowserRouter(
     { path: '/credit-banking', element: <CreditBankingDashboard /> },
     { path: '/tier-credits', element: <CreditBankingDashboard /> },
     { path: '/buy-credits', element: <CreditBankingDashboard /> },
+
+    // Open API Documentation (Gartner Integration)
+    { path: '/api-docs', element: <OpenAPIDocsPage /> },
+    { path: '/api', element: <OpenAPIDocsPage /> },
+    { path: '/developers', element: <OpenAPIDocsPage /> },
 
     // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
     {

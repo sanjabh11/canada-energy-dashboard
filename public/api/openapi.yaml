@@ -1,0 +1,492 @@
+openapi: 3.0.0
+info:
+  title: Canada Energy Intelligence Platform API
+  version: 1.0.0
+  description: |
+    **RESTful API for Canadian energy compliance, grid monitoring, and OCAP® data sovereignty.**
+    
+    The CEIP API enables third-party integrations for:
+    - Alberta TIER compliance tracking
+    - Real-time grid monitoring (AESO pool prices)
+    - Shadow billing & savings analysis
+    - OCAP®-compliant Indigenous data export
+    - Bank-ready green loan report generation
+    
+    ## Authentication
+    All requests require an API key in the `X-API-Key` header.
+    
+    ```bash
+    curl -H "X-API-Key: sk_professional_YOUR_KEY" \
+      https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1/tier/emissions?facilityId=ABC123&year=2025
+    ```
+    
+    ## Rate Limits
+    - **Professional Tier**: 1,000 calls/day
+    - **Enterprise Tier**: Custom (10,000-100,000 calls/day)
+    
+    Exceeding your rate limit returns HTTP 429.
+    
+  contact:
+    name: CEIP API Support
+    email: support@canada-energy.app
+    url: https://canada-energy.netlify.app/api-docs
+  license:
+    name: Commercial
+    url: https://canada-energy.netlify.app/terms
+  termsOfService: https://canada-energy.netlify.app/terms
+
+servers:
+  - url: https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1
+    description: Production API
+
+security:
+  - ApiKeyAuth: []
+
+tags:
+  - name: TIER Compliance
+    description: Alberta TIER emission reduction credits and compliance tracking
+  - name: Grid Data
+    description: Real-time Alberta grid monitoring (AESO)
+  - name: Billing & Savings
+    description: Shadow billing and rate comparison
+  - name: OCAP® Data
+    description: Indigenous data sovereignty and export
+  - name: Reports
+    description: Bank-ready reports and compliance exports
+
+paths:
+  /tier/emissions:
+    get:
+      summary: Get facility emissions data
+      description: Retrieve annual emissions data for a specific facility and year
+      operationId: getTierEmissions
+      tags:
+        - TIER Compliance
+      parameters:
+        - name: facilityId
+          in: query
+          required: true
+          description: Unique facility identifier
+          schema:
+            type: string
+            example: "ABC123"
+        - name: year
+          in: query
+          required: true
+          description: Reporting year
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2030
+            example: 2025
+      responses:
+        '200':
+          description: Emissions data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmissionsData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /tier/credits:
+    get:
+      summary: Get TIER credit holdings
+      description: Retrieve current TIER credit portfolio (EPCs and Offsets)
+      operationId: getTierCredits
+      tags:
+        - TIER Compliance
+      parameters:
+        - name: facilityId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Credit holdings retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  facilityId:
+                    type: string
+                  credits:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CreditHolding'
+
+  /grid/alberta/pool-price:
+    get:
+      summary: Get current Alberta pool price
+      description: Real-time AESO pool price and forecast
+      operationId: getPoolPrice
+      tags:
+        - Grid Data
+      responses:
+        '200':
+          description: Pool price retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolPriceData'
+
+  /grid/alberta/generation-mix:
+    get:
+      summary: Get generation mix
+      description: Current Alberta generation mix by source (coal, gas, wind, solar, hydro)
+      operationId: getGenerationMix
+      tags:
+        - Grid Data
+      responses:
+        '200':
+          description: Generation mix retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GenerationMixData'
+
+  /billing/shadow:
+    get:
+      summary: Get shadow billing comparison
+      description: Compare actual bill vs. RoLR and pool price alternatives
+      operationId: getShadowBilling
+      tags:
+        - Billing & Savings
+      parameters:
+        - name: month
+          in: query
+          required: true
+          description: Month to analyze (YYYY-MM format)
+          schema:
+            type: string
+            pattern: '^\d{4}-\d{2}$'
+            example: "2025-12"
+        - name: customerId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Shadow billing analysis
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ShadowBillingData'
+
+  /ocap/export:
+    post:
+      summary: Export Indigenous community data
+      description: Generate OCAP®-compliant data export with audit trail
+      operationId: exportOcapData
+      tags:
+        - OCAP® Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nationId
+                - dataTypes
+              properties:
+                nationId:
+                  type: string
+                  example: "siksika-001"
+                dataTypes:
+                  type: array
+                  items:
+                    type: string
+                    enum: [housing, energy, grants, infrastructure]
+                format:
+                  type: string
+                  enum: [json, csv]
+                  default: json
+                auditTrail:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: Data export generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exportId:
+                    type: string
+                  downloadUrl:
+                    type: string
+                  expiresAt:
+                    type: string
+                    format: date-time
+
+  /export/green-loan:
+    post:
+      summary: Generate green loan package
+      description: Create bank-ready green loan application (TD, RBC, BMO, BDC)
+      operationId: generateGreenLoanPackage
+      tags:
+        - Reports
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - lender
+                - facilityId
+                - projectCost
+                - emissionReduction
+              properties:
+                lender:
+                  type: string
+                  enum: [td, rbc, bmo, bdc]
+                facilityId:
+                  type: string
+                projectCost:
+                  type: number
+                  format: double
+                  example: 1200000
+                emissionReduction:
+                  type: number
+                  format: double
+                  example: 8500
+                format:
+                  type: string
+                  enum: [json, pdf]
+                  default: json
+      responses:
+        '200':
+          description: Green loan package generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  reportId:
+                    type: string
+                  downloadUrl:
+                    type: string
+                  lender:
+                    type: string
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key obtained from your CEIP dashboard.
+        Format: `sk_<tier>_<32_char_string>`
+        
+        Example: `sk_professional_a1b2c3d4e5f6...`
+      
+  schemas:
+    EmissionsData:
+      type: object
+      required:
+        - facilityId
+        - year
+        - totalEmissions
+      properties:
+        facilityId:
+          type: string
+          description: Unique facility identifier
+          example: "ABC123"
+        year:
+          type: integer
+          description: Reporting year
+          example: 2025
+        totalEmissions:
+          type: number
+          format: double
+          description: Total annual emissions in tonnes CO2e
+          example: 150000
+        benchmark:
+          type: number
+          format: double
+          description: TIER facility benchmark
+          example: 130000
+        exceedance:
+          type: number
+          format: double
+          description: Emissions above benchmark (compliance liability)
+          example: 20000
+        unit:
+          type: string
+          enum: [tonnes_co2e]
+          default: tonnes_co2e
+        complianceYear:
+          type: integer
+          description: Year when compliance is due
+          example: 2026
+
+    CreditHolding:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [EPC, Offset]
+          description: Emission Performance Credit or Offset credit
+        vintage:
+          type: integer
+          description: Credit vintage year
+          example: 2024
+        quantity:
+          type: number
+          format: double
+          description: Number of credits (tonnes)
+          example: 5000
+        purchasePrice:
+          type: number
+          format: double
+          description: Purchase price per tonne (CAD)
+          example: 22.50
+        currentValue:
+          type: number
+          format: double
+          description: Current market value per tonne (CAD)
+          example: 25.00
+        expiryYear:
+          type: integer
+          description: Year credits expire
+          example: 2029
+
+    PoolPriceData:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          example: "2025-12-25T18:00:00Z"
+        price:
+          type: number
+          format: double
+          description: Current pool price in CAD/MWh
+          example: 85.50
+        unit:
+          type: string
+          enum: [CAD_per_MWh]
+        forecast:
+          type: array
+          description: Next 24 hours forecast
+          items:
+            type: object
+            properties:
+              hour:
+                type: integer
+              price:
+                type: number
+                format: double
+
+    GenerationMixData:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        coal:
+          type: number
+          description: Coal generation in MW
+        gas:
+          type: number
+          description: Natural gas generation in MW
+        wind:
+          type: number
+          description: Wind generation in MW
+        solar:
+          type: number
+          description: Solar generation in MW
+        hydro:
+          type: number
+          description: Hydro generation in MW
+        unit:
+          type: string
+          enum: [MW]
+
+    ShadowBillingData:
+      type: object
+      properties:
+        month:
+          type: string
+          example: "2025-12"
+        actualCost:
+          type: number
+          format: double
+          description: What you paid (CAD)
+          example: 1420.00
+        rolrCost:
+          type: number
+          format: double
+          description: RoLR alternative cost (CAD)
+          example: 1020.00
+        poolCost:
+          type: number
+          format: double
+          description: Direct pool price cost (CAD)
+          example: 890.00
+        savingsOpportunity:
+          type: number
+          format: double
+          description: Potential savings vs actual (CAD)
+          example: 400.00
+        unit:
+          type: string
+          enum: [CAD]
+
+  responses:
+    Unauthorized:
+      description: Invalid or missing API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Invalid API key"
+              code:
+                type: string
+                example: "UNAUTHORIZED"
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Facility not found"
+              code:
+                type: string
+                example: "NOT_FOUND"
+    
+    RateLimitExceeded:
+      description: Rate limit exceeded
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: "Rate limit of 1000 calls/day exceeded"
+              code:
+                type: string
+                example: "RATE_LIMIT_EXCEEDED"
+              resetAt:
+                type: string
+                format: date-time
+                example: "2025-12-26T00:00:00Z"
