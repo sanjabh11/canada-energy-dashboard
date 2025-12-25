@@ -17,39 +17,40 @@ interface PricingTier {
     thresholdNote?: string;
 }
 
-// Research-validated pricing tiers
-// Municipal: Under $25k = sole-source, Under $75k = limited solicitation
+// Research-validated pricing tiers (Dec 2025 Value Prop Research)
+// Municipal: $70,800/yr = NWPTA sole-source optimal (<$75k)
+// Industrial: Base + 20% Success Fee = 776% ROI story
 const pricingTiers: PricingTier[] = [
     {
         id: 'free',
         name: 'Free',
-        description: 'Essential grid monitoring for consumers',
+        description: 'Real-time grid monitoring for consumers',
         price: '$0',
         priceDetail: 'forever',
         features: [
-            'Real-time Alberta grid status',
-            'RoLR vs. retailer comparison (12¢ benchmark)',
-            'Basic price alerts (1/day)',
-            'Public data dashboards',
+            'Live Alberta pool price tracking',
+            'RoLR 12¢ benchmark comparison',
+            'Daily price alerts',
+            'Public dashboards',
         ],
-        ctaText: 'Get Started',
+        ctaText: 'Start Free',
         icon: <Zap className="w-6 h-6" />,
     },
     {
         id: 'consumer',
         name: 'Rate Watchdog',
-        description: 'For Albertan households saving on electricity',
+        description: 'Stop overpaying on electricity',
         price: '$9',
         priceDetail: '/month',
-        priceId: 'pri_consumer_monthly', // TODO: Replace with actual Paddle price ID
+        priceId: 'pri_consumer_monthly',
         features: [
-            'Unlimited price alerts',
-            'Retailer switching recommendations',
             'Bill auditing & error detection',
+            'Retailer switching recommendations',
+            'Peak shaving alerts (save 15%)',
             'Historical rate analytics',
-            'Peak shaving notifications',
+            'Unlimited price alerts',
         ],
-        ctaText: 'Start Saving',
+        ctaText: 'Start Saving $500/yr',
         icon: <Sparkles className="w-6 h-6" />,
         badge: 'Most Popular',
         highlighted: true,
@@ -57,60 +58,78 @@ const pricingTiers: PricingTier[] = [
     {
         id: 'professional',
         name: 'Professional',
-        description: 'For energy consultants & small firms',
+        description: 'For energy consultants & advisors',
         price: '$149',
         priceDetail: '/month',
         priceId: 'pri_professional_monthly',
         features: [
             'Everything in Rate Watchdog',
             'API access (1,000 calls/day)',
-            'Custom report generation',
             'Multi-client dashboards',
+            'Custom report generation',
             'Methane quantification tools',
             'Priority support',
         ],
-        ctaText: 'Start Trial',
+        ctaText: 'Start 14-Day Trial',
         icon: <Users className="w-6 h-6" />,
+    },
+    {
+        id: 'industrial',
+        name: 'Industrial TIER',
+        description: 'Turn compliance into profit',
+        price: '$1,500',
+        priceDetail: '/mo + 20% savings',
+        priceId: 'pri_industrial_monthly',
+        features: [
+            'Live TIER credit pricing (EPC/Offsets)',
+            'Arbitrage alerts: Buy at $25, not $95',
+            'Direct Investment audit trail',
+            'Bank-ready compliance reports',
+            'Dedicated compliance manager',
+            '776% avg client ROI',
+        ],
+        ctaText: 'Calculate My Savings',
+        icon: <Building2 className="w-6 h-6" />,
+        badge: 'Highest ROI',
+        thresholdNote: '20% success fee on documented savings',
     },
     {
         id: 'municipal',
         name: 'Municipal',
-        description: 'Climate Action Plan implementation tool',
-        price: '$15,000',
-        priceDetail: '/year',
+        description: '30-Day Climate Action Plan. No RFP.',
+        price: '$5,900',
+        priceDetail: '/month',
         priceId: 'pri_municipal_annual',
         features: [
             'Everything in Professional',
             'Methane Compliance Engine',
-            'TIER credit tracking & reporting',
-            'GHG emissions dashboard',
-            'Funder reporting templates',
+            'TIER credit tracking',
+            'FCM/AICEI grant templates',
+            'Mayor-ready quarterly reports',
             'Onboarding & training included',
-            'Dedicated account manager',
         ],
         ctaText: 'Request Demo',
         icon: <Building2 className="w-6 h-6" />,
-        thresholdNote: 'Below $25k sole-source threshold',
+        thresholdNote: '$70,800/yr - Below NWPTA threshold',
     },
     {
-        id: 'enterprise',
-        name: 'Enterprise',
-        description: 'For mid-sized cities & utilities',
-        price: '$49,000',
-        priceDetail: '/year',
-        priceId: 'pri_enterprise_annual',
+        id: 'indigenous',
+        name: 'Sovereign',
+        description: 'Your Data, Your Jurisdiction',
+        price: '$2,500',
+        priceDetail: '/month',
+        priceId: 'pri_indigenous_monthly',
         features: [
-            'Everything in Municipal',
-            'White-label deployment',
-            'Custom integrations',
-            'SSO & advanced security',
-            'Dedicated infrastructure',
-            'SLA guarantee (99.9%)',
-            'Quarterly business reviews',
+            'OCAP® compliant architecture',
+            'Nation-controlled encryption keys',
+            'Greener Homes grant automation',
+            'AICEI reporting templates',
+            'Capacity building support',
+            'ISC grant-aligned pricing',
         ],
-        ctaText: 'Contact Sales',
+        ctaText: 'Book Consultation',
         icon: <Shield className="w-6 h-6" />,
-        thresholdNote: 'Below $75k RFP threshold',
+        thresholdNote: 'Data sovereignty guaranteed',
     },
 ];
 
@@ -140,10 +159,10 @@ export const PricingPage: React.FC = () => {
             {/* Header */}
             <header className="px-6 py-8 text-center">
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-                    Simple, Transparent Pricing
+                    Turn Compliance into Profit
                 </h1>
                 <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-                    From household savings to municipal compliance. Built for Alberta, priced for Canada.
+                    Why pay $95/tonne when credits trade at $25? Automate your TIER arbitrage and save 776% more.
                 </p>
 
                 {/* Billing Toggle */}
@@ -151,8 +170,8 @@ export const PricingPage: React.FC = () => {
                     <button
                         onClick={() => setBillingCycle('monthly')}
                         className={`px-6 py-2 rounded-full transition-all ${billingCycle === 'monthly'
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-slate-400 hover:text-white'
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Monthly
@@ -160,8 +179,8 @@ export const PricingPage: React.FC = () => {
                     <button
                         onClick={() => setBillingCycle('annual')}
                         className={`px-6 py-2 rounded-full transition-all ${billingCycle === 'annual'
-                                ? 'bg-emerald-600 text-white'
-                                : 'text-slate-400 hover:text-white'
+                            ? 'bg-emerald-600 text-white'
+                            : 'text-slate-400 hover:text-white'
                             }`}
                     >
                         Annual <span className="text-emerald-400 ml-1 text-sm">Save 20%</span>
@@ -192,8 +211,8 @@ export const PricingPage: React.FC = () => {
                         <div
                             key={tier.id}
                             className={`relative rounded-2xl p-6 flex flex-col ${tier.highlighted
-                                    ? 'bg-gradient-to-b from-emerald-600/20 to-slate-800 border-2 border-emerald-500 scale-105'
-                                    : 'bg-slate-800/50 border border-slate-700'
+                                ? 'bg-gradient-to-b from-emerald-600/20 to-slate-800 border-2 border-emerald-500 scale-105'
+                                : 'bg-slate-800/50 border border-slate-700'
                                 }`}
                         >
                             {/* Badge */}
@@ -240,8 +259,8 @@ export const PricingPage: React.FC = () => {
                                 onClick={() => handleCtaClick(tier)}
                                 disabled={isLoading}
                                 className={`w-full py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${tier.highlighted
-                                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                                        : 'bg-slate-700 hover:bg-slate-600 text-white'
+                                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                                    : 'bg-slate-700 hover:bg-slate-600 text-white'
                                     }`}
                             >
                                 {tier.ctaText}

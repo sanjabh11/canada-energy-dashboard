@@ -49,6 +49,7 @@ import { RefundPolicy } from './components/legal/RefundPolicy';
 import { EnterprisePage } from './components/enterprise/EnterprisePage';
 import { MunicipalLandingPage } from './components/MunicipalLandingPage';
 import { RetailerHedgingDashboard } from './components/RetailerHedgingDashboard';
+import { TIERROICalculator } from './components/TIERROICalculator';
 import './App.css';
 import './styles/layout.css';
 
@@ -129,6 +130,11 @@ const router = createBrowserRouter(
     { path: '/for-municipalities', element: <MunicipalLandingPage /> },
     { path: '/hedging', element: <RetailerHedgingDashboard /> },
     { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
+
+    // Industrial TIER Arbitrage (Value Prop Research Dec 2025)
+    { path: '/roi-calculator', element: <TIERROICalculator /> },
+    { path: '/industrial', element: <TIERROICalculator /> },
+    { path: '/tier-savings', element: <TIERROICalculator /> },
 
     // Whop "Energy Quiz Pro" Pivot (Client-Side Only)
     {
