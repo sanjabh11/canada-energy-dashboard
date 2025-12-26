@@ -9,9 +9,9 @@
  * Addresses Gap #6: Performance UX / PWA (HIGH Priority)
  */
 
-const CACHE_NAME = 'ceip-cache-v1';
-const STATIC_CACHE_NAME = 'ceip-static-v1';
-const API_CACHE_NAME = 'ceip-api-v1';
+const CACHE_NAME = 'ceip-cache-v2';
+const STATIC_CACHE_NAME = 'ceip-static-v2';
+const API_CACHE_NAME = 'ceip-api-v2';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -28,10 +28,17 @@ const API_PATTERNS = [
   /\.netlify\.app\/api/
 ];
 
+// Files to NEVER cache (always fetch fresh)
+const NO_CACHE_PATTERNS = [
+  /\.yaml$/,
+  /\.yml$/,
+  /openapi/
+];
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('[SW] Installing service worker...');
-  
+
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
@@ -51,17 +58,17 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('[SW] Activating service worker...');
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
             .filter((name) => {
-              return name.startsWith('ceip-') && 
-                     name !== CACHE_NAME && 
-                     name !== STATIC_CACHE_NAME && 
-                     name !== API_CACHE_NAME;
+              return name.startsWith('ceip-') &&
+                name !== CACHE_NAME &&
+                name !== STATIC_CACHE_NAME &&
+                name !== API_CACHE_NAME;
             })
             .map((name) => {
               console.log('[SW] Deleting old cache:', name);
@@ -91,6 +98,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // NEVER cache these files - always fetch fresh
+  const shouldNeverCache = NO_CACHE_PATTERNS.some((pattern) => pattern.test(url.href));
+  if (shouldNeverCache) {
+    // Let the browser handle these requests directly (no SW interception)
+    return;
+  }
+
   // Check if this is an API request
   const isApiRequest = API_PATTERNS.some((pattern) => pattern.test(url.href));
 
@@ -112,7 +126,7 @@ self.addEventListener('fetch', (event) => {
  */
 async function cacheFirst(request, cacheName) {
   const cachedResponse = await caches.match(request);
-  
+
   if (cachedResponse) {
     // Return cached response and update cache in background
     updateCache(request, cacheName);
@@ -121,12 +135,12 @@ async function cacheFirst(request, cacheName) {
 
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, networkResponse.clone());
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.error('[SW] Cache-first fetch failed:', error);
@@ -141,18 +155,18 @@ async function cacheFirst(request, cacheName) {
 async function networkFirst(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, networkResponse.clone());
     }
-    
+
     return networkResponse;
   } catch (error) {
     console.log('[SW] Network failed, trying cache:', request.url);
-    
+
     const cachedResponse = await caches.match(request);
-    
+
     if (cachedResponse) {
       return cachedResponse;
     }
@@ -167,8 +181,8 @@ async function networkFirst(request, cacheName) {
 
     return new Response(
       JSON.stringify({ error: 'Offline', message: 'No cached data available' }),
-      { 
-        status: 503, 
+      {
+        status: 503,
         statusText: 'Service Unavailable',
         headers: { 'Content-Type': 'application/json' }
       }
@@ -182,7 +196,7 @@ async function networkFirst(request, cacheName) {
 async function updateCache(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
-    
+
     if (networkResponse.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, networkResponse);
@@ -197,7 +211,7 @@ self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
   }
-  
+
   if (event.data && event.data.type === 'CLEAR_CACHE') {
     caches.keys().then((cacheNames) => {
       return Promise.all(
