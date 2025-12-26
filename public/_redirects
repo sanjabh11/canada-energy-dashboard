@@ -1,1 +1,5 @@
+# Serve static API files directly (before SPA fallback)
+/api/*  /api/:splat  200
+
+# SPA fallback - all other routes go to index.html
 /*    /index.html   200
