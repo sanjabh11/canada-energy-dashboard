@@ -59,6 +59,8 @@ import { SovereignDataVault } from './components/SovereignDataVault';
 import { CreditBankingDashboard } from './components/CreditBankingDashboard';
 // Open API Documentation (Gartner Integration)
 import { OpenAPIDocsPage } from './components/OpenAPIDocsPage';
+// Whop Mini-App (Isolated, zero-auth for Whop App Store)
+import WhopMiniApp from './components/whop-mini/WhopMiniApp';
 import './App.css';
 import './styles/layout.css';
 
@@ -82,6 +84,9 @@ const router = createBrowserRouter(
     { path: '/whop/experience/:experienceId/*', element: <WhopExperiencePage /> },
     { path: '/whop/dashboard', element: <WhopDashboardPage /> },
     { path: '/whop/discover', element: <WhopDiscoverPage /> },
+
+    // Whop Mini-App (ISOLATED - Zero auth, zero external APIs for Whop App Store)
+    { path: '/whop-mini/*', element: <WhopMiniApp /> },
 
     // Renewable Energy Optimization Hub
     { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
