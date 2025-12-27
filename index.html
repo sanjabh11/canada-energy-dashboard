@@ -44,10 +44,10 @@
   <!-- Structured Data (JSON-LD) -->
   <script type="application/ld+json" src="/schema-webapp.jsonld"></script>
   
-  <!-- Security: CSP for development (production headers set via public/_headers) -->
-  <meta name="referrer" content="no-referrer" />
-  <!-- Content Security Policy: allow self resources, Vite HMR, Supabase APIs, and Google Fonts -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co; form-action 'self'" />
+  <!-- Security: CSP for Whop iframe compatibility -->
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <!-- Content Security Policy: Whop-compatible CSP with iframe support -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.paddle.com https://esm.sh https://cdn.jsdelivr.net https://whop.com https://*.whop.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' ws://localhost:* wss://localhost:* https://*.supabase.co wss://*.supabase.co https://api.whop.com https://*.whop.com https://fonts.googleapis.com https://fonts.gstatic.com; frame-ancestors 'self' https://whop.com https://*.whop.com; form-action 'self' https://whop.com" />
   
   <!-- Preload critical resources -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
