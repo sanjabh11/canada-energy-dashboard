@@ -180,7 +180,7 @@ export class WhopBillingAdapter implements IBillingAdapter {
             params.set('redirect_url', options.successUrl);
         }
 
-        const checkoutUrl = `https://whop.com/canada-energy-academy/?${params.toString()}`;
+        const checkoutUrl = `https://whop.com/ignite-be15/?${params.toString()}`;
 
         return {
             id: `whop_checkout_${Date.now()}`,

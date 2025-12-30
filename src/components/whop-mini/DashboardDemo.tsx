@@ -130,7 +130,7 @@ export default function DashboardDemo({ user }: { user: WhopMiniUser | null }) {
                     <div className="bg-slate-900 border border-slate-800 rounded-lg p-4">
                         <div className="text-slate-400 text-sm mb-1">Reserve Margin</div>
                         <div className={`text-3xl font-bold font-mono ${reserveMargin > 10 ? 'text-green-400' :
-                                reserveMargin > 5 ? 'text-yellow-400' : 'text-red-400'
+                            reserveMargin > 5 ? 'text-yellow-400' : 'text-red-400'
                             }`}>
                             {reserveMargin.toFixed(1)}%
                         </div>
@@ -146,9 +146,9 @@ export default function DashboardDemo({ user }: { user: WhopMiniUser | null }) {
                         <div className="relative h-4 bg-slate-800 rounded-full overflow-hidden mb-4">
                             <div
                                 className={`absolute left-0 top-0 h-full transition-all duration-500 ${reserveMargin > 15 ? 'bg-green-500' :
-                                        reserveMargin > 10 ? 'bg-cyan-500' :
-                                            reserveMargin > 5 ? 'bg-yellow-500' :
-                                                'bg-red-500'
+                                    reserveMargin > 10 ? 'bg-cyan-500' :
+                                        reserveMargin > 5 ? 'bg-yellow-500' :
+                                            'bg-red-500'
                                     }`}
                                 style={{ width: `${Math.min(100, Math.max(0, 100 - (reserveMargin * 3)))}%` }}
                             />
@@ -230,7 +230,7 @@ export default function DashboardDemo({ user }: { user: WhopMiniUser | null }) {
                             </p>
                             <div className="flex flex-wrap gap-4">
                                 <a
-                                    href="https://whop.com/canada-energy/?plan=pro"
+                                    href="https://whop.com/ignite-be15/?d2c=true&plan=pro"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center bg-cyan-500 text-white font-semibold px-6 py-3 

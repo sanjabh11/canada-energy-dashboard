@@ -206,7 +206,7 @@ export function WhopDiscoverPage() {
                                     ))}
                                 </ul>
                                 <a
-                                    href={`https://whop.com/canada-energy-academy/?d2c=true&plan=${tier.name.toLowerCase()}`}
+                                    href={`https://whop.com/ignite-be15/?d2c=true&plan=${tier.name.toLowerCase()}`}
                                     className={`block w-full py-3 rounded-lg font-semibold text-center transition-all ${tier.popular
                                         ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600'
                                         : 'bg-slate-700 text-white hover:bg-slate-600'

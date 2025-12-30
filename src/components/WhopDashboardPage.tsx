@@ -84,7 +84,7 @@ export function WhopDashboardPage() {
                         </ul>
                     </div>
                     <a
-                        href="https://whop.com/canada-energy-academy/?d2c=true&plan=pro"
+                        href="https://whop.com/ignite-be15/?d2c=true&plan=pro"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-lg hover:from-purple-600 hover:to-pink-600 transition-all"
                     >
                         Upgrade to Pro

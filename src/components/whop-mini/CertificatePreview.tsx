@@ -183,7 +183,7 @@ function TrackCard({
                 {/* CTA */}
                 {isLocked ? (
                     <a
-                        href={`https://whop.com/canada-energy/?plan=${track.tier}`}
+                        href={`https://whop.com/ignite-be15/?d2c=true&plan=${track.tier}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="w-full flex items-center justify-center gap-2 bg-slate-700 text-white 
@@ -279,7 +279,7 @@ export default function CertificatePreview({ user }: { user: WhopMiniUser | null
                                 Use it as affordable prep before investing $2,670 in the official CIET course.
                             </p>
                             <a
-                                href="https://whop.com/canada-energy/?plan=pro"
+                                href="https://whop.com/ignite-be15/?d2c=true&plan=pro"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center text-purple-400 font-semibold hover:text-purple-300"

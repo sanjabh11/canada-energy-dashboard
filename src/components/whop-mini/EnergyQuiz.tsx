@@ -241,7 +241,7 @@ export default function EnergyQuiz({ user }: { user: WhopMiniUser | null }) {
                                     Upgrade to Pro to complete full certificate tracks and earn verified credentials.
                                 </p>
                                 <a
-                                    href="https://whop.com/canada-energy/?plan=basic"
+                                    href="https://whop.com/ignite-be15/?d2c=true&plan=basic"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center bg-purple-500 text-white font-semibold px-6 py-3 

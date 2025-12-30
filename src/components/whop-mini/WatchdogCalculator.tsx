@@ -212,10 +212,10 @@ export default function WatchdogCalculator({ user }: { user: WhopMiniUser | null
                     <div className="space-y-6">
                         {/* Verdict Card */}
                         <div className={`rounded-xl p-6 border ${result.verdict === 'overpaying'
-                                ? 'bg-red-500/10 border-red-500/30'
-                                : result.verdict === 'fair'
-                                    ? 'bg-amber-500/10 border-amber-500/30'
-                                    : 'bg-green-500/10 border-green-500/30'
+                            ? 'bg-red-500/10 border-red-500/30'
+                            : result.verdict === 'fair'
+                                ? 'bg-amber-500/10 border-amber-500/30'
+                                : 'bg-green-500/10 border-green-500/30'
                             }`}>
                             <div className="flex items-center gap-3 mb-4">
                                 {result.verdict === 'overpaying' ? (
@@ -226,10 +226,10 @@ export default function WatchdogCalculator({ user }: { user: WhopMiniUser | null
                                     <CheckCircle className="w-8 h-8 text-green-400" />
                                 )}
                                 <h2 className={`text-2xl font-bold ${result.verdict === 'overpaying'
-                                        ? 'text-red-300'
-                                        : result.verdict === 'fair'
-                                            ? 'text-amber-300'
-                                            : 'text-green-300'
+                                    ? 'text-red-300'
+                                    : result.verdict === 'fair'
+                                        ? 'text-amber-300'
+                                        : 'text-green-300'
                                     }`}>
                                     {result.verdict === 'overpaying'
                                         ? 'You\'re Overpaying!'
@@ -286,7 +286,7 @@ export default function WatchdogCalculator({ user }: { user: WhopMiniUser | null
                                 Never miss a savings opportunity.
                             </p>
                             <a
-                                href="https://whop.com/canada-energy/?plan=basic"
+                                href="https://whop.com/ignite-be15/?d2c=true&plan=basic"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center bg-cyan-500 text-white font-semibold px-6 py-3 

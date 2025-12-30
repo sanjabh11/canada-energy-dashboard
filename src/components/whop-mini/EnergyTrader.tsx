@@ -229,7 +229,7 @@ export default function EnergyTrader({ user }: { user: WhopMiniUser | null }) {
                                 Upgrade to access advanced scenarios, real-time market data, and TIER compliance simulations.
                             </p>
                             <a
-                                href="https://whop.com/canada-energy/?plan=pro"
+                                href="https://whop.com/ignite-be15/?d2c=true&plan=pro"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center bg-purple-500 text-white font-semibold px-6 py-3 
@@ -330,8 +330,8 @@ export default function EnergyTrader({ user }: { user: WhopMiniUser | null }) {
                 {/* Result Explanation */}
                 {showResult && selectedChoice && (
                     <div className={`rounded-lg p-4 mb-6 ${selectedChoice.result > 0
-                            ? 'bg-green-500/10 border border-green-500/30'
-                            : 'bg-red-500/10 border border-red-500/30'
+                        ? 'bg-green-500/10 border border-green-500/30'
+                        : 'bg-red-500/10 border border-red-500/30'
                         }`}>
                         <p className={`font-medium mb-2 ${selectedChoice.result > 0 ? 'text-green-300' : 'text-red-300'}`}>
                             {selectedChoice.result > 0 ? '📈 Profitable Decision' : '📉 Loss Incurred'}

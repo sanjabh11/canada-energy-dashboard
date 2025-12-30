@@ -134,7 +134,7 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
 
               // For Whop users, redirect to Whop upgrade page
               if (isWhopUser) {
-                window.location.href = `https://whop.com/canada-energy-academy/?d2c=true&plan=${targetTier}`;
+                window.location.href = `https://whop.com/ignite-be15/?d2c=true&plan=${targetTier}`;
                 return;
               }
 

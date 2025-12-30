@@ -623,9 +623,9 @@ class WhopClient {
     // TODO: Replace with your actual Whop product URLs
     const productMap: Record<WhopTier, string> = {
       free: '#',
-      basic: 'https://whop.com/canada-energy-academy/?d2c=true&plan=basic',
-      pro: 'https://whop.com/canada-energy-academy/?d2c=true&plan=pro',
-      team: 'https://whop.com/canada-energy-academy/?d2c=true&plan=team'
+      basic: 'https://whop.com/ignite-be15/?d2c=true&plan=basic',
+      pro: 'https://whop.com/ignite-be15/?d2c=true&plan=pro',
+      team: 'https://whop.com/ignite-be15/?d2c=true&plan=team'
     };
     return productMap[tier];
   }
