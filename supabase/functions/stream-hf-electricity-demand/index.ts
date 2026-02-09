@@ -2,6 +2,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { getHFElectricityDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 type HfRow = {
   datetime: string;
@@ -86,16 +87,11 @@ function mapRow(row: Record<string, unknown>): HfRow {
   };
 }
 
-const corsHeaders: Record<string, string> = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Max-Age': '86400'
-};
-
 Deno.serve(async (req: Request) => {
+  const corsHeaders = createCorsHeaders(req);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders, status: 204 });
+    return handleCorsOptions(req);
   }
 
   if (!supabase) {

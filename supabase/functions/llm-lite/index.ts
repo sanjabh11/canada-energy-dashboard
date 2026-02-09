@@ -1,10 +1,13 @@
 // Minimal LLM-lite function to unblock health and tests while llm is refactored
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 const RL_HEADERS = { 'X-RateLimit-Remaining': '29', 'X-RateLimit-Limit': '30' } as const;
+let _corsHeaders: Record<string, string> = {};
 const json = (obj: unknown, status = 200, extra: Record<string,string> = {}) => new Response(
   JSON.stringify(obj),
-  { status, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', ...RL_HEADERS as any, ...extra } }
+  { status, headers: { 'Content-Type': 'application/json', ..._corsHeaders, ...RL_HEADERS as any, ...extra } }
 );
 
 function isBlacklisted(text?: string): boolean {
@@ -28,15 +31,14 @@ function logsContainBlacklist(logs: any): boolean {
 }
 
 serve(async (req) => {
+  const rl = applyRateLimit(req, 'llm-lite');
+  if (rl.response) return rl.response;
+
+  _corsHeaders = createCorsHeaders(req);
   const url = new URL(req.url);
   const path = url.pathname.replace(/\/functions\/v1\/llm-lite\b/, '');
   if (req.method === 'OPTIONS') {
-    const h = new Headers();
-    h.set('Access-Control-Allow-Origin', '*');
-    h.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    h.set('Access-Control-Allow-Headers', 'authorization, x-client-info, apikey, content-type, x-user-id');
-    h.set('Access-Control-Max-Age', '86400');
-    return new Response(null, { status: 204, headers: h });
+    return handleCorsOptions(req);
   }
   if (req.method === 'GET' && (path === '/health' || url.pathname.endsWith('/health'))) {
     return json({ ok: true, mode: 'lite' });

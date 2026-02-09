@@ -16,20 +16,22 @@
  * - Team ($299/mo): Bulk seats + API key + Team management
  * 
  * Environment Variables:
- * - VITE_WHOP_API_KEY: Whop API key for production
+ * - WHOP_API_KEY: Server-only Whop API key (Edge Functions only, NO VITE_ prefix)
  * - VITE_WHOP_MODE: 'live' | 'simulated' | 'standalone' (default: 'standalone')
+ * - VITE_WHOP_CLIENT_ID: Client-safe Whop App ID for OAuth redirects
  */
 
 // Check if we're in live mode with real Whop SDK
 const WHOP_MODE = import.meta.env.VITE_WHOP_MODE || 'standalone';
-const WHOP_API_KEY = import.meta.env.VITE_WHOP_API_KEY || '';
+// NOTE: WHOP_API_KEY is server-only (Edge Functions). Never expose it to the browser.
 const WHOP_CLIENT_ID = import.meta.env.VITE_WHOP_CLIENT_ID || '';
 
 /**
  * Check if Whop is configured for live mode
+ * The API key lives server-side only; client checks mode + client ID.
  */
 export function isWhopLiveMode(): boolean {
-  return WHOP_MODE === 'live' && !!WHOP_API_KEY;
+  return WHOP_MODE === 'live' && !!WHOP_CLIENT_ID;
 }
 
 /**
@@ -50,15 +52,16 @@ export function getWhopConfigStatus(): {
   message: string;
 } {
   const mode = WHOP_MODE as 'live' | 'simulated' | 'standalone';
-  const hasApiKey = !!WHOP_API_KEY;
+  // API key is server-only; in live mode we assume server has it configured
+  const hasApiKey = mode === 'live';
   const hasClientId = !!WHOP_CLIENT_ID;
 
   let ready = false;
   let message = '';
 
   if (mode === 'live') {
-    ready = hasApiKey && hasClientId;
-    message = ready ? 'Whop live mode active' : 'Missing VITE_WHOP_API_KEY or VITE_WHOP_CLIENT_ID';
+    ready = hasClientId;
+    message = ready ? 'Whop live mode active' : 'Missing VITE_WHOP_CLIENT_ID';
   } else if (mode === 'simulated') {
     ready = true;
     message = 'Running in simulated Whop mode';
@@ -448,13 +451,31 @@ class WhopClient {
 
     this.initialized = true;
 
-    // Check for existing session
-    const storedUser = localStorage.getItem('whop_user');
-    if (storedUser) {
-      try {
-        this.currentUser = JSON.parse(storedUser);
-      } catch {
-        localStorage.removeItem('whop_user');
+    // Check for existing session from httpOnly cookie
+    try {
+      const res = await fetch('/api/auth/session', { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.authenticated) {
+          // We have a valid cookie session — restore user from localStorage cache
+          const storedUser = localStorage.getItem('whop_user');
+          if (storedUser) {
+            this.currentUser = JSON.parse(storedUser);
+          }
+        } else {
+          // No cookie session — clear stale localStorage
+          localStorage.removeItem('whop_user');
+        }
+      }
+    } catch {
+      // Fallback: try localStorage (dev mode without Netlify Functions)
+      const storedUser = localStorage.getItem('whop_user');
+      if (storedUser) {
+        try {
+          this.currentUser = JSON.parse(storedUser);
+        } catch {
+          localStorage.removeItem('whop_user');
+        }
       }
     }
 
@@ -554,7 +575,19 @@ class WhopClient {
 
     this.currentUser = user;
     localStorage.setItem('whop_user', JSON.stringify(user));
-    localStorage.setItem('whop_token', token);
+
+    // Store token in httpOnly cookie via Netlify Function (not in localStorage)
+    try {
+      await fetch('/api/auth/login', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, user }),
+      });
+    } catch {
+      // Fallback for local dev without Netlify Functions — store in memory only
+      console.warn('[Whop] Could not store token in httpOnly cookie (Netlify Function unavailable)');
+    }
 
     return user;
   }
@@ -613,7 +646,13 @@ class WhopClient {
   async logout(): Promise<void> {
     this.currentUser = null;
     localStorage.removeItem('whop_user');
-    localStorage.removeItem('whop_token');
+
+    // Clear httpOnly cookie via Netlify Function
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+    } catch {
+      // Fallback for local dev — cookie may not exist
+    }
   }
 
   /**

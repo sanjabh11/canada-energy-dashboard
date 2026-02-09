@@ -6,6 +6,8 @@
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 type FeatureFlagValue = 'true' | 'false' | string | undefined;
 
@@ -86,14 +88,6 @@ interface ManifestResponse {
 }
 
 // CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Content-Type': 'application/json',
-  'Cache-Control': 'private, max-age=30' // Cache for 30 seconds
-};
-
 // Feature flag configuration - controls rollout of features
 const FEATURE_FLAGS: FeatureFlags = {
   ENABLE_REAL_DATA_STREAMING: Deno.env.get('ENABLE_REAL_DATA_STREAMING') || 'false',
@@ -281,6 +275,11 @@ async function getDataSourceHealth(): Promise<Record<string, DataSourceHealth>> 
  * Main manifest endpoint handler
  */
 serve(async (req) => {
+  const corsHeaders = createCorsHeaders(req);
+  const rl = applyRateLimit(req, 'manifest');
+  if (rl.response) return rl.response;
+
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

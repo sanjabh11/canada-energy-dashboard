@@ -1,39 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { logApiUsage, checkRateLimit, getClientId, rateLimitHeaders } from "../_shared/rateLimit.ts";
-
-const DEFAULT_ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "http://localhost:5176",
-  "https://canada-energy.netlify.app",
-  "https://*.netlify.app",
-];
-
-const envAllowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
-
-const ALLOWED_ORIGINS = Array.from(new Set([
-  ...envAllowedOrigins,
-  ...DEFAULT_ALLOWED_ORIGINS,
-]));
-
-function buildCorsHeaders(originHeader: string | null): Record<string, string> {
-  const fallbackOrigin = ALLOWED_ORIGINS[0] ?? DEFAULT_ALLOWED_ORIGINS[0];
-
-  const origin = originHeader && ALLOWED_ORIGINS.includes(originHeader)
-    ? originHeader
-    : fallbackOrigin;
-
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-  };
-}
+import { logApiUsage, applyRateLimit } from "../_shared/rateLimit.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -103,7 +71,10 @@ async function validateApiKey(req: Request, supabaseClient: any): Promise<boolea
 }
 
 serve(async (req) => {
-  const corsHeaders = buildCorsHeaders(req.headers.get('origin'));
+  const rl = applyRateLimit(req, 'api-v2-esg-finance');
+  if (rl.response) return rl.response;
+
+  const corsHeaders = createCorsHeaders(req);
   const startTime = Date.now();
   const ipAddress = req.headers.get('x-forwarded-for')
     || req.headers.get('cf-connecting-ip')
@@ -135,31 +106,13 @@ serve(async (req) => {
   }
 
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   if (req.method !== 'GET') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
-  }
-
-  // Simple per-client rate limiting using shared helper
-  const clientId = getClientId(req);
-  const rate = checkRateLimit(clientId, 'api-v2-esg-finance');
-  if (!rate.allowed) {
-    const headers = {
-      ...corsHeaders,
-      'Content-Type': 'application/json',
-      ...rateLimitHeaders(rate),
-    };
-    return new Response(JSON.stringify({
-      error: 'Too Many Requests',
-      message: 'Rate limit exceeded. Please try again later.',
-    }), {
-      status: 429,
-      headers,
     });
   }
 

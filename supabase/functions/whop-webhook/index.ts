@@ -289,10 +289,10 @@ async function verifySignature(
     signature: string | null,
     secret: string
 ): Promise<boolean> {
-    // If no secret configured, skip verification (dev mode only)
+    // Never skip verification — reject if secret is not configured
     if (!secret) {
-        console.warn('[whop-webhook] ⚠️ No WHOP_WEBHOOK_SECRET set, skipping verification (DEV MODE)');
-        return true;
+        console.error('[whop-webhook] ❌ WHOP_WEBHOOK_SECRET not configured — rejecting webhook');
+        return false;
     }
 
     // Signature must be present in production

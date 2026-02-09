@@ -5,7 +5,7 @@
  * streaming capabilities, and comprehensive data visualization.
  */
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
 import {
   energyDataManager,
   DATASETS,
@@ -21,14 +21,17 @@ import { DataTable } from './DataTable';
 import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
 import { RealTimeDashboard } from './RealTimeDashboard';
-import { InvestmentCards } from './InvestmentCards';
-import { ResilienceMap } from './ResilienceMap';
-import { InnovationSearch } from './InnovationSearch';
-import { IndigenousDashboard } from './IndigenousDashboard';
-import { StakeholderDashboard } from './StakeholderDashboard';
-import GridOptimizationDashboard from './GridOptimizationDashboard';
-import SecurityDashboard from './SecurityDashboard';
-import { FeatureAvailability } from './FeatureAvailability';
+import { MiniLoadingSpinner } from './LoadingSpinner';
+
+// Lazy-loaded tab components — only the active tab's code is fetched
+const InvestmentCards = React.lazy(() => import('./InvestmentCards').then(m => ({ default: m.InvestmentCards })));
+const ResilienceMap = React.lazy(() => import('./ResilienceMap').then(m => ({ default: m.ResilienceMap })));
+const InnovationSearch = React.lazy(() => import('./InnovationSearch').then(m => ({ default: m.InnovationSearch })));
+const IndigenousDashboard = React.lazy(() => import('./IndigenousDashboard').then(m => ({ default: m.IndigenousDashboard })));
+const StakeholderDashboard = React.lazy(() => import('./StakeholderDashboard').then(m => ({ default: m.StakeholderDashboard })));
+const GridOptimizationDashboard = React.lazy(() => import('./GridOptimizationDashboard'));
+const SecurityDashboard = React.lazy(() => import('./SecurityDashboard'));
+const FeatureAvailability = React.lazy(() => import('./FeatureAvailability').then(m => ({ default: m.FeatureAvailability })));
 import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake, Recycle } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
@@ -36,31 +39,32 @@ import FooterSettingsMenu from './FooterSettingsMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './ui/ThemeToggle';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
-import HouseholdEnergyAdvisor from './HouseholdEnergyAdvisor';
-import AnalyticsTrendsDashboard from './AnalyticsTrendsDashboard';
-import RenewableOptimizationHub from './RenewableOptimizationHub';
-import CurtailmentAnalyticsDashboard from './CurtailmentAnalyticsDashboard';
-import StorageDispatchDashboard from './StorageDispatchDashboard';
-import AIDataCentreDashboard from './AIDataCentreDashboard';
-import HydrogenEconomyDashboard from './HydrogenEconomyDashboard';
-import CriticalMineralsSupplyChainDashboard from './CriticalMineralsSupplyChainDashboard';
-import SMRDeploymentDashboard from './SMRDeploymentDashboard';
-import GridInterconnectionQueueDashboard from './GridInterconnectionQueueDashboard';
-import CapacityMarketDashboard from './CapacityMarketDashboard';
-import EVChargingDashboard from './EVChargingDashboard';
-import VPPAggregationDashboard from './VPPAggregationDashboard';
-import HeatPumpDashboard from './HeatPumpDashboard';
-import CCUSProjectsDashboard from './CCUSProjectsDashboard';
-import CarbonEmissionsDashboard from './CarbonEmissionsDashboard';
-import DigitalTwinDashboard from './DigitalTwinDashboard';
-import CanadianClimatePolicyDashboard from './CanadianClimatePolicyDashboard';
-import ESGFinanceDashboard from './ESGFinanceDashboard';
-import IndustrialDecarbDashboard from './IndustrialDecarbDashboard';
-import ArcticEnergySecurityMonitor from './ArcticEnergySecurityMonitor';
+const HouseholdEnergyAdvisor = React.lazy(() => import('./HouseholdEnergyAdvisor'));
+const AnalyticsTrendsDashboard = React.lazy(() => import('./AnalyticsTrendsDashboard'));
+const RenewableOptimizationHub = React.lazy(() => import('./RenewableOptimizationHub'));
+const CurtailmentAnalyticsDashboard = React.lazy(() => import('./CurtailmentAnalyticsDashboard'));
+const StorageDispatchDashboard = React.lazy(() => import('./StorageDispatchDashboard'));
+const AIDataCentreDashboard = React.lazy(() => import('./AIDataCentreDashboard'));
+const HydrogenEconomyDashboard = React.lazy(() => import('./HydrogenEconomyDashboard'));
+const CriticalMineralsSupplyChainDashboard = React.lazy(() => import('./CriticalMineralsSupplyChainDashboard'));
+const SMRDeploymentDashboard = React.lazy(() => import('./SMRDeploymentDashboard'));
+const GridInterconnectionQueueDashboard = React.lazy(() => import('./GridInterconnectionQueueDashboard'));
+const CapacityMarketDashboard = React.lazy(() => import('./CapacityMarketDashboard'));
+const EVChargingDashboard = React.lazy(() => import('./EVChargingDashboard'));
+const VPPAggregationDashboard = React.lazy(() => import('./VPPAggregationDashboard'));
+const HeatPumpDashboard = React.lazy(() => import('./HeatPumpDashboard'));
+const CCUSProjectsDashboard = React.lazy(() => import('./CCUSProjectsDashboard'));
+const CarbonEmissionsDashboard = React.lazy(() => import('./CarbonEmissionsDashboard'));
+const DigitalTwinDashboard = React.lazy(() => import('./DigitalTwinDashboard'));
+const CanadianClimatePolicyDashboard = React.lazy(() => import('./CanadianClimatePolicyDashboard'));
+const ESGFinanceDashboard = React.lazy(() => import('./ESGFinanceDashboard'));
+const IndustrialDecarbDashboard = React.lazy(() => import('./IndustrialDecarbDashboard'));
+const ArcticEnergySecurityMonitor = React.lazy(() => import('./ArcticEnergySecurityMonitor'));
 import { useTranslation } from '../lib/i18n';
-import { ImpactMetricsDashboard } from './ImpactMetricsDashboard';
-import { CrisisScenarioSimulator } from './CrisisScenarioSimulator';
+const ImpactMetricsDashboard = React.lazy(() => import('./ImpactMetricsDashboard').then(m => ({ default: m.ImpactMetricsDashboard })));
+const CrisisScenarioSimulator = React.lazy(() => import('./CrisisScenarioSimulator').then(m => ({ default: m.CrisisScenarioSimulator })));
 import { SEOHead, SEO_CONFIGS } from './SEOHead';
+import { HomeTab, ProvincesTab, TabHero } from './dashboard';
 // Help ID mapping for each page/tab
 const helpIdByTab: Record<string, string> = {
   Home: 'tab.home',
@@ -497,418 +501,21 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
         ) : activeTab === 'Analytics' ? (
           <AnalyticsTrendsDashboard />
         ) : activeTab === 'Home' ? (
-          // Home Tab - Simplified Landing Page with Clear CTAs
-          <div className="space-y-12 -mt-8">
-            {/* Simplified Hero Section */}
-            <section
-              className="hero-section hero-section--full -mx-8 lg:-mx-16"
-              aria-labelledby="home-hero-title"
-            >
-              <div className="hero-content text-center">
-                <h1 id="home-hero-title" className="hero-title">
-                  {t.home.heroTitle}
-                </h1>
-                <p className="hero-subtitle max-w-3xl mx-auto">
-                  {t.home.heroSubtitle}
-                </p>
-                <div className="flex flex-col sm:flex-row gap-md justify-center mt-6">
-                  <button
-                    onClick={() => setActiveTab('Dashboard')}
-                    className="btn btn-primary btn-lg"
-                  >
-                    {t.home.ctaExploreDashboard}
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('Analytics')}
-                    className="btn btn-secondary btn-lg"
-                  >
-                    {t.home.ctaViewAnalytics}
-                  </button>
-                </div>
-              </div>
-            </section>
-
-            {/* Quick Insights Grid */}
-            <div className="grid-responsive-cards px-4">
-              {DATASETS.map((dataset, index) => {
-                const status = connectionStatuses.find(s => s.dataset === dataset.name);
-                return (
-                  <div
-                    key={dataset.key}
-                    className="card"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="card-header">
-                      <div className="flex items-center justify-between">
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center"
-                          style={{ backgroundColor: `${dataset.color}20`, color: dataset.color }}
-                        >
-                          <Database className="h-6 w-6" />
-                        </div>
-                        <div
-                          className={`badge ${status?.status === 'connected'
-                            ? 'badge-success'
-                            : status?.status === 'connecting'
-                              ? 'badge-info'
-                              : 'badge-warning'
-                            }`}
-                        >
-                          {status?.status === 'connected' ? (
-                            <CheckCircle className="h-3 w-3" />
-                          ) : status?.status === 'connecting' ? (
-                            <Clock className="h-3 w-3" />
-                          ) : (
-                            <AlertCircle className="h-3 w-3" />
-                          )}
-                          <span>
-                            {status?.status === 'connected'
-                              ? 'Live'
-                              : status?.status === 'connecting'
-                                ? 'Connecting'
-                                : 'Offline'}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="card-body">
-                      <h3 className="card-title mb-1">{dataset.name}</h3>
-                      <p className="card-description mb-3">{dataset.description}</p>
-                      <div className="metric-value text-electric">
-                        {status?.recordCount.toLocaleString() || '0'} records
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Key CTA Section */}
-            <div className="card text-center">
-              <div className="max-w-2xl mx-auto">
-                <h2 className="card-title mb-4">Ready for Deeper Insights?</h2>
-                <p className="text-secondary mb-6">
-                  Explore advanced analytics, scenario modeling, and AI-powered recommendations to optimize your energy strategy.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                  <button
-                    onClick={() => setActiveTab('Analytics')}
-                    className="btn btn-primary"
-                  >
-                    View Analytics
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('Dashboard')}
-                    className="btn btn-secondary"
-                  >
-                    Live Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Map/Chart Previews */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Provincial Overview */}
-              <div className="card overflow-hidden">
-                <div className="card-header">
-                  <h3 className="card-title flex items-center">
-                    <MapPin className="h-6 w-6 mr-3 text-electric" />
-                    Provincial Overview
-                  </h3>
-                </div>
-                <div className="card-body">
-                  <div className="grid grid-cols-2 gap-4">
-                    {[
-                      { province: 'Ontario', status: 'LIVE', tone: 'success' },
-                      { province: 'Quebec', status: 'LIVE', tone: 'success' },
-                      { province: 'Alberta', status: 'LIVE', tone: 'success' },
-                      { province: 'BC', status: 'CONNECTING', tone: 'info' }
-                    ].map((item, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-secondary rounded-lg"
-                      >
-                        <span className="font-medium text-primary">{item.province}</span>
-                        <span
-                          className={`text-xs font-medium ${item.tone === 'success' ? 'text-success' : 'text-electric'
-                            }`}
-                        >
-                          {item.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('Provinces')}
-                    className="w-full mt-4 btn btn-secondary btn-sm"
-                  >
-                    View All Provinces
-                  </button>
-                </div>
-              </div>
-
-              {/* Energy Mix Preview */}
-              <div className="card overflow-hidden">
-                <div className="card-header">
-                  <h3 className="card-title flex items-center">
-                    <Gauge className="h-6 w-6 mr-3 text-electric" />
-                    Energy Mix
-                  </h3>
-                </div>
-                <div className="card-body">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-tertiary">Renewable</span>
-                      <span className="text-sm font-medium text-success">67%</span>
-                    </div>
-                    <div className="w-full rounded-full h-2 bg-secondary">
-                      <div
-                        className="h-2 rounded-full"
-                        style={{ width: '67%', backgroundColor: 'var(--color-success)' }}
-                      ></div>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-tertiary">Traditional</span>
-                      <span className="text-sm font-medium text-secondary">33%</span>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('Analytics')}
-                    className="w-full mt-4 btn btn-secondary btn-sm"
-                  >
-                    View Detailed Trends
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <HomeTab connectionStatuses={connectionStatuses} onNavigate={setActiveTab} t={t} />
         ) : activeTab === 'Provinces' ? (
-          // Provinces Tab - Real-time Streaming with Dark Theme
-          <div className="space-y-8">
-            {/* Page Header */}
-            <div className="card">
-              <div className="card-header">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-md">
-                    <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: 'rgba(0, 217, 255, 0.1)' }}>
-                      <Radio className="h-6 w-6 text-electric" />
-                    </div>
-                    <div>
-                      <h1 className="text-3xl font-bold text-primary">Provincial Data Streams</h1>
-                      <p className="text-secondary mt-1">Live data from Canadian energy providers</p>
-                    </div>
-                  </div>
-                  <span className="badge badge-success flex items-center gap-2">
-                    <Signal className="h-4 w-4 animate-pulse" />
-                    LIVE
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Streaming Status Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Real-time Connection Status */}
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title flex items-center">
-                    <Wifi className="h-5 w-5 mr-3 text-electric" />
-                    Live Connection Status
-                  </h2>
-                </div>
-                <div className="card-body space-y-4">
-                  {connectionStatuses.map((status, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 bg-secondary rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className={`p-2 rounded-full ${status.status === 'connected' ? 'bg-success/20' :
-                          status.status === 'connecting' ? 'bg-electric/20 animate-pulse' :
-                            'bg-tertiary/20'
-                          }`}>
-                          {status.status === 'connected' ?
-                            <CheckCircle className="h-4 w-4 text-success" /> :
-                            status.status === 'connecting' ?
-                              <Clock className="h-4 w-4 text-electric" /> :
-                              <AlertCircle className="h-4 w-4 text-tertiary" />
-                          }
-                        </div>
-                        <div>
-                          <div className="font-semibold text-primary">{status.dataset}</div>
-                          <div className={`text-sm font-medium ${status.status === 'connected' ? 'text-success' :
-                            status.status === 'connecting' ? 'text-electric' :
-                              'text-tertiary'
-                            }`}>
-                            {status.status === 'connected' ? 'LIVE STREAM ACTIVE' :
-                              status.status === 'connecting' ? 'CONNECTING TO STREAM' :
-                                'STREAM OFFLINE'}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-electric">
-                          {status.recordCount.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-tertiary">records streaming</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Streaming Metrics */}
-              <div className="card">
-                <div className="card-header">
-                  <h2 className="card-title flex items-center">
-                    <Gauge className="h-5 w-5 mr-3 text-electric" />
-                    Streaming Metrics
-                  </h2>
-                </div>
-                <div className="card-body space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-electric">
-                        {connectionStatuses.filter(s => s.status === 'connected').length}/{connectionStatuses.length}
-                      </div>
-                      <div className="text-sm text-tertiary">Active Streams</div>
-                    </div>
-                    <div className="bg-secondary p-4 rounded-lg">
-                      <div className="text-2xl font-bold text-success">
-                        {connectionStatuses.reduce((sum, s) => sum + s.recordCount, 0).toLocaleString()}
-                      </div>
-                      <div className="text-sm text-tertiary">Total Records</div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-secondary">Stream Health</span>
-                      <span className="text-sm font-bold text-success">98.2% Uptime</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div className="bg-success h-2 rounded-full" style={{ width: '98.2%' }}></div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-secondary">Data Throughput</span>
-                      <span className="text-sm font-bold text-electric">1.2K records/min</span>
-                    </div>
-                    <div className="w-full bg-secondary rounded-full h-2">
-                      <div className="bg-electric h-2 rounded-full" style={{ width: '85%' }}></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Provincial Data Sources Map */}
-            <div className="card">
-              <div className="card-header">
-                <h2 className="card-title flex items-center">
-                  <MapPin className="h-5 w-5 mr-3 text-electric" />
-                  Canadian Energy Data Sources
-                </h2>
-              </div>
-              <div className="card-body">
-                <div className="grid-responsive-auto">
-                  {[
-                    { province: 'Ontario', source: 'IESO', status: 'connected', datasets: 2 },
-                    { province: 'Quebec', source: 'Hydro-Québec', status: 'connected', datasets: 1 },
-                    { province: 'British Columbia', source: 'BC Hydro', status: 'connecting', datasets: 1 },
-                    { province: 'Alberta', source: 'AESO', status: 'connected', datasets: 1 },
-                    { province: 'Manitoba', source: 'Manitoba Hydro', status: 'connecting', datasets: 1 },
-                    { province: 'Saskatchewan', source: 'SaskPower', status: 'connected', datasets: 1 }
-                  ].map((item, index) => (
-                    <div key={index} className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-                      <div className={`w-3 h-3 rounded-full ${item.status === 'connected' ? 'bg-success' : 'bg-electric animate-pulse'
-                        }`}></div>
-                      <div className="flex-1">
-                        <div className="font-semibold text-primary">{item.province}</div>
-                        <div className="text-sm text-tertiary">{item.source} • {item.datasets} datasets</div>
-                      </div>
-                      <span className={`badge ${item.status === 'connected' ? 'badge-success' : 'badge-info'
-                        }`}>
-                        {item.status === 'connected' ? 'LIVE' : 'CONNECTING'}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Live Data Stream Visualization */}
-            <div className="card">
-              <div className="card-header">
-                <div className="flex items-center justify-between">
-                  <h2 className="card-title flex items-center">
-                    <Signal className="h-5 w-5 mr-3 text-electric" />
-                    Live Data Stream
-                  </h2>
-                  <div className="flex items-center space-x-2 text-sm text-tertiary">
-                    <div className="w-2 h-2 bg-success rounded-full animate-pulse"></div>
-                    <span>Updating every 30 seconds</span>
-                  </div>
-                </div>
-              </div>
-              <div className="card-body">
-                <div className="text-center py-8">
-                  <div className="inline-flex items-center space-x-2 bg-secondary px-6 py-3 rounded-full">
-                    <Radio className="h-5 w-5 text-electric animate-pulse" />
-                    <span className="font-medium text-primary">Real-time data streaming from {connectionStatuses.filter(s => s.status === 'connected').length} active sources</span>
-                  </div>
-                  <p className="mt-4 text-secondary">Switch to Dashboard tab to interact with live streaming data visualizations</p>
-                  <button
-                    onClick={() => setActiveTab('Dashboard')}
-                    className="mt-4 btn btn-primary"
-                  >
-                    View Live Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <ProvincesTab connectionStatuses={connectionStatuses} onNavigate={setActiveTab} />
         ) : activeTab === 'Trends' ? (
-          // Trends Tab - Analytics View with Shader Effects
           <div className="space-y-8">
-            <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-              <div className="absolute inset-0 shader-bg-secondary animate-gradient-xy"></div>
-              <div className="absolute inset-0 bg-black/20"></div>
-              <div className="relative z-10 p-8">
-                <div className="text-center animate-fade-in">
-                  <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                    <TrendingUp className="h-10 w-10 text-white mx-auto" />
-                  </div>
-                  <h2 className="text-3xl font-bold text-white mb-4">Trend Analysis</h2>
-                  <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                    Advanced analytics and trend identification across Canadian energy data streams
-                  </p>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                    <div className="glass-card p-6 rounded-xl text-white">
-                      <TrendingUp className="h-8 w-8 text-blue-300 mb-3" />
-                      <h3 className="font-semibold mb-2">Peak Demand Patterns</h3>
-                      <p className="text-sm text-white/80">Historical and predictive analysis of energy demand peaks</p>
-                    </div>
-                    <div className="glass-card p-6 rounded-xl text-white">
-                      <BarChart3 className="h-8 w-8 text-green-300 mb-3" />
-                      <h3 className="font-semibold mb-2">Generation Trends</h3>
-                      <p className="text-sm text-white/80">Long-term trends in renewable vs traditional energy generation</p>
-                    </div>
-                    <div className="glass-card p-6 rounded-xl text-white">
-                      <Gauge className="h-8 w-8 text-purple-300 mb-3" />
-                      <h3 className="font-semibold mb-2">Price Volatility</h3>
-                      <p className="text-sm text-white/80">Market price analysis and volatility patterns</p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setActiveTab('Dashboard')}
-                    className="mt-8 glass-card text-white px-6 py-3 rounded-lg font-medium transition-all hover:bg-white/20 animate-fade-in-slow"
-                  >
-                    Explore Trends in Dashboard
-                  </button>
-                </div>
-              </div>
-            </div>
+            <TabHero
+              icon={TrendingUp}
+              title="Trend Analysis"
+              subtitle="Advanced analytics and trend identification across Canadian energy data streams"
+              cards={[
+                { icon: TrendingUp, iconColor: 'text-blue-300', title: 'Peak Demand Patterns', description: 'Historical and predictive analysis of energy demand peaks' },
+                { icon: BarChart3, iconColor: 'text-green-300', title: 'Generation Trends', description: 'Long-term trends in renewable vs traditional energy generation' },
+                { icon: Gauge, iconColor: 'text-purple-300', title: 'Price Volatility', description: 'Market price analysis and volatility patterns' },
+              ]}
+            />
           </div>
         ) : activeTab === 'Education' ? (
           // Education Tab - Information
@@ -983,44 +590,16 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
             </div>
           </div>
         ) : (
-          <>
+          <Suspense fallback={<div className="flex items-center justify-center p-12"><MiniLoadingSpinner className="text-lg" /></div>}>
             {/* Phase 2 Components */}
             {activeTab === 'Resilience' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-accent animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Shield className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Infrastructure Resilience</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        Climate scenario modeling and vulnerability assessment for critical infrastructure
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Shield className="h-8 w-8 text-red-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Risk Assessment</h3>
-                          <p className="text-sm text-white/80">Advanced climate vulnerability analysis</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <MapPin className="h-8 w-8 text-blue-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Asset Mapping</h3>
-                          <p className="text-sm text-white/80">Comprehensive infrastructure inventory</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Gauge className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Scenario Planning</h3>
-                          <p className="text-sm text-white/80">Future climate impact modeling</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Shield} title="Infrastructure Resilience" subtitle="Climate scenario modeling and vulnerability assessment for critical infrastructure" shaderClass="shader-bg-accent" cards={[
+                  { icon: Shield, iconColor: 'text-red-300', title: 'Risk Assessment', description: 'Advanced climate vulnerability analysis' },
+                  { icon: MapPin, iconColor: 'text-blue-300', title: 'Asset Mapping', description: 'Comprehensive infrastructure inventory' },
+                  { icon: Gauge, iconColor: 'text-green-300', title: 'Scenario Planning', description: 'Future climate impact modeling' },
+                ]} />
                 <ResilienceMap />
-                {/* Crisis Scenario Simulator (Gap #15) */}
                 <CrisisScenarioSimulator />
               </div>
             )}
@@ -1033,38 +612,11 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
 
             {activeTab === 'Innovation' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Zap className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Innovation Hub</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        AI-powered research and technology innovation for sustainable energy solutions
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Zap className="h-8 w-8 text-yellow-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Technology Search</h3>
-                          <p className="text-sm text-white/80">Advanced patent and innovation discovery</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <TrendingUp className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Market Analysis</h3>
-                          <p className="text-sm text-white/80">Emerging technology market insights</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Gauge className="h-8 w-8 text-purple-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Feasibility Studies</h3>
-                          <p className="text-sm text-white/80">Technical and economic viability assessment</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Zap} title="Innovation Hub" subtitle="AI-powered research and technology innovation for sustainable energy solutions" shaderClass="shader-bg-primary" cards={[
+                  { icon: Zap, iconColor: 'text-yellow-300', title: 'Technology Search', description: 'Advanced patent and innovation discovery' },
+                  { icon: TrendingUp, iconColor: 'text-green-300', title: 'Market Analysis', description: 'Emerging technology market insights' },
+                  { icon: Gauge, iconColor: 'text-purple-300', title: 'Feasibility Studies', description: 'Technical and economic viability assessment' },
+                ]} />
                 <InnovationSearch />
               </div>
             )}
@@ -1072,76 +624,22 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
             {/* Phase 3 Components */}
             {activeTab === 'Indigenous' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-energy animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Shield className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Indigenous Energy Sovereignty</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        Respectful integration of Indigenous knowledge and governance in energy planning
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Shield className="h-8 w-8 text-blue-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Traditional Knowledge</h3>
-                          <p className="text-sm text-white/80">Integration of Indigenous ecological knowledge</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <MapPin className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Territory Mapping</h3>
-                          <p className="text-sm text-white/80">Traditional territory and consultation tracking</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Gauge className="h-8 w-8 text-orange-300 mb-3" />
-                          <h3 className="font-semibold mb-2">FPIC Compliance</h3>
-                          <p className="text-sm text-white/80">Free, Prior, Informed Consent workflows</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Shield} title="Indigenous Energy Sovereignty" subtitle="Respectful integration of Indigenous knowledge and governance in energy planning" shaderClass="shader-bg-energy" cards={[
+                  { icon: Shield, iconColor: 'text-blue-300', title: 'Traditional Knowledge', description: 'Integration of Indigenous ecological knowledge' },
+                  { icon: MapPin, iconColor: 'text-green-300', title: 'Territory Mapping', description: 'Traditional territory and consultation tracking' },
+                  { icon: Gauge, iconColor: 'text-orange-300', title: 'FPIC Compliance', description: 'Free, Prior, Informed Consent workflows' },
+                ]} />
                 <IndigenousDashboard />
               </div>
             )}
 
             {activeTab === 'Stakeholders' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-secondary animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Zap className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Stakeholder Coordination</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        Multi-stakeholder engagement and collaboration platform for energy projects
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Zap className="h-8 w-8 text-purple-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Engagement Tracking</h3>
-                          <p className="text-sm text-white/80">Comprehensive stakeholder communication logs</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <MapPin className="h-8 w-8 text-blue-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Impact Mapping</h3>
-                          <p className="text-sm text-white/80">Geographic stakeholder impact analysis</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Gauge className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Consensus Building</h3>
-                          <p className="text-sm text-white/80">Collaborative decision-making support</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Zap} title="Stakeholder Coordination" subtitle="Multi-stakeholder engagement and collaboration platform for energy projects" cards={[
+                  { icon: Zap, iconColor: 'text-purple-300', title: 'Engagement Tracking', description: 'Comprehensive stakeholder communication logs' },
+                  { icon: MapPin, iconColor: 'text-blue-300', title: 'Impact Mapping', description: 'Geographic stakeholder impact analysis' },
+                  { icon: Gauge, iconColor: 'text-green-300', title: 'Consensus Building', description: 'Collaborative decision-making support' },
+                ]} />
                 <StakeholderDashboard />
               </div>
             )}
@@ -1149,76 +647,22 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
             {/* Phase 4 Components */}
             {activeTab === 'GridOptimization' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-primary animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Activity className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Grid Optimization</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        Advanced grid management and optimization for reliable energy distribution
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Activity className="h-8 w-8 text-cyan-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Load Balancing</h3>
-                          <p className="text-sm text-white/80">Real-time grid load optimization</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Gauge className="h-8 w-8 text-yellow-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Predictive Maintenance</h3>
-                          <p className="text-sm text-white/80">AI-driven equipment health monitoring</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <TrendingUp className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Efficiency Analytics</h3>
-                          <p className="text-sm text-white/80">Performance optimization insights</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Activity} title="Grid Optimization" subtitle="Advanced grid management and optimization for reliable energy distribution" shaderClass="shader-bg-primary" cards={[
+                  { icon: Activity, iconColor: 'text-cyan-300', title: 'Load Balancing', description: 'Real-time grid load optimization' },
+                  { icon: Gauge, iconColor: 'text-yellow-300', title: 'Predictive Maintenance', description: 'AI-driven equipment health monitoring' },
+                  { icon: TrendingUp, iconColor: 'text-green-300', title: 'Efficiency Analytics', description: 'Performance optimization insights' },
+                ]} />
                 <GridOptimizationDashboard />
               </div>
             )}
 
             {activeTab === 'Security' && (
               <div className="space-y-8">
-                <div className="relative overflow-hidden rounded-2xl border border-[var(--border-subtle)]/50">
-                  <div className="absolute inset-0 shader-bg-accent animate-gradient-xy"></div>
-                  <div className="absolute inset-0 bg-black/20"></div>
-                  <div className="relative z-10 p-8">
-                    <div className="text-center animate-fade-in">
-                      <div className="glass-card p-6 rounded-full w-20 h-20 mx-auto mb-6 animate-float">
-                        <Lock className="h-10 w-10 text-white mx-auto" />
-                      </div>
-                      <h2 className="text-3xl font-bold text-white mb-4">Cybersecurity & Monitoring</h2>
-                      <p className="text-xl text-white/90 mb-8 animate-fade-in-delayed">
-                        Enterprise-grade security monitoring and threat detection for energy infrastructure
-                      </p>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8 animate-fade-in-slow">
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Shield className="h-8 w-8 text-red-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Threat Detection</h3>
-                          <p className="text-sm text-white/80">Advanced cybersecurity monitoring</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Lock className="h-8 w-8 text-blue-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Access Control</h3>
-                          <p className="text-sm text-white/80">Multi-factor authentication and authorization</p>
-                        </div>
-                        <div className="glass-card p-6 rounded-xl text-white">
-                          <Activity className="h-8 w-8 text-green-300 mb-3" />
-                          <h3 className="font-semibold mb-2">Incident Response</h3>
-                          <p className="text-sm text-white/80">Automated security incident management</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TabHero icon={Lock} title="Cybersecurity & Monitoring" subtitle="Enterprise-grade security monitoring and threat detection for energy infrastructure" shaderClass="shader-bg-accent" cards={[
+                  { icon: Shield, iconColor: 'text-red-300', title: 'Threat Detection', description: 'Advanced cybersecurity monitoring' },
+                  { icon: Lock, iconColor: 'text-blue-300', title: 'Access Control', description: 'Multi-factor authentication and authorization' },
+                  { icon: Activity, iconColor: 'text-green-300', title: 'Incident Response', description: 'Automated security incident management' },
+                ]} />
                 <SecurityDashboard />
               </div>
             )}
@@ -1354,7 +798,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                 </div>
               </div>
             )}
-          </>
+          </Suspense>
         )}
       </div>
 

@@ -58,18 +58,48 @@ function useWhopAuth(): { user: WhopMiniUser | null; loading: boolean } {
                       urlParams.get('whop_token');
 
         if (token) {
-          // In production, verify with Whop API
-          // For now, decode JWT payload (base64)
+          // Verify token server-side — never trust client-decoded JWT for tier
           try {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            setUser({
-              id: payload.sub || payload.user_id || `whop_${Date.now()}`,
-              email: payload.email,
-              tier: payload.tier || 'free',
-              isWhopUser: true
-            });
+            const edgeBase = import.meta.env.VITE_SUPABASE_EDGE_BASE || '';
+            const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+            if (edgeBase && anonKey) {
+              const res = await fetch(`${edgeBase}/whop-webhook`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'apikey': anonKey,
+                  'Authorization': `Bearer ${anonKey}`,
+                },
+                body: JSON.stringify({ action: 'verify_token', token }),
+              });
+              if (res.ok) {
+                const verified = await res.json();
+                setUser({
+                  id: verified.user_id || `whop_${Date.now()}`,
+                  email: verified.email,
+                  tier: verified.tier || 'free',
+                  isWhopUser: true,
+                });
+              } else {
+                // Verification failed — treat as guest
+                setUser({ id: `guest_${Date.now()}`, tier: 'free', isWhopUser: false });
+              }
+            } else {
+              // No edge base configured — decode locally but cap at free tier
+              try {
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                setUser({
+                  id: payload.sub || payload.user_id || `whop_${Date.now()}`,
+                  email: payload.email,
+                  tier: 'free',
+                  isWhopUser: true,
+                });
+              } catch {
+                setUser({ id: `guest_${Date.now()}`, tier: 'free', isWhopUser: false });
+              }
+            }
           } catch {
-            // Invalid token, continue as guest
+            // Network/verification error — guest mode
             setUser({
               id: `guest_${Date.now()}`,
               tier: 'free',

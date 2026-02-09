@@ -50,11 +50,6 @@ export function resolveOrigin(req: Request): string {
   const allowedOrigins = getAllowedOrigins();
   const requestOrigin = req.headers.get('origin') || '';
 
-  // Check if wildcard is explicitly allowed (for backward compatibility during migration)
-  if (allowedOrigins.includes('*')) {
-    return '*';
-  }
-
   // Check if the request origin is in the allowlist
   if (requestOrigin && allowedOrigins.some(o => o === requestOrigin)) {
     return requestOrigin;
@@ -111,7 +106,7 @@ export function handleCorsOptions(req: Request): Response {
  * Standard CORS headers object for simple responses
  */
 export const corsHeaders = {
-  'Access-Control-Allow-Origin': '*', // Will be overridden by withCors
+  'Access-Control-Allow-Origin': DEFAULT_ALLOWED_ORIGINS[0],
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
@@ -122,7 +117,7 @@ export function createCorsHeaders(req: Request): Record<string, string> {
   const origin = resolveOrigin(req);
   return {
     'Vary': 'Origin',
-    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Origin': origin || DEFAULT_ALLOWED_ORIGINS[0],
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   };
 }

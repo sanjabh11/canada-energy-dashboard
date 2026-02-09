@@ -5,6 +5,8 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { createCorsHeaders, handleCorsOptions } from '../_shared/cors.ts';
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 // Environment variables
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
@@ -12,45 +14,26 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supa = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// CORS headers helper
-function corsHeaders() {
-  return {
-    'Access-Control-Allow-Origin': '*',
-    // Allow common headers used by Supabase client and our frontend
-    'Access-Control-Allow-Headers': [
-      'content-type',
-      'authorization',
-      'apikey',
-      'x-client-info',
-      'x-user-id'
-    ].join(', '),
-    'Access-Control-Allow-Methods': 'GET, OPTIONS',
-    // Expose rate-limit or other useful headers if added later
-    'Access-Control-Expose-Headers': [
-      'x-ratelimit-limit',
-      'x-ratelimit-remaining'
-    ].join(', '),
-  };
-}
-
 serve(async (req) => {
+  const corsHeaders = createCorsHeaders(req);
+  const rl = applyRateLimit(req, 'help');
+  if (rl.response) return rl.response;
+
+
   try {
     const { method } = req;
     const url = new URL(req.url);
 
     // Handle OPTIONS preflight
     if (method === 'OPTIONS') {
-      return new Response(null, {
-        status: 204,
-        headers: corsHeaders()
-      });
+      return handleCorsOptions(req);
     }
 
     // Only allow GET requests
     if (method !== 'GET') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
         status: 405,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
@@ -88,7 +71,7 @@ serve(async (req) => {
           details: error.message
         }), {
           status: 500,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
 
@@ -96,7 +79,7 @@ serve(async (req) => {
         manifest: data || []
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
@@ -118,7 +101,7 @@ serve(async (req) => {
           id: helpId
         }), {
           status: 404,
-          headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
         });
       }
 
@@ -138,14 +121,14 @@ serve(async (req) => {
         last_updated: data.last_updated,
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+        headers: { 'Content-Type': 'application/json', ...corsHeaders },
       });
     }
 
     // Route not found
     return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
       status: 404,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
 
   } catch (err) {
@@ -155,7 +138,7 @@ serve(async (req) => {
       details: String(err)
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+      headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });
   }
 });

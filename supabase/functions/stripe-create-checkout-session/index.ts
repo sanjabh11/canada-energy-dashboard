@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { handleCorsOptions, withCors } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const ANON_KEY = Deno.env.get("EDGE_SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_ANON_KEY") || "";
@@ -73,6 +74,9 @@ async function createStripeCheckoutSession(params: {
 }
 
 serve(async (req) => {
+  const rl = applyRateLimit(req, 'stripe-create-checkout-session');
+  if (rl.response) return rl.response;
+
   if (req.method === "OPTIONS") {
     return handleCorsOptions(req);
   }

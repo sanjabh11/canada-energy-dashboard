@@ -182,20 +182,9 @@ export function validateScope(input: string | null): 'national' | 'provincial' |
 }
 
 /**
- * CORS configuration helper
+ * CORS configuration helper — delegates to shared cors.ts for consistent origin resolution
  */
-export function getCorsHeaders(req: Request) {
-  const allowedOrigins = (Deno.env.get('CORS_ALLOWED_ORIGINS') || 'http://localhost:5173').split(',').map(o => o.trim());
-  const origin = req.headers.get('origin') || '';
-  const isAllowed = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? (origin || allowedOrigins[0]) : allowedOrigins[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Vary': 'Origin',
-  };
-}
+export { createCorsHeaders as getCorsHeaders } from "./cors.ts";
 
 /**
  * Error response helper

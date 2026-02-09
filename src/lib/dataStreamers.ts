@@ -10,8 +10,6 @@
 
 import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 import { fetchEdgeJson, fetchEdgeWithParams } from './edge';
-import { clientStreamSimulator } from './clientStreamSimulator';
-
 // Types
 export interface StreamingOptions {
   limit?: number;

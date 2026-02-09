@@ -6,6 +6,7 @@
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createCorsHeaders } from "./cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -30,9 +31,12 @@ const ENDPOINT_LIMITS: Record<string, { windowMs: number; maxRequests: number }>
   'llm': { windowMs: 60 * 1000, maxRequests: 20 },
   'llm-lite': { windowMs: 60 * 1000, maxRequests: 30 },
   'help': { windowMs: 60 * 1000, maxRequests: 30 },
+  'help-simple': { windowMs: 60 * 1000, maxRequests: 30 },
   'digital-twin': { windowMs: 60 * 1000, maxRequests: 10 },
   'opportunity-detector': { windowMs: 60 * 1000, maxRequests: 20 },
   'household-advisor': { windowMs: 60 * 1000, maxRequests: 20 },
+  'stripe-create-checkout-session': { windowMs: 60 * 1000, maxRequests: 10 },
+  'walkthroughs': { windowMs: 60 * 1000, maxRequests: 30 },
 };
 
 export interface RateLimitResult {
@@ -185,4 +189,55 @@ export async function logApiUsage(input: ApiUsageLogInput): Promise<void> {
   if (error) {
     console.error("Failed to insert api_usage log:", error);
   }
+}
+
+// ============ High-Level Guard ============
+
+export interface RateLimitGuardResult {
+  response: Response | null;
+  headers: Record<string, string>;
+}
+
+/**
+ * One-call rate limit guard. Returns a 429 Response (with CORS) if exceeded,
+ * or null with rate-limit headers to merge into the success response.
+ *
+ * Usage inside serve():
+ *   const rl = applyRateLimit(req, 'my-endpoint');
+ *   if (rl.response) return rl.response;
+ *   // later: headers: { ...corsHeaders, ...rl.headers }
+ */
+export function applyRateLimit(req: Request, endpoint: string): RateLimitGuardResult {
+  // Never rate-limit CORS preflight — browsers send OPTIONS before the real request
+  if (req.method === 'OPTIONS') {
+    return { response: null, headers: {} };
+  }
+
+  const clientId = getClientId(req);
+  const result = checkRateLimit(clientId, endpoint);
+  const rlHeaders = rateLimitHeaders(result);
+
+  if (!result.allowed) {
+    const cors = createCorsHeaders(req);
+    const retryAfter = Math.ceil((result.resetAt - Date.now()) / 1000);
+    const body = JSON.stringify({
+      error: 'Too Many Requests',
+      message: 'Rate limit exceeded. Please try again later.',
+      retryAfter,
+    });
+    return {
+      response: new Response(body, {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': retryAfter.toString(),
+          ...cors,
+          ...rlHeaders,
+        },
+      }),
+      headers: rlHeaders,
+    };
+  }
+
+  return { response: null, headers: rlHeaders };
 }

@@ -6,6 +6,17 @@ import './styles/accessibility.css';
 import { debug } from '@/lib/debug';
 import { validateFeatureFlags, getDeploymentStats } from './lib/featureFlags'
 
+// Global error handlers — catch unhandled async errors outside React tree
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('[Global] Unhandled promise rejection:', event.reason);
+    event.preventDefault();
+  });
+  window.addEventListener('error', (event) => {
+    console.error('[Global] Uncaught error:', event.error ?? event.message);
+  });
+}
+
 // Initialize global database for caching (optional)
 if (typeof window !== 'undefined') {
   // Simple IndexedDB wrapper for caching - can be extended

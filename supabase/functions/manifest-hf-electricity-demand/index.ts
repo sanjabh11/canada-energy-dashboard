@@ -4,22 +4,21 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import 'jsr:@supabase/functions-js/edge-runtime.d.ts'
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 // Minimal manifest for HF Electricity Demand. Returns static JSON to validate endpoint wiring.
 // Frontend expects a manifest and a separate stream endpoint.
 
 Deno.serve(async (req: Request) => {
   // CORS preflight support
-  const corsHeaders: Record<string, string> = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Max-Age': '86400',
-  };
+  const corsHeaders = createCorsHeaders(req);
+  const rl = applyRateLimit(req, 'manifest-hf-electricity-demand');
+  if (rl.response) return rl.response;
+
 
   if (req.method === 'OPTIONS') {
-    // Respond with 204 and no body per HTTP spec
-    return new Response(null, { headers: corsHeaders, status: 204 });
+    return handleCorsOptions(req);
   }
   try {
     const manifest = {

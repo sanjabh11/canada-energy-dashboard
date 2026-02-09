@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 type DemandRecord = {
   hour: string;
@@ -32,50 +34,6 @@ type WeatherRecord = {
   temperature_c: number | null;
   wind_speed_m_s: number | null;
 };
-
-const DEFAULT_ALLOWED_ORIGINS = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://localhost:5175",
-  "http://localhost:5176",
-  "https://canada-energy.netlify.app",
-  "https://whop.com",
-];
-
-// Pattern for Whop dynamic subdomains like *.apps.whop.com
-const WHOP_DOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.apps\.whop\.com$/;
-
-const envAllowedOrigins = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
-
-const ALLOWED_ORIGINS = Array.from(new Set([
-  ...envAllowedOrigins,
-  ...DEFAULT_ALLOWED_ORIGINS,
-]));
-
-function isAllowedOrigin(origin: string): boolean {
-  // Check exact match
-  if (ALLOWED_ORIGINS.includes(origin)) return true;
-  // Check Whop dynamic subdomain pattern
-  if (WHOP_DOMAIN_PATTERN.test(origin)) return true;
-  return false;
-}
-
-function buildCorsHeaders(originHeader: string | null): Record<string, string> {
-  const fallbackOrigin = ALLOWED_ORIGINS[0] ?? DEFAULT_ALLOWED_ORIGINS[0];
-
-  const origin = originHeader && isAllowedOrigin(originHeader)
-    ? originHeader
-    : fallbackOrigin;
-
-  return {
-    "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-  };
-}
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -183,10 +141,13 @@ async function getLatestWeather(): Promise<WeatherRecord[] | null> {
 }
 
 serve(async (req) => {
-  const corsHeaders = buildCorsHeaders(req.headers.get("origin"));
+  const rl = applyRateLimit(req, 'api-v2-analytics-national-overview');
+  if (rl.response) return rl.response;
+
+  const corsHeaders = createCorsHeaders(req);
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: corsHeaders });
+    return handleCorsOptions(req);
   }
 
   if (req.method !== "GET") {

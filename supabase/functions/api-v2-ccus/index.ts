@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 import {
   validateProvince,
   validateEnum,
@@ -20,6 +21,9 @@ const VALID_CCUS_STATUSES = ['Proposed', 'Under Development', 'Under Constructio
 const VALID_PATHWAYS_STATUSES = ['Proposed', 'Awaiting Federal Decision', 'Approved', 'Under Construction', 'Operational', 'On Hold', 'Cancelled'] as const;
 
 serve(async (req: Request) => {
+  const rl = applyRateLimit(req, 'api-v2-ccus');
+  if (rl.response) return rl.response;
+
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === 'OPTIONS') {

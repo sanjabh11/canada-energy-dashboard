@@ -5686,13 +5686,16 @@ export function getHelpContent(id: string): HelpContentItem {
     .map(word => word.charAt(0).toUpperCase() + word.slice(1).replace(/_/g, ' '))
     .join(' - ');
 
+  // Escape HTML entities to prevent XSS from crafted IDs
+  const safeTitle = title.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
   return {
     id,
     title,
     shortText: `Learn about ${title}`,
     difficulty: 'beginner',
     bodyHtml: `
-      <h3 class="text-lg font-semibold mb-3">${title}</h3>
+      <h3 class="text-lg font-semibold mb-3">${safeTitle}</h3>
       <p class="mb-4">Detailed help content for this feature is being developed.</p>
       <p class="mb-4">This feature is fully functional and ready to use.</p>
       

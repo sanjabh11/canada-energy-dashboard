@@ -4,6 +4,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Info } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { fetchHelpById, type HelpContent } from '../lib/helpApi';
 import { getHelpContent, getShortHelp } from '../lib/helpContent';
 import { HelpModal } from './HelpModal';
@@ -110,7 +111,7 @@ export function HelpButton({ id, className = '' }: HelpButtonProps) {
           isOpen={open}
           onClose={() => setOpen(false)}
           title={content?.short_text || 'Help'}
-          content={content?.body_html ? <div dangerouslySetInnerHTML={{ __html: content.body_html }} /> : null}
+          content={content?.body_html ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content.body_html) }} /> : null}
         />
       )}
     </>

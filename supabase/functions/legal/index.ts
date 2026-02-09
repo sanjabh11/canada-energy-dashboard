@@ -4,6 +4,7 @@
 //  - GET /legal/privacy
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 const jsonHeaders = { 'Content-Type': 'application/json' };
 
@@ -131,6 +132,9 @@ Address: Canadian Energy Information Portal, Privacy Office, Ottawa, ON, Canada`
 };
 
 serve(async (req) => {
+  const rl = applyRateLimit(req, 'legal');
+  if (rl.response) return rl.response;
+
   try {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);

@@ -4,6 +4,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 import {
   validateProvince,
   validateEnum,
@@ -19,6 +20,9 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 'Rare Earth Elements'] as const;
 
 serve(async (req: Request) => {
+  const rl = applyRateLimit(req, 'api-v2-minerals-supply-chain');
+  if (rl.response) return rl.response;
+
   const corsHeaders = getCorsHeaders(req);
 
   if (req.method === 'OPTIONS') {

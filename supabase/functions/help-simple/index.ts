@@ -1,12 +1,13 @@
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 serve(async (req) => {
+  const corsHeaders = createCorsHeaders(req);
+  const rl = applyRateLimit(req, 'help-simple');
+  if (rl.response) return rl.response;
+
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }

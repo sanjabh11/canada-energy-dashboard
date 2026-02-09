@@ -4,7 +4,8 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
-import { logApiUsage } from "../_shared/rateLimit.ts";
+import { logApiUsage, applyRateLimit } from "../_shared/rateLimit.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
@@ -14,19 +15,6 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 const VALID_PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'];
 const VALID_DC_STATUSES = ['Proposed', 'Interconnection Queue', 'Under Construction', 'Operational', 'Commissioning', 'Decommissioned'];
 
-// CORS configuration
-function getCorsHeaders(req: Request) {
-  const allowedOrigins = (Deno.env.get('CORS_ALLOWED_ORIGINS') || 'http://localhost:5173').split(',');
-  const origin = req.headers.get('origin') || '';
-  const isAllowed = allowedOrigins.includes(origin) || allowedOrigins.includes('*');
-
-  return {
-    'Access-Control-Allow-Origin': isAllowed ? (origin || allowedOrigins[0]) : allowedOrigins[0],
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Vary': 'Origin',
-  };
-}
 
 function isApiKeyValid(req: Request): boolean {
   const headerKey = req.headers.get('apikey') || '';
@@ -65,7 +53,10 @@ function validateStatus(input: string | null): string | null {
 }
 
 serve(async (req: Request) => {
-  const corsHeaders = getCorsHeaders(req);
+  const rl = applyRateLimit(req, 'api-v2-ai-datacentres');
+  if (rl.response) return rl.response;
+
+  const corsHeaders = createCorsHeaders(req);
   const start = Date.now();
   const url = new URL(req.url);
   const ipAddress =

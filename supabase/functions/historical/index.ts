@@ -5,6 +5,7 @@
 
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 // Environment
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
@@ -78,6 +79,9 @@ function getDatasetSource(dataset: string): string {
 }
 
 serve(async (req) => {
+  const rl = applyRateLimit(req, 'historical');
+  if (rl.response) return rl.response;
+
   try {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);

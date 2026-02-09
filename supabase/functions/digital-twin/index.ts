@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { applyRateLimit } from "../_shared/rateLimit.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -14,13 +16,6 @@ const supabase = SUPABASE_URL && SUPABASE_KEY
 
 const jsonHeaders: Record<string, string> = { "Content-Type": "application/json" };
 
-function getCorsHeaders(originHeader: string | null): Record<string, string> {
-  return {
-    "Access-Control-Allow-Origin": originHeader || "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-    "Access-Control-Allow-Methods": "POST, OPTIONS",
-  };
-}
 
 async function handleSystemState(req: Request, cors: Record<string, string>): Promise<Response> {
   if (!supabase) {
@@ -149,13 +144,15 @@ async function handleSystemState(req: Request, cors: Record<string, string>): Pr
 }
 
 serve(async (req) => {
+  const rl = applyRateLimit(req, 'digital-twin');
+  if (rl.response) return rl.response;
+
   const url = new URL(req.url);
-  const origin = req.headers.get("origin");
-  const cors = getCorsHeaders(origin);
+  const cors = createCorsHeaders(req);
   const path = url.pathname.replace(/\/functions\/v1\/digital-twin\b/, "") || "/";
 
   if (req.method === "OPTIONS") {
-    return new Response(null, { status: 204, headers: cors });
+    return handleCorsOptions(req);
   }
 
   if (path === "/system-state" && req.method === "POST") {

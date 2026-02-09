@@ -557,6 +557,82 @@ html.light .border-slate-800 {
   background: rgb(239 246 255 / 1); /* blue-50 */
 }
 
+/* Mobile-first metric grid — 1 col mobile, 2 col tablet, 4 col desktop */
+.metric-grid {
+  display: grid;
+  gap: var(--spacing-4);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .metric-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Hero section responsive */
+.hero-section {
+  padding: var(--spacing-4);
+}
+
+@media (min-width: 768px) {
+  .hero-section {
+    padding: var(--spacing-6) var(--spacing-8);
+  }
+}
+
+/* Responsive table wrapper — horizontal scroll on mobile */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  min-width: 600px;
+}
+
+/* Touch-friendly tap targets (WCAG minimum 44x44px) */
+@media (max-width: 767px) {
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Stack flex rows on mobile */
+  .flex-col-mobile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Full-width buttons on mobile */
+  .btn-full-mobile {
+    width: 100%;
+  }
+
+  /* Reduce heading sizes on mobile */
+  .text-responsive-xl {
+    font-size: 1.25rem !important;
+  }
+
+  .text-responsive-2xl {
+    font-size: 1.5rem !important;
+  }
+
+  .text-responsive-3xl {
+    font-size: 1.75rem !important;
+  }
+}
+
 /* Quick actions horizontal ribbon */
 .quick-actions {
   display: flex;

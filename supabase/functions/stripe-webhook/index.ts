@@ -35,8 +35,8 @@ async function verifyStripeSignature(
     secret: string
 ): Promise<boolean> {
     if (!secret) {
-        console.warn("No webhook secret configured, skipping signature verification");
-        return true; // Skip verification if no secret (development only)
+        console.error("STRIPE_WEBHOOK_SECRET not configured — rejecting webhook");
+        return false;
     }
 
     try {
