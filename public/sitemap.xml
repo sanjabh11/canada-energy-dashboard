@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Core Pages -->
+  <url><loc>https://canada-energy.netlify.app/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>
+  <url><loc>https://canada-energy.netlify.app/about</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/contact</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://canada-energy.netlify.app/privacy</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+  <url><loc>https://canada-energy.netlify.app/terms</loc><changefreq>yearly</changefreq><priority>0.3</priority></url>
+
+  <!-- Sales & Conversion Pages (HIGH PRIORITY) -->
+  <url><loc>https://canada-energy.netlify.app/pricing</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canada-energy.netlify.app/enterprise</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canada-energy.netlify.app/municipal</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canada-energy.netlify.app/roi-calculator</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>
+  <url><loc>https://canada-energy.netlify.app/compare</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
+
+  <!-- Product Pages -->
+  <url><loc>https://canada-energy.netlify.app/watchdog</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canada-energy.netlify.app/funder-reporting</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canada-energy.netlify.app/indigenous</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://canada-energy.netlify.app/landfill-methane</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/shadow-billing</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/sovereign-vault</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/credit-banking</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/dip-audit</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/bank-export</loc><changefreq>monthly</changefreq><priority>0.7</priority></url>
+
+  <!-- Dashboard Routes -->
+  <url><loc>https://canada-energy.netlify.app/analytics</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/climate-policy</loc><changefreq>daily</changefreq><priority>0.7</priority></url>
+  <url><loc>https://canada-energy.netlify.app/digital-twin</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/arctic-energy</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/renewable-optimization</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/curtailment-reduction</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/resilience</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/rate-alerts</loc><changefreq>daily</changefreq><priority>0.6</priority></url>
+  <url><loc>https://canada-energy.netlify.app/solar-wizard</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
+
+  <!-- API & Developer -->
+  <url><loc>https://canada-energy.netlify.app/api-docs</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+
+  <!-- B2B Landing Pages -->
+  <url><loc>https://canada-energy.netlify.app/employers</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+  <url><loc>https://canada-energy.netlify.app/training-coordinators</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
+</urlset>

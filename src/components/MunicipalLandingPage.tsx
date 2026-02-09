@@ -10,7 +10,7 @@
  * Reference: MonetizationResearch_Overall.md §8.1
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Building2,
@@ -25,8 +25,15 @@ import {
     Flame,
     Zap,
     Users,
-    ExternalLink
+    ExternalLink,
+    ChevronDown,
+    ChevronUp,
+    Mail,
+    ClipboardCheck,
+    Target,
+    Send
 } from 'lucide-react';
+import { SEOHead } from './SEOHead';
 
 const MUNICIPAL_BENEFITS = [
     {
@@ -109,24 +116,77 @@ const PROCUREMENT_TIERS = [
     }
 ];
 
-const CASE_STUDIES = [
+const ALBERTA_MUNICIPAL_STATS = [
     {
-        municipality: 'Town of Canmore',
-        population: '14,000',
-        result: 'Reduced GHG reporting time by 80%',
-        quote: 'Finally, a tool that speaks our language.'
+        stat: '337+',
+        label: 'Alberta Municipalities',
+        detail: 'From cities to municipal districts, all facing TIER and GHG reporting requirements'
     },
     {
-        municipality: 'City of Lethbridge',
-        population: '101,000',
-        result: '$340K in TIER credits identified',
-        quote: 'The landfill module paid for itself in 3 months.'
+        stat: '$95/t',
+        label: 'TIER Fund Price (Frozen)',
+        detail: 'Carbon compliance cost that municipalities can reduce through credit arbitrage'
+    },
+    {
+        stat: '80%',
+        label: 'Reporting Time Saved',
+        detail: 'Estimated reduction in manual GHG data compilation vs spreadsheet workflows'
+    },
+    {
+        stat: '<$75K',
+        label: 'NWPTA Sole-Source',
+        detail: 'All tiers priced below the competitive bidding threshold for direct purchase'
+    }
+];
+
+const FAQ_ITEMS = [
+    {
+        q: 'Do we need to issue an RFP to purchase CEIP?',
+        a: 'No. All CEIP municipal tiers are priced below the $75,000 NWPTA (New West Partnership Trade Agreement) threshold for services. This allows sole-source procurement or limited solicitation (3 quotes). Your Sustainability Director or Facilities Manager can approve within departmental authority.'
+    },
+    {
+        q: 'Is CEIP available through Canoe Procurement?',
+        a: 'We are in the process of applying to become a Canoe Procurement approved vendor. Once approved, any Canoe member municipality can purchase CEIP without running their own procurement process.'
+    },
+    {
+        q: 'Where is our data stored? Is it PIPEDA compliant?',
+        a: 'All data is hosted on Canadian servers (Supabase with Canadian data residency). CEIP is fully PIPEDA compliant. For Indigenous community data, we follow OCAP® (Ownership, Control, Access, Possession) principles with Nation-held encryption keys.'
+    },
+    {
+        q: 'Can CEIP help with FCM Green Municipal Fund applications?',
+        a: 'Yes. CEIP generates reports aligned with FCM GMF reporting requirements, including GHG baselines, emissions reduction tracking, and project milestone documentation. We also support AICEI, ICIP, and ERA reporting templates.'
+    },
+    {
+        q: 'What support does MCCAC provide for municipalities using CEIP?',
+        a: 'The Municipal Climate Change Action Centre (MCCAC) provides complementary funding, technical assistance, and education programs. CEIP integrates with MCCAC\'s existing support framework to provide the data analytics layer that their programs require.'
+    },
+    {
+        q: 'How long does implementation take?',
+        a: 'The Starter tier is operational within 1 week. Professional and Enterprise tiers include onboarding with data integration, typically completed within 30 days. We provide training for all user accounts.'
     }
 ];
 
 export const MunicipalLandingPage: React.FC = () => {
+    const [openFaq, setOpenFaq] = useState<number | null>(null);
+    const [auditEmail, setAuditEmail] = useState('');
+    const [auditSubmitted, setAuditSubmitted] = useState(false);
+
+    const handleAuditSubmit = () => {
+        if (!auditEmail) return;
+        const leads = JSON.parse(localStorage.getItem('ceip_municipal_leads') || '[]');
+        leads.push({ email: auditEmail, type: 'baseline_audit', timestamp: new Date().toISOString() });
+        localStorage.setItem('ceip_municipal_leads', JSON.stringify(leads));
+        setAuditSubmitted(true);
+    };
+
     return (
         <div className="min-h-screen bg-slate-900 text-white">
+            <SEOHead
+                title="Municipal Climate Tools | Alberta Energy Compliance for Municipalities"
+                description="CEIP helps Alberta municipalities implement climate action plans. Methane compliance, TIER credits, GHG tracking. All tiers priced below NWPTA $75K threshold for sole-source procurement."
+                path="/municipal"
+                keywords={['municipal climate tools Alberta', 'TIER compliance municipality', 'GHG reporting municipal', 'MCCAC energy tools', 'FCM Green Municipal Fund', 'sole source energy software']}
+            />
             {/* Header */}
             <header className="border-b border-slate-800">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -217,6 +277,49 @@ export const MunicipalLandingPage: React.FC = () => {
                 </div>
             </section>
 
+            {/* How It Works */}
+            <section className="py-20 border-b border-slate-800">
+                <div className="max-w-5xl mx-auto px-6">
+                    <h2 className="text-3xl font-bold text-center mb-4">How It Works</h2>
+                    <p className="text-slate-400 text-center mb-12">From purchase order to council report in 30 days</p>
+
+                    <div className="grid md:grid-cols-3 gap-8">
+                        {[
+                            { step: '1', icon: <ClipboardCheck className="h-8 w-8" />, title: 'Connect Your Data', desc: 'We import your utility bills, fleet data, and facility meters. No IT department required — works with CSV uploads or direct utility connections.' },
+                            { step: '2', icon: <Target className="h-8 w-8" />, title: 'Track Against Targets', desc: 'CEIP automatically maps your data to your Climate Action Plan targets. See real-time progress on GHG reductions, energy savings, and TIER compliance.' },
+                            { step: '3', icon: <Send className="h-8 w-8" />, title: 'Report to Council & Funders', desc: 'Generate mayor-ready quarterly reports and grant-compliant documentation for FCM, AICEI, and ERA with one click.' },
+                        ].map((item, i) => (
+                            <div key={i} className="text-center">
+                                <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center text-emerald-400 mx-auto mb-4">
+                                    {item.icon}
+                                </div>
+                                <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-600 text-white text-sm font-bold mb-3">
+                                    {item.step}
+                                </div>
+                                <h3 className="text-lg font-semibold mb-2">{item.title}</h3>
+                                <p className="text-slate-400 text-sm">{item.desc}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            {/* Alberta Municipal Stats (replaces fictional case studies) */}
+            <section className="py-16 border-b border-slate-800 bg-slate-800/20">
+                <div className="max-w-5xl mx-auto px-6">
+                    <h2 className="text-2xl font-bold text-center mb-8">The Alberta Municipal Opportunity</h2>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        {ALBERTA_MUNICIPAL_STATS.map((item, i) => (
+                            <div key={i} className="text-center">
+                                <div className="text-3xl font-bold text-emerald-400">{item.stat}</div>
+                                <div className="text-sm font-medium text-white mt-1">{item.label}</div>
+                                <div className="text-xs text-slate-500 mt-2">{item.detail}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
             {/* Features Grid */}
             <section className="py-20">
                 <div className="max-w-7xl mx-auto px-6">
@@ -301,24 +404,99 @@ export const MunicipalLandingPage: React.FC = () => {
                 </div>
             </section>
 
-            {/* FCM/Grant Integration */}
+            {/* FCM/Grant Integration + Trusted Partners */}
             <section className="py-20 border-t border-slate-800">
                 <div className="max-w-4xl mx-auto px-6 text-center">
-                    <h2 className="text-3xl font-bold mb-6">Funding Integration</h2>
+                    <h2 className="text-3xl font-bold mb-6">Funding & Partner Integration</h2>
                     <p className="text-slate-300 mb-8">
-                        CEIP generates reports aligned with major municipal funding programs
+                        CEIP generates reports aligned with major municipal funding programs and works alongside trusted Alberta organizations
                     </p>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
                         {[
                             { name: 'FCM GMF', desc: 'Green Municipal Fund' },
                             { name: 'AICEI', desc: 'Indigenous Clean Energy' },
-                            { name: 'ICIP', desc: 'Investing in Canada' },
-                            { name: 'ERA', desc: 'Emissions Reduction Alberta' }
+                            { name: 'ERA', desc: 'Emissions Reduction Alberta' },
+                            { name: 'MCCAC', desc: 'Municipal Climate Change Action Centre' },
+                            { name: 'Alberta Climate Leaders', desc: 'CEA + MCCAC Partnership' },
+                            { name: 'Canoe Procurement', desc: 'RMA Standing Offer (Applying)' }
                         ].map((fund, i) => (
                             <div key={i} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                                 <div className="font-bold text-emerald-400">{fund.name}</div>
                                 <div className="text-xs text-slate-500">{fund.desc}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <p className="text-sm text-slate-500">
+                        CEIP complements the technical assistance provided by{' '}
+                        <a href="https://mccac.ca" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">MCCAC</a>{' '}
+                        and{' '}
+                        <a href="https://albertaclimateleaders.ca" target="_blank" rel="noopener noreferrer" className="text-emerald-400 hover:underline">Alberta Climate Leaders</a>{' '}
+                        by providing the data analytics layer their programs require.
+                    </p>
+                </div>
+            </section>
+
+            {/* Free Climate Baseline Audit CTA */}
+            <section className="py-16 bg-gradient-to-r from-emerald-900/20 to-teal-900/20 border-y border-emerald-500/20">
+                <div className="max-w-3xl mx-auto px-6 text-center">
+                    <Mail className="h-10 w-10 text-emerald-400 mx-auto mb-4" />
+                    <h2 className="text-2xl font-bold mb-3">Free 30-Day Climate Baseline Audit</h2>
+                    <p className="text-slate-300 mb-6">
+                        Get a complimentary energy and emissions baseline report for your municipality.
+                        No commitment — just actionable data showing where you stand.
+                    </p>
+                    {auditSubmitted ? (
+                        <div className="flex items-center justify-center gap-2 text-emerald-400">
+                            <CheckCircle className="h-5 w-5" />
+                            <span>Thank you! We'll contact you within 48 hours to schedule your baseline audit.</span>
+                        </div>
+                    ) : (
+                        <div className="flex gap-3 max-w-lg mx-auto">
+                            <input
+                                type="email"
+                                value={auditEmail}
+                                onChange={(e) => setAuditEmail(e.target.value)}
+                                placeholder="sustainability@yourmunicipality.ca"
+                                className="flex-1 px-4 py-3 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            />
+                            <button
+                                onClick={handleAuditSubmit}
+                                className="px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-semibold transition-colors whitespace-nowrap"
+                            >
+                                Get Free Audit
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* FAQ Section */}
+            <section className="py-20 border-b border-slate-800">
+                <div className="max-w-3xl mx-auto px-6">
+                    <h2 className="text-3xl font-bold text-center mb-4">Frequently Asked Questions</h2>
+                    <p className="text-slate-400 text-center mb-10">Common questions from municipal procurement and sustainability teams</p>
+
+                    <div className="space-y-3">
+                        {FAQ_ITEMS.map((faq, i) => (
+                            <div key={i} className="bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+                                <button
+                                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                                    className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-700/30 transition-colors"
+                                >
+                                    <span className="font-medium pr-4">{faq.q}</span>
+                                    {openFaq === i ? (
+                                        <ChevronUp className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+                                    ) : (
+                                        <ChevronDown className="h-5 w-5 text-slate-400 flex-shrink-0" />
+                                    )}
+                                </button>
+                                {openFaq === i && (
+                                    <div className="px-6 pb-4 text-sm text-slate-300 leading-relaxed">
+                                        {faq.a}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -329,16 +507,27 @@ export const MunicipalLandingPage: React.FC = () => {
             <section className="py-20 bg-gradient-to-r from-emerald-900/30 to-teal-900/30 border-t border-emerald-500/30">
                 <div className="max-w-4xl mx-auto px-6 text-center">
                     <h2 className="text-3xl font-bold mb-6">Ready to Modernize Your Climate Reporting?</h2>
-                    <p className="text-slate-300 mb-8">
+                    <p className="text-slate-300 mb-4">
                         Schedule a demo with our municipal solutions team
                     </p>
-                    <Link
-                        to="/enterprise"
-                        className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors"
-                    >
-                        Request a Demo
-                        <ArrowRight className="h-5 w-5" />
-                    </Link>
+                    <p className="text-emerald-400 text-sm mb-8">
+                        All plans are sole-source eligible (under $75K NWPTA threshold). No RFP required.
+                    </p>
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
+                        <Link
+                            to="/enterprise"
+                            className="inline-flex items-center gap-2 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg transition-colors"
+                        >
+                            Request a Demo
+                            <ArrowRight className="h-5 w-5" />
+                        </Link>
+                        <Link
+                            to="/roi-calculator"
+                            className="inline-flex items-center gap-2 px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors"
+                        >
+                            Calculate TIER Savings
+                        </Link>
+                    </div>
                 </div>
             </section>
 

@@ -20,6 +20,7 @@ import {
     Leaf
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEOHead } from './SEOHead';
 
 interface CompetitorFeature {
     feature: string;
@@ -99,6 +100,12 @@ export const CompetitorComparison: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <SEOHead
+                title="CEIP vs Competitors | Energy Toolbase, Carbonhound, Measurabl Comparison"
+                description="Compare CEIP against Energy Toolbase, Carbonhound, and Measurabl. Only platform with Indigenous OCAP compliance, TIER arbitrage, and AI-powered Canadian energy analysis."
+                path="/compare"
+                keywords={['CEIP vs Carbonhound', 'CEIP vs Energy Toolbase', 'Canadian energy platform comparison', 'TIER compliance software comparison', 'best energy analytics Canada']}
+            />
             {/* Hero */}
             <header className="px-6 py-16 text-center">
                 <div className="max-w-4xl mx-auto">
@@ -285,6 +292,19 @@ export const CompetitorComparison: React.FC = () => {
                 </div>
             </div>
 
+            {/* Cross-Links */}
+            <section className="py-12 border-t border-slate-800">
+                <div className="max-w-4xl mx-auto px-6 text-center space-y-3">
+                    <p className="text-slate-400">
+                        <Link to="/pricing" className="text-emerald-400 hover:underline">See all pricing tiers →</Link>
+                        {' • '}
+                        <Link to="/roi-calculator" className="text-emerald-400 hover:underline">Calculate TIER savings →</Link>
+                        {' • '}
+                        <Link to="/municipal" className="text-emerald-400 hover:underline">Municipal solutions →</Link>
+                    </p>
+                </div>
+            </section>
+
             {/* SEO Footer */}
             <footer className="border-t border-slate-800 py-8 px-6 text-center text-sm text-slate-500">
                 <p>
@@ -292,7 +312,7 @@ export const CompetitorComparison: React.FC = () => {
                     Alberta TIER credit tracking, OCAP® data sovereignty, and municipal climate action planning.
                 </p>
                 <p className="mt-2">
-                    © 2025 Canada Energy Intelligence Platform. Built for Canada. Priced for Procurement.
+                    © {new Date().getFullYear()} Canada Energy Intelligence Platform. Built for Canada. Priced for Procurement.
                 </p>
             </footer>
         </div>

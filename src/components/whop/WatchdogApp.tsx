@@ -10,17 +10,20 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Zap, TrendingUp, Lock, ArrowRight, X, Calculator, Sparkles } from 'lucide-react';
+import { Zap, TrendingUp, Lock, ArrowRight, X, Calculator, Sparkles, CreditCard } from 'lucide-react';
 import { ErrorBoundary } from '../ErrorBoundary';
 import { RROAlertSystem } from '../RROAlertSystem';
 import { ThemeToggle } from '../ui/ThemeToggle';
 import { EmailCaptureModal } from '../billing/EmailCaptureModal';
 import { getBillingAdapter } from '../../lib/billingAdapter';
 import { WelcomeModal } from './WelcomeModal';
+import { SEOHead } from '../SEOHead';
+import { usePaddle } from '../billing/PaddleProvider';
 
 export function WatchdogApp() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [dismissed, setDismissed] = useState(false);
+    const { openCheckout, isLoading: paddleLoading } = usePaddle();
 
     // Get the Pro plan from billing adapter
     const billingAdapter = getBillingAdapter();
@@ -43,6 +46,12 @@ export function WatchdogApp() {
     return (
         <ErrorBoundary>
             <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-cyan-500/30">
+                <SEOHead
+                    title="Alberta Rate Watchdog | Stop Overpaying on Electricity | $9/mo"
+                    description="Bill auditing, retailer switching recommendations, peak shaving alerts. Save $500+/year on Alberta electricity. Compare RoLR rates vs competitive retailers in real-time."
+                    path="/watchdog"
+                    keywords={['Alberta electricity rates', 'RoLR rate comparison', 'Alberta bill auditing', 'electricity savings Alberta', 'AESO pool price', 'rate watchdog']}
+                />
                 {/* Hide main header in iframe context */}
                 {isInIframe && (
                     <style>{`
@@ -115,19 +124,26 @@ export function WatchdogApp() {
                     <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-r from-cyan-900/95 to-blue-900/95 border-t border-cyan-700 p-4 backdrop-blur-sm z-50">
                         <div className="max-w-6xl mx-auto flex items-center justify-between gap-4">
                             <div className="flex items-center gap-3">
-                                <Lock className="h-5 w-5 text-cyan-400" />
+                                <CreditCard className="h-5 w-5 text-amber-400" />
                                 <div>
-                                    <p className="text-white font-medium">Want more? Unlock 35+ professional dashboards</p>
-                                    <p className="text-cyan-200 text-sm">Hydrogen Hub • Critical Minerals • ESG Finance • Grid Analytics & more</p>
+                                    <p className="text-white font-medium">Unlock Bill Auditing & Peak Shaving Alerts</p>
+                                    <p className="text-cyan-200 text-sm">Save $500+/year • $9/month • Cancel anytime</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => setShowUpgradeModal(true)}
-                                    className="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                                    onClick={() => openCheckout('pri_consumer_monthly')}
+                                    disabled={paddleLoading}
+                                    className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
                                 >
-                                    Upgrade to CEIP Advanced
+                                    Subscribe $9/mo
                                     <ArrowRight className="h-4 w-4" />
+                                </button>
+                                <button
+                                    onClick={() => setShowUpgradeModal(true)}
+                                    className="px-4 py-2 bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 font-medium rounded-lg transition-colors text-sm"
+                                >
+                                    See All Plans
                                 </button>
                                 <button
                                     onClick={() => setDismissed(true)}
@@ -154,14 +170,21 @@ export function WatchdogApp() {
                 {/* Simple Footer */}
                 <footer className="border-t border-slate-800 py-8 text-center text-slate-500 text-sm mt-8 pb-24">
                     <p>&copy; {new Date().getFullYear()} Canada Energy Intelligence Platform.</p>
+                    <p className="mt-2">
+                        <Link to="/pricing" className="text-cyan-500 hover:text-cyan-400">All Plans</Link>
+                        {' • '}
+                        <Link to="/roi-calculator" className="text-cyan-500 hover:text-cyan-400">TIER Calculator</Link>
+                        {' • '}
+                        <Link to="/municipal" className="text-cyan-500 hover:text-cyan-400">For Municipalities</Link>
+                        {' • '}
+                        <Link to="/enterprise" className="text-cyan-500 hover:text-cyan-400">Enterprise</Link>
+                    </p>
                     <p className="mt-1">
-                        <Link to="/privacy" className="text-cyan-500 hover:text-cyan-400">Privacy</Link>
+                        <Link to="/privacy" className="text-slate-600 hover:text-slate-400">Privacy</Link>
                         {' • '}
-                        <Link to="/terms" className="text-cyan-500 hover:text-cyan-400">Terms</Link>
+                        <Link to="/terms" className="text-slate-600 hover:text-slate-400">Terms</Link>
                         {' • '}
-                        <Link to="/hire-me" className="text-cyan-500 hover:text-cyan-400">Hire the developer</Link>
-                        {' • '}
-                        <Link to="/about" className="text-cyan-500 hover:text-cyan-400">About CEIP</Link>
+                        <Link to="/about" className="text-slate-600 hover:text-slate-400">About</Link>
                     </p>
                 </footer>
             </div>

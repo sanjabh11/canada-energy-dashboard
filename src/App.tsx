@@ -202,7 +202,8 @@ const router = createBrowserRouter(
 
         // Whop "Alberta Rate Watchdog" - Primary Wedge Product
         { path: '/whop/watchdog', element: <WatchdogApp /> },
-        { path: '/watchdog', element: <Navigate to="/whop/watchdog" replace /> },
+        { path: '/watchdog', element: <WatchdogApp /> },
+        { path: '/rate-watchdog', element: <WatchdogApp /> },
 
         // Legal Pages (Whop Compliance - Criteria 14, 15)
         { path: '/privacy', element: <PrivacyPolicy /> },

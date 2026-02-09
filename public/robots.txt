@@ -1,0 +1,15 @@
+# Canada Energy Intelligence Platform
+# https://canada-energy.netlify.app
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://canada-energy.netlify.app/sitemap.xml
+
+# Disallow internal/admin routes
+Disallow: /admin/
+Disallow: /api-keys
+Disallow: /whop-mini/
+Disallow: /profile
+Disallow: /settings

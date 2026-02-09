@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { Check, Star, Building2, Users, Zap, Shield, ArrowRight, Sparkles } from 'lucide-react';
+import { Check, Star, Building2, Users, Zap, Shield, ArrowRight, Sparkles, Home } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { usePaddle } from './billing/PaddleProvider';
+import { SEOHead } from './SEOHead';
 
 interface PricingTier {
     id: string;
@@ -143,9 +145,18 @@ export const PricingPage: React.FC = () => {
             return;
         }
 
-        if (tier.id === 'municipal' || tier.id === 'enterprise') {
-            // High-value tiers go to contact form
-            window.location.href = '/enterprise?tier=' + tier.id;
+        if (tier.id === 'municipal') {
+            window.location.href = '/municipal';
+            return;
+        }
+
+        if (tier.id === 'indigenous') {
+            window.location.href = '/enterprise?tier=indigenous';
+            return;
+        }
+
+        if (tier.id === 'industrial') {
+            window.location.href = '/roi-calculator';
             return;
         }
 
@@ -156,6 +167,26 @@ export const PricingPage: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
+            <SEOHead
+                title="CEIP Pricing | From Free to Enterprise — Alberta Energy Compliance Tools"
+                description="Transparent pricing for Canada's energy intelligence platform. Rate Watchdog $9/mo, Professional $149/mo, Industrial TIER $1,500/mo, Municipal $5,900/mo. All under NWPTA sole-source threshold."
+                path="/pricing"
+                keywords={['CEIP pricing', 'energy compliance pricing', 'TIER compliance cost', 'municipal energy tools price', 'Alberta energy platform']}
+            />
+
+            {/* Navigation */}
+            <nav className="px-6 py-4 flex items-center justify-between max-w-7xl mx-auto">
+                <Link to="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors">
+                    <Home className="h-4 w-4" />
+                    <span className="text-sm">Back to Dashboard</span>
+                </Link>
+                <div className="flex items-center gap-4 text-sm">
+                    <Link to="/enterprise" className="text-slate-400 hover:text-white transition-colors">Enterprise</Link>
+                    <Link to="/municipal" className="text-slate-400 hover:text-white transition-colors">Municipal</Link>
+                    <Link to="/roi-calculator" className="text-emerald-400 hover:text-emerald-300 transition-colors">TIER Calculator</Link>
+                </div>
+            </nav>
+
             {/* Header */}
             <header className="px-6 py-8 text-center">
                 <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
@@ -271,13 +302,25 @@ export const PricingPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* FAQ Teaser */}
-            <div className="text-center pb-12">
+            {/* Cross-Links */}
+            <div className="text-center pb-12 space-y-3">
                 <p className="text-slate-400">
                     Questions about municipal procurement?{' '}
-                    <a href="/enterprise" className="text-emerald-400 hover:underline">
-                        See our RFP-friendly packages →
-                    </a>
+                    <Link to="/municipal" className="text-emerald-400 hover:underline">
+                        See our municipal page →
+                    </Link>
+                </p>
+                <p className="text-slate-400">
+                    Want to calculate TIER savings first?{' '}
+                    <Link to="/roi-calculator" className="text-emerald-400 hover:underline">
+                        Try our free ROI calculator →
+                    </Link>
+                </p>
+                <p className="text-slate-400">
+                    See how we compare to alternatives:{' '}
+                    <Link to="/compare" className="text-emerald-400 hover:underline">
+                        CEIP vs. competitors →
+                    </Link>
                 </p>
             </div>
         </div>

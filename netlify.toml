@@ -81,11 +81,11 @@
     # NOTE: 'unsafe-inline' in style-src is required by React inline styles (standard for React SPAs).
     Content-Security-Policy = """
       default-src 'self';
-      script-src 'self' 'unsafe-eval' https://cdn.paddle.com https://esm.sh https://cdn.jsdelivr.net https://whop.com https://static.cloudflareinsights.com;
+      script-src 'self' 'unsafe-eval' https://cdn.paddle.com https://esm.sh https://cdn.jsdelivr.net https://whop.com https://static.cloudflareinsights.com https://plausible.io;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
       img-src 'self' data: https: blob:;
       font-src 'self' data: https://fonts.gstatic.com;
-      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://api.openweathermap.org https://weather.gc.ca https://api.whop.com https://*.whop.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.paddle.com;
+      connect-src 'self' https://*.supabase.co wss://*.supabase.co https://generativelanguage.googleapis.com https://api.openweathermap.org https://weather.gc.ca https://api.whop.com https://*.whop.com https://fonts.googleapis.com https://fonts.gstatic.com https://cdn.paddle.com https://plausible.io;
       frame-ancestors 'self' https://whop.com https://*.whop.com;
       object-src 'none';
       base-uri 'self';

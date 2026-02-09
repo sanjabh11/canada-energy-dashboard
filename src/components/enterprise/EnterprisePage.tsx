@@ -15,8 +15,8 @@
  * Route: /enterprise
  */
 
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
     Building2,
     Users,
@@ -29,8 +29,10 @@ import {
     Zap,
     BarChart3,
     Lock,
-    HeadphonesIcon
+    HeadphonesIcon,
+    Calendar
 } from 'lucide-react';
+import { SEOHead } from '../SEOHead';
 
 interface EnterpriseFormData {
     companyName: string;
@@ -38,20 +40,41 @@ interface EnterpriseFormData {
     email: string;
     phone: string;
     teamSize: string;
+    industry: string;
     message: string;
 }
 
+const INDUSTRY_OPTIONS = [
+    { value: 'municipal', label: 'Municipality / Regional District' },
+    { value: 'indigenous', label: 'Indigenous Nation / Energy Coordinator' },
+    { value: 'industrial', label: 'Industrial Facility (TIER Compliance)' },
+    { value: 'consulting', label: 'Energy Consulting Firm' },
+    { value: 'utility', label: 'Utility / Retailer' },
+    { value: 'finance', label: 'ESG / Sustainable Finance' },
+    { value: 'other', label: 'Other' }
+];
+
 export function EnterprisePage() {
+    const [searchParams] = useSearchParams();
+    const tierParam = searchParams.get('tier') || '';
+
     const [formData, setFormData] = useState<EnterpriseFormData>({
         companyName: '',
         contactName: '',
         email: '',
         phone: '',
         teamSize: 'small',
+        industry: tierParam || '',
         message: ''
     });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (tierParam) {
+            setFormData(prev => ({ ...prev, industry: tierParam }));
+        }
+    }, [tierParam]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -66,7 +89,8 @@ export function EnterprisePage() {
         leads.push({
             ...formData,
             timestamp: new Date().toISOString(),
-            source: 'enterprise_page'
+            source: 'enterprise_page',
+            urlTier: tierParam
         });
         localStorage.setItem('ceip_enterprise_leads', JSON.stringify(leads));
 
@@ -109,6 +133,12 @@ export function EnterprisePage() {
 
     return (
         <div className="min-h-screen bg-slate-900 text-white">
+            <SEOHead
+                title="Enterprise Energy Intelligence | Custom Solutions for Utilities & Municipalities"
+                description="Custom CEIP solutions for utilities, municipalities, Indigenous energy coordinators, and industrial compliance teams. API access, dedicated support, enterprise-grade security."
+                path="/enterprise"
+                keywords={['enterprise energy platform', 'custom energy analytics', 'municipal energy enterprise', 'TIER compliance enterprise', 'Indigenous energy enterprise']}
+            />
             {/* Header */}
             <header className="bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -121,12 +151,18 @@ export function EnterprisePage() {
                             <span className="text-slate-400 text-sm ml-2">Canada Energy Intelligence Platform</span>
                         </div>
                     </Link>
-                    <nav className="flex items-center gap-4">
+                    <nav className="flex items-center gap-4 text-sm">
                         <Link to="/pricing" className="text-slate-300 hover:text-white transition-colors">
-                            See Pricing
+                            Pricing
                         </Link>
-                        <Link to="/contact" className="text-slate-300 hover:text-white transition-colors">
-                            Contact
+                        <Link to="/municipal" className="text-slate-300 hover:text-white transition-colors">
+                            Municipal
+                        </Link>
+                        <Link to="/roi-calculator" className="text-slate-300 hover:text-white transition-colors">
+                            TIER Calculator
+                        </Link>
+                        <Link to="/compare" className="text-slate-300 hover:text-white transition-colors">
+                            Compare
                         </Link>
                     </nav>
                 </div>
@@ -147,12 +183,16 @@ export function EnterprisePage() {
                         Custom solutions for utilities, energy companies, and corporate sustainability teams.
                         Full API access, dedicated support, and enterprise-grade security.
                     </p>
-                    <div className="flex items-center justify-center gap-4">
+                    <div className="flex items-center justify-center gap-4 flex-wrap">
                         <a href="#contact-form" className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2">
                             Contact Sales
                             <ArrowRight className="h-5 w-5" />
                         </a>
-                        <Link to="/api-docs" className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors">
+                        <a href="#contact-form" className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+                            <Calendar className="h-5 w-5" />
+                            Book a 30-Min Demo
+                        </a>
+                        <Link to="/api-docs" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
                             View API Docs
                         </Link>
                     </div>
@@ -337,6 +377,21 @@ export function EnterprisePage() {
                                     <option value="medium">11-50 users</option>
                                     <option value="large">51-200 users</option>
                                     <option value="enterprise">200+ users</option>
+                                </select>
+                            </div>
+
+                            <div className="mb-6">
+                                <label className="block text-sm text-slate-400 mb-2">Industry / Use Case *</label>
+                                <select
+                                    required
+                                    value={formData.industry}
+                                    onChange={e => setFormData({ ...formData, industry: e.target.value })}
+                                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-amber-500 focus:outline-none"
+                                >
+                                    <option value="">Select your industry...</option>
+                                    {INDUSTRY_OPTIONS.map(opt => (
+                                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
                                 </select>
                             </div>
 

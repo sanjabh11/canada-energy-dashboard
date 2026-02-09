@@ -186,6 +186,24 @@ export const SEO_CONFIGS = {
     description: 'Explore CEIP subscription tiers for individuals, teams, and enterprises. API access and custom solutions.',
     path: '/pricing',
     keywords: ['CEIP pricing', 'energy data subscription', 'API access plans']
+  },
+  funderReporting: {
+    title: 'Indigenous Funder Reporting Dashboard',
+    description: 'Auto-generate Wah-ila-toos, CERRC, and Northern REACHE quarterly reports. OCAP-compliant Indigenous energy project tracking with community benchmarking.',
+    path: '/funder-reporting',
+    keywords: ['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP compliance', 'First Nations energy projects', 'funder reporting dashboard']
+  },
+  roiCalculator: {
+    title: 'TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage',
+    description: 'Calculate how much your Alberta facility can save on TIER carbon compliance. Compare fund payment ($95/t) vs market credits ($25/t) vs Direct Investment.',
+    path: '/roi-calculator',
+    keywords: ['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']
+  },
+  municipal: {
+    title: 'Municipal Climate Tools | Alberta Energy Compliance for Municipalities',
+    description: 'CEIP helps Alberta municipalities implement climate action plans. Methane compliance, TIER credits, GHG tracking. All tiers priced below NWPTA $75K threshold.',
+    path: '/municipal',
+    keywords: ['municipal climate tools Alberta', 'TIER compliance municipality', 'GHG reporting municipal', 'MCCAC energy tools', 'FCM Green Municipal Fund']
   }
 };
 
