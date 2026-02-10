@@ -1,6 +1,6 @@
 # Canada Energy Intelligence Platform (CEIP) – Top 20 Features
 
-> **Last Updated:** December 12, 2025  
+> **Last Updated:** February 10, 2026  
 > **Live Demo:** [canada-energy.netlify.app](https://canada-energy.netlify.app/)
 
 ---
@@ -59,15 +59,16 @@ Six new features targeting Alberta market opportunities:
 
 ---
 
-## 5. Indigenous Energy Sovereignty Dashboard
+## 5. Indigenous Energy Sovereignty Dashboard (Early Access)
 
-OCAP®/FPIC-compliant platform for First Nations energy projects:
+OCAP®-aligned architecture for First Nations energy projects — seeking community co-design partners:
 
 - Territory mapping with consultation status
 - FPIC workflow management (3 stages)
 - Traditional Ecological Knowledge (TEK) integration
 - Multi-step project intake form (UNDRIP-aware)
-- Chief & Council reporting exports
+- Funder report templates (Wah-ila-toos, CERRC, Northern REACHE)
+- Sovereign Data Vault with data residency controls (Early Access — encryption backend in development)
 
 ---
 
@@ -83,15 +84,18 @@ Track green finance across Canada:
 
 ---
 
-## 7. AI/LLM-Powered Analytics (5x Effectiveness)
+## 7. AI/LLM Energy Analysis
 
-Planned AI enhancement roadmap:
+LLM-powered energy Q&A via Gemini integration:
 
-- RAG (Retrieval-Augmented Generation) with pgvector
-- Multi-model ensemble (Gemini, Claude)
-- Prompt templates for policy/market analysis
-- Response caching and evaluation framework
-- Natural language energy Q&A
+- Natural language energy Q&A (Energy Advisor Chat)
+- LLM Edge Function with energy context
+- Response caching for common queries
+
+**Roadmap (not yet built):**
+- RAG with pgvector for document retrieval
+- Multi-model ensemble (Gemini + Claude)
+- Energy-specific prompt templates
 
 ---
 
@@ -137,16 +141,16 @@ Secure v2 Edge Functions for integrations:
 
 ---
 
-## 11. High Data Quality (95%+ Real Data)
+## 11. Authoritative Canadian Data Sources
 
-Data sources with minimal mocking:
+Data sourced from official Canadian energy authorities:
 
-- **Static Data:** ECCC, IESO, AESO, NPRI, CER, issuer disclosures
+- **Grid Data:** AESO (Alberta pool price, generation), IESO (Ontario demand, prices)
+- **Emissions:** ECCC, NPRI, CER regulatory filings
 - **ESG:** MSCI, Sustainalytics, Yahoo Finance
-- **Government:** Provincial energy programs
-- **Time Series:** Historical demand, prices, generation
+- **Government:** Provincial energy programs, Alberta.ca TIER data
 
-SQL fix scripts ensure < 5% placeholder data.
+Dashboards attempt live API fetches and fall back to cached/sample data when sources are unavailable. Data provenance is documented per dashboard.
 
 ---
 

@@ -108,9 +108,12 @@ export const SovereignDataVault: React.FC = () => {
                             <Shield className="h-10 w-10 text-purple-400" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold text-white">Sovereign Data Vault</h1>
+                            <div className="flex items-center gap-3">
+                                <h1 className="text-3xl font-bold text-white">Sovereign Data Vault</h1>
+                                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">EARLY ACCESS</span>
+                            </div>
                             <p className="text-slate-400 text-lg">
-                                OCAP® Compliant Data Architecture for Indigenous Communities
+                                OCAP®-Aligned Data Architecture — Seeking Community Co-Design Partners
                             </p>
                         </div>
                     </div>

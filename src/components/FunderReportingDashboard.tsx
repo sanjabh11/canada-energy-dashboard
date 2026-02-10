@@ -491,8 +491,8 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <SEOHead
-        title="Indigenous Funder Reporting Dashboard | OCAP-Compliant Energy Project Tracking"
-        description="Auto-generate Wah-ila-toos, CERRC, and Northern REACHE quarterly reports. OCAP-compliant Indigenous energy project tracking with community benchmarking and bank-ready exports."
+        title="Indigenous Funder Reporting Dashboard | OCAP-Aligned Energy Project Tracking"
+        description="Funder report templates for Wah-ila-toos, CERRC, and Northern REACHE programs. OCAP-aligned Indigenous energy project tracking with community benchmarking. Seeking community design partners."
         path="/funder-reporting"
         keywords={['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP compliance', 'First Nations energy projects', 'funder reporting dashboard']}
       />
@@ -503,9 +503,12 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
               <FileText className="h-8 w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Funder Reporting Dashboard</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl font-bold">Funder Reporting Dashboard</h1>
+                <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 text-xs font-semibold rounded-full border border-amber-500/30">EARLY ACCESS</span>
+              </div>
               <p className="text-emerald-100 text-sm mt-1">
-                Generate Wah-ila-toos, CERRC, and Northern REACHE reports automatically
+                Wah-ila-toos, CERRC, and Northern REACHE report templates — seeking community design partners
               </p>
             </div>
           </div>

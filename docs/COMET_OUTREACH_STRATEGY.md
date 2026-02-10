@@ -1,9 +1,12 @@
 # CEIP Comet Outreach Strategy — LinkedIn Cold Connection & Messaging Playbook
 
-**Date:** February 9, 2026
+**Date:** February 10, 2026 (v2.0 — Post-Adversarial Review)
 **Tool:** Perplexity Comet Browser (AI LinkedIn Agent)
-**Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` — Top 5 Revenue Opportunities
+**Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` + `ADVERSARIAL_USP_ANALYSIS.md`
 **Live URLs:** All pages deployed at `https://canada-energy.netlify.app`
+
+> **CRITICAL RULE:** Every claim in outreach must be verifiable by the prospect clicking through.
+> See `ADVERSARIAL_USP_ANALYSIS.md` for what we can and cannot claim.
 
 ---
 
@@ -46,9 +49,16 @@ Copy-paste this as the base prompt in Comet, then customize per campaign:
 ```
 You are my safe LinkedIn outreach assistant for CEIP (Canada Energy Intelligence Platform).
 
-CONTEXT: CEIP is Canada's only AI-powered energy analytics platform with 25+ dashboards, 44 API endpoints, Indigenous OCAP data sovereignty, TIER carbon credit arbitrage tools, and municipal climate planning. Live at https://canada-energy.netlify.app
+CONTEXT: CEIP is a comprehensive Canadian energy intelligence platform with 25+ sector dashboards, 44 API endpoints, a TIER compliance calculator, and OCAP-aligned Indigenous energy tools. Built by a solo developer. Early-stage, seeking design partners and beta testers. Live at https://canada-energy.netlify.app
 
-GOAL: Build genuine connections with {TARGET_PERSONA}. We are NOT selling — we are offering free tools, insights, and partnership opportunities.
+IMPORTANT — DO NOT CLAIM:
+- "AI-powered" as a primary differentiator
+- "Live" pricing (our TIER prices are based on Q4 2025 data)
+- "Used by consultants" or any social proof we don't have
+- "Nation-held encryption keys" or "full data sovereignty" (architecture exists, implementation is early-access)
+- "Bill auditing" or "peak shaving alerts" for Rate Watchdog
+
+GOAL: Build genuine connections with {TARGET_PERSONA}. We are NOT selling — we are offering free tools, beta access, and partnership opportunities. Position as honest early-stage builder seeking feedback.
 
 SAFETY: Follow 2026 LinkedIn best practices. Personalize deeply, engage content first (like + comment thoughtfully), add natural 2-5 min delays between actions, limit to 15-20 connection requests/day max, keep messages short and conversational. Stop if ANY warning appears.
 
@@ -101,39 +111,39 @@ Start with 10 prospects today. Show me drafts for approval before sending.
 
 **Template A — Data Pain Hook:**
 ```
-Hi {FirstName}, saw your work on {specific: e.g., Alberta grid analysis at {Company}}. I built a free Canadian energy API (44 endpoints, live AESO/IESO data). Would love your feedback on data accuracy — connect?
+Hi {FirstName}, saw your work on {specific: e.g., Alberta grid analysis at {Company}}. I built a Canadian energy API (44 endpoints, AESO/IESO/ECCC data) at a fraction of Orennia's cost. Looking for analyst beta testers — connect?
 ```
 
 **Template B — Post-Engagement Hook:**
 ```
-Hi {FirstName}, great point in your post about {topic}. I've been building real-time Canadian energy data tools for analysts — thought you might find the API useful. Would love to connect!
+Hi {FirstName}, great point in your post about {topic}. I've been building Canadian energy data tools for analysts — 44 API endpoints covering grid, carbon, and provincial data. Would love your feedback!
 ```
 
-**Template C — Mutual Connection Hook:**
+**Template C — Beta Tester Hook:**
 ```
-Hi {FirstName}, noticed we both work in Canadian energy analytics. I built an open API with live grid data + AI analysis — used by a few consultants already. Happy to share access if useful!
+Hi {FirstName}, noticed we both work in Canadian energy analytics. I built an open API with AESO/IESO grid data — looking for 5 analyst beta testers who'll get free Pro access. Interested?
 ```
 
 ### Follow-Up DM (if accepted)
 
-**Template A — API Demo Offer:**
+**Template A — Beta Access Offer:**
 ```
 Thanks for connecting, {FirstName}! Your work at {Company} on {topic} caught my eye.
 
-Quick question: how much time does your team spend pulling AESO/IESO data manually? I built an API that serves live Canadian grid data, TIER credit pricing, and provincial generation — all in one call.
+Quick question: how much time does your team spend pulling AESO/IESO data manually? I built an API with 44 endpoints covering Canadian grid data, emissions, and TIER credits — Python/Excel friendly.
 
-Happy to set up a free 30-day Pro trial so you can test it with your workflow: https://canada-energy.netlify.app/api-docs
+I'm offering free Pro access to 5 beta testers in exchange for feedback on data accuracy: https://canada-energy.netlify.app/api-docs
 
 What's your biggest data headache right now?
 ```
 
-**Template B — Analyst-to-Analyst:**
+**Template B — Price Comparison:**
 ```
 Appreciate the connection, {FirstName}! I noticed {Company} is doing interesting work on {topic}.
 
-I've been obsessed with making Canadian energy data more accessible — built 44 API endpoints covering AESO pool price, IESO demand, emissions, and TIER credits. Python/Excel friendly.
+I've been building a Canadian energy data platform — 44 API endpoints covering AESO pool price, IESO demand, emissions, provincial generation, and TIER credits. Similar data to Orennia but at $149/mo vs their $10-30K/yr.
 
-Would a quick 5-min walkthrough be useful? Here's a preview: https://canada-energy.netlify.app/api-docs
+Would a quick 5-min walkthrough be useful? Here's the API docs: https://canada-energy.netlify.app/api-docs
 
 Curious what data sources your team relies on most?
 ```
@@ -150,14 +160,16 @@ The API is free to try for 30 days — no commitment. Let me know if I can help 
 
 ## Campaign 2: Indigenous Energy Coordinators
 
-**Priority:** HIGH (BLUE OCEAN — zero competitors)
-**GTM Score:** 9.5/10
-**Target MRR:** $12,500 by Month 6
+**Priority:** HIGH (No competitor is attempting OCAP-aligned energy analytics)
+**GTM Score:** 9.5/10 (opportunity) / 6/10 (product readiness — needs community co-design)
+**Target MRR:** $12,500 by Month 6 (requires co-design partner first)
 **Pricing:** $2,500/mo (fits ISC "Capacity Building" grant budgets)
 **Live demo URLs:**
-- Funder Reporting: `https://canada-energy.netlify.app/funder-reporting`
-- OCAP Data Vault: `https://canada-energy.netlify.app/sovereign-vault`
+- Funder Reporting: `https://canada-energy.netlify.app/funder-reporting` (Early Access)
+- OCAP Data Vault: `https://canada-energy.netlify.app/sovereign-vault` (Early Access)
 - Indigenous Dashboard: `https://canada-energy.netlify.app/indigenous`
+
+**⚠️ HONESTY NOTE:** The OCAP architecture is designed but NOT production-hardened. Encryption is not yet implemented. Funder reporting uses template scaffolding with demo data. We MUST position this as seeking a co-design partner, not selling a finished product.
 
 ### Target Organizations & Roles
 
@@ -178,19 +190,19 @@ The API is free to try for 30 days — no commitment. Let me know if I can help 
 
 ### Connection Request Note (≤250 chars)
 
-**Template A — Partnership Hook:**
+**Template A — Learning Hook:**
 ```
-Hi {FirstName}, I'm building Canada's only OCAP-compliant energy data platform. Saw your work on {community/project}. Would love to connect and learn how we might support your energy goals.
+Hi {FirstName}, I'm building energy tracking tools designed for OCAP alignment. It's early stage — I'd love to learn from {community}'s experience with funder reporting. Would you be open to connecting?
 ```
 
-**Template B — Funder Reporting Hook:**
+**Template B — Co-Design Hook:**
 ```
-Hi {FirstName}, noticed your {community}'s clean energy work. I built a tool that auto-generates Wah-ila-toos and CERRC quarterly reports. Happy to share a free demo — connect?
+Hi {FirstName}, noticed your {community}'s clean energy work. I'm building funder report templates for Wah-ila-toos/CERRC programs and need community input to get it right. Interested in shaping the tool?
 ```
 
 **Template C — ICE Network Context:**
 ```
-Hi {FirstName}, fellow ICE Network follower here. I've been building data sovereignty tools for Indigenous energy projects — OCAP-compliant, nation-controlled encryption. Would love to exchange ideas!
+Hi {FirstName}, fellow ICE Network follower here. I'm a developer building OCAP-aligned energy data tools — early stage, seeking one community to co-design with. Would love to exchange ideas!
 ```
 
 ### Follow-Up DM (if accepted)
@@ -199,22 +211,22 @@ Hi {FirstName}, fellow ICE Network follower here. I've been building data sovere
 ```
 Thanks for connecting, {FirstName}! I have deep respect for the energy work happening at {community/org}.
 
-I built something that might save your team significant reporting time: an OCAP-compliant dashboard that auto-generates Wah-ila-toos, CERRC, and Northern REACHE quarterly reports from your project data. Your community holds the encryption keys — full data sovereignty.
+I'm a solo developer building what I hope will become Canada's first OCAP-aligned energy data platform. I've built the architecture — data residency controls, consent logging, funder report templates for Wah-ila-toos/CERRC/Northern REACHE — but I know real OCAP alignment requires community partnership to get right.
 
-Here's a preview: https://canada-energy.netlify.app/funder-reporting
+Here's an early preview: https://canada-energy.netlify.app/funder-reporting
 
-Would a 20-minute walkthrough be helpful? I'm also exploring an ICE Network partnership to offer this as a shared tool. Happy to learn what would be most useful for your community.
+I'm looking for ONE community willing to co-design the tool. Free access, direct developer support, and your feedback shapes what gets built. Would a 20-minute conversation be helpful?
 ```
 
 **Template B — For Executives/Directors:**
 ```
 Appreciate the connection, {FirstName}! Your leadership on {project/initiative} is inspiring.
 
-Quick context: I'm a solo developer who built Canada's only OCAP-compliant energy analytics platform — used for funder reporting, project benchmarking, and capacity tracking. Everything is encrypted with nation-held keys.
+I'm a developer building an OCAP-aligned energy data platform. I've designed the architecture for data sovereignty (residency controls, access logging, nation-controlled configurations) but it's early-access — I need a community partner to harden it into something genuinely useful.
 
-We're looking for one community partner to co-pilot and shape the tool. If {org} has upcoming grant reporting deadlines, this could help. Details: https://canada-energy.netlify.app/sovereign-vault
+I'm offering one community free access + direct developer support in exchange for shaping the product: https://canada-energy.netlify.app/sovereign-vault
 
-Would love to hear what challenges you face with project data management.
+What are the biggest pain points your team faces with energy project data and funder reporting?
 ```
 
 ### Important Notes for This Campaign
@@ -334,17 +346,17 @@ Would you be open to a free 30-day baseline audit? No commitment — you keep th
 
 **Template A — Arbitrage Hook:**
 ```
-Hi {FirstName}, the TIER fund-credit spread is ~$70/tonne right now. I built a free calculator showing industrial savings via market credits vs. fund payment. Thought it might be relevant to {Company}.
+Hi {FirstName}, the TIER fund-credit spread is ~$70/t (Alberta.ca confirmed). I built a free 3-pathway compliance calculator (fund vs market credits vs Direct Investment). Might be useful for {Company}?
 ```
 
 **Template B — Direct Investment Hook:**
 ```
-Hi {FirstName}, saw {Company}'s sustainability work. With the new Direct Investment pathway under TIER, I built an audit trail generator and ROI calculator. Happy to share — connect?
+Hi {FirstName}, saw {Company}'s sustainability work. With the new Direct Investment pathway under TIER, I built a compliance calculator comparing all 3 pathways. Happy to share — connect?
 ```
 
 **Template C — Compliance Angle:**
 ```
-Hi {FirstName}, noticed your role in environmental compliance at {Company}. I track live TIER credit pricing (EPC + offsets) — showing a $70/t savings opportunity right now. Worth a quick look?
+Hi {FirstName}, noticed your environmental compliance role at {Company}. I built a free TIER calculator showing fund ($95/t) vs market credits (~$25/t) vs Direct Investment. Worth a quick look?
 ```
 
 ### Follow-Up DM (if accepted)
@@ -366,24 +378,26 @@ It also covers the new Direct Investment pathway (Dec 2025 amendments). Would a 
 ```
 Appreciate the connection, {FirstName}! I've been deep in the TIER compliance space and wanted to share a few data points:
 
-• Fund price: $95/t (2025-2026)
-• Market EPC credits: ~$25/t
-• New Direct Investment pathway: capex can offset compliance obligations
+• Fund price: $95/t (Alberta.ca, May 2025)
+• Market EPC credits: ~$25/t (S&P Global, Q4 2025)
+• New Direct Investment pathway: capex can offset compliance obligations (standard expected early 2026)
 
-I built a tool that tracks live credit pricing and models the optimal compliance pathway for each facility. Here's the calculator: https://canada-energy.netlify.app/roi-calculator
+I built a calculator that models the optimal compliance pathway for each facility across all three options: https://canada-energy.netlify.app/roi-calculator
 
-Most facilities I've modeled show 500-800% ROI on switching from fund payments to market credits. Worth exploring for {Company}?
+For a facility with 20K tonnes exceedance, the spread between fund payment and market credits is $1.4M/yr. Worth exploring for {Company}?
 ```
 
 ---
 
-## Campaign 5: Alberta Rate Watchdog (B2C)
+## Campaign 5: Alberta Rate Watchdog (B2C — Lead Gen)
 
-**Priority:** MEDIUM (low ARPU but top-of-funnel for B2B)
+**Priority:** LOW for LinkedIn (primary channels are Reddit/YouTube/Facebook)
 **GTM Score:** 6.0/10
-**Target MRR:** $1,800 by Month 3
-**Pricing:** $9/month
+**Current state:** Free rate comparison tool. Retailer data needs updating.
+**Pricing:** Free (do NOT charge $9/mo until bill upload + real alerts are built)
 **Live URL:** `https://canada-energy.netlify.app/watchdog`
+
+**⚠️ HONESTY NOTE:** Rate Watchdog currently provides rate comparison only. It does NOT do bill auditing, peak shaving alerts, or personalized savings calculations. Do NOT claim these features in any outreach. Charge only after features match promises.
 
 ### Note: LinkedIn is NOT the primary channel for B2C
 
@@ -408,12 +422,12 @@ LinkedIn outreach for Rate Watchdog should target **influencers and amplifiers**
 
 **Template A — For Realtors:**
 ```
-Hi {FirstName}, love your Calgary real estate content. I built a free electricity bill checker for Alberta homeowners — helps buyers understand their energy costs before closing. Thought it might be useful!
+Hi {FirstName}, love your Calgary real estate content. I built a free Alberta electricity rate comparison tool — helps buyers compare RoLR vs fixed rates before closing. Thought it might be useful!
 ```
 
 **Template B — For Finance Influencers:**
 ```
-Hi {FirstName}, great post on {financial topic}. I built an Alberta electricity savings tool ($9/mo) that audits bills and catches overcharges. Saves the avg household $500/yr. Worth a look?
+Hi {FirstName}, great post on {financial topic}. I built a free Alberta electricity rate comparison tool that shows RoLR vs competitive retailer rates side-by-side. Might interest your Alberta audience!
 ```
 
 ### Follow-Up DM (if accepted)
@@ -421,11 +435,11 @@ Hi {FirstName}, great post on {financial topic}. I built an Alberta electricity 
 ```
 Thanks for connecting, {FirstName}!
 
-Quick pitch: I built "Alberta Rate Watchdog" — a $9/mo tool that audits electricity bills, compares RoLR vs competitive rates, and sends peak-shaving alerts. Average user saves $500+/year.
+I built "Alberta Rate Watchdog" — a free tool that compares RoLR rates against competitive retailers and tracks AESO pool prices. It helps Albertans see whether they should switch electricity providers.
 
-I'm looking for a few Alberta realtors/influencers who'd be interested in sharing it with their audience (affiliate or just goodwill). Here's the tool: https://canada-energy.netlify.app/watchdog
+I'm looking for a few Alberta realtors/influencers who'd be interested in sharing it with their audience. It's completely free: https://canada-energy.netlify.app/watchdog
 
-Would that be something you'd consider? Happy to set up a free account for you to test first.
+Would that be something you'd consider? Happy to answer any questions about how it works.
 ```
 
 ---
@@ -543,15 +557,17 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 ```
 You are my safe LinkedIn outreach assistant for CEIP (Canada Energy Intelligence Platform — https://canada-energy.netlify.app).
 
-CEIP is Canada's only AI-powered energy analytics platform with:
+CEIP is a comprehensive Canadian energy intelligence platform with:
 • 25+ specialized energy dashboards (AESO, IESO, hydrogen, CCUS, ESG, etc.)
-• 44 REST API endpoints with live Canadian grid data
-• Indigenous OCAP-compliant data sovereignty (nation-held encryption keys)
-• TIER carbon credit arbitrage tracking ($70/tonne savings opportunity)
-• Municipal climate tools priced below $75K NWPTA sole-source threshold
-• Funder reporting (Wah-ila-toos, CERRC, Northern REACHE auto-generation)
+• 44 REST API endpoints with Canadian grid, emissions, and compliance data
+• TIER carbon credit compliance calculator (3-pathway: fund vs market vs Direct Investment)
+• OCAP-aligned Indigenous energy tools (early-access, seeking community co-design partner)
+• Municipal climate tools designed for simplified procurement (<$75K)
+• Funder report templates for Wah-ila-toos, CERRC, Northern REACHE programs (early-access)
 
-I am a solo founder relocating to Alberta. My approach is value-first: offer free tools, free trials, free audits. Never hard-sell.
+DO NOT CLAIM: "AI-powered" as headline • "live pricing" • "used by consultants" • "nation-held encryption keys" • "bill auditing" or "peak shaving" • "$500/year savings" • "auto-generates reports"
+
+I am a solo developer relocating to Alberta. My approach is value-first: offer free tools, beta access, and design partnerships. Be honest about early-stage status. Never hard-sell.
 
 TODAY'S CAMPAIGN: {Campaign Name}
 TARGET: {Persona description}

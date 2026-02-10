@@ -329,11 +329,11 @@ export const TIERROICalculator: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
                 <div className="flex flex-col items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">Live EPC/Offset Pricing</span>
+                    <span className="text-sm text-slate-400">Q4 2025 Market Data (S&P/ICAP)</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">Direct Investment Automation</span>
+                    <span className="text-sm text-slate-400">3-Pathway Compliance Modeling</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />

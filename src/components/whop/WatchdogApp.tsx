@@ -47,10 +47,10 @@ export function WatchdogApp() {
         <ErrorBoundary>
             <div className="min-h-screen bg-slate-900 text-white font-sans selection:bg-cyan-500/30">
                 <SEOHead
-                    title="Alberta Rate Watchdog | Stop Overpaying on Electricity | $9/mo"
-                    description="Bill auditing, retailer switching recommendations, peak shaving alerts. Save $500+/year on Alberta electricity. Compare RoLR rates vs competitive retailers in real-time."
+                    title="Alberta Rate Watchdog | Compare RoLR vs Competitive Electricity Rates"
+                    description="Compare Alberta RoLR rates against competitive retailers. Track AESO pool prices and see which electricity plan saves you the most. Free rate comparison tool."
                     path="/watchdog"
-                    keywords={['Alberta electricity rates', 'RoLR rate comparison', 'Alberta bill auditing', 'electricity savings Alberta', 'AESO pool price', 'rate watchdog']}
+                    keywords={['Alberta electricity rates', 'RoLR rate comparison', 'Alberta electricity comparison', 'AESO pool price', 'rate watchdog', 'Alberta retailer rates']}
                 />
                 {/* Hide main header in iframe context */}
                 {isInIframe && (
@@ -126,8 +126,8 @@ export function WatchdogApp() {
                             <div className="flex items-center gap-3">
                                 <CreditCard className="h-5 w-5 text-amber-400" />
                                 <div>
-                                    <p className="text-white font-medium">Unlock Bill Auditing & Peak Shaving Alerts</p>
-                                    <p className="text-cyan-200 text-sm">Save $500+/year • $9/month • Cancel anytime</p>
+                                    <p className="text-white font-medium">Unlock Premium Rate Alerts & Detailed Comparisons</p>
+                                    <p className="text-cyan-200 text-sm">Daily rate monitoring • Retailer comparisons • $9/month • Cancel anytime</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
