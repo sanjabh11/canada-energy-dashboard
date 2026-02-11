@@ -62,6 +62,12 @@ const CompetitorComparison = React.lazy(() => import('./components/CompetitorCom
 // Value Prop Research Dec 2025 - LOW Priority Features
 const SovereignDataVault = React.lazy(() => import('./components/SovereignDataVault').then(m => ({ default: m.SovereignDataVault })));
 const CreditBankingDashboard = React.lazy(() => import('./components/CreditBankingDashboard').then(m => ({ default: m.CreditBankingDashboard })));
+// Forecast Benchmarking (standalone page for consulting firms)
+const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastBenchmarkingPage'));
+// P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
+const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard').then(m => ({ default: m.DemandForecastDashboard })));
+const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport').then(m => ({ default: m.RegulatoryFilingExport })));
+const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard').then(m => ({ default: m.AssetHealthDashboard })));
 // Open API Documentation (Gartner Integration)
 const OpenAPIDocsPage = React.lazy(() => import('./components/OpenAPIDocsPage').then(m => ({ default: m.OpenAPIDocsPage })));
 // Whop Mini-App (Isolated, zero-auth for Whop App Store)
@@ -105,6 +111,10 @@ const router = createBrowserRouter(
 
         // Whop Mini-App (ISOLATED - Zero auth, zero external APIs for Whop App Store)
         { path: '/whop-mini/*', element: <WhopMiniApp /> },
+
+        // Forecast Benchmarking (standalone for consulting firms / regulatory)
+        { path: '/forecast-benchmarking', element: <ForecastBenchmarkingPage /> },
+        { path: '/forecast-evaluation', element: <ForecastBenchmarkingPage /> },
 
         // Renewable Energy Optimization Hub
         { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
@@ -183,6 +193,22 @@ const router = createBrowserRouter(
         { path: '/credit-banking', element: <CreditBankingDashboard /> },
         { path: '/tier-credits', element: <CreditBankingDashboard /> },
         { path: '/buy-credits', element: <CreditBankingDashboard /> },
+
+        // P2: Ontario Demand Forecasting (ML Load Prediction)
+        { path: '/demand-forecast', element: <DemandForecastDashboard /> },
+        { path: '/load-forecast', element: <DemandForecastDashboard /> },
+        { path: '/ontario-forecast', element: <DemandForecastDashboard /> },
+
+        // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
+        { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
+        { path: '/regulatory', element: <RegulatoryFilingExport /> },
+        { path: '/rule-005', element: <RegulatoryFilingExport /> },
+        { path: '/oeb-filing', element: <RegulatoryFilingExport /> },
+
+        // P4: Asset Health Index (CSV-Based CBRM Scoring)
+        { path: '/asset-health', element: <AssetHealthDashboard /> },
+        { path: '/asset-scoring', element: <AssetHealthDashboard /> },
+        { path: '/cbrm', element: <AssetHealthDashboard /> },
 
         // Open API Documentation (Gartner Integration)
         { path: '/api-docs', element: <OpenAPIDocsPage /> },

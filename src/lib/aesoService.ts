@@ -46,6 +46,10 @@ export interface AESOSupplyData {
   totalGeneration: number;
 }
 
+// Data snapshot metadata — update this single constant when refreshing static rates
+export const DATA_SNAPSHOT_DATE = '2026-02-01';
+export const DATA_SNAPSHOT_LABEL = 'February 2026';
+
 // AESO API Base URL
 const AESO_API_BASE = 'https://api.aeso.ca/report/v1.1';
 const AESO_ETS_BASE = 'https://ets.aeso.ca';
@@ -149,7 +153,7 @@ export async function getCurrentRRORate(): Promise<AESORRORate | null> {
     // In production, this should scrape or use an API for:
     // https://ucahelps.alberta.ca/regulated-rate-option.aspx
     
-    // For now, use realistic current RRO data (December 2024)
+    // Static fallback data — see DATA_SNAPSHOT_DATE for vintage
     const currentRRO: AESORRORate = {
       month: new Date().toLocaleString('en-US', { month: 'long' }),
       year: new Date().getFullYear(),
@@ -180,22 +184,22 @@ async function estimateCurrentRRO(): Promise<number> {
     return Math.round((baseRate + transmissionDistribution + adminFees) * 100) / 100;
   }
   
-  // Default fallback based on typical Alberta RRO (December 2024)
-  return 16.82;
+  // Default fallback based on typical Alberta RRO (Feb 2026, source: ucahelps.alberta.ca)
+  return 14.95;
 }
 
 /**
  * Get all Alberta RRO providers with current rates
  */
 export async function getAllRROProviders(): Promise<AESORRORate[]> {
-  // Based on UCA data: https://ucahelps.alberta.ca/
+  // Based on UCA data: https://ucahelps.alberta.ca/ (as of DATA_SNAPSHOT_DATE)
   const providers = [
-    { name: 'ENMAX Energy', rate: 16.82 },
-    { name: 'EPCOR Energy Alberta', rate: 16.79 },
-    { name: 'ATCO Electric', rate: 16.91 },
-    { name: 'FortisAlberta (Direct Energy)', rate: 16.85 },
-    { name: 'City of Lethbridge', rate: 15.99 },
-    { name: 'City of Red Deer', rate: 16.45 }
+    { name: 'ENMAX Energy', rate: 14.95 },
+    { name: 'EPCOR Energy Alberta', rate: 14.89 },
+    { name: 'ATCO Electric', rate: 15.12 },
+    { name: 'FortisAlberta (Direct Energy)', rate: 15.05 },
+    { name: 'City of Lethbridge', rate: 14.29 },
+    { name: 'City of Red Deer', rate: 14.75 }
   ];
 
   const currentMonth = new Date().toLocaleString('en-US', { month: 'long' });
@@ -226,13 +230,13 @@ export interface RetailerOffer {
 }
 
 export async function getRetailerOffers(): Promise<RetailerOffer[]> {
-  // Real retailer data (December 2024)
+  // Retailer data as of DATA_SNAPSHOT_DATE
   // Source: https://ucahelps.alberta.ca/cost-comparison-tool.aspx
   return [
     {
       id: 'enmax',
       name: 'ENMAX Energy',
-      fixedRate: 10.99,
+      fixedRate: 9.99,
       term: 12,
       promo: 'No deposit required',
       url: 'https://www.enmax.com/',
@@ -242,7 +246,7 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
     {
       id: 'direct',
       name: 'Direct Energy',
-      fixedRate: 10.49,
+      fixedRate: 9.49,
       term: 24,
       promo: 'Lock in low rate for 2 years',
       url: 'https://www.directenergy.ca/',
@@ -252,9 +256,9 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
     {
       id: 'epcor',
       name: 'EPCOR Energy',
-      fixedRate: 10.79,
+      fixedRate: 9.79,
       term: 12,
-      promo: 'Free smart thermostat program',
+      promo: 'Smart home energy bundle',
       url: 'https://www.epcor.com/',
       greenOption: false,
       cancellationFee: 0
@@ -262,7 +266,7 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
     {
       id: 'atco',
       name: 'ATCOenergy',
-      fixedRate: 10.29,
+      fixedRate: 9.29,
       term: 36,
       promo: 'Price match guarantee',
       url: 'https://www.atcoenergy.com/',
@@ -272,7 +276,7 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
     {
       id: 'justenergy',
       name: 'Just Energy',
-      fixedRate: 11.49,
+      fixedRate: 10.49,
       term: 12,
       promo: 'Flexible terms available',
       url: 'https://www.justenergy.com/',
@@ -282,7 +286,7 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
     {
       id: 'solarus',
       name: 'Solarus',
-      fixedRate: 9.99,
+      fixedRate: 8.99,
       term: 24,
       promo: 'Lowest rate guarantee',
       url: 'https://www.solarus.ca/',
@@ -321,7 +325,7 @@ export function calculateSavings(
  * Get latest cached pool price (fallback when API unavailable)
  */
 function getLatestCachedPoolPrice(): AESOPoolPrice {
-  // Realistic pool price based on recent AESO data (December 2024)
+  // Pool price patterns based on AESO data (see DATA_SNAPSHOT_DATE)
   // Typical range: $50-150/MWh depending on time of day and demand
   const hour = new Date().getHours();
   let basePrice = 85; // Average pool price

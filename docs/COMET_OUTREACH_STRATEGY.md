@@ -1,12 +1,18 @@
 # CEIP Comet Outreach Strategy — LinkedIn Cold Connection & Messaging Playbook
 
-**Date:** February 10, 2026 (v2.0 — Post-Adversarial Review)
+**Date:** February 11, 2026 (v2.1 — P2–P5 Implementation)
 **Tool:** Perplexity Comet Browser (AI LinkedIn Agent)
 **Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` + `ADVERSARIAL_USP_ANALYSIS.md`
 **Live URLs:** All pages deployed at `https://canada-energy.netlify.app`
 
 > **CRITICAL RULE:** Every claim in outreach must be verifiable by the prospect clicking through.
 > See `ADVERSARIAL_USP_ANALYSIS.md` for what we can and cannot claim.
+
+> **New capabilities to reference (NOW LIVE):**
+> - Ontario Demand Forecasting (seasonal decomposition, accuracy vs baselines) — `/demand-forecast`
+> - Regulatory Filing Templates (AUC Rule 005 Schedules 4.2/10/17/22 + OEB Chapter 5 Sections 5.2/5.3/5.4) — `/regulatory-filing`
+> - Asset Health Index (CSV-based CBRM-lite scoring, no SCADA required) — `/asset-health`
+> - OEB Innovation Sandbox pilot proposal (for credibility with Ontario LDCs) — `docs/OEB_SANDBOX_PROPOSAL.md`
 
 ---
 
@@ -21,6 +27,8 @@
 7. [Campaign 5: Alberta Residential / Rate Watchdog (B2C)](#campaign-5-alberta-rate-watchdog-b2c)
 8. [Weekly Cadence & Scaling Plan](#weekly-cadence--scaling-plan)
 9. [Tracking & Optimization](#tracking--optimization)
+10. [Feature Change Log & UI Verification (Feb 2026)](#feature-change-log--ui-verification-feb-2026)
+11. [Optional Future Items (Not Committed)](#optional-future-items-not-committed)
 
 ---
 
@@ -549,6 +557,55 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 | **Pricing** | `https://canada-energy.netlify.app/pricing` | All campaigns (late stage) |
 | **Enterprise Contact** | `https://canada-energy.netlify.app/enterprise` | High-value leads |
 | **Enterprise + Industry** | `https://canada-energy.netlify.app/enterprise?tier=indigenous` | Pre-filled contact form |
+
+---
+
+## Feature Change Log & UI Verification (Feb 2026)
+
+### Newly Implemented (P2–P5)
+
+| Feature | URL | Outreach Proof Point | What Prospect Sees | How to Verify (UI) |
+|---------|-----|----------------------|--------------------|--------------------|
+| Ontario Demand Forecasting (Seasonal Decomposition) | `/demand-forecast` | "We provide MAE/MAPE/RMSE vs persistence & seasonal naive baselines on Ontario load." | 4 tabs: Overview, Forecast, Decomposition, Accuracy with charts and CSV export. | Open page → Generate forecast → View charts; compare metrics block; export CSV. |
+| Regulatory Filing Templates (AUC Rule 005 + OEB Ch5) | `/regulatory-filing` | "We export AUC Rule 005 Schedules 4.2/10/17/22 and OEB Ch5 Sections 5.2/5.3/5.4 to CSV with sample data." | Template selector, jurisdiction filter, preview table, download CSV. | Select template → preview sample rows → click Export CSV downloads file. |
+| Asset Health Index (CSV CBRM-lite) | `/asset-health` | "CSV-based Health Index (age/loading/maintenance/environment) with condition/risk charts. No SCADA required." | Upload/ sample loader, condition & risk pies, age vs HI scatter, scored table, export. | Load sample → see charts populate → export results CSV; verify recommendations column. |
+| OEB Sandbox Pilot Proposal | `docs/OEB_SANDBOX_PROPOSAL.md` | "We prepared a 12-month pilot proposal for small Ontario LDCs (<12,500 customers)." | Markdown doc with Exec Summary, Problem, Solution, Budget, Success Metrics. | Open doc; check Sections 1–9; budget table present. |
+
+### Optional Future Items (Not Committed / Use Carefully)
+- 12CP Peak Shaving Calculator (L2) — not built; do NOT promise.
+- REA Landing Page (L3) — not built; do NOT promise.
+- Banyon Displacement Research (L4) — research-only; do NOT promise migration tooling.
+- OCAP data vault hardening (encryption, key mgmt) — still early-access; be transparent.
+
+### UI Smoke Test Steps (before outreach claims)
+1) **Demand Forecast:** Go to `/demand-forecast` → click "Generate Forecast" → confirm charts render and metrics show values.
+2) **Regulatory Templates:** Go to `/regulatory-filing` → choose AUC Rule 005 Schedule 4.2 → click Export CSV → file downloads.
+3) **Asset Health:** Go to `/asset-health` → click "Load Sample Data" → pies/scatter/table populate → export results.
+4) **Docs:** Open `docs/OEB_SANDBOX_PROPOSAL.md` in repo → confirm budget + success metrics present.
+
+---
+
+## Optional Future Items (Not Committed)
+
+Use these as "roadmap/early thinking" only; never present as shipped:
+- 12CP Peak Shaving Calculator (Alberta T&D charge optimizer)
+- REA-specific landing + offers (<$75K sole-source framing)
+- Banyon displacement playbook (billing migration research)
+- OCAP encryption/key custody (nation-held) beyond current early-access design
+
+---
+
+## Outreach Inserts for New Features (Use in relevant campaigns)
+
+- **For Consulting Firms / Municipal / Industrial:**
+  - "We publish accuracy vs persistence + seasonal naive baselines; MAE/MAPE/RMSE are visible on `/demand-forecast`."
+  - "Regulatory exports: AUC Rule 005 Schedules 4.2/10/17/22 and OEB Ch5 5.2/5.3/5.4 downloadable as CSV at `/regulatory-filing`."
+- **For Ontario LDCs / Innovation teams:**
+  - "We drafted an OEB Innovation Sandbox pilot for small LDCs (<12,500 customers) — ready to share for co-application." (Point to `docs/OEB_SANDBOX_PROPOSAL.md`)
+- **For Utility Asset Managers:**
+  - "CSV-based Asset Health Index (age/loading/maintenance/environment) — no SCADA required — live at `/asset-health` with charts + export."
+
+Keep honesty constraints: no AI-as-headline, no SCADA, no live pricing, no social proof claims.
 
 ---
 
