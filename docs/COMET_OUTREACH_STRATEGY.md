@@ -609,6 +609,140 @@ Keep honesty constraints: no AI-as-headline, no SCADA, no live pricing, no socia
 
 ---
 
+## Multi-Channel Outreach Strategy (Beyond LinkedIn)
+
+### Channel Priority Matrix
+
+| Channel | Effort | CAC | Speed | Best For | Priority |
+|---------|--------|-----|-------|----------|----------|
+| **LinkedIn** | Medium | Low | Fast | Consulting firms, Industrial | 🔴 HIGH |
+| **Cold Email** | Low | Low | Fast | Consulting, Municipal, REAs | 🔴 HIGH |
+| **Industry Events** | High | Medium | Slow | All segments (trust-building) | 🟡 MEDIUM |
+| **Content/SEO** | High | Very Low | Slow | Long-term inbound | 🟡 MEDIUM |
+| **Reddit/Communities** | Low | Very Low | Medium | B2C (Watchdog), thought leadership | 🟡 MEDIUM |
+| **Partnerships** | Medium | Zero | Medium | ICE Network, MCCAC, AFREA | 🔴 HIGH |
+
+### A. Cold Email Playbook
+
+**Approach:**
+- LinkedIn engagement (Day 1-3) → Connection request (Day 4) → Email if no LinkedIn reply (Day 7-10)
+- Volume: 20-30 personalized emails/week (NOT mass blasts)
+- Tool: Apollo.io or Instantly.ai for sequencing
+
+**Template — Consulting Firms:**
+```
+Subject: Canadian energy API — faster than manual AESO scraping
+
+Hi {FirstName},
+
+I noticed {Company}'s work on {specific project/report}. I built a Canadian energy API 
+with 44 endpoints (AESO pool price, IESO demand, emissions, TIER credits) — designed 
+to replace manual data pulls.
+
+It's $149/mo vs Orennia's $10-30K/yr, and I'm offering free Pro access to 5 analysts 
+for beta testing.
+
+Would a 5-minute Loom demo be useful? Here's the API docs: 
+https://canada-energy.netlify.app/api-docs
+
+Best,
+{Your name}
+```
+
+**Template — Municipal Officers:**
+```
+Subject: Free Climate Baseline Audit for {Municipality}
+
+Hi {FirstName},
+
+I built a climate reporting tool specifically for Alberta municipalities — priced at 
+$70,800/yr to stay below the $75K NWPTA sole-source threshold.
+
+I'd like to offer {Municipality} a free 30-minute Climate Baseline Audit. You keep 
+the report either way — no commitment.
+
+Here's a quick overview: https://canada-energy.netlify.app/municipal
+
+Would next week work for a quick call?
+
+Best,
+{Your name}
+```
+
+**Template — Ontario LDCs (with Sandbox pitch):**
+```
+Subject: OEB Innovation Sandbox co-application — ML for DSP
+
+Hi {FirstName},
+
+I'm building ML-assisted distribution planning tools for small Ontario LDCs (<12,500 
+customers) and have drafted an OEB Innovation Sandbox pilot proposal.
+
+The pilot would provide your team with:
+• Automated load forecasting (MAE/MAPE benchmarked vs baselines)
+• Asset Health Index scoring from CSV — no SCADA required
+• Pre-formatted OEB Chapter 5 DSP exports (Sections 5.2, 5.3, 5.4)
+
+I'm looking for 1-2 LDCs to co-apply. Would a 20-minute conversation be useful?
+
+Best,
+{Your name}
+```
+
+### B. Industry Events Calendar (2025-2026)
+
+| Event | Location | Timing | Target Segment | Action |
+|-------|----------|--------|----------------|--------|
+| **ICE Network Gathering** | TBD | Annual | Indigenous energy | **#1 priority** — attend + present |
+| **MCCAC Workshops** | Alberta cities | Monthly | Municipal sustainability | Free; present demo |
+| **IPPSA Annual Conference** | Banff, AB | Oct 2026 | Alberta IPPs, REAs | Attend (don't sponsor) |
+| **EDA EDIST** | Various | Spring/Fall | Ontario LDCs | Attend + demo at networking |
+| **ERA Annual Forum** | Calgary | Fall | Industrial TIER | Target mid-tier emitters |
+
+**Event Playbook:**
+1. Register 2+ months early
+2. Download attendee list (if available)
+3. Pre-event LinkedIn outreach to 10-15 attendees
+4. Bring QR code linking to `/api-docs` or `/regulatory-filing`
+5. Post-event: Connect on LinkedIn + follow-up email within 48 hours
+
+### C. Content Marketing (Minimal Viable)
+
+**Q1 2026 Strategy:**
+- **Keystone asset:** "2026 Canadian Energy Data Landscape Report"
+- **Repurpose into:** 5 LinkedIn posts, 2 blog articles, 1 webinar, email nurture series
+
+**Content Calendar:**
+| Week | Content Type | Topic | Channel |
+|------|--------------|-------|---------|
+| 1 | LinkedIn Post | TIER fund vs market credit spread ($70/t arbitrage) | LinkedIn |
+| 2 | Blog Article | "How to automate AUC Rule 005 filings" | Website + LinkedIn |
+| 3 | LinkedIn Post | Ontario demand forecast accuracy demo | LinkedIn |
+| 4 | Newsletter | Monthly Canadian energy data roundup | Email list |
+
+### D. Reddit / Communities
+
+**Target Subreddits:**
+- r/Calgary, r/Edmonton, r/Alberta — Rate Watchdog content
+- r/energy — thought leadership, API announcements
+- r/solar, r/electricvehicles — renewable integration content
+
+**Approach:**
+- **Ratio:** 10 helpful comments : 1 subtle self-mention
+- **Never:** Direct pitch or link spam
+- **Do:** Answer questions, share insights, build reputation over 4-8 weeks before mentioning CEIP
+
+### E. Partnership Outreach
+
+| Partner | Type | Value | Outreach Approach |
+|---------|------|-------|-------------------|
+| **ICE Network** | Channel | 1,500+ Indigenous energy coordinators | "CEIP as 'data layer' for ICE members" |
+| **MCCAC** | Referral | Alberta municipal climate network | "Free Climate Baseline Audits for workshop attendees" |
+| **AFREA** | Channel | 60 Alberta REAs | "Rule 005 template automation partnership" |
+| **Elenchus/METSCO** | Referral | Ontario LDC advisors | "White-label Asset Health scoring for LDC clients" |
+
+---
+
 ## Comet Session Starter — Copy This First
 
 ```
