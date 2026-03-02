@@ -58,7 +58,19 @@ const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculato
 const ShadowBillingModule = React.lazy(() => import('./components/ShadowBillingModule').then(m => ({ default: m.ShadowBillingModule })));
 const DIPAuditTrailGenerator = React.lazy(() => import('./components/DIPAuditTrailGenerator').then(m => ({ default: m.DIPAuditTrailGenerator })));
 const BankReadyExport = React.lazy(() => import('./components/BankReadyExport').then(m => ({ default: m.BankReadyExport })));
-const CompetitorComparison = React.lazy(() => import('./components/CompetitorComparison'));
+// Preload helper for critical routes to avoid hydration mismatch on direct load
+const lazyWithPreload = (importFn: () => Promise<any>) => {
+  const Component = React.lazy(importFn);
+  // Preload immediately in browser
+  if (typeof window !== 'undefined') {
+    importFn();
+  }
+  return Component;
+};
+
+// Preload critical routes that were failing on direct URL access
+const CompetitorComparison = lazyWithPreload(() => import('./components/CompetitorComparison'));
+const OpenAPIDocsPage = lazyWithPreload(() => import('./components/OpenAPIDocsPage'));
 // Value Prop Research Dec 2025 - LOW Priority Features
 const SovereignDataVault = React.lazy(() => import('./components/SovereignDataVault').then(m => ({ default: m.SovereignDataVault })));
 const CreditBankingDashboard = React.lazy(() => import('./components/CreditBankingDashboard').then(m => ({ default: m.CreditBankingDashboard })));
@@ -68,8 +80,7 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
-// Open API Documentation (Gartner Integration)
-const OpenAPIDocsPage = React.lazy(() => import('./components/OpenAPIDocsPage'));
+// Open API Documentation (Gartner Integration) - preloaded above
 // Whop Mini-App (Isolated, zero-auth for Whop App Store)
 const WhopMiniApp = React.lazy(() => import('./components/whop-mini/WhopMiniApp'));
 
