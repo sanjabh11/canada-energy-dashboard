@@ -81,8 +81,17 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     { tier: 'team', label: 'Team ($299/mo)', icon: <Users className="w-5 h-5" />, description: 'Full platform + API' },
   ];
 
+  const handleBackdropClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+    >
       <div className="relative w-full max-w-md bg-slate-900 rounded-2xl shadow-2xl border border-slate-700 p-6">
         {/* Close button */}
         <button

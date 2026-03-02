@@ -41,6 +41,12 @@
   force = true
 
 [[redirects]]
+  from = "/openapi.yaml"
+  to = "/api/openapi.yaml"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/*.yaml"
   to = "/:splat.yaml"
   status = 200

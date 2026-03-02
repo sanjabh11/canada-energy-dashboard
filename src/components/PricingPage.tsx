@@ -286,10 +286,21 @@ export const PricingPage: React.FC = () => {
                             {/* Description */}
                             <p className="text-slate-400 text-sm mb-4">{tier.description}</p>
 
-                            {/* Price */}
+                            {/* Price - Dynamic based on billing cycle */}
                             <div className="mb-6">
-                                <span className="text-3xl font-bold text-white">{tier.price}</span>
-                                <span className="text-slate-400 ml-1">{tier.priceDetail}</span>
+                                <span className="text-3xl font-bold text-white">
+                                    {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial'
+                                        ? `${tier.price.replace(/\$\d+/, '$' + Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8))}`
+                                        : tier.price}
+                                </span>
+                                <span className="text-slate-400 ml-1">
+                                    {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial'
+                                        ? '/year'
+                                        : tier.priceDetail}
+                                </span>
+                                {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial' && (
+                                    <p className="text-xs text-emerald-400 mt-1">20% annual discount applied</p>
+                                )}
                                 {tier.thresholdNote && (
                                     <p className="text-xs text-emerald-400 mt-1">{tier.thresholdNote}</p>
                                 )}

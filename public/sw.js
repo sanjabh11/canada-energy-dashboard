@@ -9,9 +9,9 @@
  * Addresses Gap #6: Performance UX / PWA (HIGH Priority)
  */
 
-const CACHE_NAME = 'ceip-cache-v2';
-const STATIC_CACHE_NAME = 'ceip-static-v2';
-const API_CACHE_NAME = 'ceip-api-v2';
+const CACHE_NAME = 'ceip-cache-v3';
+const STATIC_CACHE_NAME = 'ceip-static-v3';
+const API_CACHE_NAME = 'ceip-api-v3';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
@@ -90,6 +90,12 @@ self.addEventListener('fetch', (event) => {
 
   // Skip non-GET requests
   if (request.method !== 'GET') {
+    return;
+  }
+
+  // NEVER cache index.html - always fetch fresh to avoid chunk hash mismatch
+  if (url.pathname === '/' || url.pathname === '/index.html') {
+    event.respondWith(fetch(request));
     return;
   }
 
