@@ -22,22 +22,9 @@
     VITE_ENABLE_LIVE_STREAMING = "true"
 
 [build.processing]
-  # Skip processing - we handle it ourselves
-  skip_processing = false
-
-[build.processing.css]
-  bundle = true
-  minify = true
-
-[build.processing.js]
-  bundle = true
-  minify = true
-
-[build.processing.html]
-  pretty_urls = true
-
-[build.processing.images]
-  compress = true
+  # CRITICAL: Disable Netlify post-processing - Vite already handles all bundling/minification
+  # Netlify's re-minification breaks React.lazy() dynamic imports
+  skip_processing = true
 
 # Redirects and rewrites
 # Static files should be served directly (before SPA fallback)
