@@ -11,6 +11,10 @@ import { ThemeProvider } from './lib/ThemeContext';
 import './App.css';
 import './styles/layout.css';
 
+// EAGER imports for routes that were failing on direct load (test fix)
+import { CompetitorComparison } from './components/CompetitorComparison';
+import { OpenAPIDocsPage } from './components/OpenAPIDocsPage';
+
 // ============================================================================
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
 // ============================================================================
@@ -58,19 +62,6 @@ const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculato
 const ShadowBillingModule = React.lazy(() => import('./components/ShadowBillingModule').then(m => ({ default: m.ShadowBillingModule })));
 const DIPAuditTrailGenerator = React.lazy(() => import('./components/DIPAuditTrailGenerator').then(m => ({ default: m.DIPAuditTrailGenerator })));
 const BankReadyExport = React.lazy(() => import('./components/BankReadyExport').then(m => ({ default: m.BankReadyExport })));
-// Preload helper for critical routes to avoid hydration mismatch on direct load
-const lazyWithPreload = (importFn: () => Promise<any>) => {
-  const Component = React.lazy(importFn);
-  // Preload immediately in browser
-  if (typeof window !== 'undefined') {
-    importFn();
-  }
-  return Component;
-};
-
-// Preload critical routes that were failing on direct URL access
-const CompetitorComparison = lazyWithPreload(() => import('./components/CompetitorComparison'));
-const OpenAPIDocsPage = lazyWithPreload(() => import('./components/OpenAPIDocsPage'));
 // Value Prop Research Dec 2025 - LOW Priority Features
 const SovereignDataVault = React.lazy(() => import('./components/SovereignDataVault').then(m => ({ default: m.SovereignDataVault })));
 const CreditBankingDashboard = React.lazy(() => import('./components/CreditBankingDashboard').then(m => ({ default: m.CreditBankingDashboard })));
