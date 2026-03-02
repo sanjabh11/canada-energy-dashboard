@@ -4,8 +4,7 @@
  * For Gartner Digital Markets integration requirement
  */
 
-import React, { useState } from 'react';
-import { RedocStandalone } from 'redoc';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
     Code,
@@ -20,6 +19,22 @@ import {
 
 export const OpenAPIDocsPage: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'docs' | 'quickstart'>('quickstart');
+    const [RedocComponent, setRedocComponent] = useState<any>(null);
+    const [redocError, setRedocError] = useState<string | null>(null);
+
+    // Lazy load Redoc only in browser to avoid SSR crashes
+    useEffect(() => {
+        if (activeTab === 'docs' && !RedocComponent) {
+            import('redoc')
+                .then((module) => {
+                    setRedocComponent(() => module.RedocStandalone);
+                })
+                .catch((err) => {
+                    console.error('Failed to load Redoc:', err);
+                    setRedocError('Failed to load API documentation viewer. Please refresh the page.');
+                });
+        }
+    }, [activeTab, RedocComponent]);
 
     return (
         <div className="min-h-screen bg-slate-900">
@@ -268,35 +283,53 @@ export const OpenAPIDocsPage: React.FC = () => {
             ) : (
                 // API Reference (Redoc)
                 <div>
-                    <RedocStandalone
-                        specUrl="/api/openapi.yaml"
-                        options={{
-                            theme: {
-                                colors: {
-                                    primary: {
-                                        main: '#10b981'
+                    {redocError ? (
+                        <div className="max-w-4xl mx-auto px-6 py-12">
+                            <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-8 text-center">
+                                <p className="text-red-400 mb-4">{redocError}</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="px-6 py-3 bg-red-600 hover:bg-red-500 rounded-lg font-medium text-white transition-all"
+                                >
+                                    Refresh Page
+                                </button>
+                            </div>
+                        </div>
+                    ) : !RedocComponent ? (
+                        <div className="flex items-center justify-center py-24">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-400"></div>
+                        </div>
+                    ) : (
+                        <RedocComponent
+                            specUrl="/api/openapi.yaml"
+                            options={{
+                                theme: {
+                                    colors: {
+                                        primary: {
+                                            main: '#10b981'
+                                        }
+                                    },
+                                    typography: {
+                                        fontSize: '15px',
+                                        fontFamily: 'Inter, system-ui, sans-serif',
+                                        code: {
+                                            fontFamily: 'JetBrains Mono, monospace'
+                                        }
+                                    },
+                                    sidebar: {
+                                        backgroundColor: '#1e293b',
+                                        textColor: '#cbd5e1'
+                                    },
+                                    rightPanel: {
+                                        backgroundColor: '#0f172a'
                                     }
                                 },
-                                typography: {
-                                    fontSize: '15px',
-                                    fontFamily: 'Inter, system-ui, sans-serif',
-                                    code: {
-                                        fontFamily: 'JetBrains Mono, monospace'
-                                    }
-                                },
-                                sidebar: {
-                                    backgroundColor: '#1e293b',
-                                    textColor: '#cbd5e1'
-                                },
-                                rightPanel: {
-                                    backgroundColor: '#0f172a'
-                                }
-                            },
-                            hideDownloadButton: false,
-                            expandResponses: '200,201',
-                            jsonSampleExpandLevel: 2
-                        }}
-                    />
+                                hideDownloadButton: false,
+                                expandResponses: '200,201',
+                                jsonSampleExpandLevel: 2
+                            }}
+                        />
+                    )}
                 </div>
             )}
         </div>

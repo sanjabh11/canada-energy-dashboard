@@ -58,7 +58,7 @@ const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculato
 const ShadowBillingModule = React.lazy(() => import('./components/ShadowBillingModule').then(m => ({ default: m.ShadowBillingModule })));
 const DIPAuditTrailGenerator = React.lazy(() => import('./components/DIPAuditTrailGenerator').then(m => ({ default: m.DIPAuditTrailGenerator })));
 const BankReadyExport = React.lazy(() => import('./components/BankReadyExport').then(m => ({ default: m.BankReadyExport })));
-const CompetitorComparison = React.lazy(() => import('./components/CompetitorComparison').then(m => ({ default: m.CompetitorComparison })));
+const CompetitorComparison = React.lazy(() => import('./components/CompetitorComparison'));
 // Value Prop Research Dec 2025 - LOW Priority Features
 const SovereignDataVault = React.lazy(() => import('./components/SovereignDataVault').then(m => ({ default: m.SovereignDataVault })));
 const CreditBankingDashboard = React.lazy(() => import('./components/CreditBankingDashboard').then(m => ({ default: m.CreditBankingDashboard })));
