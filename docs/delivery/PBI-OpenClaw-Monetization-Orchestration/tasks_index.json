@@ -1,0 +1,13 @@
+{
+  "pbi_id": "PBI-OpenClaw-Monetization-Orchestration",
+  "tasks": [
+    {
+      "id": "PBI-OpenClaw-Monetization-Orchestration-T1",
+      "title": "Canonical entitlement, route-aware auth UI, authoritative Whop access, billing config, and funnel/lead lifecycle foundations",
+      "status": "InProgress",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-02-28"
+    }
+  ]
+}

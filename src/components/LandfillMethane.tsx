@@ -161,16 +161,24 @@ export function LandfillMethaneModule() {
   const exportPDF = () => {
     if (!result) return;
 
-    const reportText = formatLandGEMResults(result);
-    const blob = new Blob([JSON.stringify(reportText, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `Landfill_Methane_Assessment_${landfillName.replace(/\s+/g, '_')}_${currentYear}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    try {
+      const reportText = formatLandGEMResults(result);
+      const blob = new Blob([JSON.stringify(reportText, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Landfill_Methane_Assessment_${landfillName.replace(/\s+/g, '_')}_${currentYear}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      // Show success feedback
+      alert('Report downloaded successfully!');
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Failed to export report. Please try again.');
+    }
   };
 
   const nextStep = () => {
@@ -832,7 +840,7 @@ export function LandfillMethaneModule() {
                 to="/pricing"
                 className="ml-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 rounded-lg flex items-center gap-2 transition-colors"
               >
-                Get Started ($2,850/year)
+                Get Started ($5,900/month)
                 <ArrowRight className="h-4 w-4" />
               </Link>
             )}

@@ -28,7 +28,7 @@ const LandfillMethane = React.lazy(() => import('./components/LandfillMethane'))
 const ModulePlayer = React.lazy(() => import('./components/modules').then(m => ({ default: m.ModulePlayer })));
 const CohortAdminPage = React.lazy(() => import('./components/CohortAdminPage').then(m => ({ default: m.CohortAdminPage })));
 const ApiKeysPage = React.lazy(() => import('./components/ApiKeysPage').then(m => ({ default: m.ApiKeysPage })));
-const FunderReportingDashboard = React.lazy(() => import('./components/FunderReportingDashboard').then(m => ({ default: m.FunderReportingDashboard })));
+const FunderReportingDashboard = React.lazy(() => import('./components/FunderReportingDashboard'));
 const EmployersPage = React.lazy(() => import('./components/EmployersPage').then(m => ({ default: m.EmployersPage })));
 const IncubatorsPage = React.lazy(() => import('./components/IncubatorsPage').then(m => ({ default: m.IncubatorsPage })));
 const TrainingCoordinatorsPage = React.lazy(() => import('./components/TrainingCoordinatorsPage').then(m => ({ default: m.TrainingCoordinatorsPage })));
@@ -53,7 +53,7 @@ const RefundPolicy = React.lazy(() => import('./components/legal/RefundPolicy').
 const EnterprisePage = React.lazy(() => import('./components/enterprise/EnterprisePage').then(m => ({ default: m.EnterprisePage })));
 const MunicipalLandingPage = React.lazy(() => import('./components/MunicipalLandingPage').then(m => ({ default: m.MunicipalLandingPage })));
 const RetailerHedgingDashboard = React.lazy(() => import('./components/RetailerHedgingDashboard').then(m => ({ default: m.RetailerHedgingDashboard })));
-const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculator').then(m => ({ default: m.TIERROICalculator })));
+const TIERROICalculator = React.lazy(() => import('./components/TIERROICalculator'));
 // Value Prop Research Dec 2025 - MEDIUM Priority Features
 const ShadowBillingModule = React.lazy(() => import('./components/ShadowBillingModule').then(m => ({ default: m.ShadowBillingModule })));
 const DIPAuditTrailGenerator = React.lazy(() => import('./components/DIPAuditTrailGenerator').then(m => ({ default: m.DIPAuditTrailGenerator })));
@@ -65,11 +65,11 @@ const CreditBankingDashboard = React.lazy(() => import('./components/CreditBanki
 // Forecast Benchmarking (standalone page for consulting firms)
 const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastBenchmarkingPage'));
 // P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
-const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard').then(m => ({ default: m.DemandForecastDashboard })));
-const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport').then(m => ({ default: m.RegulatoryFilingExport })));
-const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard').then(m => ({ default: m.AssetHealthDashboard })));
+const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
+const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
+const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Open API Documentation (Gartner Integration)
-const OpenAPIDocsPage = React.lazy(() => import('./components/OpenAPIDocsPage').then(m => ({ default: m.OpenAPIDocsPage })));
+const OpenAPIDocsPage = React.lazy(() => import('./components/OpenAPIDocsPage'));
 // Whop Mini-App (Isolated, zero-auth for Whop App Store)
 const WhopMiniApp = React.lazy(() => import('./components/whop-mini/WhopMiniApp'));
 
@@ -232,6 +232,7 @@ const router = createBrowserRouter(
         { path: '/rate-watchdog', element: <WatchdogApp /> },
 
         // Legal Pages (Whop Compliance - Criteria 14, 15)
+        { path: '/legal', element: <Navigate to="/privacy" replace /> },
         { path: '/privacy', element: <PrivacyPolicy /> },
         { path: '/terms', element: <TermsOfService /> },
         { path: '/refund', element: <RefundPolicy /> },

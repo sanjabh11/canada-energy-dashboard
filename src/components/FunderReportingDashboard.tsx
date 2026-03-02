@@ -111,6 +111,7 @@ export function FunderReportingDashboard() {
 
   async function loadProjects() {
     setLoading(true);
+    let projectsLoaded = false;
     try {
       if (isEdgeFetchEnabled()) {
         const base = getEdgeBaseUrl();
@@ -138,16 +139,17 @@ export function FunderReportingDashboard() {
                 actual_cost: p.actual_cost ?? cap * 2400,
               };
             });
-            setProjects(projectList);
             if (projectList.length > 0) {
+              setProjects(projectList);
               setSelectedProjects([projectList[0].id]);
+              projectsLoaded = true;
             }
           }
         }
       }
       
-      // Fallback demo data
-      if (projects.length === 0) {
+      // Fallback demo data if no projects loaded
+      if (!projectsLoaded) {
         const demoProjects: ProjectData[] = [
           {
             id: 'demo-1',
@@ -201,6 +203,57 @@ export function FunderReportingDashboard() {
       }
     } catch (error) {
       console.error('Error loading projects:', error);
+      // Ensure demo data is shown even on error
+      const demoProjects: ProjectData[] = [
+        {
+          id: 'demo-1',
+          name: 'Northern Grid Microgeneration',
+          community: 'Cree, Ojibwe, Dene',
+          territory_name: 'Treaty 5 Territory',
+          energy_type: 'solar',
+          capacity_kw: 500,
+          project_status: 'construction',
+          fpic_status: 'obtained',
+          jobs_created: 25,
+          emissions_avoided_tonnes_co2: 2500,
+          households_served: 150,
+          total_budget: 1500000,
+          actual_cost: 1200000,
+          funding_sources: [
+            { source: 'Wah-ila-toos', amount: 750000 },
+            { source: 'Community Investment', amount: 450000 }
+          ],
+          milestones: [
+            { name: 'Site Assessment', date: '2025-01-15', completed: true },
+            { name: 'FPIC Obtained', date: '2025-03-01', completed: true },
+            { name: 'Construction Start', date: '2025-06-01', completed: true },
+            { name: 'Grid Connection', date: '2025-12-01', completed: false }
+          ],
+          challenges: ['Supply chain delays for solar panels', 'Winter construction limitations'],
+          next_quarter_plans: ['Complete electrical infrastructure', 'Begin grid connection testing']
+        },
+        {
+          id: 'demo-2',
+          name: 'James Bay Storage Upgrade',
+          community: 'Ojibwe, Cree, Oji-Cree',
+          territory_name: 'Treaty 9 Territory',
+          energy_type: 'hydro',
+          capacity_kw: 2000,
+          project_status: 'planning',
+          fpic_status: 'in_progress',
+          jobs_created: 45,
+          emissions_avoided_tonnes_co2: 8000,
+          households_served: 500,
+          total_budget: 5000000,
+          actual_cost: 800000,
+          funding_sources: [
+            { source: 'CERRC', amount: 2500000 },
+            { source: 'Provincial Grant', amount: 1500000 }
+          ]
+        }
+      ];
+      setProjects(demoProjects);
+      setSelectedProjects(['demo-1']);
     } finally {
       setLoading(false);
     }

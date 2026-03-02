@@ -50,12 +50,24 @@ interface WhopWebhookPayload {
 }
 
 // Tier mapping based on Whop product IDs
-const PRODUCT_TIER_MAP: Record<string, string> = {
-    'pass_WATCHDOG_PRODUCT_ID': 'basic',
-    'pass_BASIC_PRODUCT_ID': 'basic',
-    'pass_PRO_PRODUCT_ID': 'pro',
-    'pass_TEAM_PRODUCT_ID': 'team'
-};
+// Product-to-tier mapping now sourced from environment variables
+// This function builds the map from VITE_WHOP_PRODUCT_* env vars
+function buildProductTierMap(): Record<string, string> {
+    const map: Record<string, string> = {};
+    
+    // Map environment variables to canonical tiers
+    const basicProductId = Deno.env.get('VITE_WHOP_PRODUCT_BASIC');
+    const proProductId = Deno.env.get('VITE_WHOP_PRODUCT_PRO');
+    const teamProductId = Deno.env.get('VITE_WHOP_PRODUCT_TEAM');
+    
+    if (basicProductId) map[basicProductId] = 'basic';
+    if (proProductId) map[proProductId] = 'pro';
+    if (teamProductId) map[teamProductId] = 'team';
+    
+    return map;
+}
+
+const PRODUCT_TIER_MAP = buildProductTierMap();
 
 serve(async (req) => {
     // Only accept POST
@@ -152,8 +164,14 @@ async function handleMembershipActivated(
 ): Promise<{ success: boolean; message: string }> {
     const { data } = payload;
 
-    // Determine tier from product
-    const tier = PRODUCT_TIER_MAP[data.product_id] || 'basic';
+    // Map product to tier (canonical tier model: free/basic/pro/team)
+    const productId = data.product_id;
+    const tier = PRODUCT_TIER_MAP[productId] || 'free';
+            
+    // Validate tier is canonical
+    if (!['free', 'basic', 'pro', 'team'].includes(tier)) {
+        console.warn(`[Whop Webhook] Unknown tier '${tier}' for product ${productId}, defaulting to free`);
+    }
 
     // Get internal user ID from metadata (if we injected it during checkout)
     const internalUserId = data.metadata?.user_id || data.user_id;

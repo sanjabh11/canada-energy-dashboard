@@ -11,6 +11,9 @@
  * by Whop, Stripe, Lemon Squeezy, or any other provider.
  */
 
+import { debug } from './debug';
+import { getSupabaseConfig, getWhopProductId, getStripePriceId } from './config';
+import { type CanonicalTier } from './entitlements';
 import { WhopTier, WHOP_ACCESS_MATRIX } from './whop';
 
 // ============================================================================
@@ -22,7 +25,7 @@ export type BillingProvider = 'whop' | 'stripe' | 'lemon_squeezy' | 'manual';
 export interface BillingPlan {
     id: string;
     name: string;
-    tier: WhopTier;
+    tier: CanonicalTier;
     price: number;
     currency: string;
     interval: 'month' | 'year' | 'one_time';
@@ -52,7 +55,7 @@ export interface Subscription {
     id: string;
     userId: string;
     planId: string;
-    tier?: WhopTier;
+    tier?: CanonicalTier;
     status: 'active' | 'cancelled' | 'past_due' | 'trialing' | 'expired';
     provider?: BillingProvider;
     currentPeriodStart?: string;
@@ -134,23 +137,40 @@ const WHOP_PLANS: BillingPlan[] = [
 ];
 
 // Whop product IDs (configure in Whop dashboard)
-const WHOP_PRODUCT_MAP: Record<string, string> = {
-    'whop_watchdog': 'pass_WATCHDOG_PRODUCT_ID',
-    'whop_basic': 'pass_BASIC_PRODUCT_ID',
-    'whop_pro': 'pass_PRO_PRODUCT_ID',
-    'whop_team': 'pass_TEAM_PRODUCT_ID'
+// Whop product IDs now sourced from externalized config
+// Legacy plan ID to canonical tier mapping
+const WHOP_PLAN_TO_TIER: Record<string, CanonicalTier> = {
+    'whop_watchdog': 'basic',
+    'whop_basic': 'basic',
+    'whop_pro': 'pro',
+    'whop_team': 'team'
 };
 
 export class WhopBillingAdapter implements IBillingAdapter {
     provider: BillingProvider = 'whop';
 
     async createCheckoutSession(options: CheckoutOptions): Promise<CheckoutSession> {
+        // Map plan ID to canonical tier
+        const tier = WHOP_PLAN_TO_TIER[options.planId];
+        if (!tier) {
+            throw new Error(`Unknown plan ID: ${options.planId}`);
+        }
+        
+        // Free tier cannot be purchased
+        if (tier === 'free') {
+            throw new Error('Cannot create checkout for free tier');
+        }
+        
+        // Get product ID from externalized config
+        const whopProductId = getWhopProductId(tier);
+        if (!whopProductId) {
+            throw new Error(`Whop product ID not configured for tier: ${tier}`);
+        }
+        
         const plan = this.getPlan(options.planId);
         if (!plan) {
             throw new Error(`Unknown plan: ${options.planId}`);
         }
-
-        const whopProductId = WHOP_PRODUCT_MAP[options.planId];
 
         // Build checkout URL with metadata injection
         const params = new URLSearchParams({
@@ -249,15 +269,36 @@ const STRIPE_PLANS: BillingPlan[] = [
 ];
 
 // Stripe price IDs (configure in Stripe dashboard)
-const STRIPE_PRICE_MAP: Record<string, string> = {
-    'stripe_watchdog': 'price_WATCHDOG_STRIPE_ID',
-    'stripe_pro': 'price_PRO_STRIPE_ID'
+// Stripe price IDs now sourced from externalized config
+// Legacy plan ID to canonical tier mapping
+const STRIPE_PLAN_TO_TIER: Record<string, CanonicalTier> = {
+    'stripe_watchdog': 'basic',
+    'stripe_basic': 'basic',
+    'stripe_pro': 'pro',
+    'stripe_team': 'team'
 };
 
 export class StripeBillingAdapter implements IBillingAdapter {
     provider: BillingProvider = 'stripe';
 
     async createCheckoutSession(options: CheckoutOptions): Promise<CheckoutSession> {
+        // Map plan ID to canonical tier
+        const tier = STRIPE_PLAN_TO_TIER[options.planId];
+        if (!tier) {
+            throw new Error(`Unknown plan ID: ${options.planId}`);
+        }
+        
+        // Free tier cannot be purchased
+        if (tier === 'free') {
+            throw new Error('Cannot create checkout for free tier');
+        }
+        
+        // Get price ID from externalized config
+        const stripePriceId = getStripePriceId(tier);
+        if (!stripePriceId) {
+            throw new Error(`Stripe price ID not configured for tier: ${tier}`);
+        }
+        
         const plan = this.getPlan(options.planId);
         if (!plan) {
             throw new Error(`Unknown plan: ${options.planId}`);
@@ -268,7 +309,7 @@ export class StripeBillingAdapter implements IBillingAdapter {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                priceId: STRIPE_PRICE_MAP[options.planId],
+                priceId: stripePriceId,
                 userId: options.userId,
                 email: options.email,
                 successUrl: options.successUrl || `${window.location.origin}/billing/success`,

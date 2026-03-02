@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { initializePaddle, Paddle } from '@paddle/paddle-js';
+import { trackEvent } from '../../lib/analytics';
 
 interface PaddleContextType {
     paddle: Paddle | null;
@@ -35,13 +36,22 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
                 const paddleInstance = await initializePaddle({
                     environment: PADDLE_ENVIRONMENT as 'sandbox' | 'production',
                     token: PADDLE_CLIENT_TOKEN,
-                    eventCallback: (event) => {
+                    eventCallback: (data) => {
                         // Handle Paddle events
-                        if (event.name === 'checkout.completed') {
-                            console.log('Checkout completed:', event.data);
-                            // TODO: Handle successful checkout (update user subscription status)
+                        if (data.name === 'checkout.completed') {
+                            console.log('[Paddle] Checkout completed:', data.data);
+                            // Track checkout completion event
+                            trackEvent('checkout_complete', {
+                                transaction_id: data.data?.transaction_id,
+                                provider: 'paddle',
+                                items: data.data?.items?.map((item: any) => item.price?.id).join(',') || 'unknown'
+                            });
+                            // Handle successful checkout (update user subscription status)
                         }
-                        if (event.name === 'checkout.closed') {
+                        if (data.name === 'checkout.closed') {
+                            trackEvent('checkout_abandoned', {
+                                provider: 'paddle'
+                            });
                             console.log('Checkout closed');
                         }
                     },

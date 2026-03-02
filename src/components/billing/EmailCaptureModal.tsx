@@ -13,7 +13,8 @@
  */
 
 import React, { useState } from 'react';
-import { X, Mail, ArrowRight, Lock, CheckCircle } from 'lucide-react';
+import { X, Mail, Lock, Sparkles, CheckCircle, ArrowRight } from 'lucide-react';
+import { trackEvent } from '../../lib/analytics';
 import { createCheckout, CheckoutOptions, BillingPlan } from '../../lib/billingAdapter';
 
 interface EmailCaptureModalProps {
@@ -43,6 +44,14 @@ export function EmailCaptureModal({ plan, isOpen, onClose, userId }: EmailCaptur
         setError('');
 
         try {
+            // Track email capture event
+            trackEvent('email_captured', {
+                plan_id: plan.id,
+                plan_name: plan.name,
+                source: 'email_capture_modal',
+                has_user_id: !!userId
+            });
+
             // Store email locally (owned data!)
             saveEmailLocally(email);
 
@@ -53,6 +62,14 @@ export function EmailCaptureModal({ plan, isOpen, onClose, userId }: EmailCaptur
 
             // Small delay to show success state
             await new Promise(resolve => setTimeout(resolve, 500));
+
+            // Track checkout start event
+            trackEvent('checkout_start', {
+                plan_id: plan.id,
+                plan_name: plan.name,
+                email_captured: true,
+                source: 'email_capture_modal'
+            });
 
             // Create checkout with pre-filled email
             const checkoutOptions: CheckoutOptions = {
@@ -73,6 +90,10 @@ export function EmailCaptureModal({ plan, isOpen, onClose, userId }: EmailCaptur
             window.location.href = session.url;
 
         } catch (err) {
+            trackEvent('checkout_error', {
+                plan_id: plan.id,
+                error: 'email_capture_failed'
+            });
             setError('Something went wrong. Please try again.');
             setLoading(false);
             setCaptured(false);

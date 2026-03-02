@@ -13,17 +13,23 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { User, LogOut, Crown, Settings, Award, ExternalLink } from 'lucide-react';
 import { useAuth, setAuthModalOpener } from './AuthProvider';
 import { AuthModal } from './AuthModal';
 import { type WhopTier } from '../../lib/whop';
 
 export function AuthButton() {
-  // PORTFOLIO-FIRST STRATEGY: Remove all auth UI
-  // The dashboard is now fully public to demonstrate capability to recruiters and employers
-  // No sign-in, no guest login - just direct access to the platform
-  // This aligns with Gemini research recommendation: "Remove auth walls for instant capability proof"
-  return null;
+  // Route-aware auth UI visibility policy:
+  // - Hidden on /whop/* and /whop-mini/* (embedded Whop experiences)
+  // - Visible on all other routes (standalone app)
+  const location = useLocation();
+  const isWhopRoute = location.pathname.startsWith('/whop/') || 
+                      location.pathname.startsWith('/whop-mini/');
+  
+  if (isWhopRoute) {
+    return null;
+  }
 
   const { user, tier, edubizUser, isWhopUser, isGuest, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);

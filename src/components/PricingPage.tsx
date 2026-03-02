@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Check, Star, Building2, Users, Zap, Shield, ArrowRight, Sparkles, Home } from 'lucide-react';
+import { trackEvent, captureAttribution } from '../lib/analytics';
 import { Link } from 'react-router-dom';
 import { usePaddle } from './billing/PaddleProvider';
 import { SEOHead } from './SEOHead';
@@ -139,28 +140,47 @@ export const PricingPage: React.FC = () => {
     const { openCheckout, isLoading } = usePaddle();
     const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
 
+    useEffect(() => {
+        captureAttribution();
+        trackEvent('pricing_page_view', { billing_cycle: billingCycle });
+    }, []);
+
     const handleCtaClick = (tier: PricingTier) => {
+        trackEvent('pricing_cta_click', {
+            tier_id: tier.id,
+            tier_name: tier.name,
+            price: tier.price,
+            billing_cycle: billingCycle,
+            persona: tier.id === 'municipal' ? 'municipal' : 
+                     tier.id === 'indigenous' ? 'indigenous' : 
+                     tier.id === 'industrial' ? 'industrial' : 'standard'
+        });
+
         if (tier.id === 'free') {
             window.location.href = '/dashboard';
             return;
         }
 
         if (tier.id === 'municipal') {
+            trackEvent('lead_intent_update', { intent: 'municipal_inquiry', tier: 'municipal' });
             window.location.href = '/municipal';
             return;
         }
 
         if (tier.id === 'indigenous') {
+            trackEvent('lead_intent_update', { intent: 'indigenous_inquiry', tier: 'indigenous' });
             window.location.href = '/enterprise?tier=indigenous';
             return;
         }
 
         if (tier.id === 'industrial') {
+            trackEvent('lead_intent_update', { intent: 'industrial_inquiry', tier: 'industrial' });
             window.location.href = '/roi-calculator';
             return;
         }
 
         if (tier.priceId) {
+            trackEvent('lead_intent_update', { intent: 'checkout_initiated', tier: tier.id });
             openCheckout(tier.priceId);
         }
     };

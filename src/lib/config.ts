@@ -93,3 +93,110 @@ export function isStreamingConfigured(): boolean {
 export function canUseStreaming(): boolean {
   return getFeatureFlagUseStreaming() && isStreamingConfigured();
 }
+
+// ============================================================================
+// BILLING CONFIGURATION REGISTRY
+// ============================================================================
+
+export interface BillingProductConfig {
+  whopProductId?: string;
+  stripePriceId?: string;
+  tier: 'free' | 'basic' | 'pro' | 'team';
+  displayName: string;
+}
+
+export interface BillingConfigRegistry {
+  products: Record<string, BillingProductConfig>;
+  validationErrors: string[];
+}
+
+/**
+ * Centralized billing product/plan ID registry.
+ * All Whop product IDs and Stripe price IDs are defined here.
+ * Environment variables are validated at startup.
+ */
+function buildBillingRegistry(): BillingConfigRegistry {
+  const errors: string[] = [];
+  
+  const products: Record<string, BillingProductConfig> = {
+    basic: {
+      whopProductId: env.VITE_WHOP_PRODUCT_BASIC as string | undefined,
+      stripePriceId: env.VITE_STRIPE_PRICE_BASIC as string | undefined,
+      tier: 'basic',
+      displayName: 'Basic'
+    },
+    pro: {
+      whopProductId: env.VITE_WHOP_PRODUCT_PRO as string | undefined,
+      stripePriceId: env.VITE_STRIPE_PRICE_PRO as string | undefined,
+      tier: 'pro',
+      displayName: 'Pro'
+    },
+    team: {
+      whopProductId: env.VITE_WHOP_PRODUCT_TEAM as string | undefined,
+      stripePriceId: env.VITE_STRIPE_PRICE_TEAM as string | undefined,
+      tier: 'team',
+      displayName: 'Team'
+    }
+  };
+
+  // Validate that at least one billing provider is configured for each product
+  Object.entries(products).forEach(([key, config]) => {
+    if (!config.whopProductId && !config.stripePriceId) {
+      errors.push(`Product '${key}': No Whop or Stripe ID configured`);
+    }
+  });
+
+  return { products, validationErrors: errors };
+}
+
+let billingRegistryCache: BillingConfigRegistry | null = null;
+
+/**
+ * Get the billing configuration registry.
+ * Validates configuration on first call and caches result.
+ */
+export function getBillingRegistry(): BillingConfigRegistry {
+  if (!billingRegistryCache) {
+    billingRegistryCache = buildBillingRegistry();
+    
+    // Log validation errors in development
+    if (DEBUG && billingRegistryCache.validationErrors.length > 0) {
+      debug.warn('[Config] Billing registry validation errors:', billingRegistryCache.validationErrors);
+    }
+  }
+  return billingRegistryCache;
+}
+
+/**
+ * Get Whop product ID for a given tier.
+ * Returns undefined if not configured.
+ */
+export function getWhopProductId(tier: 'basic' | 'pro' | 'team'): string | undefined {
+  const registry = getBillingRegistry();
+  return registry.products[tier]?.whopProductId;
+}
+
+/**
+ * Get Stripe price ID for a given tier.
+ * Returns undefined if not configured.
+ */
+export function getStripePriceId(tier: 'basic' | 'pro' | 'team'): string | undefined {
+  const registry = getBillingRegistry();
+  return registry.products[tier]?.stripePriceId;
+}
+
+/**
+ * Get all Whop product IDs mapped to their canonical tiers.
+ */
+export function getWhopProductTierMap(): Record<string, 'basic' | 'pro' | 'team'> {
+  const registry = getBillingRegistry();
+  const map: Record<string, 'basic' | 'pro' | 'team'> = {};
+  
+  Object.values(registry.products).forEach(config => {
+    if (config.whopProductId && config.tier !== 'free') {
+      map[config.whopProductId] = config.tier as 'basic' | 'pro' | 'team';
+    }
+  });
+  
+  return map;
+}

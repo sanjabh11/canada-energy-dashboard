@@ -15,5 +15,6 @@ export { MonetizationReport, FEATURE_MONETIZATION_DATA } from './MonetizationRep
 export type { MonetizationReportProps } from './MonetizationReport';
 
 // Whop Tier Gating (New - Hybrid Strategy)
-export { WhopTierGate, useWhopTier, hasTierAccess, normalizeUserTier } from './WhopTierGate';
+export { WhopTierGate, useWhopTier } from './WhopTierGate';
 export type { WhopTier } from './WhopTierGate';
+export { hasTierAccess, normalizeTier as normalizeUserTier } from '../../lib/entitlements';

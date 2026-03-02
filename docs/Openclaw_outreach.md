@@ -1,6 +1,8 @@
 # CEIP OpenClaw Outreach Strategy — LinkedIn Cold Connection & Messaging Playbook
 
-**Date:** February 28, 2026 (v3.0 — OpenClaw Migration + Execution Ready)
+**Date:** March 1, 2026 (v4.0 — Blockers Removed + OpenClaw-Ready)
+
+> **⚡ v4.0 BLOCKER FIXES APPLIED:** (1) TIER/EPC prices updated to current March 2026 data, (2) Canoe Procurement claim removed from Campaign 3, (3) Campaign 2 rewritten to ICE Network org-level entry (NO cold individual DMs), (4) Manual-first protocol enforced Weeks 1-3 before OpenClaw automation.
 **Tool:** OpenClaw Console (`https://claw.kilosessions.ai/chat?session=main`) + OpenClaw browser automation
 **Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` + `ADVERSARIAL_USP_ANALYSIS.md`
 **Live URLs:** All pages deployed at `https://canada-energy.netlify.app`
@@ -63,11 +65,11 @@ Copy-paste this as the base prompt in OpenClaw, then customize per campaign:
 ```
 You are my safe OpenClaw LinkedIn outreach assistant for CEIP (Canada Energy Intelligence Platform).
 
-CONTEXT: CEIP is a comprehensive Canadian energy intelligence platform with 25+ sector dashboards, 44 API endpoints, a TIER compliance calculator, and OCAP-aligned Indigenous energy tools. Built by a solo developer. Early-stage, seeking design partners and beta testers. Live at https://canada-energy.netlify.app
+CONTEXT: CEIP is a comprehensive Canadian energy intelligence platform with 25+ sector dashboards, 44 API endpoints, a TIER compliance calculator, and OCAP-aligned Indigenous energy tools. Built by a Senior Technology & Management Consultant (GenAI + digital transformation specialist). Early-stage, seeking design partners and beta testers. Live at https://canada-energy.netlify.app
 
 IMPORTANT — DO NOT CLAIM:
 - "AI-powered" as a primary differentiator
-- "Live" pricing (our TIER prices are based on Q4 2025 data)
+- Any specific EPC credit price without adding "as of March 2026" — prices are volatile (ranged $17-$41/t in the last 4 months)
 - "Used by consultants" or any social proof we don't have
 - "Nation-held encryption keys" or "full data sovereignty" (architecture exists, implementation is early-access)
 - "Bill auditing" or "peak shaving alerts" for Rate Watchdog
@@ -196,59 +198,82 @@ The API is free to try for 30 days — no commitment. Let me know if I can help 
 | **Aboriginal Financial Officers Association (AFOA)** | Professional body | Members working on energy projects |
 | **20/20 Catalysts** | Impact consultancy | Indigenous energy advisors |
 
-### OpenClaw Search Query
+### 🚨 CRITICAL PROTOCOL CHANGE (v4.0) — NO COLD INDIVIDUAL LINKEDIN DMs FOR CAMPAIGN 2
 
+**Why:** Indigenous professional networks in Canada are high-trust, relationship-first. Cold outreach from an unknown individual — even with respectful OCAP language — risks being flagged as extractive. The appropriate entry is at the **organizational level**, through established community channels.
+
+**New Entry Strategy: Org-Level Outreach → Events → Introduction → Individual**
+
+---
+
+### Step 1 — Email ICE Network Directly (Week 1, Before Any LinkedIn Activity)
+
+**ICE Network contacts (Indigenous Clean Energy, Ottawa):**
+- **Executive Director:** James Jenkins — jjenkins@indigenouscleanenergy.com
+- **Associate Executive Director:** Terri Lynn Morrison — tlmorrison@indigenouscleanenergy.com
+- **General:** info@indigenouscleanenergy.com
+- **Phone:** 613-416-9300 ext 700
+
+**Email Template — ICE Network Partnership Inquiry:**
 ```
-"Energy Coordinator" OR "Clean Energy" OR "Community Energy" AND ("Indigenous" OR "First Nation" OR "Métis" OR "Inuit") AND Canada
+Subject: Partnership Inquiry — CEIP OCAP-Aligned Energy Data Platform
+
+Dear James / Terri Lynn,
+
+I'm Sanjay Bhargava, a Technology Consultant who has published research on GenAI for Canadian utilities and is now building CEIP (Canada Energy Intelligence Platform) — designed from the ground up with OCAP principles.
+
+CEIP currently includes:
+• Funder report templates for Wah-ila-toos/CERRC/Northern REACHE programs
+• Data residency controls + consent logging architecture
+• Indigenous Energy Dashboard: https://canada-energy.netlify.app/indigenous
+
+I recognize that real OCAP alignment requires genuine community co-design — not a developer working in isolation. I'm writing to ask whether ICE Network would be open to reviewing CEIP as a potential member resource, or whether you could point me toward the right process for a technology partner to engage with the ICE community respectfully.
+
+I am NOT seeking to sell to communities. I'm seeking ONE co-design partner who would guide what gets built, with free access and full input into the architecture.
+
+Would a brief call to explore this be appropriate?
+
+Warm regards,
+Sanjay Bhargava
+Senior Technology & Management Consultant
+[Phone] | [LinkedIn profile URL]
 ```
 
-### Connection Request Note (≤250 chars)
+---
 
-**Template A — Learning Hook:**
+### Step 2 — Attend ICE Gathering or Regional Events (Month 2+)
+
+| Event | When | Approach |
+|-------|------|----------|
+| **ICE Gathering** (annual ICE Network event) | Check icenet.work for dates | Attend as community learner, not exhibitor |
+| **Regional Indigenous clean energy forums** | Province-specific | Find via FNPA, Wataynikaneyap connections |
+| **RES Canada / AFREA** | Annual | Network with Indigenous project leads |
+
+**At events:** Introduce yourself as a technology consultant building CEIP. Have the demo ready on your laptop. Do NOT distribute pitch decks. Listen first.
+
+---
+
+### Step 3 — LinkedIn ONLY after org-level relationship exists
+
+Once ICE Network has responded positively OR an event contact has expressed interest:
+- THEN send a LinkedIn connection request — referencing the prior introduction
+- Do NOT use OpenClaw automation for this campaign AT ALL
+- All Campaign 2 LinkedIn interactions are manual and relationship-based
+
+**Manual LinkedIn Note (only after intro/warm context):**
 ```
-Hi {FirstName}, I'm building energy tracking tools designed for OCAP alignment. It's early stage — I'd love to learn from {community}'s experience with funder reporting. Would you be open to connecting?
-```
-
-**Template B — Co-Design Hook:**
-```
-Hi {FirstName}, noticed your {community}'s clean energy work. I'm building funder report templates for Wah-ila-toos/CERRC programs and need community input to get it right. Interested in shaping the tool?
-```
-
-**Template C — ICE Network Context:**
-```
-Hi {FirstName}, fellow ICE Network follower here. I'm a developer building OCAP-aligned energy data tools — early stage, seeking one community to co-design with. Would love to exchange ideas!
-```
-
-### Follow-Up DM (if accepted)
-
-**Template A — For Energy Coordinators:**
-```
-Thanks for connecting, {FirstName}! I have deep respect for the energy work happening at {community/org}.
-
-I'm a solo developer building what I hope will become Canada's first OCAP-aligned energy data platform. I've built the architecture — data residency controls, consent logging, funder report templates for Wah-ila-toos/CERRC/Northern REACHE — but I know real OCAP alignment requires community partnership to get right.
-
-Here's an early preview: https://canada-energy.netlify.app/funder-reporting
-
-I'm looking for ONE community willing to co-design the tool. Free access, direct developer support, and your feedback shapes what gets built. Would a 20-minute conversation be helpful?
-```
-
-**Template B — For Executives/Directors:**
-```
-Appreciate the connection, {FirstName}! Your leadership on {project/initiative} is inspiring.
-
-I'm a developer building an OCAP-aligned energy data platform. I've designed the architecture for data sovereignty (residency controls, access logging, nation-controlled configurations) but it's early-access — I need a community partner to harden it into something genuinely useful.
-
-I'm offering one community free access + direct developer support in exchange for shaping the product: https://canada-energy.netlify.app/sovereign-vault
-
-What are the biggest pain points your team faces with energy project data and funder reporting?
+Hi {FirstName}, great to [meet at ICE Gathering / connect via ICE Network introduction]. 
+As I mentioned, I'm building OCAP-aligned energy tools and would value your perspective. 
+Happy to continue the conversation here!
 ```
 
 ### Important Notes for This Campaign
 
-- **TONE:** Humble, collaborative, learning-oriented. Never position as "selling to" Indigenous communities — always "building with."
+- **NO OpenClaw automation** for Campaign 2 — ever. All touchpoints are human and deliberate.
+- **TONE:** Humble, collaborative, learning-oriented. Never position as "selling to" — always "building with."
 - **LANGUAGE:** Use "community" not "client." Use "partnership" not "sales."
-- **FOLLOW-UP:** If interest, offer a free pilot — not a trial. Frame as "co-development."
-- **EVENTS:** Ask about upcoming ICE Gathering or regional clean energy events to attend in person.
+- **TIMELINE:** Realistic first co-design partner: Month 4-6. Do not rush.
+- **EVENTS:** Budget for attending at least 1 ICE-related event in 2026.
 
 ---
 
@@ -309,9 +334,7 @@ I'd like to offer you a completely free Climate Baseline Audit — it takes abou
 
 The tool is specifically designed for Alberta municipalities: https://canada-energy.netlify.app/municipal
 
-Two things that make it procurement-friendly:
-• Annual cost is $70,800 — below the NWPTA $75K sole-source threshold
-• Available through Canoe Procurement (application pending)
+One thing that makes it procurement-friendly: annual cost is $70,800 — deliberately below the NWPTA $75K sole-source threshold, so there's no RFP required for most municipalities.
 
 Would a 30-minute walkthrough next week work? Happy to do it over Teams/Zoom.
 ```
@@ -326,6 +349,8 @@ Here's how it works in 3 steps: https://canada-energy.netlify.app/municipal
 
 Would you be open to a free 30-day baseline audit? No commitment — you keep the report either way.
 ```
+
+> **⚠️ REMOVED:** "Available through Canoe Procurement (application pending)" — do not include this claim until you are confirmed listed on the Canoe vendor directory. Confirmed removal: v4.0 March 2026.
 
 ---
 
@@ -358,48 +383,63 @@ Would you be open to a free 30-day baseline audit? No commitment — you keep th
 
 ### Connection Request Note (≤250 chars)
 
-**Template A — Arbitrage Hook:**
+> **⚡ v4.0 — TIER PRICE UPDATE:** EPC credits rebounded from $17/t (Nov 2025 low) to ~$41/t by late Jan 2026 (ClearBlue Markets / S&P Global). Fund frozen at $95/t (Alberta.ca, May 2025 announcement). Spread is now ~$54/t — still highly material. Update templates monthly; always include "as of [month]" qualifier.
+
+**Template A — Arbitrage Hook (UPDATED PRICING):**
 ```
-Hi {FirstName}, the TIER fund-credit spread is ~$70/t (Alberta.ca confirmed). I built a free 3-pathway compliance calculator (fund vs market credits vs Direct Investment). Might be useful for {Company}?
+Hi {FirstName}, the TIER fund-credit spread is ~$54/t right now (fund $95/t, EPC credits ~$41/t as of March 2026). I built a free 3-pathway compliance calculator (fund vs market credits vs Direct Investment). Useful for {Company}?
 ```
+*(241 chars — fits ≤250 limit)*
 
 **Template B — Direct Investment Hook:**
 ```
 Hi {FirstName}, saw {Company}'s sustainability work. With the new Direct Investment pathway under TIER, I built a compliance calculator comparing all 3 pathways. Happy to share — connect?
 ```
 
-**Template C — Compliance Angle:**
+**Template C — Compliance Angle (UPDATED PRICING):**
 ```
-Hi {FirstName}, noticed your environmental compliance role at {Company}. I built a free TIER calculator showing fund ($95/t) vs market credits (~$25/t) vs Direct Investment. Worth a quick look?
+Hi {FirstName}, noticed your environmental compliance role at {Company}. I built a free TIER calculator: fund ($95/t) vs market credits (~$41/t, March 2026) vs Direct Investment. Worth a look?
 ```
+
+**Template D — Consultant Credibility Hook (NEW in v4.0):**
+```
+Hi {FirstName}, I published analysis on GenAI for Canadian utilities and went deep on TIER compliance modelling. Built a 3-pathway calculator (fund vs EPC vs Direct Investment). Might be useful for {Company}?
+```
+*(Link your Canada utilities article in the follow-up DM)*
 
 ### Follow-Up DM (if accepted)
 
-**Template A — ROI Calculator Lead:**
+**Template A — ROI Calculator Lead (UPDATED PRICING):**
 ```
 Thanks for connecting, {FirstName}! Your compliance work at {Company} is right in my wheelhouse.
 
 Quick question: is {Company} currently paying into the TIER fund at $95/tonne, or buying market credits?
 
-I ask because the spread right now is massive — EPC credits are trading around $25/t, meaning facilities can save ~$70/tonne by buying credits instead of paying the fund. For a facility emitting 100K tonnes, that's potentially $7M/year in savings.
+I ask because the spread right now is significant — EPC credits are trading around $41/t (as of March 2026, up from $17/t in November 2025 — market is active), meaning facilities can save ~$54/tonne by buying credits instead of paying the fund. For a facility emitting 100K tonnes, that's potentially $5.4M/year in savings.
 
 I built a calculator that models this exactly: https://canada-energy.netlify.app/roi-calculator
 
 It also covers the new Direct Investment pathway (Dec 2025 amendments). Would a 15-minute walkthrough be useful?
 ```
 
-**Template B — Subject Matter Expert Approach:**
+**Template B — Subject Matter Expert Approach (UPDATED PRICING):**
 ```
-Appreciate the connection, {FirstName}! I've been deep in the TIER compliance space and wanted to share a few data points:
+Appreciate the connection, {FirstName}! I've been deep in the TIER compliance space — I also published analysis on GenAI for Canadian utilities if you'd like background context.
 
-• Fund price: $95/t (Alberta.ca, May 2025)
-• Market EPC credits: ~$25/t (S&P Global, Q4 2025)
-• New Direct Investment pathway: capex can offset compliance obligations (standard expected early 2026)
+Current TIER data points:
+• Fund price: $95/t (Alberta.ca — frozen indefinitely as of May 2025; next review tied to federal carbon price negotiations by April 1, 2026)
+• Market EPC credits: ~$41/t (ClearBlue Markets / S&P Global, late Jan 2026 — up from $17/t at Nov 2025 low)
+• EPC compliance limit: 90% of obligations from 2026 onwards (up from previous cap)
+• New Direct Investment pathway: capex can offset compliance obligations
 
-I built a calculator that models the optimal compliance pathway for each facility across all three options: https://canada-energy.netlify.app/roi-calculator
+I built a calculator that models the optimal compliance pathway across all three options: https://canada-energy.netlify.app/roi-calculator
 
-For a facility with 20K tonnes exceedance, the spread between fund payment and market credits is $1.4M/yr. Worth exploring for {Company}?
+⚠️ Note: EPC prices are volatile — the calculator uses current data. Always confirm with your broker before transacting.
+
+For a facility with 20K tonnes exceedance, the spread between fund payment and market credits is ~$1.08M/yr at current prices. Worth exploring for {Company}?
 ```
+
+> **⚡ MONTHLY MAINTENANCE REQUIRED:** Update the EPC price in templates every month. Sources: ClearBlue Markets (clearbluemarkets.com), S&P Global Platts, or ccarbon.info. Set a calendar reminder for the 1st of each month.
 
 ---
 
@@ -460,36 +500,91 @@ Would that be something you'd consider? Happy to answer any questions about how 
 
 ## Weekly Cadence & Scaling Plan
 
-### Week 1-2: Testing (Manual Approval)
+> **🚨 v4.0 MANUAL-FIRST PROTOCOL:** OpenClaw automation is NOT enabled for Weeks 1-3. All outreach is human-driven until acceptance rate baseline is established and LinkedIn account health is confirmed. Campaign 2 (Indigenous) is NEVER automated — all manual.
 
-| Day | Campaign | Actions | Cap |
-|-----|----------|---------|-----|
-| Mon | Consulting Firms | 5 engagements + 5 connection requests | 10 total |
-| Tue | Indigenous Coordinators | 5 engagements + 5 connection requests | 10 total |
-| Wed | Municipal Officers | 5 engagements + 5 connection requests | 10 total |
-| Thu | Industrial Compliance | 5 engagements + 5 connection requests | 10 total |
-| Fri | Review responses, refine templates, send follow-ups | Follow-ups only | — |
+---
 
-**Weekly total: 20 connection requests + 20 engagements = 40 actions**
+### ✅ Pre-Outreach Week (Before Week 1 — Do This First)
 
-### Week 3-4: Scaling (if acceptance >50%)
+| Action | Status | Check When Done |
+|--------|--------|------------------|
+| Pin Canada utilities article to LinkedIn profile | Required | ☐ |
+| Send ICE Network org email (James Jenkins / Terri Lynn) | Required | ☐ |
+| Smoke-test all live URLs: /municipal, /roi-calculator, /api-docs, /funder-reporting | Required | ☐ |
+| Confirm /legal page (Privacy Policy + ToS) is live | Required | ☐ |
+| Set up HubSpot Free CRM with 5 pipeline stages | Required | ☐ |
+| Record 1 Loom demo (3-5 min) for Campaign 1 | Required | ☐ |
+| Create 1-page PDF summary for Campaign 1 | Required | ☐ |
+| Update TIER price in Campaign 4 templates to current | Required | ☐ |
 
-| Day | Campaign | Actions | Cap |
-|-----|----------|---------|-----|
-| Mon | Consulting Firms | 10 engagements + 10 requests | 20 total |
-| Tue | Indigenous Coordinators | 10 engagements + 10 requests | 20 total |
-| Wed | Municipal Officers | 10 engagements + 10 requests | 20 total |
-| Thu | Industrial + Watchdog | 10 engagements + 10 requests | 20 total |
-| Fri | Follow-ups + analysis | All follow-ups | — |
+**Do not start Week 1 outreach until all rows above are checked.**
 
-**Weekly total: 40 connection requests + 40 engagements = 80 actions**
+---
 
-### Month 2+: Cruise (if acceptance >40%)
+### Week 1-2: Manual Only — Campaign 1 + Campaign 3 Only
 
-- Maintain 50-80 requests/week
+> ⚡ **Campaign 2 (Indigenous): Do NOT do individual LinkedIn outreach. Awaiting ICE Network org response.**
+> ⚡ **Campaign 4 (Industrial): Do NOT start yet. Longer cycle — begin Week 7.**
+> ⚡ **OpenClaw automation: OFF. All actions are human-approved one by one.**
+
+| Day | Campaign | Actions | Mode | Cap |
+|-----|----------|---------|------|-----|
+| Mon | Campaign 1 (Consulting) | Visit 5 profiles → engage (like + comment) | 👤 MANUAL | 5 engagements |
+| Tue | Campaign 1 (Consulting) | Send 5 personalized connection notes | 👤 MANUAL | 5 requests |
+| Wed | Campaign 3 (Municipal) | Visit 5 profiles → engage (like + comment) | 👤 MANUAL | 5 engagements |
+| Thu | Campaign 3 (Municipal) | Send 5 personalized connection notes | 👤 MANUAL | 5 requests |
+| Fri | All | Send follow-up DMs to all who accepted this week | 👤 MANUAL | All pending |
+
+**Week 1-2 total: 10 connection requests/week + 10 engagements = 20 actions/week**
+
+**EOW Check:** Review acceptance rates. If <25%, revise templates before Week 3. Do NOT scale.
+
+---
+
+### Week 3-4: Manual + Assist — Campaign 1 + Campaign 3
+
+> ⚡ **OpenClaw assist mode only:** Use OpenClaw to DRAFT messages for human review. A human must approve every message before sending. Do NOT enable auto-send.
+
+| Day | Campaign | Actions | Mode | Cap |
+|-----|----------|---------|------|-----|
+| Mon | Campaign 1 | OpenClaw drafts 10 connection notes → human reviews → sends best 7 | 🤝 ASSIST | 7 requests |
+| Tue | Campaign 3 | OpenClaw drafts 10 connection notes → human reviews → sends best 7 | 🤝 ASSIST | 7 requests |
+| Wed | Campaign 1 | Follow-ups to all prior accepted | 👤 MANUAL | all pending |
+| Thu | Campaign 3 | Follow-ups to all prior accepted | 👤 MANUAL | all pending |
+| Fri | All | Review, respond to replies, log in HubSpot | 👤 MANUAL | — |
+
+**EOW Check:** Acceptance >30%? Reply >15%? → Proceed to Week 5 automation. Below target? → Fix templates first.
+
+---
+
+### Week 5+: OpenClaw Automation Enabled — Campaign 1 + Campaign 3 Only
+
+> ⚡ **Automation gate:** Only proceed if Weeks 3-4 show clean account health (no warnings, no CAPTCHAs) and acceptance rate >30%.
+> ⚡ **Campaign 4:** Add manually from Week 7 onwards.
+> ⚡ **Campaign 2:** Still org-level only, no automation.
+
+| Day | Campaign | Actions | Mode | Cap |
+|-----|----------|---------|------|-----|
+| Mon–Thu | C1 + C3 | OpenClaw automated batches, randomized 4-8 min delays | 🤖 AUTO | 10/day (40/week combined) |
+| Fri | All | Human: review replies, send follow-ups, log | 👤 MANUAL | all pending |
+
+**Safety guardrails for OpenClaw automation:**
+- Max 10 requests/day total across all running campaigns
+- Randomize delay: 4-8 minutes (not fixed intervals — LinkedIn detects patterns)
+- Run sessions at different times each day (not always 9am)
+- Monitor LinkedIn account health dashboard daily
+- **Stop immediately** at any warning, CAPTCHA, or restriction notice
+
+---
+
+### Month 2+: Full Velocity (if Week 5+ clean)
+
+- C1 + C3: 40-60 requests/week via OpenClaw
+- C4: 10-15 requests/week — MANUAL ONLY (high-stakes accuracy)
+- C2: Via ICE events / referrals only — NO automation
 - Focus on campaigns with highest reply rates
 - A/B test templates (feed winning versions back to OpenClaw)
-- Add email outreach for prospects not on LinkedIn
+- Add email outreach (Apollo.io) as parallel channel for C1 and C3
 
 ---
 
