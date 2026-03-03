@@ -42,7 +42,7 @@
 
 [[redirects]]
   from = "/openapi.yaml"
-  to = "/api/openapi.yaml"
+  to = "/openapi.yaml"
   status = 200
   force = true
 

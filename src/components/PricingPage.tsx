@@ -290,16 +290,14 @@ export const PricingPage: React.FC = () => {
                             <div className="mb-6">
                                 <span className="text-3xl font-bold text-white">
                                     {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial'
-                                        ? `${tier.price.replace(/\$\d+/, '$' + Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8))}`
+                                        ? `$${(Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8 * 12) / 12).toFixed(2).replace(/\.00$/, '')}`
                                         : tier.price}
                                 </span>
                                 <span className="text-slate-400 ml-1">
-                                    {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial'
-                                        ? '/year'
-                                        : tier.priceDetail}
+                                    {tier.priceDetail}
                                 </span>
                                 {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial' && (
-                                    <p className="text-xs text-emerald-400 mt-1">20% annual discount applied</p>
+                                    <p className="text-xs text-emerald-400 mt-1">Billed annually at ${Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8 * 12)}/yr</p>
                                 )}
                                 {tier.thresholdNote && (
                                     <p className="text-xs text-emerald-400 mt-1">{tier.thresholdNote}</p>
