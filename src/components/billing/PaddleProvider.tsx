@@ -25,6 +25,23 @@ const PADDLE_ENVIRONMENT = import.meta.env.PROD ? 'production' : 'sandbox';
 
 // TODO: Replace with your actual Paddle client token
 const PADDLE_CLIENT_TOKEN = import.meta.env.VITE_PADDLE_CLIENT_TOKEN || 'test_paddle_token';
+const CHECKOUT_FALLBACK_KEY = 'ceip_checkout_fallback_intent';
+
+function handleCheckoutFallback(priceId: string): void {
+    if (typeof window === 'undefined') return;
+
+    localStorage.setItem(CHECKOUT_FALLBACK_KEY, JSON.stringify({
+        priceId,
+        occurredAt: new Date().toISOString(),
+        reason: 'paddle_unavailable'
+    }));
+
+    const params = new URLSearchParams({
+        checkout: 'fallback',
+        priceId
+    });
+    window.location.href = `/enterprise?${params.toString()}`;
+}
 
 export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     const [paddle, setPaddle] = useState<Paddle | null>(null);
@@ -33,6 +50,9 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     useEffect(() => {
         const initPaddle = async () => {
             try {
+                if (PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
+                    console.warn('[Paddle] Missing VITE_PADDLE_CLIENT_TOKEN. Checkout fallback will be used.');
+                }
                 const paddleInstance = await initializePaddle({
                     environment: PADDLE_ENVIRONMENT as 'sandbox' | 'production',
                     token: PADDLE_CLIENT_TOKEN,
@@ -70,19 +90,35 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     const openCheckout = (priceId: string) => {
         if (!paddle) {
             console.error('Paddle not initialized');
+            trackEvent('checkout_fallback_redirected', {
+                provider: 'paddle',
+                reason: 'not_initialized',
+                price_id: priceId
+            });
+            handleCheckoutFallback(priceId);
             return;
         }
 
-        paddle.Checkout.open({
-            items: [{ priceId, quantity: 1 }],
-            settings: {
-                displayMode: 'overlay',
-                theme: 'dark',
-                locale: 'en',
-                successUrl: `${window.location.origin}/checkout/success`,
-                allowLogout: true,
-            },
-        });
+        try {
+            paddle.Checkout.open({
+                items: [{ priceId, quantity: 1 }],
+                settings: {
+                    displayMode: 'overlay',
+                    theme: 'dark',
+                    locale: 'en',
+                    successUrl: `${window.location.origin}/checkout/success`,
+                    allowLogout: true,
+                },
+            });
+        } catch (error) {
+            console.error('[Paddle] Checkout open failed:', error);
+            trackEvent('checkout_fallback_redirected', {
+                provider: 'paddle',
+                reason: 'checkout_open_failed',
+                price_id: priceId
+            });
+            handleCheckoutFallback(priceId);
+        }
     };
 
     return (

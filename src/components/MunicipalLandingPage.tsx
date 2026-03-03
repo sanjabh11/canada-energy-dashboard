@@ -34,6 +34,7 @@ import {
     Send
 } from 'lucide-react';
 import { SEOHead } from './SEOHead';
+import { persistLeadIntake } from '../lib/leadIntake';
 
 const MUNICIPAL_BENEFITS = [
     {
@@ -150,7 +151,7 @@ const FAQ_ITEMS = [
     },
     {
         q: 'Where is our data stored? Is it PIPEDA compliant?',
-        a: 'All data is hosted on Canadian servers (Supabase with Canadian data residency). CEIP is fully PIPEDA compliant. For Indigenous community data, we follow OCAP® (Ownership, Control, Access, Possession) principles with Nation-held encryption keys.'
+        a: 'All data is hosted on Canadian servers (Supabase with Canadian data residency). CEIP is designed for PIPEDA-aligned workflows, with final legal validation performed by customer counsel. For Indigenous community data, we follow OCAP® (Ownership, Control, Access, Possession) principles with Nation-held encryption keys.'
     },
     {
         q: 'Can CEIP help with FCM Green Municipal Fund applications?',
@@ -171,10 +172,29 @@ export const MunicipalLandingPage: React.FC = () => {
     const [auditEmail, setAuditEmail] = useState('');
     const [auditSubmitted, setAuditSubmitted] = useState(false);
 
-    const handleAuditSubmit = () => {
+    const handleAuditSubmit = async () => {
         if (!auditEmail) return;
+
+        const persistResult = await persistLeadIntake({
+            company_name: 'Municipal Audit Request',
+            contact_name: 'Municipal Lead',
+            email: auditEmail,
+            source_route: '/municipal',
+            channel: 'direct',
+            segment: 'municipal',
+            campaign_id: 'municipal_2026q1',
+            metadata: {
+                lead_type: 'baseline_audit',
+            },
+        });
+
         const leads = JSON.parse(localStorage.getItem('ceip_municipal_leads') || '[]');
-        leads.push({ email: auditEmail, type: 'baseline_audit', timestamp: new Date().toISOString() });
+        leads.push({
+            email: auditEmail,
+            type: 'baseline_audit',
+            timestamp: new Date().toISOString(),
+            persistedToSupabase: persistResult.ok,
+        });
         localStorage.setItem('ceip_municipal_leads', JSON.stringify(leads));
         setAuditSubmitted(true);
     };

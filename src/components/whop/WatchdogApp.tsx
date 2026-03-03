@@ -19,6 +19,9 @@ import { getBillingAdapter } from '../../lib/billingAdapter';
 import { WelcomeModal } from './WelcomeModal';
 import { SEOHead } from '../SEOHead';
 import { usePaddle } from '../billing/PaddleProvider';
+import { captureAttribution, trackEvent } from '../../lib/analytics';
+import { CEIP_PRICING, formatUsd } from '../../lib/pricingCatalog';
+import { trackRouteIntentCta, trackRouteIntentView } from '../../lib/gtm';
 
 export function WatchdogApp() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -31,7 +34,7 @@ export function WatchdogApp() {
         id: 'whop_pro',
         name: 'CEIP Pro',
         tier: 'pro' as const,
-        price: 29,
+        price: CEIP_PRICING.whop.whop_pro,
         currency: 'USD',
         interval: 'month' as const,
         features: ['35+ dashboards', 'Real-time IESO + AESO', 'Hydrogen, CCUS, ESG', 'Data export', 'API access']
@@ -42,6 +45,12 @@ export function WatchdogApp() {
     useEffect(() => {
         setIsInIframe(window.self !== window.top);
     }, []);
+
+    useEffect(() => {
+        captureAttribution();
+        trackRouteIntentView('watchdog', { iframe: isInIframe });
+        trackEvent('watchdog_page_view', { iframe: isInIframe });
+    }, [isInIframe]);
 
     return (
         <ErrorBoundary>
@@ -79,7 +88,10 @@ export function WatchdogApp() {
                         <div className="flex items-center gap-3">
                             <ThemeToggle compact />
                             <button
-                                onClick={() => setShowUpgradeModal(true)}
+                                onClick={() => {
+                                    trackRouteIntentCta('watchdog', 'unlock_ceip_advanced');
+                                    setShowUpgradeModal(true);
+                                }}
                                 className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white text-sm font-medium rounded-lg transition-all flex items-center gap-2"
                             >
                                 <TrendingUp className="h-4 w-4" />
@@ -103,6 +115,7 @@ export function WatchdogApp() {
                         </div>
                         <button
                             onClick={() => {
+                                trackRouteIntentCta('watchdog', 'predict_bill_calculate_now');
                                 // Scroll to the forecast section
                                 document.querySelector('.rro-forecast')?.scrollIntoView({ behavior: 'smooth' });
                             }}
@@ -127,20 +140,28 @@ export function WatchdogApp() {
                                 <CreditCard className="h-5 w-5 text-amber-400" />
                                 <div>
                                     <p className="text-white font-medium">Unlock Premium Rate Alerts & Detailed Comparisons</p>
-                                    <p className="text-cyan-200 text-sm">Daily rate monitoring • Retailer comparisons • $9/month • Cancel anytime</p>
+                                    <p className="text-cyan-200 text-sm">Daily rate monitoring • Retailer comparisons • {formatUsd(CEIP_PRICING.direct.consumer_watchdog)}/month • Cancel anytime</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
                                 <button
-                                    onClick={() => openCheckout('pri_consumer_monthly')}
+                                    onClick={() => {
+                                        trackRouteIntentCta('watchdog', 'subscribe_consumer_monthly', {
+                                            price_id: 'pri_consumer_monthly',
+                                        });
+                                        openCheckout('pri_consumer_monthly');
+                                    }}
                                     disabled={paddleLoading}
                                     className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
                                 >
-                                    Subscribe $9/mo
+                                    Subscribe {formatUsd(CEIP_PRICING.direct.consumer_watchdog)}/mo
                                     <ArrowRight className="h-4 w-4" />
                                 </button>
                                 <button
-                                    onClick={() => setShowUpgradeModal(true)}
+                                    onClick={() => {
+                                        trackRouteIntentCta('watchdog', 'see_all_plans');
+                                        setShowUpgradeModal(true);
+                                    }}
                                     className="px-4 py-2 bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 font-medium rounded-lg transition-colors text-sm"
                                 >
                                     See All Plans

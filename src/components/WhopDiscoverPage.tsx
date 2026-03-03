@@ -11,13 +11,22 @@
  * - CTA to start using the app
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
     Zap, BookOpen, Award, Users, BarChart3,
     Check, ArrowRight, Star, Quote
 } from 'lucide-react';
+import { captureAttribution, trackEvent } from '../lib/analytics';
+import { CEIP_PRICING, formatUsd } from '../lib/pricingCatalog';
+import { trackRouteIntentCta, trackRouteIntentView } from '../lib/gtm';
 
 export function WhopDiscoverPage() {
+    useEffect(() => {
+        captureAttribution();
+        trackRouteIntentView('whop_discover');
+        trackEvent('whop_discover_page_view');
+    }, []);
+
     const features = [
         {
             icon: <BarChart3 className="w-6 h-6" />,
@@ -49,21 +58,21 @@ export function WhopDiscoverPage() {
     const tiers = [
         {
             name: 'Basic',
-            price: '$29',
+            price: formatUsd(CEIP_PRICING.whop.whop_basic),
             period: '/month',
             features: ['Full dashboard access', 'Certificate tracks', 'AI chat (25/day)', 'Data citations'],
             popular: false
         },
         {
             name: 'Pro',
-            price: '$99',
+            price: formatUsd(CEIP_PRICING.whop.whop_pro),
             period: '/month',
             features: ['Everything in Basic', 'Unlimited AI', 'Cohort management', 'Creator dashboard', 'Priority support'],
             popular: true
         },
         {
             name: 'Team',
-            price: '$299',
+            price: formatUsd(CEIP_PRICING.whop.whop_team),
             period: '/month',
             features: ['Everything in Pro', 'Bulk seats (25)', 'API access', 'White-label', 'Dedicated support'],
             popular: false
@@ -102,6 +111,7 @@ export function WhopDiscoverPage() {
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a
                             href="/whop/experience/"
+                            onClick={() => trackRouteIntentCta('whop_discover', 'start_learning_free')}
                             className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all"
                         >
                             Start Learning Free
@@ -113,6 +123,13 @@ export function WhopDiscoverPage() {
                         >
                             View Pricing
                         </a>
+                        <a
+                            href="/enterprise"
+                            onClick={() => trackRouteIntentCta('whop_discover', 'handoff_enterprise_consult')}
+                            className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-slate-800 text-cyan-300 font-bold rounded-xl border border-cyan-500/40 hover:bg-slate-700 transition-all"
+                        >
+                            Need B2B Compliance Tools?
+                        </a>
                     </div>
 
                     {/* Free Tools Showcase */}
@@ -121,6 +138,7 @@ export function WhopDiscoverPage() {
                         <div className="flex flex-wrap justify-center gap-4">
                             <a
                                 href="/whop/watchdog"
+                                onClick={() => trackRouteIntentCta('whop_discover', 'open_watchdog')}
                                 className="group flex items-center gap-3 bg-slate-800/80 hover:bg-slate-700 border border-amber-500/30 hover:border-amber-500 rounded-xl px-5 py-3 transition-all"
                             >
                                 <div className="p-2 bg-amber-500/20 rounded-lg group-hover:bg-amber-500/30 transition-colors">
@@ -133,6 +151,7 @@ export function WhopDiscoverPage() {
                             </a>
                             <a
                                 href="/whop/quiz"
+                                onClick={() => trackRouteIntentCta('whop_discover', 'open_quiz')}
                                 className="group flex items-center gap-3 bg-slate-800/80 hover:bg-slate-700 border border-cyan-500/30 hover:border-cyan-500 rounded-xl px-5 py-3 transition-all"
                             >
                                 <div className="p-2 bg-cyan-500/20 rounded-lg group-hover:bg-cyan-500/30 transition-colors">
@@ -207,6 +226,7 @@ export function WhopDiscoverPage() {
                                 </ul>
                                 <a
                                     href={`https://whop.com/ignite-be15/?d2c=true&plan=${tier.name.toLowerCase()}`}
+                                    onClick={() => trackRouteIntentCta('whop_discover', `checkout_${tier.name.toLowerCase()}`)}
                                     className={`block w-full py-3 rounded-lg font-semibold text-center transition-all ${tier.popular
                                         ? 'bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:from-cyan-600 hover:to-blue-600'
                                         : 'bg-slate-700 text-white hover:bg-slate-600'
@@ -252,6 +272,7 @@ export function WhopDiscoverPage() {
                     </p>
                     <a
                         href="/whop/experience/"
+                        onClick={() => trackRouteIntentCta('whop_discover', 'launch_energy_academy')}
                         className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white font-bold rounded-xl hover:from-cyan-600 hover:to-blue-600 transition-all"
                     >
                         Launch Your Energy Academy

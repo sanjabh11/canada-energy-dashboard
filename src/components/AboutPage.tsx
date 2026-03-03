@@ -110,7 +110,7 @@ export const AboutPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-semibold text-primary mb-1">Enterprise Security</h3>
-                  <p className="text-secondary">Bank-grade security with end-to-end encryption, compliance monitoring, and audit trails</p>
+                  <p className="text-secondary">Enterprise-focused security controls with encryption, compliance monitoring, and audit trails</p>
                 </div>
               </div>
             </div>
@@ -195,9 +195,9 @@ export const AboutPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
-                { name: 'SOC 2 Type II', description: 'Security & availability compliance' },
-                { name: 'ISO 27001', description: 'Information security management' },
-                { name: 'GDPR Compliant', description: 'Data protection regulation' },
+                { name: 'SOC 2 Readiness Roadmap', description: 'Security controls aligned for future audit' },
+                { name: 'ISO 27001 Control Alignment', description: 'Information security controls mapped' },
+                { name: 'GDPR-Aligned Patterns', description: 'Data minimization and privacy-by-design' },
                 { name: 'UNDRIP Aligned', description: 'Indigenous rights compliance' }
               ].map((cert, index) => (
                 <div

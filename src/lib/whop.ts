@@ -21,6 +21,8 @@
  * - VITE_WHOP_CLIENT_ID: Client-safe Whop App ID for OAuth redirects
  */
 
+import { CEIP_PRICING } from './pricingCatalog';
+
 // Check if we're in live mode with real Whop SDK
 const WHOP_MODE = import.meta.env.VITE_WHOP_MODE || 'standalone';
 // NOTE: WHOP_API_KEY is server-only (Edge Functions). Never expose it to the browser.
@@ -137,7 +139,7 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
   },
   basic: {
     tier: 'basic',
-    price: 29,
+    price: CEIP_PRICING.whop.whop_basic,
     features: [
       'public_dashboards',
       'basic_charts',
@@ -160,7 +162,7 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
   },
   pro: {
     tier: 'pro',
-    price: 99,
+    price: CEIP_PRICING.whop.whop_pro,
     features: [
       'public_dashboards',
       'basic_charts',
@@ -194,7 +196,7 @@ export const WHOP_ACCESS_MATRIX: Record<WhopTier, WhopAccessMatrix> = {
   },
   team: {
     tier: 'team',
-    price: 299,
+    price: CEIP_PRICING.whop.whop_team,
     features: [
       'public_dashboards',
       'basic_charts',

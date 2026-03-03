@@ -33,6 +33,10 @@ import {
     Calendar
 } from 'lucide-react';
 import { SEOHead } from '../SEOHead';
+import { captureAttribution, trackEvent } from '../../lib/analytics';
+import { trackRouteIntentCta, trackRouteIntentView } from '../../lib/gtm';
+import { CEIP_PRICING, formatUsd } from '../../lib/pricingCatalog';
+import { persistLeadIntake } from '../../lib/leadIntake';
 
 interface EnterpriseFormData {
     companyName: string;
@@ -57,6 +61,8 @@ const INDUSTRY_OPTIONS = [
 export function EnterprisePage() {
     const [searchParams] = useSearchParams();
     const tierParam = searchParams.get('tier') || '';
+    const checkoutFallback = searchParams.get('checkout') === 'fallback';
+    const priceIdParam = searchParams.get('priceId') || '';
 
     const [formData, setFormData] = useState<EnterpriseFormData>({
         companyName: '',
@@ -65,7 +71,9 @@ export function EnterprisePage() {
         phone: '',
         teamSize: 'small',
         industry: tierParam || '',
-        message: ''
+        message: checkoutFallback && priceIdParam
+            ? `Checkout fallback requested for ${priceIdParam}. Please contact me with next steps.`
+            : ''
     });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -76,13 +84,65 @@ export function EnterprisePage() {
         }
     }, [tierParam]);
 
+    useEffect(() => {
+        captureAttribution();
+        trackRouteIntentView('enterprise', {
+            tier_param: tierParam || 'none',
+            checkout_fallback: checkoutFallback,
+            price_id: priceIdParam || 'none',
+        });
+        trackEvent('enterprise_page_view', {
+            tier_param: tierParam || 'none',
+            checkout_fallback: checkoutFallback,
+            price_id: priceIdParam || 'none',
+        });
+    }, [tierParam, checkoutFallback, priceIdParam]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        // In production, send to backend API
-        // For now, simulate submission
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        trackRouteIntentCta('enterprise', 'submit_contact_form', {
+            team_size: formData.teamSize,
+            industry: formData.industry || 'unknown',
+            checkout_fallback: checkoutFallback,
+            price_id: priceIdParam || 'none',
+        });
+        trackEvent('enterprise_form_submit_attempt', {
+            team_size: formData.teamSize,
+            industry: formData.industry || 'unknown',
+            checkout_fallback: checkoutFallback,
+            price_id: priceIdParam || 'none',
+        });
+
+        const persistResult = await persistLeadIntake({
+            company_name: formData.companyName,
+            contact_name: formData.contactName,
+            email: formData.email,
+            phone: formData.phone,
+            team_size: formData.teamSize,
+            industry: formData.industry,
+            message: formData.message,
+            source_route: '/enterprise',
+            channel: 'direct',
+            segment: formData.industry || 'consultancy',
+            campaign_id: 'enterprise_2026q1',
+            metadata: {
+                tier_param: tierParam || null,
+                checkout_fallback: checkoutFallback,
+                checkout_price_id: priceIdParam || null,
+            },
+        });
+
+        if (!persistResult.ok) {
+            trackEvent('enterprise_form_persist_failed', {
+                error: persistResult.error || 'unknown',
+            });
+        } else {
+            trackEvent('enterprise_form_persisted', {
+                source: 'supabase',
+            });
+        }
 
         // Store lead locally (Dual Capture pattern)
         const leads = JSON.parse(localStorage.getItem('ceip_enterprise_leads') || '[]');
@@ -90,7 +150,8 @@ export function EnterprisePage() {
             ...formData,
             timestamp: new Date().toISOString(),
             source: 'enterprise_page',
-            urlTier: tierParam
+            urlTier: tierParam,
+            persistedToSupabase: persistResult.ok
         });
         localStorage.setItem('ceip_enterprise_leads', JSON.stringify(leads));
 
@@ -171,9 +232,14 @@ export function EnterprisePage() {
             {/* Hero */}
             <section className="bg-gradient-to-b from-slate-800 to-slate-900 py-20">
                 <div className="max-w-7xl mx-auto px-6 text-center">
+                    {checkoutFallback && (
+                        <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-amber-900/40 border border-amber-500/30 px-4 py-2 text-sm text-amber-200">
+                            Checkout fallback activated for <span className="font-semibold">{priceIdParam || 'unknown_plan'}</span>. Submit this form and we will complete onboarding manually.
+                        </div>
+                    )}
                     <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-2 rounded-full text-sm mb-6">
                         <Lock className="h-4 w-4" />
-                        SOC 2 Compliant
+                        Enterprise-Grade Security Controls
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold mb-6">
                         Energy Intelligence<br />
@@ -184,15 +250,27 @@ export function EnterprisePage() {
                         Full API access, dedicated support, and enterprise-grade security.
                     </p>
                     <div className="flex items-center justify-center gap-4 flex-wrap">
-                        <a href="#contact-form" className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2">
+                        <a
+                            href="#contact-form"
+                            onClick={() => trackRouteIntentCta('enterprise', 'contact_sales')}
+                            className="px-8 py-4 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"
+                        >
                             Contact Sales
                             <ArrowRight className="h-5 w-5" />
                         </a>
-                        <a href="#contact-form" className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2">
+                        <a
+                            href="#contact-form"
+                            onClick={() => trackRouteIntentCta('enterprise', 'book_demo')}
+                            className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                        >
                             <Calendar className="h-5 w-5" />
                             Book a 30-Min Demo
                         </a>
-                        <Link to="/api-docs" className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors">
+                        <Link
+                            to="/api-docs"
+                            onClick={() => trackRouteIntentCta('enterprise', 'view_api_docs')}
+                            className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
+                        >
                             View API Docs
                         </Link>
                     </div>
@@ -226,10 +304,10 @@ export function EnterprisePage() {
                     <h2 className="text-3xl font-bold mb-6">Flexible Enterprise Pricing</h2>
                     <div className="bg-slate-800 border border-slate-700 rounded-2xl p-8">
                         <p className="text-5xl font-bold text-amber-400 mb-2">
-                            Starting at $99<span className="text-xl text-slate-400">/month</span>
+                            Starting at {formatUsd(CEIP_PRICING.direct.professional)}<span className="text-xl text-slate-400">/month</span>
                         </p>
                         <p className="text-slate-300 mb-6">
-                            Volume discounts available for teams of 10+
+                            Annual invoicing and volume discounts available for teams of 10+
                         </p>
                         <ul className="text-left max-w-md mx-auto space-y-3 mb-8">
                             {[

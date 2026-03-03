@@ -11,6 +11,7 @@ import {
     LayoutDashboard, ArrowLeft, Activity, Zap, Wind, Sun,
     Flame, Droplets, AlertTriangle, ChevronRight, TrendingUp
 } from 'lucide-react';
+import { CEIP_PRICING, formatUsd } from '../../lib/pricingCatalog';
 
 interface WhopMiniUser {
     id: string;
@@ -241,7 +242,7 @@ export default function DashboardDemo({ user }: { user: WhopMiniUser | null }) {
                                 </a>
                                 <div className="flex items-center gap-2 text-slate-400">
                                     <AlertTriangle className="w-4 h-4 text-amber-400" />
-                                    <span className="text-sm">$99/month for Pro access</span>
+                                    <span className="text-sm">{formatUsd(CEIP_PRICING.whop.whop_pro)}/month for Pro access</span>
                                 </div>
                             </div>
                         </div>

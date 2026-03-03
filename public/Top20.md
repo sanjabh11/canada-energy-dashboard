@@ -44,14 +44,14 @@ Indigenous Energy | Stakeholders | Security | Features
 
 ---
 
-## 4. NEW: Alberta-Focused Consumer Tools
+## 4. Alberta-Focused Consumer Tools
 
-Six new features targeting Alberta market opportunities:
+Six features targeting Alberta market opportunities:
 
 | Tool | Route | Purpose |
 |------|-------|---------|
 | **Solar Wizard** | `/solar-wizard` | TurboTax for Micro-generation permits |
-| **Rate Watchdog** | `/rate-alerts` | RRO price monitoring & retailer comparison |
+| **Rate Watchdog** | `/rate-alerts` | RRO price monitoring & retailer comparison (Updated Feb 2026) |
 | **AICEI Reporting** | `/aicei` | Indigenous grant compliance reporting |
 | **Hire Me Page** | `/hire-me` | LMIA-ready employer landing page |
 | **Resume** | `/resume-canada.md` | NOC 21232 aligned resume |
@@ -59,7 +59,15 @@ Six new features targeting Alberta market opportunities:
 
 ---
 
-## 5. Indigenous Energy Sovereignty Dashboard (Early Access)
+## 5. Forecast Benchmarking Tool (NEW)
+
+Evaluate energy forecasts against industry baselines (MAE, MAPE, RMSE) across 1h-48h horizons. Features persistence and seasonal naive benchmarks for Canadian renewable energy. Designed for consulting firms, grid operators, and municipal planners.
+
+**Route:** `/forecast-benchmarking`
+
+---
+
+## 6. Indigenous Energy Sovereignty Dashboard (Early Access)
 
 OCAP®-aligned architecture for First Nations energy projects — seeking community co-design partners:
 
@@ -150,7 +158,7 @@ Data sourced from official Canadian energy authorities:
 - **ESG:** MSCI, Sustainalytics, Yahoo Finance
 - **Government:** Provincial energy programs, Alberta.ca TIER data
 
-Dashboards attempt live API fetches and fall back to cached/sample data when sources are unavailable. Data provenance is documented per dashboard.
+Dashboards attempt live API fetches and fall back to cached/sample data when sources are unavailable. Data provenance and freshness are strictly documented per dashboard using the **DataFreshnessBadge**.
 
 ---
 
@@ -278,7 +286,7 @@ Ready for commercial deployment:
 |----------|--------|
 | **Main** | `/`, `/dashboard`, `/about`, `/contact` |
 | **Analytics** | `/analytics`, `/trends`, `/investment` |
-| **Energy** | `/renewable-optimization`, `/curtailment-reduction`, `/resilience` |
+| **Energy** | `/renewable-optimization`, `/curtailment-reduction`, `/resilience`, `/forecast-benchmarking` |
 | **Future** | `/ai-datacentres`, `/hydrogen`, `/smr-deployment` |
 | **Consumer** | `/my-energy-ai`, `/solar-wizard`, `/rate-alerts` |
 | **Indigenous** | `/indigenous`, `/aicei`, `/funder-reporting` |

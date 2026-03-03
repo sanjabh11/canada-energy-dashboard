@@ -8,6 +8,7 @@ import React, { useState, useMemo } from 'react';
 import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, Info, Mail, ExternalLink, HelpCircle } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
+import { persistLeadIntake } from '../lib/leadIntake';
 
 interface ROIResults {
     fundPayment: number;
@@ -58,10 +59,32 @@ export const TIERROICalculator: React.FC = () => {
         };
     }, [benchmarkExceedance, directInvestCapex]);
 
-    const handleEmailSubmit = () => {
+    const handleEmailSubmit = async () => {
         if (!emailCapture) return;
+
+        const persistResult = await persistLeadIntake({
+            company_name: 'Industrial ROI Inquiry',
+            contact_name: 'Industrial Lead',
+            email: emailCapture,
+            source_route: '/roi-calculator',
+            channel: 'direct',
+            segment: 'industrial',
+            campaign_id: 'roi_calculator_2026q1',
+            metadata: {
+                annual_emissions: annualEmissions,
+                benchmark_exceedance: benchmarkExceedance,
+                direct_invest_capex: directInvestCapex,
+            },
+        });
+
         const leads = JSON.parse(localStorage.getItem('ceip_tier_leads') || '[]');
-        leads.push({ email: emailCapture, emissions: annualEmissions, exceedance: benchmarkExceedance, timestamp: new Date().toISOString() });
+        leads.push({
+            email: emailCapture,
+            emissions: annualEmissions,
+            exceedance: benchmarkExceedance,
+            timestamp: new Date().toISOString(),
+            persistedToSupabase: persistResult.ok,
+        });
         localStorage.setItem('ceip_tier_leads', JSON.stringify(leads));
         setEmailSubmitted(true);
     };

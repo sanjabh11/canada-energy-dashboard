@@ -15,6 +15,7 @@ import { debug } from './debug';
 import { getSupabaseConfig, getWhopProductId, getStripePriceId } from './config';
 import { type CanonicalTier } from './entitlements';
 import { WhopTier, WHOP_ACCESS_MATRIX } from './whop';
+import { CEIP_PRICING } from './pricingCatalog';
 
 // ============================================================================
 // BILLING ADAPTER INTERFACES (Provider-Agnostic)
@@ -102,7 +103,7 @@ const WHOP_PLANS: BillingPlan[] = [
         id: 'whop_watchdog',
         name: 'Alberta Rate Watchdog',
         tier: 'basic',
-        price: 9,
+        price: CEIP_PRICING.direct.consumer_watchdog,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.basic.features.slice(0, 5)
@@ -111,7 +112,7 @@ const WHOP_PLANS: BillingPlan[] = [
         id: 'whop_basic',
         name: 'CEIP Basic',
         tier: 'basic',
-        price: 29,
+        price: CEIP_PRICING.whop.whop_basic,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.basic.features
@@ -120,7 +121,7 @@ const WHOP_PLANS: BillingPlan[] = [
         id: 'whop_pro',
         name: 'CEIP Pro',
         tier: 'pro',
-        price: 99,
+        price: CEIP_PRICING.whop.whop_pro,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.pro.features
@@ -129,7 +130,7 @@ const WHOP_PLANS: BillingPlan[] = [
         id: 'whop_team',
         name: 'CEIP Team',
         tier: 'team',
-        price: 299,
+        price: CEIP_PRICING.whop.whop_team,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.team.features
@@ -252,7 +253,7 @@ const STRIPE_PLANS: BillingPlan[] = [
         id: 'stripe_watchdog',
         name: 'Alberta Rate Watchdog',
         tier: 'basic',
-        price: 9,
+        price: CEIP_PRICING.direct.consumer_watchdog,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.basic.features.slice(0, 5)
@@ -261,7 +262,7 @@ const STRIPE_PLANS: BillingPlan[] = [
         id: 'stripe_pro',
         name: 'CEIP Pro',
         tier: 'pro',
-        price: 99,
+        price: CEIP_PRICING.whop.whop_pro,
         currency: 'USD',
         interval: 'month',
         features: WHOP_ACCESS_MATRIX.pro.features

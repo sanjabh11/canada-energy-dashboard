@@ -4,14 +4,18 @@ import { trackEvent, captureAttribution } from '../lib/analytics';
 import { Link } from 'react-router-dom';
 import { usePaddle } from './billing/PaddleProvider';
 import { SEOHead } from './SEOHead';
+import { CEIP_PRICING, formatUsd } from '../lib/pricingCatalog';
+import { trackRouteIntentCta, trackRouteIntentView } from '../lib/gtm';
 
 interface PricingTier {
     id: string;
     name: string;
     description: string;
+    monthlyPrice: number;
     price: string;
     priceDetail: string;
-    priceId?: string; // Paddle price ID
+    priceId?: string; // Paddle monthly price ID
+    annualMode?: 'sales_assisted' | 'not_available';
     features: string[];
     highlighted?: boolean;
     ctaText: string;
@@ -28,8 +32,10 @@ const pricingTiers: PricingTier[] = [
         id: 'free',
         name: 'Free',
         description: 'Real-time grid monitoring for consumers',
+        monthlyPrice: 0,
         price: '$0',
         priceDetail: 'forever',
+        annualMode: 'not_available',
         features: [
             'Live Alberta pool price tracking',
             'RoLR 12¢ benchmark comparison',
@@ -43,9 +49,11 @@ const pricingTiers: PricingTier[] = [
         id: 'consumer',
         name: 'Rate Watchdog',
         description: 'Stop overpaying on electricity',
-        price: '$9',
+        monthlyPrice: CEIP_PRICING.direct.consumer_watchdog,
+        price: formatUsd(CEIP_PRICING.direct.consumer_watchdog),
         priceDetail: '/month',
         priceId: 'pri_consumer_monthly',
+        annualMode: 'not_available',
         features: [
             'Bill auditing & error detection',
             'Retailer switching recommendations',
@@ -62,9 +70,11 @@ const pricingTiers: PricingTier[] = [
         id: 'professional',
         name: 'Professional',
         description: 'For energy consultants & advisors',
-        price: '$149',
+        monthlyPrice: CEIP_PRICING.direct.professional,
+        price: formatUsd(CEIP_PRICING.direct.professional),
         priceDetail: '/month',
         priceId: 'pri_professional_monthly',
+        annualMode: 'sales_assisted',
         features: [
             'Everything in Rate Watchdog',
             'API access (1,000 calls/day)',
@@ -80,9 +90,11 @@ const pricingTiers: PricingTier[] = [
         id: 'industrial',
         name: 'Industrial TIER',
         description: 'Turn compliance into profit',
-        price: '$1,500',
+        monthlyPrice: CEIP_PRICING.direct.industrial_tier,
+        price: formatUsd(CEIP_PRICING.direct.industrial_tier),
         priceDetail: '/mo + 20% savings',
         priceId: 'pri_industrial_monthly',
+        annualMode: 'not_available',
         features: [
             'Live TIER credit pricing (EPC/Offsets)',
             'Arbitrage alerts: Buy at $25, not $95',
@@ -100,9 +112,10 @@ const pricingTiers: PricingTier[] = [
         id: 'municipal',
         name: 'Municipal',
         description: '30-Day Climate Action Plan. No RFP.',
-        price: '$5,900',
+        monthlyPrice: CEIP_PRICING.direct.municipal,
+        price: formatUsd(CEIP_PRICING.direct.municipal),
         priceDetail: '/month',
-        priceId: 'pri_municipal_annual',
+        annualMode: 'sales_assisted',
         features: [
             'Everything in Professional',
             'Methane Compliance Engine',
@@ -119,9 +132,11 @@ const pricingTiers: PricingTier[] = [
         id: 'indigenous',
         name: 'Sovereign',
         description: 'Your Data, Your Jurisdiction',
-        price: '$2,500',
+        monthlyPrice: CEIP_PRICING.direct.sovereign,
+        price: formatUsd(CEIP_PRICING.direct.sovereign),
         priceDetail: '/month',
         priceId: 'pri_indigenous_monthly',
+        annualMode: 'sales_assisted',
         features: [
             'OCAP® compliant architecture',
             'Nation-controlled encryption keys',
@@ -142,10 +157,31 @@ export const PricingPage: React.FC = () => {
 
     useEffect(() => {
         captureAttribution();
+        trackRouteIntentView('pricing', { billing_cycle: billingCycle });
         trackEvent('pricing_page_view', { billing_cycle: billingCycle });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+    useEffect(() => {
+        trackEvent('pricing_billing_cycle_changed', { billing_cycle: billingCycle });
+    }, [billingCycle]);
+
+    const supportsAnnualDisplay = (tier: PricingTier): boolean =>
+        billingCycle === 'annual' && tier.annualMode === 'sales_assisted';
+
+    const getAnnualMonthlyEquivalent = (tier: PricingTier): string =>
+        `$${(Math.round(tier.monthlyPrice * 0.8 * 12) / 12).toFixed(2).replace(/\.00$/, '')}`;
+
+    const getAnnualInvoiceAmount = (tier: PricingTier): number =>
+        Math.round(tier.monthlyPrice * 0.8 * 12);
+
     const handleCtaClick = (tier: PricingTier) => {
+        trackRouteIntentCta('pricing', `pricing_${tier.id}_cta`, {
+            tier_id: tier.id,
+            tier_name: tier.name,
+            billing_cycle: billingCycle,
+        });
+
         trackEvent('pricing_cta_click', {
             tier_id: tier.id,
             tier_name: tier.name,
@@ -155,6 +191,28 @@ export const PricingPage: React.FC = () => {
                      tier.id === 'indigenous' ? 'indigenous' : 
                      tier.id === 'industrial' ? 'industrial' : 'standard'
         });
+
+        if (billingCycle === 'annual' && tier.annualMode === 'sales_assisted') {
+            trackEvent('lead_intent_update', {
+                intent: 'annual_quote_request',
+                tier: tier.id,
+                route: tier.id === 'municipal' ? '/municipal' : '/enterprise',
+            });
+            if (tier.id === 'municipal') {
+                window.location.href = '/municipal';
+                return;
+            }
+            const industryTier = tier.id === 'professional' ? 'consulting' : tier.id;
+            window.location.href = `/enterprise?checkout=fallback&priceId=${tier.id}_annual_quote&tier=${industryTier}`;
+            return;
+        }
+
+        if (billingCycle === 'annual' && tier.annualMode === 'not_available') {
+            trackEvent('annual_cycle_not_supported', {
+                tier: tier.id,
+                fallback: 'monthly',
+            });
+        }
 
         if (tier.id === 'free') {
             window.location.href = '/dashboard';
@@ -189,7 +247,7 @@ export const PricingPage: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
             <SEOHead
                 title="CEIP Pricing | From Free to Enterprise — Alberta Energy Compliance Tools"
-                description="Transparent pricing for Canada's energy intelligence platform. Rate Watchdog $9/mo, Professional $149/mo, Industrial TIER $1,500/mo, Municipal $5,900/mo. All under NWPTA sole-source threshold."
+                description={`Transparent pricing for Canada's energy intelligence platform. Rate Watchdog ${formatUsd(CEIP_PRICING.direct.consumer_watchdog)}/mo, Professional ${formatUsd(CEIP_PRICING.direct.professional)}/mo, Industrial TIER ${formatUsd(CEIP_PRICING.direct.industrial_tier)}/mo, Municipal ${formatUsd(CEIP_PRICING.direct.municipal)}/mo. All under NWPTA sole-source threshold.`}
                 path="/pricing"
                 keywords={['CEIP pricing', 'energy compliance pricing', 'TIER compliance cost', 'municipal energy tools price', 'Alberta energy platform']}
             />
@@ -216,6 +274,15 @@ export const PricingPage: React.FC = () => {
                     Why pay $95/tonne when credits trade at $25? Automate your TIER arbitrage and save 776% more.
                 </p>
 
+                <div className="mt-6 mx-auto max-w-4xl rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-sm">
+                    <p className="text-slate-200 font-semibold mb-2">Two-Lane GTM Offer Structure</p>
+                    <p className="text-slate-400">
+                        <span className="text-cyan-300">Whop lane:</span> Wedge + trials ({formatUsd(CEIP_PRICING.whop.whop_basic)} / {formatUsd(CEIP_PRICING.whop.whop_pro)} / {formatUsd(CEIP_PRICING.whop.whop_team)} per month).
+                        {' '}
+                        <span className="text-emerald-300">Direct lane:</span> Consultancy/municipal/industrial closes ({formatUsd(CEIP_PRICING.direct.professional)}+ per month).
+                    </p>
+                </div>
+
                 {/* Billing Toggle */}
                 <div className="mt-8 inline-flex items-center gap-4 bg-slate-800 rounded-full p-1">
                     <button
@@ -237,6 +304,9 @@ export const PricingPage: React.FC = () => {
                         Annual <span className="text-emerald-400 ml-1 text-sm">Save 20%</span>
                     </button>
                 </div>
+                <p className="mt-3 text-xs text-slate-500">
+                    Annual plans for Professional, Municipal, and Sovereign are sales-assisted.
+                </p>
             </header>
 
             {/* Trust Badges */}
@@ -289,15 +359,17 @@ export const PricingPage: React.FC = () => {
                             {/* Price - Dynamic based on billing cycle */}
                             <div className="mb-6">
                                 <span className="text-3xl font-bold text-white">
-                                    {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial'
-                                        ? `$${(Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8 * 12) / 12).toFixed(2).replace(/\.00$/, '')}`
+                                    {supportsAnnualDisplay(tier)
+                                        ? getAnnualMonthlyEquivalent(tier)
                                         : tier.price}
                                 </span>
                                 <span className="text-slate-400 ml-1">
                                     {tier.priceDetail}
                                 </span>
-                                {billingCycle === 'annual' && tier.id !== 'free' && tier.id !== 'industrial' && (
-                                    <p className="text-xs text-emerald-400 mt-1">Billed annually at ${Math.round(parseInt(tier.price.replace(/\D/g, '')) * 0.8 * 12)}/yr</p>
+                                {supportsAnnualDisplay(tier) && (
+                                    <p className="text-xs text-emerald-400 mt-1">
+                                        {`Annual invoicing quote available (~${getAnnualInvoiceAmount(tier)}/yr equivalent)`}
+                                    </p>
                                 )}
                                 {tier.thresholdNote && (
                                     <p className="text-xs text-emerald-400 mt-1">{tier.thresholdNote}</p>
