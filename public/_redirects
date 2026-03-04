@@ -2,4 +2,4 @@
 /api/*  /api/:splat  200
 
 # SPA fallback - all other routes go to index.html
-/*    /index.html   200!
+/*    /index.html   200

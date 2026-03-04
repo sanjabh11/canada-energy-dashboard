@@ -38,9 +38,9 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
 - Verification:
   - `pnpm exec tsc --noEmit` passed.
   - `node --check scripts/gtm-weekly-report.mjs` passed.
-  - Full `pnpm run build` not run due network-constrained dependency install behavior in this environment.
+  - `pnpm exec vite build` passed (after dependency resolution for `dompurify` import used by `HelpButton.tsx`).
 - QA countercheck round:
   - Hardened SPA rewrites in [netlify.toml](/Users/sanjayb/minimax/canada-energy-dashboard/netlify.toml) and [public/_redirects](/Users/sanjayb/minimax/canada-energy-dashboard/public/_redirects).
   - Made annual mode unmistakable on pricing page (visual banner + CTA label change).
   - Converted demo CTA into true calendar link when `VITE_BOOK_DEMO_URL` is configured, otherwise explicit callback request wording.
-  - `pnpm exec vite build` failed due pre-existing missing dependency import (`dompurify` in `HelpButton.tsx`), unrelated to GTM patches.
+  - Re-ran production build and verified generated `dist/_redirects` no longer forces SPA fallback over static assets.
