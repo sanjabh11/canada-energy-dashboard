@@ -200,3 +200,8 @@ export function getWhopProductTierMap(): Record<string, 'basic' | 'pro' | 'team'
   
   return map;
 }
+
+export function getBookDemoUrl(): string {
+  const raw = env.VITE_BOOK_DEMO_URL as string | undefined;
+  return raw?.trim() || '';
+}

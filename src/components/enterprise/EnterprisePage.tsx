@@ -37,6 +37,7 @@ import { captureAttribution, trackEvent } from '../../lib/analytics';
 import { trackRouteIntentCta, trackRouteIntentView } from '../../lib/gtm';
 import { CEIP_PRICING, formatUsd } from '../../lib/pricingCatalog';
 import { persistLeadIntake } from '../../lib/leadIntake';
+import { getBookDemoUrl } from '../../lib/config';
 
 interface EnterpriseFormData {
     companyName: string;
@@ -77,6 +78,7 @@ export function EnterprisePage() {
     });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const demoBookingUrl = getBookDemoUrl();
 
     useEffect(() => {
         if (tierParam) {
@@ -258,14 +260,27 @@ export function EnterprisePage() {
                             Contact Sales
                             <ArrowRight className="h-5 w-5" />
                         </a>
-                        <a
-                            href="#contact-form"
-                            onClick={() => trackRouteIntentCta('enterprise', 'book_demo')}
-                            className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
-                        >
-                            <Calendar className="h-5 w-5" />
-                            Book a 30-Min Demo
-                        </a>
+                        {demoBookingUrl ? (
+                            <a
+                                href={demoBookingUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={() => trackRouteIntentCta('enterprise', 'book_demo_calendar')}
+                                className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Calendar className="h-5 w-5" />
+                                Book a 30-Min Demo
+                            </a>
+                        ) : (
+                            <a
+                                href="#contact-form"
+                                onClick={() => trackRouteIntentCta('enterprise', 'book_demo_callback')}
+                                className="px-8 py-4 bg-slate-700 hover:bg-slate-600 text-white font-medium rounded-lg transition-colors flex items-center gap-2"
+                            >
+                                <Calendar className="h-5 w-5" />
+                                Request Demo Callback
+                            </a>
+                        )}
                         <Link
                             to="/api-docs"
                             onClick={() => trackRouteIntentCta('enterprise', 'view_api_docs')}

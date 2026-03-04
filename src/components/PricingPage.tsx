@@ -175,6 +175,12 @@ export const PricingPage: React.FC = () => {
     const getAnnualInvoiceAmount = (tier: PricingTier): number =>
         Math.round(tier.monthlyPrice * 0.8 * 12);
 
+    const getCtaLabel = (tier: PricingTier): string => {
+        if (billingCycle !== 'annual') return tier.ctaText;
+        if (tier.annualMode === 'sales_assisted') return 'Request Annual Quote';
+        return tier.ctaText;
+    };
+
     const handleCtaClick = (tier: PricingTier) => {
         trackRouteIntentCta('pricing', `pricing_${tier.id}_cta`, {
             tier_id: tier.id,
@@ -304,6 +310,11 @@ export const PricingPage: React.FC = () => {
                         Annual <span className="text-emerald-400 ml-1 text-sm">Save 20%</span>
                     </button>
                 </div>
+                {billingCycle === 'annual' && (
+                    <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-900/20 px-4 py-2 text-xs text-emerald-300">
+                        Annual Mode Active: sales-assisted quotes for Professional, Municipal, and Sovereign
+                    </div>
+                )}
                 <p className="mt-3 text-xs text-slate-500">
                     Annual plans for Professional, Municipal, and Sovereign are sales-assisted.
                 </p>
@@ -333,7 +344,9 @@ export const PricingPage: React.FC = () => {
                             key={tier.id}
                             className={`relative rounded-2xl p-6 flex flex-col ${tier.highlighted
                                 ? 'bg-gradient-to-b from-emerald-600/20 to-slate-800 border-2 border-emerald-500 scale-105'
-                                : 'bg-slate-800/50 border border-slate-700'
+                                : billingCycle === 'annual' && tier.annualMode === 'sales_assisted'
+                                    ? 'bg-slate-800/50 border border-emerald-600/60'
+                                    : 'bg-slate-800/50 border border-slate-700'
                                 }`}
                         >
                             {/* Badge */}
@@ -395,7 +408,7 @@ export const PricingPage: React.FC = () => {
                                     : 'bg-slate-700 hover:bg-slate-600 text-white'
                                     }`}
                             >
-                                {tier.ctaText}
+                                {getCtaLabel(tier)}
                                 <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>

@@ -5,3 +5,6 @@
 - Rule: For multi-surface funnels (Whop + direct), encode channel-role intent in both docs and analytics contracts to prevent drift between product positioning and measured events.
 - Rule: Never call `apply_patch` through `exec_command`; always use the dedicated `apply_patch` tool directly.
 - Rule: After JSX edits, re-open the edited section to verify event handlers were applied as attributes and not inserted as text nodes.
+
+## 2026-03-04
+- Rule: When QA reports production failures that contradict local code, assume deploy drift first and still harden code paths so failures are self-evident (explicit UI state, forced rewrites, explicit CTA semantics).

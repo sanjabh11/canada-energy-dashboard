@@ -63,7 +63,7 @@
   from = "/*"
   to = "/index.html"
   status = 200
-  force = false
+  force = true
 
 # Security Headers
 [[headers]]

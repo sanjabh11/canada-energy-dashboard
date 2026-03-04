@@ -13,6 +13,13 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
 - [x] Verify with type-check/build-level checks (as feasible)
 - [x] Update review section and capture outcomes
 
+## QA Countercheck Plan (March 4, 2026)
+- [x] Countercheck reported production QA findings against current code state
+- [x] Harden Netlify SPA fallback rules to eliminate direct-route blank states
+- [x] Make annual toggle state visibly obvious on pricing cards and CTAs
+- [x] Resolve demo CTA semantic mismatch (calendar vs form scroll)
+- [x] Verify with type-check and adversarial bug replay
+
 ## Acceptance Criteria
 - One pricing catalog feeds: `src/lib/whop.ts`, `src/components/PricingPage.tsx`, `src/components/WhopDiscoverPage.tsx`
 - GTM attribution events include: `channel`, `segment`, `message_variant`, `cta`, `campaign_id`
@@ -32,3 +39,8 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
   - `pnpm exec tsc --noEmit` passed.
   - `node --check scripts/gtm-weekly-report.mjs` passed.
   - Full `pnpm run build` not run due network-constrained dependency install behavior in this environment.
+- QA countercheck round:
+  - Hardened SPA rewrites in [netlify.toml](/Users/sanjayb/minimax/canada-energy-dashboard/netlify.toml) and [public/_redirects](/Users/sanjayb/minimax/canada-energy-dashboard/public/_redirects).
+  - Made annual mode unmistakable on pricing page (visual banner + CTA label change).
+  - Converted demo CTA into true calendar link when `VITE_BOOK_DEMO_URL` is configured, otherwise explicit callback request wording.
+  - `pnpm exec vite build` failed due pre-existing missing dependency import (`dompurify` in `HelpButton.tsx`), unrelated to GTM patches.
