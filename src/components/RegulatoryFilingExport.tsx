@@ -6,6 +6,11 @@ import {
 } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
+import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
+import { assertExportAllowed } from '../lib/dataConfidence';
+import { ExportBlockedModal } from './ExportBlockedModal';
+import { trackEvent } from '../lib/analytics';
+import { createExportJob, waitForExportJob, ExportJobError } from '../lib/exportJobsClient';
 import {
   REGULATORY_TEMPLATES,
   templateToCSV,
@@ -32,12 +37,47 @@ export const RegulatoryFilingExport: React.FC = () => {
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>('all');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
   const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null);
+  const [showBlockedModal, setShowBlockedModal] = useState(false);
+  const [blockedReason, setBlockedReason] = useState<string | undefined>();
+  const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
+  const [lastOfficialUrl, setLastOfficialUrl] = useState<string | null>(null);
+  const [isOfficialExporting, setIsOfficialExporting] = useState(false);
+  const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
 
   const templates = useMemo(() => {
     const all = Object.values(REGULATORY_TEMPLATES);
     if (jurisdiction === 'all') return all;
     return all.filter(t => t.jurisdiction === jurisdiction);
   }, [jurisdiction]);
+
+  const exportGate = useMemo(
+    () =>
+      assertExportAllowed(
+        [
+          {
+            source: 'compliance_pack',
+            lastUpdated: DATA_SNAPSHOT_DATE,
+            dataConfidence: 'cached',
+            dataSource: 'cached',
+            label: DATA_SNAPSHOT_LABEL,
+          },
+          {
+            source: 'aeso_pool',
+            lastUpdated: DATA_SNAPSHOT_DATE,
+            dataConfidence: 'cached',
+            dataSource: 'cached',
+            label: DATA_SNAPSHOT_LABEL,
+          },
+          {
+            source: 'tier_inputs',
+            lastUpdated: DATA_SNAPSHOT_DATE,
+            label: DATA_SNAPSHOT_LABEL,
+          },
+        ],
+        'medium'
+      ),
+    []
+  );
 
   const handleSelectTemplate = useCallback((id: TemplateType) => {
     setSelectedTemplate(id);
@@ -55,7 +95,96 @@ export const RegulatoryFilingExport: React.FC = () => {
     a.download = `${template.id}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-  }, []);
+    trackEvent('export_job_created', {
+      surface: 'regulatory_filing_export',
+      template: template.id,
+      mode: 'draft',
+      confidence: exportGate.confidence,
+    });
+  }, [exportGate]);
+
+  const handleOfficialExport = useCallback(async (
+    template: TemplateDefinition,
+    data: Record<string, unknown>[],
+    forceOfficial = false
+  ) => {
+    if (!exportGate.allowed && !canForceOfficialExport && !forceOfficial) {
+      setBlockedReason(exportGate.reason);
+      setShowBlockedModal(true);
+      trackEvent('export_blocked_low_confidence', {
+        surface: 'regulatory_filing_export',
+        template: template.id,
+        confidence: exportGate.confidence,
+        reason: exportGate.reason ?? 'low confidence',
+      });
+      return;
+    }
+
+    setIsOfficialExporting(true);
+    try {
+      setOfficialJobStatus('queued');
+      const createResult = await createExportJob({
+        template: 'regulatory_filing',
+        request_source: 'regulatory_filing_export',
+        request_context: {
+          filing_template: template.id,
+          jurisdiction: template.jurisdiction,
+          regulation: template.regulation,
+          preview_rows: data.length,
+          input_updated_at: new Date().toISOString(),
+          submitted_at: new Date().toISOString(),
+          client_generated_at: new Date().toISOString(),
+          data_snapshot_date: DATA_SNAPSHOT_DATE,
+          data_snapshot_label: DATA_SNAPSHOT_LABEL,
+          fpic_required: false,
+        },
+        force_export: forceOfficial || (!exportGate.allowed && canForceOfficialExport),
+        sources: ['aeso_pool', 'tier_inputs', 'compliance_pack'],
+      });
+
+      const finalJob = await waitForExportJob(createResult.jobId, {
+        onUpdate: (job) => setOfficialJobStatus(job.status),
+      });
+
+      if (finalJob.status === 'success' && finalJob.outputSignedUrl) {
+        setLastOfficialUrl(finalJob.outputSignedUrl);
+        setOfficialJobStatus('success');
+        window.open(finalJob.outputSignedUrl, '_blank', 'noopener,noreferrer');
+        trackEvent('export_job_created', {
+          surface: 'regulatory_filing_export',
+          template: template.id,
+          mode: 'official',
+          confidence: exportGate.confidence,
+        });
+        return;
+      }
+
+      if (finalJob.status === 'blocked_stale') {
+        setBlockedReason(finalJob.reason || exportGate.reason);
+        setShowBlockedModal(true);
+        return;
+      }
+
+      alert('Official filing export did not complete. Please retry.');
+    } catch (error) {
+      if (error instanceof ExportJobError) {
+        if (error.status === 409) {
+          setBlockedReason(error.payload.reason || exportGate.reason);
+          setShowBlockedModal(true);
+          return;
+        }
+        if (error.status === 403) {
+          window.location.href = '/enterprise?intent=official-export-access&surface=regulatory-filing';
+          return;
+        }
+        alert(error.payload.reason || error.message);
+        return;
+      }
+      alert('Failed to queue official filing export.');
+    } finally {
+      setIsOfficialExporting(false);
+    }
+  }, [canForceOfficialExport, exportGate]);
 
   const activeTemplate = selectedTemplate ? REGULATORY_TEMPLATES[selectedTemplate] : null;
 
@@ -98,6 +227,17 @@ export const RegulatoryFilingExport: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto py-6 px-6">
+        {!exportGate.allowed ? (
+          <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4">
+            <div className="text-sm font-semibold text-amber-200">
+              Official filing exports are confidence-gated
+            </div>
+            <div className="mt-1 text-xs text-amber-300">
+              {exportGate.reason} You can continue previewing templates while source feeds refresh.
+            </div>
+          </div>
+        ) : null}
+
         {/* Value Prop */}
         <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-5 mb-6">
           <div className="flex items-start gap-3">
@@ -200,7 +340,11 @@ export const RegulatoryFilingExport: React.FC = () => {
               <TemplateDetail
                 template={activeTemplate}
                 data={previewData}
-                onExport={() => handleExportCSV(activeTemplate, previewData)}
+                onExportOfficial={() => { void handleOfficialExport(activeTemplate, previewData); }}
+                onExportDraft={() => handleExportCSV(activeTemplate, previewData)}
+                officialExportDisabled={isOfficialExporting}
+                officialJobStatus={officialJobStatus}
+                latestOfficialUrl={lastOfficialUrl}
               />
             ) : (
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-12 flex flex-col items-center justify-center text-center">
@@ -243,6 +387,36 @@ export const RegulatoryFilingExport: React.FC = () => {
           </Link>
         </div>
       </div>
+      <ExportBlockedModal
+        isOpen={showBlockedModal}
+        title="Official Compliance Export Blocked"
+        reason={blockedReason || exportGate.reason}
+        onClose={() => {
+          setShowBlockedModal(false);
+          setBlockedReason(undefined);
+        }}
+        onRequestRefresh={() => {
+          setShowBlockedModal(false);
+          setBlockedReason(undefined);
+          trackEvent('refresh_request', { surface: 'regulatory_filing_export' });
+          window.location.href = '/enterprise?intent=data-refresh&surface=regulatory-filing';
+        }}
+        onDownloadDraft={() => {
+          if (activeTemplate && previewData) {
+            handleExportCSV(activeTemplate, previewData);
+          }
+          setShowBlockedModal(false);
+          setBlockedReason(undefined);
+        }}
+        canForceExport={canForceOfficialExport}
+        onForceExport={() => {
+          if (activeTemplate && previewData) {
+            void handleOfficialExport(activeTemplate, previewData, true);
+          }
+          setShowBlockedModal(false);
+          setBlockedReason(undefined);
+        }}
+      />
     </div>
   );
 };
@@ -251,10 +425,14 @@ export const RegulatoryFilingExport: React.FC = () => {
 // TEMPLATE DETAIL COMPONENT
 // ============================================================================
 
-function TemplateDetail({ template, data, onExport }: {
+function TemplateDetail({ template, data, onExportOfficial, onExportDraft, officialExportDisabled, officialJobStatus, latestOfficialUrl }: {
   template: TemplateDefinition;
   data: Record<string, unknown>[];
-  onExport: () => void;
+  onExportOfficial: () => void;
+  onExportDraft: () => void;
+  officialExportDisabled: boolean;
+  officialJobStatus: string | null;
+  latestOfficialUrl: string | null;
 }) {
   return (
     <div className="space-y-4">
@@ -275,13 +453,37 @@ function TemplateDetail({ template, data, onExport }: {
             <h2 className="text-white text-xl font-bold">{template.name}</h2>
             <p className="text-slate-400 text-sm mt-1">{template.description}</p>
           </div>
-          <button
-            onClick={onExport}
-            className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </button>
+          <div className="flex flex-col items-end gap-2">
+            <button
+              onClick={onExportOfficial}
+              disabled={officialExportDisabled}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:bg-slate-600 text-white rounded-lg text-sm font-medium transition-colors flex-shrink-0"
+            >
+              <Download className="h-4 w-4" />
+              Official Export
+            </button>
+            <button
+              onClick={onExportDraft}
+              className="text-xs text-slate-300 underline underline-offset-2 hover:text-white"
+            >
+              Download Draft CSV
+            </button>
+            {officialJobStatus ? (
+              <div className="text-[11px] text-slate-400">
+                Job: <span className="text-white">{officialJobStatus}</span>
+                {latestOfficialUrl ? (
+                  <a
+                    href={latestOfficialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ml-2 text-cyan-300 underline"
+                  >
+                    Latest
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/* Column definitions */}

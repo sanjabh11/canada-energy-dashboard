@@ -9,3 +9,5 @@
 ## 2026-03-04
 - Rule: When QA reports production failures that contradict local code, assume deploy drift first and still harden code paths so failures are self-evident (explicit UI state, forced rewrites, explicit CTA semantics).
 - Rule: Never force SPA fallback rewrites (`200!` / `force=true`) without explicit static asset exclusions; it can cause JS/JSON/SW requests to return HTML and blank the app.
+- Rule: Before implementing plan-specified paths/endpoints, map them to real repository files/routes first; if names differ, bind changes to existing production paths and close the behavior gap there.
+- Rule: For new Supabase tables in edge functions, avoid tight generated DB typings until types are regenerated; keep server helpers pragmatically typed and validate behavior with build/typecheck instead of over-modeling first.

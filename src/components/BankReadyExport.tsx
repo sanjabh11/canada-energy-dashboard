@@ -7,7 +7,7 @@
  * - Accelerates green financing approval
  */
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
     Building2,
     Download,
@@ -18,6 +18,11 @@ import {
     DollarSign,
     Shield
 } from 'lucide-react';
+import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
+import { assertExportAllowed } from '../lib/dataConfidence';
+import { ExportBlockedModal } from './ExportBlockedModal';
+import { trackEvent } from '../lib/analytics';
+import { createExportJob, waitForExportJob, ExportJobError } from '../lib/exportJobsClient';
 
 interface FacilityData {
     facilityName: string;
@@ -49,19 +54,79 @@ export const BankReadyExport: React.FC = () => {
     });
 
     const [isGenerating, setIsGenerating] = useState(false);
+    const [showBlockedModal, setShowBlockedModal] = useState(false);
+    const [blockedReason, setBlockedReason] = useState<string | undefined>();
+    const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
+    const [lastOfficialUrl, setLastOfficialUrl] = useState<string | null>(null);
+
+    const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+    const exportGate = useMemo(
+        () =>
+            assertExportAllowed(
+                [
+                    {
+                        source: 'compliance_pack',
+                        lastUpdated: DATA_SNAPSHOT_DATE,
+                        dataConfidence: 'cached',
+                        dataSource: 'cached',
+                        label: DATA_SNAPSHOT_LABEL
+                    },
+                    {
+                        source: 'tier_inputs',
+                        lastUpdated: DATA_SNAPSHOT_DATE,
+                        label: DATA_SNAPSHOT_LABEL
+                    },
+                    {
+                        source: 'aeso_pool',
+                        lastUpdated: DATA_SNAPSHOT_DATE,
+                        dataConfidence: 'cached',
+                        dataSource: 'cached',
+                        label: DATA_SNAPSHOT_LABEL
+                    }
+                ],
+                'medium'
+            ),
+        []
+    );
 
     // Calculate metrics
     const emissionReductionPercent = ((facilityData.emissionReduction / facilityData.annualEmissions) * 100).toFixed(1);
     const paybackYears = (facilityData.projectCost / facilityData.energyCostSavings).toFixed(1);
     const carbonIntensityReduction = facilityData.emissionReduction;
 
-    const generateReport = () => {
+    const generateReport = async (mode: 'official' | 'draft' = 'official', forceOfficial = false) => {
+        const isOfficial = mode === 'official';
+        if (isOfficial && !exportGate.allowed && !canForceOfficialExport && !forceOfficial) {
+            setBlockedReason(exportGate.reason);
+            setShowBlockedModal(true);
+            trackEvent('export_blocked_low_confidence', {
+                surface: 'compliance_pack',
+                confidence: exportGate.confidence,
+                reason: exportGate.reason ?? 'low confidence',
+            });
+            return;
+        }
+
+        trackEvent('export_attempt', {
+            surface: 'compliance_pack',
+            mode,
+            confidence: exportGate.confidence,
+            blocked_sources: exportGate.blockedSources.join(','),
+        });
+
         setIsGenerating(true);
 
         const report = {
             reportType: 'Green Loan Application Data Package',
             generatedBy: 'Canada Energy Intelligence Platform',
             generatedAt: new Date().toISOString(),
+            exportMode: mode,
+            dataConfidence: exportGate.confidence,
+            dataSnapshotDate: DATA_SNAPSHOT_DATE,
+            dataSnapshotLabel: DATA_SNAPSHOT_LABEL,
+            disclaimer: isOfficial
+                ? null
+                : 'Draft export only. This package may include stale cached data and is not an official compliance filing artifact.',
             targetLender: SUPPORTED_BANKS.find(b => b.id === selectedBank),
 
             borrowerInfo: {
@@ -148,17 +213,89 @@ export const BankReadyExport: React.FC = () => {
             ]
         };
 
-        // Generate and download JSON (would be PDF in production)
-        setTimeout(() => {
+        if (!isOfficial) {
+            // Draft export remains local and immediate.
             const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Green-Loan-Package-${selectedBank.toUpperCase()}-${new Date().toISOString().split('T')[0]}.json`;
+            a.download = `Draft-Green-Loan-Package-${selectedBank.toUpperCase()}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
             setIsGenerating(false);
-        }, 1500);
+            trackEvent('export_job_created', {
+                surface: 'compliance_pack',
+                mode: 'draft',
+                confidence: exportGate.confidence,
+            });
+            return;
+        }
+
+        try {
+            setOfficialJobStatus('queued');
+            const createResult = await createExportJob({
+                template: 'compliance_pack',
+                request_source: 'bank_ready_export',
+                request_context: {
+                    selected_bank: selectedBank,
+                    facility_data: facilityData,
+                    input_updated_at: new Date().toISOString(),
+                    submitted_at: new Date().toISOString(),
+                    client_generated_at: new Date().toISOString(),
+                    data_snapshot_date: DATA_SNAPSHOT_DATE,
+                    data_snapshot_label: DATA_SNAPSHOT_LABEL,
+                    fpic_required: false,
+                },
+                force_export: forceOfficial || (!exportGate.allowed && canForceOfficialExport),
+                sources: ['aeso_pool', 'tier_inputs', 'compliance_pack'],
+            });
+
+            const finalJob = await waitForExportJob(createResult.jobId, {
+                onUpdate: (job) => setOfficialJobStatus(job.status),
+            });
+
+            if (finalJob.status === 'success' && finalJob.outputSignedUrl) {
+                setLastOfficialUrl(finalJob.outputSignedUrl);
+                setOfficialJobStatus('success');
+                window.open(finalJob.outputSignedUrl, '_blank', 'noopener,noreferrer');
+                trackEvent('export_job_created', {
+                    surface: 'compliance_pack',
+                    mode: 'official',
+                    confidence: exportGate.confidence,
+                });
+                return;
+            }
+
+            if (finalJob.status === 'blocked_stale') {
+                setBlockedReason(finalJob.reason || exportGate.reason);
+                setShowBlockedModal(true);
+                trackEvent('export_blocked_low_confidence', {
+                    surface: 'compliance_pack',
+                    confidence: exportGate.confidence,
+                    reason: finalJob.reason ?? exportGate.reason ?? 'low confidence',
+                });
+                return;
+            }
+
+            alert('Official export did not complete. Please retry or use draft export.');
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                if (error.status === 409) {
+                    setBlockedReason(error.payload.reason || exportGate.reason);
+                    setShowBlockedModal(true);
+                    return;
+                }
+                if (error.status === 403) {
+                    window.location.href = '/enterprise?intent=official-export-access&surface=compliance-pack';
+                    return;
+                }
+                alert(error.payload.reason || error.message);
+                return;
+            }
+            alert('Failed to queue official export. Please try again.');
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const formatCurrency = (value: number): string => {
@@ -188,6 +325,17 @@ export const BankReadyExport: React.FC = () => {
                 <div className="grid lg:grid-cols-3 gap-8">
                     {/* Input Form */}
                     <div className="lg:col-span-2 space-y-6">
+                        {!exportGate.allowed ? (
+                            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4">
+                                <div className="text-sm font-semibold text-amber-200">
+                                    Official exports are currently confidence-gated
+                                </div>
+                                <div className="mt-1 text-xs text-amber-300">
+                                    {exportGate.reason} Download draft output with caveat or request a data refresh before issuing client-ready compliance packs.
+                                </div>
+                            </div>
+                        ) : null}
+
                         {/* Bank Selection */}
                         <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
                             <h2 className="text-lg font-semibold text-white mb-4">Select Target Lender</h2>
@@ -285,7 +433,7 @@ export const BankReadyExport: React.FC = () => {
 
                         {/* Generate Button */}
                         <button
-                            onClick={generateReport}
+                            onClick={() => { void generateReport('official'); }}
                             disabled={isGenerating}
                             className="w-full py-4 bg-green-600 hover:bg-green-500 disabled:bg-slate-600 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
                         >
@@ -297,10 +445,32 @@ export const BankReadyExport: React.FC = () => {
                             ) : (
                                 <>
                                     <Download className="h-5 w-5" />
-                                    Generate {SUPPORTED_BANKS.find(b => b.id === selectedBank)?.name} Data Package
+                                    Generate Official {SUPPORTED_BANKS.find(b => b.id === selectedBank)?.name} Data Package
                                 </>
                             )}
                         </button>
+                        <button
+                            onClick={() => { void generateReport('draft'); }}
+                            disabled={isGenerating}
+                            className="w-full py-3 border border-slate-600 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-200 transition-all"
+                        >
+                            Download Draft Package (with freshness caveat)
+                        </button>
+                        {officialJobStatus ? (
+                            <div className="rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-3 text-xs text-slate-300">
+                                Official export status: <span className="font-semibold text-white">{officialJobStatus}</span>
+                                {lastOfficialUrl ? (
+                                    <a
+                                        href={lastOfficialUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="ml-2 text-cyan-300 underline"
+                                    >
+                                        Download latest
+                                    </a>
+                                ) : null}
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Preview Panel */}
@@ -370,6 +540,32 @@ export const BankReadyExport: React.FC = () => {
                     </div>
                 </div>
             </div>
+            <ExportBlockedModal
+                isOpen={showBlockedModal}
+                title="Official Compliance Pack Blocked"
+                reason={blockedReason || exportGate.reason}
+                onClose={() => {
+                    setShowBlockedModal(false);
+                    setBlockedReason(undefined);
+                }}
+                onRequestRefresh={() => {
+                    setShowBlockedModal(false);
+                    setBlockedReason(undefined);
+                    trackEvent('refresh_request', { surface: 'compliance_pack' });
+                    window.location.href = '/enterprise?intent=data-refresh&surface=compliance-pack';
+                }}
+                onDownloadDraft={() => {
+                    setShowBlockedModal(false);
+                    setBlockedReason(undefined);
+                    void generateReport('draft');
+                }}
+                canForceExport={canForceOfficialExport}
+                onForceExport={() => {
+                    setShowBlockedModal(false);
+                    setBlockedReason(undefined);
+                    void generateReport('official', true);
+                }}
+            />
         </div>
     );
 };

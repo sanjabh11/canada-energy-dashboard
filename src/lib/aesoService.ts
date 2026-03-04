@@ -16,7 +16,12 @@ export interface AESOPoolPrice {
   poolPrice: number;
   forecastPrice?: number;
   priceType: 'actual' | 'forecast';
+  dataConfidence?: AESODataConfidence;
+  dataAsOf?: string;
+  dataSource?: 'api' | 'cached';
 }
+
+export type AESODataConfidence = 'live' | 'cached';
 
 export interface AESORRORate {
   month: string;
@@ -57,6 +62,26 @@ const AESO_ETS_BASE = 'https://ets.aeso.ca';
 // Environment variable for API key (optional for public data)
 const AESO_API_KEY = (import.meta as any)?.env?.VITE_AESO_API_KEY || '';
 
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+const DAYS_PER_YEAR = 365;
+const TWO_PI = Math.PI * 2;
+
+const getDayOfYear = (date: Date): number => {
+  const start = new Date(Date.UTC(date.getFullYear(), 0, 0));
+  const diff = date.getTime() - start.getTime();
+  return Math.floor(diff / MS_PER_DAY);
+};
+
+const roundPrice = (value: number): number => Math.round(value * 100) / 100;
+
+const getDeterministicAdjustment = (date: Date, amplitude: number): number => {
+  const dayOfYear = getDayOfYear(date);
+  const hour = date.getHours();
+  const diurnal = Math.sin((hour / 24) * TWO_PI) * (amplitude * 0.6);
+  const seasonal = Math.sin((dayOfYear / DAYS_PER_YEAR) * TWO_PI) * (amplitude * 0.4);
+  return diurnal + seasonal;
+};
+
 /**
  * Fetch current pool price from AESO
  * Uses the public pool price report endpoint
@@ -79,7 +104,10 @@ export async function getCurrentPoolPrice(): Promise<AESOPoolPrice | null> {
     return {
       timestamp: data.timestamp || new Date().toISOString(),
       poolPrice: parseFloat(data.pool_price) || 0,
-      priceType: 'actual'
+      priceType: 'actual',
+      dataConfidence: 'live',
+      dataAsOf: data.timestamp || new Date().toISOString(),
+      dataSource: 'api'
     };
   } catch (error) {
     // Expected to fail due to CORS in browser - use cached/simulated data
@@ -105,7 +133,10 @@ export async function getPoolPriceForecast(hours: number = 24): Promise<AESOPool
       timestamp: f.timestamp,
       poolPrice: parseFloat(f.forecast_price),
       forecastPrice: parseFloat(f.forecast_price),
-      priceType: 'forecast' as const
+      priceType: 'forecast' as const,
+      dataConfidence: 'live',
+      dataAsOf: f.timestamp,
+      dataSource: 'api'
     }));
   } catch (error) {
     console.warn('Error fetching AESO forecast:', error);
@@ -136,7 +167,10 @@ export async function getHistoricalPoolPrices(
     return (data.prices || []).map((p: any) => ({
       timestamp: p.timestamp,
       poolPrice: parseFloat(p.pool_price),
-      priceType: 'actual' as const
+      priceType: 'actual' as const,
+      dataConfidence: 'live',
+      dataAsOf: p.timestamp,
+      dataSource: 'api'
     }));
   } catch (error) {
     console.warn('Error fetching historical prices:', error);
@@ -327,7 +361,8 @@ export function calculateSavings(
 function getLatestCachedPoolPrice(): AESOPoolPrice {
   // Pool price patterns based on AESO data (see DATA_SNAPSHOT_DATE)
   // Typical range: $50-150/MWh depending on time of day and demand
-  const hour = new Date().getHours();
+  const now = new Date();
+  const hour = now.getHours();
   let basePrice = 85; // Average pool price
 
   // Peak hours (morning 7-9am, evening 5-8pm) have higher prices
@@ -337,13 +372,15 @@ function getLatestCachedPoolPrice(): AESOPoolPrice {
     basePrice = 55; // Off-peak overnight
   }
 
-  // Add some realistic variation
-  const variation = (Math.random() - 0.5) * 20;
+  const adjustment = getDeterministicAdjustment(now, 10);
   
   return {
-    timestamp: new Date().toISOString(),
-    poolPrice: Math.round((basePrice + variation) * 100) / 100,
-    priceType: 'actual'
+    timestamp: now.toISOString(),
+    poolPrice: roundPrice(basePrice + adjustment),
+    priceType: 'actual',
+    dataConfidence: 'cached',
+    dataAsOf: DATA_SNAPSHOT_DATE,
+    dataSource: 'cached'
   };
 }
 
@@ -365,13 +402,16 @@ function generateForecastFromHistorical(): AESOPoolPrice[] {
       basePrice = 50;
     }
     
-    const variation = (Math.random() - 0.5) * 15;
+    const adjustment = getDeterministicAdjustment(forecastTime, 8);
     
     forecasts.push({
       timestamp: forecastTime.toISOString(),
-      poolPrice: Math.round((basePrice + variation) * 100) / 100,
-      forecastPrice: Math.round((basePrice + variation) * 100) / 100,
-      priceType: 'forecast'
+      poolPrice: roundPrice(basePrice + adjustment),
+      forecastPrice: roundPrice(basePrice + adjustment),
+      priceType: 'forecast',
+      dataConfidence: 'cached',
+      dataAsOf: DATA_SNAPSHOT_DATE,
+      dataSource: 'cached'
     });
   }
   
@@ -394,12 +434,15 @@ function getHistoricalCachedPrices(startDate: string, endDate: string): AESOPool
   while (current <= end) {
     const monthIndex = current.getMonth();
     const basePrice = monthlyAverages[monthIndex];
-    const variation = (Math.random() - 0.5) * 20;
+    const adjustment = getDeterministicAdjustment(current, 12);
     
     prices.push({
       timestamp: current.toISOString(),
-      poolPrice: Math.round((basePrice + variation) * 100) / 100,
-      priceType: 'actual'
+      poolPrice: roundPrice(basePrice + adjustment),
+      priceType: 'actual',
+      dataConfidence: 'cached',
+      dataAsOf: DATA_SNAPSHOT_DATE,
+      dataSource: 'cached'
     });
     
     current.setDate(current.getDate() + 1);

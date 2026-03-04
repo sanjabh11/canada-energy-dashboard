@@ -36,7 +36,9 @@ import {
     getRetailerOffers,
     getPoolPriceForecast,
     calculateSavings,
+    DATA_SNAPSHOT_DATE,
     DATA_SNAPSHOT_LABEL,
+    type AESODataConfidence,
     type RetailerOffer
 } from '../lib/aesoService';
 import {
@@ -120,6 +122,9 @@ export function RROAlertSystem() {
     const [lastUpdated, setLastUpdated] = useState(new Date());
     const [isLoading, setIsLoading] = useState(true);
     const [dataSource, setDataSource] = useState<'live' | 'cached'>('cached');
+    const [dataConfidence, setDataConfidence] = useState<AESODataConfidence>('cached');
+    const [forecastConfidence, setForecastConfidence] = useState<AESODataConfidence>('cached');
+    const [dataAsOf, setDataAsOf] = useState<string>(DATA_SNAPSHOT_DATE);
 
     // Fetch real data on mount
     useEffect(() => {
@@ -133,7 +138,9 @@ export function RROAlertSystem() {
                     // Estimate RRO from pool price (pool/10 + T&D + admin)
                     const estimatedRRO = Math.round((price.poolPrice / 10 + 6.5) * 100) / 100;
                     setCurrentRRO(estimatedRRO);
-                    setDataSource('live');
+                    setDataConfidence(price.dataConfidence ?? 'cached');
+                    setDataAsOf(price.dataAsOf ?? DATA_SNAPSHOT_DATE);
+                    setDataSource(price.dataSource === 'api' ? 'live' : 'cached');
                 }
 
                 // Fetch RRO rate
@@ -147,6 +154,7 @@ export function RROAlertSystem() {
                 if (forecast.length > 0) {
                     const avgForecast = forecast.reduce((sum, f) => sum + f.poolPrice, 0) / forecast.length;
                     setForecastRRO(Math.round((avgForecast / 10 + 6.5) * 100) / 100);
+                    setForecastConfidence(forecast[0]?.dataConfidence ?? 'cached');
                 }
 
                 // Fetch retailer offers
@@ -166,8 +174,17 @@ export function RROAlertSystem() {
         fetchData();
     }, []);
 
+    const isLowConfidence = dataConfidence === 'cached' || forecastConfidence === 'cached';
     const rroTrend = forecastRRO > currentRRO ? 'up' : 'down';
-    const shouldSwitch = currentRRO > 14 || forecastRRO > 16;
+    const formattedAsOf = dataAsOf && !Number.isNaN(new Date(dataAsOf).getTime())
+        ? new Date(dataAsOf).toLocaleString('en-CA', {
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        })
+        : DATA_SNAPSHOT_LABEL;
+    const shouldSwitch = !isLowConfidence && (currentRRO > 14 || forecastRRO > 16);
     const activeRetailers = retailers.length > 0 ? retailers : RETAILERS.map(r => ({ ...r, greenOption: false }));
     const lowestFixed = Math.min(...activeRetailers.map(r => r.fixedRate));
 
@@ -187,12 +204,16 @@ export function RROAlertSystem() {
                 setPoolPrice(price.poolPrice);
                 const estimatedRRO = Math.round((price.poolPrice / 10 + 6.5) * 100) / 100;
                 setCurrentRRO(estimatedRRO);
+                setDataConfidence(price.dataConfidence ?? 'cached');
+                setDataAsOf(price.dataAsOf ?? DATA_SNAPSHOT_DATE);
+                setDataSource(price.dataSource === 'api' ? 'live' : 'cached');
             }
 
             const forecast = await getPoolPriceForecast(24);
             if (forecast.length > 0) {
                 const avgForecast = forecast.reduce((sum, f) => sum + f.poolPrice, 0) / forecast.length;
                 setForecastRRO(Math.round((avgForecast / 10 + 6.5) * 100) / 100);
+                setForecastConfidence(forecast[0]?.dataConfidence ?? 'cached');
             }
 
             setHistoricalData(generateHistoricalData());
@@ -243,6 +264,18 @@ export function RROAlertSystem() {
 
             <div className="max-w-6xl mx-auto py-8 px-6">
 
+                {isLowConfidence && (
+                    <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-4 mb-6 flex items-start gap-3">
+                        <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5" />
+                        <div>
+                            <div className="text-sm font-medium text-amber-200">Live feed unavailable</div>
+                            <div className="text-xs text-amber-300">
+                                Displaying cached snapshot data (as of {DATA_SNAPSHOT_LABEL}). Forecast alerts are paused until the feed resumes.
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Current Rate Cards */}
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
                     {/* Current RRO */}
@@ -251,7 +284,7 @@ export function RROAlertSystem() {
                             <span className="text-slate-400 text-sm">Current RRO Rate</span>
                             <span className="text-xs text-slate-500 flex items-center gap-1">
                                 <Clock className="h-3 w-3" />
-                                {DATA_SNAPSHOT_LABEL}
+                                {dataConfidence === 'live' ? `Live · ${formattedAsOf}` : `Snapshot · ${DATA_SNAPSHOT_LABEL}`}
                             </span>
                         </div>
                         <div className="flex items-end gap-2 mb-2">
@@ -500,6 +533,7 @@ export function RROAlertSystem() {
                             </div>
                             <button
                                 type="submit"
+                                disabled={isLowConfidence}
                                 className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
                             >
                                 <Bell className="h-5 w-5" />

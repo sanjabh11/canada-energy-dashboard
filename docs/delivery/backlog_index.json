@@ -20,6 +20,13 @@
       "status": "Agreed",
       "owner": "user",
       "created_at": "2025-11-19"
+    },
+    {
+      "id": "PBI-GTM-Forecast-Confidence",
+      "title": "GTM: Deterministic Forecasts + Data Confidence Gating",
+      "status": "Agreed",
+      "owner": "user",
+      "created_at": "2026-03-04"
     }
   ]
 }

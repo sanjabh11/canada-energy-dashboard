@@ -1,0 +1,13 @@
+{
+  "pbi_id": "PBI-GTM-Forecast-Confidence",
+  "tasks": [
+    {
+      "id": "PBI-GTM-Forecast-Confidence-T1",
+      "title": "Deterministic AESO forecast fallback + data confidence gating",
+      "status": "InProgress",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-04"
+    }
+  ]
+}

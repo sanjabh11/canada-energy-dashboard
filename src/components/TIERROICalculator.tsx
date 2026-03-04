@@ -5,10 +5,15 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, Info, Mail, ExternalLink, HelpCircle } from 'lucide-react';
+import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, Info, Mail, ExternalLink, HelpCircle, Share2, Download } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import { persistLeadIntake } from '../lib/leadIntake';
+import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
+import { assertExportAllowed } from '../lib/dataConfidence';
+import { ExportBlockedModal } from './ExportBlockedModal';
+import { trackEvent } from '../lib/analytics';
+import { createExportJob, waitForExportJob, ExportJobError } from '../lib/exportJobsClient';
 
 interface ROIResults {
     fundPayment: number;
@@ -27,6 +32,10 @@ export const TIERROICalculator: React.FC = () => {
     const [directInvestCapex, setDirectInvestCapex] = useState<number>(500000);
     const [emailCapture, setEmailCapture] = useState('');
     const [emailSubmitted, setEmailSubmitted] = useState(false);
+    const [showBlockedModal, setShowBlockedModal] = useState(false);
+    const [blockedReason, setBlockedReason] = useState<string | undefined>();
+    const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
+    const [lastOfficialUrl, setLastOfficialUrl] = useState<string | null>(null);
 
     // Market constants (from research — updated Feb 2026)
     const FUND_PRICE = 95; // TIER fund price (frozen at $95, Alberta May 2025)
@@ -58,6 +67,138 @@ export const TIERROICalculator: React.FC = () => {
             bestOption
         };
     }, [benchmarkExceedance, directInvestCapex]);
+
+    const exportGate = useMemo(
+        () =>
+            assertExportAllowed(
+                [
+                    {
+                        source: 'aeso_pool',
+                        lastUpdated: DATA_SNAPSHOT_DATE,
+                        dataConfidence: 'cached',
+                        dataSource: 'cached',
+                        label: DATA_SNAPSHOT_LABEL
+                    },
+                    {
+                        source: 'tier_inputs',
+                        lastUpdated: DATA_SNAPSHOT_DATE,
+                        label: DATA_SNAPSHOT_LABEL
+                    }
+                ],
+                'medium'
+            ),
+        []
+    );
+    const canRunOfficialActions = exportGate.allowed;
+    const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+
+    const handleBlockedAction = (cta: 'tier_export_blocked' | 'tier_share_blocked') => {
+        setBlockedReason(exportGate.reason);
+        setShowBlockedModal(true);
+        trackEvent('export_blocked_low_confidence', {
+            surface: 'industrial_tier_impact',
+            cta,
+            reason: exportGate.reason ?? 'low confidence',
+            confidence: exportGate.confidence,
+        });
+    };
+
+    const queueImpactExport = async (cta: 'impact_export' | 'impact_share', forceOfficial = false): Promise<string | null> => {
+        if (!canRunOfficialActions && !canForceOfficialExport && !forceOfficial) {
+            handleBlockedAction(cta === 'impact_export' ? 'tier_export_blocked' : 'tier_share_blocked');
+            return null;
+        }
+
+        setOfficialJobStatus('queued');
+        try {
+            const createResult = await createExportJob({
+                template: 'industrial_tier_impact',
+                request_source: 'tier_roi_calculator',
+                request_context: {
+                    annual_emissions: annualEmissions,
+                    benchmark_exceedance: benchmarkExceedance,
+                    direct_invest_capex: directInvestCapex,
+                    results,
+                    input_updated_at: new Date().toISOString(),
+                    submitted_at: new Date().toISOString(),
+                    client_generated_at: new Date().toISOString(),
+                    data_snapshot_date: DATA_SNAPSHOT_DATE,
+                    data_snapshot_label: DATA_SNAPSHOT_LABEL,
+                    fpic_required: false,
+                },
+                force_export: forceOfficial || (!canRunOfficialActions && canForceOfficialExport),
+                sources: ['aeso_pool', 'tier_inputs'],
+            });
+
+            const finalJob = await waitForExportJob(createResult.jobId, {
+                onUpdate: (job) => setOfficialJobStatus(job.status),
+            });
+
+            if (finalJob.status === 'success' && finalJob.outputSignedUrl) {
+                setLastOfficialUrl(finalJob.outputSignedUrl);
+                setOfficialJobStatus('success');
+                trackEvent('export_job_created', {
+                    surface: 'industrial_tier_impact',
+                    cta,
+                    confidence: exportGate.confidence,
+                });
+                return finalJob.outputSignedUrl;
+            }
+
+            if (finalJob.status === 'blocked_stale') {
+                setBlockedReason(finalJob.reason || exportGate.reason);
+                setShowBlockedModal(true);
+                return null;
+            }
+
+            alert('Official impact export did not complete. Please retry.');
+            return null;
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                if (error.status === 409) {
+                    setBlockedReason(error.payload.reason || exportGate.reason);
+                    setShowBlockedModal(true);
+                    return null;
+                }
+                if (error.status === 403) {
+                    window.location.href = '/enterprise?intent=official-export-access&surface=industrial-tier';
+                    return null;
+                }
+                alert(error.payload.reason || error.message);
+                return null;
+            }
+            alert('Failed to queue official impact export.');
+            return null;
+        }
+    };
+
+    const handleExportImpact = async (forceOfficial = false) => {
+        const url = await queueImpactExport('impact_export', forceOfficial);
+        if (!url) {
+            return;
+        }
+
+        window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    const handleShareImpact = async (forceOfficial = false) => {
+        const url = await queueImpactExport('impact_share', forceOfficial);
+        if (!url) {
+            return;
+        }
+
+        const summary = `CEIP TIER Impact Today: Estimated net savings ${formatCurrency(results.netSavings)} with ROI ${results.roiPercent.toFixed(0)}%.`;
+        if (navigator.share) {
+            await navigator.share({
+                title: 'CEIP TIER Impact Today',
+                text: summary,
+                url,
+            });
+        } else {
+            await navigator.clipboard.writeText(`${summary} ${url}`);
+            alert('Impact summary copied to clipboard.');
+        }
+    };
 
     const handleEmailSubmit = async () => {
         if (!emailCapture) return;
@@ -291,7 +432,9 @@ export const TIERROICalculator: React.FC = () => {
                     <div className="bg-gradient-to-r from-emerald-600/20 to-green-600/20 border-2 border-emerald-500 rounded-xl p-6">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <div className="text-sm text-emerald-400">Your Net Savings</div>
+                                <div className="text-sm text-emerald-400">
+                                    {canRunOfficialActions ? 'Impact Today (Official)' : 'Impact Today (Estimate - Lower Confidence)'}
+                                </div>
                                 <div className="text-4xl font-bold text-white">
                                     {formatCurrency(results.netSavings)}
                                 </div>
@@ -312,6 +455,12 @@ export const TIERROICalculator: React.FC = () => {
                                     : "Strong ROI - CEIP pays for itself many times over"}
                             </span>
                         </div>
+
+                        {!canRunOfficialActions ? (
+                            <div className="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200">
+                                Official export/share actions are paused. Source data is currently low confidence ({exportGate.reason}).
+                            </div>
+                        ) : null}
                     </div>
 
                     {/* Direct Investment Result */}
@@ -336,6 +485,46 @@ export const TIERROICalculator: React.FC = () => {
                             {results.bestOption === 'market_credits' ? 'Buy Market Credits' : 'Direct Investment'}
                         </span>
                     </div>
+
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        <button
+                            onClick={() => { void handleExportImpact(); }}
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                                canRunOfficialActions
+                                    ? 'bg-cyan-600 text-white hover:bg-cyan-500'
+                                    : 'cursor-not-allowed bg-slate-700 text-slate-400'
+                            }`}
+                        >
+                            <Download className="h-4 w-4" />
+                            Export Impact Summary
+                        </button>
+                        <button
+                            onClick={() => { void handleShareImpact(); }}
+                            className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-3 text-sm font-medium transition-colors ${
+                                canRunOfficialActions
+                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                                    : 'cursor-not-allowed bg-slate-700 text-slate-400'
+                            }`}
+                        >
+                            <Share2 className="h-4 w-4" />
+                            Share Impact Snapshot
+                        </button>
+                    </div>
+                    {officialJobStatus ? (
+                        <div className="rounded-lg border border-slate-700 bg-slate-800/70 p-3 text-xs text-slate-300">
+                            Official artifact status: <span className="font-semibold text-white">{officialJobStatus}</span>
+                            {lastOfficialUrl ? (
+                                <a
+                                    href={lastOfficialUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ml-2 text-cyan-300 underline"
+                                >
+                                    Latest
+                                </a>
+                            ) : null}
+                        </div>
+                    ) : null}
 
                     {/* CTA */}
                     <button
@@ -400,8 +589,30 @@ export const TIERROICalculator: React.FC = () => {
           <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
             <p>Data sources: Alberta.ca TIER Regulation, S&P Global Commodity Insights, ICAP Carbon Action</p>
             <p>Fund price frozen at $95/t (Alberta May 2025). Market credit prices as of Q4 2025. Direct Investment Standard expected early 2026.</p>
+            <p>Current snapshot vintage: {DATA_SNAPSHOT_LABEL} ({DATA_SNAPSHOT_DATE})</p>
           </div>
           </section>
+          <ExportBlockedModal
+            isOpen={showBlockedModal}
+            title="Official Impact Actions Blocked"
+            reason={blockedReason || exportGate.reason}
+            onClose={() => {
+              setShowBlockedModal(false);
+              setBlockedReason(undefined);
+            }}
+            onRequestRefresh={() => {
+              setShowBlockedModal(false);
+              setBlockedReason(undefined);
+              trackEvent('refresh_request', { surface: 'industrial_tier_impact' });
+              window.location.href = '/enterprise?intent=data-refresh&surface=industrial-tier';
+            }}
+            canForceExport={canForceOfficialExport}
+            onForceExport={() => {
+              setShowBlockedModal(false);
+              setBlockedReason(undefined);
+              void handleExportImpact(true);
+            }}
+          />
         </div>
     );
 };
