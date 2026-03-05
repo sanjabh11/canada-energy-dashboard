@@ -205,3 +205,35 @@ export function getBookDemoUrl(): string {
   const raw = env.VITE_BOOK_DEMO_URL as string | undefined;
   return raw?.trim() || '';
 }
+
+type PaddlePlanKey =
+  | 'consumer_monthly'
+  | 'professional_monthly'
+  | 'industrial_monthly'
+  | 'indigenous_monthly';
+
+const DEFAULT_PADDLE_PRICE_IDS: Record<PaddlePlanKey, string> = {
+  // Keep consumer fallback because this path is currently known working in production.
+  consumer_monthly: 'pri_consumer_monthly',
+  // Force env-driven setup for higher-value plans to prevent silent misconfiguration.
+  professional_monthly: '',
+  industrial_monthly: '',
+  indigenous_monthly: '',
+};
+
+export function getPaddlePriceId(key: PaddlePlanKey): string {
+  const envMap: Record<PaddlePlanKey, string | undefined> = {
+    consumer_monthly: env.VITE_PADDLE_PRICE_CONSUMER_MONTHLY as string | undefined,
+    professional_monthly: env.VITE_PADDLE_PRICE_PROFESSIONAL_MONTHLY as string | undefined,
+    industrial_monthly: env.VITE_PADDLE_PRICE_INDUSTRIAL_MONTHLY as string | undefined,
+    indigenous_monthly: env.VITE_PADDLE_PRICE_INDIGENOUS_MONTHLY as string | undefined,
+  };
+
+  const configured = envMap[key]?.trim();
+  if (configured) return configured;
+  return DEFAULT_PADDLE_PRICE_IDS[key];
+}
+
+export function isPaddlePriceConfigured(key: PaddlePlanKey): boolean {
+  return Boolean(getPaddlePriceId(key));
+}

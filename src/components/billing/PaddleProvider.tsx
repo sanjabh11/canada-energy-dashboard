@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState, ReactNode } from 'react';
 import { initializePaddle, Paddle } from '@paddle/paddle-js';
 import { trackEvent } from '../../lib/analytics';
 
@@ -46,6 +46,7 @@ function handleCheckoutFallback(priceId: string): void {
 export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     const [paddle, setPaddle] = useState<Paddle | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const activeCheckoutPriceIdRef = useRef<string | null>(null);
 
     useEffect(() => {
         const initPaddle = async () => {
@@ -73,6 +74,17 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
                                 provider: 'paddle'
                             });
                             console.log('Checkout closed');
+                            activeCheckoutPriceIdRef.current = null;
+                        }
+                        if (data.name === 'checkout.error') {
+                            trackEvent('checkout_fallback_redirected', {
+                                provider: 'paddle',
+                                reason: 'checkout_error_event',
+                                price_id: activeCheckoutPriceIdRef.current || 'unknown',
+                            });
+                            if (activeCheckoutPriceIdRef.current) {
+                                handleCheckoutFallback(activeCheckoutPriceIdRef.current);
+                            }
                         }
                     },
                 });
@@ -100,6 +112,7 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
         }
 
         try {
+            activeCheckoutPriceIdRef.current = priceId;
             paddle.Checkout.open({
                 items: [{ priceId, quantity: 1 }],
                 settings: {
@@ -117,6 +130,7 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
                 reason: 'checkout_open_failed',
                 price_id: priceId
             });
+            activeCheckoutPriceIdRef.current = null;
             handleCheckoutFallback(priceId);
         }
     };

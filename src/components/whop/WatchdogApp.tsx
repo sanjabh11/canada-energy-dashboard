@@ -22,11 +22,13 @@ import { usePaddle } from '../billing/PaddleProvider';
 import { captureAttribution, trackEvent } from '../../lib/analytics';
 import { CEIP_PRICING, formatUsd } from '../../lib/pricingCatalog';
 import { trackRouteIntentCta, trackRouteIntentView } from '../../lib/gtm';
+import { getPaddlePriceId } from '../../lib/config';
 
 export function WatchdogApp() {
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const [dismissed, setDismissed] = useState(false);
     const { openCheckout, isLoading: paddleLoading } = usePaddle();
+    const consumerMonthlyPriceId = getPaddlePriceId('consumer_monthly');
 
     // Get the Pro plan from billing adapter
     const billingAdapter = getBillingAdapter();
@@ -147,9 +149,13 @@ export function WatchdogApp() {
                                 <button
                                     onClick={() => {
                                         trackRouteIntentCta('watchdog', 'subscribe_consumer_monthly', {
-                                            price_id: 'pri_consumer_monthly',
+                                            price_id: consumerMonthlyPriceId || 'missing_price_id',
                                         });
-                                        openCheckout('pri_consumer_monthly');
+                                        if (consumerMonthlyPriceId) {
+                                            openCheckout(consumerMonthlyPriceId);
+                                        } else {
+                                            window.location.href = '/enterprise?checkout=fallback&priceId=consumer_monthly_unconfigured&tier=consulting';
+                                        }
                                     }}
                                     disabled={paddleLoading}
                                     className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold rounded-lg transition-colors flex items-center gap-2"

@@ -6,6 +6,7 @@ import { usePaddle } from './billing/PaddleProvider';
 import { SEOHead } from './SEOHead';
 import { CEIP_PRICING, formatUsd } from '../lib/pricingCatalog';
 import { trackRouteIntentCta, trackRouteIntentView } from '../lib/gtm';
+import { getPaddlePriceId } from '../lib/config';
 
 interface PricingTier {
     id: string;
@@ -52,7 +53,7 @@ const pricingTiers: PricingTier[] = [
         monthlyPrice: CEIP_PRICING.direct.consumer_watchdog,
         price: formatUsd(CEIP_PRICING.direct.consumer_watchdog),
         priceDetail: '/month',
-        priceId: 'pri_consumer_monthly',
+        priceId: getPaddlePriceId('consumer_monthly'),
         annualMode: 'not_available',
         features: [
             'Bill auditing & error detection',
@@ -73,7 +74,7 @@ const pricingTiers: PricingTier[] = [
         monthlyPrice: CEIP_PRICING.direct.professional,
         price: formatUsd(CEIP_PRICING.direct.professional),
         priceDetail: '/month',
-        priceId: 'pri_professional_monthly',
+        priceId: getPaddlePriceId('professional_monthly') || undefined,
         annualMode: 'sales_assisted',
         features: [
             'Everything in Rate Watchdog',
@@ -93,7 +94,7 @@ const pricingTiers: PricingTier[] = [
         monthlyPrice: CEIP_PRICING.direct.industrial_tier,
         price: formatUsd(CEIP_PRICING.direct.industrial_tier),
         priceDetail: '/mo + 20% savings',
-        priceId: 'pri_industrial_monthly',
+        priceId: getPaddlePriceId('industrial_monthly') || undefined,
         annualMode: 'not_available',
         features: [
             'Live TIER credit pricing (EPC/Offsets)',
@@ -135,7 +136,7 @@ const pricingTiers: PricingTier[] = [
         monthlyPrice: CEIP_PRICING.direct.sovereign,
         price: formatUsd(CEIP_PRICING.direct.sovereign),
         priceDetail: '/month',
-        priceId: 'pri_indigenous_monthly',
+        priceId: getPaddlePriceId('indigenous_monthly') || undefined,
         annualMode: 'sales_assisted',
         features: [
             'OCAP® compliant architecture',
@@ -246,7 +247,15 @@ export const PricingPage: React.FC = () => {
         if (tier.priceId) {
             trackEvent('lead_intent_update', { intent: 'checkout_initiated', tier: tier.id });
             openCheckout(tier.priceId);
+            return;
         }
+
+        // Defensive fallback for misconfigured Paddle price IDs.
+        trackEvent('checkout_config_missing_fallback', {
+            tier: tier.id,
+            billing_cycle: billingCycle,
+        });
+        window.location.href = `/enterprise?checkout=fallback&priceId=${tier.id}_monthly_unconfigured&tier=${tier.id === 'professional' ? 'consulting' : tier.id}`;
     };
 
     return (
