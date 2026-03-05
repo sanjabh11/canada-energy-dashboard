@@ -55,8 +55,9 @@ function getAuthHeaders(idempotencyKey?: string): Record<string, string> {
   const exportApiKey = (import.meta.env.VITE_EXPORTS_API_KEY as string | undefined)?.trim() || getExportCredential();
 
   if (exportApiKey) {
-    baseHeaders.Authorization = `ApiKey ${exportApiKey}`;
-    baseHeaders.apikey = exportApiKey;
+    // Keep Supabase gateway auth headers from getEdgeHeaders() intact.
+    // Send CEIP entitlement key separately to avoid gateway 401s.
+    baseHeaders['x-export-api-key'] = exportApiKey;
   }
 
   if (idempotencyKey) {

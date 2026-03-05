@@ -54,13 +54,21 @@ export async function verifyExportEntitlement(
   supabase: any
 ): Promise<ExportEntitlementResult> {
   const apikeyHeader = req.headers.get("apikey")?.trim() || "";
+  const explicitExportApiKey = req.headers.get("x-export-api-key")?.trim() || "";
   const authHeader = req.headers.get("authorization")?.trim() || "";
+  const platformAnonKeys = new Set([
+    Deno.env.get("SUPABASE_ANON_KEY")?.trim() || "",
+    Deno.env.get("EDGE_SUPABASE_ANON_KEY")?.trim() || "",
+  ].filter(Boolean));
+  const apikeyIsPlatformKey = apikeyHeader ? platformAnonKeys.has(apikeyHeader) : false;
 
-  if (apikeyHeader) {
+  const apiKeyCandidate = explicitExportApiKey || (apikeyIsPlatformKey ? "" : apikeyHeader);
+
+  if (apiKeyCandidate) {
     const { data, error } = await supabase
       .from("api_keys")
       .select("id, api_key, label, is_active, expires_at, tier, created_by")
-      .eq("api_key", apikeyHeader)
+      .eq("api_key", apiKeyCandidate)
       .maybeSingle();
     const row = data as any;
 
@@ -70,7 +78,11 @@ export async function verifyExportEntitlement(
         status: 403,
         reason: "Invalid API key.",
         canForceExport: false,
-        entitlementSnapshot: { method: "api_key", valid: false },
+        entitlementSnapshot: {
+          method: "api_key",
+          valid: false,
+          provided_via: explicitExportApiKey ? "x-export-api-key" : "apikey",
+        },
       };
     }
 
@@ -88,6 +100,7 @@ export async function verifyExportEntitlement(
       canForceExport: active && canForceByTier(tier),
       entitlementSnapshot: {
         method: "api_key",
+        provided_via: explicitExportApiKey ? "x-export-api-key" : "apikey",
         key_id: row.id,
         key_label: row.label ?? null,
         tier,

@@ -23,7 +23,7 @@ import { assertExportAllowed } from '../lib/dataConfidence';
 import { ExportBlockedModal } from './ExportBlockedModal';
 import { trackEvent } from '../lib/analytics';
 import { createExportJob, waitForExportJob, ExportJobError, cancelExportJob, reissueExportJobUrl } from '../lib/exportJobsClient';
-import { getEdgeBaseUrl } from '../lib/config';
+import { getEdgeBaseUrl, getEdgeHeaders } from '../lib/config';
 
 interface FacilityData {
     facilityName: string;
@@ -54,7 +54,8 @@ export const BankReadyExport: React.FC = () => {
         projectDescription: 'LED lighting retrofit, HVAC optimization, and solar PV installation'
     });
 
-    const [isGenerating, setIsGenerating] = useState(false);
+    const [isOfficialGenerating, setIsOfficialGenerating] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
     const [showBlockedModal, setShowBlockedModal] = useState(false);
     const [blockedReason, setBlockedReason] = useState<string | undefined>();
     const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
@@ -102,7 +103,20 @@ export const BankReadyExport: React.FC = () => {
     const paybackYears = (facilityData.projectCost / facilityData.energyCostSavings).toFixed(1);
     const carbonIntensityReduction = facilityData.emissionReduction;
 
+    const validateFacilityInput = (): boolean => {
+        if (!facilityData.facilityName.trim()) {
+            setValidationError('Facility Name is required before export.');
+            return false;
+        }
+        setValidationError(null);
+        return true;
+    };
+
     const generateReport = async (mode: 'official' | 'draft' = 'official', forceOfficial = false) => {
+        if (!validateFacilityInput()) {
+            return;
+        }
+
         const isOfficial = mode === 'official';
         if (isOfficial && !exportGate.allowed && !canForceOfficialExport && !forceOfficial) {
             setBlockedReason(exportGate.reason);
@@ -121,8 +135,6 @@ export const BankReadyExport: React.FC = () => {
             confidence: exportGate.confidence,
             blocked_sources: exportGate.blockedSources.join(','),
         });
-
-        setIsGenerating(true);
 
         const report = {
             reportType: 'Green Loan Application Data Package',
@@ -230,7 +242,6 @@ export const BankReadyExport: React.FC = () => {
             a.download = `Draft-Green-Loan-Package-${selectedBank.toUpperCase()}-${new Date().toISOString().split('T')[0]}.json`;
             a.click();
             URL.revokeObjectURL(url);
-            setIsGenerating(false);
             trackEvent('export_job_created', {
                 surface: 'compliance_pack',
                 mode: 'draft',
@@ -240,6 +251,7 @@ export const BankReadyExport: React.FC = () => {
         }
 
         try {
+            setIsOfficialGenerating(true);
             setOfficialJobStatus('queued');
             const createResult = await createExportJob({
                 template: 'compliance_pack',
@@ -308,7 +320,7 @@ export const BankReadyExport: React.FC = () => {
             }
             alert('Failed to queue official export. Please try again.');
         } finally {
-            setIsGenerating(false);
+            setIsOfficialGenerating(false);
         }
     };
 
@@ -371,12 +383,12 @@ export const BankReadyExport: React.FC = () => {
         }
 
         try {
+            const headers = getEdgeHeaders();
             const response = await fetch(`${base}/export-job-status?id=${encodeURIComponent(jobId)}`, {
                 method: 'GET',
                 headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `ApiKey ${key}`,
-                    apikey: key,
+                    ...headers,
+                    'x-export-api-key': key,
                 },
             });
             const body = await response.text();
@@ -447,8 +459,13 @@ export const BankReadyExport: React.FC = () => {
                                         type="text"
                                         value={facilityData.facilityName}
                                         onChange={(e) => setFacilityData({ ...facilityData, facilityName: e.target.value })}
-                                        className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white"
+                                        className={`w-full px-4 py-3 bg-slate-900 rounded-lg text-white ${
+                                            validationError ? 'border border-red-500' : 'border border-slate-600'
+                                        }`}
                                     />
+                                    {validationError ? (
+                                        <p className="mt-2 text-xs text-red-400">{validationError}</p>
+                                    ) : null}
                                 </div>
                                 <div>
                                     <label className="block text-sm text-slate-400 mb-2">Facility Type</label>
@@ -514,10 +531,10 @@ export const BankReadyExport: React.FC = () => {
                         {/* Generate Button */}
                         <button
                             onClick={() => { void generateReport('official'); }}
-                            disabled={isGenerating}
+                            disabled={isOfficialGenerating}
                             className="w-full py-4 bg-green-600 hover:bg-green-500 disabled:bg-slate-600 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
                         >
-                            {isGenerating ? (
+                            {isOfficialGenerating ? (
                                 <>
                                     <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
                                     Generating Report...
@@ -531,7 +548,6 @@ export const BankReadyExport: React.FC = () => {
                         </button>
                         <button
                             onClick={() => { void generateReport('draft'); }}
-                            disabled={isGenerating}
                             className="w-full py-3 border border-slate-600 bg-slate-800 hover:bg-slate-700 rounded-xl font-medium text-slate-200 transition-all"
                         >
                             Download Draft Package (with freshness caveat)
