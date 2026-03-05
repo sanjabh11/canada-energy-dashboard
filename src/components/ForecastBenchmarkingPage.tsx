@@ -50,7 +50,7 @@ const ForecastBenchmarkingPage: React.FC = () => {
     []
   );
   const canOfficialExport = exportGate.allowed;
-  const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+  const canForceOfficialExport = import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
 
   const downloadCsv = (official: boolean) => {
     if (official && !canOfficialExport && !canForceOfficialExport) {

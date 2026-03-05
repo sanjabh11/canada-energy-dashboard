@@ -90,7 +90,7 @@ export const TIERROICalculator: React.FC = () => {
         []
     );
     const canRunOfficialActions = exportGate.allowed;
-    const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+    const canForceOfficialExport = import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
 
     const handleBlockedAction = (cta: 'tier_export_blocked' | 'tier_share_blocked') => {
         setBlockedReason(exportGate.reason);

@@ -42,7 +42,7 @@ export const RegulatoryFilingExport: React.FC = () => {
   const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
   const [lastOfficialUrl, setLastOfficialUrl] = useState<string | null>(null);
   const [isOfficialExporting, setIsOfficialExporting] = useState(false);
-  const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+  const canForceOfficialExport = import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
 
   const templates = useMemo(() => {
     const all = Object.values(REGULATORY_TEMPLATES);
