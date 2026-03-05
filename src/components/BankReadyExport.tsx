@@ -22,7 +22,7 @@ import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
 import { assertExportAllowed } from '../lib/dataConfidence';
 import { ExportBlockedModal } from './ExportBlockedModal';
 import { trackEvent } from '../lib/analytics';
-import { createExportJob, waitForExportJob, ExportJobError } from '../lib/exportJobsClient';
+import { createExportJob, waitForExportJob, ExportJobError, cancelExportJob, reissueExportJobUrl } from '../lib/exportJobsClient';
 
 interface FacilityData {
     facilityName: string;
@@ -58,6 +58,10 @@ export const BankReadyExport: React.FC = () => {
     const [blockedReason, setBlockedReason] = useState<string | undefined>();
     const [officialJobStatus, setOfficialJobStatus] = useState<string | null>(null);
     const [lastOfficialUrl, setLastOfficialUrl] = useState<string | null>(null);
+    const [currentJobId, setCurrentJobId] = useState<string | null>(null);
+    const [qaForceFpic, setQaForceFpic] = useState(false);
+    const [qaConsentArtifactId, setQaConsentArtifactId] = useState('');
+    const [qaIdempotencyKey, setQaIdempotencyKey] = useState('');
 
     const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
     const exportGate = useMemo(
@@ -244,11 +248,13 @@ export const BankReadyExport: React.FC = () => {
                     client_generated_at: new Date().toISOString(),
                     data_snapshot_date: DATA_SNAPSHOT_DATE,
                     data_snapshot_label: DATA_SNAPSHOT_LABEL,
-                    fpic_required: false,
+                    fpic_required: qaForceFpic,
+                    consent_artifact_id: qaConsentArtifactId || undefined,
                 },
                 force_export: forceOfficial || (!exportGate.allowed && canForceOfficialExport),
                 sources: ['aeso_pool', 'tier_inputs', 'compliance_pack'],
-            });
+            }, qaIdempotencyKey.trim() ? { idempotencyKey: qaIdempotencyKey.trim() } : {});
+            setCurrentJobId(createResult.jobId);
 
             const finalJob = await waitForExportJob(createResult.jobId, {
                 onUpdate: (job) => setOfficialJobStatus(job.status),
@@ -287,6 +293,10 @@ export const BankReadyExport: React.FC = () => {
                 }
                 if (error.status === 403) {
                     window.location.href = '/enterprise?intent=official-export-access&surface=compliance-pack';
+                    return;
+                }
+                if (error.status === 408) {
+                    alert('Job is still queued. Ensure `process-export-jobs` is running (cron or manual invoke), then retry status.');
                     return;
                 }
                 alert(error.payload.reason || error.message);
@@ -459,6 +469,9 @@ export const BankReadyExport: React.FC = () => {
                         {officialJobStatus ? (
                             <div className="rounded-lg border border-slate-700 bg-slate-800/80 px-4 py-3 text-xs text-slate-300">
                                 Official export status: <span className="font-semibold text-white">{officialJobStatus}</span>
+                                {currentJobId ? (
+                                    <span className="ml-2 text-slate-400">Job ID: {currentJobId}</span>
+                                ) : null}
                                 {lastOfficialUrl ? (
                                     <a
                                         href={lastOfficialUrl}
@@ -469,6 +482,52 @@ export const BankReadyExport: React.FC = () => {
                                         Download latest
                                     </a>
                                 ) : null}
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                    <button
+                                        onClick={() => { void handleCancelJob(); }}
+                                        className="rounded-md border border-slate-600 px-2 py-1 text-[11px] text-slate-200 hover:bg-slate-700"
+                                    >
+                                        Cancel Job
+                                    </button>
+                                    <button
+                                        onClick={() => { void handleReissueUrl(); }}
+                                        className="rounded-md border border-cyan-600/60 px-2 py-1 text-[11px] text-cyan-200 hover:bg-cyan-900/30"
+                                    >
+                                        Reissue URL
+                                    </button>
+                                </div>
+                                {officialJobStatus === 'queued' ? (
+                                    <div className="mt-2 text-amber-300">
+                                        If this stays queued locally, invoke `process-export-jobs` manually or run the scheduler.
+                                    </div>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        {import.meta.env.DEV ? (
+                            <div className="rounded-lg border border-indigo-500/30 bg-indigo-500/10 p-3 text-xs text-indigo-200">
+                                <div className="mb-2 font-semibold">Dev QA Controls</div>
+                                <label className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        checked={qaForceFpic}
+                                        onChange={(e) => setQaForceFpic(e.target.checked)}
+                                    />
+                                    Force `fpic_required=true` in request context
+                                </label>
+                                <input
+                                    type="text"
+                                    value={qaConsentArtifactId}
+                                    onChange={(e) => setQaConsentArtifactId(e.target.value)}
+                                    placeholder="consent_artifact_id (for FPIC allow test)"
+                                    className="mt-2 w-full rounded-md border border-indigo-400/40 bg-slate-900 px-2 py-1 text-xs text-white"
+                                />
+                                <input
+                                    type="text"
+                                    value={qaIdempotencyKey}
+                                    onChange={(e) => setQaIdempotencyKey(e.target.value)}
+                                    placeholder="optional fixed Idempotency-Key"
+                                    className="mt-2 w-full rounded-md border border-indigo-400/40 bg-slate-900 px-2 py-1 text-xs text-white"
+                                />
                             </div>
                         ) : null}
                     </div>
@@ -571,3 +630,33 @@ export const BankReadyExport: React.FC = () => {
 };
 
 export default BankReadyExport;
+    const handleCancelJob = async () => {
+        if (!currentJobId) return;
+        try {
+            await cancelExportJob(currentJobId);
+            setOfficialJobStatus('canceled');
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                alert(error.payload.reason || error.message);
+                return;
+            }
+            alert('Failed to cancel job.');
+        }
+    };
+
+    const handleReissueUrl = async () => {
+        if (!currentJobId) return;
+        try {
+            const result = await reissueExportJobUrl(currentJobId);
+            if (result.outputSignedUrl) {
+                setLastOfficialUrl(result.outputSignedUrl);
+                window.open(result.outputSignedUrl, '_blank', 'noopener,noreferrer');
+            }
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                alert(error.payload.reason || error.message);
+                return;
+            }
+            alert('Failed to reissue URL.');
+        }
+    };

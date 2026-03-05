@@ -209,3 +209,26 @@ export async function cancelExportJob(jobId: string): Promise<ExportJobResponse>
     status: 'canceled',
   };
 }
+
+export async function reissueExportJobUrl(jobId: string): Promise<ExportJobResponse> {
+  const response = await request(`export-job-status?id=${encodeURIComponent(jobId)}`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ action: 'reissue_url' }),
+  });
+
+  const parsed = await parseJsonSafe(response);
+  if (!response.ok) {
+    throw new ExportJobError(response.status, {
+      error: String(parsed.error || 'Failed to reissue export URL'),
+      reason: typeof parsed.reason === 'string' ? parsed.reason : undefined,
+      code: typeof parsed.code === 'string' ? parsed.code : undefined,
+    });
+  }
+
+  return {
+    jobId: String(parsed.jobId),
+    status: 'success',
+    outputSignedUrl: typeof parsed.outputSignedUrl === 'string' ? parsed.outputSignedUrl : null,
+  };
+}
