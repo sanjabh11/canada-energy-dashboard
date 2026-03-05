@@ -46,6 +46,12 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
 - [x] Preserve draft exports and enforce low-confidence + FPIC hard-stop server rules
 - [x] Run type-check/build validation and update review notes
 
+## Tier-3 QA Gap Fixes (March 5, 2026)
+- [x] Remove localhost edge-fetch false negative when Supabase env is configured
+- [x] Make low-confidence official export forcing opt-in (not implicit in DEV)
+- [x] Add Bank Export dev ownership probe to cover TC-08 from UI
+- [x] Re-run type-check/build and update review notes
+
 ## Acceptance Criteria
 - One pricing catalog feeds: `src/lib/whop.ts`, `src/components/PricingPage.tsx`, `src/components/WhopDiscoverPage.tsx`
 - GTM attribution events include: `channel`, `segment`, `message_variant`, `cta`, `campaign_id`
@@ -90,3 +96,9 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
     - `pnpm exec tsc --noEmit` passed.
     - `pnpm exec tsc -b` passed.
     - `pnpm run build` passed.
+- Tier-3 QA gap-fix round:
+  - Updated localhost edge-fetch fallback in [src/lib/config.ts](/Users/sanjayb/minimax/canada-energy-dashboard/src/lib/config.ts) so local edge calls are enabled when Supabase env vars are present.
+  - Changed Bank Export force-export behavior to explicit env-driven opt-in (`VITE_ALLOW_LOW_CONFIDENCE_EXPORTS`) in [src/components/BankReadyExport.tsx](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/BankReadyExport.tsx), allowing confidence-block QA in dev without hidden bypass.
+  - Added TC-08 ownership probe controls in dev QA panel (job id + optional probe API key + direct ownership check result) in [src/components/BankReadyExport.tsx](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/BankReadyExport.tsx).
+  - Verification:
+    - `pnpm exec tsc --noEmit` passed.

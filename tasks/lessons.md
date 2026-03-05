@@ -11,3 +11,6 @@
 - Rule: Never force SPA fallback rewrites (`200!` / `force=true`) without explicit static asset exclusions; it can cause JS/JSON/SW requests to return HTML and blank the app.
 - Rule: Before implementing plan-specified paths/endpoints, map them to real repository files/routes first; if names differ, bind changes to existing production paths and close the behavior gap there.
 - Rule: For new Supabase tables in edge functions, avoid tight generated DB typings until types are regenerated; keep server helpers pragmatically typed and validate behavior with build/typecheck instead of over-modeling first.
+
+## 2026-03-05
+- Rule: DEV-mode convenience bypasses (`import.meta.env.DEV`) can hide critical QA paths; make confidence-force behavior explicitly env-controlled so local QA can verify blocked flows.

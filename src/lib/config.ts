@@ -61,12 +61,14 @@ export function isEdgeFetchEnabled(): boolean {
     return result;
   }
 
-  // If not explicitly set, disable on localhost to avoid noisy CORS failures during development
+  // If not explicitly set, only disable localhost when Supabase env is missing.
+  // This keeps local QA flows testable when env is configured.
   if (typeof window !== 'undefined') {
     const host = window.location?.hostname || '';
     if (host === 'localhost' || host === '127.0.0.1') {
-      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, no explicit setting, returning false');
-      return false;
+      const hasSupabaseEnv = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
+      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, hasSupabaseEnv:', hasSupabaseEnv);
+      return hasSupabaseEnv;
     }
   }
 

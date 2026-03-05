@@ -23,6 +23,7 @@ import { assertExportAllowed } from '../lib/dataConfidence';
 import { ExportBlockedModal } from './ExportBlockedModal';
 import { trackEvent } from '../lib/analytics';
 import { createExportJob, waitForExportJob, ExportJobError, cancelExportJob, reissueExportJobUrl } from '../lib/exportJobsClient';
+import { getEdgeBaseUrl } from '../lib/config';
 
 interface FacilityData {
     facilityName: string;
@@ -62,8 +63,11 @@ export const BankReadyExport: React.FC = () => {
     const [qaForceFpic, setQaForceFpic] = useState(false);
     const [qaConsentArtifactId, setQaConsentArtifactId] = useState('');
     const [qaIdempotencyKey, setQaIdempotencyKey] = useState('');
+    const [qaProbeJobId, setQaProbeJobId] = useState('');
+    const [qaProbeApiKey, setQaProbeApiKey] = useState('');
+    const [qaProbeResult, setQaProbeResult] = useState('');
 
-    const canForceOfficialExport = import.meta.env.DEV || import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
+    const canForceOfficialExport = import.meta.env.VITE_ALLOW_LOW_CONFIDENCE_EXPORTS === 'true';
     const exportGate = useMemo(
         () =>
             assertExportAllowed(
@@ -316,6 +320,72 @@ export const BankReadyExport: React.FC = () => {
         }).format(value);
     };
 
+    const handleCancelJob = async () => {
+        if (!currentJobId) return;
+        try {
+            await cancelExportJob(currentJobId);
+            setOfficialJobStatus('canceled');
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                alert(error.payload.reason || error.message);
+                return;
+            }
+            alert('Failed to cancel job.');
+        }
+    };
+
+    const handleReissueUrl = async () => {
+        if (!currentJobId) return;
+        try {
+            const result = await reissueExportJobUrl(currentJobId);
+            if (result.outputSignedUrl) {
+                setLastOfficialUrl(result.outputSignedUrl);
+                window.open(result.outputSignedUrl, '_blank', 'noopener,noreferrer');
+            }
+        } catch (error) {
+            if (error instanceof ExportJobError) {
+                alert(error.payload.reason || error.message);
+                return;
+            }
+            alert('Failed to reissue URL.');
+        }
+    };
+
+    const handleProbeOwnership = async () => {
+        const jobId = qaProbeJobId.trim();
+        if (!jobId) {
+            setQaProbeResult('Enter a job ID first.');
+            return;
+        }
+
+        const base = getEdgeBaseUrl();
+        if (!base) {
+            setQaProbeResult('Edge base URL is not configured.');
+            return;
+        }
+
+        const key = qaProbeApiKey.trim() || localStorage.getItem('ceip_export_api_key') || '';
+        if (!key) {
+            setQaProbeResult('Provide a probe API key or set ceip_export_api_key in localStorage.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`${base}/export-job-status?id=${encodeURIComponent(jobId)}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `ApiKey ${key}`,
+                    apikey: key,
+                },
+            });
+            const body = await response.text();
+            setQaProbeResult(`HTTP ${response.status}: ${body}`);
+        } catch (error) {
+            setQaProbeResult(`Probe failed: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-5xl mx-auto">
@@ -528,6 +598,34 @@ export const BankReadyExport: React.FC = () => {
                                     placeholder="optional fixed Idempotency-Key"
                                     className="mt-2 w-full rounded-md border border-indigo-400/40 bg-slate-900 px-2 py-1 text-xs text-white"
                                 />
+                                <div className="mt-3 border-t border-indigo-400/20 pt-3">
+                                    <div className="font-medium text-indigo-100">Ownership Probe (TC-08)</div>
+                                    <input
+                                        type="text"
+                                        value={qaProbeJobId}
+                                        onChange={(e) => setQaProbeJobId(e.target.value)}
+                                        placeholder="job_id to probe"
+                                        className="mt-2 w-full rounded-md border border-indigo-400/40 bg-slate-900 px-2 py-1 text-xs text-white"
+                                    />
+                                    <input
+                                        type="text"
+                                        value={qaProbeApiKey}
+                                        onChange={(e) => setQaProbeApiKey(e.target.value)}
+                                        placeholder="optional probe API key (different principal)"
+                                        className="mt-2 w-full rounded-md border border-indigo-400/40 bg-slate-900 px-2 py-1 text-xs text-white"
+                                    />
+                                    <button
+                                        onClick={() => { void handleProbeOwnership(); }}
+                                        className="mt-2 rounded-md border border-indigo-400/50 px-2 py-1 text-xs hover:bg-indigo-900/30"
+                                    >
+                                        Probe Job Ownership
+                                    </button>
+                                    {qaProbeResult ? (
+                                        <div className="mt-2 rounded bg-slate-900/80 p-2 text-[11px] text-indigo-100">
+                                            {qaProbeResult}
+                                        </div>
+                                    ) : null}
+                                </div>
                             </div>
                         ) : null}
                     </div>
@@ -628,35 +726,3 @@ export const BankReadyExport: React.FC = () => {
         </div>
     );
 };
-
-export default BankReadyExport;
-    const handleCancelJob = async () => {
-        if (!currentJobId) return;
-        try {
-            await cancelExportJob(currentJobId);
-            setOfficialJobStatus('canceled');
-        } catch (error) {
-            if (error instanceof ExportJobError) {
-                alert(error.payload.reason || error.message);
-                return;
-            }
-            alert('Failed to cancel job.');
-        }
-    };
-
-    const handleReissueUrl = async () => {
-        if (!currentJobId) return;
-        try {
-            const result = await reissueExportJobUrl(currentJobId);
-            if (result.outputSignedUrl) {
-                setLastOfficialUrl(result.outputSignedUrl);
-                window.open(result.outputSignedUrl, '_blank', 'noopener,noreferrer');
-            }
-        } catch (error) {
-            if (error instanceof ExportJobError) {
-                alert(error.payload.reason || error.message);
-                return;
-            }
-            alert('Failed to reissue URL.');
-        }
-    };
