@@ -76,7 +76,7 @@ serve(async (req) => {
     try {
       const { data, error } = await serviceClient
         .from("api_keys")
-        .select("id, label, created_at, is_active, expires_at, usage_count")
+        .select("id, label, created_at, is_active, expires_at, usage_count, tier, daily_limit, last_used_at")
         .eq("created_by", user.id)
         .order("created_at", { ascending: false });
 
@@ -131,7 +131,7 @@ serve(async (req) => {
           is_active: true,
           expires_at: expiresAt,
         })
-        .select("id, label, created_at, is_active, expires_at, usage_count")
+        .select("id, label, created_at, is_active, expires_at, usage_count, tier, daily_limit, last_used_at")
         .single();
 
       if (error) {

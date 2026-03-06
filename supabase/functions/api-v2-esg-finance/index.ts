@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { logApiUsage, applyRateLimit } from "../_shared/rateLimit.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { validateApiKeyAccess } from "../_shared/apiKeyAccess.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -13,62 +14,6 @@ const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
 const supabase = SUPABASE_URL && SUPABASE_KEY
   ? createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } })
   : null;
-
-async function validateApiKey(req: Request, supabaseClient: any): Promise<boolean> {
-  const headerKey = req.headers.get('apikey') || '';
-  const authHeader = req.headers.get('authorization') || '';
-  let token = '';
-  if (authHeader && authHeader.toLowerCase().startsWith('bearer ')) {
-    token = authHeader.slice(7).trim();
-  }
-
-  const candidate = headerKey || token;
-
-  const allowedAnonKeys = [
-    Deno.env.get('EDGE_SUPABASE_ANON_KEY') || '',
-    Deno.env.get('SUPABASE_ANON_KEY') || '',
-  ].filter(Boolean);
-
-  // Fast path: accept the configured anon key(s) so the first-party dashboard keeps working
-  if (allowedAnonKeys.length > 0 && candidate && allowedAnonKeys.includes(candidate)) {
-    return true;
-  }
-
-  // If no key is provided and no anon keys are configured, maintain previous behavior (do not hard fail)
-  if (!candidate) {
-    return allowedAnonKeys.length === 0;
-  }
-
-  if (!supabaseClient) {
-    return false;
-  }
-
-  try {
-    const { data, error } = await supabaseClient
-      .from('api_keys')
-      .select('id, is_active, expires_at')
-      .eq('api_key', candidate)
-      .maybeSingle();
-
-    if (error) {
-      console.error('api_keys lookup failed', error);
-      return false;
-    }
-
-    if (!data || !data.is_active) {
-      return false;
-    }
-
-    if (data.expires_at && new Date(data.expires_at).getTime() < Date.now()) {
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    console.error('api_keys validation threw', err);
-    return false;
-  }
-}
 
 serve(async (req) => {
   const rl = applyRateLimit(req, 'api-v2-esg-finance');
@@ -123,17 +68,26 @@ serve(async (req) => {
     });
   }
 
-  if (!(await validateApiKey(req, supabase))) {
-    const statusCode = 401;
+  const access = await validateApiKeyAccess(req, supabase, 'api-v2-esg-finance');
+  if (!access.allowed) {
+    const statusCode = access.status || 401;
     const response = new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: 'Missing or invalid API key',
+      error: access.error || 'Unauthorized',
+      message: access.message || 'Missing or invalid API key',
+      tier: access.tier || null,
+      daily_limit: access.dailyLimit ?? null,
+      remaining: access.remaining ?? null,
     }), {
       status: statusCode,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-    await safeLog(statusCode, { reason: 'unauthorized' });
+    await safeLog(statusCode, {
+      reason: statusCode === 429 ? 'daily_limit_exceeded' : 'unauthorized',
+      tier: access.tier || null,
+      daily_limit: access.dailyLimit ?? null,
+      remaining: access.remaining ?? null,
+    });
 
     return response;
   }

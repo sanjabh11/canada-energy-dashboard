@@ -1,15 +1,15 @@
 /**
  * UpgradeModal - Tier Upgrade Information
  *
- * Shows pricing and features for each tier.
- * Week 1: Placeholder UI only (no Stripe yet)
- * Week 2: Will add Stripe Checkout integration
+ * Legacy tier gate upsell modal.
+ *
+ * This now routes users into the canonical CEIP pricing / enterprise paths
+ * instead of the older Whop/Stripe-specific checkout flow.
  */
 
 import React, { useState } from 'react';
 import { X, Check, Sparkles, Zap, Crown } from 'lucide-react';
 import { useAuth } from './AuthProvider';
-import { getEdgeBaseUrl } from '../../lib/config';
 
 interface UpgradeModalProps {
   isOpen: boolean;
@@ -127,62 +127,26 @@ export function UpgradeModal({ isOpen, onClose, targetTier = 'edubiz' }: Upgrade
             type="button"
             disabled={loading}
             onClick={async () => {
-              if (!user) {
-                window.location.href = '/pricing';
-                return;
-              }
-
-              // For Whop users, redirect to Whop upgrade page
               if (isWhopUser) {
-                window.location.href = `https://whop.com/ignite-be15/?d2c=true&plan=${targetTier}`;
-                return;
-              }
-
-              // Call Stripe checkout Edge Function
-              const base = getEdgeBaseUrl();
-              if (!base) {
-                alert('Payment service not configured. Please try again later.');
+                window.location.href = '/whop/discover';
                 return;
               }
 
               setLoading(true);
-              try {
-                const response = await fetch(`${base}/stripe-create-checkout-session`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                  },
-                  body: JSON.stringify({
-                    tier: targetTier,
-                    successBase: window.location.origin,
-                  }),
-                });
-
-                const data = await response.json();
-
-                if (!response.ok) {
-                  throw new Error(data.error || 'Failed to create checkout session');
-                }
-
-                if (data.url) {
-                  // Redirect to Stripe Checkout
-                  window.location.href = data.url;
-                } else {
-                  throw new Error('No checkout URL returned');
-                }
-              } catch (error) {
-                console.error('Checkout error:', error);
-                alert(`Checkout failed: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
-                setLoading(false);
-              }
+              const destination = !user
+                ? '/pricing'
+                : targetTier === 'pro'
+                  ? '/enterprise?tier=consulting'
+                  : '/pricing';
+              window.location.href = destination;
             }}
             className={`w-full py-4 bg-gradient-to-r from-${tier.color}-500 to-${tier.color}-600 text-white font-semibold rounded-lg hover:from-${tier.color}-600 hover:to-${tier.color}-700 focus:outline-none focus:ring-2 focus:ring-${tier.color}-500 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {loading
-              ? 'Connecting to checkout…'
+              ? 'Redirecting…'
               : targetTier === 'edubiz'
-                ? 'Start 7-Day Free Trial'
-                : 'Contact Sales'}
+                ? 'View Plans'
+                : 'Talk to Sales'}
           </button>
 
           <button

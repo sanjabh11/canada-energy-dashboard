@@ -27,6 +27,13 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
 - New migration exists with all required GTM entities
 - New docs clearly operationalize Sprint 0-5 execution
 
+## Adversarial Monetization Hardening (March 6, 2026)
+- [ ] Audit the weakest monetization assumptions against current repo behavior and identify direct failure modes
+- [ ] Fix API monetization leaks by enforcing API-key validation + daily quota checks on paid API endpoints
+- [ ] Replace the placeholder API key management UI with the working `api-keys-admin` flow
+- [ ] Align upgrade/upsell entry points with canonical pricing so users are not routed into stale Whop/Stripe-era plans
+- [ ] Re-run type-check/build validation and update review notes
+
 ## Review
 - Added durable lead intake flow (`lead_intake_submissions`) and persistence on enterprise, municipal, and ROI capture paths.
 - Fixed enterprise CTA tracking bug where handlers were not attached as JSX attributes.
@@ -44,3 +51,11 @@ Implement the 90-day Hybrid GTM plan in code and documentation with minimal, pro
   - Made annual mode unmistakable on pricing page (visual banner + CTA label change).
   - Converted demo CTA into true calendar link when `VITE_BOOK_DEMO_URL` is configured, otherwise explicit callback request wording.
   - Re-ran production build and verified generated `dist/_redirects` no longer forces SPA fallback over static assets.
+- Adversarial monetization hardening round:
+  - Replaced the dead placeholder API key UI in [src/components/ApiKeysPage.tsx](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/ApiKeysPage.tsx) with the real `api-keys-admin` flow so key creation/listing is operational for consultant/data-pack monetization.
+  - Extended [supabase/functions/api-keys-admin/index.ts](/Users/sanjayb/minimax/canada-energy-dashboard/supabase/functions/api-keys-admin/index.ts) to return `tier`, `daily_limit`, and `last_used_at`, making commercial limits visible in the UI.
+  - Added shared API-key quota enforcement in [supabase/functions/_shared/apiKeyAccess.ts](/Users/sanjayb/minimax/canada-energy-dashboard/supabase/functions/_shared/apiKeyAccess.ts) and wired it into [supabase/functions/api-v2-esg-finance/index.ts](/Users/sanjayb/minimax/canada-energy-dashboard/supabase/functions/api-v2-esg-finance/index.ts) and [supabase/functions/api-v2-industrial-decarb/index.ts](/Users/sanjayb/minimax/canada-energy-dashboard/supabase/functions/api-v2-industrial-decarb/index.ts).
+  - Replaced the stale Stripe-era upsell path in [src/components/auth/UpgradeModal.tsx](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/auth/UpgradeModal.tsx) with canonical routing to `/pricing`, `/enterprise`, and `/whop/discover`.
+  - Verification:
+    - `pnpm exec tsc --noEmit` passed.
+    - `pnpm run build` passed.

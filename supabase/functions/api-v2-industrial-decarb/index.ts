@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { logApiUsage } from "../_shared/rateLimit.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { validateApiKeyAccess } from "../_shared/apiKeyAccess.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -48,6 +49,28 @@ serve(async (req) => {
   if (!supabase) {
     return new Response(JSON.stringify({ error: 'Supabase client not configured' }), {
       status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+
+  const access = await validateApiKeyAccess(req, supabase, 'api-v2-industrial-decarb');
+  if (!access.allowed) {
+    const statusCode = access.status || 401;
+    await safeLog(statusCode, {
+      reason: statusCode === 429 ? 'daily_limit_exceeded' : 'unauthorized',
+      tier: access.tier || null,
+      daily_limit: access.dailyLimit ?? null,
+      remaining: access.remaining ?? null,
+    });
+
+    return new Response(JSON.stringify({
+      error: access.error || 'Unauthorized',
+      message: access.message || 'Missing or invalid API key',
+      tier: access.tier || null,
+      daily_limit: access.dailyLimit ?? null,
+      remaining: access.remaining ?? null,
+    }), {
+      status: statusCode,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }
