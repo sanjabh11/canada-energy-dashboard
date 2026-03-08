@@ -198,6 +198,27 @@ function transformDemand(rows: DemandRow[]): Array<{ date: string; average_mw: n
     .sort((a, b) => a.date.localeCompare(b.date));
 }
 
+function resolveObservedWindow(
+  generationRows: GenerationRow[],
+  demandRows: Array<{ date: string; average_mw: number | null }>,
+  fallbackStart: string,
+  fallbackEnd: string,
+): { start: string; end: string } {
+  const dates = [
+    ...generationRows.map((row) => row.date).filter((date): date is string => Boolean(date)),
+    ...demandRows.map((row) => row.date).filter((date): date is string => Boolean(date)),
+  ].sort((a, b) => a.localeCompare(b));
+
+  if (dates.length === 0) {
+    return { start: fallbackStart, end: fallbackEnd };
+  }
+
+  return {
+    start: dates[0] ?? fallbackStart,
+    end: dates[dates.length - 1] ?? fallbackEnd,
+  };
+}
+
 serve(async (req) => {
   const rl = applyRateLimit(req, 'api-v2-analytics-trends');
   if (rl.response) return rl.response;
@@ -237,6 +258,12 @@ serve(async (req) => {
 
     const generationSeries = transformGeneration(generationRows);
     const demandSeries = transformDemand(demandRows);
+    const observedWindow = resolveObservedWindow(
+      generationRows,
+      demandSeries,
+      windowStartStr,
+      windowEnd.toISOString().slice(0, 10),
+    );
 
     const uniqueGenDates = new Set(generationRows.map((r) => (r as { date: string }).date));
     const effectiveDays = Math.min(uniqueGenDates.size, timeframe.days);
@@ -247,8 +274,8 @@ serve(async (req) => {
     const payload = {
       timeframe: timeframe.label,
       window: {
-        start: windowStartStr,
-        end: windowEnd.toISOString().slice(0, 10),
+        start: observedWindow.start,
+        end: observedWindow.end,
         days: timeframe.days,
         days_effective: effectiveDays,
       },

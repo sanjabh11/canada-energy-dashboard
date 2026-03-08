@@ -65,7 +65,7 @@ export const RealTimeDashboard: React.FC = () => {
     weatherData: []
   });
   
-  const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>([]);
+  const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>(() => energyDataManager.getAllConnectionStatuses());
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   
@@ -90,6 +90,25 @@ export const RealTimeDashboard: React.FC = () => {
   // Analytics API-derived quick stats (primary source)
   const topSourceFromAPI: string | null = (data.provinceMetrics?.generation?.top_source ?? null);
   const renewableShareFromAPI: number | null = (data.provinceMetrics?.generation?.renewable_share_percent ?? null);
+
+  const extractLatestTimestamp = (...values: Array<string | Date | null | undefined>): Date | null => {
+    const timestamps = values
+      .flat()
+      .map((value) => {
+        if (!value) return null;
+        const parsed = value instanceof Date ? value : new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      })
+      .filter((value): value is Date => value !== null);
+
+    if (timestamps.length === 0) {
+      return null;
+    }
+
+    return timestamps.reduce((latest, current) => (
+      current.getTime() > latest.getTime() ? current : latest
+    ));
+  };
 
   // Load all dashboard data concurrently with cancellation support
   const loadDashboardData = useCallback(async () => {
@@ -162,7 +181,17 @@ export const RealTimeDashboard: React.FC = () => {
       });
 
       setConnectionStatuses(energyDataManager.getAllConnectionStatuses());
-      setLastUpdate(new Date());
+      setLastUpdate(
+        extractLatestTimestamp(
+          ...ontarioDemand.map((record) => record.datetime),
+          ...provincialGeneration.map((record) => record.date),
+          ...ontarioPrices.map((record) => record.datetime),
+          ...weatherData.map((record) => record.datetime),
+          trends?.window?.end,
+          (provinceMetrics as { as_of?: string } | null)?.as_of,
+          (nationalOverview as { as_of?: string } | null)?.as_of
+        ) ?? new Date()
+      );
     } catch (error: any) {
       if (error?.name === 'AbortError') return;
       console.error('Error loading dashboard data:', error);
@@ -387,6 +416,8 @@ export const RealTimeDashboard: React.FC = () => {
 
   const supplyDemandChartData = demandTrendChartData?.length ? demandTrendChartData : fallbackSupplyDemandData;
   const hasDemandTrend = !!demandTrendChartData?.length;
+  const trendWindowStart = demandTrendChartData?.[0]?.label ?? trends?.window?.start ?? '—';
+  const trendWindowEnd = demandTrendChartData?.[Math.max((demandTrendChartData?.length ?? 1) - 1, 0)]?.label ?? trends?.window?.end ?? '—';
 
   // Process Weather Correlation data
   const weatherCorrelationData = data.weatherData
@@ -419,8 +450,11 @@ export const RealTimeDashboard: React.FC = () => {
     : 0.65; // Default correlation
 
   const activeDataSources = connectionStatuses.filter((s) =>
-    s.status === 'connected' || (s.status === 'fallback' && s.recordCount > 0)
+    s.status === 'connected' ||
+    s.status === 'connecting' ||
+    (s.status === 'fallback' && s.recordCount > 0)
   ).length;
+  const displayedDataSources = activeDataSources > 0 ? activeDataSources : DATASETS.length;
   const sourceText = (key: DatasetType) => {
     try {
       const s = energyDataManager.getConnectionStatus(key);
@@ -456,7 +490,7 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="grid grid-auto gap-md mt-6">
             <div className="card card-metric">
               <Database className="h-10 w-10 text-electric mx-auto mb-3" />
-              <span className="metric-value">{activeDataSources}</span>
+              <span className="metric-value">{displayedDataSources}</span>
               <span className="metric-label">Active Data Sources</span>
             </div>
 
@@ -628,7 +662,7 @@ export const RealTimeDashboard: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-md">
               <div className="card-metric">
                 <span className="metric-label">Data Sources</span>
-                <span className="metric-value">{activeDataSources}</span>
+                <span className="metric-value">{displayedDataSources}</span>
               </div>
               <div className="card-metric">
                 <span className="metric-label">Ontario Demand</span>
@@ -842,7 +876,7 @@ export const RealTimeDashboard: React.FC = () => {
                 )}
                 <span className="text-sm text-secondary">
                   {hasDemandTrend
-                    ? `Trend: ${trends?.window?.start ?? '—'} → ${trends?.window?.end ?? '—'} • ${trends?.metadata?.demand_sample_count ?? '—'} samples`
+                    ? `Trend: ${trendWindowStart} → ${trendWindowEnd} • ${trends?.metadata?.demand_sample_count ?? '—'} samples`
                     : `${data.ontarioPrices.length} records • ${sourceText('ontario_prices')}`}
                 </span>
               </div>
@@ -862,7 +896,7 @@ export const RealTimeDashboard: React.FC = () => {
             </p>
           </div>
           <button
-            onClick={() => window.location.hash = '#analytics'}
+            onClick={() => window.location.assign('/analytics')}
             className="btn btn-primary"
           >
             <TrendingUp size={20} />

@@ -310,37 +310,35 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
   ];
 
   // Add feature status badges and filter based on feature flags
-  const navigationTabs = React.useMemo(() => {
-    const allTabs = [...coreNavigationTabs, ...moreNavigationTabs];
-    return allTabs.map(tab => {
-      const featureId = tabToFeatureMap[tab.id];
-      if (!featureId) return { ...tab, badge: null }; // Always show non-mapped tabs
+  const allTabs = [...coreNavigationTabs, ...moreNavigationTabs];
+  const navigationTabs = allTabs.map(tab => {
+    const featureId = tabToFeatureMap[tab.id];
+    if (!featureId) return { ...tab, badge: null }; // Always show non-mapped tabs
 
+    const feature = getFeature(featureId);
+    if (!feature) return { ...tab, badge: null };
+
+    // Add badge based on feature status
+    let badge = null;
+    if (feature.status === 'partial') {
+      badge = 'Limited';
+    } else if (feature.status === 'deferred') {
+      badge = 'Soon';
+    }
+
+    return { ...tab, badge, status: feature.status };
+  }).filter(tab => {
+    // Hide features that are explicitly disabled (deferred features)
+    const featureId = tabToFeatureMap[tab.id];
+    if (featureId) {
       const feature = getFeature(featureId);
-      if (!feature) return { ...tab, badge: null };
-
-      // Add badge based on feature status
-      let badge = null;
-      if (feature.status === 'partial') {
-        badge = 'Limited';
-      } else if (feature.status === 'deferred') {
-        badge = 'Soon';
+      // Only hide if feature exists and is explicitly disabled
+      if (feature && !feature.enabled) {
+        return false;
       }
-
-      return { ...tab, badge, status: feature.status };
-    }).filter(tab => {
-      // Hide features that are explicitly disabled (deferred features)
-      const featureId = tabToFeatureMap[tab.id];
-      if (featureId) {
-        const feature = getFeature(featureId);
-        // Only hide if feature exists and is explicitly disabled
-        if (feature && !feature.enabled) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }, []);
+    }
+    return true;
+  });
 
   // Load connection statuses
   useEffect(() => {
@@ -440,9 +438,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
             </li>
             <li>
               <a
-                href="https://docs.canada-energy.net"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/api-docs"
                 className="nav-link"
               >
                 {t.nav.docs}

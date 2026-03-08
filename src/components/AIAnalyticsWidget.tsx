@@ -5,9 +5,14 @@
  * predictive insights, and recommendation engine.
  */
 
-import React, { useState, useEffect } from 'react';
-import { Brain, TrendingUp, AlertTriangle, CheckCircle, Settings, Play, Pause, RotateCcw } from 'lucide-react';
-import { getTransitionAnalyticsInsight, type TransitionKpisResponse } from '../lib/llmClient';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Brain, TrendingUp, AlertTriangle, CheckCircle, Settings, Play } from 'lucide-react';
+
+interface FeedbackState {
+  show: boolean;
+  message: string;
+  type: 'success' | 'error' | 'info';
+}
 
 export interface ScenarioModel {
   id: string;
@@ -75,9 +80,15 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState<string>('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [feedback, setFeedback] = useState<FeedbackState>({ show: false, message: '', type: 'info' });
+
+  const showFeedbackMessage = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setFeedback({ show: true, message, type });
+    setTimeout(() => setFeedback({ show: false, message: '', type: 'info' }), 3000);
+  };
 
   // Generate AI recommendations based on current data
-  const generateRecommendations = async () => {
+  const generateRecommendations = useCallback(async (showRefreshFeedback = false) => {
     setIsAnalyzing(true);
     try {
       // Simulate AI analysis - in real implementation, this would call the LLM API
@@ -117,33 +128,45 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
       setRecommendations(mockRecommendations);
 
       // Generate insights
-      const insightText = `Analysis of ${dataset} data reveals significant opportunities for optimization. Current renewable penetration is at ${currentMetrics.renewablePercentage || 67}%, with potential to reach ${currentMetrics.renewablePercentage || 67 + 15}% through strategic investments. Peak demand patterns suggest implementing demand response programs could reduce costs by 8-12%.`;
+      const renewablePercentage = currentMetrics.renewablePercentage ?? 67;
+      const projectedRenewablePercentage = Math.min(100, renewablePercentage + 15);
+      const insightText = `Analysis of ${dataset} data reveals significant opportunities for optimization. Current renewable penetration is at ${renewablePercentage}%, with potential to reach ${projectedRenewablePercentage}% through strategic investments. Peak demand patterns suggest implementing demand response programs could reduce costs by 8-12%.`;
       setInsights(insightText);
+
+      if (showRefreshFeedback) {
+        showFeedbackMessage('Analysis refreshed with latest dashboard data', 'success');
+      }
 
     } catch (error) {
       console.error('Error generating recommendations:', error);
     } finally {
       setIsAnalyzing(false);
     }
-  };
+  }, [currentMetrics, dataset]);
 
   useEffect(() => {
     generateRecommendations();
-  }, [dataset, currentMetrics]);
+  }, [generateRecommendations]);
 
   const handleScenarioSelect = (scenario: ScenarioModel) => {
     setSelectedScenario(scenario);
   };
 
   const handleScenarioApply = () => {
-    if (selectedScenario && onScenarioApply) {
-      onScenarioApply(selectedScenario);
+    if (selectedScenario) {
+      if (onScenarioApply) {
+        onScenarioApply(selectedScenario);
+      } else {
+        showFeedbackMessage('No handler registered for scenario application', 'error');
+      }
     }
   };
 
   const handleRecommendationApply = (recommendation: AIRecommendation) => {
     if (onRecommendationApply) {
       onRecommendationApply(recommendation);
+    } else {
+      showFeedbackMessage(`Applied: ${recommendation.title} (Note: No parent handler registered)`, 'info');
     }
   };
 
@@ -167,7 +190,18 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-slate-200">
+    <div className="bg-white rounded-lg shadow-sm border border-slate-200 relative">
+      {/* Feedback Toast */}
+      {feedback.show && (
+        <div className={`absolute top-2 left-1/2 transform -translate-x-1/2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${
+          feedback.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' :
+          feedback.type === 'error' ? 'bg-red-100 text-red-800 border border-red-200' :
+          'bg-blue-100 text-blue-800 border border-blue-200'
+        }`}>
+          {feedback.message}
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -188,7 +222,7 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
             {showAdvanced ? 'Simple' : 'Advanced'}
           </button>
           <button
-            onClick={generateRecommendations}
+            onClick={() => generateRecommendations(true)}
             disabled={isAnalyzing}
             className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-2"
           >

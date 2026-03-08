@@ -7,9 +7,10 @@
  */
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { LineChart, Line, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import {
-  TrendingUp, Cloud, AlertCircle, ArrowLeft, Calendar, BarChart3
+  TrendingUp, Cloud, AlertCircle, ArrowLeft, Calendar, BarChart3, CheckCircle
 } from 'lucide-react';
 import {
   energyDataManager,
@@ -203,21 +204,44 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   const [insightError, setInsightError] = useState<string | null>(null);
   const insightAbortRef = useRef<AbortController | null>(null);
 
+  // Applied recommendations state
+  const [appliedRecommendations, setAppliedRecommendations] = useState<string[]>([]);
+  const [activeScenario, setActiveScenario] = useState<string | null>(null);
+
+  // Feedback toast state for user actions
+  const [actionFeedback, setActionFeedback] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({ show: false, message: '', type: 'success' });
+
+  const showActionFeedback = (message: string, type: 'success' | 'error' = 'success') => {
+    setActionFeedback({ show: true, message, type });
+    setTimeout(() => setActionFeedback({ show: false, message: '', type: 'success' }), 3000);
+  };
+
+  const handleRecommendationApply = (recommendation: { id: string; title: string }) => {
+    setAppliedRecommendations(prev => [...prev, recommendation.id]);
+    // Persist to localStorage for session continuity
+    try {
+      const stored = JSON.parse(localStorage.getItem('ceip_applied_recommendations') || '[]');
+      localStorage.setItem('ceip_applied_recommendations', JSON.stringify([...stored, recommendation.id]));
+    } catch { /* ignore */ }
+    // Show parent-level success feedback
+    showActionFeedback(`✓ Recommendation "${recommendation.title}" applied successfully`, 'success');
+  };
+
+  const handleScenarioApply = (scenario: { id: string; name: string }) => {
+    setActiveScenario(scenario.id);
+    try {
+      localStorage.setItem('ceip_active_scenario', JSON.stringify({ id: scenario.id, name: scenario.name, appliedAt: new Date().toISOString() }));
+    } catch { /* ignore */ }
+    // Show parent-level success feedback
+    showActionFeedback(`✓ Scenario "${scenario.name}" applied successfully`, 'success');
+  };
+
   const handleBackToDashboard = () => {
-    if (typeof window === 'undefined' || typeof document === 'undefined') {
+    if (typeof window === 'undefined') {
       return;
     }
 
-    const { origin } = window.location;
-    const referrer = document.referrer;
-    const hasSameOriginReferrer = !!referrer && referrer.startsWith(origin);
-
-    if (hasSameOriginReferrer && window.history.length > 1) {
-      window.history.back();
-      return;
-    }
-
-    window.location.assign('/');
+    window.location.assign('/dashboard');
   };
 
   // Load analytics data
@@ -404,6 +428,19 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 py-8`}>
 
+        {/* Action Feedback Toast */}
+        {actionFeedback.show && typeof document !== 'undefined' && createPortal(
+          <div className={`fixed top-20 left-1/2 transform -translate-x-1/2 z-[120] px-6 py-3 rounded-lg shadow-lg text-sm font-medium flex items-center gap-2 ${
+            actionFeedback.type === 'success'
+              ? 'bg-green-100 text-green-800 border border-green-200'
+              : 'bg-red-100 text-red-800 border border-red-200'
+          }`}>
+            <CheckCircle className="h-4 w-4" />
+            {actionFeedback.message}
+          </div>,
+          document.body
+        )}
+
         {/* Renewable Penetration Heatmap - Uses real data with fallback */}
         <RenewablePenetrationHeatmap
           provincialData={(() => {
@@ -464,6 +501,8 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
             totalCapacity: 100000,
             peakDemand: 25000
           }}
+          onRecommendationApply={handleRecommendationApply}
+          onScenarioApply={handleScenarioApply}
         />
 
         {/* Reports Section */}
