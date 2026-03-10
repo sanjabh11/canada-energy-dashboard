@@ -202,6 +202,17 @@ export function EnterprisePage() {
                 path="/enterprise"
                 keywords={['enterprise energy platform', 'custom energy analytics', 'municipal energy enterprise', 'TIER compliance enterprise', 'Indigenous energy enterprise']}
             />
+            <style>{`
+                /* Suppress browser default red borders on invalid required fields */
+                input:invalid, select:invalid, textarea:invalid {
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
+                input:user-invalid, select:user-invalid, textarea:user-invalid {
+                    box-shadow: none !important;
+                    outline: none !important;
+                }
+            `}</style>
             {/* Header */}
             <header className="bg-gradient-to-r from-slate-800 to-slate-900 border-b border-slate-700">
                 <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
@@ -402,7 +413,7 @@ export function EnterprisePage() {
                             </Link>
                         </div>
                     ) : (
-                        <form onSubmit={handleSubmit} className="bg-slate-800/50 border border-slate-700 rounded-xl p-8">
+                        <form onSubmit={handleSubmit} className="bg-slate-800/50 border border-slate-700 rounded-xl p-8" noValidate>
                             <div className="grid md:grid-cols-2 gap-6 mb-6">
                                 <div>
                                     <label className="block text-sm text-slate-400 mb-2">Company Name *</label>

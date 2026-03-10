@@ -59,6 +59,45 @@ const EMISSION_FACTORS: Record<string, number> = {
   other: 400 // Conservative estimate
 };
 
+// Map Canadian fuel type names to standardized emission factor keys
+const GENERATION_TYPE_MAP: Record<string, string> = {
+  // Canadian dataset fuel types
+  'combustible fuels': 'gas',
+  'hydraulic turbine': 'hydro',
+  'hydraulic_turbine': 'hydro',
+  'wind power turbine': 'wind',
+  'wind_power_turbine': 'wind',
+  'other types of electricity generation': 'other',
+  'tidal power turbine': 'hydro', // Tidal is marine/hydro
+  'tidal_power_turbine': 'hydro',
+  'nuclear steam turbine': 'nuclear',
+  'nuclear_steam_turbine': 'nuclear',
+  // Standard names (passthrough)
+  'coal': 'coal',
+  'natural gas': 'gas',
+  'natural_gas': 'gas',
+  'gas': 'gas',
+  'oil': 'oil',
+  'petroleum': 'oil',
+  'diesel': 'oil',
+  'nuclear': 'nuclear',
+  'hydro': 'hydro',
+  'hydroelectric': 'hydro',
+  'wind': 'wind',
+  'solar': 'solar',
+  'biomass': 'biomass',
+  'geothermal': 'geothermal',
+  'other': 'other'
+};
+
+/**
+ * Normalize Canadian generation type names to standardized keys
+ */
+function normalizeGenerationType(type: string): string {
+  const normalized = type.toLowerCase().trim();
+  return GENERATION_TYPE_MAP[normalized] || 'other';
+}
+
 // Canadian national average for comparison (kg CO2/MWh)
 const CANADIAN_AVERAGE_INTENSITY = 130;
 
@@ -126,8 +165,8 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
     }
     
     const breakdown = validMix.map(source => {
-      const sourceType = source.source_type.toLowerCase().trim();
-      const emissionFactor = EMISSION_FACTORS[sourceType] || EMISSION_FACTORS['other'];
+      const normalizedType = normalizeGenerationType(source.source_type);
+      const emissionFactor = EMISSION_FACTORS[normalizedType] || EMISSION_FACTORS['other'];
       const co2_kg = source.capacity_mw * emissionFactor;
       
       return {
@@ -141,10 +180,10 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
     const total_co2_kg_hour = breakdown.reduce((sum, b) => sum + b.co2_kg, 0);
     const total_co2_tonnes_hour = total_co2_kg_hour / 1000;
     
-    // Calculate fossil vs renewable
-    const fossilSources = ['coal', 'natural gas', 'natural_gas', 'gas', 'oil', 'petroleum', 'diesel'];
+    // Calculate fossil vs renewable using normalized types
+    const fossilTypes = new Set(['coal', 'gas', 'oil', 'natural_gas', 'petroleum', 'diesel']);
     const fossil_co2 = breakdown
-      .filter(b => fossilSources.includes(b.source.toLowerCase().trim()))
+      .filter(b => fossilTypes.has(normalizeGenerationType(b.source)))
       .reduce((sum, b) => sum + b.co2_kg, 0);
     const renewable_co2 = total_co2_kg_hour - fossil_co2;
     

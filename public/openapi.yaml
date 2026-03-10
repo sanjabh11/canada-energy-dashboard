@@ -3,14 +3,16 @@ info:
   title: Canada Energy Intelligence Platform API
   version: 1.0.0
   description: |
-    **RESTful API for Canadian energy compliance, grid monitoring, and OCAP® data sovereignty.**
+    **RESTful API for Canadian energy data, compliance workflows, and stakeholder-ready exports.**
     
     The CEIP API enables third-party integrations for:
     - Alberta TIER compliance tracking
-    - Real-time grid monitoring (AESO pool prices)
+    - Alberta grid data access (AESO pool prices and related workflows)
     - Shadow billing & savings analysis
-    - OCAP®-compliant Indigenous data export
-    - Bank-ready green loan report generation
+    - OCAP®-aligned Indigenous reporting/export workflows
+    - bank-ready export package generation
+    
+    *Note: The endpoints below represent a core subset of the 40+ available commercial datasets in the CEIP API v2 architecture. Full access to all `api-v2-*` microservices is provided upon API key provisioning.*
     
     ## Authentication
     All requests require an API key in the `X-API-Key` header.
@@ -46,7 +48,7 @@ tags:
   - name: TIER Compliance
     description: Alberta TIER emission reduction credits and compliance tracking
   - name: Grid Data
-    description: Real-time Alberta grid monitoring (AESO)
+    description: Alberta grid monitoring with AESO-sourced data (live when available, historical fallback otherwise)
   - name: Billing & Savings
     description: Shadow billing and rate comparison
   - name: OCAP® Data
@@ -93,6 +95,56 @@ paths:
         '429':
           $ref: '#/components/responses/RateLimitExceeded'
 
+  /api/v2/grid-status:
+    get:
+      summary: Get grid status snapshots (live when available, cached fallback otherwise)
+      description: Returns recent grid status snapshots (demand, supply, reserve margin) for specified regions. Matches the actual `api-v2-grid-status` edge function.
+      operationId: getGridStatusV2
+      tags:
+        - Grid Data V2
+      parameters:
+        - name: region
+          in: query
+          required: false
+          description: Region to query (e.g., Ontario, Alberta)
+          schema:
+            type: string
+            example: "Ontario"
+        - name: limit
+          in: query
+          required: false
+          description: Number of recent snapshots to return
+          schema:
+            type: integer
+            default: 24
+      responses:
+        '200':
+          description: Grid status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  region:
+                    type: string
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        demand_mw:
+                          type: number
+                        supply_mw:
+                          type: number
+                        reserve_margin:
+                          type: number
+                        frequency_hz:
+                          type: number
+                        status:
+                          type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /tier/credits:
     get:
       summary: Get TIER credit holdings
@@ -124,7 +176,7 @@ paths:
   /grid/alberta/pool-price:
     get:
       summary: Get current Alberta pool price
-      description: Real-time AESO pool price and forecast
+      description: Current AESO pool price response with forecast/fallback metadata depending on source availability
       operationId: getPoolPrice
       tags:
         - Grid Data
