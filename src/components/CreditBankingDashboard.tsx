@@ -21,8 +21,12 @@ import {
     PlusCircle,
     Clock,
     Shield,
-    AlertTriangle
+    AlertTriangle,
+    ExternalLink
 } from 'lucide-react';
+import { useTIERPricing, calculateSavingsPercentage, getPricingDataQualityWarning, getTIERPricingProvenance } from '../lib/tierPricing';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 interface CreditHolding {
     id: string;
@@ -55,13 +59,16 @@ const COMPLIANCE_YEARS: ComplianceYear[] = [
     { year: 2027, liability: 17000, allocated: 0, remaining: 17000 },
 ];
 
-const CURRENT_MARKET_PRICE = 25.00;
-const TIER_FUND_PRICE = 95.00;
-
 export const CreditBankingDashboard: React.FC = () => {
     const [holdings] = useState<CreditHolding[]>(SAMPLE_HOLDINGS);
     const [showBuyModal, setShowBuyModal] = useState(false);
     const [buyQuantity, setBuyQuantity] = useState<number>(1000);
+    const tierPricing = useTIERPricing();
+    const CURRENT_MARKET_PRICE = tierPricing.marketCreditPrice;
+    const TIER_FUND_PRICE = tierPricing.fundPrice;
+    const SAVINGS_PERCENTAGE = calculateSavingsPercentage(tierPricing);
+    const pricingWarning = getPricingDataQualityWarning(tierPricing);
+    const pricingProvenance = getTIERPricingProvenance(tierPricing);
 
     // Portfolio calculations
     const portfolio = useMemo(() => {
@@ -107,6 +114,21 @@ export const CreditBankingDashboard: React.FC = () => {
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
             <div className="max-w-6xl mx-auto">
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                    <DataFreshnessBadge
+                        timestamp={pricingProvenance.lastUpdated}
+                        status={pricingProvenance.isFallback ? 'demo' : 'stale'}
+                        source={tierPricing.source}
+                    />
+                </div>
+                {pricingWarning && (
+                    <DataTrustNotice
+                        mode="fallback"
+                        title="TIER pricing snapshot disclosure"
+                        message={`${pricingWarning} Market-credit examples on this page should be treated as snapshot-era planning values, not a live quote.`}
+                        className="mb-6"
+                    />
+                )}
                 {/* Header */}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-4">
@@ -134,15 +156,15 @@ export const CreditBankingDashboard: React.FC = () => {
                     <div className="flex items-center gap-3">
                         <TrendingDown className="h-6 w-6 text-emerald-400" />
                         <div>
-                            <span className="text-emerald-400 font-semibold">Buyer's Market</span>
+                            <span className="text-emerald-400 font-semibold">Snapshot market view</span>
                             <span className="text-slate-400 ml-2">
-                                Credits at ${CURRENT_MARKET_PRICE}/t — {((1 - CURRENT_MARKET_PRICE / TIER_FUND_PRICE) * 100).toFixed(0)}% below $95 fund price
+                                Illustrative credits at ${CURRENT_MARKET_PRICE}/t — {SAVINGS_PERCENTAGE.toFixed(0)}% below the ${TIER_FUND_PRICE} TIER fund price
                             </span>
                         </div>
                     </div>
                     <div className="text-right">
                         <div className="text-2xl font-bold text-emerald-400">${CURRENT_MARKET_PRICE}</div>
-                        <div className="text-xs text-slate-400">Current EPC Price</div>
+                        <div className="text-xs text-slate-400">Illustrative EPC Snapshot</div>
                     </div>
                 </div>
 
@@ -186,7 +208,7 @@ export const CreditBankingDashboard: React.FC = () => {
                         <div className="text-3xl font-bold text-emerald-400">
                             {formatCurrency(portfolio.fundValueSaved)}
                         </div>
-                        <div className="text-sm text-emerald-400/70 mt-1">vs. paying $95/t</div>
+                        <div className="text-sm text-emerald-400/70 mt-1">vs. paying ${TIER_FUND_PRICE}/t</div>
                     </div>
 
                     <div className={`rounded-2xl p-5 border ${coverageRatio >= 80
@@ -294,19 +316,23 @@ export const CreditBankingDashboard: React.FC = () => {
                                 Banking Strategy
                             </h3>
                             <p className="text-slate-300 text-sm mb-4">
-                                With credits at ${CURRENT_MARKET_PRICE}/t (74% below fund price),
+                                With credits at ${CURRENT_MARKET_PRICE}/t ({SAVINGS_PERCENTAGE.toFixed(0)}% below fund price),
                                 now is an optimal time to bank for future compliance years before
                                 tightening stringency increases demand.
                             </p>
                             <div className="grid grid-cols-2 gap-3 text-sm">
                                 <div className="p-3 bg-slate-800/50 rounded-lg">
                                     <div className="text-slate-400">Fund Price</div>
-                                    <div className="text-lg font-bold text-red-400">$95/t</div>
+                                    <div className="text-lg font-bold text-red-400">${TIER_FUND_PRICE}/t</div>
                                 </div>
                                 <div className="p-3 bg-slate-800/50 rounded-lg">
                                     <div className="text-slate-400">Market Price</div>
                                     <div className="text-lg font-bold text-emerald-400">${CURRENT_MARKET_PRICE}/t</div>
                                 </div>
+                            </div>
+                            <div className="mt-3 pt-3 border-t border-slate-700/50 text-xs text-slate-500 flex items-center gap-1">
+                                <ExternalLink className="h-3 w-3" />
+                                <span>Prices from {tierPricing.source}, {tierPricing.effectiveDate}</span>
                             </div>
                         </div>
                     </div>

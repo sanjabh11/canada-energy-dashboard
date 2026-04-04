@@ -22,6 +22,7 @@ import {
     Leaf,
     ArrowRight
 } from 'lucide-react';
+import { getPricingDataQualityWarning, getTIERPricing } from '../lib/tierPricing';
 
 interface DirectInvestment {
     id: string;
@@ -59,6 +60,8 @@ const checkEligibility = (investment: Partial<DirectInvestment>): { eligible: bo
 };
 
 export const DIPAuditTrailGenerator: React.FC = () => {
+    const tierPricing = getTIERPricing();
+    const pricingWarning = getPricingDataQualityWarning(tierPricing);
     const [investments, setInvestments] = useState<DirectInvestment[]>([]);
     const [showAddForm, setShowAddForm] = useState(false);
     const [newInvestment, setNewInvestment] = useState<Partial<DirectInvestment>>({
@@ -97,8 +100,7 @@ export const DIPAuditTrailGenerator: React.FC = () => {
     const eligibleCapex = eligibleInvestments.reduce((sum, i) => sum + i.capexAmount, 0);
 
     // TIER credit value calculation
-    const TIER_FUND_PRICE = 95; // $/tonne
-    const potentialCreditValue = totalEmissionReduction * TIER_FUND_PRICE;
+    const potentialCreditValue = totalEmissionReduction * tierPricing.fundPrice;
 
     const generateAuditTrail = () => {
         // In production, this would generate a PDF
@@ -198,9 +200,17 @@ export const DIPAuditTrailGenerator: React.FC = () => {
                         <div className="text-3xl font-bold text-blue-400">
                             {formatCurrency(potentialCreditValue)}
                         </div>
-                        <div className="text-xs text-blue-400/70 mt-1">@ $95/tonne fund price</div>
+                        <div className="text-xs text-blue-400/70 mt-1">
+                            @{tierPricing.fundPrice}/tonne fund price · verified {tierPricing.lastVerifiedAt}
+                        </div>
                     </div>
                 </div>
+
+                {pricingWarning && (
+                    <div className="mb-6 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
+                        {pricingWarning}
+                    </div>
+                )}
 
                 {/* Add Investment Form Modal */}
                 {showAddForm && (

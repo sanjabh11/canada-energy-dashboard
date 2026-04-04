@@ -62,6 +62,17 @@ serve(async (req) => {
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
   const entitlement = await verifyExportEntitlement(req, supabase);
   if (!entitlement.allowed || !entitlement.principalType || !entitlement.principalId) {
+    // Log denial telemetry before returning 403
+    await logExportEvent(supabase, {
+      jobId: "",
+      eventName: "export_denied",
+      payload: {
+        reason: entitlement.reason ?? "Not entitled for official export.",
+        principalType: entitlement.principalType ?? "anonymous",
+        principalId: entitlement.principalId ?? "unknown",
+        status: entitlement.status || 403,
+      },
+    });
     return new Response(JSON.stringify({
       error: "Forbidden",
       reason: entitlement.reason ?? "Not entitled for official export.",

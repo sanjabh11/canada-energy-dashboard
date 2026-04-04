@@ -99,7 +99,7 @@ export const OpenAPIDocsPage: React.FC = () => {
                     <div className="prose prose-invert max-w-none">
                         <h2 className="text-3xl font-bold text-white mb-4">Get Started in 5 Minutes</h2>
                         <p className="text-xl text-slate-400 mb-8">
-                            RESTful API for Canadian energy compliance, grid monitoring, and OCAP® data sovereignty.
+                            RESTful API for Canadian energy data, compliance workflows, and consultant-ready exports.
                         </p>
 
                         <div className="grid md:grid-cols-3 gap-6 mb-12 not-prose">
@@ -107,9 +107,9 @@ export const OpenAPIDocsPage: React.FC = () => {
                                 <div className="p-3 bg-emerald-600/20 rounded-xl inline-block mb-4">
                                     <Zap className="h-6 w-6 text-emerald-400" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-white mb-2">Real-time Data</h3>
+                                <h3 className="text-lg font-semibold text-white mb-2">Consultant Data Pack</h3>
                                 <p className="text-sm text-slate-400">
-                                    AESO pool prices, TIER credit pricing, grid generation mix updated every 5 minutes.
+                                    Canadian energy datasets, compliance-oriented endpoints, and structured access paths for analyst workflows.
                                 </p>
                             </div>
 
@@ -117,9 +117,9 @@ export const OpenAPIDocsPage: React.FC = () => {
                                 <div className="p-3 bg-blue-600/20 rounded-xl inline-block mb-4">
                                     <Shield className="h-6 w-6 text-blue-400" />
                                 </div>
-                                <h3 className="text-lg font-semibold text-white mb-2">OCAP® Compliant</h3>
+                                <h3 className="text-lg font-semibold text-white mb-2">OCAP®-Aligned Pathway</h3>
                                 <p className="text-sm text-slate-400">
-                                    The only API built for Indigenous data sovereignty with audit trails.
+                                    Indigenous reporting and governance-informed workflow support should be positioned as early-access and co-design oriented.
                                 </p>
                             </div>
 
@@ -144,7 +144,7 @@ export const OpenAPIDocsPage: React.FC = () => {
                             </div>
 
                             <p className="text-slate-300 mb-4">
-                                Subscribe to our Professional tier ($149/mo) to receive 1,000 API calls per day.
+                                Start with the Consultant Data Pack / Professional tier ($149/mo) for 1,000 API calls per day, then move enterprise workflows into sales-assisted access as needed.
                             </p>
 
                             <div className="bg-slate-900 border border-slate-600 rounded-lg p-4">
@@ -301,7 +301,7 @@ export const OpenAPIDocsPage: React.FC = () => {
                         </div>
                     ) : (
                         <RedocComponent
-                            specUrl="/api/openapi.yaml"
+                            specUrl="/openapi.yaml"
                             options={{
                                 theme: {
                                     colors: {

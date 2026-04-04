@@ -14,6 +14,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Activity, CheckCircle, AlertTriangle, XCircle, Clock, Zap, Database, TrendingUp } from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 interface OpsHealthMetrics {
   ingestion_uptime_percent: number;
@@ -34,6 +35,13 @@ interface OpsHealthMetrics {
     freshness: 'meeting' | 'degraded';
   };
   monitoring_status?: 'Active' | 'Offline' | string;
+  last_heartbeat_at?: string | null;
+  stream_summary?: {
+    healthy: number;
+    degraded: number;
+    error: number;
+    total: number;
+  };
   timestamp: string;
 }
 
@@ -82,70 +90,22 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
 
     try {
       const headers = getEdgeHeaders();
-      const statusUrl = `${base}/api-v2-grid-status`;
-      const stabilityUrl = `${base}/api-v2-grid-stability-metrics`;
+      const response = await fetch(`${base}/ops-health`, { headers, signal: controller.signal });
 
-      const [statusResp, stabilityResp] = await Promise.all([
-        fetch(statusUrl, { headers, signal: controller.signal }),
-        fetch(stabilityUrl, { headers, signal: controller.signal })
-      ]);
-
-      if (!statusResp.ok || !stabilityResp.ok) {
-        throw new Error(`HTTP ${statusResp.status}/${stabilityResp.status}`);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
 
-      const statusJson: any = await statusResp.json();
-      const stabilityJson: any = await stabilityResp.json();
-
-      const records: any[] = Array.isArray(statusJson?.records) ? statusJson.records : [];
-      const latest = records[0] || null;
-      const capturedAt = latest?.captured_at ? new Date(latest.captured_at) : null;
-      const now = new Date();
-      
-      // If no records from API, generate synthetic fresh metrics
-      // This prevents showing stale 3961h freshness when using fallback data
-      const isSynthetic = !capturedAt || records.length === 0;
-      
-      // If no captured_at timestamp or no records, assume data is fresh (within 5 minutes)
-      // This prevents false "degraded" status when the API doesn't return timestamps
-      const freshnessMinutes = isSynthetic
-        ? 5  // Synthetic freshness - show as 5 minutes old (within healthy threshold)
-        : capturedAt
-          ? Math.max(0, Math.round((now.getTime() - capturedAt.getTime()) / 60000))
-          : 5;
-
-      const totalJobs = records.length || 0;
-      const successfulJobs = totalJobs; // assume success in absence of explicit failure metrics
-      const failedJobs = 0;
-
-      const metricsPayload: OpsHealthMetrics = {
-        ingestion_uptime_percent: 99.5,
-        forecast_job_success_rate: 99.0,
-        last_purge_run: stabilityJson?.last_updated || now.toISOString(),
-        avg_job_latency_ms: 250,
-        data_freshness_minutes: Number.isFinite(freshnessMinutes) ? freshnessMinutes : 999,
-        error_rate_percent: 0.0,
-        last_24h_jobs: {
-          total: totalJobs,
-          successful: successfulJobs,
-          failed: failedJobs,
-        },
-        slo_status: {
-          ingestion: freshnessMinutes <= 60 ? 'meeting' : 'degraded',
-          forecast: 'meeting',
-          latency: 'meeting',
-          freshness: freshnessMinutes <= 60 ? 'meeting' : 'degraded',
-        },
-        monitoring_status: 'Active',
-        timestamp: now.toISOString(),
-      };
+      const metricsPayload = await response.json() as OpsHealthMetrics;
 
       setMetrics(metricsPayload);
-      setLastUpdate(now);
+      setLastUpdate(metricsPayload.timestamp ? new Date(metricsPayload.timestamp) : new Date());
+      setEdgeDisabled(false);
       setError(null);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
       console.error('Failed to fetch ops health:', err);
+      setEdgeDisabled(false);
       setError(err.message || 'Failed to load');
     } finally {
       setLoading(false);
@@ -153,6 +113,16 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   };
 
   useEffect(() => {
+    // Check edge status immediately to avoid showing error state when offline
+    if (!getEdgeBaseUrl() || !isEdgeFetchEnabled()) {
+      if (import.meta.env.DEV) {
+        console.warn('OpsHealthPanel: Supabase Edge disabled on mount; showing offline state.');
+        setEdgeDisabled(true);
+        setLoading(false);
+        return;
+      }
+    }
+    
     fetchOpsHealth();
 
     if (autoRefresh) {
@@ -234,6 +204,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   }
 
   const overallStatus = getOverallStatus();
+  const freshnessTimestamp = metrics.last_heartbeat_at || metrics.timestamp;
 
   // Inline variant - single line status
   if (variant === 'inline') {
@@ -248,6 +219,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         <span className="text-xs text-tertiary">
           {metrics.ingestion_uptime_percent.toFixed(1)}% uptime
         </span>
+        <DataFreshnessBadge timestamp={freshnessTimestamp} staleThresholdMinutes={15} compact />
       </div>
     );
   }
@@ -292,6 +264,15 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         </div>
 
         <div className="card-body">
+          <div className="mb-4 flex items-center justify-between gap-sm">
+            <DataFreshnessBadge timestamp={freshnessTimestamp} staleThresholdMinutes={15} compact />
+            {metrics.stream_summary && (
+              <span className="text-xs text-tertiary">
+                Streams: {metrics.stream_summary.healthy}/{metrics.stream_summary.total} healthy
+              </span>
+            )}
+          </div>
+
           <div className="grid grid-cols-2 gap-md text-sm">
             <div className="space-y-1">
               <div className="flex items-center gap-sm text-tertiary text-xs uppercase tracking-wide">
@@ -366,6 +347,9 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
             <div>
               <h2 className="text-lg font-semibold text-primary">Operations Health</h2>
               <p className="text-sm text-secondary">SLO Metrics & System Status</p>
+              <div className="mt-2">
+                <DataFreshnessBadge timestamp={freshnessTimestamp} staleThresholdMinutes={15} compact />
+              </div>
             </div>
           </div>
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${

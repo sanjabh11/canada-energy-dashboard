@@ -44,36 +44,46 @@ const CANADA_GRID_CONTEXT = {
   currentAIDemand: 2, // GW estimated current AI/data center load
 };
 
-const calculateScenario = (aiDemandGW: number): ScenarioResult => {
+const calculateScenario = (aiDemandGW: number, targetYear: number): ScenarioResult => {
+  const currentYear = 2025;
+  const yearsToTarget = Math.max(1, targetYear - currentYear);
   const totalDemand = CANADA_GRID_CONTEXT.currentPeak + aiDemandGW;
   const availableCapacity = CANADA_GRID_CONTEXT.currentCapacity * (1 - CANADA_GRID_CONTEXT.reserveMargin);
   
-  // Grid stress calculation
+  // Grid stress calculation - more time to build = less stress
   const utilizationRate = totalDemand / availableCapacity;
+  const timeFactor = Math.min(1, 10 / yearsToTarget); // Less stress if more time to prepare
+  const adjustedUtilization = utilizationRate * timeFactor;
+  
   let gridStress: ScenarioResult['gridStress'];
-  if (utilizationRate < 0.7) gridStress = 'low';
-  else if (utilizationRate < 0.85) gridStress = 'moderate';
-  else if (utilizationRate < 0.95) gridStress = 'high';
+  if (adjustedUtilization < 0.7) gridStress = 'low';
+  else if (adjustedUtilization < 0.85) gridStress = 'moderate';
+  else if (adjustedUtilization < 0.95) gridStress = 'high';
   else gridStress = 'critical';
 
-  // Clean firm power required (24/7 baseload for AI)
-  const cleanFirmRequired = aiDemandGW * 1.2; // 20% buffer for reliability
+  // Clean firm power required (20% buffer for reliability)
+  const cleanFirmRequired = aiDemandGW * 1.2;
 
   // Emissions impact (if met with gas vs clean)
   // Gas emits ~0.4 tCO2/MWh, running 8760 hours/year
   const emissionsIfGas = aiDemandGW * 1000 * 8760 * 0.4 / 1000000; // Mt CO2e/year
 
   // Investment needed ($2-3B per GW for clean firm power)
-  const investmentNeeded = cleanFirmRequired * 2.5;
+  // Earlier target = higher cost (rush construction)
+  const costFactor = 1 + (1 / yearsToTarget); // 2x cost if target is next year, 1.1x if 10 years
+  const investmentNeeded = cleanFirmRequired * 2.5 * costFactor;
 
   // Jobs created (~3000 jobs per GW of clean energy)
-  const jobsCreated = Math.round(cleanFirmRequired * 3000);
+  // Earlier timeline = more concentrated job creation
+  const jobsCreated = Math.round(cleanFirmRequired * 3000 * costFactor);
 
   // Renewable gap (how much new capacity needed)
   const renewableGap = Math.max(0, totalDemand - availableCapacity);
 
-  // Nuclear/SMR needed for baseload (assume 40% of clean firm)
-  const nuclearNeeded = cleanFirmRequired * 0.4;
+  // Nuclear/SMR needed for baseload (40% of clean firm)
+  // More time = more SMR feasibility
+  const smrFeasibility = Math.min(1, yearsToTarget / 8); // SMR needs ~8 years
+  const nuclearNeeded = cleanFirmRequired * 0.4 * smrFeasibility;
 
   // Storage needed (4 hours of AI load)
   const storageNeeded = aiDemandGW * 4 * 1000; // GWh
@@ -106,7 +116,7 @@ export const AIDemandScenarioSlider: React.FC<AIDemandScenarioSliderProps> = ({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [targetYear, setTargetYear] = useState(2035);
 
-  const scenario = useMemo(() => calculateScenario(aiDemand), [aiDemand]);
+  const scenario = useMemo(() => calculateScenario(aiDemand, targetYear), [aiDemand, targetYear]);
   const stressStyle = stressColors[scenario.gridStress];
 
   // Interpolate demand based on year (linear growth from current to target)

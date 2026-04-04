@@ -226,7 +226,7 @@ export default function EnergyTrader({ user }: { user: WhopMiniUser | null }) {
                                 Master Energy Markets
                             </h3>
                             <p className="text-slate-400 mb-4">
-                                Upgrade to access advanced scenarios, real-time market data, and TIER compliance simulations.
+                                Upgrade to access advanced scenarios, live-when-available market feeds, and TIER compliance simulations.
                             </p>
                             <a
                                 href="https://whop.com/ignite-be15/?d2c=true&plan=pro"

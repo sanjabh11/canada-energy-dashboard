@@ -26,11 +26,6 @@ export function AuthButton() {
   const location = useLocation();
   const isWhopRoute = location.pathname.startsWith('/whop/') || 
                       location.pathname.startsWith('/whop-mini/');
-  
-  if (isWhopRoute) {
-    return null;
-  }
-
   const { user, tier, edubizUser, isWhopUser, isGuest, signOut } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -39,6 +34,10 @@ export function AuthButton() {
   useEffect(() => {
     setAuthModalOpener(() => setShowAuthModal(true));
   }, []);
+
+  if (isWhopRoute) {
+    return null;
+  }
 
   const handleSignOut = async () => {
     await signOut();

@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom';
+import { Toaster } from 'sonner';
 import { I18nProvider } from './components/I18nProvider';
 import { SkipToMain } from './components/ui/SkipToMain';
 import { ErrorBoundary } from './components/ErrorBoundary';
@@ -31,6 +32,7 @@ const ApiKeysPage = React.lazy(() => import('./components/ApiKeysPage').then(m =
 const FunderReportingDashboard = React.lazy(() => import('./components/FunderReportingDashboard'));
 const EmployersPage = React.lazy(() => import('./components/EmployersPage').then(m => ({ default: m.EmployersPage })));
 const IncubatorsPage = React.lazy(() => import('./components/IncubatorsPage').then(m => ({ default: m.IncubatorsPage })));
+const StakeholderOverview = React.lazy(() => import('./components/StakeholderOverview').then(m => ({ default: m.StakeholderOverview })));
 const TrainingCoordinatorsPage = React.lazy(() => import('./components/TrainingCoordinatorsPage').then(m => ({ default: m.TrainingCoordinatorsPage })));
 // Whop Integration Pages
 const WhopExperiencePage = React.lazy(() => import('./components/WhopExperiencePage').then(m => ({ default: m.WhopExperiencePage })));
@@ -69,9 +71,22 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
-// Open API Documentation (Gartner Integration) - preloaded above
+// Trust & Transparency Dashboards
+const ComplianceDashboard = React.lazy(() => import('./components/ComplianceDashboard').then(m => ({ default: m.ComplianceDashboard })));
+const StakeholderDashboard = React.lazy(() => import('./components/StakeholderDashboard').then(m => ({ default: m.StakeholderDashboard })));
+// AI Data Centre Dashboard standalone route
+const AIDataCentreDashboard = React.lazy(() => import('./components/AIDataCentreDashboard').then(m => ({ default: m.AIDataCentreDashboard })));
+// Natural Language Query Interface (NL2SQL)
+const AskDataPage = React.lazy(() => import('./components/AskDataPage').then(m => ({ default: m.AskDataPage })));
+// Multi-Source AI Assistant (Tool Calling)
+const EnergyCopilot = React.lazy(() => import('./components/EnergyCopilot').then(m => ({ default: m.EnergyCopilot })));
+// Automated Workflow Runner (Agent Framework)
+const AgentRunner = React.lazy(() => import('./components/AgentRunner').then(m => ({ default: m.AgentRunner })));
 // Whop Mini-App (Isolated, zero-auth for Whop App Store)
 const WhopMiniApp = React.lazy(() => import('./components/whop-mini/WhopMiniApp'));
+
+// System Status Page (Phase 0 Foundation)
+const StatusPage = React.lazy(() => import('./components/StatusPage'));
 
 // Lightweight loading fallback for Suspense
 function RouteLoader() {
@@ -115,6 +130,7 @@ const router = createBrowserRouter(
         // Forecast Benchmarking (standalone for consulting firms / regulatory)
         { path: '/forecast-benchmarking', element: <ForecastBenchmarkingPage /> },
         { path: '/forecast-evaluation', element: <ForecastBenchmarkingPage /> },
+        { path: '/forecasts', element: <ForecastBenchmarkingPage /> },
 
         // Renewable Energy Optimization Hub
         { path: '/renewable-optimization', element: <EnergyDataDashboard initialTab="RenewableOptimization" /> },
@@ -239,6 +255,36 @@ const router = createBrowserRouter(
 
         // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)
         { path: '/enterprise', element: <EnterprisePage /> },
+        { path: '/overview', element: <StakeholderOverview /> },
+        { path: '/stakeholders', element: <StakeholderOverview /> },
+
+        // Trust & Transparency Dashboards (Cycle 3 QA fixes)
+        { path: '/compliance', element: <ComplianceDashboard /> },
+        { path: '/stakeholder', element: <StakeholderDashboard /> },
+
+        // AI Data Centre Dashboard standalone route
+        { path: '/ai-datacentres', element: <AIDataCentreDashboard /> },
+        { path: '/ai-datacentre', element: <AIDataCentreDashboard /> },
+
+        // Natural Language Query Interface (NL2SQL)
+        { path: '/ask-data', element: <AskDataPage /> },
+        { path: '/nl2sql', element: <AskDataPage /> },
+        { path: '/query', element: <AskDataPage /> },
+
+        // Multi-Source AI Assistant (Tool Calling)
+        { path: '/copilot', element: <EnergyCopilot /> },
+        { path: '/assistant', element: <EnergyCopilot /> },
+
+        // Automated Workflow Runner (Agent Framework)
+        { path: '/agent', element: <AgentRunner /> },
+        { path: '/workflows', element: <AgentRunner /> },
+        { path: '/automation', element: <AgentRunner /> },
+
+        // /status page (Phase 0 Foundation - Uptime Monitoring)
+        { path: '/status', element: <StatusPage /> },
+
+        // /features opens as an overlay on the dashboard, not a standalone route
+        { path: '/features', element: <Navigate to="/" replace /> },
 
         // 404 catch-all
         { path: '*', element: <RouteErrorFallback /> },
@@ -257,6 +303,7 @@ function App() {
               <AuthProvider>
                 <HelpProvider>
                   <SkipToMain targetId="main-content" />
+                  <Toaster position="top-right" richColors />
                   <Suspense fallback={<RouteLoader />}>
                     <RouterProvider router={router} future={routerFutureConfig} />
                   </Suspense>

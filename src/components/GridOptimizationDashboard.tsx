@@ -8,6 +8,8 @@ import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { realDataService } from '../lib/realDataService';
 import { PartialFeatureWarning } from './FeatureStatusBadge';
 import { HelpButton } from './HelpButton';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 // Interfaces for Grid Optimization Dashboard
 export interface GridStatus {
@@ -292,6 +294,9 @@ const GridOptimizationDashboard: React.FC = () => {
     }));
   }, [recommendations]);
 
+  const gridLastUpdated = gridStatus[0]?.timestamp ?? stabilityMetrics?.lastUpdated ?? null;
+  const gridFreshnessStatus = isFallbackData ? 'demo' : connectionStatus === 'connected' ? 'live' : connectionStatus === 'fallback' ? 'demo' : 'unknown';
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -305,6 +310,14 @@ const GridOptimizationDashboard: React.FC = () => {
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="grid_optimization" />
+        {isFallbackData && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Fallback grid telemetry active"
+            message="Grid optimization is currently using fallback telemetry and calculated defaults because live upstream APIs are unavailable. Treat recommendations as indicative until live feeds recover."
+            className="mb-6"
+          />
+        )}
         
         <section className="hero-section mb-8">
           <div className="hero-content">
@@ -314,8 +327,15 @@ const GridOptimizationDashboard: React.FC = () => {
                   Grid Optimization Dashboard
                 </h1>
                 <p className="hero-subtitle mt-2">
-                  Real-time grid monitoring, stability analysis, and optimization recommendations
+                  {isFallbackData ? 'Fallback grid telemetry, stability analysis, and indicative optimization recommendations' : 'Grid monitoring, stability analysis, and optimization recommendations'}
                 </p>
+                <div className="mt-3">
+                  <DataFreshnessBadge
+                    timestamp={gridLastUpdated}
+                    status={gridFreshnessStatus}
+                    source={isFallbackData ? 'Fallback grid dataset' : isUsingRealData ? 'IESO stream' : 'Cached operational feed'}
+                  />
+                </div>
               </div>
               <HelpButton id="grid.optimization.overview" />
             </div>
@@ -437,10 +457,10 @@ const GridOptimizationDashboard: React.FC = () => {
             </div>
             <h3 className="text-lg font-semibold text-primary mb-2 metric-label">Data Source</h3>
             <p className="text-3xl font-bold text-orange-600 metric-value">
-              {isUsingRealData ? 'IESO' : 'MOCK'}
+              {isUsingRealData ? 'IESO' : isFallbackData ? 'FALLBACK' : 'OFFLINE'}
             </p>
             <p className="text-sm text-secondary mt-1">
-              {connectionStatus === 'connected' ? 'Real-time streaming' : 'Cached data'}
+              {connectionStatus === 'connected' ? 'Real-time streaming' : connectionStatus === 'fallback' || isFallbackData ? 'Fallback telemetry' : 'Cached data'}
             </p>
           </div>
         </div>
@@ -562,7 +582,7 @@ const GridOptimizationDashboard: React.FC = () => {
               connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
             }`}></span>
             <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'IESO Data Stream Active' : 'IESO Data Stream Offline'}
+              {connectionStatus === 'connected' ? 'IESO Data Stream Active' : connectionStatus === 'fallback' || isFallbackData ? 'IESO Data Stream In Fallback Mode' : 'IESO Data Stream Offline'}
             </span>
           </div>
         </div>

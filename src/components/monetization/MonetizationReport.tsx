@@ -30,7 +30,7 @@ export const FEATURE_MONETIZATION_DATA: FeatureMonetization[] = [
   {
     id: 'dashboard',
     name: 'Dashboard',
-    description: 'Real-time energy data streaming',
+    description: 'Live-when-available energy data streaming',
     rating: 5,
     estimatedValue: '$75,000/year',
     sponsorCategories: [
@@ -122,7 +122,7 @@ export const FEATURE_MONETIZATION_DATA: FeatureMonetization[] = [
   {
     id: 'carbon-emissions',
     name: 'Carbon Emissions',
-    description: 'Real-time emissions tracking',
+    description: 'Live-when-available emissions tracking',
     rating: 5,
     estimatedValue: '$70,000/year',
     sponsorCategories: [

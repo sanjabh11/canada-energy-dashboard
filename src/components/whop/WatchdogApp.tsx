@@ -37,7 +37,7 @@ export function WatchdogApp() {
         price: CEIP_PRICING.whop.whop_pro,
         currency: 'USD',
         interval: 'month' as const,
-        features: ['35+ dashboards', 'Real-time IESO + AESO', 'Hydrogen, CCUS, ESG', 'Data export', 'API access']
+        features: ['35+ dashboards', 'Live-when-available IESO + AESO', 'Hydrogen, CCUS, ESG', 'Data export', 'API access']
     };
 
     // Detect if in iframe (Whop context)

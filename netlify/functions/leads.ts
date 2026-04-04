@@ -7,6 +7,45 @@
 
 import { Handler, HandlerEvent, HandlerContext } from '@netlify/functions';
 
+const ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'https://canada-energy.netlify.app',
+  'https://ceip.netlify.app',
+];
+
+function resolveOrigin(origin: string | undefined): string {
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    return origin;
+  }
+
+  return ALLOWED_ORIGINS[0];
+}
+
+function corsHeaders(origin: string | undefined) {
+  return {
+    'Access-Control-Allow-Origin': resolveOrigin(origin),
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json'
+  };
+}
+
+function getSupabaseConfig(): { supabaseUrl: string; supabaseKey: string } {
+  const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL || '';
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SERVICE_ROLE_KEY ||
+    process.env.SB_SERVICE_ROLE_KEY ||
+    '';
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Server-side Supabase configuration is missing for lead persistence');
+  }
+
+  return { supabaseUrl, supabaseKey };
+}
+
 interface LeadIntentPayload {
   email?: string;
   userId?: string;
@@ -24,6 +63,28 @@ interface LeadLifecyclePayload {
   tierInterest?: string;
   persona?: string;
   metadata?: Record<string, any>;
+}
+
+interface LeadIntakeSubmissionPayload {
+  company_name?: string | null;
+  contact_name?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  team_size?: string | null;
+  industry?: string | null;
+  message?: string | null;
+  source_route?: string | null;
+  channel?: string | null;
+  segment?: string | null;
+  campaign_id?: string | null;
+  metadata?: Record<string, any>;
+}
+
+function clamp(value: string | null | undefined, maxLength: number): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  return trimmed.slice(0, maxLength);
 }
 
 /**
@@ -50,13 +111,7 @@ function determineLifecycleState(intentType: string, currentState?: string): str
  * Store lead intent in Supabase
  */
 async function storeLeadIntent(payload: LeadIntentPayload): Promise<void> {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('[Leads] Supabase not configured, skipping database storage');
-    return;
-  }
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
 
   const response = await fetch(`${supabaseUrl}/rest/v1/lead_intent`, {
     method: 'POST',
@@ -82,17 +137,42 @@ async function storeLeadIntent(payload: LeadIntentPayload): Promise<void> {
   }
 }
 
+async function storeLeadIntakeSubmission(payload: LeadIntakeSubmissionPayload): Promise<void> {
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
+  const response = await fetch(`${supabaseUrl}/rest/v1/lead_intake_submissions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'apikey': supabaseKey,
+      'Authorization': `Bearer ${supabaseKey}`,
+      'Prefer': 'return=minimal'
+    },
+    body: JSON.stringify({
+      company_name: clamp(payload.company_name, 200),
+      contact_name: clamp(payload.contact_name, 200),
+      email: clamp(payload.email, 320),
+      phone: clamp(payload.phone, 64),
+      team_size: clamp(payload.team_size, 32),
+      industry: clamp(payload.industry, 64),
+      message: clamp(payload.message, 4000),
+      source_route: clamp(payload.source_route, 128),
+      channel: clamp(payload.channel, 32),
+      segment: clamp(payload.segment, 64),
+      campaign_id: clamp(payload.campaign_id, 128),
+      metadata: payload.metadata || {}
+    })
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to store lead intake submission: ${response.statusText}`);
+  }
+}
+
 /**
  * Update lead lifecycle state
  */
 async function updateLeadLifecycle(payload: LeadLifecyclePayload): Promise<void> {
-  const supabaseUrl = process.env.VITE_SUPABASE_URL;
-  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseKey) {
-    console.warn('[Leads] Supabase not configured, skipping lifecycle update');
-    return;
-  }
+  const { supabaseUrl, supabaseKey } = getSupabaseConfig();
 
   // First, try to get existing lifecycle record
   const getResponse = await fetch(
@@ -165,13 +245,7 @@ async function updateLeadLifecycle(payload: LeadLifecyclePayload): Promise<void>
 }
 
 export const handler: Handler = async (event: HandlerEvent, context: HandlerContext) => {
-  // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Content-Type': 'application/json'
-  };
+  const headers = corsHeaders(event.headers.origin);
 
   // Handle preflight
   if (event.httpMethod === 'OPTIONS') {
@@ -190,6 +264,26 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
   try {
     const body = JSON.parse(event.body || '{}');
     const action = body.action || 'capture';
+
+    if (action === 'intake') {
+      const submission = body.submission as LeadIntakeSubmissionPayload | undefined;
+
+      if (!submission?.contact_name || !submission?.email || !submission?.source_route || !submission?.segment || !submission?.campaign_id) {
+        return {
+          statusCode: 400,
+          headers,
+          body: JSON.stringify({ error: 'Missing required lead intake fields' })
+        };
+      }
+
+      await storeLeadIntakeSubmission(submission);
+
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({ success: true, message: 'Lead intake stored' })
+      };
+    }
 
     if (action === 'intent') {
       // Track lead intent
@@ -226,30 +320,12 @@ export const handler: Handler = async (event: HandlerEvent, context: HandlerCont
     }
 
     if (action === 'lifecycle') {
-      // Update lifecycle state
-      const lifecyclePayload: LeadLifecyclePayload = {
-        email: body.email,
-        userId: body.userId,
-        newState: body.newState,
-        tierInterest: body.tierInterest,
-        persona: body.persona,
-        metadata: body.metadata
-      };
-
-      if (!lifecyclePayload.email) {
-        return {
-          statusCode: 400,
-          headers,
-          body: JSON.stringify({ error: 'Email is required for lifecycle updates' })
-        };
-      }
-
-      await updateLeadLifecycle(lifecyclePayload);
-
       return {
-        statusCode: 200,
+        statusCode: 403,
         headers,
-        body: JSON.stringify({ success: true, message: 'Lifecycle updated' })
+        body: JSON.stringify({
+          error: 'Lifecycle updates are restricted to internal workflow jobs'
+        })
       };
     }
 

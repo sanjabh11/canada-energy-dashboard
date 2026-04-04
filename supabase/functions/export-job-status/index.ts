@@ -8,6 +8,7 @@ import { applyRateLimit } from "../_shared/rateLimit.ts";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const EXPORT_SIGNED_URL_TTL_SECONDS = Number(Deno.env.get("EXPORT_SIGNED_URL_TTL_SECONDS") || "86400");
+const EXPORT_STORAGE_BUCKET = Deno.env.get("EXPORT_STORAGE_BUCKET") || "exports";
 
 function getJobId(url: URL): string {
   return url.searchParams.get("id")?.trim() || "";
@@ -156,7 +157,7 @@ serve(async (req) => {
     const storagePath = String(job.output_storage_path);
     const { data: signedData, error: signedError } = await supabase
       .storage
-      .from("exports")
+      .from(EXPORT_STORAGE_BUCKET)
       .createSignedUrl(storagePath, EXPORT_SIGNED_URL_TTL_SECONDS);
 
     if (signedError || !signedData?.signedUrl) {

@@ -7,6 +7,7 @@ import { useMessageSentiment, useNLPHealth } from '../hooks/useNLP';
 import { SentimentUtils } from '../lib/nlpService';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, Bar } from 'recharts';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
+import DataTrustNotice from './DataTrustNotice';
 
 // Interfaces for Stakeholder dashboard data
 export interface Stakeholder {
@@ -76,7 +77,7 @@ export const StakeholderDashboard: React.FC = () => {
   const [currentUser] = useState({ id: 'user1', name: 'Consultation Coordinator' });
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Use WebSocket for real-time consultation
+  // Use WebSocket for consultation updates
   const {
     messages: wsMessages,
     connectionStatus: wsConnectionStatus,
@@ -86,8 +87,9 @@ export const StakeholderDashboard: React.FC = () => {
     sendMessage: sendWsMessage
   } = useWebSocketConsultation(selectedConsultation);
 
-  // Use streaming data for real-time updates
+  // Use streaming data for updates
   const { data: stakeholderData, connectionStatus } = useStreamingData('stakeholder');
+  const isUsingFallbackData = connectionStatus === 'fallback' || (connectionStatus !== 'connected' && stakeholderData.length === 0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,22 +189,23 @@ export const StakeholderDashboard: React.FC = () => {
   const sendMessage = async () => {
     if (!newMessage.trim()) return;
 
+    const message: CollaborationMessage = {
+      id: Date.now().toString(),
+      senderId: currentUser.id,
+      senderName: currentUser.name,
+      content: newMessage,
+      timestamp: new Date().toISOString(),
+      type: 'message'
+    };
+
     try {
-      // Send via WebSocket for real-time communication
       if (wsConnected) {
-        sendWsMessage(newMessage);
+        // Add to local state immediately for instant feedback when the socket is available
+        setMessages(prev => [...prev, message]);
         setNewMessage('');
+        sendWsMessage(newMessage);
       } else {
         // Fallback to HTTP API if WebSocket not connected
-        const message: CollaborationMessage = {
-          id: Date.now().toString(),
-          senderId: currentUser.id,
-          senderName: currentUser.name,
-          content: newMessage,
-          timestamp: new Date().toISOString(),
-          type: 'message'
-        };
-
         await fetch('/api/stakeholder/messages', {
           method: 'POST',
           headers: {
@@ -210,7 +213,6 @@ export const StakeholderDashboard: React.FC = () => {
           },
           body: JSON.stringify(message),
         });
-
         setMessages(prev => [...prev, message]);
         setNewMessage('');
       }
@@ -342,6 +344,15 @@ export const StakeholderDashboard: React.FC = () => {
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="stakeholder_coordination" />
 
+        {isUsingFallbackData && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Illustrative stakeholder data in use"
+            message="Stakeholder coordination is currently displaying sample stakeholder records and consultation history for demonstration. Contact information and meeting records are illustrative examples only."
+            className="mb-6"
+          />
+        )}
+
         <section className="hero-section hero-section--compact mb-8">
           <div className="hero-content">
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
@@ -351,7 +362,7 @@ export const StakeholderDashboard: React.FC = () => {
                   <HelpButton id="module.stakeholder.overview" />
                 </div>
                 <p className="hero-subtitle mt-2">
-                  Manage consultations, track feedback, and collaborate in real-time
+                  Manage consultations, track feedback, and collaborate in one shared workspace
                 </p>
               </div>
               <div className="self-start">
@@ -601,10 +612,10 @@ export const StakeholderDashboard: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
+              connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'fallback' ? 'bg-amber-500' : 'bg-red-500'
             }`}></span>
             <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'Data Stream Active' : 'Data Stream Offline'}
+              {connectionStatus === 'connected' ? 'Data Stream Active' : connectionStatus === 'fallback' ? 'Using Backup Data' : 'Data Stream Offline'}
             </span>
           </div>
         </div>

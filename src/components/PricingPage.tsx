@@ -31,7 +31,7 @@ const pricingTiers: PricingTier[] = [
     {
         id: 'free',
         name: 'Free',
-        description: 'Real-time grid monitoring for consumers',
+        description: 'Consumer grid monitoring with live-when-available data and transparent fallback labeling',
         monthlyPrice: 0,
         price: '$0',
         priceDetail: 'forever',
@@ -55,20 +55,20 @@ const pricingTiers: PricingTier[] = [
         priceId: 'pri_consumer_monthly',
         annualMode: 'not_available',
         features: [
-            'Bill auditing & error detection',
-            'Retailer switching recommendations',
-            'Peak shaving alerts (save 15%)',
+            'Retailer rate comparison',
+            'RoLR vs fixed-rate monitoring',
+            'Retailer switching guidance',
             'Historical rate analytics',
             'Unlimited price alerts',
         ],
-        ctaText: 'Start Saving $500/yr',
+        ctaText: 'Track Rates Now',
         icon: <Sparkles className="w-6 h-6" />,
         badge: 'Most Popular',
         highlighted: true,
     },
     {
         id: 'professional',
-        name: 'Professional',
+        name: 'Consultant Data Pack',
         description: 'For energy consultants & advisors',
         monthlyPrice: CEIP_PRICING.direct.professional,
         price: formatUsd(CEIP_PRICING.direct.professional),
@@ -96,12 +96,12 @@ const pricingTiers: PricingTier[] = [
         priceId: 'pri_industrial_monthly',
         annualMode: 'not_available',
         features: [
-            'Live TIER credit pricing (EPC/Offsets)',
-            'Arbitrage alerts: Buy at $25, not $95',
-            'Direct Investment audit trail',
-            'Bank-ready compliance reports',
+            'TIER pathway comparison workflow',
+            'Compliance scenario analysis',
+            'Direct Investment scenario support',
+            'Compliance pack workflow',
             'Dedicated compliance manager',
-            '776% avg client ROI',
+            'Sales-assisted ROI review',
         ],
         ctaText: 'Calculate My Savings',
         icon: <Building2 className="w-6 h-6" />,
@@ -138,16 +138,16 @@ const pricingTiers: PricingTier[] = [
         priceId: 'pri_indigenous_monthly',
         annualMode: 'sales_assisted',
         features: [
-            'OCAP® compliant architecture',
-            'Nation-controlled encryption keys',
-            'Greener Homes grant automation',
+            'OCAP®-aligned architecture',
+            'Community-governed data workflow planning',
+            'Grant and funder reporting workflow',
             'AICEI reporting templates',
             'Capacity building support',
             'ISC grant-aligned pricing',
         ],
         ctaText: 'Book Consultation',
         icon: <Shield className="w-6 h-6" />,
-        thresholdNote: 'Data sovereignty guaranteed',
+        thresholdNote: 'Sales-assisted implementation',
     },
 ];
 
@@ -277,7 +277,7 @@ export const PricingPage: React.FC = () => {
                     Turn Compliance into Profit
                 </h1>
                 <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-                    Why pay $95/tonne when credits trade at $25? Automate your TIER arbitrage and save 776% more.
+                    Move from manual energy and compliance workflows to stakeholder-ready analysis, exports, and sales-assisted implementation.
                 </p>
 
                 <div className="mt-6 mx-auto max-w-4xl rounded-xl border border-slate-700 bg-slate-900/60 p-4 text-sm">
@@ -328,7 +328,7 @@ export const PricingPage: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-2">
                     <Check className="w-4 h-4 text-emerald-500" />
-                    <span>CAD Billing</span>
+                    <span>Transparent monthly pricing</span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Star className="w-4 h-4 text-emerald-500" />

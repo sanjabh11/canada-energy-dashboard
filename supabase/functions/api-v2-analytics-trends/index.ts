@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -43,6 +44,16 @@ type DemandRow = {
   average_mw: number | null;
 };
 
+type DemandSeriesResult = {
+  rows: DemandRow[];
+  provenance: {
+    source: string;
+    last_updated: string | null;
+    freshness_status: 'live' | 'stale' | 'demo' | 'unknown';
+    is_fallback: boolean;
+  };
+};
+
 async function loadGenerationSeries(windowStart: string): Promise<GenerationRow[]> {
   if (!supabase) return [];
 
@@ -58,6 +69,15 @@ async function loadGenerationSeries(windowStart: string): Promise<GenerationRow[
   }
 
   return (data ?? []) as GenerationRow[];
+}
+
+function getLatestDate(values: string[]): string | null {
+  const valid = values
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  return valid[0]?.toISOString() ?? null;
 }
 
 /**
@@ -98,10 +118,19 @@ function generateSyntheticDemandData(windowStart: string, days: number): DemandR
   return result;
 }
 
-async function loadOntarioDemandSeries(windowStart: string, days: number): Promise<DemandRow[]> {
+async function loadOntarioDemandSeries(windowStart: string, days: number): Promise<DemandSeriesResult> {
   if (!supabase) {
     console.warn('No Supabase client, using synthetic demand data');
-    return generateSyntheticDemandData(windowStart, days);
+    const rows = generateSyntheticDemandData(windowStart, days);
+    return {
+      rows,
+      provenance: buildDataProvenance({
+        source: 'Synthetic Ontario demand model',
+        lastUpdated: getLatestDate(rows.map((row) => row.bucket_date)),
+        isFallback: true,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
   const { data, error } = await supabase
@@ -118,7 +147,16 @@ async function loadOntarioDemandSeries(windowStart: string, days: number): Promi
 
     if (fallbackError) {
       console.error('Ontario demand fallback query failed, using synthetic data', fallbackError);
-      return generateSyntheticDemandData(windowStart, days);
+      const rows = generateSyntheticDemandData(windowStart, days);
+      return {
+        rows,
+        provenance: buildDataProvenance({
+          source: 'Synthetic Ontario demand model',
+          lastUpdated: getLatestDate(rows.map((row) => row.bucket_date)),
+          isFallback: true,
+          staleAfterHours: 24,
+        }),
+      };
     }
 
     const buckets = new Map<string, { sum: number; count: number }>();
@@ -142,10 +180,27 @@ async function loadOntarioDemandSeries(windowStart: string, days: number): Promi
     // If we got less than 3 days of data, use synthetic data instead
     if (aggregated.length < 3) {
       console.warn(`Only ${aggregated.length} days of demand data found, using synthetic data`);
-      return generateSyntheticDemandData(windowStart, days);
+      const rows = generateSyntheticDemandData(windowStart, days);
+      return {
+        rows,
+        provenance: buildDataProvenance({
+          source: 'Synthetic Ontario demand model',
+          lastUpdated: getLatestDate(rows.map((row) => row.bucket_date)),
+          isFallback: true,
+          staleAfterHours: 24,
+        }),
+      };
     }
 
-    return aggregated;
+    return {
+      rows: aggregated,
+      provenance: buildDataProvenance({
+        source: 'Ontario hourly demand manual aggregation',
+        lastUpdated: getLatestDate(aggregated.map((row) => row.bucket_date)),
+        isFallback: false,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
   const result = (data ?? []) as DemandRow[];
@@ -153,10 +208,27 @@ async function loadOntarioDemandSeries(windowStart: string, days: number): Promi
   // If we got less than 3 days of data, use synthetic data instead
   if (result.length < 3) {
     console.warn(`Only ${result.length} days of demand data found, using synthetic data`);
-    return generateSyntheticDemandData(windowStart, days);
+    const rows = generateSyntheticDemandData(windowStart, days);
+    return {
+      rows,
+      provenance: buildDataProvenance({
+        source: 'Synthetic Ontario demand model',
+        lastUpdated: getLatestDate(rows.map((row) => row.bucket_date)),
+        isFallback: true,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
-  return result;
+  return {
+    rows: result,
+    provenance: buildDataProvenance({
+      source: 'Ontario hourly demand daily average',
+      lastUpdated: getLatestDate(result.map((row) => row.bucket_date)),
+      isFallback: false,
+      staleAfterHours: 24,
+    }),
+  };
 }
 
 function transformGeneration(rows: GenerationRow[]): {
@@ -251,16 +323,17 @@ serve(async (req) => {
   const windowStartStr = windowStart.toISOString().slice(0, 10);
 
   try {
-    const [generationRows, demandRows] = await Promise.all([
+    const [generationRows, demandSeries] = await Promise.all([
       loadGenerationSeries(windowStartStr),
       loadOntarioDemandSeries(windowStartStr, timeframe.days),
     ]);
 
     const generationSeries = transformGeneration(generationRows);
-    const demandSeries = transformDemand(demandRows);
+    const demandRows = demandSeries.rows;
+    const transformedDemandSeries = transformDemand(demandRows);
     const observedWindow = resolveObservedWindow(
       generationRows,
-      demandSeries,
+      transformedDemandSeries,
       windowStartStr,
       windowEnd.toISOString().slice(0, 10),
     );
@@ -269,7 +342,13 @@ serve(async (req) => {
     const effectiveDays = Math.min(uniqueGenDates.size, timeframe.days);
     const completenessPct = timeframe.days > 0 ? (effectiveDays / timeframe.days) * 100 : 0;
     const excludedDays = timeframe.days - effectiveDays;
-    const demandSampleCount = demandSeries.length;
+    const demandSampleCount = transformedDemandSeries.length;
+    const generationProvenance = buildDataProvenance({
+      source: 'provincial_generation',
+      lastUpdated: getLatestDate(generationRows.map((row) => row.date)),
+      isFallback: generationRows.length === 0,
+      staleAfterHours: 24 * 7,
+    });
 
     const payload = {
       timeframe: timeframe.label,
@@ -280,13 +359,22 @@ serve(async (req) => {
         days_effective: effectiveDays,
       },
       generation: generationSeries,
-      ontario_demand: demandSeries,
+      ontario_demand: transformedDemandSeries,
       metadata: {
-        sources: ['provincial_generation', 'ontario_hourly_demand'],
+        sources: [generationProvenance.source, demandSeries.provenance.source],
         completeness_pct: parseFloat(completenessPct.toFixed(2)),
         excluded_days_below_threshold: Math.max(0, excludedDays),
         completeness_threshold_pct: 95,
         demand_sample_count: demandSampleCount,
+        provenance: {
+          generation: generationProvenance,
+          ontario_demand: demandSeries.provenance,
+        },
+        is_fallback: generationProvenance.is_fallback || demandSeries.provenance.is_fallback,
+      },
+      provenance: {
+        generation: generationProvenance,
+        ontario_demand: demandSeries.provenance,
       },
     };
 

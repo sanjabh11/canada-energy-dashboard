@@ -6,7 +6,8 @@
  */
 
 import React, { useState } from 'react';
-import { Settings, Users, Lock, Info, ChevronUp, X } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { cn } from '../lib/utils';
 
 export interface FooterMenuItem {
@@ -144,7 +145,7 @@ export const FooterSettingsMenu: React.FC<FooterSettingsMenuProps> = ({
         <div className="max-w-screen-2xl mx-auto px-6 py-3">
           <div className="flex items-center justify-between">
             {/* Left: Label */}
-            <div className="flex items-center gap-3">
+            <Link to="/settings" className="flex items-center gap-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-400/70">
               <div className="bg-slate-700 rounded-lg p-2">
                 <Settings className="h-4 w-4 text-slate-300" />
               </div>
@@ -152,7 +153,7 @@ export const FooterSettingsMenu: React.FC<FooterSettingsMenuProps> = ({
                 <div className="text-sm font-semibold text-white">Settings & More</div>
                 <div className="text-xs text-slate-400">Additional features and tools</div>
               </div>
-            </div>
+            </Link>
 
             {/* Right: Menu Items */}
             <div className="flex items-center gap-2">

@@ -44,6 +44,8 @@ const ForecastBenchmarkingPage: React.FC = () => {
             <DataFreshnessBadge
               snapshotDate={DATA_SNAPSHOT_DATE}
               snapshotLabel={DATA_SNAPSHOT_LABEL}
+              isFallback
+              source="AESO snapshot / benchmark baselines"
             />
           </div>
         </div>
@@ -60,6 +62,9 @@ const ForecastBenchmarkingPage: React.FC = () => {
                 Compare your renewable energy forecasts against standard statistical baselines 
                 used across the industry. We evaluate accuracy across multiple time horizons 
                 (1h to 48h) using MAE, MAPE, and RMSE metrics.
+              </p>
+              <p className="text-xs text-amber-200/90">
+                Current baselines are static benchmark datasets. Treat them as demo/training references until live provenance is wired through the forecasting pipeline.
               </p>
               <div className="grid md:grid-cols-3 gap-4 text-sm">
                 <div className="bg-slate-800/50 rounded-lg p-3">

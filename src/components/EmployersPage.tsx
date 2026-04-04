@@ -38,8 +38,8 @@ import { SEOHead, SEO_CONFIGS } from './SEOHead';
 const CASE_STUDIES = [
   {
     id: 'aeso-integration',
-    title: 'Real-Time AESO Grid Analytics',
-    description: 'Live integration with Alberta Electric System Operator APIs for demand monitoring, pool pricing, and storage dispatch tracking.',
+    title: 'AESO Grid Analytics',
+    description: 'Live-when-available integration with Alberta Electric System Operator APIs for demand monitoring, pool pricing, and storage dispatch tracking.',
     metrics: [
       { label: 'Data Latency', value: '<1 sec' },
       { label: 'Uptime', value: '99.9%' },
@@ -162,7 +162,7 @@ export function EmployersPage() {
             {/* Right: Live Dashboard Preview */}
             <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
               <div className="bg-slate-700 px-4 py-3 flex items-center justify-between">
-                <span className="text-sm text-slate-300 font-medium">Live Dashboard Demo</span>
+                <span className="text-sm text-slate-300 font-medium">Dashboard Demo</span>
                 <Link
                   to="/"
                   className="text-sm text-emerald-400 hover:text-emerald-300 flex items-center gap-1"
@@ -180,7 +180,7 @@ export function EmployersPage() {
                       className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
                     >
                       <Play className="h-4 w-4" />
-                      Launch Live Demo
+                      Launch Demo
                     </Link>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export function EmployersPage() {
             <HelpButton id="page.employers.casestudies" />
           </div>
           <p className="text-slate-400 mb-8">
-            Proof of capability: These features are live on this platform. Click to explore.
+            Proof of capability: These features are available on this platform. Click to explore.
           </p>
 
           <div className="grid lg:grid-cols-3 gap-6">

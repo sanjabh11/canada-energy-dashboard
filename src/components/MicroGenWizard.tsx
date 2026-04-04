@@ -181,21 +181,21 @@ export function MicroGenWizard() {
         setCurrentStep(prev => Math.max(prev - 1, 1));
     };
 
-    const generatePermitPack = () => {
+    const generatePermitPack = async () => {
         try {
-            generatePermitPackagePDF(formData, calculations);
+            await generatePermitPackagePDF(formData, calculations);
         } catch (error) {
             console.error('PDF generation failed:', error);
-            alert('PDF generation requires jspdf library. Please install with: npm install jspdf');
+            alert('PDF generation is currently unavailable. Please try again.');
         }
     };
 
-    const generateAUCFormOnly = () => {
+    const generateAUCFormOnly = async () => {
         try {
-            generateAUCFormPDF(formData, calculations);
+            await generateAUCFormPDF(formData, calculations);
         } catch (error) {
             console.error('PDF generation failed:', error);
-            alert('PDF generation requires jspdf library. Please install with: npm install jspdf');
+            alert('PDF generation is currently unavailable. Please try again.');
         }
     };
 

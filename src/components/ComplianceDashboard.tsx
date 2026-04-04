@@ -16,6 +16,7 @@ import { fetchEdgePostJson, type EdgeFetchOptions } from '../lib/edge';
 import { ENDPOINTS } from '../lib/constants';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 import { HelpButton } from './HelpButton';
+import DataTrustNotice from './DataTrustNotice';
 
 interface ComplianceRecord {
   id: string;
@@ -180,6 +181,7 @@ export const ComplianceDashboard: React.FC = () => {
   const [remediationAdvice, setRemediationAdvice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
+  const [usingMockData, setUsingMockData] = useState(true);
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -313,7 +315,15 @@ export const ComplianceDashboard: React.FC = () => {
     <div className="space-y-6">
       {/* Feature Info */}
       <AcceptableFeatureInfo featureId="compliance_monitoring" />
-      
+
+      {usingMockData && (
+        <DataTrustNotice
+          mode="mock"
+          title="Illustrative compliance data in use"
+          message="Regulatory compliance monitoring is displaying sample projects, violations, and audit records for demonstration. Compliance scores, violation statuses, and remediation advice are illustrative examples only."
+        />
+      )}
+
       {/* Dashboard Header */}
         <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
           <div className="flex items-center space-x-4 mb-4">

@@ -1,6 +1,6 @@
 /**
  * Weather API Integration Service
- * Fetches real-time weather data for renewable energy forecasting
+ * Fetches current weather data for renewable energy forecasting
  * 
  * APIs Used:
  * 1. Environment Canada (Free, official Canadian data)
@@ -275,31 +275,11 @@ export function extractWeatherFeatures(
 export async function storeWeatherObservation(
   observation: WeatherObservation
 ): Promise<boolean> {
-  try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase configuration missing');
-      return false;
-    }
-
-    const response = await fetch(`${supabaseUrl}/rest/v1/weather_observations`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'apikey': supabaseKey,
-        'Authorization': `Bearer ${supabaseKey}`,
-        'Prefer': 'return=minimal',
-      },
-      body: JSON.stringify(observation),
-    });
-
-    return response.ok;
-  } catch (error) {
-    console.error('Failed to store weather observation:', error);
-    return false;
-  }
+  console.warn(
+    'storeWeatherObservation is deprecated in the client; use the weather-ingestion-cron or a server-side writer instead.',
+    observation.source
+  );
+  return false;
 }
 
 /**

@@ -88,11 +88,11 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     }, []);
 
     const openCheckout = (priceId: string) => {
-        if (!paddle) {
-            console.error('Paddle not initialized');
+        if (!paddle || PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
+            console.error('Paddle not initialized or using test token');
             trackEvent('checkout_fallback_redirected', {
                 provider: 'paddle',
-                reason: 'not_initialized',
+                reason: !paddle ? 'not_initialized' : 'test_token',
                 price_id: priceId
             });
             handleCheckoutFallback(priceId);

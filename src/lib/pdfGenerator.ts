@@ -10,8 +10,6 @@
  * - System Summary
  */
 
-import jsPDF from 'jspdf';
-
 export interface MicroGenFormData {
   address: string;
   postalCode: string;
@@ -49,14 +47,19 @@ const UTILITY_ADDRESSES: Record<string, string> = {
   'atco': '5302-50th Avenue, Vegreville, AB T9C 1R8'
 };
 
+async function createPdfDocument(): Promise<any> {
+  const { default: jsPDF } = await import('jspdf');
+  return new jsPDF();
+}
+
 /**
  * Generate complete permit package PDF
  */
-export function generatePermitPackagePDF(
+export async function generatePermitPackagePDF(
   formData: MicroGenFormData,
   calculations: CalculationResults
-): void {
-  const doc = new jsPDF();
+): Promise<void> {
+  const doc = await createPdfDocument();
   const today = new Date().toLocaleDateString('en-CA');
   
   // Page 1: Cover Page
@@ -84,7 +87,7 @@ export function generatePermitPackagePDF(
 }
 
 function addCoverPage(
-  doc: jsPDF,
+  doc: any,
   formData: MicroGenFormData,
   calculations: CalculationResults,
   date: string
@@ -150,7 +153,7 @@ function addCoverPage(
 }
 
 function addAUCFormA(
-  doc: jsPDF,
+  doc: any,
   formData: MicroGenFormData,
   calculations: CalculationResults,
   date: string
@@ -263,7 +266,7 @@ function addAUCFormA(
 }
 
 function addSystemSummary(
-  doc: jsPDF,
+  doc: any,
   formData: MicroGenFormData,
   calculations: CalculationResults
 ): void {
@@ -362,7 +365,7 @@ function addSystemSummary(
   doc.text('Page 3 of 5', 190, 280, { align: 'right' });
 }
 
-function addSitePlanTemplate(doc: jsPDF, formData: MicroGenFormData): void {
+function addSitePlanTemplate(doc: any, formData: MicroGenFormData): void {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('SITE PLAN TEMPLATE', 105, 20, { align: 'center' });
@@ -417,7 +420,7 @@ function addSitePlanTemplate(doc: jsPDF, formData: MicroGenFormData): void {
   doc.text('Page 4 of 5', 190, 280, { align: 'right' });
 }
 
-function addInstallationChecklist(doc: jsPDF): void {
+function addInstallationChecklist(doc: any): void {
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('INSTALLATION CHECKLIST', 105, 20, { align: 'center' });
@@ -499,11 +502,11 @@ function addInstallationChecklist(doc: jsPDF): void {
 /**
  * Generate just the AUC Form A PDF
  */
-export function generateAUCFormPDF(
+export async function generateAUCFormPDF(
   formData: MicroGenFormData,
   calculations: CalculationResults
-): void {
-  const doc = new jsPDF();
+): Promise<void> {
+  const doc = await createPdfDocument();
   const today = new Date().toLocaleDateString('en-CA');
   
   addAUCFormA(doc, formData, calculations, today);

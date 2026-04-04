@@ -33,8 +33,8 @@ export const AboutPage: React.FC = () => {
             </div>
             <h1 className="text-5xl font-bold mb-6">About Canada Energy Intelligence Platform</h1>
             <p className="text-xl text-blue-100 leading-relaxed">
-              Leading the future of Canadian energy analytics with real-time data, AI-powered insights,
-              and comprehensive monitoring across all provinces.
+              Building Canadian energy analytics with live-when-available data, AI-powered insights,
+              and explicit provenance across provincial monitoring workflows.
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export const AboutPage: React.FC = () => {
             </div>
             <h2 className="text-3xl font-bold text-primary mb-6">Our Mission</h2>
             <p className="text-lg text-secondary leading-relaxed mb-6">
-              To democratize access to Canadian energy data through advanced analytics, real-time monitoring,
+              To democratize access to Canadian energy data through advanced analytics, live-when-available monitoring,
               and AI-powered insights that support informed decision-making for energy professionals,
               policymakers, and the public.
             </p>
@@ -91,8 +91,8 @@ export const AboutPage: React.FC = () => {
                   <Globe className="h-5 w-5 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-primary mb-1">Real-Time Data Streaming</h3>
-                  <p className="text-secondary">Live data feeds from all Canadian provinces with sub-minute updates and resilient architecture</p>
+                  <h3 className="font-semibold text-primary mb-1">Operator-Fed Data Streaming</h3>
+                  <p className="text-secondary">Operator-fed and snapshot-backed provincial data with transparent freshness labeling and resilient fallback handling</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">

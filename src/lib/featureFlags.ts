@@ -26,6 +26,10 @@ export interface FeatureConfig {
   component?: string;
 }
 
+export function isPhase4SurfaceEnabled(): boolean {
+  return import.meta.env.DEV || import.meta.env.VITE_ENABLE_PHASE4_EXPERIMENTS === 'true';
+}
+
 /**
  * Feature Registry - Single source of truth for all platform features
  */

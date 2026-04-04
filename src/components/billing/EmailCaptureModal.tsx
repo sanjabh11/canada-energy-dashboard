@@ -52,9 +52,6 @@ export function EmailCaptureModal({ plan, isOpen, onClose, userId }: EmailCaptur
                 has_user_id: !!userId
             });
 
-            // Store email locally (owned data!)
-            saveEmailLocally(email);
-
             // Optionally save to Supabase (if configured)
             await saveEmailToDatabase(email, plan.id);
 
@@ -218,41 +215,18 @@ const EMAIL_STORAGE_KEY = 'ceip_captured_emails';
  * Save email to localStorage (owned data!)
  */
 function saveEmailLocally(email: string): void {
-    const stored = localStorage.getItem(EMAIL_STORAGE_KEY);
-    let emails: Array<{ email: string; timestamp: string }> = [];
-
-    try {
-        emails = stored ? JSON.parse(stored) : [];
-    } catch {
-        emails = [];
-    }
-
-    // Avoid duplicates
-    if (!emails.find(e => e.email === email)) {
-        emails.push({
-            email,
-            timestamp: new Date().toISOString()
-        });
-        localStorage.setItem(EMAIL_STORAGE_KEY, JSON.stringify(emails));
-    }
+    void email;
 }
 
 /**
  * Save email to Supabase (if configured)
  */
 async function saveEmailToDatabase(email: string, planId: string): Promise<void> {
-    // Check if Supabase is configured
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl) {
-        console.log('[EmailCapture] Supabase not configured, skipping DB save');
-        return;
-    }
-
     try {
-        const response = await fetch('/api/leads/capture', {
+        const response = await fetch('/.netlify/functions/leads', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, planId, source: 'checkout_modal' })
+            body: JSON.stringify({ action: 'capture', email, planId, source: 'checkout_modal' })
         });
 
         if (!response.ok) {
@@ -280,22 +254,14 @@ function generateAnonymousId(): string {
  * Get all captured emails (for export)
  */
 export function getCapturedEmails(): Array<{ email: string; timestamp: string }> {
-    const stored = localStorage.getItem(EMAIL_STORAGE_KEY);
-    try {
-        return stored ? JSON.parse(stored) : [];
-    } catch {
-        return [];
-    }
+    return [];
 }
 
 /**
  * Export emails as CSV
  */
 export function exportEmailsAsCsv(): string {
-    const emails = getCapturedEmails();
-    const header = 'email,captured_at\n';
-    const rows = emails.map(e => `${e.email},${e.timestamp}`).join('\n');
-    return header + rows;
+    return 'email,captured_at\n';
 }
 
 export default EmailCaptureModal;

@@ -429,9 +429,9 @@ export const TOUR_DEFINITIONS: TourDefinition[] = [
       },
       {
         id: 'real-time-prices',
-        title: '💰 Real-Time Pricing',
+        title: '💰 Pricing',
         content:
-          'See these numbers? They show the current electricity price. When it\'s low (green), that\'s the best time to use power-hungry appliances!',
+          'See these numbers? They show the current electricity price. When it\'s low (green), that\'s the best time to use power-hungry appliances.',
         target: '[data-tour="pricing"]',
         placement: 'right',
         tip: 'Run your dishwasher and do laundry during off-peak hours to save!'

@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 const SUPABASE_URL = Deno.env.get("EDGE_SUPABASE_URL") ?? Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_KEY = Deno.env.get("EDGE_SUPABASE_SERVICE_ROLE_KEY")
@@ -74,7 +75,15 @@ function generateSyntheticGenerationData(province: string, days: number) {
 async function fetchGeneration(province: string, windowStart: string, windowEnd: string, windowDays: number) {
   if (!supabase) {
     console.warn('No Supabase client, using synthetic generation data');
-    return generateSyntheticGenerationData(province, windowDays);
+    return {
+      ...generateSyntheticGenerationData(province, windowDays),
+      provenance: buildDataProvenance({
+        source: `${province} synthetic provincial generation model`,
+        lastUpdated: new Date().toISOString(),
+        isFallback: true,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
   const { data, error } = await supabase
@@ -86,7 +95,15 @@ async function fetchGeneration(province: string, windowStart: string, windowEnd:
 
   if (error) {
     console.error("provincial_generation query failed, using synthetic data", { province, error });
-    return generateSyntheticGenerationData(province, windowDays);
+    return {
+      ...generateSyntheticGenerationData(province, windowDays),
+      provenance: buildDataProvenance({
+        source: `${province} synthetic provincial generation model`,
+        lastUpdated: new Date().toISOString(),
+        isFallback: true,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
   const aggregates = new Map<string, number>();
@@ -105,7 +122,15 @@ async function fetchGeneration(province: string, windowStart: string, windowEnd:
   // If no data found, use synthetic data
   if (total === 0 || bySource.length === 0) {
     console.warn(`No generation data found for ${province}, using synthetic data`);
-    return generateSyntheticGenerationData(province, windowDays);
+    return {
+      ...generateSyntheticGenerationData(province, windowDays),
+      provenance: buildDataProvenance({
+        source: `${province} synthetic provincial generation model`,
+        lastUpdated: new Date().toISOString(),
+        isFallback: true,
+        staleAfterHours: 24,
+      }),
+    };
   }
 
   // Compute top source excluding unknown/unclassified buckets
@@ -118,7 +143,18 @@ async function fetchGeneration(province: string, windowStart: string, windowEnd:
     .reduce((sum, r) => sum + r.generation_gwh, 0);
   const renewableSharePercent = total > 0 ? (renewableTotal / total) * 100 : 0;
 
-  return { total, bySource, topSource, renewableSharePercent };
+  return {
+    total,
+    bySource,
+    topSource,
+    renewableSharePercent,
+    provenance: buildDataProvenance({
+      source: 'provincial_generation',
+      lastUpdated: windowEnd,
+      isFallback: false,
+      staleAfterHours: 72,
+    }),
+  };
 }
 
 async function fetchOntarioDemand(): Promise<{ hour: string; market_demand_mw: number | null } | null> {
@@ -204,6 +240,25 @@ serve(async (req) => {
       latest_demand: ontarioDemand,
       metadata: {
         sources: ["provincial_generation"].concat(provinceParam === "ON" ? ["ontario_hourly_demand"] : []),
+        is_fallback: generation.provenance.is_fallback,
+        freshness_status: generation.provenance.freshness_status,
+      },
+      provenance: {
+        generation: generation.provenance,
+        latest_demand: provinceParam === "ON"
+          ? buildDataProvenance({
+              source: ontarioDemand ? "ontario_hourly_demand" : "Ontario demand unavailable",
+              lastUpdated: ontarioDemand?.hour ?? null,
+              isFallback: !ontarioDemand,
+              staleAfterHours: 12,
+            })
+          : null,
+        is_fallback: generation.provenance.is_fallback || (provinceParam === "ON" && !ontarioDemand),
+        freshness_status: generation.provenance.is_fallback
+          ? generation.provenance.freshness_status
+          : provinceParam === "ON" && !ontarioDemand
+            ? "demo"
+            : generation.provenance.freshness_status,
       },
     };
 

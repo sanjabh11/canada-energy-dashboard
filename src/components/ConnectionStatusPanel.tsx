@@ -1,7 +1,7 @@
 /**
  * Connection Status Panel Component
  * 
- * Displays real-time connection status for all datasets
+ * Displays connection status for all datasets
  * with detailed status information.
  */
 

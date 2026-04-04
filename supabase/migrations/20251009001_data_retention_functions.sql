@@ -1,0 +1,2 @@
+-- intentionally empty migration
+-- placeholder reserved during Phase 2 retention planning; kept for migration ordering stability

@@ -281,6 +281,16 @@ const IndustrialDecarbDashboard: React.FC = () => {
     { id: '3', project_name: 'Imperial Heat Recovery', company: 'Imperial Oil', facility_name: 'Kearl', province_code: 'AB', project_type: 'Heat Recovery', investment_cad: 320000000, annual_emissions_avoided_tonnes: 180000, annual_cost_savings_cad: 28000000, payback_period_years: 4.8 },
   ];
 
+  const SAMPLE_SUMMARY: OverviewSummary = {
+    total_facility_emissions_tonnes: 85400000,
+    facility_count: 24,
+    avg_emission_intensity: 0.36,
+    total_methane_reduction_tonnes: 154000,
+    total_obps_surplus_tonnes: 1250000,
+    total_obps_deficit_tonnes: 450000,
+    total_efficiency_avoided_tonnes: 1280000,
+  };
+
   if (!data) {
     return (
       <div className="text-center text-secondary p-8">
@@ -293,9 +303,9 @@ const IndustrialDecarbDashboard: React.FC = () => {
   const years = ['All', '2023', '2022', '2021', '2020'];
 
   // Use sample data if API returns empty arrays
-  const facilities = data.top_facilities.length > 0 ? data.top_facilities : SAMPLE_FACILITIES;
-  const methaneLeaders = data.methane_leaders.length > 0 ? data.methane_leaders : SAMPLE_METHANE;
-  const efficiencyProjectsList = data.top_efficiency_projects.length > 0 ? data.top_efficiency_projects : SAMPLE_EFFICIENCY;
+  const facilities = data.top_facilities?.length > 0 ? data.top_facilities : SAMPLE_FACILITIES;
+  const methaneLeaders = data.methane_leaders?.length > 0 ? data.methane_leaders : SAMPLE_METHANE;
+  const efficiencyProjectsList = data.top_efficiency_projects?.length > 0 ? data.top_efficiency_projects : SAMPLE_EFFICIENCY;
 
   const emissionsByFacility = facilities.map(f => ({
     facility: f.facility_name.length > 28 ? f.facility_name.substring(0, 28) + '...' : f.facility_name,
@@ -329,7 +339,9 @@ const IndustrialDecarbDashboard: React.FC = () => {
     return value.toFixed(1);
   };
 
-  const summary = data.summary;
+  const summary = (data.summary && data.summary.total_facility_emissions_tonnes !== undefined && data.summary.total_facility_emissions_tonnes > 0) 
+    ? data.summary 
+    : SAMPLE_SUMMARY;
 
   const renderTable = () => {
     if (tableLoading) {

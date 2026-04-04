@@ -127,10 +127,10 @@ export function SEOHead({
  */
 export const SEO_CONFIGS = {
   dashboard: {
-    title: 'Real-Time Energy Dashboard',
-    description: 'Live monitoring of Canadian energy systems with real-time data from IESO, AESO, and provincial grids.',
+    title: 'Canada Energy Dashboard',
+    description: 'Monitor Canadian energy systems with live-when-available data from IESO, AESO, and provincial grids plus explicit freshness labeling.',
     path: '/dashboard',
-    keywords: ['Canada energy dashboard', 'IESO real-time data', 'AESO grid', 'Ontario electricity'],
+    keywords: ['Canada energy dashboard', 'IESO electricity data', 'AESO grid', 'Ontario electricity'],
     schema: PAGE_SCHEMAS.dashboard,
     datasetSchema: DATASET_SCHEMAS.ontarioDemand
   },

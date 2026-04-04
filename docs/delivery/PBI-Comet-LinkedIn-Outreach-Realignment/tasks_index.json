@@ -1,0 +1,13 @@
+{
+  "pbi_id": "PBI-Comet-LinkedIn-Outreach-Realignment",
+  "tasks": [
+    {
+      "id": "PBI-Comet-LinkedIn-Outreach-Realignment-T1",
+      "title": "Adversarial reconciliation of prior GTM research vs current LinkedIn/Comet strategy, with outreach-safe doc/code alignment",
+      "status": "InProgress",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-09"
+    }
+  ]
+}

@@ -184,6 +184,9 @@ const CarbonEmissionsDashboard: React.FC = () => {
     .filter(e => e.reporting_year === parseInt(selectedYear === 'All' ? '2023' : selectedYear))
     .reduce((sum, e) => sum + e.total_emissions_tco2e, 0) / 1000000;
 
+  // Check if we have data for the selected year
+  const hasDataForYear = data.emissions.some(e => e.reporting_year === parseInt(selectedYear === 'All' ? '2023' : selectedYear));
+
   const cleanestProvince = provinceData.length > 0 ? provinceData[provinceData.length - 1] : null;
   const dirtiestProvince = provinceData.length > 0 ? provinceData[0] : null;
 
@@ -256,9 +259,11 @@ const CarbonEmissionsDashboard: React.FC = () => {
             <div>
               <p className="metric-label">Total Emissions ({selectedYear})</p>
               <p className="metric-value">
-                {currentYearEmissions.toFixed(1)} Mt
+                {hasDataForYear ? `${currentYearEmissions.toFixed(1)} Mt` : 'No data'}
               </p>
-              <p className="text-xs text-tertiary mt-1">Million tonnes CO2e</p>
+              <p className="text-xs text-tertiary mt-1">
+                {hasDataForYear ? 'Million tonnes CO2e' : 'Data unavailable for this year'}
+              </p>
             </div>
             <Factory className="h-10 w-10 text-danger" />
           </div>
@@ -285,10 +290,10 @@ const CarbonEmissionsDashboard: React.FC = () => {
             <div>
               <p className="metric-label">Cleanest Province</p>
               <p className="metric-value text-success">
-                {cleanestProvince?.province ?? 'N/A'}
+                {hasDataForYear ? (cleanestProvince?.province ?? 'N/A') : 'No data'}
               </p>
               <p className="text-xs text-tertiary mt-1">
-                {cleanestProvince?.intensity.toFixed(0)} gCO2/kWh
+                {hasDataForYear && cleanestProvince ? `${cleanestProvince.intensity.toFixed(0)} gCO2/kWh` : '—'}
               </p>
             </div>
             <Leaf className="h-10 w-10 text-success" />
@@ -301,9 +306,11 @@ const CarbonEmissionsDashboard: React.FC = () => {
               <div>
                 <p className="metric-label">Avoided Emissions</p>
                 <p className="metric-value text-electric">
-                  {(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt
+                  {hasDataForYear ? `${(data.statistics.total_avoided_tco2e / 1000000).toFixed(1)} Mt` : 'No data'}
                 </p>
-                <p className="text-xs text-tertiary mt-1">From clean energy</p>
+                <p className="text-xs text-tertiary mt-1">
+                  {hasDataForYear ? 'From clean energy' : 'Data unavailable'}
+                </p>
               </div>
               <HelpButton id="carbon.avoided-emissions" className="ml-1" />
             </div>

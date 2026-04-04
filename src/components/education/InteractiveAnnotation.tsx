@@ -323,7 +323,7 @@ export const AnnotationPresets = {
   dataInsight: (metric: string, value: string): AnnotationConfig => ({
     type: 'insight',
     title: `📊 ${metric}`,
-    message: `Current value: ${value}. This represents the real-time measurement.`,
+      message: `Current value: ${value}. This represents the current measurement.`,
     comparison: 'Tap for detailed explanation'
   })
 };

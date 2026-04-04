@@ -27,7 +27,7 @@ export function useStreamingData(dataset: string) {
         setIsUsingRealData(true);
         setError(null);
       } else if (update.type === 'fallback') {
-        setConnectionStatus('connected');
+        setConnectionStatus('fallback');
         setIsUsingRealData(false);
         setError('Using fallback data');
       } else if (update.type === 'disconnected' || update.type === 'error') {

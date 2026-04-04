@@ -37,8 +37,11 @@ import {
     getPoolPriceForecast,
     calculateSavings,
     DATA_SNAPSHOT_LABEL,
+    DATA_SNAPSHOT_DATE,
     type RetailerOffer
 } from '../lib/aesoService';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import {
     LineChart,
     Line,
@@ -208,7 +211,7 @@ export function RROAlertSystem() {
         <div className="min-h-screen bg-slate-900">
             <SEOHead
                 title="Alberta RRO Rate Watchdog | Electricity Price Alerts"
-                description="Track Alberta's Regulated Rate Option in real-time. Get alerts before price spikes and compare fixed-rate retailers."
+                description="Track Alberta's Regulated Rate Option with live-when-available and snapshot-disclosed pricing. Get alerts before price spikes and compare fixed-rate retailers."
                 path="/rate-alerts"
                 keywords={['Alberta RRO rate', 'electricity prices', 'ENMAX rates', 'EPCOR rates', 'Alberta power bill']}
             />
@@ -242,6 +245,21 @@ export function RROAlertSystem() {
             </div>
 
             <div className="max-w-6xl mx-auto py-8 px-6">
+                <div className="mb-6 flex flex-wrap items-center gap-3">
+                    <DataFreshnessBadge
+                        timestamp={lastUpdated.toISOString()}
+                        status={dataSource === 'live' ? 'live' : 'stale'}
+                        source={dataSource === 'live' ? 'AESO-derived browser fetch' : `Snapshot inputs verified ${DATA_SNAPSHOT_LABEL}`}
+                    />
+                </div>
+                {dataSource === 'cached' && (
+                    <DataTrustNotice
+                        mode="fallback"
+                        title="Snapshot-era Alberta price guidance"
+                        message={`Browser access to live Alberta pricing is not guaranteed in this surface. RRO estimates and retailer comparisons may reflect ${DATA_SNAPSHOT_LABEL} snapshot data (${DATA_SNAPSHOT_DATE}) rather than a confirmed live market quote.`}
+                        className="mb-6"
+                    />
+                )}
 
                 {/* Current Rate Cards */}
                 <div className="grid md:grid-cols-3 gap-6 mb-8">
@@ -560,7 +578,7 @@ export function RROAlertSystem() {
                             </div>
                             <div>
                                 <h3 className="text-lg font-bold text-white">Unlock CEIP Advanced</h3>
-                                <p className="text-sm text-slate-400">35+ professional dashboards, real-time grid analytics, AI insights</p>
+                                <p className="text-sm text-slate-400">35+ professional dashboards, live-when-available grid analytics, AI insights</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -580,7 +598,7 @@ export function RROAlertSystem() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-purple-500/20">
                         {[
                             { icon: '📊', label: '35+ Dashboards' },
-                            { icon: '⚡', label: 'Real-time Grid Data' },
+                            { icon: '⚡', label: 'Live-when-available Grid Data' },
                             { icon: '🤖', label: 'AI Price Forecasts' },
                             { icon: '📈', label: 'Export & API Access' }
                         ].map((feature) => (

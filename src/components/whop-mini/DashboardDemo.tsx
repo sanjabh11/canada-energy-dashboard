@@ -19,7 +19,7 @@ interface WhopMiniUser {
     isWhopUser: boolean;
 }
 
-// Static mock data (simulates real-time)
+// Static mock data for product demonstration
 const MOCK_DATA = {
     poolPrice: 87.50,
     poolPriceChange: 12.3,
@@ -226,7 +226,7 @@ export default function DashboardDemo({ user }: { user: WhopMiniUser | null }) {
                                 Connect to Live AESO Data
                             </h3>
                             <p className="text-slate-400 mb-4">
-                                Upgrade to Pro for real-time pool prices, grid alerts, and historical analysis.
+                                Upgrade to Pro for live-when-available pool prices, grid alerts, and historical analysis.
                                 Get notified when prices spike above your threshold.
                             </p>
                             <div className="flex flex-wrap gap-4">

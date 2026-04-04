@@ -19,12 +19,14 @@ import {
 } from 'recharts';
 import TerritorialMap, { type MapPoint, type TerritoryBoundary } from './TerritorialMap';
 import { AlertTriangle, Plus, Edit, X, Download, Shield, Users, Calendar, Save, FileText, ExternalLink } from 'lucide-react';
+import DataTrustNotice from './DataTrustNotice';
 import { Link } from 'react-router-dom';
 import { localStorageManager, type IndigenousProjectRecord } from '../lib/localStorageManager';
 import IndigenousProjectForm, { type EnhancedIndigenousProject } from './IndigenousProjectForm';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { IndigenousCaseStudies } from './IndigenousCaseStudies';
+import { useStreamingData } from '../hooks/useStreamingData';
 
 // Interfaces for Indigenous dashboard data
 export interface TerritoryData {
@@ -249,12 +251,8 @@ export const IndigenousDashboard: React.FC = () => {
 
   // Use streaming data for real Indigenous data (governance-compliant sources)
   // IMPORTANT: Only use data that has been approved through proper governance processes
-  // const { data: indigenousData, connectionStatus } = useStreamingData('indigenous');
-
-  // For now, using governance-approved public data sources only
-  // TODO: Implement real Indigenous data integration with proper governance approval
-  const indigenousData = [];
-  const connectionStatus = 'connected';
+  const { data: indigenousData, connectionStatus } = useStreamingData('indigenous');
+  const isUsingFallbackData = connectionStatus === 'fallback' || (connectionStatus !== 'connected' && indigenousData.length === 0);
 
   // Use WebSocket for real-time consultation updates
   const {
@@ -266,7 +264,11 @@ export const IndigenousDashboard: React.FC = () => {
 
   // Load initial data from local storage (guarded to avoid React StrictMode double-invoke)
   useEffect(() => {
-    if (hasLoadedRef.current) return;
+    if (hasLoadedRef.current) {
+      // If already loaded in a previous StrictMode invoke, ensure loading is false
+      setLoading(false);
+      return;
+    }
     hasLoadedRef.current = true;
     loadInitialData();
   }, []);
@@ -558,6 +560,15 @@ export const IndigenousDashboard: React.FC = () => {
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="indigenous_dashboard" />
+
+        {isUsingFallbackData && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Illustrative territory data in use"
+            message="Indigenous territory mapping is currently displaying sample data for demonstration purposes. Consultation status and FPIC workflows are illustrative examples only."
+            className="mb-6"
+          />
+        )}
 
         <section className="hero-section hero-section--compact mb-8">
           <div className="hero-content">
@@ -983,10 +994,10 @@ export const IndigenousDashboard: React.FC = () => {
           </div>
           <div className="flex items-center space-x-2 text-sm">
             <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
+              connectionStatus === 'connected' ? 'bg-green-500' : connectionStatus === 'fallback' ? 'bg-amber-500' : 'bg-red-500'
             }`}></span>
             <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'Data Stream Active' : 'Data Stream Offline'}
+              {connectionStatus === 'connected' ? 'Data Stream Active' : connectionStatus === 'fallback' ? 'Using Backup Data' : 'Data Stream Offline'}
             </span>
           </div>
         </div>

@@ -3,6 +3,8 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Briefcase, TrendingUp, Activity, Wifi, WifiOff } from 'lucide-react';
 import { financialEngine, type CashFlow, type InvestmentMetrics, type SimpleInvestment } from '../lib/financialCalculations';
 import { useStreamingData } from '../hooks/useStreamingData';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import { CONTAINER_CLASSES, CHART_CONFIGS, TEXT_CLASSES, COLOR_SCHEMES, LAYOUT_UTILS } from '../lib/ui/layout';
 
 // Mock investment data with realistic positive cash flows
@@ -150,7 +152,7 @@ export const InvestmentCards: React.FC = () => {
       setInvestments(analyzedInvestments);
       setLoading(false);
       setFallbackMode(!isUsingRealData);
-    } else if (demandData.length === 0 && (connectionStatus === 'connected' || connectionStatus === 'error')) {
+    } else if (demandData.length === 0 && (connectionStatus === 'fallback' || connectionStatus === 'error')) {
       // Fallback to enhanced static data if no streaming data available
       const fallbackInvestments = createDynamicInvestments(12000, 9.2, false);
       const analyzedInvestments = fallbackInvestments.map(investment => ({
@@ -207,13 +209,29 @@ export const InvestmentCards: React.FC = () => {
             </h1>
 
             <p className={`${TEXT_CLASSES.body} text-xl lg:text-2xl text-green-100 font-light max-w-3xl mx-auto leading-relaxed animate-fade-in-delayed`}>
-              AI-powered financial analysis with real-time market data integration
+              AI-powered financial analysis with live-when-available market data and fallback-aware modeling
             </p>
+            <div className="mt-4 flex justify-center">
+              <DataFreshnessBadge
+                timestamp={demandData[demandData.length - 1]?.timestamp ?? new Date().toISOString()}
+                status={fallbackMode ? 'demo' : isUsingRealData && connectionStatus === 'connected' ? 'live' : 'unknown'}
+                source={fallbackMode ? 'Fallback Ontario market assumptions' : 'Ontario demand stream'}
+              />
+            </div>
           </div>
         </div>
       </div>
 
       <div className={CONTAINER_CLASSES.page}>
+        {fallbackMode && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Illustrative market assumptions active"
+            message="This portfolio view is currently using fallback market assumptions instead of live Ontario demand data. Treat investment outputs as directional until the live stream is restored."
+            className="mb-6"
+          />
+        )}
+
         {/* Portfolio Key Metrics with Improved Grid */}
         <div className={CONTAINER_CLASSES.gridDashboard}>
           <div className="card p-6">
@@ -302,7 +320,7 @@ export const InvestmentCards: React.FC = () => {
               <div className="flex-1 ml-4">
                 <div className={`${TEXT_CLASSES.body} font-semibold text-success`}>🎯 LIVE Ontario Market Data</div>
                 <div className={`${TEXT_CLASSES.bodySmall} text-success opacity-80`}>
-                  Investments calculated from real-time IESO demand data
+                  Investments calculated from current IESO demand data when the live stream is available
                   {demandData.length > 0 && demandData[demandData.length - 1] &&
                     ` (${demandData[demandData.length - 1].values.demand_mw?.toLocaleString() || '0'} MW demand)`
                   }
@@ -313,9 +331,9 @@ export const InvestmentCards: React.FC = () => {
             <>
               <Briefcase className={`h-5 w-5 ${COLOR_SCHEMES.primary.accent}`} />
               <div className="flex-1 ml-4">
-                <div className={`${TEXT_CLASSES.body} font-semibold text-primary`}>💡 Enhanced Analysis Mode</div>
+                <div className={`${TEXT_CLASSES.body} font-semibold text-primary`}>💡 Fallback Analysis Mode</div>
                 <div className={`${TEXT_CLASSES.bodySmall} text-secondary opacity-80`}>
-                  Using calculated models with Ontario market conditions
+                  Using calculated models with Ontario market conditions instead of the live Ontario demand stream
                 </div>
               </div>
             </>

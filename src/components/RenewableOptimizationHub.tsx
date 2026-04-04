@@ -9,6 +9,7 @@ import { ProvenanceBadge, DataQualityBadge, BaselineComparisonBadge } from './Pr
 import type { ProvenanceType } from '../lib/types/provenance';
 import { BaselineComparisonCard } from './BaselineComparisonCard';
 import { ForecastAccuracyPanel } from './ForecastAccuracyPanel';
+import DataTrustNotice from './DataTrustNotice';
 
 interface TabProps {
   active: boolean;
@@ -38,6 +39,7 @@ const RenewableOptimizationHub: React.FC = () => {
   const [forecasts, setForecasts] = useState<RenewableForecast[]>([]);
   const [performance, setPerformance] = useState<ForecastPerformance[]>([]);
   const [awardMetrics, setAwardMetrics] = useState<AwardEvidenceMetrics | null>(null);
+  const [usingMockData, setUsingMockData] = useState(false);
 
   // Load data
   useEffect(() => {
@@ -110,6 +112,7 @@ const RenewableOptimizationHub: React.FC = () => {
           }
         ];
         setPerformance(mockPerformance as any);
+        setUsingMockData(true);
       }
     } catch (dbError) {
       console.error('Database fallback failed, using mock data:', dbError);
@@ -137,6 +140,7 @@ const RenewableOptimizationHub: React.FC = () => {
         }
       ];
       setPerformance(mockPerformance as any);
+      setUsingMockData(true);
     }
   };
 
@@ -393,6 +397,15 @@ const RenewableOptimizationHub: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-900 dashboard-analytics">
       <div className={CONTAINER_CLASSES.page}>
+        {usingMockData && (
+          <DataTrustNotice
+            mode="mock"
+            title="Illustrative forecast metrics active"
+            message="Renewable optimization is displaying sample forecast accuracy metrics for demonstration. MAE/MAPE values and performance statistics are illustrative examples, not live operational data."
+            className="mb-6"
+          />
+        )}
+
         {/* Header */}
         <header className="mb-8">
           <div className="flex items-center justify-between">

@@ -156,7 +156,7 @@ export const commonMethodologies = {
   forecastMAE: {
     title: "Forecast Accuracy (MAE)",
     formula: "MAE = (1/n) × Σ|Actual - Predicted|",
-    source: "Real-time generation data + forecast models",
+    source: "Current generation data + forecast models",
     period: "30-day rolling window",
     assumptions: [
       "Hour-ahead predictions",
@@ -169,7 +169,7 @@ export const commonMethodologies = {
   storageRevenue: {
     title: "Storage Arbitrage Revenue",
     formula: "Revenue = Σ(Discharge MWh × Peak Price - Charge MWh × Off-Peak Price)",
-    source: "HOEP real-time pricing + dispatch logs",
+    source: "HOEP pricing + dispatch logs",
     period: "Monthly aggregation",
     assumptions: [
       "Round-trip efficiency: 85%",

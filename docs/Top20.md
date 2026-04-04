@@ -1,7 +1,14 @@
 # Canada Energy Intelligence Platform (CEIP) – Top 20 Features
 
-> **Last Updated:** February 10, 2026  
+> **Last Updated:** March 9, 2026  
 > **Live Demo:** [canada-energy.netlify.app](https://canada-energy.netlify.app/)
+
+> **For current LinkedIn outreach, lead with these proof pages first:**
+> - `Consultant Data Pack` → `/api-docs`
+> - `Industrial TIER Pack` → `/roi-calculator`
+> - Forecast trust layer → `/forecast-benchmarking`
+> - Regulatory templates → `/regulatory-filing`
+> - Asset condition / REA-LDC angle → `/asset-health`
 
 ---
 
@@ -51,7 +58,7 @@ Six features targeting Alberta market opportunities:
 | Tool | Route | Purpose |
 |------|-------|---------|
 | **Solar Wizard** | `/solar-wizard` | TurboTax for Micro-generation permits |
-| **Rate Watchdog** | `/rate-alerts` | RRO price monitoring & retailer comparison (Updated Feb 2026) |
+| **Rate Watchdog** | `/watchdog` | Alberta electricity rate comparison and RoLR monitoring |
 | **AICEI Reporting** | `/aicei` | Indigenous grant compliance reporting |
 | **Hire Me Page** | `/hire-me` | LMIA-ready employer landing page |
 | **Resume** | `/resume-canada.md` | NOC 21232 aligned resume |
@@ -61,13 +68,25 @@ Six features targeting Alberta market opportunities:
 
 ## 5. Forecast Benchmarking Tool (NEW)
 
-Evaluate energy forecasts against industry baselines (MAE, MAPE, RMSE) across 1h-48h horizons. Features persistence and seasonal naive benchmarks for Canadian renewable energy. Designed for consulting firms, grid operators, and municipal planners.
+Evaluate energy forecasts against industry baselines (MAE, MAPE, RMSE) across 1h-48h horizons. Features persistence and seasonal naive benchmarks for Canadian renewable energy. Designed as a **trust layer** for consulting firms, grid operators, municipal planners, and regulatory conversations.
 
 **Route:** `/forecast-benchmarking`
 
 ---
 
-## 6. Indigenous Energy Sovereignty Dashboard (Early Access)
+## 6. Regulatory Filing Templates (High-Value B2B Proof)
+
+Export-ready filing templates for:
+
+- **AUC Rule 005** schedules for Alberta utilities / REAs
+- **OEB Chapter 5 DSP** sections for Ontario utility planning workflows
+- sample preview + CSV export for stakeholder walkthroughs
+
+**Route:** `/regulatory-filing`
+
+---
+
+## 7. Indigenous Energy Sovereignty Dashboard (Early Access)
 
 OCAP®-aligned architecture for First Nations energy projects — seeking community co-design partners:
 
@@ -76,11 +95,11 @@ OCAP®-aligned architecture for First Nations energy projects — seeking commun
 - Traditional Ecological Knowledge (TEK) integration
 - Multi-step project intake form (UNDRIP-aware)
 - Funder report templates (Wah-ila-toos, CERRC, Northern REACHE)
-- Sovereign Data Vault with data residency controls (Early Access — encryption backend in development)
+- Sovereign Data Vault with data residency controls (Early Access — production hardening still in progress)
 
 ---
 
-## 6. ESG & Sustainable Finance Analytics
+## 8. ESG & Sustainable Finance Analytics
 
 Track green finance across Canada:
 
@@ -92,7 +111,7 @@ Track green finance across Canada:
 
 ---
 
-## 7. AI/LLM Energy Analysis
+## 9. AI/LLM Energy Analysis
 
 LLM-powered energy Q&A via Gemini integration:
 
@@ -107,7 +126,7 @@ LLM-powered energy Q&A via Gemini integration:
 
 ---
 
-## 8. Regulatory Intelligence Module
+## 10. Regulatory Intelligence Module
 
 Structured compliance tracking:
 
@@ -119,7 +138,20 @@ Structured compliance tracking:
 
 ---
 
-## 9. EdTech: Cohort Admin System
+## 11. Asset Health Index (CSV-Based)
+
+CBRM-lite utility asset scoring for REAs, small LDCs, and consultant workflows:
+
+- CSV upload workflow
+- health index scoring (0-100)
+- condition and risk visualization
+- export-ready results for asset-condition discussions
+
+**Route:** `/asset-health`
+
+---
+
+## 12. EdTech: Cohort Admin System
 
 Credentialed learning platform for energy education:
 
@@ -133,9 +165,9 @@ Credentialed learning platform for energy education:
 
 ---
 
-## 10. API-First Architecture
+## 13. API-First Architecture
 
-Secure v2 Edge Functions for integrations:
+Secure API and data-access surfaces for integrations and consultant workflows:
 
 | Endpoint | Data |
 |----------|------|
@@ -145,11 +177,11 @@ Secure v2 Edge Functions for integrations:
 | `/api/v2/regulatory` | Compliance data |
 | `/api/v2/esg` | ESG scores and metrics |
 
-**Features:** API key authentication, telemetry logging, RLS policies
+**Features:** API key authentication, telemetry logging, RLS policies, consultant-pack commercial packaging
 
 ---
 
-## 11. Authoritative Canadian Data Sources
+## 14. Authoritative Canadian Data Sources
 
 Data sourced from official Canadian energy authorities:
 
@@ -158,11 +190,11 @@ Data sourced from official Canadian energy authorities:
 - **ESG:** MSCI, Sustainalytics, Yahoo Finance
 - **Government:** Provincial energy programs, Alberta.ca TIER data
 
-Dashboards attempt live API fetches and fall back to cached/sample data when sources are unavailable. Data provenance and freshness are strictly documented per dashboard using the **DataFreshnessBadge**.
+Dashboards attempt live API fetches and fall back to cached/sample data when sources are unavailable. Data provenance and freshness are documented using the **DataFreshnessBadge** and related freshness controls.
 
 ---
 
-## 12. OWASP-Aligned Security Posture
+## 15. OWASP-Aligned Security Posture
 
 Enterprise security practices:
 
@@ -174,7 +206,7 @@ Enterprise security practices:
 
 ---
 
-## 13. Telemetry & Rate Limiting
+## 16. Telemetry & Rate Limiting
 
 Commercial-ready usage tracking:
 
@@ -185,7 +217,7 @@ Commercial-ready usage tracking:
 
 ---
 
-## 14. User Interface Components
+## 17. User Interface Components
 
 **Header Actions:**
 - 🔄 Refresh data
@@ -206,7 +238,7 @@ Commercial-ready usage tracking:
 
 ---
 
-## 15. Storage Dispatch & Revenue Optimization
+## 18. Storage Dispatch & Revenue Optimization
 
 Trading-focused analytics:
 
@@ -218,7 +250,7 @@ Trading-focused analytics:
 
 ---
 
-## 16. Digital Twin & Scenario Modeling
+## 19. Digital Twin & Scenario Modeling
 
 Interactive energy system simulation:
 
@@ -229,7 +261,7 @@ Interactive energy system simulation:
 
 ---
 
-## 17. Employer & Immigration Integration
+## 20. Employer & Immigration Integration
 
 LMIA-ready hiring page for Alberta employers:
 

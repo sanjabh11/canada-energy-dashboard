@@ -47,15 +47,8 @@ serve(async (req: Request) => {
       .eq('province', province)
       .order('design_capacity_kg_per_day', { ascending: false });
 
-    if (hub) {
-      facilitiesQuery = facilitiesQuery.eq('part_of_hub', hub);
-    }
-    if (hydrogenType) {
-      facilitiesQuery = facilitiesQuery.eq('hydrogen_type', hydrogenType);
-    }
-
-    const { data: facilities, error: facilitiesError } = await facilitiesQuery;
-    if (facilitiesError) throw facilitiesError;
+    if (hub) facilitiesQuery = facilitiesQuery.eq('part_of_hub', hub);
+    if (hydrogenType) facilitiesQuery = facilitiesQuery.eq('hydrogen_type', hydrogenType);
 
     // Fetch hydrogen projects
     let projectsQuery = supabase
@@ -64,21 +57,55 @@ serve(async (req: Request) => {
       .eq('province', province)
       .order('capital_investment_cad', { ascending: false });
 
-    if (hub) {
-      projectsQuery = projectsQuery.eq('part_of_hub', hub);
-    }
+    if (hub) projectsQuery = projectsQuery.eq('part_of_hub', hub);
 
-    const { data: projects, error: projectsError } = await projectsQuery;
-    if (projectsError) throw projectsError;
+    // Initial parallel fetch (independent queries)
+    const [
+      facilitiesResult,
+      projectsResult,
+      infrastructureResult,
+      pricingResult,
+      demandResult,
+      priceForecastsResult
+    ] = await Promise.all([
+      facilitiesQuery,
+      projectsQuery,
+      supabase
+        .from('hydrogen_infrastructure')
+        .select('*')
+        .eq('province', province)
+        .order('commissioning_date', { ascending: false }),
+      supabase
+        .from('hydrogen_prices')
+        .select('*')
+        .eq('region', 'Alberta')
+        .order('timestamp', { ascending: false })
+        .limit(52), // Last year of weekly data
+      supabase
+        .from('hydrogen_demand')
+        .select('*')
+        .eq('province', province)
+        .eq('is_forecast', true)
+        .order('timestamp', { ascending: true })
+        .limit(60), // 5 years monthly
+      supabase
+        .from('hydrogen_price_forecasts')
+        .select('*')
+        .order('forecast_year', { ascending: true })
+        .order('scenario', { ascending: true })
+    ]);
 
-    // Fetch infrastructure
-    const { data: infrastructure } = await supabase
-      .from('hydrogen_infrastructure')
-      .select('*')
-      .eq('province', province)
-      .order('commissioning_date', { ascending: false });
+    if (facilitiesResult.error) throw facilitiesResult.error;
+    if (projectsResult.error) throw projectsResult.error;
 
-    // Fetch recent production data
+    const facilities = facilitiesResult.data;
+    const projects = projectsResult.data;
+    const infrastructure = infrastructureResult.data;
+    const pricing = pricingResult.data;
+    const demand = demandResult.data;
+    const priceForecasts = priceForecastsResult.data;
+
+    // Fetch recent production data (depends on facilities)
     let productionData = null;
     if (includeTimeseries && facilities && facilities.length > 0) {
       const { data: production } = await supabase
@@ -91,30 +118,6 @@ serve(async (req: Request) => {
 
       productionData = production || [];
     }
-
-    // Fetch latest pricing
-    const { data: pricing } = await supabase
-      .from('hydrogen_prices')
-      .select('*')
-      .eq('region', 'Alberta')
-      .order('timestamp', { ascending: false })
-      .limit(52); // Last year of weekly data
-
-    // Fetch demand forecast
-    const { data: demand } = await supabase
-      .from('hydrogen_demand')
-      .select('*')
-      .eq('province', province)
-      .eq('is_forecast', true)
-      .order('timestamp', { ascending: true })
-      .limit(60); // 5 years monthly
-
-    // Fetch hydrogen price forecasts (2025-2035)
-    const { data: priceForecasts } = await supabase
-      .from('hydrogen_price_forecasts')
-      .select('*')
-      .order('forecast_year', { ascending: true })
-      .order('scenario', { ascending: true });
 
     // Calculate summary statistics
     const summary = {

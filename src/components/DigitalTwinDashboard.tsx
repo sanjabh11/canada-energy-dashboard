@@ -1,7 +1,7 @@
 /**
  * Digital Twin Energy Ecosystem Dashboard
  * 
- * Virtual model of Canada's energy system with real-time simulation,
+ * Virtual model of Canada's energy system with simulation,
  * stress testing, and predictive modeling capabilities.
  */
 
@@ -338,7 +338,7 @@ export const DigitalTwinDashboard: React.FC = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-electric mx-auto mb-4"></div>
           <p className="text-secondary">Initializing Digital Twin...</p>
-          <p className="text-sm text-tertiary">Loading real-time system state</p>
+          <p className="text-sm text-tertiary">Loading current system state</p>
         </div>
       </div>
     );
@@ -358,7 +358,7 @@ export const DigitalTwinDashboard: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Digital Twin Energy Ecosystem</h1>
-              <p className="text-purple-200">Virtual Canada Energy System • Real-time Simulation • Predictive Modeling</p>
+              <p className="text-purple-200">Virtual Canada Energy System • Simulation • Predictive Modeling</p>
             </div>
             <HelpButton id="digitaltwin.overview" />
           </div>
@@ -402,12 +402,12 @@ export const DigitalTwinDashboard: React.FC = () => {
 
         {error && (
           <div className="mt-2 text-sm text-yellow-200">
-            <p>Digital Twin live data unavailable; running in demo simulation mode.</p>
+            <p>Digital Twin current data unavailable; running in demo simulation mode.</p>
           </div>
         )}
         {!error && isDemoMode && (
           <div className="mt-2 text-sm text-yellow-200">
-            <p>Digital Twin running in demo simulation mode (no live backend connection).</p>
+            <p>Digital Twin running in demo simulation mode (no backend connection).</p>
           </div>
         )}
 

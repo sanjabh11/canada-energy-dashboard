@@ -46,6 +46,8 @@ export const RegulatoryFilingExport: React.FC = () => {
     setPreviewData(sampleData);
   }, []);
 
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
+
   const handleExportCSV = useCallback((template: TemplateDefinition, data: Record<string, unknown>[]) => {
     const csv = templateToCSV(template, data);
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -55,6 +57,9 @@ export const RegulatoryFilingExport: React.FC = () => {
     a.download = `${template.id}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
+    // Show success feedback
+    setExportSuccess(template.name);
+    setTimeout(() => setExportSuccess(null), 3000);
   }, []);
 
   const activeTemplate = selectedTemplate ? REGULATORY_TEMPLATES[selectedTemplate] : null;
@@ -98,6 +103,21 @@ export const RegulatoryFilingExport: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto py-6 px-6">
+        {/* Export Success Notification */}
+        {exportSuccess && (
+          <div className="mb-4 bg-emerald-900/30 border border-emerald-500/50 rounded-xl p-4 flex items-center gap-3 animate-fade-in">
+            <CheckCircle2 className="h-5 w-5 text-emerald-400 flex-shrink-0" />
+            <div>
+              <p className="text-emerald-300 font-medium">
+                Export Successful
+              </p>
+              <p className="text-emerald-400/80 text-sm">
+                Downloaded: {exportSuccess}.csv
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Value Prop */}
         <div className="bg-amber-900/20 border border-amber-500/30 rounded-xl p-5 mb-6">
           <div className="flex items-start gap-3">

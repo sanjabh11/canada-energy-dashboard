@@ -383,14 +383,14 @@ function generateForecastFromHistorical(): AESOPoolPrice[] {
  */
 function getHistoricalCachedPrices(startDate: string, endDate: string): AESOPoolPrice[] {
   const prices: AESOPoolPrice[] = [];
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
   
   // Generate monthly averages for the past year
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthlyAverages = [95, 88, 75, 65, 58, 62, 85, 110, 92, 78, 85, 105]; // $/MWh
   
-  let current = new Date(start);
+  const current = new Date(start);
   while (current <= end) {
     const monthIndex = current.getMonth();
     const basePrice = monthlyAverages[monthIndex];

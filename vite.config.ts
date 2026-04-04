@@ -44,6 +44,7 @@ export default defineConfig({
     },
   },
   build: {
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -59,7 +60,7 @@ export default defineConfig({
             '@radix-ui/react-toast',
           ],
           'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-pdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-export': ['jspdf', 'jspdf-autotable'],
           'vendor-redoc': ['redoc'],
         },
       },

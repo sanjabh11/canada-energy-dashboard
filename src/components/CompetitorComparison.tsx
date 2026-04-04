@@ -114,11 +114,12 @@ export const CompetitorComparison: React.FC = () => {
                         The Only Platform Built for Canadian Compliance
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold text-white mb-6">
-                        CEIP vs. The Competition
+                        Why CEIP Wins for Canadian
+                        <span className="block text-emerald-400">Energy Intelligence</span>
                     </h1>
-                    <p className="text-xl text-slate-300 max-w-2xl mx-auto">
-                        Why Energy Toolbase, Carbonhound, and Measurabl can't match our
-                        Alberta TIER, OCAP®, and procurement-optimized pricing
+                    <p className="text-xl text-slate-300 max-w-3xl mx-auto">
+                        Compare CEIP against adjacent tools across Canadian energy data,
+                        TIER workflow support, municipal reporting, and stakeholder-ready operating paths
                     </p>
                 </div>
             </header>
@@ -131,16 +132,16 @@ export const CompetitorComparison: React.FC = () => {
                         <div className="text-sm text-slate-400 mt-1">Critical Features Only CEIP Has</div>
                     </div>
                     <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-white">$70</div>
-                        <div className="text-sm text-slate-400 mt-1">Arbitrage per Tonne ($95 - $25)</div>
+                        <div className="text-4xl font-bold text-white">TIER</div>
+                        <div className="text-sm text-slate-400 mt-1">Pathway comparison focus for Alberta compliance workflows</div>
                     </div>
                     <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
-                        <div className="text-4xl font-bold text-white">776%</div>
-                        <div className="text-sm text-slate-400 mt-1">Avg Industrial Client ROI</div>
+                        <div className="text-4xl font-bold text-white">API</div>
+                        <div className="text-sm text-slate-400 mt-1">Consultant-friendly access and enterprise upgrade path</div>
                     </div>
                     <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 text-center">
                         <div className="text-4xl font-bold text-white">&lt;$75k</div>
-                        <div className="text-sm text-slate-400 mt-1">NWPTA Sole-Source Ready</div>
+                        <div className="text-sm text-slate-400 mt-1">Municipal pricing positioned for simpler procurement review</div>
                     </div>
                 </div>
             </div>

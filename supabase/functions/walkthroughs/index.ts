@@ -20,12 +20,12 @@ const jsonHeaders = { 'Content-Type': 'application/json' };
 const WALKTHROUGHS = {
   'dashboard': {
     title: 'Dashboard Exploration',
-    description: 'Learn to navigate and understand the real-time energy dashboard',
+    description: 'Learn to navigate and understand the live-when-available energy dashboard',
     steps: [
       {
         id: 'step1',
         title: 'Welcome to the Dashboard',
-        content: 'This dashboard shows live Ontario electricity demand, provincial generation mix, Alberta market prices, and weather correlations. All data is updated in real-time.',
+        content: 'This dashboard shows Ontario electricity demand, provincial generation mix, Alberta market prices, and weather correlations. Depending on source availability, data may be live, stale, or fallback-labeled.',
         target: '.dashboard-header',
         position: 'bottom',
         action: 'next'

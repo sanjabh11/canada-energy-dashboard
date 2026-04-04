@@ -153,6 +153,27 @@ export interface Translations {
     linkBackToDashboard: string;
     linkForIncubators: string;
   };
+  // Real-time dashboard section
+  realTime: {
+    title: string;
+    subtitle: string;
+    liveMonitoring: string;
+    activeDataSources: string;
+    provincesCovered: string;
+    updateFrequency: string;
+    architecture: string;
+    dataSources: string;
+    ontarioDemand: string;
+    albertaPrice: string;
+    connected: string;
+    connecting: string;
+    opsHealthUnavailable: string;
+    storageDispatch: string;
+    withinBounds: string;
+    outOfBounds: string;
+    renewableAlignment: string;
+    actions: string;
+  };
   // Incubators / CTN landing page
   incubators: {
     badgeLabel: string;
@@ -335,6 +356,26 @@ export const en: Translations = {
     ctaApiDocs: 'API Documentation',
     linkForEmployers: '← For Employers',
     linkBackToDashboard: 'Back to Dashboard →'
+  },
+  realTime: {
+    title: 'Real-Time Energy Dashboard',
+    subtitle: 'Live monitoring of Canada\'s electrical grid',
+    liveMonitoring: 'Live monitoring',
+    activeDataSources: 'Active Data Sources',
+    provincesCovered: 'Provinces Covered',
+    updateFrequency: 'Update Frequency',
+    architecture: 'Architecture',
+    dataSources: 'Data Sources',
+    ontarioDemand: 'Ontario Demand',
+    albertaPrice: 'Alberta Price',
+    connected: 'Connected',
+    connecting: 'Connecting...',
+    opsHealthUnavailable: 'Ops health unavailable',
+    storageDispatch: 'Storage Dispatch',
+    withinBounds: 'Within Bounds',
+    outOfBounds: 'Out of Bounds',
+    renewableAlignment: 'Renewable Alignment',
+    actions: 'actions'
   }
 };
 
@@ -496,6 +537,26 @@ export const fr: Translations = {
     ctaApiDocs: 'Documentation API',
     linkForEmployers: '← Pour les employeurs',
     linkBackToDashboard: 'Retour au tableau de bord →'
+  },
+  realTime: {
+    title: 'Tableau de bord énergétique en temps réel',
+    subtitle: 'Surveillance en direct du réseau électrique canadien',
+    liveMonitoring: 'Surveillance en direct',
+    activeDataSources: 'Sources de données actives',
+    provincesCovered: 'Provinces couvertes',
+    updateFrequency: 'Fréquence de mise à jour',
+    architecture: 'Architecture',
+    dataSources: 'Sources de données',
+    ontarioDemand: 'Demande Ontario',
+    albertaPrice: 'Prix Alberta',
+    connected: 'Connecté',
+    connecting: 'Connexion...',
+    opsHealthUnavailable: 'Santé ops indisponible',
+    storageDispatch: 'Dispatch stockage',
+    withinBounds: 'Dans les limites',
+    outOfBounds: 'Hors limites',
+    renewableAlignment: 'Alignement renouvelable',
+    actions: 'actions'
   }
 };
 

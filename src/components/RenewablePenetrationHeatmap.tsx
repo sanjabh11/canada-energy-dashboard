@@ -403,7 +403,7 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
               ) : (
                 <div className="text-center py-8 text-slate-500">
                   <Info size={48} className="mx-auto mb-4 opacity-50" />
-                  <p>No real-time data available for {selectedData.name}</p>
+                  <p>No live data available for {selectedData.name}</p>
                   <p className="text-sm mt-2">Data will be displayed when generation mix is available</p>
                 </div>
               )}

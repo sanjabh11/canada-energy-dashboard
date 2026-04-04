@@ -140,7 +140,7 @@ const watchdogContent = {
     steps: [
         {
             icon: <Zap className="h-6 w-6 text-cyan-400" />,
-            title: 'Real-Time Prices',
+            title: 'Live-When-Available Prices',
             description: 'See current Alberta pool prices updated every 5 minutes from AESO data.'
         },
         {

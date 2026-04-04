@@ -33,6 +33,9 @@ import { createProvenance } from '../lib/types/provenance';
 import RenewablePenetrationHeatmap from './RenewablePenetrationHeatmap';
 import ModularChartWidget from './ModularChartWidget';
 import AIAnalyticsWidget from './AIAnalyticsWidget';
+import { AskDataPanel } from './AskDataPanel';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 interface AnalyticsData {
   ontarioDemand: OntarioDemandRecord[];
@@ -389,6 +392,8 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
       generation: 15 + Math.random() * 5
     }));
 
+  const analyticsUsingFallback = data.provincialGeneration.length === 0 || data.ontarioDemand.length === 0;
+
   return (
     <div className="min-h-screen bg-slate-900 dashboard-analytics">
       {/* Hero Section */}
@@ -411,6 +416,13 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
                   <span className="text-secondary">{excludedLowQualityCount} low-completeness records excluded (threshold: 95%)</span>
                 </div>
               )}
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  timestamp={new Date().toISOString()}
+                  status={analyticsUsingFallback ? 'demo' : 'live'}
+                  source={analyticsUsingFallback ? 'Mixed analytics fallback inputs' : 'Provincial generation + Ontario demand datasets'}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <button
@@ -427,6 +439,13 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
       </section>
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 py-8`}>
+        {analyticsUsingFallback && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Fallback analytics inputs active"
+            message="Some analytics cards are using seeded or supplemented values because upstream generation or Ontario demand inputs are incomplete. Treat the charts as directional rather than audit-grade."
+          />
+        )}
 
         {/* Action Feedback Toast */}
         {actionFeedback.show && typeof document !== 'undefined' && createPortal(
@@ -503,7 +522,13 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
           }}
           onRecommendationApply={handleRecommendationApply}
           onScenarioApply={handleScenarioApply}
+          onQuerySubmit={(query) => console.log('AI Query submitted:', query)}
         />
+
+        {/* Natural Language Query Interface */}
+        <div className="card p-6">
+          <AskDataPanel />
+        </div>
 
         {/* Reports Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -516,17 +541,17 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
           <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/40 via-purple-900/40 to-slate-900/40 pointer-events-none" />
           <div className="relative z-10 p-6">
             <h3 className="text-lg font-semibold text-primary mb-2">
-              Ready to monitor real-time data?
+              Ready to review current data?
             </h3>
             <p className="text-sm text-secondary mb-4">
-              Return to the main dashboard for live energy metrics and alerts
+              Return to the main dashboard for energy metrics and alerts
             </p>
             <button
               onClick={handleBackToDashboard}
               className="inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-medium"
             >
               <ArrowLeft size={20} />
-              Back to Real-Time Dashboard
+              Back to Dashboard
             </button>
           </div>
         </div>

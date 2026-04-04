@@ -1,5 +1,5 @@
 /**
- * Real-Time CO2 Emissions Tracker
+ * CO2 Emissions Tracker
  * 
  * Displays live CO2 emissions from electricity generation.
  * Calculates emissions from provincial generation mix using standard emission factors.
@@ -363,7 +363,7 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
               </div>
               <div>
                 <h2 className="text-2xl font-bold text-gray-700">CO₂ Emissions Tracker</h2>
-                <p className="text-sm text-gray-500">Real-time carbon intensity monitoring</p>
+                <p className="text-sm text-gray-500">Carbon intensity monitoring</p>
               </div>
             </div>
           </div>
@@ -393,8 +393,8 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
               <Leaf className={getIntensityColor(co2Data.intensity_kg_per_mwh)} size={28} />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Real-Time CO₂ Emissions</h2>
-              <p className="text-sm text-slate-600">Live carbon footprint from electricity generation</p>
+              <h2 className="text-xl font-bold text-slate-900">CO₂ Emissions</h2>
+              <p className="text-sm text-slate-600">Carbon footprint from electricity generation</p>
             </div>
           </div>
           
@@ -424,7 +424,7 @@ export const CO2EmissionsTracker: React.FC<CO2EmissionsTrackerProps> = ({
               <li>• Emission factors from NRCan, EPA, and IPCC lifecycle assessments</li>
               <li>• Values include construction, operation, and decommissioning</li>
               <li>• Canadian grid average: {CANADIAN_AVERAGE_INTENSITY} kg CO₂/MWh</li>
-              <li>• Real-time calculations based on current generation mix</li>
+              <li>• Calculations based on current generation mix</li>
             </ul>
           </div>
         )}

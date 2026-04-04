@@ -10,6 +10,11 @@
 
 import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 import { fetchEdgeJson, fetchEdgeWithParams } from './edge';
+
+import provincialGenerationSample from '../../public/data/provincial_generation_sample.json';
+import ontarioDemandSample from '../../public/data/ontario_demand_sample.json';
+import ontarioPricesSample from '../../public/data/ontario_prices_sample.json';
+import hfElectricityDemandSample from '../../public/data/hf_electricity_demand_sample.json';
 // Types
 export interface StreamingOptions {
   limit?: number;
@@ -148,13 +153,50 @@ const getBaseDataUrl = () => {
   return `${base}data/`;
 };
 
-async function loadSampleJson<T>(fileName: string): Promise<T> {
-  const url = `${getBaseDataUrl()}${fileName}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to load fallback data from ${url}: ${response.status} ${response.statusText}`);
+/**
+ * Shifts an array of records so their timestamps end at the current time.
+ */
+function shiftTimestampsToNow<T>(records: T[], dateField: keyof T): T[] {
+  if (!records || records.length === 0) return records;
+  
+  let maxTime = -Infinity;
+  for (const record of records) {
+    const val = record[dateField] as unknown as string;
+    if (!val) continue;
+    // Handle "YYYY-MM" format safely
+    const parsed = new Date(val.length === 7 && val.includes('-') ? `${val}-01` : val).getTime();
+    if (!isNaN(parsed) && parsed > maxTime) {
+      maxTime = parsed;
+    }
   }
-  return (await response.json()) as T;
+  
+  if (maxTime === -Infinity) return records;
+  
+  const shift = Date.now() - maxTime;
+  
+  return records.map(record => {
+    const val = record[dateField] as unknown as string;
+    if (!val) return record;
+    
+    const originalTime = new Date(val.length === 7 && val.includes('-') ? `${val}-01` : val).getTime();
+    if (isNaN(originalTime)) return record;
+    
+    const shiftedDate = new Date(originalTime + shift);
+    let newDateStr = shiftedDate.toISOString();
+    
+    if (val.length === 7 && val.includes('-')) {
+      newDateStr = newDateStr.substring(0, 7);
+    } else if (val.length === 10 && val.includes('-')) {
+      newDateStr = newDateStr.substring(0, 10);
+    } else if (val.includes(' ')) {
+      newDateStr = newDateStr.substring(0, 19).replace('T', ' ');
+    }
+    
+    return {
+      ...record,
+      [dateField]: newDateStr
+    };
+  });
 }
 
 /**
@@ -222,11 +264,10 @@ export class ProvincialGenerationStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<ProvincialGenerationRecord[]> {
-    const raw = await loadSampleJson<Array<Omit<ProvincialGenerationRecord, 'source' | 'version' | 'ingested_at'>>>(
-      'provincial_generation_sample.json'
-    );
+    const raw = provincialGenerationSample as Array<Omit<ProvincialGenerationRecord, 'source' | 'version' | 'ingested_at'>>;
     const now = new Date();
-    return raw.map((record, index) => ({
+    const shifted = shiftTimestampsToNow(raw, 'date');
+    return shifted.map((record, index) => ({
       ...record,
       id: record.id ?? `provincial_generation_fallback_${index}`,
       source: 'fallback',
@@ -242,7 +283,7 @@ export class ProvincialGenerationStreamer extends BaseDataStreamer {
 export class OntarioDemandStreamer extends BaseDataStreamer {
   async getManifest() {
     const { json } = await fetchEdgeJson([
-      'manifest-ontario-demand',
+      'manifest',
       'manifest/kaggle/ontario_demand'
     ]);
     return json;
@@ -298,10 +339,9 @@ export class OntarioDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioDemandRecord[]> {
-    const raw = await loadSampleJson<Array<Omit<OntarioDemandRecord, 'source' | 'version' | 'ingested_at'>>>(
-      'ontario_demand_sample.json'
-    );
-    return raw.map((record, index) => ({
+    const raw = ontarioDemandSample as Array<Omit<OntarioDemandRecord, 'source' | 'version' | 'ingested_at'>>;
+    const shifted = shiftTimestampsToNow(raw, 'datetime');
+    return shifted.map((record, index) => ({
       ...record,
       id: record.id ?? index,
       source: 'fallback',
@@ -317,7 +357,7 @@ export class OntarioDemandStreamer extends BaseDataStreamer {
 export class OntarioPricesStreamer extends BaseDataStreamer {
   async getManifest() {
     const { json } = await fetchEdgeJson([
-      'manifest-ontario-prices',
+      'manifest',
       'manifest/kaggle/ontario_prices'
     ]);
     return json;
@@ -373,10 +413,9 @@ export class OntarioPricesStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioPricesRecord[]> {
-    const raw = await loadSampleJson<Array<Omit<OntarioPricesRecord, 'source' | 'version' | 'ingested_at'>>>(
-      'ontario_prices_sample.json'
-    );
-    return raw.map((record, index) => ({
+    const raw = ontarioPricesSample as Array<Omit<OntarioPricesRecord, 'source' | 'version' | 'ingested_at'>>;
+    const shifted = shiftTimestampsToNow(raw, 'datetime');
+    return shifted.map((record, index) => ({
       ...record,
       id: record.id ?? index,
       source: 'fallback',
@@ -452,10 +491,9 @@ export class HFElectricityDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<HFElectricityDemandRecord[]> {
-    const raw = await loadSampleJson<Array<HFElectricityDemandRecord & { datetime: string }>>(
-      'hf_electricity_demand_sample.json'
-    );
-    return raw.map((record) => ({
+    const raw = hfElectricityDemandSample as Array<HFElectricityDemandRecord & { datetime: string }>;
+    const shifted = shiftTimestampsToNow(raw, 'datetime');
+    return shifted.map((record) => ({
       ...record,
       source: 'fallback',
       version: '1.0-fallback'

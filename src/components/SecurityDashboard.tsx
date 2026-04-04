@@ -7,6 +7,8 @@ import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, 
 import { Shield, AlertTriangle, Eye, Lock, Zap, Activity, TrendingUp, Target, Clock, Wifi, WifiOff, AlertCircle } from 'lucide-react';
 import { PartialFeatureWarning } from './FeatureStatusBadge';
 import { HelpButton } from './HelpButton';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 // Interfaces for Security Dashboard
 export interface ThreatModel {
@@ -262,6 +264,12 @@ const SecurityDashboard: React.FC = () => {
     };
   }, [securityMetrics, incidents]);
 
+  const securityFreshnessStatus = connectionStatus === 'fallback'
+    ? 'demo'
+    : securityMetrics?.lastUpdated
+      ? 'live'
+      : 'unknown';
+
   // Prepare threat model data for scatter plot
   const threatScatterData = useMemo(() => {
     return threatModels.map(threat => ({
@@ -323,6 +331,21 @@ const SecurityDashboard: React.FC = () => {
     }));
   }, [mitigationStrategies]);
 
+  // Derive unified monitoring status from both connection sources
+  const monitoringStatus = useMemo(() => {
+    const wsHealthy = wsConnected;
+    const streamHealthy = connectionStatus === 'connected';
+    const streamFallback = connectionStatus === 'fallback';
+
+    if (wsHealthy && streamHealthy) {
+      return { state: 'active', label: 'Security Monitoring Active', color: 'bg-green-500' };
+    } else if (wsHealthy || streamHealthy || streamFallback) {
+      return { state: 'degraded', label: 'Security Monitoring Degraded', color: 'bg-yellow-500' };
+    } else {
+      return { state: 'offline', label: 'Security Monitoring Offline', color: 'bg-red-500' };
+    }
+  }, [wsConnected, connectionStatus]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -336,6 +359,15 @@ const SecurityDashboard: React.FC = () => {
       <div className={CONTAINER_CLASSES.page}>
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="security_assessment" />
+
+        {connectionStatus === 'fallback' && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Fallback monitoring mode active"
+            message="Parts of the security monitoring view are running on fallback stream state rather than a confirmed live event feed. Use this dashboard for situational awareness, not incident-grade verification."
+            className="mb-6"
+          />
+        )}
 
         <section className="hero-section">
           <div className="hero-content">
@@ -353,6 +385,13 @@ const SecurityDashboard: React.FC = () => {
                 <p className="hero-subtitle">
                   Threat modeling, incident monitoring, and security mitigation strategies
                 </p>
+                <div className="mt-3">
+                  <DataFreshnessBadge
+                    timestamp={securityMetrics?.lastUpdated}
+                    status={securityFreshnessStatus}
+                    source={connectionStatus === 'fallback' ? 'Fallback security telemetry' : 'Security metrics API'}
+                  />
+                </div>
               </div>
               <HelpButton id="security.overview" />
             </div>
@@ -625,23 +664,11 @@ const SecurityDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Connection Status */}
-        <div className="mt-4 flex items-center justify-end space-x-4">
+        {/* Unified Connection Status */}
+        <div className="mt-4 flex items-center justify-end">
           <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              wsConnected ? 'bg-secondary0' : 'bg-secondary0'
-            }`}></span>
-            <span className="text-secondary">
-              {wsConnected ? 'Real-time Security Monitoring Active' : 'Security Monitoring Offline'}
-            </span>
-          </div>
-          <div className="flex items-center space-x-2 text-sm">
-            <span className={`inline-block w-2 h-2 rounded-full ${
-              connectionStatus === 'connected' ? 'bg-secondary0' : 'bg-secondary0'
-            }`}></span>
-            <span className="text-secondary">
-              {connectionStatus === 'connected' ? 'Security Data Stream Active' : 'Security Data Stream Offline'}
-            </span>
+            <span className={`inline-block w-2 h-2 rounded-full ${monitoringStatus.color}`}></span>
+            <span className="text-secondary">{monitoringStatus.label}</span>
           </div>
         </div>
       </div>

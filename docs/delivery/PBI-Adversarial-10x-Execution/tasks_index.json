@@ -1,0 +1,101 @@
+{
+  "pbi_id": "PBI-Adversarial-10x-Execution",
+  "tasks": [
+    {
+      "id": "PBI-Adversarial-10x-Execution-T1",
+      "title": "Foundation safety net and lead capture hardening",
+      "status": "InProgress",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T2",
+      "title": "Freshness metadata and Phase 1 knowledge foundation",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T3",
+      "title": "pgvector document embeddings and retrieval scaffold",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T4",
+      "title": "Prompt grounding with retrieved corpus context",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T5",
+      "title": "Ops health and freshness backbone unification",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T6",
+      "title": "RAG ingestion pipeline for chunking and embeddings",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T7",
+      "title": "Retrieval-aware client and UI integration",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T8",
+      "title": "Bundle and performance hardening for large Vite chunks",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-24"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T9",
+      "title": "Runtime fallback transparency and mock data disclosure",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-25"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T10",
+      "title": "Streaming consumer normalization (Indigenous, Stakeholder)",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-25"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T11",
+      "title": "High-visibility mock data disclosure (Renewable, Compliance, RealTime)",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-25"
+    },
+    {
+      "id": "PBI-Adversarial-10x-Execution-T12",
+      "title": "llmClient chunk optimization and modular split",
+      "status": "Review",
+      "owner": "AI_Agent",
+      "tier": "Tier 2",
+      "created_at": "2026-03-25"
+    }
+  ]
+}

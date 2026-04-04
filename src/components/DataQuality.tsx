@@ -40,12 +40,33 @@ const DataQuality: React.FC<Props> = ({ datasetPath }) => {
   const recommendations: string[] = Array.isArray(data?.recommendations) ? (data!.recommendations as string[]) : [];
   const alerts: string[] = Array.isArray(data?.alerts) ? (data!.alerts as string[]) : [];
 
+  const handleDownloadJson = () => {
+    if (!data) {
+      console.warn('Download attempted but no data available');
+      return;
+    }
+    try {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safePath = (datasetPath || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `data-quality_${safePath}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Failed to download JSON:', err);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-800">Data Quality</h3>
         <button
-          onClick={() => { if (data) { const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `data-quality_${datasetPath}.json`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url); } }}
+          onClick={handleDownloadJson}
           disabled={!data}
           className="flex items-center space-x-2 text-sm bg-slate-100 hover:bg-slate-200 disabled:opacity-50 px-3 py-2 rounded"
         >

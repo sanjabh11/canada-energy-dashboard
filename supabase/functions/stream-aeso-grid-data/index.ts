@@ -8,6 +8,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 // CORS headers for Edge Function responses
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
@@ -302,12 +303,19 @@ serve(async (req: Request) => {
       records: records.length,
       duration_ms: duration
     }, startedAt);
+    const provenance = buildDataProvenance({
+      source: 'AESO API',
+      lastUpdated: records[0]?.timestamp ?? new Date().toISOString(),
+      isFallback: false,
+      staleAfterHours: 2,
+    });
 
     return new Response(JSON.stringify({
       success: true,
       message: 'AESO data ingested successfully',
       records: records.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      provenance,
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -325,11 +333,18 @@ serve(async (req: Request) => {
       error: message,
       duration_ms: duration
     }, startedAt);
+    const provenance = buildDataProvenance({
+      source: 'AESO API unavailable',
+      lastUpdated: null,
+      isFallback: true,
+      staleAfterHours: 2,
+    });
 
     return new Response(JSON.stringify({
       success: false,
       error: message,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      provenance,
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }

@@ -30,8 +30,8 @@ export function WhopDiscoverPage() {
     const features = [
         {
             icon: <BarChart3 className="w-6 h-6" />,
-            title: 'Real-Time Energy Analytics',
-            description: 'Track Canadian energy production across all provinces with live data visualization'
+            title: 'Energy Analytics Workspace',
+            description: 'Explore Canadian energy production across provinces with live-when-available telemetry and clearly labeled demo views'
         },
         {
             icon: <BookOpen className="w-6 h-6" />,
@@ -106,7 +106,7 @@ export function WhopDiscoverPage() {
                     </h1>
                     <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
                         The complete platform for teaching Canadian energy systems.
-                        Real data. Professional certificates. AI-powered learning.
+                        Operator-sourced datasets, labeled demos, professional certificates, and AI-powered learning.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a

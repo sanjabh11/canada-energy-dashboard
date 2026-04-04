@@ -242,7 +242,7 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
           <FeatureCard
             icon={TrendingUp}
             title="Energy Trader"
-            description="Simulate high-stakes grid decisions. Can you profit from the chaos of Alberta's electricity market?"
+            description="Simulate high-stakes grid decisions with scenario-based Alberta market exercises and demo analytics."
             href="/whop-mini/trader"
             tag="NEW"
             tagColor="purple"
@@ -260,7 +260,7 @@ function WhopMiniHome({ user }: { user: WhopMiniUser | null }) {
           <FeatureCard
             icon={LayoutDashboard}
             title="Dashboard Demo"
-            description="See how municipalities and EPCs monitor Alberta's grid in real-time."
+            description="See how municipalities and EPCs review Alberta grid conditions with a clearly labeled demo dashboard."
             href="/whop-mini/dashboard"
             tag="PREVIEW"
             tagColor="cyan"

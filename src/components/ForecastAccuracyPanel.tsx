@@ -152,9 +152,18 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
   }, [resourceType, province, stats]);
 
   const generateSampleData = (type: 'solar' | 'wind', prov: string): ForecastAccuracyData => {
+    // Province-specific variation factors ( Ontario=1.0 as baseline)
+    const provinceMultipliers: Record<string, number> = {
+      'ON': 1.0,
+      'AB': 1.15,  // Alberta: higher variability
+      'BC': 0.95,  // BC: hydro-dominated, more stable
+      'QC': 0.90,  // Quebec: hydro-dominated, very stable
+    };
+    const multiplier = provinceMultipliers[prov] ?? 1.0;
+    
     const horizons: HorizonMetrics[] = [1, 3, 6, 12, 24, 48].map(h => {
       const baseMae = type === 'solar' ? 4.5 : 8.2;
-      const mae = baseMae + (h * 0.3);
+      const mae = (baseMae + (h * 0.3)) * multiplier;
       const baselineMae = mae / 0.75; // 25% uplift
       
       return {
@@ -324,6 +333,22 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
               </div>
               <div className="text-xs text-gray-600 mb-2">
                 MAE (Mean Absolute Error)
+              </div>
+
+              {/* MAPE */}
+              <div className="text-sm font-semibold text-gray-700 mb-1">
+                {horizon.mape.toFixed(1)}% MAPE
+              </div>
+              <div className="text-xs text-gray-500 mb-2">
+                Mean Absolute Percentage Error
+              </div>
+
+              {/* RMSE */}
+              <div className="text-sm font-semibold text-gray-700 mb-1">
+                {horizon.rmse?.toFixed(1) ?? (horizon.mae * 1.2).toFixed(1)}% RMSE
+              </div>
+              <div className="text-xs text-gray-500 mb-2">
+                Root Mean Square Error
               </div>
 
               {/* Confidence Band */}

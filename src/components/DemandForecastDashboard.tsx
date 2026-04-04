@@ -152,6 +152,8 @@ export const DemandForecastDashboard: React.FC = () => {
               <DataFreshnessBadge
                 snapshotDate={stats.date_range.end || 'N/A'}
                 snapshotLabel="Training Data"
+                isFallback
+                source="Ontario sample/training dataset"
               />
               <button
                 onClick={handleExportCSV}

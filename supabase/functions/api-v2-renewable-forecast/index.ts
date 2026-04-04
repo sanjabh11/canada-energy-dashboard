@@ -6,6 +6,7 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 interface ForecastRequest {
   province: string;
   source_type: 'solar' | 'wind';
@@ -240,6 +241,7 @@ serve(async (req) => {
 
     // Fetch weather data if requested
     let weatherData = null;
+    let weatherObservedAt: string | null = null;
     if (fetch_weather) {
       const { data: weather } = await supabaseClient
         .from('weather_observations')
@@ -250,6 +252,7 @@ serve(async (req) => {
         .single();
 
       if (weather) {
+        weatherObservedAt = weather.observed_at ?? null;
         weatherData = {
           temp_c: weather.temperature_c,
           cloud_cover_pct: weather.cloud_cover_percent,
@@ -288,6 +291,13 @@ serve(async (req) => {
       forecasts.push(stored || forecast);
     }
 
+    const provenance = buildDataProvenance({
+      source: weatherData ? 'weather_observations' : 'renewable_forecast_model',
+      lastUpdated: weatherObservedAt,
+      isFallback: !weatherData,
+      staleAfterHours: 6,
+    });
+
     return new Response(
       JSON.stringify({
         success: true,
@@ -298,6 +308,7 @@ serve(async (req) => {
           baseline_generation_mw: baseline,
           weather_available: !!weatherData,
           generated_at: new Date().toISOString(),
+          provenance,
         },
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

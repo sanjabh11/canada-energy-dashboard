@@ -78,6 +78,7 @@ export function EnterprisePage() {
     });
     const [submitted, setSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [submitError, setSubmitError] = useState('');
     const demoBookingUrl = getBookDemoUrl();
 
     useEffect(() => {
@@ -103,6 +104,7 @@ export function EnterprisePage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
+        setSubmitError('');
 
         trackRouteIntentCta('enterprise', 'submit_contact_form', {
             team_size: formData.teamSize,
@@ -140,22 +142,14 @@ export function EnterprisePage() {
             trackEvent('enterprise_form_persist_failed', {
                 error: persistResult.error || 'unknown',
             });
+            setLoading(false);
+            setSubmitError('We could not submit your request. Please try again in a moment.');
+            return;
         } else {
             trackEvent('enterprise_form_persisted', {
-                source: 'supabase',
+                source: 'netlify_function',
             });
         }
-
-        // Store lead locally (Dual Capture pattern)
-        const leads = JSON.parse(localStorage.getItem('ceip_enterprise_leads') || '[]');
-        leads.push({
-            ...formData,
-            timestamp: new Date().toISOString(),
-            source: 'enterprise_page',
-            urlTier: tierParam,
-            persistedToSupabase: persistResult.ok
-        });
-        localStorage.setItem('ceip_enterprise_leads', JSON.stringify(leads));
 
         setLoading(false);
         setSubmitted(true);
@@ -509,6 +503,10 @@ export function EnterprisePage() {
                                     placeholder="We're looking for a platform to track emissions across our 15 facilities..."
                                 />
                             </div>
+
+                            {submitError && (
+                                <p className="mb-6 text-sm text-rose-400">{submitError}</p>
+                            )}
 
                             <button
                                 type="submit"

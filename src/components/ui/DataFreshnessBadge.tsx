@@ -10,7 +10,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Clock, CheckCircle, AlertTriangle, XCircle, RefreshCw } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, RefreshCw, Database } from 'lucide-react';
+import { getFreshnessStatus, type FreshnessStatus } from '../../lib/foundation';
 
 export interface DataFreshnessBadgeProps {
   /** Timestamp of last data update (Date object or ISO string) */
@@ -31,9 +32,11 @@ export interface DataFreshnessBadgeProps {
   compact?: boolean;
   /** Additional CSS classes */
   className?: string;
+  /** Explicitly override the computed status */
+  status?: FreshnessStatus;
+  /** Optional source label for high-risk datasets */
+  source?: string;
 }
-
-type FreshnessStatus = 'fresh' | 'stale' | 'expired' | 'unknown';
 
 export function DataFreshnessBadge({
   timestamp,
@@ -44,7 +47,9 @@ export function DataFreshnessBadge({
   showRefreshButton = false,
   isRefreshing = false,
   compact = false,
-  className = ''
+  className = '',
+  status,
+  source,
 }: DataFreshnessBadgeProps) {
   const [now, setNow] = useState(new Date());
 
@@ -63,13 +68,19 @@ export function DataFreshnessBadge({
 
   // Calculate freshness status
   const getStatus = (): FreshnessStatus => {
+    if (status) return status;
+    const baseStatus = getFreshnessStatus({
+      lastUpdated: lastUpdate && !isNaN(lastUpdate.getTime()) ? lastUpdate.toISOString() : null,
+      staleAfterHours: staleThresholdMinutes / 60,
+      now,
+    });
+
+    if (baseStatus === 'unknown' || baseStatus === 'demo') return baseStatus;
+
     if (!lastUpdate || isNaN(lastUpdate.getTime())) return 'unknown';
-    
     const minutesAgo = (now.getTime() - lastUpdate.getTime()) / (1000 * 60);
-    
-    if (minutesAgo < staleThresholdMinutes) return 'fresh';
-    if (minutesAgo < expiredThresholdMinutes) return 'stale';
-    return 'expired';
+    if (minutesAgo < expiredThresholdMinutes) return baseStatus;
+    return 'stale';
   };
 
   // Format relative time
@@ -99,7 +110,7 @@ export function DataFreshnessBadge({
     });
   };
 
-  const status = getStatus();
+  const currentStatus = getStatus();
   const displayTime = showRelative ? formatRelativeTime() : formatAbsoluteTime();
 
   // Status configuration
@@ -110,7 +121,7 @@ export function DataFreshnessBadge({
     borderColor: string;
     label: string;
   }> = {
-    fresh: {
+    live: {
       icon: CheckCircle,
       color: 'text-emerald-400',
       bgColor: 'bg-emerald-500/10',
@@ -124,12 +135,12 @@ export function DataFreshnessBadge({
       borderColor: 'border-amber-500/30',
       label: 'Stale'
     },
-    expired: {
-      icon: XCircle,
-      color: 'text-red-400',
-      bgColor: 'bg-red-500/10',
-      borderColor: 'border-red-500/30',
-      label: 'Expired'
+    demo: {
+      icon: Database,
+      color: 'text-sky-400',
+      bgColor: 'bg-sky-500/10',
+      borderColor: 'border-sky-500/30',
+      label: 'Demo Data'
     },
     unknown: {
       icon: Clock,
@@ -140,7 +151,7 @@ export function DataFreshnessBadge({
     }
   };
 
-  const config = statusConfig[status];
+  const config = statusConfig[currentStatus];
   const Icon = config.icon;
 
   if (compact) {
@@ -150,7 +161,7 @@ export function DataFreshnessBadge({
         title={`Last updated: ${formatAbsoluteTime()}`}
       >
         <Icon className="h-3 w-3" />
-        <span>{displayTime}</span>
+        <span>{currentStatus === 'demo' ? config.label : displayTime}</span>
         {showRefreshButton && onRefresh && (
           <button
             onClick={onRefresh}
@@ -173,8 +184,14 @@ export function DataFreshnessBadge({
         <span className={`font-medium ${config.color}`}>{config.label}</span>
         <span className="text-slate-400">•</span>
         <span className="text-slate-300" title={formatAbsoluteTime()}>
-          Updated {displayTime}
+          {currentStatus === 'demo' ? 'Fallback or seeded dataset' : `Updated ${displayTime}`}
         </span>
+        {source ? (
+          <>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-300">{source}</span>
+          </>
+        ) : null}
       </div>
       {showRefreshButton && onRefresh && (
         <button
@@ -213,23 +230,22 @@ export function DataFreshnessIndicator({
     
     const minutesAgo = (Date.now() - lastUpdate.getTime()) / (1000 * 60);
     
-    if (minutesAgo < staleThresholdMinutes) return 'fresh';
-    if (minutesAgo < staleThresholdMinutes * 24) return 'stale';
-    return 'expired';
+    if (minutesAgo < staleThresholdMinutes) return 'live';
+    return 'stale';
   };
 
   const status = getStatus();
   const colorMap: Record<FreshnessStatus, string> = {
-    fresh: 'bg-emerald-400',
+    live: 'bg-emerald-400',
     stale: 'bg-amber-400',
-    expired: 'bg-red-400',
+    demo: 'bg-sky-400',
     unknown: 'bg-slate-400'
   };
 
   return (
     <div
       className={`h-2 w-2 rounded-full ${colorMap[status]} ${
-        status === 'fresh' ? 'animate-pulse' : ''
+        status === 'live' ? 'animate-pulse' : ''
       } ${className}`}
       title={
         lastUpdate

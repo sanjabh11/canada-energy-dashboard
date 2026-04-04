@@ -1,5 +1,3 @@
-import { supabase } from './supabaseClient';
-
 export interface LeadIntakeSubmission {
   company_name: string;
   contact_name: string;
@@ -41,10 +39,31 @@ export async function persistLeadIntake(submission: LeadIntakeSubmission): Promi
     metadata: submission.metadata ?? {},
   };
 
+  if (!payload.contact_name || !payload.email || !payload.source_route || !payload.segment || !payload.campaign_id) {
+    return {
+      ok: false,
+      error: 'invalid_submission',
+    };
+  }
+
   try {
-    const { error } = await supabase.from('lead_intake_submissions').insert(payload);
-    if (error) {
-      return { ok: false, error: error.message };
+    const response = await fetch('/api/leads/intake', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'intake',
+        submission: payload,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      return {
+        ok: false,
+        error: body?.message || body?.error || `lead_capture_failed_${response.status}`,
+      };
     }
     return { ok: true };
   } catch (error) {

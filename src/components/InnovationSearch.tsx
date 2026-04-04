@@ -3,6 +3,7 @@ import { Search, Lightbulb, Target, Zap, Eye, Briefcase, Clock, DollarSign, User
 import { trlEngine, type TRLEvaluation, InnovationCategory } from '../lib/technologyReadiness';
 import { supabase } from '../lib/supabaseClient';
 import { getSupabaseConfig } from '../lib/config';
+import DataTrustNotice from './DataTrustNotice';
 
 // Mock innovation data for demonstration
 const mockInnovations = [
@@ -98,7 +99,8 @@ export const InnovationSearch: React.FC = () => {
   const [innovations, setInnovations] = useState<any[]>([]);
   const [trlEvaluations, setTrlEvaluations] = useState<Map<string, TRLEvaluation>>(new Map());
   const [showPitchGeneration, setShowPitchGeneration] = useState(false);
-  const [generatedPitch, setGeneratedPitch] = useState<string>('');
+  const [generatedPitch, setGeneratedPitch] = useState('');
+  const [usingMockData, setUsingMockData] = useState(false);
 
   // Load innovations from database
   useEffect(() => {
@@ -110,6 +112,7 @@ export const InnovationSearch: React.FC = () => {
         if (!url || !anonKey) {
           console.warn('Supabase not configured, using mock data');
           setInnovations(mockInnovations);
+          setUsingMockData(true);
           await loadTRLEvaluationsForMock();
           setLoading(false);
           return;
@@ -125,6 +128,7 @@ export const InnovationSearch: React.FC = () => {
           console.error('Error loading innovations:', error);
           // Fallback to mock data
           setInnovations(mockInnovations);
+          setUsingMockData(true);
           await loadTRLEvaluationsForMock();
         } else if (data && data.length > 0) {
           // Map database records to expected format
@@ -146,16 +150,19 @@ export const InnovationSearch: React.FC = () => {
           }));
           
           setInnovations(mappedInnovations);
+          setUsingMockData(false);
           await loadTRLEvaluations(mappedInnovations);
         } else {
           // No data in database, use mock
           console.info('No innovations in database, using mock data');
           setInnovations(mockInnovations);
+          setUsingMockData(true);
           await loadTRLEvaluationsForMock();
         }
       } catch (error) {
         console.error('Failed to load innovations:', error);
         setInnovations(mockInnovations);
+        setUsingMockData(true);
         await loadTRLEvaluationsForMock();
       }
       
@@ -275,6 +282,14 @@ ${evaluation?.evidenceDescription || 'Technology maturity assessment in progress
 
   return (
     <div className="space-y-6">
+      {usingMockData && (
+        <DataTrustNotice
+          mode="mock"
+          title="Illustrative innovation dataset active"
+          message="This screen is currently using illustrative innovation examples because live Supabase records are unavailable or not configured. Treat TRL scores, funding, and generated pitch content as demos rather than verified market records."
+        />
+      )}
+
       {/* Header */}
       <div className="card p-6">
         <div className="flex items-center space-x-4 mb-4">

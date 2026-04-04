@@ -22,17 +22,19 @@ import { DataExporter } from './DataExporter';
 import { LoadingSpinner } from './LoadingSpinner';
 import { RealTimeDashboard } from './RealTimeDashboard';
 import { MiniLoadingSpinner } from './LoadingSpinner';
+import DataTrustNotice from './DataTrustNotice';
 
 // Lazy-loaded tab components — only the active tab's code is fetched
 const InvestmentCards = React.lazy(() => import('./InvestmentCards').then(m => ({ default: m.InvestmentCards })));
 const ResilienceMap = React.lazy(() => import('./ResilienceMap').then(m => ({ default: m.ResilienceMap })));
 const InnovationSearch = React.lazy(() => import('./InnovationSearch').then(m => ({ default: m.InnovationSearch })));
-const IndigenousDashboard = React.lazy(() => import('./IndigenousDashboard').then(m => ({ default: m.IndigenousDashboard })));
+const IndigenousDashboard = React.lazy(() => import('./IndigenousDashboard'));
 const StakeholderDashboard = React.lazy(() => import('./StakeholderDashboard').then(m => ({ default: m.StakeholderDashboard })));
 const GridOptimizationDashboard = React.lazy(() => import('./GridOptimizationDashboard'));
 const SecurityDashboard = React.lazy(() => import('./SecurityDashboard'));
 const FeatureAvailability = React.lazy(() => import('./FeatureAvailability').then(m => ({ default: m.FeatureAvailability })));
-import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake, Recycle } from 'lucide-react';
+import { Zap, Database, Activity, Home, BarChart3, TrendingUp, GraduationCap, Globe, Wifi, Radio, Signal, AlertCircle, CheckCircle, Clock, MapPin, Gauge, TrendingDown, Shield, Lock, Info, Sun, Wind, Battery, Server, Fuel, Package, Atom, Cable, Car, Thermometer, Factory, Leaf, Users, Cpu, Scale, DollarSign, Snowflake, Recycle, AlertTriangle } from 'lucide-react';
+import { ErrorBoundary } from './ErrorBoundary';
 import { CONTAINER_CLASSES, TEXT_CLASSES, COLOR_SCHEMES, RESPONSIVE_UTILS } from '../lib/ui/layout';
 import NavigationRibbon from './NavigationRibbon';
 import FooterSettingsMenu from './FooterSettingsMenu';
@@ -550,9 +552,9 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                       <div className="p-4 bg-secondary rounded-lg">
                         <div className="flex items-center space-x-2 mb-2">
                           <Signal className="h-5 w-5 text-electric" />
-                          <h4 className="font-semibold text-blue-800">Real-time Streaming</h4>
+                          <h4 className="font-semibold text-blue-800">Live-When-Available Streaming</h4>
                         </div>
-                        <p className="text-sm text-secondary">Data streams continuously from multiple Canadian energy providers using resilient Supabase Edge Functions</p>
+                        <p className="text-sm text-secondary">Data is pulled from multiple Canadian energy providers using resilient Supabase Edge Functions, with freshness and fallback states surfaced where available.</p>
                       </div>
 
                       <div className="p-4 bg-secondary rounded-lg">
@@ -602,6 +604,11 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
 
             {activeTab === 'Investment' && (
               <div className="space-y-8">
+                <DataTrustNotice
+                  mode="fallback"
+                  title="Investment analysis is trust-labeled"
+                  message="This page now distinguishes live stream inputs from fallback market assumptions. Use the freshness badge inside the investment view before treating outputs as current market guidance."
+                />
                 <InvestmentCards />
               </div>
             )}
@@ -644,7 +651,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
             {activeTab === 'GridOptimization' && (
               <div className="space-y-8">
                 <TabHero icon={Activity} title="Grid Optimization" subtitle="Advanced grid management and optimization for reliable energy distribution" shaderClass="shader-bg-primary" cards={[
-                  { icon: Activity, iconColor: 'text-cyan-300', title: 'Load Balancing', description: 'Real-time grid load optimization' },
+                  { icon: Activity, iconColor: 'text-cyan-300', title: 'Load Balancing', description: 'Live-when-available grid load optimization with fallback disclosure' },
                   { icon: Gauge, iconColor: 'text-yellow-300', title: 'Predictive Maintenance', description: 'AI-driven equipment health monitoring' },
                   { icon: TrendingUp, iconColor: 'text-green-300', title: 'Efficiency Analytics', description: 'Performance optimization insights' },
                 ]} />
@@ -659,7 +666,21 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                   { icon: Lock, iconColor: 'text-blue-300', title: 'Access Control', description: 'Multi-factor authentication and authorization' },
                   { icon: Activity, iconColor: 'text-green-300', title: 'Incident Response', description: 'Automated security incident management' },
                 ]} />
-                <SecurityDashboard />
+                <ErrorBoundary fallback={
+                  <div className="card p-8 text-center">
+                    <AlertTriangle className="h-12 w-12 text-warning mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Security Dashboard Unavailable</h3>
+                    <p className="text-secondary mb-4">The security monitoring system is currently offline. Please try again later.</p>
+                    <button 
+                      onClick={() => window.location.reload()} 
+                      className="btn btn-primary"
+                    >
+                      Reload Dashboard
+                    </button>
+                  </div>
+                }>
+                  <SecurityDashboard />
+                </ErrorBoundary>
               </div>
             )}
 

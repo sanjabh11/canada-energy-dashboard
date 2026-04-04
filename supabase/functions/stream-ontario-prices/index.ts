@@ -3,6 +3,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { getOntarioPricesSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 type OntarioPriceRow = {
   datetime: string;
@@ -85,6 +86,19 @@ function mapRow(row: Record<string, unknown>): OntarioPriceRow {
   };
 }
 
+function getLatestTimestamp(rows: Array<Record<string, unknown>>): string | null {
+  if (rows.length === 0) return null;
+
+  const timestamps = rows
+    .map((row) => row.datetime ?? row.interval_ending)
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  return timestamps[0]?.toISOString() ?? null;
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = createCorsHeaders(req);
 
@@ -140,6 +154,12 @@ Deno.serve(async (req: Request) => {
       console.log('Database empty, loading sample data...');
       const sampleData = await getOntarioPricesSample();
       const paginated = paginateSampleData(sampleData, limit, cursor || undefined);
+      const provenance = buildDataProvenance({
+        source: 'Ontario nodal price sample dataset',
+        lastUpdated: getLatestTimestamp(paginated.rows),
+        isFallback: true,
+        staleAfterHours: 1,
+      });
       
       const metadata = {
         streamKey: STREAM_KEY,
@@ -148,7 +168,8 @@ Deno.serve(async (req: Request) => {
         returned: paginated.rows.length,
         totalEstimate: sampleData.length,
         hasMore: paginated.hasMore,
-        usingSampleData: true
+        usingSampleData: true,
+        ...provenance,
       };
 
       await updateStreamHealth('healthy', metadata, {
@@ -164,13 +185,21 @@ Deno.serve(async (req: Request) => {
 
       return new Response(JSON.stringify({ 
         rows: paginated.rows, 
-        metadata 
+        metadata,
+        provenance,
       }), { headers, status: 200 });
     }
 
     // Return database data
     const nextOffset = offset + rows.length;
     const hasMore = nextOffset < total;
+
+    const provenance = buildDataProvenance({
+      source: 'Ontario nodal prices table',
+      lastUpdated: getLatestTimestamp(rows),
+      isFallback: usedSample,
+      staleAfterHours: 1,
+    });
 
     const metadata = {
       streamKey: STREAM_KEY,
@@ -179,7 +208,8 @@ Deno.serve(async (req: Request) => {
       returned: rows.length,
       totalEstimate: total,
       hasMore,
-      usingSampleData: usedSample
+      usingSampleData: usedSample,
+      ...provenance,
     };
 
     await updateStreamHealth('healthy', metadata, {
@@ -193,7 +223,7 @@ Deno.serve(async (req: Request) => {
       headers.set('x-next-cursor', String(nextOffset));
     }
 
-    const body = { rows, metadata };
+    const body = { rows, metadata, provenance };
     return new Response(JSON.stringify(body), { headers, status: 200 });
   } catch (err) {
     errorCount++;
@@ -206,19 +236,27 @@ Deno.serve(async (req: Request) => {
       const url = new URL(req.url);
       const limit = Math.min(Number(url.searchParams.get('limit') ?? '100'), 1000);
       const paginated = paginateSampleData(sampleData, limit);
+      const provenance = buildDataProvenance({
+        source: 'Ontario nodal price sample dataset',
+        lastUpdated: getLatestTimestamp(paginated.rows),
+        isFallback: true,
+        staleAfterHours: 1,
+      });
       
       const metadata = {
         streamKey: STREAM_KEY,
         error: message,
         usingSampleData: true,
-        returned: paginated.rows.length
+        returned: paginated.rows.length,
+        ...provenance,
       };
 
       await logInvocation('error', metadata, startedAt);
 
       return new Response(JSON.stringify({ 
         rows: paginated.rows, 
-        metadata 
+        metadata,
+        provenance,
       }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200

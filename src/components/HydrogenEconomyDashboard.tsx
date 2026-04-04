@@ -238,34 +238,34 @@ export const HydrogenEconomyDashboard: React.FC = () => {
 
   // Prepare visualizations data
   const colorDistribution = [
-    { name: 'Green H₂', value: data.insights.color_distribution.green_percentage, fill: HYDROGEN_COLORS['Green'] },
-    { name: 'Blue H₂', value: data.insights.color_distribution.blue_percentage, fill: HYDROGEN_COLORS['Blue'] },
-    { name: 'Grey H₂', value: data.insights.color_distribution.grey_percentage, fill: HYDROGEN_COLORS['Grey'] },
+    { name: 'Green H₂', value: data.insights?.color_distribution?.green_percentage || 0, fill: HYDROGEN_COLORS['Green'] },
+    { name: 'Blue H₂', value: data.insights?.color_distribution?.blue_percentage || 0, fill: HYDROGEN_COLORS['Blue'] },
+    { name: 'Grey H₂', value: data.insights?.color_distribution?.grey_percentage || 0, fill: HYDROGEN_COLORS['Grey'] },
   ].filter(item => item.value > 0);
 
   const hubComparison = [
     {
       hub: 'Edmonton',
-      capacity: data.insights.hub_status.edmonton_hub.capacity_kg_per_day / 1000, // Convert to tonnes
-      projects: data.insights.hub_status.edmonton_hub.project_count,
-      investment: data.insights.hub_status.edmonton_hub.investment_cad / 1e9, // Convert to billions
+      capacity: (data.insights?.hub_status?.edmonton_hub?.capacity_kg_per_day || 0) / 1000, // Convert to tonnes
+      projects: data.insights?.hub_status?.edmonton_hub?.project_count || 0,
+      investment: (data.insights?.hub_status?.edmonton_hub?.investment_cad || 0) / 1e9, // Convert to billions
     },
     {
       hub: 'Calgary',
-      capacity: data.insights.hub_status.calgary_hub.capacity_kg_per_day / 1000,
-      projects: data.insights.hub_status.calgary_hub.project_count,
-      investment: data.insights.hub_status.calgary_hub.investment_cad / 1e9,
+      capacity: (data.insights?.hub_status?.calgary_hub?.capacity_kg_per_day || 0) / 1000,
+      projects: data.insights?.hub_status?.calgary_hub?.project_count || 0,
+      investment: (data.insights?.hub_status?.calgary_hub?.investment_cad || 0) / 1e9,
     },
   ];
 
-  const facilityTypeData = Object.entries(data.summary.facilities.by_type).map(([type, info]) => ({
+  const facilityTypeData = Object.entries(data.summary?.facilities?.by_type || {}).map(([type, info]: [string, any]) => ({
     type,
     count: info.count,
     capacity: Math.round(info.capacity_kg_per_day / 1000), // tonnes/day
     fill: HYDROGEN_COLORS[type] || COLORS.grey,
   }));
 
-  const projectsByStatus = Object.entries(data.summary.projects.by_status).map(([status, count]) => ({
+  const projectsByStatus = Object.entries(data.summary?.projects?.by_status || {}).map(([status, count]) => ({
     status,
     count,
   }));

@@ -128,10 +128,10 @@ serve(async (req) => {
 
   const { data: failedRows, error: failedRowsError } = await supabase
     .from("export_jobs")
-    .select("id, status, status_reason, template, request_source, created_at")
+    .select("id, status, status_reason, template, request_source, created_at, finished_at")
     .in("status", ["blocked_stale", "failed"])
-    .gte("created_at", lastHourIso)
-    .order("created_at", { ascending: false })
+    .gte("finished_at", lastHourIso)
+    .order("finished_at", { ascending: false })
     .limit(25);
 
   if (failedRowsError) {

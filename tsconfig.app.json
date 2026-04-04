@@ -38,6 +38,7 @@
   },
   "include": [
     "src",
+    "tests/**/*.ts",
     "types/**/*.d.ts",
     "supabase/functions/**/*.ts"
   ]

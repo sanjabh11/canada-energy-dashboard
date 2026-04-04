@@ -19,13 +19,15 @@ import {
   RadialBarChart, RadialBar, ComposedChart, Area
 } from 'recharts';
 import {
-  Server, Zap, TrendingUp, AlertTriangle, CheckCircle,
-  MapPin, Activity, Gauge, Cloud, Thermometer, DollarSign
+  Server, Zap, TrendingUp, AlertTriangle,
+  MapPin, Activity, Gauge, Cloud, DollarSign
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { AIDemandScenarioSlider } from './AIDemandScenarioSlider';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import {
   type DashboardData, type QueueData, type QueueHistoryData, type MetricCardProps,
   COLORS, STATUS_COLORS, getProvinceName,
@@ -37,10 +39,12 @@ export const AIDataCentreDashboard: React.FC = () => {
   const [queueData, setQueueData] = useState<QueueData | null>(null);
   const [queueHistory, setQueueHistory] = useState<QueueHistoryData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [, setError] = useState<string | null>(null);
   const [edgeDisabled, setEdgeDisabled] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
   const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
+  const [selectedDataCentre, setSelectedDataCentre] = useState<DashboardData['data_centres'][0] | null>(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -65,18 +69,19 @@ export const AIDataCentreDashboard: React.FC = () => {
           `api/ai-datacentres/${selectedProvince}`
         ]).then(r => r.json),
         fetchEdgeJson([
-          'api-v2-aeso-queue?status=Active',
-          'api/aeso-queue/active'
+          `api-v2-aeso-queue?status=Active&province=${selectedProvince}`,
+          `api/aeso-queue/active?province=${selectedProvince}`
         ]).then(r => r.json),
         fetchEdgeJson([
-          'api-v2-aeso-queue?history=true',
-          'api/aeso-queue/history'
+          `api-v2-aeso-queue?history=true&province=${selectedProvince}`,
+          `api/aeso-queue/history?province=${selectedProvince}`
         ]).then(r => r.json),
       ]);
 
       setDcData(dcResponse);
       setQueueData(queueResponse);
       setQueueHistory(historyResponse);
+      setLastUpdated(new Date().toISOString());
     } catch (err) {
       console.error('Failed to load AI Data Centre data:', err);
       // Use fallback data instead of showing error
@@ -85,6 +90,7 @@ export const AIDataCentreDashboard: React.FC = () => {
       setQueueData(STATIC_FALLBACK_QUEUE_DATA);
       setQueueHistory(null);
       setEdgeDisabled(true); // Show demo mode indicator
+      setLastUpdated(new Date().toISOString());
       setError(null); // Clear any error
     } finally {
       setLoading(false);
@@ -109,11 +115,21 @@ export const AIDataCentreDashboard: React.FC = () => {
   // No more early returns for edgeDisabled or error - we now use fallback data
   // and show a banner instead
 
-  if (!dcData || !queueData) return null;
+  if (!dcData) return null;
 
   // Check if province has data
   const hasProvinceData = dcData.data_centres.length > 0 || dcData.summary.total_count > 0;
   const isAlberta = selectedProvince === 'AB';
+  const queueInsights = isAlberta && queueData ? queueData.insights : null;
+  const queueSummary = isAlberta && queueData ? queueData.summary : null;
+  const currentQueueValue = queueSummary?.total_requested_mw != null
+    ? `${Math.round(queueSummary.total_requested_mw)} MW`
+    : 'N/A';
+  const currentQueueSubtitle = queueSummary
+    ? `${queueSummary.total_projects} projects`
+    : isAlberta
+      ? 'Queue data unavailable'
+      : 'Queue data available for Alberta only';
 
   // Prepare data for visualizations
   const statusData = Object.entries(dcData.summary.by_status).map(([status, count]) => ({
@@ -130,22 +146,15 @@ export const AIDataCentreDashboard: React.FC = () => {
     }))
     .sort((a, b) => b.capacity - a.capacity);
 
-  const queueByType = Object.entries(queueData.summary.by_type)
-    .map(([type, data]) => ({
-      type,
-      projects: data.count,
-      capacity_mw: Math.round(data.total_mw),
-    }))
-    .sort((a, b) => b.capacity_mw - a.capacity_mw);
-
-  const phase1Utilization = [
-    {
-      name: 'Phase 1 Allocation',
-      allocated: queueData.insights.phase1_allocation_status.allocated_mw,
-      remaining: queueData.insights.phase1_allocation_status.remaining_mw,
-      utilization: queueData.insights.phase1_allocation_status.utilization_percentage,
-    }
-  ];
+  const queueByType = queueSummary
+    ? Object.entries(queueSummary.by_type)
+      .map(([type, data]) => ({
+        type,
+        projects: data.count,
+        capacity_mw: Math.round(data.total_mw),
+      }))
+      .sort((a, b) => b.capacity_mw - a.capacity_mw)
+    : [];
 
   const gridImpactData = [
     { name: 'Current DC Load', value: dcData.grid_impact.total_dc_load_mw, fill: COLORS.success },
@@ -176,6 +185,13 @@ export const AIDataCentreDashboard: React.FC = () => {
                   : `${getProvinceName(selectedProvince)} AI Data Centre Infrastructure`
                 }
               </p>
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  timestamp={lastUpdated}
+                  status={edgeDisabled ? 'demo' : 'live'}
+                  source={edgeDisabled ? 'Sample AI data centre dataset' : 'AI data centre + queue APIs'}
+                />
+              </div>
             </div>
             <HelpButton id="ai-datacentre.overview" />
           </div>
@@ -184,17 +200,12 @@ export const AIDataCentreDashboard: React.FC = () => {
 
       {/* Demo Mode Banner - shown when API is unavailable */}
       {edgeDisabled && (
-        <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
-          <div className="flex items-center gap-3">
-            <Cloud className="w-6 h-6 text-warning flex-shrink-0" />
-            <div>
-              <h3 className="font-semibold text-amber-800">Demo Mode Active</h3>
-              <p className="text-sm text-amber-700">
-                Showing sample data. Live analytics will be available when connected to AESO data feeds.
-              </p>
-            </div>
-          </div>
-        </div>
+        <DataTrustNotice
+          mode="mock"
+          title="Sample infrastructure data active"
+          message="This AI data centre view is currently using sample queue and facility data. Treat capacity, demand, and queue analytics as illustrative until live upstream feeds are connected."
+          className="mb-6"
+        />
       )}
 
       {/* Filters and Tab Switcher */}
@@ -227,25 +238,30 @@ export const AIDataCentreDashboard: React.FC = () => {
           </div>
 
           {/* Tab Switcher */}
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('current')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'current'
-                ? 'bg-electric text-white'
-                : 'bg-secondary text-secondary hover:bg-slate-200'
-                }`}
-            >
-              Current Queue
-            </button>
-            <button
-              onClick={() => setActiveTab('history')}
-              className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'history'
-                ? 'bg-electric text-white'
-                : 'bg-secondary text-secondary hover:bg-slate-200'
-                }`}
-            >
-              Queue Growth (2023-2025)
-            </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex gap-2">
+              <button
+                onClick={() => setActiveTab('current')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'current'
+                  ? 'bg-electric text-white'
+                  : 'bg-secondary text-secondary hover:bg-slate-200'
+                  }`}
+              >
+                Current Queue
+              </button>
+              <button
+                onClick={() => setActiveTab('history')}
+                className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${activeTab === 'history'
+                  ? 'bg-electric text-white'
+                  : 'bg-secondary text-secondary hover:bg-slate-200'
+                  }`}
+              >
+                Queue Growth (2023-2025)
+              </button>
+            </div>
+            <div className="px-4 py-2 rounded-lg border border-teal-200 bg-teal-50 text-teal-700 text-sm font-semibold min-w-[132px] text-center">
+              {currentQueueValue}
+            </div>
           </div>
         </div>
       </div>
@@ -268,24 +284,24 @@ export const AIDataCentreDashboard: React.FC = () => {
           )}
 
           {/* Critical Alerts Banner - Alberta only */}
-          {isAlberta && queueData.insights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
+          {queueInsights && queueInsights.grid_reliability_concern.queue_to_peak_ratio > 50 && (
             <div className="mb-6 p-4 bg-secondary border-l-4 border-red-500 rounded-lg">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-6 h-6 text-danger flex-shrink-0 mt-0.5" />
                 <div>
                   <h3 className="font-bold text-red-800 mb-1">GRID RELIABILITY ALERT</h3>
                   <p className="text-danger">
-                    {queueData.insights.grid_reliability_concern.message}
+                    {queueInsights.grid_reliability_concern.message}
                   </p>
                   <p className="text-sm text-danger mt-1">
-                    Queue requests = {queueData.insights.grid_reliability_concern.queue_to_peak_ratio}% of current provincial peak demand
+                    Queue requests = {queueInsights.grid_reliability_concern.queue_to_peak_ratio}% of current provincial peak demand
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {isAlberta && queueData.insights.phase1_allocation_status.is_fully_allocated && (
+          {queueInsights && queueInsights.phase1_allocation_status.is_fully_allocated && (
             <div className="mb-6 p-4 bg-amber-50 border-l-4 border-amber-500 rounded-lg">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
@@ -318,21 +334,21 @@ export const AIDataCentreDashboard: React.FC = () => {
             <MetricCard
               icon={<Activity className="w-8 h-8" />}
               title="Queue Requests"
-              value={`${Math.round(queueData.summary.total_requested_mw)} MW`}
-              subtitle={`${queueData.summary.total_projects} projects`}
+              value={currentQueueValue}
+              subtitle={currentQueueSubtitle}
               color="amber"
             />
             <MetricCard
               icon={<DollarSign className="w-8 h-8" />}
               title="Total Investment"
-              value={`$${(dcData.data_centres.reduce((sum, dc) => sum + (dc.capital_investment_cad || 0), 0) / 1e9).toFixed(1)}B`}
+              value={dcData?.data_centres?.length ? `$${(dcData.data_centres.reduce((sum, dc) => sum + (dc.capital_investment_cad || 0), 0) / 1e9).toFixed(1)}B` : '$0.0B'}
               subtitle="Capital committed"
               color="purple"
             />
           </div>
 
           {/* Phase 1 Allocation Status - Alberta only */}
-          {isAlberta && (
+          {queueInsights && (
             <div className="card p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
@@ -349,10 +365,10 @@ export const AIDataCentreDashboard: React.FC = () => {
                       outerRadius="100%"
                       data={[{
                         name: 'Utilization',
-                        value: queueData.insights.phase1_allocation_status.utilization_percentage,
-                        fill: queueData.insights.phase1_allocation_status.utilization_percentage > 90
+                        value: queueInsights.phase1_allocation_status.utilization_percentage,
+                        fill: queueInsights.phase1_allocation_status.utilization_percentage > 90
                           ? COLORS.danger
-                          : queueData.insights.phase1_allocation_status.utilization_percentage > 70
+                          : queueInsights.phase1_allocation_status.utilization_percentage > 70
                             ? COLORS.warning
                             : COLORS.success,
                       }]}
@@ -361,7 +377,7 @@ export const AIDataCentreDashboard: React.FC = () => {
                     >
                       <RadialBar dataKey="value" cornerRadius={10} />
                       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-3xl font-bold">
-                        {queueData.insights.phase1_allocation_status.utilization_percentage}%
+                        {queueInsights.phase1_allocation_status.utilization_percentage}%
                       </text>
                     </RadialBarChart>
                   </ResponsiveContainer>
@@ -374,16 +390,16 @@ export const AIDataCentreDashboard: React.FC = () => {
                   <div className="flex justify-between items-center p-4 bg-amber-50 rounded-lg">
                     <span className="font-semibold text-secondary">Allocated</span>
                     <span className="text-xl font-bold text-warning">
-                      {queueData.insights.phase1_allocation_status.allocated_mw} MW
+                      {queueInsights.phase1_allocation_status.allocated_mw} MW
                     </span>
                   </div>
                   <div className="flex justify-between items-center p-4 bg-secondary rounded-lg">
                     <span className="font-semibold text-secondary">Remaining</span>
                     <span className="text-xl font-bold text-success">
-                      {queueData.insights.phase1_allocation_status.remaining_mw} MW
+                      {queueInsights.phase1_allocation_status.remaining_mw} MW
                     </span>
                   </div>
-                  {queueData.insights.phase1_allocation_status.is_fully_allocated && (
+                  {queueInsights.phase1_allocation_status.is_fully_allocated && (
                     <div className="p-3 bg-secondary border border-red-200 rounded-lg">
                       <p className="text-sm text-danger font-medium">
                         ⚠️ Capacity exhausted - projects moved to Phase 2
@@ -466,7 +482,7 @@ export const AIDataCentreDashboard: React.FC = () => {
           )}
 
           {/* AESO Queue Breakdown - Alberta only */}
-          {isAlberta && (
+          {queueInsights && (
             <div className="card p-6 mb-8">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
@@ -480,19 +496,19 @@ export const AIDataCentreDashboard: React.FC = () => {
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div>
                     <div className="text-3xl font-bold text-electric">
-                      {queueData.insights.data_centre_dominance.dc_projects}
+                      {queueInsights.data_centre_dominance.dc_projects}
                     </div>
                     <div className="text-sm text-secondary">DC Projects</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-electric">
-                      {Math.round(queueData.insights.data_centre_dominance.dc_mw)} MW
+                      {Math.round(queueInsights.data_centre_dominance.dc_mw)} MW
                     </div>
                     <div className="text-sm text-secondary">DC Capacity</div>
                   </div>
                   <div>
                     <div className="text-3xl font-bold text-electric">
-                      {queueData.insights.data_centre_dominance.dc_percentage_of_queue}%
+                      {queueInsights.data_centre_dominance.dc_percentage_of_queue}%
                     </div>
                     <div className="text-sm text-secondary">% of Total Queue</div>
                   </div>
@@ -547,11 +563,18 @@ export const AIDataCentreDashboard: React.FC = () => {
                       <th className="px-4 py-3 text-left text-xs font-medium text-tertiary uppercase tracking-wider">
                         Power Source
                       </th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-tertiary uppercase tracking-wider">
+                        Renewable %
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-secondary divide-y divide-[var(--border-subtle)]">
                     {dcData.data_centres.map((dc) => (
-                      <tr key={dc.id} className="hover:bg-secondary">
+                      <tr 
+                        key={dc.id} 
+                        className="hover:bg-secondary cursor-pointer transition-colors"
+                        onClick={() => setSelectedDataCentre(dc)}
+                      >
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-primary">
                           {dc.facility_name}
                         </td>
@@ -579,20 +602,73 @@ export const AIDataCentreDashboard: React.FC = () => {
                           {dc.pue_actual || dc.pue_design || 'N/A'}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-secondary">
-                          <div className="flex items-center gap-2">
-                            {dc.power_source}
-                            {dc.renewable_percentage > 0 && (
-                              <span className="text-xs text-success font-medium">
-                                ({dc.renewable_percentage}% renewable)
-                              </span>
-                            )}
-                          </div>
+                          {dc.power_source}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-right">
+                          {dc.renewable_percentage > 0 ? (
+                            <span className="text-success font-medium">{dc.renewable_percentage}%</span>
+                          ) : (
+                            <span className="text-tertiary">—</span>
+                          )}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+
+              {/* Data Centre Detail Panel */}
+              {selectedDataCentre && (
+                <div className="mt-6 p-6 bg-secondary rounded-lg border border-[var(--border-subtle)]">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-primary">{selectedDataCentre.facility_name}</h3>
+                      <p className="text-sm text-secondary mt-1">{selectedDataCentre.operator} • {selectedDataCentre.location_city}, {selectedDataCentre.province}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedDataCentre(null)}
+                      className="text-tertiary hover:text-primary transition-colors"
+                      aria-label="Close details"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="p-3 bg-primary rounded">
+                      <div className="text-xs text-tertiary">Contracted Capacity</div>
+                      <div className="text-lg font-semibold text-primary">{Math.round(selectedDataCentre.contracted_capacity_mw)} MW</div>
+                    </div>
+                    <div className="p-3 bg-primary rounded">
+                      <div className="text-xs text-tertiary">PUE</div>
+                      <div className="text-lg font-semibold text-primary">{selectedDataCentre.pue_actual || selectedDataCentre.pue_design || 'N/A'}</div>
+                    </div>
+                    <div className="p-3 bg-primary rounded">
+                      <div className="text-xs text-tertiary">Power Source</div>
+                      <div className="text-lg font-semibold text-primary">{selectedDataCentre.power_source}</div>
+                    </div>
+                    <div className="p-3 bg-primary rounded">
+                      <div className="text-xs text-tertiary">Renewable %</div>
+                      <div className="text-lg font-semibold text-success">
+                        {selectedDataCentre.renewable_percentage > 0 ? `${selectedDataCentre.renewable_percentage}%` : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-tertiary">Status:</span>
+                    <span
+                      className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full"
+                      style={{
+                        backgroundColor: STATUS_COLORS[selectedDataCentre.status] + '20',
+                        color: STATUS_COLORS[selectedDataCentre.status],
+                      }}
+                    >
+                      {selectedDataCentre.status}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </>
@@ -601,7 +677,19 @@ export const AIDataCentreDashboard: React.FC = () => {
       {/* Historical Queue Growth View */}
       {activeTab === 'history' && (
         <>
-          {!queueHistory || !queueHistory.history || queueHistory.history.length === 0 ? (
+          {!isAlberta ? (
+            <div className="bg-secondary border-l-4 border-teal-400 p-6 rounded-lg">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-6 h-6 text-electric flex-shrink-0 mt-0.5" />
+                <div>
+                  <h3 className="font-bold text-primary mb-2">Queue History Not Available</h3>
+                  <p className="text-secondary">
+                    Historical queue growth is currently available for Alberta only.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : !queueHistory || !queueHistory.history || queueHistory.history.length === 0 ? (
             <div className="bg-secondary border-l-4 border-yellow-400 p-6 rounded-lg">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />

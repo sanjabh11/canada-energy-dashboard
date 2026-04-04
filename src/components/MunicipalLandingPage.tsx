@@ -40,7 +40,7 @@ const MUNICIPAL_BENEFITS = [
     {
         icon: <BarChart3 className="h-6 w-6" />,
         title: 'Track Your Climate Plan Metrics',
-        description: 'Real-time dashboards for GHG emissions, energy consumption, and progress toward targets'
+        description: 'Live-when-available dashboards for GHG emissions, energy consumption, and progress toward targets'
     },
     {
         icon: <FileText className="h-6 w-6" />,
@@ -143,15 +143,15 @@ const ALBERTA_MUNICIPAL_STATS = [
 const FAQ_ITEMS = [
     {
         q: 'Do we need to issue an RFP to purchase CEIP?',
-        a: 'No. All CEIP municipal tiers are priced below the $75,000 NWPTA (New West Partnership Trade Agreement) threshold for services. This allows sole-source procurement or limited solicitation (3 quotes). Your Sustainability Director or Facilities Manager can approve within departmental authority.'
+        a: 'Potentially not. CEIP municipal tiers are positioned below the $75,000 NWPTA (New West Partnership Trade Agreement) threshold, which may support a simpler procurement path depending on your municipality\'s policies and delegated authorities. Final procurement interpretation should be confirmed by your purchasing team.'
     },
     {
         q: 'Is CEIP available through Canoe Procurement?',
-        a: 'We are in the process of applying to become a Canoe Procurement approved vendor. Once approved, any Canoe member municipality can purchase CEIP without running their own procurement process.'
+        a: 'Not today. Canoe Procurement alignment is being evaluated as a future channel, but it should not be treated as an active purchasing path until CEIP is formally listed.'
     },
     {
         q: 'Where is our data stored? Is it PIPEDA compliant?',
-        a: 'All data is hosted on Canadian servers (Supabase with Canadian data residency). CEIP is designed for PIPEDA-aligned workflows, with final legal validation performed by customer counsel. For Indigenous community data, we follow OCAP® (Ownership, Control, Access, Possession) principles with Nation-held encryption keys.'
+        a: 'CEIP is designed for PIPEDA-aligned workflows, with final legal validation performed by customer counsel. For Indigenous community data, the current platform should be positioned as OCAP®-aligned workflow design and reporting support rather than a completed sovereign infrastructure implementation.'
     },
     {
         q: 'Can CEIP help with FCM Green Municipal Fund applications?',
@@ -171,9 +171,15 @@ export const MunicipalLandingPage: React.FC = () => {
     const [openFaq, setOpenFaq] = useState<number | null>(null);
     const [auditEmail, setAuditEmail] = useState('');
     const [auditSubmitted, setAuditSubmitted] = useState(false);
+    const [auditError, setAuditError] = useState('');
 
     const handleAuditSubmit = async () => {
-        if (!auditEmail) return;
+        if (!auditEmail || !auditEmail.includes('@')) {
+            setAuditError('Enter a valid municipal work email to request the audit.');
+            return;
+        }
+
+        setAuditError('');
 
         const persistResult = await persistLeadIntake({
             company_name: 'Municipal Audit Request',
@@ -188,14 +194,12 @@ export const MunicipalLandingPage: React.FC = () => {
             },
         });
 
-        const leads = JSON.parse(localStorage.getItem('ceip_municipal_leads') || '[]');
-        leads.push({
-            email: auditEmail,
-            type: 'baseline_audit',
-            timestamp: new Date().toISOString(),
-            persistedToSupabase: persistResult.ok,
-        });
-        localStorage.setItem('ceip_municipal_leads', JSON.stringify(leads));
+        if (!persistResult.ok) {
+            setAuditError('We could not submit your audit request. Please try again shortly.');
+            return;
+        }
+
+        setAuditEmail('');
         setAuditSubmitted(true);
     };
 
@@ -271,15 +275,15 @@ export const MunicipalLandingPage: React.FC = () => {
                     <div className="flex justify-center gap-8 mt-12 text-slate-400 text-sm">
                         <div className="flex items-center gap-2">
                             <Shield className="w-4 h-4 text-emerald-500" />
-                            <span>Alberta Protocol Compliant</span>
+                            <span>Alberta-focused workflow support</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <CheckCircle className="w-4 h-4 text-emerald-500" />
-                            <span>TIER Verified</span>
+                            <span>TIER-aligned reporting support</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <Users className="w-4 h-4 text-emerald-500" />
-                            <span>OCAP® Compliant</span>
+                            <span>OCAP®-aligned workflow design</span>
                         </div>
                     </div>
                 </div>
@@ -306,7 +310,7 @@ export const MunicipalLandingPage: React.FC = () => {
                     <div className="grid md:grid-cols-3 gap-8">
                         {[
                             { step: '1', icon: <ClipboardCheck className="h-8 w-8" />, title: 'Connect Your Data', desc: 'We import your utility bills, fleet data, and facility meters. No IT department required — works with CSV uploads or direct utility connections.' },
-                            { step: '2', icon: <Target className="h-8 w-8" />, title: 'Track Against Targets', desc: 'CEIP automatically maps your data to your Climate Action Plan targets. See real-time progress on GHG reductions, energy savings, and TIER compliance.' },
+                            { step: '2', icon: <Target className="h-8 w-8" />, title: 'Track Against Targets', desc: 'CEIP automatically maps your data to your Climate Action Plan targets. See current progress on GHG reductions, energy savings, and TIER compliance with explicit freshness labeling.' },
                             { step: '3', icon: <Send className="h-8 w-8" />, title: 'Report to Council & Funders', desc: 'Generate mayor-ready quarterly reports and grant-compliant documentation for FCM, AICEI, and ERA with one click.' },
                         ].map((item, i) => (
                             <div key={i} className="text-center">
@@ -439,7 +443,7 @@ export const MunicipalLandingPage: React.FC = () => {
                             { name: 'ERA', desc: 'Emissions Reduction Alberta' },
                             { name: 'MCCAC', desc: 'Municipal Climate Change Action Centre' },
                             { name: 'Alberta Climate Leaders', desc: 'CEA + MCCAC Partnership' },
-                            { name: 'Canoe Procurement', desc: 'RMA Standing Offer (Applying)' }
+                            { name: 'Procurement Review', desc: 'Channel and buying-path assessment in progress' }
                         ].map((fund, i) => (
                             <div key={i} className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                                 <div className="font-bold text-emerald-400">{fund.name}</div>
@@ -488,6 +492,9 @@ export const MunicipalLandingPage: React.FC = () => {
                                 Get Free Audit
                             </button>
                         </div>
+                    )}
+                    {auditError && (
+                        <p className="mt-3 text-sm text-rose-400">{auditError}</p>
                     )}
                 </div>
             </section>
@@ -561,6 +568,8 @@ export const MunicipalLandingPage: React.FC = () => {
                         <Link to="/terms" className="hover:text-white">Terms</Link>
                         {' • '}
                         <Link to="/enterprise" className="hover:text-white">Enterprise</Link>
+                        {' • '}
+                        <Link to="/status" className="hover:text-white">System Status</Link>
                     </p>
                 </div>
             </footer>

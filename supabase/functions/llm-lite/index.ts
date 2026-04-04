@@ -10,6 +10,53 @@ const json = (obj: unknown, status = 200, extra: Record<string,string> = {}) => 
   { status, headers: { 'Content-Type': 'application/json', ..._corsHeaders, ...RL_HEADERS as any, ...extra } }
 );
 
+type ResponseMeta = {
+  dataset?: string;
+  source: string;
+  freshness: string;
+  generated_at: string;
+  is_fallback: boolean;
+  llm_mode: string;
+  source_count: number;
+};
+
+function buildMeta(params: { dataset?: string; result?: unknown; source: string; llmMode: string; isFallback: boolean }): ResponseMeta {
+  const nowIso = new Date().toISOString();
+  const resultObject = params.result && typeof params.result === 'object' && !Array.isArray(params.result)
+    ? params.result as Record<string, unknown>
+    : null;
+  const sources = Array.isArray(resultObject?.sources)
+    ? resultObject.sources
+    : Array.isArray(resultObject?.provenance)
+      ? resultObject.provenance
+      : [];
+  const firstSource = sources[0] as { last_updated?: string } | undefined;
+
+  return {
+    dataset: params.dataset,
+    source: params.source,
+    freshness: firstSource?.last_updated || nowIso,
+    generated_at: nowIso,
+    is_fallback: params.isFallback,
+    llm_mode: params.llmMode,
+    source_count: sources.length,
+  };
+}
+
+function jsonResult(params: { dataset?: string; result: unknown; source: string; llmMode: string; isFallback: boolean; status?: number }) {
+  return json({
+    dataset: params.dataset,
+    result: params.result,
+    meta: buildMeta({
+      dataset: params.dataset,
+      result: params.result,
+      source: params.source,
+      llmMode: params.llmMode,
+      isFallback: params.isFallback,
+    }),
+  }, params.status ?? 200, { 'X-LLM-Mode': params.llmMode });
+}
+
 function isBlacklisted(text?: string): boolean {
   if (!text) return false;
   const lower = text.toLowerCase();
@@ -49,7 +96,7 @@ serve(async (req) => {
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(userPrompt)) return json({ error: 'Request blocked by safety policy.' }, 403);
     if (isIndigenousSensitive(datasetPath)) return json({ error: 'Dataset flagged as Indigenous-related.', code: 'INDIGENOUS_GUARD' }, 451);
-    return json({ dataset: datasetPath, result: { tl_dr: 'Automated summary (lite)', trends: [], classroom_activity: 'Discuss recent trends.', provenance: [{ id: datasetPath, last_updated: new Date().toISOString(), note: 'lite' }] } }, 200, RL_HEADERS as any);
+    return jsonResult({ dataset: datasetPath, result: { tl_dr: 'Automated summary (lite)', trends: [], classroom_activity: 'Discuss recent trends.', provenance: [{ id: datasetPath, last_updated: new Date().toISOString(), note: 'lite' }] }, source: 'supabase-llm-lite/explain-chart', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/analytics-insight' || url.pathname.endsWith('/analytics-insight'))) {
     const body = await req.json().catch(() => ({}));
@@ -57,7 +104,7 @@ serve(async (req) => {
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(queryType)) return json({ error: 'Request blocked by safety policy.' }, 403);
     if (isIndigenousSensitive(datasetPath)) return json({ error: 'Dataset flagged as Indigenous-related.', code: 'INDIGENOUS_GUARD' }, 451);
-    return json({ dataset: datasetPath, result: { summary: 'Automated (lite) insight', key_findings: [], policy_implications: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] } }, 200, RL_HEADERS as any);
+    return jsonResult({ dataset: datasetPath, result: { summary: 'Automated (lite) insight', key_findings: [], policy_implications: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/analytics-insight', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/transition-report' || url.pathname.endsWith('/transition-report'))) {
     const body = await req.json().catch(() => ({}));
@@ -65,26 +112,26 @@ serve(async (req) => {
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (isBlacklisted(focus)) return json({ error: 'Request blocked by safety policy.' }, 403);
     if (isIndigenousSensitive(datasetPath)) return json({ error: 'Dataset flagged as Indigenous-related.', code: 'INDIGENOUS_GUARD' }, 451);
-    return json({ dataset: datasetPath, result: { summary: 'Automated (lite) report', progress: [], risks: [], recommendations: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] } }, 200, RL_HEADERS as any);
+    return jsonResult({ dataset: datasetPath, result: { summary: 'Automated (lite) report', progress: [], risks: [], recommendations: [], confidence: 'low', sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/transition-report', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/transition-kpis' || url.pathname.endsWith('/transition-kpis'))) {
     const body = await req.json().catch(() => ({}));
     const { datasetPath } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
-    return json({ result: { dataset: datasetPath, timeframe: 'recent', kpis: { total_mwh: 0, top_source: { type: 'unknown', mwh: 0 }, renewable_share: 0 }, sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] } });
+    return jsonResult({ dataset: datasetPath, result: { dataset: datasetPath, timeframe: 'recent', kpis: { total_mwh: 0, top_source: { type: 'unknown', mwh: 0 }, renewable_share: 0 }, sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/transition-kpis', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/data-quality' || url.pathname.endsWith('/data-quality'))) {
     const body = await req.json().catch(() => ({}));
     const { datasetPath, logs } = body;
     if (!datasetPath) return json({ error: 'datasetPath required' }, 400);
     if (logsContainBlacklist(logs)) return json({ error: 'Request blocked by safety policy.' }, 403);
-    return json({ dataset: datasetPath, result: { summary: 'Automated data-quality (lite)', issues: [], recommendations: [], confidence: 'low', validation_reports: [], alerts: [], sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] } });
+    return jsonResult({ dataset: datasetPath, result: { summary: 'Automated data-quality (lite)', issues: [], recommendations: [], confidence: 'low', validation_reports: [], alerts: [], sources: [{ id: datasetPath, last_updated: new Date().toISOString(), excerpt: 'lite' }] }, source: 'supabase-llm-lite/data-quality', llmMode: 'lite', isFallback: true });
   }
   if (req.method === 'POST' && (path === '/feedback' || url.pathname.endsWith('/feedback'))) {
     return json({ ok: true });
   }
   if (req.method === 'GET' && (path === '/history' || url.pathname.endsWith('/history'))) {
-    return json({ result: [] });
+    return jsonResult({ result: [], source: 'supabase-llm-lite/history', llmMode: 'history', isFallback: true });
   }
   return json({ error: 'Not found' }, 404);
 });

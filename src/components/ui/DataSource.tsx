@@ -171,7 +171,7 @@ export const COMMON_DATA_SOURCES = {
   IESO_DEMAND: {
     dataset: 'IESO Demand Data',
     url: 'https://www.ieso.ca/en/Power-Data',
-    description: 'Independent Electricity System Operator real-time demand'
+    description: 'Independent Electricity System Operator demand data'
   },
   IESO_PRICE: {
     dataset: 'IESO Market Price',
@@ -181,7 +181,7 @@ export const COMMON_DATA_SOURCES = {
   AESO_DEMAND: {
     dataset: 'AESO Grid Data',
     url: 'https://www.aeso.ca/grid/current-supply-demand/',
-    description: 'Alberta Electric System Operator real-time grid data'
+    description: 'Alberta Electric System Operator grid data'
   },
   ECCC_EMISSIONS: {
     dataset: 'ECCC GHG Inventory',

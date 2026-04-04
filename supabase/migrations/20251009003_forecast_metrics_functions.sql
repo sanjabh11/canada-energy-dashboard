@@ -1,0 +1,2 @@
+-- intentionally empty migration
+-- placeholder reserved during forecast metrics function planning; kept for migration ordering stability

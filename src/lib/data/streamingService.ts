@@ -17,7 +17,7 @@ export interface StreamingDataPoint {
 export interface StreamingConnection {
   id: string;
   dataset: string;
-  status: 'connecting' | 'connected' | 'disconnected' | 'error';
+  status: 'connecting' | 'connected' | 'fallback' | 'disconnected' | 'error';
   lastUpdate: string;
   errorCount: number;
   retryCount: number;
@@ -243,7 +243,7 @@ export class StreamingService {
     const connection: StreamingConnection = {
       id: `${dataset}_fallback_${Date.now()}`,
       dataset,
-      status: 'connected', // Connected to fallback
+      status: 'fallback',
       lastUpdate: new Date().toISOString(),
       errorCount: 0,
       retryCount: 0

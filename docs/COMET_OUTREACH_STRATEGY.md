@@ -1,5 +1,7 @@
 # CEIP OpenClaw Outreach Strategy — LinkedIn Cold Connection & Messaging Playbook
 
+> **Superseded for current execution:** Use `docs/COMET_OUTREACH_STRATEGY_V2.md` as the canonical outreach strategy for the revised Comet + manual LinkedIn direct messaging approach.
+
 **Date:** February 28, 2026 (v3.0 — OpenClaw Migration + Execution Ready)
 **Tool:** OpenClaw Console (`https://claw.kilosessions.ai/chat?session=main`) + OpenClaw browser automation
 **Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` + `ADVERSARIAL_USP_ANALYSIS.md`

@@ -5,7 +5,7 @@
  * interactive features, and AI-powered insights.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -54,6 +54,8 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
   const [selectedDataKeys, setSelectedDataKeys] = useState<string[]>(dataKeys);
   const [chartTypeState, setChartTypeState] = useState(chartType);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [exportFeedback, setExportFeedback] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const handleDataKeyToggle = (key: string) => {
     setSelectedDataKeys(prev =>
@@ -68,8 +70,50 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
   };
 
   const exportChart = () => {
-    // Implementation for chart export
-    console.log('Exporting chart:', title);
+    // Use scoped ref to find SVG within this widget only
+    const chartSvg = chartContainerRef.current?.querySelector('.recharts-wrapper svg');
+    if (!chartSvg) {
+      setExportFeedback({ show: true, message: 'Chart not ready for export', type: 'error' });
+      setTimeout(() => setExportFeedback(null), 3000);
+      return;
+    }
+    
+    try {
+      // Clone the SVG to avoid modifying the rendered chart
+      const svgClone = chartSvg.cloneNode(true) as SVGElement;
+      
+      // Ensure SVG has proper namespace and dimensions
+      svgClone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgClone.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+      
+      // Get dimensions from original
+      const width = svgClone.getAttribute('width') || '800';
+      const height = svgClone.getAttribute('height') || '400';
+      svgClone.setAttribute('width', width);
+      svgClone.setAttribute('height', height);
+      
+      // Serialize to string
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgClone);
+      
+      // Create blob and download
+      const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeTitle = title.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `${safeTitle}_chart.svg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      
+      setExportFeedback({ show: true, message: `Exporting ${safeTitle}_chart.svg...`, type: 'success' });
+      setTimeout(() => setExportFeedback(null), 3000);
+    } catch (err) {
+      setExportFeedback({ show: true, message: 'Export failed. Please try again.', type: 'error' });
+      setTimeout(() => setExportFeedback(null), 3000);
+    }
   };
 
   const renderChart = () => {
@@ -221,7 +265,18 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
   };
 
   return (
-    <div className={`card ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-6 overflow-auto' : ''}`}>
+    <div className={`card ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-6 overflow-auto' : ''} relative`}>
+      {/* Export Feedback Toast */}
+      {exportFeedback?.show && (
+        <div className={`absolute top-2 right-2 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${
+          exportFeedback.type === 'success' 
+            ? 'bg-green-100 text-green-800 border border-green-200' 
+            : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          {exportFeedback.message}
+        </div>
+      )}
+
       {/* Chart Header */}
       <div className="card-header flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -297,7 +352,7 @@ export const ModularChartWidget: React.FC<ModularChartProps> = ({
       )}
 
       {/* Chart Content */}
-      <div className="p-4">
+      <div ref={chartContainerRef} className="p-4">
         <ResponsiveContainer width="100%" height={height}>
           {renderChart()}
         </ResponsiveContainer>

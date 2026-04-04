@@ -1,13 +1,18 @@
 /**
  * Data Manifest Endpoint - Central Configuration and Status
  *
- * Provides real-time status, configuration, and self-documentation for all
+ * Provides live-when-available status, configuration, and self-documentation for all
  * streaming data sources in the Energy Data Integration Platform.
  */
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
+
+const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 type FeatureFlagValue = 'true' | 'false' | string | undefined;
 
@@ -77,6 +82,7 @@ interface ManifestDataset extends DataSourceConfig {
   status: 'available' | 'disabled';
   enabled: boolean;
   health?: DataSourceHealth;
+  provenance?: ReturnType<typeof buildDataProvenance>;
   configuration?: unknown;
   usage?: unknown;
 }
@@ -85,6 +91,7 @@ interface ManifestResponse {
   system: ManifestSystem;
   datasets: Record<string, ManifestDataset>;
   metadata: ManifestMetadata;
+  provenance?: ReturnType<typeof buildDataProvenance>;
 }
 
 // CORS headers
@@ -102,7 +109,7 @@ const DATA_SOURCES_MANIFEST: DataSourcesManifest = {
   'ontario-demand': {
     id: 'ontario-demand',
     title: 'Ontario Electricity Demand & Prices',
-    description: 'Real-time electricity demand and weighted average pricing from IESO market data',
+    description: 'Live-when-available electricity demand and weighted average pricing from IESO market data',
     category: 'electrical',
     provider: 'IESO',
     region: 'Ontario, Canada',
@@ -142,11 +149,11 @@ const DATA_SOURCES_MANIFEST: DataSourcesManifest = {
   'alberta-market': {
     id: 'alberta-market',
     title: 'Alberta Energy Market Data',
-    description: 'Real-time energy market data including pool prices and generation mix from AESO',
+    description: 'Live-when-available energy market data including pool prices and generation mix from AESO',
     category: 'electrical',
     provider: 'AESO',
     region: 'Alberta, Canada',
-    streamEndpoint: '/functions/v1/stream-alberta-market',
+    streamEndpoint: '/functions/v1/stream-aeso-grid-data',
     enabled: FEATURE_FLAGS.AESO_STREAMING_ENABLED === 'true',
     live: true,
     refreshIntervalMs: 30000,
@@ -167,7 +174,7 @@ const DATA_SOURCES_MANIFEST: DataSourcesManifest = {
     category: 'meteorological',
     provider: 'ECCC',
     region: 'Ontario, Canada',
-    streamEndpoint: '/functions/v1/stream-weather',
+    streamEndpoint: '/functions/v1/weather-ingestion-cron',
     enabled: FEATURE_FLAGS.WEATHER_STREAMING_ENABLED === 'true',
     live: true,
     refreshIntervalMs: 300000, // 5 minutes for weather
@@ -275,14 +282,13 @@ async function getDataSourceHealth(): Promise<Record<string, DataSourceHealth>> 
  * Main manifest endpoint handler
  */
 serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return handleCorsOptions(req);
+  }
+
   const corsHeaders = createCorsHeaders(req);
   const rl = applyRateLimit(req, 'manifest');
   if (rl.response) return rl.response;
-
-
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
 
   if (req.method !== 'GET') {
     return new Response(
@@ -328,7 +334,13 @@ serve(async (req) => {
       const datasetEntry: ManifestDataset = {
         ...sourceConfig,
         enabled: isSourceEnabled,
-        status: isSourceEnabled ? 'available' : 'disabled'
+        status: isSourceEnabled ? 'available' : 'disabled',
+        provenance: buildDataProvenance({
+          source: String(sourceConfig.provider),
+          lastUpdated: new Date().toISOString(),
+          isFallback: !isSourceEnabled,
+          staleAfterHours: 1,
+        }),
       };
 
       if (format === 'full') {
@@ -353,10 +365,23 @@ serve(async (req) => {
         const datasetHealth = healthData[sourceId];
         if (datasetHealth) {
           datasets[sourceId].health = datasetHealth;
+          datasets[sourceId].provenance = buildDataProvenance({
+            source: String(datasets[sourceId].provider),
+            lastUpdated: datasetHealth.lastCheck,
+            isFallback: datasetHealth.status !== 'healthy',
+            staleAfterHours: 1,
+          });
         }
       });
       MONITORING_STATE.lastHealthCheck = new Date().toISOString();
     }
+
+    manifest.provenance = buildDataProvenance({
+      source: 'manifest registry',
+      lastUpdated: manifest.metadata.generationTimestamp,
+      isFallback: false,
+      staleAfterHours: 1,
+    });
 
     return new Response(JSON.stringify(manifest, null, format === 'full' ? 2 : 0), {
       headers: corsHeaders,

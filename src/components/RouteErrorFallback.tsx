@@ -13,7 +13,11 @@ export const RouteErrorFallback: React.FC = () => {
   let title = 'Something Went Wrong';
   let message = 'An unexpected error occurred while loading this page.';
 
-  if (isRouteErrorResponse(error)) {
+  // If there's no error object, this component was rendered directly as the catch-all router fallback
+  if (!error) {
+    title = 'Page Not Found';
+    message = 'The page you are looking for does not exist or has been moved.';
+  } else if (isRouteErrorResponse(error)) {
     if (error.status === 404) {
       title = 'Page Not Found';
       message = 'The page you are looking for does not exist or has been moved.';

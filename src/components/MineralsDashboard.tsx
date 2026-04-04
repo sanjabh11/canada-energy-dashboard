@@ -2,7 +2,7 @@
  * Critical Minerals Supply Chain Monitor Dashboard
  *
  * Comprehensive dashboard for monitoring critical minerals supply chain,
- * risk assessment, and market intelligence with real-time alerts.
+ * risk assessment, and market intelligence with alerts.
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';

@@ -9,6 +9,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { getOntarioDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 // CORS headers placeholder — set per-request in serve()
 let corsHeaders: Record<string, string> = {};
@@ -27,6 +28,19 @@ type IESODataResult = {
   metadata: Record<string, unknown>;
   hadError: boolean;
 };
+
+function getLatestTimestamp(rows: Array<Record<string, unknown>>): string | null {
+  if (rows.length === 0) return null;
+
+  const timestamps = rows
+    .map((row) => row.timestamp ?? row.datetime ?? row.hour)
+    .filter((value): value is string => typeof value === 'string')
+    .map((value) => new Date(value))
+    .filter((value) => !Number.isNaN(value.getTime()))
+    .sort((a, b) => b.getTime() - a.getTime());
+
+  return timestamps[0]?.toISOString() ?? null;
+}
 
 async function logInvocation(
   status: 'success' | 'error',
@@ -479,6 +493,12 @@ serve(async (req: Request) => {
           source: 'kaggle',
           version: '1.0-sample'
         }));
+        const provenance = buildDataProvenance({
+          source: 'Ontario demand sample dataset',
+          lastUpdated: getLatestTimestamp(transformedRows),
+          isFallback: true,
+          staleAfterHours: 1,
+        });
         
         return new Response(JSON.stringify({
           dataset: 'ontario-demand',
@@ -486,10 +506,12 @@ serve(async (req: Request) => {
           metadata: {
             hasMore: paginated.hasMore,
             totalEstimate: sampleData.length,
-            usingSampleData: true
+            usingSampleData: true,
+            ...provenance,
           },
           timestamp: new Date().toISOString(),
-          source: 'Sample Data (IESO unavailable)'
+          source: 'Sample Data (IESO unavailable)',
+          provenance,
         }), {
           headers: { 
             ...corsHeaders, 
@@ -507,9 +529,15 @@ serve(async (req: Request) => {
         total_demand_mw: row.demand_mw || 15000,
         hourly_demand_gwh: (row.demand_mw || 15000) / 1000,
         date: (row.timestamp || new Date().toISOString()).split('T')[0],
-        source: 'kaggle',
+        source: 'ieso',
         version: '1.0-ieso'
       }));
+      const provenance = buildDataProvenance({
+        source: usedSample ? 'Ontario demand sample dataset' : 'IESO hourly demand feed',
+        lastUpdated: getLatestTimestamp(transformedData),
+        isFallback: usedSample,
+        staleAfterHours: 1,
+      });
       
       return new Response(JSON.stringify({
         dataset: 'ontario-demand',
@@ -517,10 +545,12 @@ serve(async (req: Request) => {
         metadata: {
           hasMore: false,
           totalEstimate: transformedData.length,
-          usingSampleData: usedSample
+          usingSampleData: usedSample,
+          ...provenance,
         },
         timestamp: new Date().toISOString(),
-        source: usedSample ? 'Sample Data' : 'IESO'
+        source: usedSample ? 'Sample Data' : 'IESO',
+        provenance,
       }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200

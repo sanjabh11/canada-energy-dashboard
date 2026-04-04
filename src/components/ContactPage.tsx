@@ -64,8 +64,27 @@ export const ContactPage: React.FC = () => {
     setSubmitStatus('idle');
 
     try {
-      // Simulate form submission - in real implementation, this would send to backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl) throw new Error('Supabase URL not configured');
+
+      const res = await fetch(`${supabaseUrl}/functions/v1/lead-capture`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          company: formData.company || null,
+          subject: formData.subject,
+          message: formData.message,
+          inquiry_type: formData.inquiryType,
+          source: `${window.location.origin}${window.location.pathname}`,
+        }),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody?.error || `Server error: ${res.status}`);
+      }
 
       setSubmitStatus('success');
       setFormData({
@@ -85,8 +104,8 @@ export const ContactPage: React.FC = () => {
 
   const faqs = [
     {
-      question: 'How do I access real-time energy data?',
-      answer: 'Real-time data is available through our live dashboard. Simply navigate to the Dashboard tab to view current metrics from all Canadian provinces.'
+      question: 'How do I access energy data with freshness labels?',
+      answer: 'Current energy data is available through the dashboard, with live, stale, and fallback status shown per surface where that metadata exists. Use freshness badges and trust notices to distinguish operator-fed data from demo or backup datasets.'
     },
     {
       question: 'What data sources do you use?',
@@ -94,11 +113,11 @@ export const ContactPage: React.FC = () => {
     },
     {
       question: 'Is the platform free to use?',
-      answer: 'Yes, our platform provides free access to basic analytics and real-time data. Premium features and API access are available through subscription plans.'
+      answer: 'Yes, the platform provides free access to core analytics and selected data views. Premium features and API access are available through subscription plans, and some views may rely on snapshot or fallback data depending on source availability.'
     },
     {
       question: 'How often is the data updated?',
-      answer: 'Data updates vary by source, but most metrics are refreshed every 30 seconds to 5 minutes, ensuring you have the most current information available.'
+      answer: 'Update cadence varies by source. Some feeds refresh every 30 seconds to 5 minutes when live connections are available, while other surfaces use slower snapshot refreshes or explicitly labeled fallback datasets.'
     },
     {
       question: 'Do you support Indigenous consultation workflows?',

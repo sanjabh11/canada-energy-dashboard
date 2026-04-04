@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { getTransitionReport, type TransitionReportResponse } from '../lib/llmClient';
-import { FileDown, Loader2, Link as LinkIcon } from 'lucide-react';
+import { FileDown, Loader2, Link as LinkIcon, CheckCircle } from 'lucide-react';
+import RetrievedEvidencePanel from './RetrievedEvidencePanel';
 
 interface Props {
   datasetPath: string;
@@ -11,7 +12,13 @@ const TransitionReportPanel: React.FC<Props> = ({ datasetPath, timeframe }) => {
   const [data, setData] = useState<TransitionReportResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<{ show: boolean; message: string; type: 'success' | 'error' } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const showFeedbackMessage = (message: string, type: 'success' | 'error' = 'success') => {
+    setFeedback({ show: true, message, type });
+    setTimeout(() => setFeedback(null), 3000);
+  };
 
   useEffect(() => {
     abortRef.current?.abort();
@@ -38,16 +45,28 @@ const TransitionReportPanel: React.FC<Props> = ({ datasetPath, timeframe }) => {
   }, [datasetPath, timeframe]);
 
   const downloadJson = () => {
-    if (!data) return;
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transition-report_${datasetPath}_${timeframe}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    if (!data) {
+      console.warn('Download attempted but no data available');
+      showFeedbackMessage('No data available to download', 'error');
+      return;
+    }
+    try {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      const safeDataset = (datasetPath || 'unknown').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      const safeTimeframe = (timeframe || 'latest').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      link.download = `transition-report_${safeDataset}_${safeTimeframe}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      showFeedbackMessage('Report downloaded successfully', 'success');
+    } catch (err) {
+      console.error('Failed to download JSON:', err);
+      showFeedbackMessage('Failed to download report', 'error');
+    }
   };
 
   // Derived arrays aligned with server schema; fall back to older keys if present
@@ -65,12 +84,22 @@ const TransitionReportPanel: React.FC<Props> = ({ datasetPath, timeframe }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+      {feedback?.show && (
+        <div className={`fixed top-4 right-4 z-50 px-4 py-2 rounded-lg shadow-lg text-sm font-medium ${
+          feedback.type === 'success' ? 'bg-green-100 text-green-800 border border-green-200' : 'bg-red-100 text-red-800 border border-red-200'
+        }`}>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4" />
+            {feedback.message}
+          </div>
+        </div>
+      )}
       <div className="p-4 border-b border-slate-200 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-800">Transition Report</h3>
         <button
           onClick={downloadJson}
           disabled={!data}
-          className="flex items-center space-x-2 text-sm bg-slate-100 hover:bg-slate-200 disabled:opacity-50 px-3 py-2 rounded"
+          className="flex items-center space-x-2 text-sm bg-white hover:bg-slate-50 disabled:opacity-50 disabled:bg-slate-100 border border-slate-300 shadow-sm text-slate-700 font-medium px-3 py-2 rounded transition-colors"
         >
           <FileDown className="h-4 w-4" />
           <span>Download JSON</span>
@@ -92,6 +121,12 @@ const TransitionReportPanel: React.FC<Props> = ({ datasetPath, timeframe }) => {
               <h4 className="font-semibold text-slate-800 mb-1">Summary</h4>
               <p className="text-sm text-slate-700 whitespace-pre-line">{data.summary}</p>
             </div>
+            <RetrievedEvidencePanel
+              query={data.summary || `${datasetPath} ${timeframe} transition report`}
+              sourceTypes={['energy_corpus']}
+              title="Supporting Energy Corpus Evidence"
+              limit={3}
+            />
             {progress.length > 0 && (
               <div>
                 <h4 className="font-semibold text-slate-800 mb-1">Progress</h4>

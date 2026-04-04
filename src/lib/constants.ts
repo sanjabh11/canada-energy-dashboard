@@ -2,6 +2,9 @@
 
 export const ENDPOINTS = {
   LLM_BASE: 'llm',
+  RAG: {
+    ENERGY_SEARCH: 'energy-rag'
+  },
   LLM: {
     EXPLAIN_CHART: 'llm/explain-chart',
     ANALYTICS_INSIGHT: 'llm/analytics-insight',

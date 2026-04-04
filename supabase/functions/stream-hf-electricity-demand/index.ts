@@ -3,6 +3,7 @@ import 'jsr:@supabase/functions-js/edge-runtime.d.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { getHFElectricityDemandSample, paginateSampleData } from "../_shared/sampleDataLoader.ts";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
+import { buildDataProvenance } from "../_shared/dataProvenance.ts";
 
 type HfRow = {
   datetime: string;
@@ -87,6 +88,16 @@ function mapRow(row: Record<string, unknown>): HfRow {
   };
 }
 
+function getLatestTimestamp(rows: HfRow[]): string | null {
+  if (rows.length === 0) return null;
+
+  return rows.reduce<string | null>((latest, row) => {
+    if (!row.datetime) return latest;
+    if (!latest) return row.datetime;
+    return new Date(row.datetime).getTime() > new Date(latest).getTime() ? row.datetime : latest;
+  }, null);
+}
+
 Deno.serve(async (req: Request) => {
   const corsHeaders = createCorsHeaders(req);
 
@@ -152,6 +163,12 @@ Deno.serve(async (req: Request) => {
         hasMore: paginated.hasMore,
         usingSampleData: true
       };
+      const provenance = buildDataProvenance({
+        source: 'Hugging Face electricity demand sample dataset',
+        lastUpdated: getLatestTimestamp(paginated.rows as HfRow[]),
+        isFallback: true,
+        staleAfterHours: 12,
+      });
 
       await updateStreamHealth('healthy', metadata, {
         last_success: new Date().toISOString(),
@@ -166,7 +183,8 @@ Deno.serve(async (req: Request) => {
 
       return new Response(JSON.stringify({ 
         rows: paginated.rows, 
-        metadata 
+        metadata,
+        provenance,
       }), { headers, status: 200 });
     }
 
@@ -183,6 +201,12 @@ Deno.serve(async (req: Request) => {
       hasMore,
       usingSampleData: usedSample
     };
+    const provenance = buildDataProvenance({
+      source: usedSample ? 'Hugging Face electricity demand sample dataset' : 'hf_electricity_demand',
+      lastUpdated: getLatestTimestamp(rows as HfRow[]),
+      isFallback: usedSample,
+      staleAfterHours: 12,
+    });
 
     await updateStreamHealth('healthy', metadata, {
       last_success: new Date().toISOString(),
@@ -195,7 +219,7 @@ Deno.serve(async (req: Request) => {
       headers.set('x-next-cursor', String(nextOffset));
     }
 
-    const body = { rows, metadata };
+    const body = { rows, metadata, provenance };
     return new Response(JSON.stringify(body), { headers, status: 200 });
   } catch (err) {
     errorCount++;
@@ -215,12 +239,19 @@ Deno.serve(async (req: Request) => {
         usingSampleData: true,
         returned: paginated.rows.length
       };
+      const provenance = buildDataProvenance({
+        source: 'Hugging Face electricity demand sample dataset',
+        lastUpdated: getLatestTimestamp(paginated.rows as HfRow[]),
+        isFallback: true,
+        staleAfterHours: 12,
+      });
 
       await logInvocation('error', metadata, startedAt);
 
       return new Response(JSON.stringify({ 
         rows: paginated.rows, 
-        metadata 
+        metadata,
+        provenance,
       }), {
         headers: { 'Content-Type': 'application/json', ...corsHeaders },
         status: 200

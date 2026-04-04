@@ -9,6 +9,7 @@ import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, I
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import { persistLeadIntake } from '../lib/leadIntake';
+import { useTIERPricing, calculateArbitrageSpread } from '../lib/tierPricing';
 
 interface ROIResults {
     fundPayment: number;
@@ -27,10 +28,15 @@ export const TIERROICalculator: React.FC = () => {
     const [directInvestCapex, setDirectInvestCapex] = useState<number>(500000);
     const [emailCapture, setEmailCapture] = useState('');
     const [emailSubmitted, setEmailSubmitted] = useState(false);
+    const [emailError, setEmailError] = useState('');
 
-    // Market constants (from research — updated Feb 2026)
-    const FUND_PRICE = 95; // TIER fund price (frozen at $95, Alberta May 2025)
-    const MARKET_PRICE = 25; // Current EPC/Offset market price (~$24.50-$25)
+    // TIER Pricing configuration (single source of truth)
+    const tierPricing = useTIERPricing();
+    const FUND_PRICE = tierPricing.fundPrice;
+    const MARKET_PRICE = tierPricing.marketCreditPrice;
+    const ARBITRAGE_SPREAD = calculateArbitrageSpread(tierPricing);
+
+    // CEIP service fees (business model constants)
     const CEIP_BASE_FEE = 18000; // $1,500/mo × 12
     const SUCCESS_FEE_RATE = 0.20; // 20% of savings
     const DI_CREDIT_RATE = 0.80; // $1 invested = ~$0.80 compliance credit (estimated)
@@ -57,10 +63,15 @@ export const TIERROICalculator: React.FC = () => {
             roiPercent,
             bestOption
         };
-    }, [benchmarkExceedance, directInvestCapex]);
+    }, [benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE]);
 
     const handleEmailSubmit = async () => {
-        if (!emailCapture) return;
+        if (!emailCapture || !emailCapture.includes('@')) {
+            setEmailError('Enter a valid work email to receive the report.');
+            return;
+        }
+
+        setEmailError('');
 
         const persistResult = await persistLeadIntake({
             company_name: 'Industrial ROI Inquiry',
@@ -77,15 +88,12 @@ export const TIERROICalculator: React.FC = () => {
             },
         });
 
-        const leads = JSON.parse(localStorage.getItem('ceip_tier_leads') || '[]');
-        leads.push({
-            email: emailCapture,
-            emissions: annualEmissions,
-            exceedance: benchmarkExceedance,
-            timestamp: new Date().toISOString(),
-            persistedToSupabase: persistResult.ok,
-        });
-        localStorage.setItem('ceip_tier_leads', JSON.stringify(leads));
+        if (!persistResult.ok) {
+            setEmailError('We could not save your request. Please try again in a moment.');
+            return;
+        }
+
+        setEmailCapture('');
         setEmailSubmitted(true);
     };
 
@@ -102,7 +110,7 @@ export const TIERROICalculator: React.FC = () => {
         <div className="min-h-screen bg-slate-900 text-white">
           <SEOHead
             title="TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage"
-            description="Calculate how much your Alberta facility can save on TIER carbon compliance. Compare fund payment ($95/t) vs market credits ($25/t) vs Direct Investment. Free calculator."
+            description={`Calculate how much your Alberta facility can save on TIER carbon compliance. Compare fund payment ($${FUND_PRICE}/t) vs market credits ($${MARKET_PRICE}/t) vs Direct Investment. Free calculator.`}
             path="/roi-calculator"
             keywords={['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']}
           />
@@ -131,10 +139,10 @@ export const TIERROICalculator: React.FC = () => {
               <p className="text-slate-300 text-sm leading-relaxed">
                 The <strong>Technology Innovation and Emissions Reduction (TIER)</strong> regulation requires
                 Alberta facilities emitting 100,000+ tonnes CO₂e/year to reduce emissions below a benchmark.
-                Facilities exceeding their benchmark must comply by: paying the <strong>$95/tonne fund price</strong>,
-                purchasing <strong>market credits (EPCs/Offsets) at ~$25/tonne</strong>, or using the new
+                Facilities exceeding their benchmark must comply by: paying the <strong>${FUND_PRICE}/tonne fund price</strong>,
+                purchasing <strong>market credits (EPCs/Offsets) at ~${MARKET_PRICE}/tonne</strong>, or using the new
                 <strong> Direct Investment pathway</strong> (Dec 2025 amendments) to invest in on-site efficiency.
-                The $70/tonne spread between fund price and market credits represents a massive savings opportunity.
+                The ${ARBITRAGE_SPREAD}/tonne spread between fund price and market credits represents a massive savings opportunity.
               </p>
               <div className="flex gap-4 mt-3 text-xs text-slate-500">
                 <a href="https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
@@ -227,7 +235,7 @@ export const TIERROICalculator: React.FC = () => {
                         </div>
                         <div className="mt-3 text-center">
                             <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
-                                ${FUND_PRICE - MARKET_PRICE}/tonne arbitrage opportunity
+                                ${ARBITRAGE_SPREAD}/tonne arbitrage opportunity
                             </span>
                         </div>
                     </div>
@@ -394,12 +402,15 @@ export const TIERROICalculator: React.FC = () => {
                 </button>
               </div>
             )}
+            {emailError && (
+              <p className="mt-3 text-sm text-rose-400">{emailError}</p>
+            )}
           </div>
 
           {/* Data Sources */}
           <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
             <p>Data sources: Alberta.ca TIER Regulation, S&P Global Commodity Insights, ICAP Carbon Action</p>
-            <p>Fund price frozen at $95/t (Alberta May 2025). Market credit prices as of Q4 2025. Direct Investment Standard expected early 2026.</p>
+            <p>Fund price frozen at ${FUND_PRICE}/t ({tierPricing.source}, {tierPricing.effectiveDate}). Market credit prices as of {tierPricing.periodLabel}. Direct Investment Standard expected early 2026.</p>
           </div>
           </section>
         </div>

@@ -105,7 +105,7 @@ const AUDIENCE_SEGMENTS = [
     icon: '🎓',
     description: 'Energy technology programs seeking digital curriculum supplements',
     painPoint: 'Textbooks are outdated, students need hands-on data experience',
-    solution: 'Real-time dashboards + AI tutoring + certificates',
+    solution: 'Operator-sourced dashboards + AI tutoring + certificates',
     fundingSource: 'Tuition fees, provincial education grants'
   },
   {
@@ -197,7 +197,7 @@ export function TrainingCoordinatorsPage() {
           </h1>
           <p className="text-xl text-cyan-100 mb-8 max-w-3xl">
             CIET charges $2,500+ for CEM certification. We deliver Canada-specific energy education 
-            with AI tutoring and real-time dashboards for <strong>$120/learner</strong>.
+            with AI tutoring and operator-sourced dashboards for <strong>$120/learner</strong>.
           </p>
           <div className="flex flex-wrap gap-4">
             <a
@@ -470,7 +470,7 @@ export function TrainingCoordinatorsPage() {
                 </li>
                 <li className="flex items-start gap-2 text-slate-300">
                   <CheckCircle className="h-5 w-5 text-emerald-400 flex-shrink-0" />
-                  Real-time dashboards with live data
+                  Dashboards with operator-sourced data and explicit freshness labeling
                 </li>
               </ul>
             </div>

@@ -42,6 +42,9 @@ export interface AIAnalyticsProps {
   currentMetrics?: Record<string, number>;
   onScenarioApply?: (scenario: ScenarioModel) => void;
   onRecommendationApply?: (recommendation: AIRecommendation) => void;
+  query?: string;
+  onQueryChange?: (query: string) => void;
+  onQuerySubmit?: (query: string) => void;
 }
 
 const DEFAULT_SCENARIOS: ScenarioModel[] = [
@@ -72,7 +75,10 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
   dataset,
   currentMetrics = {},
   onScenarioApply,
-  onRecommendationApply
+  onRecommendationApply,
+  query: externalQuery,
+  onQueryChange,
+  onQuerySubmit
 }) => {
   const [scenarios, setScenarios] = useState<ScenarioModel[]>(DEFAULT_SCENARIOS);
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
@@ -80,7 +86,20 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [insights, setInsights] = useState<string>('');
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [internalQuery, setInternalQuery] = useState<string>('');
   const [feedback, setFeedback] = useState<FeedbackState>({ show: false, message: '', type: 'info' });
+  const [appliedRecommendations, setAppliedRecommendations] = useState<string[]>(() => {
+    // Load from localStorage on mount
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = localStorage.getItem('ceip_applied_recommendations');
+        if (stored) {
+          return JSON.parse(stored) as string[];
+        }
+      } catch { /* ignore */ }
+    }
+    return [] as string[];
+  });
 
   const showFeedbackMessage = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
     setFeedback({ show: true, message, type });
@@ -88,17 +107,22 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
   };
 
   // Generate AI recommendations based on current data
-  const generateRecommendations = useCallback(async (showRefreshFeedback = false) => {
+  const generateRecommendations = useCallback(async (showRefreshFeedback = false, customQuery?: string) => {
     setIsAnalyzing(true);
     try {
+      // Use custom query if provided, otherwise use external/internal query
+      const activeQuery = customQuery || externalQuery || internalQuery;
+      
       // Simulate AI analysis - in real implementation, this would call the LLM API
       const mockRecommendations: AIRecommendation[] = [
         {
           id: 'rec-1',
           type: 'optimization',
           priority: 'high',
-          title: 'Peak Shaving Implementation',
-          description: 'Implement demand response during peak hours to reduce grid strain',
+          title: activeQuery ? `Analysis: "${activeQuery.substring(0, 50)}${activeQuery.length > 50 ? '...' : ''}"` : 'Peak Shaving Implementation',
+          description: activeQuery 
+            ? `Based on your query about "${activeQuery}", we recommend analyzing demand patterns and implementing targeted response strategies.` 
+            : 'Implement demand response during peak hours to reduce grid strain',
           expectedImpact: '10-15% peak demand reduction',
           implementationTime: '3-6 months',
           confidence: 0.87
@@ -127,14 +151,21 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
 
       setRecommendations(mockRecommendations);
 
-      // Generate insights
+      // Generate insights - include query context if provided
       const renewablePercentage = currentMetrics.renewablePercentage ?? 67;
       const projectedRenewablePercentage = Math.min(100, renewablePercentage + 15);
-      const insightText = `Analysis of ${dataset} data reveals significant opportunities for optimization. Current renewable penetration is at ${renewablePercentage}%, with potential to reach ${projectedRenewablePercentage}% through strategic investments. Peak demand patterns suggest implementing demand response programs could reduce costs by 8-12%.`;
+      let insightText;
+      
+      if (activeQuery) {
+        insightText = `Analysis for "${activeQuery}": Based on ${dataset} data, current renewable penetration is ${renewablePercentage}% with potential to reach ${projectedRenewablePercentage}%. Your query suggests interest in optimization strategies that could yield 8-12% cost reductions through targeted demand response programs.`;
+      } else {
+        insightText = `Analysis of ${dataset} data reveals significant opportunities for optimization. Current renewable penetration is at ${renewablePercentage}%, with potential to reach ${projectedRenewablePercentage}% through strategic investments. Peak demand patterns suggest implementing demand response programs could reduce costs by 8-12%.`;
+      }
+      
       setInsights(insightText);
 
       if (showRefreshFeedback) {
-        showFeedbackMessage('Analysis refreshed with latest dashboard data', 'success');
+        showFeedbackMessage(activeQuery ? `Analysis complete for: "${activeQuery.substring(0, 30)}..."` : 'Analysis refreshed with latest dashboard data', 'success');
       }
 
     } catch (error) {
@@ -142,7 +173,7 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [currentMetrics, dataset]);
+  }, [currentMetrics, dataset, externalQuery, internalQuery]);
 
   useEffect(() => {
     generateRecommendations();
@@ -168,6 +199,16 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
     } else {
       showFeedbackMessage(`Applied: ${recommendation.title} (Note: No parent handler registered)`, 'info');
     }
+    // Track applied recommendation
+    setAppliedRecommendations(prev => {
+      if (prev.includes(recommendation.id)) return prev;
+      const next = [...prev, recommendation.id];
+      // Persist to localStorage
+      try {
+        localStorage.setItem('ceip_applied_recommendations', JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
   };
 
   const getPriorityColor = (priority: string) => {
@@ -187,6 +228,24 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
       case 'technical': return <Settings className="h-4 w-4" />;
       default: return <Brain className="h-4 w-4" />;
     }
+  };
+
+  // Handle query input change
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newQuery = e.target.value;
+    setInternalQuery(newQuery);
+    if (onQueryChange) {
+      onQueryChange(newQuery);
+    }
+  };
+
+  // Handle query submit/analyze
+  const handleAnalyze = () => {
+    const queryToSubmit = externalQuery || internalQuery;
+    if (onQuerySubmit) {
+      onQuerySubmit(queryToSubmit);
+    }
+    generateRecommendations(true, queryToSubmit);
   };
 
   return (
@@ -222,7 +281,7 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
             {showAdvanced ? 'Simple' : 'Advanced'}
           </button>
           <button
-            onClick={() => generateRecommendations(true)}
+            onClick={handleAnalyze}
             disabled={isAnalyzing}
             className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-2"
           >
@@ -239,6 +298,32 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
             )}
           </button>
         </div>
+      </div>
+
+      {/* Query Input */}
+      <div className="p-4 border-b border-slate-200 bg-slate-50">
+        <label className="block text-sm font-medium text-slate-700 mb-2">
+          Ask a question about energy data
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={externalQuery !== undefined ? externalQuery : internalQuery}
+            onChange={handleQueryChange}
+            placeholder="e.g., What is Ontario's peak demand forecast for summer 2025?"
+            className="flex-1 px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-sm"
+          />
+          <button
+            onClick={handleAnalyze}
+            disabled={isAnalyzing}
+            className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 transition-colors text-sm font-medium"
+          >
+            {isAnalyzing ? 'Analyzing...' : 'Ask AI'}
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          Enter a specific question to get targeted AI analysis and recommendations.
+        </p>
       </div>
 
       {/* AI Insights */}
@@ -344,9 +429,21 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
 
               <button
                 onClick={() => handleRecommendationApply(rec)}
-                className="mt-2 w-full px-3 py-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 rounded transition-colors"
+                disabled={appliedRecommendations.includes(rec.id)}
+                className={`mt-2 w-full px-3 py-1 text-xs rounded transition-colors ${
+                  appliedRecommendations.includes(rec.id)
+                    ? 'bg-green-100 text-green-700 cursor-default'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                }`}
               >
-                Apply Recommendation
+                {appliedRecommendations.includes(rec.id) ? (
+                  <span className="flex items-center justify-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Applied
+                  </span>
+                ) : (
+                  'Apply Recommendation'
+                )}
               </button>
             </div>
           ))}

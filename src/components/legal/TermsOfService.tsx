@@ -47,7 +47,7 @@ export function TermsOfService() {
                         <h2 className="text-xl font-semibold text-white">2. Description of Services</h2>
                         <p>CEIP provides:</p>
                         <ul className="space-y-2 mt-4">
-                            <li><strong>Alberta Rate Watchdog:</strong> Real-time electricity price monitoring and forecasts using AESO data</li>
+                            <li><strong>Alberta Rate Watchdog:</strong> Live-when-available electricity price monitoring and forecasts using AESO data, cached snapshots, or clearly labeled demo datasets</li>
                             <li><strong>Energy Quiz Pro:</strong> Educational quizzes about Canadian energy systems</li>
                             <li><strong>CEIP Advanced:</strong> Premium dashboards and analytics (paid tier)</li>
                         </ul>
