@@ -36,8 +36,9 @@ const MAX_QUERY_LENGTH = 500;
 const MAX_RESULTS = 1000;
 const QUERY_TIMEOUT_MS = 30000;
 
-// Demo data mode - enabled via environment variable
-const ENABLE_DEMO_DATA = Deno.env.get("ENABLE_DEMO_DATA") === "true";
+// Demo data mode - enabled by default for local/dev and explicitly disabled in production when needed.
+// This keeps NL2SQL honest: empty result sets surface seeded demo rows instead of a misleading blank state.
+const ENABLE_DEMO_DATA = Deno.env.get("ENABLE_DEMO_DATA") !== "false";
 
 interface NL2SQLRequest {
   query: string;

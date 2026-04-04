@@ -83,6 +83,12 @@ const StatusPage: React.FC = () => {
     }
   ]);
 
+  const hasNonLiveHighRiskSources = HIGH_RISK_SOURCE_REGISTRY.some((item) => item.meta.freshnessStatus !== 'live');
+  const statusBannerTitle = hasNonLiveHighRiskSources ? 'Operational status overview' : 'All Systems Operational';
+  const statusBannerCopy = hasNonLiveHighRiskSources
+    ? 'System health is tracked below with explicit live, stale, and demo labels. Some high-risk sources are not live, so the page avoids claiming full operational parity.'
+    : 'All monitored systems are running normally.';
+
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -172,10 +178,8 @@ const StatusPage: React.FC = () => {
               <Shield className="h-8 w-8 text-emerald-600" />
             </div>
             <div className="flex-1">
-              <h2 className="text-xl font-semibold text-emerald-900">All Systems Operational</h2>
-              <p className="text-emerald-700">
-                All monitored systems are running normally. Data freshness is within acceptable ranges.
-              </p>
+              <h2 className="text-xl font-semibold text-emerald-900">{statusBannerTitle}</h2>
+              <p className="text-emerald-700">{statusBannerCopy}</p>
             </div>
             <div className="text-right">
               <div className="text-3xl font-bold text-emerald-600">99.9%</div>

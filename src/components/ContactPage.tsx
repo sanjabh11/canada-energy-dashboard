@@ -29,7 +29,16 @@ export const ContactPage: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [submitMessage, setSubmitMessage] = useState<string>('');
   const [errors, setErrors] = useState<Partial<ContactFormData>>({});
+  const fieldIds = {
+    name: 'contact-name',
+    email: 'contact-email',
+    company: 'contact-company',
+    inquiryType: 'contact-inquiry-type',
+    subject: 'contact-subject',
+    message: 'contact-message',
+  } as const;
 
   const handleInputChange = (field: keyof ContactFormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -62,6 +71,7 @@ export const ContactPage: React.FC = () => {
 
     setIsSubmitting(true);
     setSubmitStatus('idle');
+    setSubmitMessage('');
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -87,6 +97,7 @@ export const ContactPage: React.FC = () => {
       }
 
       setSubmitStatus('success');
+      setSubmitMessage('Message sent successfully. We will get back to you within 24 hours.');
       setFormData({
         name: '',
         email: '',
@@ -97,6 +108,11 @@ export const ContactPage: React.FC = () => {
       });
     } catch (error) {
       setSubmitStatus('error');
+      setSubmitMessage(
+        error instanceof Error
+          ? error.message
+          : 'We could not submit your message. Please try again or contact us directly.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -242,21 +258,21 @@ export const ContactPage: React.FC = () => {
               <h2 className="text-2xl font-bold text-primary mb-6">Send us a Message</h2>
 
               {submitStatus === 'success' && (
-                <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                <div data-testid="contact-submit-success" className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3" aria-live="polite">
                   <CheckCircle className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="font-medium text-green-800">Message Sent Successfully!</div>
-                    <div className="text-sm text-green-700">We'll get back to you within 24 hours.</div>
+                    <div className="text-sm text-green-700">{submitMessage || "We'll get back to you within 24 hours."}</div>
                   </div>
                 </div>
               )}
 
               {submitStatus === 'error' && (
-                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
+                <div data-testid="contact-submit-error" className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3" aria-live="polite">
                   <AlertCircle className="h-5 w-5 text-red-600" />
                   <div>
                     <div className="font-medium text-red-800">Failed to Send Message</div>
-                    <div className="text-sm text-red-700">Please try again or contact us directly.</div>
+                    <div className="text-sm text-red-700">{submitMessage || 'Please try again or contact us directly.'}</div>
                   </div>
                 </div>
               )}
@@ -264,10 +280,11 @@ export const ContactPage: React.FC = () => {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor={fieldIds.name} className="block text-sm font-medium text-secondary mb-2">
                       Full Name *
                     </label>
                     <input
+                      id={fieldIds.name}
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
@@ -280,10 +297,11 @@ export const ContactPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor={fieldIds.email} className="block text-sm font-medium text-secondary mb-2">
                       Email Address *
                     </label>
                     <input
+                      id={fieldIds.email}
                       type="email"
                       value={formData.email}
                       onChange={(e) => handleInputChange('email', e.target.value)}
@@ -298,10 +316,11 @@ export const ContactPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor={fieldIds.company} className="block text-sm font-medium text-secondary mb-2">
                       Company/Organization
                     </label>
                     <input
+                      id={fieldIds.company}
                       type="text"
                       value={formData.company}
                       onChange={(e) => handleInputChange('company', e.target.value)}
@@ -311,10 +330,11 @@ export const ContactPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-secondary mb-2">
+                    <label htmlFor={fieldIds.inquiryType} className="block text-sm font-medium text-secondary mb-2">
                       Inquiry Type
                     </label>
                     <select
+                      id={fieldIds.inquiryType}
                       value={formData.inquiryType}
                       onChange={(e) => handleInputChange('inquiryType', e.target.value)}
                       className="w-full px-4 py-3 rounded-lg bg-secondary text-primary border border-[var(--border-medium)] focus:ring-2 focus:ring-electric focus:border-transparent transition-colors"
@@ -329,10 +349,11 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
+                  <label htmlFor={fieldIds.subject} className="block text-sm font-medium text-secondary mb-2">
                     Subject *
                   </label>
                   <input
+                    id={fieldIds.subject}
                     type="text"
                     value={formData.subject}
                     onChange={(e) => handleInputChange('subject', e.target.value)}
@@ -345,10 +366,11 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-2">
+                  <label htmlFor={fieldIds.message} className="block text-sm font-medium text-secondary mb-2">
                     Message *
                   </label>
                   <textarea
+                    id={fieldIds.message}
                     rows={6}
                     value={formData.message}
                     onChange={(e) => handleInputChange('message', e.target.value)}

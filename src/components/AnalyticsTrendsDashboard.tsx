@@ -392,7 +392,22 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
       generation: 15 + Math.random() * 5
     }));
 
-  const analyticsUsingFallback = data.provincialGeneration.length === 0 || data.ontarioDemand.length === 0;
+  const analyticsConnectionState = useMemo(() => {
+    if (connectionStatuses.length === 0) return 'unknown' as const;
+    if (connectionStatuses.some(status => status.status === 'fallback')) return 'demo' as const;
+    if (connectionStatuses.some(status => status.status === 'error')) return 'unknown' as const;
+    if (connectionStatuses.every(status => status.status === 'connected')) return 'live' as const;
+    return 'unknown' as const;
+  }, [connectionStatuses]);
+
+  const analyticsUsesSupplementedData = data.provincialGeneration.length === 0 || data.ontarioDemand.length === 0 || excludedLowQualityCount > 0;
+  const analyticsIsDemo = analyticsConnectionState === 'demo' || analyticsUsesSupplementedData;
+  const analyticsStatus = analyticsIsDemo ? 'demo' : analyticsConnectionState === 'live' ? 'live' : 'unknown';
+  const analyticsSourceLabel = analyticsIsDemo
+    ? 'Mixed analytics fallback inputs'
+    : analyticsConnectionState === 'live'
+      ? 'Provincial generation + Ontario demand datasets'
+      : 'Analytics provenance unavailable';
 
   return (
     <div className="min-h-screen bg-slate-900 dashboard-analytics">
@@ -419,8 +434,8 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
               <div className="mt-3">
                 <DataFreshnessBadge
                   timestamp={new Date().toISOString()}
-                  status={analyticsUsingFallback ? 'demo' : 'live'}
-                  source={analyticsUsingFallback ? 'Mixed analytics fallback inputs' : 'Provincial generation + Ontario demand datasets'}
+                  status={analyticsStatus}
+                  source={analyticsSourceLabel}
                 />
               </div>
             </div>
@@ -439,7 +454,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
       </section>
 
       <div className={`${CONTAINER_CLASSES.page} space-y-8 py-8`}>
-        {analyticsUsingFallback && (
+        {analyticsIsDemo && (
           <DataTrustNotice
             mode="fallback"
             title="Fallback analytics inputs active"
