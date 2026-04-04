@@ -109,10 +109,22 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
-        <div className="text-center">
-          <Package className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-pulse" />
-          <p className="text-lg text-secondary">Loading Critical Minerals Dashboard...</p>
+      <div className="min-h-screen bg-secondary px-6 py-10">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Package className="w-8 h-8 text-blue-500 animate-pulse" />
+              <div>
+                <p className="text-lg font-semibold text-slate-900">Loading Critical Minerals Dashboard...</p>
+                <p className="text-sm text-slate-600">Preparing supply chain, trade flow, and stockpile snapshots.</p>
+              </div>
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            <div className="h-32 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+            <div className="h-32 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+            <div className="h-32 rounded-2xl bg-white border border-slate-200 animate-pulse" />
+          </div>
         </div>
       </div>
     );
@@ -120,14 +132,14 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
 
   if (!isEdgeFetchEnabled() && !error && !data) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-secondary">
-        <div className="text-center">
+      <div className="flex items-center justify-center min-h-screen bg-secondary px-6">
+        <div className="max-w-xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center shadow-sm">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-          <p className="text-lg text-secondary">
-            Live Critical Minerals analytics are disabled in this environment (Supabase Edge offline or not configured).
+          <p className="text-lg text-amber-900 font-semibold">
+            Critical Minerals is running in offline/demo mode in this environment.
           </p>
-          <p className="text-sm text-secondary mt-2">
-            In production, configure Supabase Edge functions and set VITE_ENABLE_EDGE_FETCH=true to enable real data.
+          <p className="text-sm text-amber-800 mt-2">
+            Supabase Edge is disabled or not configured locally, so the dashboard shows a cached-friendly placeholder state instead of live data.
           </p>
         </div>
       </div>

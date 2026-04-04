@@ -76,6 +76,8 @@ const ComplianceDashboard = React.lazy(() => import('./components/ComplianceDash
 const StakeholderDashboard = React.lazy(() => import('./components/StakeholderDashboard').then(m => ({ default: m.StakeholderDashboard })));
 // AI Data Centre Dashboard standalone route
 const AIDataCentreDashboard = React.lazy(() => import('./components/AIDataCentreDashboard').then(m => ({ default: m.AIDataCentreDashboard })));
+const HydrogenEconomyDashboard = React.lazy(() => import('./components/HydrogenEconomyDashboard').then(m => ({ default: m.HydrogenEconomyDashboard })));
+const CriticalMineralsSupplyChainDashboard = React.lazy(() => import('./components/CriticalMineralsSupplyChainDashboard').then(m => ({ default: m.CriticalMineralsSupplyChainDashboard })));
 // Natural Language Query Interface (NL2SQL)
 const AskDataPage = React.lazy(() => import('./components/AskDataPage').then(m => ({ default: m.AskDataPage })));
 // Multi-Source AI Assistant (Tool Calling)
@@ -145,6 +147,10 @@ const router = createBrowserRouter(
         { path: '/climate-policy', element: <EnergyDataDashboard initialTab="ClimatePolicy" /> },
         { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
         { path: '/household-advisor', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
+        { path: '/hydrogen', element: <HydrogenEconomyDashboard /> },
+        { path: '/hydrogen-hub', element: <HydrogenEconomyDashboard /> },
+        { path: '/critical-minerals', element: <CriticalMineralsSupplyChainDashboard /> },
+        { path: '/minerals', element: <CriticalMineralsSupplyChainDashboard /> },
         { path: '/about', element: <AboutPage /> },
         { path: '/contact', element: <ContactPage /> },
         { path: '/profile', element: <ProfilePage /> },

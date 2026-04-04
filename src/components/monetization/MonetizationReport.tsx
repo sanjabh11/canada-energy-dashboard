@@ -235,6 +235,7 @@ export const MonetizationReport: React.FC<MonetizationReportProps> = ({
   const [selectedTier, setSelectedTier] = useState<MonetizationTier | 'all'>('all');
   const [sortBy, setSortBy] = useState<'rating' | 'value' | 'name'>('rating');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
   // Filter and sort features
   const filteredFeatures = useMemo(() => {
@@ -279,6 +280,24 @@ export const MonetizationReport: React.FC<MonetizationReportProps> = ({
     };
   }, []);
 
+  const handleShare = async () => {
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    const shareText = 'Monetization Analysis Report';
+
+    try {
+      if (navigator.clipboard?.writeText && shareUrl) {
+        await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+        setShareFeedback('Share link copied to clipboard.');
+      } else {
+        setShareFeedback('Copy/share is unavailable in this environment.');
+      }
+    } catch {
+      setShareFeedback('Unable to copy share link right now.');
+    }
+
+    window.setTimeout(() => setShareFeedback(null), 2500);
+  };
+
   return (
     <div className={cn('w-full space-y-6', className)}>
       {/* Header */}
@@ -298,12 +317,24 @@ export const MonetizationReport: React.FC<MonetizationReportProps> = ({
               <Download className="h-4 w-4" />
               Export
             </button>
-            <button className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors backdrop-blur-sm flex items-center gap-2">
+            <button
+              data-testid="monetization-share"
+              onClick={handleShare}
+              className="px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg font-medium transition-colors backdrop-blur-sm flex items-center gap-2"
+            >
               <Share2 className="h-4 w-4" />
               Share
             </button>
           </div>
         </div>
+        {shareFeedback && (
+          <div
+            data-testid="monetization-share-feedback"
+            className="mt-4 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-sm text-white/90"
+          >
+            {shareFeedback}
+          </div>
+        )}
 
         {/* Summary Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">

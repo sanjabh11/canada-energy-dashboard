@@ -193,6 +193,18 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   }
 
   if (error || !metrics) {
+    if (import.meta.env.DEV) {
+      return (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="text-amber-600" size={20} />
+            <span className="text-sm text-amber-900">
+              Ops health is unavailable in local development. The page will show source freshness and monitor metadata instead.
+            </span>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4">
         <div className="flex items-center gap-2">

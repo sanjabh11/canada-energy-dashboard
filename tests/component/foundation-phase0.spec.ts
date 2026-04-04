@@ -30,6 +30,11 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(page.getByText('Health Endpoint').first()).toBeVisible();
   });
 
+  test('hydrogen standalone route resolves', async ({ page }) => {
+    await page.goto('/hydrogen');
+    await expect(page.getByText(/Failed to load dashboard data\. Please try again\./)).toBeVisible();
+  });
+
   test('analytics page exposes fallback provenance when data is supplemented', async ({ page }) => {
     await page.goto('/analytics');
     await expect(page.getByText('Analytics & Trends')).toBeVisible();
