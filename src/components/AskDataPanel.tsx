@@ -38,6 +38,7 @@ interface QueryResult {
     truncated: boolean;
     cacheHit: boolean;
     schemaVersion: string;
+    isDemoData?: boolean;
   };
 }
 
@@ -356,6 +357,15 @@ export function AskDataPanel() {
             </div>
             {result.meta.cacheHit && (
               <span className="text-green-500">(cached)</span>
+            )}
+            {result.meta.isDemoData && (
+              <span
+                data-testid="nl2sql-demo-badge"
+                className="inline-flex items-center gap-1 rounded-full bg-sky-500/10 px-2 py-0.5 text-sky-700 dark:text-sky-300"
+              >
+                <Database className="h-3 w-3" />
+                Demo data
+              </span>
             )}
             {result.explanation && (
               <span className="text-primary">{result.explanation}</span>
