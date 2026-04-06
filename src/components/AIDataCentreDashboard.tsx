@@ -28,11 +28,21 @@ import { isEdgeFetchEnabled } from '../lib/config';
 import { AIDemandScenarioSlider } from './AIDemandScenarioSlider';
 import DataTrustNotice from './DataTrustNotice';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import { buildDataProvenance } from '../lib/foundation';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
+import { DataFreshnessIndicator } from './ui/DataFreshnessBadge';
 import {
   type DashboardData, type QueueData, type QueueHistoryData, type MetricCardProps,
   COLORS, STATUS_COLORS, getProvinceName,
-  STATIC_FALLBACK_DC_DATA, STATIC_FALLBACK_QUEUE_DATA,
 } from './ai-datacentre/types';
+
+interface AIDataCentreDashboardSnapshot {
+  dcData: DashboardData;
+  queueData: QueueData | null;
+  queueHistory: QueueHistoryData | null;
+}
+
+const AI_DATA_CENTRE_SNAPSHOT_KEY = 'dashboard_snapshot_ai_data_centre';
 
 export const AIDataCentreDashboard: React.FC = () => {
   const [dcData, setDcData] = useState<DashboardData | null>(null);
@@ -42,6 +52,8 @@ export const AIDataCentreDashboard: React.FC = () => {
   const [, setError] = useState<string | null>(null);
   const [edgeDisabled, setEdgeDisabled] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
+  const [usingCachedSnapshot, setUsingCachedSnapshot] = useState(false);
+  const [sourceUnavailable, setSourceUnavailable] = useState(false);
   const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [selectedDataCentre, setSelectedDataCentre] = useState<DashboardData['data_centres'][0] | null>(null);
@@ -50,15 +62,32 @@ export const AIDataCentreDashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     setEdgeDisabled(false);
+    setUsingCachedSnapshot(false);
+    setSourceUnavailable(false);
 
     try {
       if (!isEdgeFetchEnabled()) {
-        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; using demo data.');
-        // Use fallback data instead of showing empty state
-        setDcData(STATIC_FALLBACK_DC_DATA);
-        setQueueData(STATIC_FALLBACK_QUEUE_DATA);
-        setQueueHistory(null);
-        setEdgeDisabled(true);
+        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; no seeded fallback will be used.');
+        const cachedSnapshot = loadDashboardSnapshot<AIDataCentreDashboardSnapshot>(AI_DATA_CENTRE_SNAPSHOT_KEY);
+        if (cachedSnapshot) {
+          setDcData(cachedSnapshot.payload.dcData);
+          setQueueData(cachedSnapshot.payload.queueData);
+          setQueueHistory(cachedSnapshot.payload.queueHistory);
+          setLastUpdated(
+            cachedSnapshot.payload.dcData.metadata?.last_updated
+              ?? cachedSnapshot.payload.queueData?.metadata?.last_updated
+              ?? cachedSnapshot.payload.queueHistory?.metadata?.last_updated
+              ?? cachedSnapshot.cachedAt,
+          );
+          setUsingCachedSnapshot(true);
+        } else {
+          setDcData(null);
+          setQueueData(null);
+          setQueueHistory(null);
+          setEdgeDisabled(true);
+          setLastUpdated(null);
+          setSourceUnavailable(true);
+        }
         setLoading(false);
         return;
       }
@@ -81,16 +110,35 @@ export const AIDataCentreDashboard: React.FC = () => {
       setDcData(dcResponse);
       setQueueData(queueResponse);
       setQueueHistory(historyResponse);
-      setLastUpdated(new Date().toISOString());
+      setLastUpdated(dcResponse?.metadata?.last_updated ?? queueResponse?.metadata?.last_updated ?? historyResponse?.metadata?.last_updated ?? null);
+      saveDashboardSnapshot(AI_DATA_CENTRE_SNAPSHOT_KEY, {
+        dcData: dcResponse,
+        queueData: queueResponse,
+        queueHistory: historyResponse,
+      });
     } catch (err) {
       console.error('Failed to load AI Data Centre data:', err);
-      // Use fallback data instead of showing error
-      console.warn('AIDataCentreDashboard: API call failed, using fallback demo data.');
-      setDcData(STATIC_FALLBACK_DC_DATA);
-      setQueueData(STATIC_FALLBACK_QUEUE_DATA);
-      setQueueHistory(null);
-      setEdgeDisabled(true); // Show demo mode indicator
-      setLastUpdated(new Date().toISOString());
+      const cachedSnapshot = loadDashboardSnapshot<AIDataCentreDashboardSnapshot>(AI_DATA_CENTRE_SNAPSHOT_KEY);
+      if (cachedSnapshot) {
+        setDcData(cachedSnapshot.payload.dcData);
+        setQueueData(cachedSnapshot.payload.queueData);
+        setQueueHistory(cachedSnapshot.payload.queueHistory);
+        setLastUpdated(
+          cachedSnapshot.payload.dcData.metadata?.last_updated
+            ?? cachedSnapshot.payload.queueData?.metadata?.last_updated
+            ?? cachedSnapshot.payload.queueHistory?.metadata?.last_updated
+            ?? cachedSnapshot.cachedAt,
+        );
+        setUsingCachedSnapshot(true);
+      } else {
+        console.warn('AIDataCentreDashboard: API call failed and no cached source-backed snapshot is available.');
+        setDcData(null);
+        setQueueData(null);
+        setQueueHistory(null);
+        setEdgeDisabled(true);
+        setLastUpdated(null);
+        setSourceUnavailable(true);
+      }
       setError(null); // Clear any error
     } finally {
       setLoading(false);
@@ -115,7 +163,39 @@ export const AIDataCentreDashboard: React.FC = () => {
   // No more early returns for edgeDisabled or error - we now use fallback data
   // and show a banner instead
 
-  if (!dcData) return null;
+  if (!dcData) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-secondary px-6">
+        <div className="max-w-2xl rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+          <div className="flex items-start gap-4">
+            <AlertTriangle className="mt-1 h-8 w-8 text-yellow-600" />
+            <div>
+              <h1 className="text-2xl font-semibold text-amber-950">AI Data Centre source-backed snapshot unavailable</h1>
+              <p className="mt-2 text-sm text-amber-900">
+                This dashboard no longer falls back to seeded demo facility or queue data. No live edge response or cached source-backed snapshot is available for the selected province.
+              </p>
+              <p className="mt-2 text-sm text-amber-800">
+                Required upstream sources include the AI data centre registry, AESO queue snapshot, and queue history feeds.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  onClick={loadDashboardData}
+                  className="rounded-lg bg-secondary0 px-5 py-2 text-white hover:bg-electric"
+                >
+                  Retry
+                </button>
+                {sourceUnavailable && (
+                  <span className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm text-amber-900">
+                    Waiting for a live response or a previously cached real snapshot.
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Check if province has data
   const hasProvinceData = dcData.data_centres.length > 0 || dcData.summary.total_count > 0;
@@ -163,6 +243,28 @@ export const AIDataCentreDashboard: React.FC = () => {
     { name: 'Available', value: dcData.grid_impact.current_peak_demand_mw - dcData.grid_impact.total_dc_load_mw, fill: '#e2e8f0' },
   ];
 
+  const aiDashboardFreshness = buildDataProvenance({
+    source: edgeDisabled
+      ? 'Sample AI data centre + AESO queue dataset'
+      : usingCachedSnapshot
+        ? `${dcData.metadata?.data_source || queueData?.metadata?.data_source || 'AI data centre + AESO queue APIs'} (cached snapshot)`
+        : selectedProvince !== 'AB'
+          ? `${dcData.metadata?.data_source || 'AI data centre registry'} (${getProvinceName(selectedProvince)} registry view)`
+        : dcData.metadata?.data_source || queueData?.metadata?.data_source || 'AI data centre + AESO queue APIs',
+    lastUpdated: edgeDisabled
+      ? null
+      : dcData.metadata?.last_updated || queueData?.metadata?.last_updated || queueHistory?.metadata?.last_updated || lastUpdated,
+    isFallback: edgeDisabled || usingCachedSnapshot,
+    staleAfterHours: 24,
+    note: edgeDisabled
+      ? 'Facility, capacity, and queue metrics are currently sourced from the seeded demo dataset.'
+      : usingCachedSnapshot
+        ? 'Facility and queue metrics are restored from the last successful cached snapshot for this browser.'
+        : isAlberta
+          ? 'Facility registry and Alberta queue analytics are loaded from edge-backed sources.'
+          : 'Facility registry is source-backed for the selected province, while queue analytics remain Alberta-only and do not apply to this provincial view.',
+  });
+
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
@@ -187,9 +289,10 @@ export const AIDataCentreDashboard: React.FC = () => {
               </p>
               <div className="mt-3">
                 <DataFreshnessBadge
-                  timestamp={lastUpdated}
-                  status={edgeDisabled ? 'demo' : 'live'}
-                  source={edgeDisabled ? 'Sample AI data centre dataset' : 'AI data centre + queue APIs'}
+                  timestamp={aiDashboardFreshness.lastUpdated}
+                  status={aiDashboardFreshness.freshnessStatus}
+                  source={aiDashboardFreshness.source}
+                  showRelative={false}
                 />
               </div>
             </div>
@@ -204,6 +307,25 @@ export const AIDataCentreDashboard: React.FC = () => {
           mode="mock"
           title="Sample infrastructure data active"
           message="This AI data centre view is currently using sample queue and facility data. Treat capacity, demand, and queue analytics as illustrative until live upstream feeds are connected."
+          className="mb-6"
+        />
+      )}
+
+      {/* Cached Snapshot Banner - shown when using browser-local cached data */}
+      {usingCachedSnapshot && !edgeDisabled && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Cached snapshot data in use"
+          message="This AI data centre view is restored from the last successful cached snapshot stored in this browser. Live upstream feeds are currently unavailable. Metrics reflect the last known state and may be stale."
+          className="mb-6"
+        />
+      )}
+
+      {!edgeDisabled && !usingCachedSnapshot && !isAlberta && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Registry-only provincial view"
+          message={`${getProvinceName(selectedProvince)} currently shows source-backed facility registry data only. Queue allocation, phase-1 capacity, and Alberta-specific AESO queue analytics remain Alberta-only and should not be read as provincial live queue coverage.`}
           className="mb-6"
         />
       )}
@@ -323,6 +445,8 @@ export const AIDataCentreDashboard: React.FC = () => {
               value={dcData.summary.total_count}
               subtitle={`${dcData.summary.by_status['Operational'] || 0} operational`}
               color="blue"
+              freshnessTimestamp={dcData.metadata?.last_updated}
+              freshnessStatus={aiDashboardFreshness.freshnessStatus}
             />
             <MetricCard
               icon={<Zap className="w-8 h-8" />}
@@ -330,6 +454,8 @@ export const AIDataCentreDashboard: React.FC = () => {
               value={`${Math.round(dcData.summary.total_contracted_capacity_mw)} MW`}
               subtitle={`${Math.round(dcData.summary.operational_capacity_mw)} MW operational`}
               color="green"
+              freshnessTimestamp={dcData.metadata?.last_updated}
+              freshnessStatus={aiDashboardFreshness.freshnessStatus}
             />
             <MetricCard
               icon={<Activity className="w-8 h-8" />}
@@ -337,6 +463,8 @@ export const AIDataCentreDashboard: React.FC = () => {
               value={currentQueueValue}
               subtitle={currentQueueSubtitle}
               color="amber"
+              freshnessTimestamp={queueData?.metadata?.last_updated}
+              freshnessStatus={aiDashboardFreshness.freshnessStatus}
             />
             <MetricCard
               icon={<DollarSign className="w-8 h-8" />}
@@ -344,6 +472,8 @@ export const AIDataCentreDashboard: React.FC = () => {
               value={dcData?.data_centres?.length ? `$${(dcData.data_centres.reduce((sum, dc) => sum + (dc.capital_investment_cad || 0), 0) / 1e9).toFixed(1)}B` : '$0.0B'}
               subtitle="Capital committed"
               color="purple"
+              freshnessTimestamp={dcData.metadata?.last_updated}
+              freshnessStatus={aiDashboardFreshness.freshnessStatus}
             />
           </div>
 
@@ -1021,7 +1151,7 @@ export const AIDataCentreDashboard: React.FC = () => {
   );
 };
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color, freshnessTimestamp, freshnessStatus }) => {
   const colorClasses = {
     blue: 'bg-secondary text-electric border-blue-200',
     green: 'bg-secondary text-success border-green-200',
@@ -1031,9 +1161,19 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, c
 
   return (
     <div className={`${colorClasses[color]} border rounded-xl p-6 shadow-md`}>
-      <div className="flex items-center gap-3 mb-3">
-        {icon}
-        <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {icon}
+          <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+        </div>
+        {(freshnessTimestamp || freshnessStatus) && (
+          <DataFreshnessIndicator
+            timestamp={freshnessTimestamp}
+            status={freshnessStatus}
+            staleThresholdMinutes={360}
+            className="ml-auto"
+          />
+        )}
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
       <p className="text-sm opacity-80">{subtitle}</p>

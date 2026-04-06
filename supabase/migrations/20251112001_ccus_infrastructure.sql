@@ -62,10 +62,10 @@ CREATE TABLE IF NOT EXISTS ccus_facilities (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ccus_facilities_province ON ccus_facilities(province);
-CREATE INDEX idx_ccus_facilities_status ON ccus_facilities(status);
-CREATE INDEX idx_ccus_facilities_operator ON ccus_facilities(operator);
-CREATE INDEX idx_ccus_facilities_capacity ON ccus_facilities(design_capture_capacity_mt_per_year DESC);
+CREATE INDEX IF NOT EXISTS idx_ccus_facilities_province ON ccus_facilities(province);
+CREATE INDEX IF NOT EXISTS idx_ccus_facilities_status ON ccus_facilities(status);
+CREATE INDEX IF NOT EXISTS idx_ccus_facilities_operator ON ccus_facilities(operator);
+CREATE INDEX IF NOT EXISTS idx_ccus_facilities_capacity ON ccus_facilities(design_capture_capacity_mt_per_year DESC);
 
 COMMENT ON TABLE ccus_facilities IS 'Registry of CCUS facilities with capture capacity, technology, storage, and economics';
 
@@ -105,8 +105,8 @@ CREATE TABLE IF NOT EXISTS ccus_capture_data (
   UNIQUE(facility_id, timestamp)
 );
 
-CREATE INDEX idx_ccus_capture_timestamp ON ccus_capture_data(timestamp DESC);
-CREATE INDEX idx_ccus_capture_facility ON ccus_capture_data(facility_id);
+CREATE INDEX IF NOT EXISTS idx_ccus_capture_timestamp ON ccus_capture_data(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_ccus_capture_facility ON ccus_capture_data(facility_id);
 
 COMMENT ON TABLE ccus_capture_data IS 'Time-series CO2 capture performance data';
 
@@ -152,8 +152,8 @@ CREATE TABLE IF NOT EXISTS ccus_pipelines (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ccus_pipelines_operator ON ccus_pipelines(operator);
-CREATE INDEX idx_ccus_pipelines_status ON ccus_pipelines(status);
+CREATE INDEX IF NOT EXISTS idx_ccus_pipelines_operator ON ccus_pipelines(operator);
+CREATE INDEX IF NOT EXISTS idx_ccus_pipelines_status ON ccus_pipelines(status);
 
 COMMENT ON TABLE ccus_pipelines IS 'CO2 transportation pipelines connecting capture facilities to storage sites';
 
@@ -202,8 +202,8 @@ CREATE TABLE IF NOT EXISTS ccus_storage_sites (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ccus_storage_province ON ccus_storage_sites(province);
-CREATE INDEX idx_ccus_storage_capacity ON ccus_storage_sites(remaining_capacity_mt DESC);
+CREATE INDEX IF NOT EXISTS idx_ccus_storage_province ON ccus_storage_sites(province);
+CREATE INDEX IF NOT EXISTS idx_ccus_storage_capacity ON ccus_storage_sites(remaining_capacity_mt DESC);
 
 COMMENT ON TABLE ccus_storage_sites IS 'Geological storage reservoirs for captured CO2';
 
@@ -245,8 +245,8 @@ CREATE TABLE IF NOT EXISTS ccus_economics (
   UNIQUE(facility_id, year)
 );
 
-CREATE INDEX idx_ccus_economics_facility ON ccus_economics(facility_id);
-CREATE INDEX idx_ccus_economics_year ON ccus_economics(year DESC);
+CREATE INDEX IF NOT EXISTS idx_ccus_economics_facility ON ccus_economics(facility_id);
+CREATE INDEX IF NOT EXISTS idx_ccus_economics_year ON ccus_economics(year DESC);
 
 COMMENT ON TABLE ccus_economics IS 'Annual economics for CCUS facilities including tax credits and carbon credits';
 
@@ -287,8 +287,8 @@ CREATE TABLE IF NOT EXISTS pathways_alliance_projects (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_pathways_projects_company ON pathways_alliance_projects(member_company);
-CREATE INDEX idx_pathways_projects_status ON pathways_alliance_projects(status);
+CREATE INDEX IF NOT EXISTS idx_pathways_projects_company ON pathways_alliance_projects(member_company);
+CREATE INDEX IF NOT EXISTS idx_pathways_projects_status ON pathways_alliance_projects(status);
 
 COMMENT ON TABLE pathways_alliance_projects IS 'Pathways Alliance $16.5B CCUS proposal tracking (6 member companies)';
 
@@ -306,12 +306,14 @@ VALUES
 
   ('strathcona-ccus', 'Strathcona Refinery CCUS', 'Imperial Oil', 'Edmonton', 'AB', 53.5461, -113.4938, 'Under Construction', '2025-12-01', 0.5, NULL, 'Post-combustion', 'Refinery', 'Saline Aquifer', 'Nisku Formation', 560000000, 0.5, 'Imperial Oil Press Releases', 'Part of Imperial''s $720M Strathcona Renewable Diesel project.'),
 
-  ('cq-edmonton-ccus', 'Capital Power Genesee CCUS', 'Capital Power', 'Genesee', 'AB', 53.2836, -114.2239, 'Proposed', '2030-01-01', 3.0, NULL, 'Post-combustion', 'Natural Gas Power Plant', 'Saline Aquifer', 'Leduc Formation', 2400000000, 3.0, 'Capital Power CCUS Feasibility Study', 'Proposed CCUS for Genesee Generating Station Units 1 & 2.');
+  ('cq-edmonton-ccus', 'Capital Power Genesee CCUS', 'Capital Power', 'Genesee', 'AB', 53.2836, -114.2239, 'Proposed', '2030-01-01', 3.0, NULL, 'Post-combustion', 'Natural Gas Power Plant', 'Saline Aquifer', 'Leduc Formation', 2400000000, 3.0, 'Capital Power CCUS Feasibility Study', 'Proposed CCUS for Genesee Generating Station Units 1 & 2.')
+ON CONFLICT DO NOTHING;
 
 -- Alberta Carbon Trunk Line (Pipeline)
 INSERT INTO ccus_pipelines (id, pipeline_name, operator, from_location, to_location, total_length_km, design_capacity_mt_per_year, current_throughput_mt_per_year, status, actual_operational_date, capital_cost_cad, tariff_cad_per_tonne, pipeline_diameter_inches, operating_pressure_bar, data_source, notes)
 VALUES
-  ('actl-pipeline', 'Alberta Carbon Trunk Line (ACTL)', 'Wolf Midstream', 'Industrial Heartland (Fort Saskatchewan/Redwater)', 'Clive oil field (near Red Deer)', 240, 14.6, 2.5, 'Operational', '2020-06-01', 1200000000, 15, 16, 153, 'Wolf Midstream', 'North America''s largest CO2 pipeline. Connects multiple capture facilities to EOR storage.');
+  ('actl-pipeline', 'Alberta Carbon Trunk Line (ACTL)', 'Wolf Midstream', 'Industrial Heartland (Fort Saskatchewan/Redwater)', 'Clive oil field (near Red Deer)', 240, 14.6, 2.5, 'Operational', '2020-06-01', 1200000000, 15, 16, 153, 'Wolf Midstream', 'North America''s largest CO2 pipeline. Connects multiple capture facilities to EOR storage.')
+ON CONFLICT DO NOTHING;
 
 -- Storage Sites
 INSERT INTO ccus_storage_sites (id, site_name, operator, location, province, latitude, longitude, reservoir_type, depth_meters, total_storage_capacity_mt, cumulative_injected_mt, remaining_capacity_mt, max_injection_rate_mt_per_year, active_injection_wells, monitoring_status, last_monitoring_date, containment_verified, storage_fee_cad_per_tonne, data_source)
@@ -320,7 +322,8 @@ VALUES
 
   ('nisku-saline', 'Nisku Formation Saline Aquifer', 'Various', 'Edmonton-Calgary Corridor', 'AB', 52.5000, -114.0000, 'Saline Aquifer', 2000, 500, 3, 497, 10, 15, 'Active', '2025-09-15', TRUE, 8, 'Alberta Geological Survey'),
 
-  ('weyburn-eor', 'Weyburn-Midale CO2 Project', 'Cenovus Energy', 'Weyburn', 'SK', 49.6617, -103.8594, 'Depleted Oil Reservoir', 1450, 55, 25, 30, 3, 80, 'Active', '2025-08-20', TRUE, 12, 'Cenovus Annual Reports');
+  ('weyburn-eor', 'Weyburn-Midale CO2 Project', 'Cenovus Energy', 'Weyburn', 'SK', 49.6617, -103.8594, 'Depleted Oil Reservoir', 1450, 55, 25, 30, 3, 80, 'Active', '2025-08-20', TRUE, 12, 'Cenovus Annual Reports')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: PATHWAYS ALLIANCE PROPOSED PROJECTS
@@ -338,7 +341,8 @@ VALUES
 
   ('pathways-foster-creek', 'Foster Creek SAGD CCUS', 'Cenovus', 'In-Situ Operations', 1.5, 'Awaiting Federal Decision', 2500000000, 1250000000, '2031-01-01', FALSE, 'Phase 2 Pathways project. SAGD CCUS at Foster Creek.'),
 
-  ('pathways-surmont', 'Surmont SAGD CCUS', 'ConocoPhillips', 'In-Situ Operations', 1.8, 'Awaiting Federal Decision', 3000000000, 1500000000, '2031-01-01', FALSE, 'ConocoPhillips Surmont SAGD facility CCUS.');
+  ('pathways-surmont', 'Surmont SAGD CCUS', 'ConocoPhillips', 'In-Situ Operations', 1.8, 'Awaiting Federal Decision', 3000000000, 1500000000, '2031-01-01', FALSE, 'ConocoPhillips Surmont SAGD facility CCUS.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: CCUS ECONOMICS (Sample Data for Quest)
@@ -347,4 +351,5 @@ VALUES
 INSERT INTO ccus_economics (facility_id, year, capex_cad, federal_tax_credit_cad, opex_annual_cad, capture_cost_per_tonne_cad, carbon_credit_revenue_cad, alberta_tier_credits_tonnes, carbon_credit_price_cad_per_tonne, total_revenue_cad, total_cost_cad)
 VALUES
   ('quest-ccus', 2023, 0, 0, 45000000, 45, 65000000, 1000000, 65, 65000000, 45000000),
-  ('quest-ccus', 2024, 0, 0, 47000000, 47, 70000000, 1000000, 70, 70000000, 47000000);
+  ('quest-ccus', 2024, 0, 0, 47000000, 47, 70000000, 1000000, 70, 70000000, 47000000)
+ON CONFLICT DO NOTHING;

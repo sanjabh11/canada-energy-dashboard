@@ -66,10 +66,10 @@ CREATE TABLE IF NOT EXISTS ai_data_centres (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ai_dc_province ON ai_data_centres(province);
-CREATE INDEX idx_ai_dc_status ON ai_data_centres(status);
-CREATE INDEX idx_ai_dc_operator ON ai_data_centres(operator);
-CREATE INDEX idx_ai_dc_capacity ON ai_data_centres(contracted_capacity_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_province ON ai_data_centres(province);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_status ON ai_data_centres(status);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_operator ON ai_data_centres(operator);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_capacity ON ai_data_centres(contracted_capacity_mw DESC);
 
 COMMENT ON TABLE ai_data_centres IS 'Registry of AI data centres with power, cooling, and infrastructure specifications';
 
@@ -107,9 +107,9 @@ CREATE TABLE IF NOT EXISTS ai_dc_power_consumption (
   UNIQUE(data_centre_id, timestamp)
 );
 
-CREATE INDEX idx_ai_dc_power_timestamp ON ai_dc_power_consumption(timestamp DESC);
-CREATE INDEX idx_ai_dc_power_dc_id ON ai_dc_power_consumption(data_centre_id);
-CREATE INDEX idx_ai_dc_power_total_load ON ai_dc_power_consumption(total_load_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_power_timestamp ON ai_dc_power_consumption(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_power_dc_id ON ai_dc_power_consumption(data_centre_id);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_power_total_load ON ai_dc_power_consumption(total_load_mw DESC);
 
 COMMENT ON TABLE ai_dc_power_consumption IS 'Time-series power consumption data for AI data centres';
 
@@ -167,12 +167,12 @@ CREATE TABLE IF NOT EXISTS aeso_interconnection_queue (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_aeso_queue_type ON aeso_interconnection_queue(project_type);
-CREATE INDEX idx_aeso_queue_phase ON aeso_interconnection_queue(phase_allocation);
-CREATE INDEX idx_aeso_queue_status ON aeso_interconnection_queue(status);
-CREATE INDEX idx_aeso_queue_submission ON aeso_interconnection_queue(submission_date DESC);
-CREATE INDEX idx_aeso_queue_capacity ON aeso_interconnection_queue(requested_capacity_mw DESC);
-CREATE INDEX idx_aeso_queue_region ON aeso_interconnection_queue(region);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_type ON aeso_interconnection_queue(project_type);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_phase ON aeso_interconnection_queue(phase_allocation);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_status ON aeso_interconnection_queue(status);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_submission ON aeso_interconnection_queue(submission_date DESC);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_capacity ON aeso_interconnection_queue(requested_capacity_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_aeso_queue_region ON aeso_interconnection_queue(region);
 
 COMMENT ON TABLE aeso_interconnection_queue IS 'AESO interconnection queue tracking with focus on AI data centre projects';
 
@@ -210,10 +210,11 @@ CREATE TABLE IF NOT EXISTS alberta_grid_capacity (
   forecasted_demand_growth_2030_mw NUMERIC,
 
   created_at TIMESTAMP DEFAULT NOW(),
+  last_updated TIMESTAMP DEFAULT NOW(),
   UNIQUE(timestamp)
 );
 
-CREATE INDEX idx_alberta_capacity_timestamp ON alberta_grid_capacity(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_alberta_capacity_timestamp ON alberta_grid_capacity(timestamp DESC);
 
 COMMENT ON TABLE alberta_grid_capacity IS 'Alberta grid capacity metrics with AI data centre impact tracking';
 
@@ -245,8 +246,8 @@ CREATE TABLE IF NOT EXISTS ai_dc_emissions (
   UNIQUE(data_centre_id, timestamp)
 );
 
-CREATE INDEX idx_ai_dc_emissions_dc_id ON ai_dc_emissions(data_centre_id);
-CREATE INDEX idx_ai_dc_emissions_timestamp ON ai_dc_emissions(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_emissions_dc_id ON ai_dc_emissions(data_centre_id);
+CREATE INDEX IF NOT EXISTS idx_ai_dc_emissions_timestamp ON ai_dc_emissions(timestamp DESC);
 
 COMMENT ON TABLE ai_dc_emissions IS 'Emissions tracking for AI data centres with Scope 1/2/3 breakdown';
 

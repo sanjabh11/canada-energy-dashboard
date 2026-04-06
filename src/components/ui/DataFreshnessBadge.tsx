@@ -216,9 +216,10 @@ export function DataFreshnessBadge({
  */
 export function DataFreshnessIndicator({
   timestamp,
+  status: explicitStatus,
   staleThresholdMinutes = 60,
   className = ''
-}: Pick<DataFreshnessBadgeProps, 'timestamp' | 'staleThresholdMinutes' | 'className'>) {
+}: Pick<DataFreshnessBadgeProps, 'timestamp' | 'status' | 'staleThresholdMinutes' | 'className'>) {
   const lastUpdate = timestamp
     ? typeof timestamp === 'string'
       ? new Date(timestamp)
@@ -226,6 +227,7 @@ export function DataFreshnessIndicator({
     : null;
 
   const getStatus = (): FreshnessStatus => {
+    if (explicitStatus) return explicitStatus;
     if (!lastUpdate || isNaN(lastUpdate.getTime())) return 'unknown';
     
     const minutesAgo = (Date.now() - lastUpdate.getTime()) / (1000 * 60);

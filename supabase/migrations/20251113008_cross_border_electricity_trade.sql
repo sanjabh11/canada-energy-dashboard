@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS interconnection_points (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_interconnection_province ON interconnection_points(canadian_province);
-CREATE INDEX idx_interconnection_state ON interconnection_points(us_state);
+CREATE INDEX IF NOT EXISTS idx_interconnection_province ON interconnection_points(canadian_province);
+CREATE INDEX IF NOT EXISTS idx_interconnection_state ON interconnection_points(us_state);
 
 -- =============================================================================
 -- 2. CROSS-BORDER TRADE FLOWS TABLE
@@ -72,9 +72,9 @@ CREATE TABLE IF NOT EXISTS cross_border_electricity_flows (
   CONSTRAINT unique_flow_timestamp UNIQUE (interconnection_id, flow_timestamp)
 );
 
-CREATE INDEX idx_flows_interconnection ON cross_border_electricity_flows(interconnection_id);
-CREATE INDEX idx_flows_timestamp ON cross_border_electricity_flows(flow_timestamp);
-CREATE INDEX idx_flows_date ON cross_border_electricity_flows(flow_date);
+CREATE INDEX IF NOT EXISTS idx_flows_interconnection ON cross_border_electricity_flows(interconnection_id);
+CREATE INDEX IF NOT EXISTS idx_flows_timestamp ON cross_border_electricity_flows(flow_timestamp);
+CREATE INDEX IF NOT EXISTS idx_flows_date ON cross_border_electricity_flows(flow_date);
 
 -- =============================================================================
 -- 3. PROVINCIAL TRADE SUMMARY TABLE
@@ -116,8 +116,8 @@ CREATE TABLE IF NOT EXISTS provincial_trade_summary (
   CONSTRAINT unique_provincial_trade UNIQUE (province_code, reporting_year, reporting_month)
 );
 
-CREATE INDEX idx_provincial_trade_province ON provincial_trade_summary(province_code);
-CREATE INDEX idx_provincial_trade_year ON provincial_trade_summary(reporting_year);
+CREATE INDEX IF NOT EXISTS idx_provincial_trade_province ON provincial_trade_summary(province_code);
+CREATE INDEX IF NOT EXISTS idx_provincial_trade_year ON provincial_trade_summary(reporting_year);
 
 -- =============================================================================
 -- 4. TRADE AGREEMENTS TABLE
@@ -152,7 +152,7 @@ CREATE TABLE IF NOT EXISTS electricity_trade_agreements (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_trade_agreements_status ON electricity_trade_agreements(status);
+CREATE INDEX IF NOT EXISTS idx_trade_agreements_status ON electricity_trade_agreements(status);
 
 -- =============================================================================
 -- 5. MATERIALIZED VIEW: Cross-Border Trade Summary
@@ -185,7 +185,7 @@ GROUP BY p.code, p.name, pts.reporting_year, pts.total_exports_gwh, pts.total_im
          pts.imports_as_percent_of_demand
 ORDER BY pts.reporting_year DESC, pts.net_exports_gwh DESC;
 
-CREATE UNIQUE INDEX idx_cross_border_trade_summary ON cross_border_trade_summary(province_code, reporting_year);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_cross_border_trade_summary ON cross_border_trade_summary(province_code, reporting_year);
 
 -- =============================================================================
 -- SEED DATA
@@ -199,7 +199,8 @@ INSERT INTO interconnection_points (interconnection_name, canadian_province, us_
 ('Saskatchewan-North Dakota Tie', 'SK', 'ND', 150, 230, 'AC', 'SaskPower', 'Basin Electric', 1978),
 ('Ontario-Michigan Interconnection', 'ON', 'MI', 2000, 230, 'AC', 'IESO/Hydro One', 'MISO', 1965),
 ('New Brunswick-Maine Tie', 'NB', 'ME', 700, 345, 'AC', 'NB Power', 'ISO New England', 1980),
-('Quebec-Vermont HVDC', 'QC', 'VT', 225, 450, 'DC', 'Hydro-Québec', 'Vermont Electric Power Company', 1986);
+('Quebec-Vermont HVDC', 'QC', 'VT', 225, 450, 'DC', 'Hydro-Québec', 'Vermont Electric Power Company', 1986)
+ON CONFLICT DO NOTHING;
 
 -- Provincial Trade Summary (2023 data)
 INSERT INTO provincial_trade_summary (province_code, reporting_year, total_exports_gwh, total_imports_gwh, exports_to_us_gwh, export_revenue_cad_millions, avg_export_price_cad_per_mwh, exports_as_percent_of_generation) VALUES
@@ -208,14 +209,16 @@ INSERT INTO provincial_trade_summary (province_code, reporting_year, total_expor
 ('BC', 2023, 9500, 3200, 9000, 450, 47, 12.6),
 ('ON', 2023, 2500, 5800, 2200, 110, 44, -2.1),
 ('NB', 2023, 3500, 2100, 2800, 140, 40, 16.3),
-('SK', 2023, 1800, 400, 1600, 72, 40, 6.8);
+('SK', 2023, 1800, 400, 1600, 72, 40, 6.8)
+ON CONFLICT DO NOTHING;
 
 -- Trade Agreements (Sample)
 INSERT INTO electricity_trade_agreements (agreement_name, parties, agreement_type, start_date, end_date, contract_capacity_mw, firm_energy_gwh_per_year, pricing_mechanism, status) VALUES
 ('BC Hydro - BPA Capacity/Energy Exchange', ARRAY['BC', 'WA'], 'Bilateral Contract', '2013-10-01', '2033-09-30', 1100, 4380, 'Market-based', 'Active'),
 ('Hydro-Québec - NYPA Long-term Contract', ARRAY['QC', 'NY'], 'Bilateral Contract', '2023-01-01', '2043-12-31', 1250, 10950, 'Fixed price', 'Active'),
 ('Manitoba Hydro - MISO Export', ARRAY['MB', 'MN', 'WI'], 'Regional Market', '2015-04-01', NULL, 500, 3500, 'Market-based', 'Active'),
-('NB Power - ISO-NE Market Participation', ARRAY['NB', 'ME', 'MA'], 'Regional Market', '2018-01-01', NULL, 700, 2500, 'Market-based', 'Active');
+('NB Power - ISO-NE Market Participation', ARRAY['NB', 'ME', 'MA'], 'Regional Market', '2018-01-01', NULL, 700, 2500, 'Market-based', 'Active')
+ON CONFLICT DO NOTHING;
 
 -- Sample hourly flows (last 24 hours for one interconnection)
 INSERT INTO cross_border_electricity_flows (interconnection_id, flow_timestamp, flow_hour, net_flow_mw, export_mw, import_mw, energy_mwh, data_quality)
@@ -228,7 +231,8 @@ SELECT
   0 AS import_mw,
   (800 + (RANDOM() * 400 - 200))::NUMERIC(12,2) AS energy_mwh,
   'Actual' AS data_quality
-FROM generate_series(0, 23) AS n;
+FROM generate_series(0, 23) AS n
+ON CONFLICT DO NOTHING;
 
 -- Refresh materialized view
 REFRESH MATERIALIZED VIEW cross_border_trade_summary;

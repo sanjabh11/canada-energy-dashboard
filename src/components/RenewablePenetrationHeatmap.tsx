@@ -17,6 +17,7 @@ interface ProvinceData {
   fossil_mw: number;
   total_mw: number;
   renewable_pct: number;
+  data_origin?: 'observed' | 'supplemented' | 'reference';
   sources: {
     hydro?: number;
     wind?: number;
@@ -84,6 +85,7 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
         fossil_mw: 0,
         total_mw: 0,
         renewable_pct: 0,
+        data_origin: undefined,
         sources: {},
         hasData: false
       };
@@ -118,6 +120,12 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
     if (percentage >= 30) return 'Fair';
     if (percentage >= 15) return 'Low';
     return 'Very Low';
+  };
+
+  const getOriginLabel = (origin?: ProvinceData['data_origin']): string | null => {
+    if (origin === 'supplemented') return 'Supplemented';
+    if (origin === 'reference') return 'Reference';
+    return null;
   };
 
   const topPerformers = useMemo(() => {
@@ -271,6 +279,11 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
                     }`}
                 >
                   <div className="text-xs font-medium opacity-90 mb-1">{province.code}</div>
+                  {getOriginLabel(province.data_origin) && (
+                    <div className="mb-1 inline-flex rounded bg-black/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide">
+                      {getOriginLabel(province.data_origin)}
+                    </div>
+                  )}
                   <div className="text-2xl font-bold mb-1">
                     {province.renewable_pct.toFixed(1)}%
                   </div>
@@ -303,7 +316,10 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
                     </div>
                     <div>
                       <div className="font-semibold text-slate-900">{province.name}</div>
-                      <div className="text-xs text-slate-600">{province.region} Canada</div>
+                      <div className="text-xs text-slate-600">
+                        {province.region} Canada
+                        {getOriginLabel(province.data_origin) ? ` • ${getOriginLabel(province.data_origin)}` : ''}
+                      </div>
                     </div>
                   </div>
 
@@ -391,6 +407,11 @@ export const RenewablePenetrationHeatmap: React.FC<RenewablePenetrationHeatmapPr
                       <Info size={16} className="text-blue-600" />
                       <span className="text-sm text-blue-900">
                         Rating: <strong>{getRating(selectedData.renewable_pct)}</strong>
+                        {getOriginLabel(selectedData.data_origin) ? (
+                          <span className="ml-2 text-blue-700">
+                            • {getOriginLabel(selectedData.data_origin)} value
+                          </span>
+                        ) : null}
                         {selectedData.renewable_pct > nationalAverage && (
                           <span className="ml-2 text-green-600">
                             ({(selectedData.renewable_pct - nationalAverage).toFixed(1)}% above national average)

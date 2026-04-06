@@ -566,6 +566,9 @@ ON CONFLICT (id) DO UPDATE SET
 -- UPDATE ALBERTA GRID CAPACITY WITH REAL ESTIMATES
 -- ============================================================================
 
+ALTER TABLE public.alberta_grid_capacity
+  ADD COLUMN IF NOT EXISTS last_updated TIMESTAMP DEFAULT NOW();
+
 -- Based on AESO 2024 reports
 INSERT INTO alberta_grid_capacity (
   timestamp,

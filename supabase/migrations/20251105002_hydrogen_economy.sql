@@ -71,11 +71,11 @@ CREATE TABLE IF NOT EXISTS hydrogen_facilities (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_h2_facility_province ON hydrogen_facilities(province);
-CREATE INDEX idx_h2_facility_type ON hydrogen_facilities(facility_type);
-CREATE INDEX idx_h2_facility_h2_type ON hydrogen_facilities(hydrogen_type);
-CREATE INDEX idx_h2_facility_status ON hydrogen_facilities(status);
-CREATE INDEX idx_h2_facility_hub ON hydrogen_facilities(part_of_hub);
+CREATE INDEX IF NOT EXISTS idx_h2_facility_province ON hydrogen_facilities(province);
+CREATE INDEX IF NOT EXISTS idx_h2_facility_type ON hydrogen_facilities(facility_type);
+CREATE INDEX IF NOT EXISTS idx_h2_facility_h2_type ON hydrogen_facilities(hydrogen_type);
+CREATE INDEX IF NOT EXISTS idx_h2_facility_status ON hydrogen_facilities(status);
+CREATE INDEX IF NOT EXISTS idx_h2_facility_hub ON hydrogen_facilities(part_of_hub);
 
 COMMENT ON TABLE hydrogen_facilities IS 'Hydrogen production, storage, refueling, and distribution facilities across Canada';
 
@@ -121,9 +121,9 @@ CREATE TABLE IF NOT EXISTS hydrogen_production (
   UNIQUE(facility_id, timestamp)
 );
 
-CREATE INDEX idx_h2_prod_timestamp ON hydrogen_production(timestamp DESC);
-CREATE INDEX idx_h2_prod_facility ON hydrogen_production(facility_id);
-CREATE INDEX idx_h2_prod_production ON hydrogen_production(production_kg DESC);
+CREATE INDEX IF NOT EXISTS idx_h2_prod_timestamp ON hydrogen_production(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_h2_prod_facility ON hydrogen_production(facility_id);
+CREATE INDEX IF NOT EXISTS idx_h2_prod_production ON hydrogen_production(production_kg DESC);
 
 COMMENT ON TABLE hydrogen_production IS 'Time-series hydrogen production data with emissions and efficiency tracking';
 
@@ -199,11 +199,11 @@ CREATE TABLE IF NOT EXISTS hydrogen_projects (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_h2_project_province ON hydrogen_projects(province);
-CREATE INDEX idx_h2_project_type ON hydrogen_projects(project_type);
-CREATE INDEX idx_h2_project_status ON hydrogen_projects(status);
-CREATE INDEX idx_h2_project_h2_type ON hydrogen_projects(hydrogen_type);
-CREATE INDEX idx_h2_project_hub ON hydrogen_projects(part_of_hub);
+CREATE INDEX IF NOT EXISTS idx_h2_project_province ON hydrogen_projects(province);
+CREATE INDEX IF NOT EXISTS idx_h2_project_type ON hydrogen_projects(project_type);
+CREATE INDEX IF NOT EXISTS idx_h2_project_status ON hydrogen_projects(status);
+CREATE INDEX IF NOT EXISTS idx_h2_project_h2_type ON hydrogen_projects(hydrogen_type);
+CREATE INDEX IF NOT EXISTS idx_h2_project_hub ON hydrogen_projects(part_of_hub);
 
 COMMENT ON TABLE hydrogen_projects IS 'Hydrogen economy projects including production, infrastructure, and applications';
 
@@ -266,9 +266,9 @@ CREATE TABLE IF NOT EXISTS hydrogen_infrastructure (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_h2_infra_type ON hydrogen_infrastructure(infrastructure_type);
-CREATE INDEX idx_h2_infra_province ON hydrogen_infrastructure(province);
-CREATE INDEX idx_h2_infra_status ON hydrogen_infrastructure(status);
+CREATE INDEX IF NOT EXISTS idx_h2_infra_type ON hydrogen_infrastructure(infrastructure_type);
+CREATE INDEX IF NOT EXISTS idx_h2_infra_province ON hydrogen_infrastructure(province);
+CREATE INDEX IF NOT EXISTS idx_h2_infra_status ON hydrogen_infrastructure(status);
 
 COMMENT ON TABLE hydrogen_infrastructure IS 'Hydrogen refueling, pipeline, storage, and distribution infrastructure';
 
@@ -313,9 +313,9 @@ CREATE TABLE IF NOT EXISTS hydrogen_prices (
   UNIQUE(timestamp, region, pricing_point, hydrogen_type)
 );
 
-CREATE INDEX idx_h2_price_timestamp ON hydrogen_prices(timestamp DESC);
-CREATE INDEX idx_h2_price_region ON hydrogen_prices(region);
-CREATE INDEX idx_h2_price_type ON hydrogen_prices(hydrogen_type);
+CREATE INDEX IF NOT EXISTS idx_h2_price_timestamp ON hydrogen_prices(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_h2_price_region ON hydrogen_prices(region);
+CREATE INDEX IF NOT EXISTS idx_h2_price_type ON hydrogen_prices(hydrogen_type);
 
 COMMENT ON TABLE hydrogen_prices IS 'Hydrogen pricing data by region, type, and delivery method';
 
@@ -348,8 +348,8 @@ CREATE TABLE IF NOT EXISTS hydrogen_demand (
   UNIQUE(timestamp, province, region)
 );
 
-CREATE INDEX idx_h2_demand_timestamp ON hydrogen_demand(timestamp DESC);
-CREATE INDEX idx_h2_demand_province ON hydrogen_demand(province);
+CREATE INDEX IF NOT EXISTS idx_h2_demand_timestamp ON hydrogen_demand(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_h2_demand_province ON hydrogen_demand(province);
 
 COMMENT ON TABLE hydrogen_demand IS 'Hydrogen demand tracking and forecasting by sector and geography';
 

@@ -87,7 +87,7 @@ export default defineConfig({
 
   // Run local dev server before starting tests
   webServer: {
-    command: 'pnpm run test:e2e:server',
+    command: 'VITE_ENABLE_EDGE_FETCH=true VITE_SUPABASE_URL=http://127.0.0.1:5173 VITE_SUPABASE_ANON_KEY=test-key pnpm run test:e2e:server',
     url: 'http://127.0.0.1:5173',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,

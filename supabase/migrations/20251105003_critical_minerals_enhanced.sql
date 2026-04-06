@@ -95,11 +95,11 @@ CREATE TABLE IF NOT EXISTS critical_minerals_projects (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_cm_project_mineral ON critical_minerals_projects(primary_mineral);
-CREATE INDEX idx_cm_project_province ON critical_minerals_projects(province);
-CREATE INDEX idx_cm_project_stage ON critical_minerals_projects(stage);
-CREATE INDEX idx_cm_project_priority ON critical_minerals_projects(is_priority_mineral);
-CREATE INDEX idx_cm_project_capacity ON critical_minerals_projects(design_capacity_tonnes_per_year DESC);
+CREATE INDEX IF NOT EXISTS idx_cm_project_mineral ON critical_minerals_projects(primary_mineral);
+CREATE INDEX IF NOT EXISTS idx_cm_project_province ON critical_minerals_projects(province);
+CREATE INDEX IF NOT EXISTS idx_cm_project_stage ON critical_minerals_projects(stage);
+CREATE INDEX IF NOT EXISTS idx_cm_project_priority ON critical_minerals_projects(is_priority_mineral);
+CREATE INDEX IF NOT EXISTS idx_cm_project_capacity ON critical_minerals_projects(design_capacity_tonnes_per_year DESC);
 
 COMMENT ON TABLE critical_minerals_projects IS 'Enhanced critical minerals projects with supply chain and strategic tracking';
 
@@ -150,11 +150,11 @@ CREATE TABLE IF NOT EXISTS minerals_supply_chain (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_supply_chain_mineral ON minerals_supply_chain(mineral);
-CREATE INDEX idx_supply_chain_stage ON minerals_supply_chain(stage);
-CREATE INDEX idx_supply_chain_province ON minerals_supply_chain(province);
-CREATE INDEX idx_supply_chain_status ON minerals_supply_chain(status);
-CREATE INDEX idx_supply_chain_gap ON minerals_supply_chain(is_domestic_gap);
+CREATE INDEX IF NOT EXISTS idx_supply_chain_mineral ON minerals_supply_chain(mineral);
+CREATE INDEX IF NOT EXISTS idx_supply_chain_stage ON minerals_supply_chain(stage);
+CREATE INDEX IF NOT EXISTS idx_supply_chain_province ON minerals_supply_chain(province);
+CREATE INDEX IF NOT EXISTS idx_supply_chain_status ON minerals_supply_chain(status);
+CREATE INDEX IF NOT EXISTS idx_supply_chain_gap ON minerals_supply_chain(is_domestic_gap);
 
 COMMENT ON TABLE minerals_supply_chain IS 'Critical minerals supply chain from mine to manufacturing';
 
@@ -195,8 +195,8 @@ CREATE TABLE IF NOT EXISTS minerals_prices (
   UNIQUE(mineral, timestamp, price_basis)
 );
 
-CREATE INDEX idx_minerals_price_mineral ON minerals_prices(mineral);
-CREATE INDEX idx_minerals_price_timestamp ON minerals_prices(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_minerals_price_mineral ON minerals_prices(mineral);
+CREATE INDEX IF NOT EXISTS idx_minerals_price_timestamp ON minerals_prices(timestamp DESC);
 
 COMMENT ON TABLE minerals_prices IS 'Critical minerals pricing data for market analysis';
 
@@ -236,10 +236,10 @@ CREATE TABLE IF NOT EXISTS minerals_trade_flows (
   UNIQUE(mineral, year, month, flow_type, origin_country, destination_country)
 );
 
-CREATE INDEX idx_trade_mineral ON minerals_trade_flows(mineral);
-CREATE INDEX idx_trade_year ON minerals_trade_flows(year DESC);
-CREATE INDEX idx_trade_type ON minerals_trade_flows(flow_type);
-CREATE INDEX idx_trade_china ON minerals_trade_flows(is_china_sourced);
+CREATE INDEX IF NOT EXISTS idx_trade_mineral ON minerals_trade_flows(mineral);
+CREATE INDEX IF NOT EXISTS idx_trade_year ON minerals_trade_flows(year DESC);
+CREATE INDEX IF NOT EXISTS idx_trade_type ON minerals_trade_flows(flow_type);
+CREATE INDEX IF NOT EXISTS idx_trade_china ON minerals_trade_flows(is_china_sourced);
 
 COMMENT ON TABLE minerals_trade_flows IS 'International and domestic critical minerals trade flows';
 
@@ -301,9 +301,9 @@ CREATE TABLE IF NOT EXISTS battery_supply_chain (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_battery_sc_type ON battery_supply_chain(facility_type);
-CREATE INDEX idx_battery_sc_province ON battery_supply_chain(province);
-CREATE INDEX idx_battery_sc_status ON battery_supply_chain(status);
+CREATE INDEX IF NOT EXISTS idx_battery_sc_type ON battery_supply_chain(facility_type);
+CREATE INDEX IF NOT EXISTS idx_battery_sc_province ON battery_supply_chain(province);
+CREATE INDEX IF NOT EXISTS idx_battery_sc_status ON battery_supply_chain(status);
 
 COMMENT ON TABLE battery_supply_chain IS 'Battery supply chain facilities linked to critical minerals demand';
 
@@ -344,9 +344,9 @@ CREATE TABLE IF NOT EXISTS minerals_strategic_stockpile (
   UNIQUE(mineral, timestamp)
 );
 
-CREATE INDEX idx_stockpile_mineral ON minerals_strategic_stockpile(mineral);
-CREATE INDEX idx_stockpile_timestamp ON minerals_strategic_stockpile(timestamp DESC);
-CREATE INDEX idx_stockpile_adequacy ON minerals_strategic_stockpile(stockpile_adequacy);
+CREATE INDEX IF NOT EXISTS idx_stockpile_mineral ON minerals_strategic_stockpile(mineral);
+CREATE INDEX IF NOT EXISTS idx_stockpile_timestamp ON minerals_strategic_stockpile(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_stockpile_adequacy ON minerals_strategic_stockpile(stockpile_adequacy);
 
 COMMENT ON TABLE minerals_strategic_stockpile IS 'Strategic national stockpiles of critical minerals for security';
 
@@ -385,8 +385,8 @@ CREATE TABLE IF NOT EXISTS ev_minerals_demand_forecast (
   UNIQUE(year, scenario)
 );
 
-CREATE INDEX idx_ev_demand_year ON ev_minerals_demand_forecast(year);
-CREATE INDEX idx_ev_demand_scenario ON ev_minerals_demand_forecast(scenario);
+CREATE INDEX IF NOT EXISTS idx_ev_demand_year ON ev_minerals_demand_forecast(year);
+CREATE INDEX IF NOT EXISTS idx_ev_demand_scenario ON ev_minerals_demand_forecast(scenario);
 
 COMMENT ON TABLE ev_minerals_demand_forecast IS 'EV-driven critical minerals demand forecasting with gap analysis';
 

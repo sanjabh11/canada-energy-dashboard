@@ -67,6 +67,7 @@ CREATE INDEX IF NOT EXISTS idx_hydrogen_price_forecasts_year_scenario ON hydroge
 ALTER TABLE hydrogen_price_forecasts ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Allow public read access (for dashboard)
+DROP POLICY IF EXISTS "Allow public read access to price forecasts" ON hydrogen_price_forecasts;
 CREATE POLICY "Allow public read access to price forecasts"
   ON hydrogen_price_forecasts
   FOR SELECT
@@ -277,7 +278,8 @@ INSERT INTO hydrogen_price_forecasts (
    'Pessimistic: Slow green H2 adoption, blue H2 still 40% cheaper',
    'IEA Delayed Transition Scenario',
    'Green H2 cost parity not achieved by 2035. Market growth slower than expected.'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =====================================================================
 -- COMMENTS

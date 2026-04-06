@@ -101,6 +101,7 @@ CREATE INDEX IF NOT EXISTS idx_minerals_geopolitical_china_dep ON minerals_geopo
 ALTER TABLE minerals_geopolitical_risk ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Allow public read access (for dashboard)
+DROP POLICY IF EXISTS "Allow public read access to geopolitical risk" ON minerals_geopolitical_risk;
 CREATE POLICY "Allow public read access to geopolitical risk"
   ON minerals_geopolitical_risk
   FOR SELECT
@@ -243,7 +244,8 @@ INSERT INTO minerals_geopolitical_risk (
    ARRAY['Chile water restrictions (2023)', 'Peru mining protests (2024)', 'Zambia export tax (2024)']::TEXT[],
    'USGS Mineral Commodity Summaries 2024, S&P Global Copper Outlook',
    'MODERATE RISK: Copper is relatively diversified but demand growth is extreme (grid + EVs + renewables).'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =====================================================================
 -- VIEW: Risk Summary Dashboard

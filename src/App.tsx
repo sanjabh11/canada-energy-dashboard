@@ -148,6 +148,7 @@ const router = createBrowserRouter(
         { path: '/my-energy-ai', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
         { path: '/household-advisor', element: <EnergyDataDashboard initialTab="HouseholdAdvisor" /> },
         { path: '/hydrogen', element: <HydrogenEconomyDashboard /> },
+        { path: '/hydrogen-economy', element: <HydrogenEconomyDashboard /> },
         { path: '/hydrogen-hub', element: <HydrogenEconomyDashboard /> },
         { path: '/critical-minerals', element: <CriticalMineralsSupplyChainDashboard /> },
         { path: '/minerals', element: <CriticalMineralsSupplyChainDashboard /> },
@@ -270,6 +271,7 @@ const router = createBrowserRouter(
 
         // AI Data Centre Dashboard standalone route
         { path: '/ai-datacentres', element: <AIDataCentreDashboard /> },
+        { path: '/ai-data-centre', element: <AIDataCentreDashboard /> },
         { path: '/ai-datacentre', element: <AIDataCentreDashboard /> },
 
         // Natural Language Query Interface (NL2SQL)

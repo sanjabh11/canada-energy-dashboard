@@ -8,6 +8,14 @@ import { SentimentUtils } from '../lib/nlpService';
 import { BarChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line, Bar } from 'recharts';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
+
+// Snapshot key for browser cache persistence
+const STAKEHOLDER_SNAPSHOT_KEY = 'dashboard_snapshot_stakeholder';
+
+// Data source tracking type
+type DataSourceType = 'live' | 'sample' | 'cached' | 'unavailable';
 
 // Interfaces for Stakeholder dashboard data
 export interface Stakeholder {
@@ -76,6 +84,8 @@ export const StakeholderDashboard: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [currentUser] = useState({ id: 'user1', name: 'Consultation Coordinator' });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [dataSource, setDataSource] = useState<DataSourceType>('sample');
+  const [dataSourceLabel, setDataSourceLabel] = useState<string>('Stakeholder coordination API');
 
   // Use WebSocket for consultation updates
   const {
@@ -128,55 +138,87 @@ export const StakeholderDashboard: React.FC = () => {
   const loadInitialData = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // Try to load from API, fall back to sample data
+      // Try to load from API first
       try {
-        const stakeholdersResponse = await fetch('/api/stakeholder/stakeholders');
-        if (stakeholdersResponse.ok) {
+        const [stakeholdersResponse, meetingsResponse, feedbackResponse, messagesResponse] = await Promise.all([
+          fetch('/api/stakeholder/stakeholders'),
+          fetch('/api/stakeholder/meetings'),
+          fetch('/api/stakeholder/feedback'),
+          fetch('/api/stakeholder/messages')
+        ]);
+
+        if (stakeholdersResponse.ok && meetingsResponse.ok && feedbackResponse.ok) {
           const stakeholdersData = await stakeholdersResponse.json();
-          setStakeholders(stakeholdersData);
-        } else {
-          throw new Error('API unavailable');
-        }
-
-        const meetingsResponse = await fetch('/api/stakeholder/meetings');
-        if (meetingsResponse.ok) {
           const meetingsData = await meetingsResponse.json();
-          setMeetings(meetingsData);
-        } else {
-          throw new Error('API unavailable');
-        }
-
-        const feedbackResponse = await fetch('/api/stakeholder/feedback');
-        if (feedbackResponse.ok) {
           const feedbackData = await feedbackResponse.json();
-          setFeedback(feedbackData);
-        } else {
-          throw new Error('API unavailable');
-        }
+          const messagesData = messagesResponse.ok ? await messagesResponse.json() : [];
 
-        const messagesResponse = await fetch('/api/stakeholder/messages');
-        if (messagesResponse.ok) {
-          const messagesData = await messagesResponse.json();
+          setStakeholders(stakeholdersData);
+          setMeetings(meetingsData);
+          setFeedback(feedbackData);
           setMessages(messagesData);
-        } else {
-          throw new Error('API unavailable');
+          setDataSource('live');
+          setDataSourceLabel('Stakeholder coordination API');
+
+          // Save to cache for offline use
+          saveDashboardSnapshot(STAKEHOLDER_SNAPSHOT_KEY, {
+            stakeholders: stakeholdersData,
+            meetings: meetingsData,
+            feedback: feedbackData,
+            messages: messagesData,
+            metadata: {
+              data_source: 'Stakeholder coordination API',
+              last_updated: new Date().toISOString(),
+              snapshot_type: 'live',
+            },
+          });
+          return;
         }
-      } catch {
-        // Use sample data when API is unavailable
-        console.log('Stakeholder API unavailable, using sample data');
-        setStakeholders(SAMPLE_STAKEHOLDERS);
-        setMeetings(SAMPLE_MEETINGS);
-        setFeedback(SAMPLE_FEEDBACK);
-        setMessages([]);
+      } catch (apiErr) {
+        console.log('Stakeholder API unavailable, checking cache');
       }
 
-    } catch (err) {
-      // Even on error, provide sample data for demo purposes
+      // Try to load from browser cache
+      const cachedSnapshot = loadDashboardSnapshot<{
+        stakeholders: Stakeholder[];
+        meetings: Meeting[];
+        feedback: FeedbackEntry[];
+        messages: CollaborationMessage[];
+        metadata?: {
+          data_source?: string;
+          last_updated?: string;
+        };
+      }>(STAKEHOLDER_SNAPSHOT_KEY);
+
+      if (cachedSnapshot?.payload) {
+        setStakeholders(cachedSnapshot.payload.stakeholders || []);
+        setMeetings(cachedSnapshot.payload.meetings || []);
+        setFeedback(cachedSnapshot.payload.feedback || []);
+        setMessages(cachedSnapshot.payload.messages || []);
+        setDataSource('cached');
+        setDataSourceLabel(cachedSnapshot.payload.metadata?.data_source || 'Cached stakeholder data');
+        return;
+      }
+
+      // Fall back to sample data
       setStakeholders(SAMPLE_STAKEHOLDERS);
       setMeetings(SAMPLE_MEETINGS);
       setFeedback(SAMPLE_FEEDBACK);
-      setError(null); // Clear error since we have fallback data
+      setMessages([]);
+      setDataSource('sample');
+      setDataSourceLabel('Sample stakeholder data');
+
+    } catch (err) {
+      console.error('Failed to load stakeholder data:', err);
+      // Even on error, provide sample data
+      setStakeholders(SAMPLE_STAKEHOLDERS);
+      setMeetings(SAMPLE_MEETINGS);
+      setFeedback(SAMPLE_FEEDBACK);
+      setMessages([]);
+      setDataSource('sample');
+      setDataSourceLabel('Sample stakeholder data');
     } finally {
       setLoading(false);
     }
@@ -344,11 +386,20 @@ export const StakeholderDashboard: React.FC = () => {
         {/* Feature Info */}
         <AcceptableFeatureInfo featureId="stakeholder_coordination" />
 
-        {isUsingFallbackData && (
+        {dataSource === 'sample' && (
           <DataTrustNotice
-            mode="fallback"
+            mode="mock"
             title="Illustrative stakeholder data in use"
             message="Stakeholder coordination is currently displaying sample stakeholder records and consultation history for demonstration. Contact information and meeting records are illustrative examples only."
+            className="mb-6"
+          />
+        )}
+
+        {dataSource === 'cached' && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Cached stakeholder data in use"
+            message="This stakeholder view is restored from the last successful cached snapshot stored in this browser. Live stakeholder feeds are currently unavailable. Records reflect the last known state and may be stale."
             className="mb-6"
           />
         )}
@@ -361,9 +412,13 @@ export const StakeholderDashboard: React.FC = () => {
                   <h1 className="hero-title">Stakeholder Coordination Dashboard</h1>
                   <HelpButton id="module.stakeholder.overview" />
                 </div>
-                <p className="hero-subtitle mt-2">
-                  Manage consultations, track feedback, and collaborate in one shared workspace
-                </p>
+                <div className="mt-3">
+                  <DataFreshnessBadge
+                    timestamp={new Date()}
+                    status={dataSource === 'live' ? 'live' : dataSource === 'cached' ? 'stale' : 'demo'}
+                    source={dataSourceLabel}
+                  />
+                </div>
               </div>
               <div className="self-start">
                 <HelpButton

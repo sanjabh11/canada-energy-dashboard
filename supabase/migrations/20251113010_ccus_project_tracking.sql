@@ -82,10 +82,10 @@ CREATE TABLE IF NOT EXISTS ccus_projects (
   CONSTRAINT unique_ccus_project UNIQUE (project_name, operator)
 );
 
-CREATE INDEX idx_ccus_projects_province ON ccus_projects(province_code);
-CREATE INDEX idx_ccus_projects_status ON ccus_projects(status);
-CREATE INDEX idx_ccus_projects_type ON ccus_projects(project_type);
-CREATE INDEX idx_ccus_projects_operator ON ccus_projects(operator);
+CREATE INDEX IF NOT EXISTS idx_ccus_projects_province ON ccus_projects(province_code);
+CREATE INDEX IF NOT EXISTS idx_ccus_projects_status ON ccus_projects(status);
+CREATE INDEX IF NOT EXISTS idx_ccus_projects_type ON ccus_projects(project_type);
+CREATE INDEX IF NOT EXISTS idx_ccus_projects_operator ON ccus_projects(operator);
 
 -- =============================================================================
 -- 2. CCUS HUBS TABLE (Regional CCUS Clusters)
@@ -125,7 +125,7 @@ CREATE TABLE IF NOT EXISTS ccus_hubs (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ccus_hubs_province ON ccus_hubs(province_code);
+CREATE INDEX IF NOT EXISTS idx_ccus_hubs_province ON ccus_hubs(province_code);
 
 -- =============================================================================
 -- 3. CCUS POLICY & INCENTIVES TABLE
@@ -167,8 +167,8 @@ CREATE TABLE IF NOT EXISTS ccus_policies (
   CONSTRAINT unique_ccus_policy UNIQUE (jurisdiction, policy_name)
 );
 
-CREATE INDEX idx_ccus_policies_jurisdiction ON ccus_policies(jurisdiction);
-CREATE INDEX idx_ccus_policies_type ON ccus_policies(policy_type);
+CREATE INDEX IF NOT EXISTS idx_ccus_policies_jurisdiction ON ccus_policies(jurisdiction);
+CREATE INDEX IF NOT EXISTS idx_ccus_policies_type ON ccus_policies(policy_type);
 
 -- =============================================================================
 -- SEED DATA: Real CCUS Projects (Verified from public sources)
@@ -356,7 +356,8 @@ INSERT INTO ccus_projects (
     FALSE,
     'Cenovus, IEA GHG Weyburn-Midale CO2 Monitoring Project',
     'World''s longest-running large-scale CO2-EOR & monitoring project. International Energy Agency study site. Receives CO2 from Boundary Dam and U.S. Receives 10+ publications on storage security.'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- SEED DATA: CCUS Hubs
@@ -395,7 +396,8 @@ INSERT INTO ccus_hubs (
     16500.0,
     'Pathways Alliance',
     'Largest proposed CCUS network in Canada. Integrates 95% of oil sands production. Targeting 22 Mt CO2/year by 2030. Cold Lake Air Weapons Range storage.'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- SEED DATA: CCUS Policies
@@ -456,7 +458,8 @@ INSERT INTO ccus_policies (
     'Technology Innovation and Emissions Reduction Regulation (TIER)',
     'Emissions Reduction Alberta',
     'Formerly Climate Change and Emissions Management Corporation (CCEMC). Funded >$700M in cleantech R&D. Supported Quest and other CCUS pilots.'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =============================================================================
 -- MATERIALIZED VIEW: CCUS Project Summary
@@ -478,7 +481,7 @@ FROM ccus_projects cp
 JOIN provinces p ON cp.province_code = p.code
 GROUP BY cp.province_code, p.name, cp.status;
 
-CREATE UNIQUE INDEX idx_ccus_project_summary ON ccus_project_summary(province_code, status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ccus_project_summary ON ccus_project_summary(province_code, status);
 
 -- Refresh materialized view
 REFRESH MATERIALIZED VIEW ccus_project_summary;

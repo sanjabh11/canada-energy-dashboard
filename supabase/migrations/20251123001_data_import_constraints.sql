@@ -1,4 +1,4 @@
--- 20251123_data_import_constraints.sql
+-- 20251123001_data_import_constraints.sql
 -- Unique constraints to support idempotent ESG and industrial data imports
 
 -- Ensure one ESG ratings row per company (use DO block for idempotency)

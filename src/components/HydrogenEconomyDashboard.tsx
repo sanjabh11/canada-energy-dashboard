@@ -26,6 +26,11 @@ import {
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
 import { isEdgeFetchEnabled } from '../lib/config';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge, DataFreshnessIndicator } from './ui/DataFreshnessBadge';
+import { buildDataProvenance } from '../lib/foundation';
+import { resolveDashboardDeliveryMode } from '../lib/dashboardDeliveryMode';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
 
 interface HydrogenFacility {
   id: string;
@@ -130,6 +135,15 @@ interface DashboardData {
       grey_percentage: number;
     };
   };
+  metadata?: {
+    province?: string;
+    last_updated?: string;
+    data_source?: string;
+    strategic_context?: string;
+    snapshot_type?: 'live' | 'persisted_snapshot';
+    snapshot_stored_at?: string | null;
+    is_fallback?: boolean;
+  };
 }
 
 const COLORS = {
@@ -150,21 +164,39 @@ const HYDROGEN_COLORS: Record<string, string> = {
   'Turquoise': COLORS.teal,
 };
 
+const HYDROGEN_SNAPSHOT_KEY = 'dashboard_snapshot_hydrogen_economy';
+
 export const HydrogenEconomyDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProvince, setSelectedProvince] = useState('AB');
   const [selectedHub, setSelectedHub] = useState<string | null>(null);
+  const [usingCachedSnapshot, setUsingCachedSnapshot] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
-    
+    setUsingCachedSnapshot(false);
+
     if (!isEdgeFetchEnabled()) {
       console.warn('HydrogenEconomyDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+      const cachedSnapshot = loadDashboardSnapshot<DashboardData>(HYDROGEN_SNAPSHOT_KEY);
+      if (cachedSnapshot) {
+        setData({
+          ...cachedSnapshot.payload,
+          metadata: {
+            ...cachedSnapshot.payload.metadata,
+            last_updated: cachedSnapshot.payload.metadata?.last_updated ?? cachedSnapshot.cachedAt,
+            data_source: `${cachedSnapshot.payload.metadata?.data_source || 'Hydrogen hub edge API'} (cached snapshot)`,
+            is_fallback: true,
+          },
+        });
+        setUsingCachedSnapshot(true);
+      } else {
+        setData(null);
+      }
       setLoading(false);
-      setData(null);
       return;
     }
 
@@ -180,9 +212,24 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       ]);
 
       setData(response.json);
+      saveDashboardSnapshot(HYDROGEN_SNAPSHOT_KEY, response.json);
     } catch (err) {
       console.error('Failed to load Hydrogen Hub data:', err);
-      setError('Failed to load dashboard data. Please try again.');
+      const cachedSnapshot = loadDashboardSnapshot<DashboardData>(HYDROGEN_SNAPSHOT_KEY);
+      if (cachedSnapshot) {
+        setData({
+          ...cachedSnapshot.payload,
+          metadata: {
+            ...cachedSnapshot.payload.metadata,
+            last_updated: cachedSnapshot.payload.metadata?.last_updated ?? cachedSnapshot.cachedAt,
+            data_source: `${cachedSnapshot.payload.metadata?.data_source || 'Hydrogen hub edge API'} (cached snapshot)`,
+            is_fallback: true,
+          },
+        });
+        setUsingCachedSnapshot(true);
+      } else {
+        setError('Live hydrogen data request failed and no persisted or browser-cached snapshot is available for the current filters.');
+      }
     } finally {
       setLoading(false);
     }
@@ -286,6 +333,36 @@ export const HydrogenEconomyDashboard: React.FC = () => {
     total: Math.round(d.total_demand_kg / 1000),
   })) || [];
 
+  const deliveryMode = resolveDashboardDeliveryMode({
+    hasData: Boolean(data),
+    usingCachedSnapshot,
+    snapshotType: data.metadata?.snapshot_type,
+    isFallback: data.metadata?.is_fallback,
+  });
+  const usingPersistedSnapshot = deliveryMode === 'persisted_snapshot';
+  const usingBrowserCache = deliveryMode === 'browser_cache';
+  const hydrogenIsFallback = deliveryMode === 'persisted_snapshot' || deliveryMode === 'browser_cache';
+
+  const hydrogenFreshness = buildDataProvenance({
+    source: usingPersistedSnapshot
+      ? `${data.metadata?.data_source || 'Hydrogen hub edge API'} (persisted snapshot)`
+      : usingBrowserCache
+        ? `${data.metadata?.data_source || 'Hydrogen hub edge API'} (browser cache)`
+        : selectedHub
+          ? `${data.metadata?.data_source || 'Hydrogen hub edge API'} (${selectedHub} filter)`
+          : data.metadata?.data_source || 'Hydrogen hub edge API',
+    lastUpdated: data.metadata?.last_updated ?? null,
+    isFallback: hydrogenIsFallback,
+    staleAfterHours: 24,
+    note: usingPersistedSnapshot
+      ? 'Hydrogen hub metrics are restored from a persisted backend snapshot for this filter variant.'
+      : usingBrowserCache
+        ? 'Hydrogen hub metrics are restored from the last successful cached snapshot for this browser.'
+      : selectedHub
+        ? `Hydrogen hub metrics are filtered to ${selectedHub}; cards and charts show a scoped view rather than the full provincial hydrogen economy.`
+        : 'Hydrogen hub metrics aggregate source-backed facilities, projects, infrastructure, pricing, and forecast records.',
+  });
+
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
@@ -305,11 +382,48 @@ export const HydrogenEconomyDashboard: React.FC = () => {
               <p className="hero-subtitle">
                 $300M federal investment · Edmonton & Calgary hydrogen hubs
               </p>
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  timestamp={hydrogenFreshness.lastUpdated}
+                  status={hydrogenFreshness.freshnessStatus}
+                  source={hydrogenFreshness.source}
+                  showRelative={false}
+                />
+              </div>
             </div>
             <HelpButton id="hydrogen.overview" />
           </div>
         </div>
       </section>
+
+      {/* Persisted Backend Snapshot Banner */}
+      {usingPersistedSnapshot && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Persisted backend snapshot in use"
+          message="Hydrogen hub metrics are restored from a persisted backend snapshot for this filter variant. Live upstream feeds are currently unavailable. Data reflects the last successfully stored state and may be stale."
+          className="mb-6"
+        />
+      )}
+
+      {/* Browser Cache Banner */}
+      {usingBrowserCache && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Cached snapshot data in use"
+          message="Hydrogen hub metrics are restored from the last successful cached snapshot stored in this browser. Live upstream feeds are currently unavailable. Metrics reflect the last known state and may be stale."
+          className="mb-6"
+        />
+      )}
+
+      {selectedHub && !hydrogenIsFallback && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Filtered hub view active"
+          message={`This dashboard is currently scoped to ${selectedHub}. Summary cards and charts now reflect that filtered hub slice rather than the full provincial hydrogen economy.`}
+          className="mb-6"
+        />
+      )}
 
       {/* Filters */}
       <div className="card p-4 mb-8">
@@ -362,6 +476,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           value={data.summary.facilities.total_count}
           subtitle={`${data.summary.facilities.operational_count} operational`}
           color="green"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={hydrogenFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<Zap className="w-8 h-8" />}
@@ -369,6 +485,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           value={`${Math.round(data.summary.facilities.total_design_capacity_kg_per_day / 1000)} t/day`}
           subtitle="Design capacity"
           color="blue"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={hydrogenFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<Calendar className="w-8 h-8" />}
@@ -376,6 +494,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
           value={data.summary.projects.total_count}
           subtitle={`$${(data.summary.projects.total_investment_cad / 1e9).toFixed(1)}B investment`}
           color="purple"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={hydrogenFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<DollarSign className="w-8 h-8" />}
@@ -385,6 +505,8 @@ export const HydrogenEconomyDashboard: React.FC = () => {
             `${data.summary.pricing.weekly_change_percentage > 0 ? '+' : ''}${data.summary.pricing.weekly_change_percentage.toFixed(1)}% weekly` :
             'No change data'}
           color="amber"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={hydrogenFreshness.freshnessStatus}
         />
       </div>
 
@@ -916,9 +1038,11 @@ interface MetricCardProps {
   value: string | number;
   subtitle: string;
   color: 'green' | 'blue' | 'purple' | 'amber';
+  freshnessTimestamp?: Date | string | null;
+  freshnessStatus?: 'live' | 'stale' | 'demo' | 'unknown';
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color, freshnessTimestamp, freshnessStatus }) => {
   const colorClasses = {
     green: 'bg-secondary text-success border-green-200',
     blue: 'bg-secondary text-electric border-blue-200',
@@ -928,9 +1052,19 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, c
 
   return (
     <div className={`${colorClasses[color]} border rounded-xl p-6 shadow-md`}>
-      <div className="flex items-center gap-3 mb-3">
-        {icon}
-        <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {icon}
+          <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+        </div>
+        {(freshnessTimestamp || freshnessStatus) && (
+          <DataFreshnessIndicator
+            timestamp={freshnessTimestamp}
+            status={freshnessStatus}
+            staleThresholdMinutes={360}
+            className="ml-auto"
+          />
+        )}
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
       <p className="text-sm opacity-80">{subtitle}</p>

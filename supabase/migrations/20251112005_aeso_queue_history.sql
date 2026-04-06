@@ -62,6 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_aeso_queue_history_dc_projects ON aeso_queue_hist
 ALTER TABLE aeso_queue_history ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policy: Allow public read access (for dashboard)
+DROP POLICY IF EXISTS "Allow public read access to queue history" ON aeso_queue_history;
 CREATE POLICY "Allow public read access to queue history"
   ON aeso_queue_history
   FOR SELECT
@@ -256,7 +257,8 @@ INSERT INTO aeso_queue_history (
     2400000000,
     'AESO Q1 2025 Interconnection Queue Report (March Update)',
     'Latest data: AI data centres dominate queue at 34.6%. Alberta''s $100B strategy driving unprecedented demand.'
-  );
+  )
+ON CONFLICT DO NOTHING;
 
 -- =====================================================================
 -- COMMENTS

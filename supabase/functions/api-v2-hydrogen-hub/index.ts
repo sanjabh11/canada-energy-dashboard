@@ -5,6 +5,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { loadDashboardSummarySnapshot, saveDashboardSummarySnapshot } from "../_shared/dashboardSnapshots.ts";
 import {
   validateProvince,
   validateEnum,
@@ -15,11 +16,17 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const VERIFICATION_FALLBACK_TOKEN = Deno.env.get("CEIP_VERIFICATION_FALLBACK_TOKEN") || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Validation constants
 const VALID_HUBS = ['Edmonton Hub', 'Calgary Hub'] as const;
 const VALID_HYDROGEN_TYPES = ['Green', 'Blue', 'Grey', 'Turquoise', 'Pink'] as const;
+const HYDROGEN_DASHBOARD_KEY = 'hydrogen_economy';
+
+function buildVariantKey(args: { province: string; hub: string | null; hydrogenType: string | null; includeTimeseries: boolean }) {
+  return `province:${args.province}|hub:${args.hub || 'all'}|type:${args.hydrogenType || 'all'}|timeseries:${args.includeTimeseries ? 'true' : 'false'}`;
+}
 
 serve(async (req: Request) => {
   const rl = applyRateLimit(req, 'api-v2-hydrogen-hub');
@@ -33,12 +40,16 @@ serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
+    if (VERIFICATION_FALLBACK_TOKEN && req.headers.get('x-ceip-verify-fallback') === VERIFICATION_FALLBACK_TOKEN) {
+      throw new Error('Forced hydrogen snapshot fallback verification');
+    }
 
     // Validate input parameters
     const province = validateProvince(url.searchParams.get('province'), 'AB');
     const hub = validateEnum(url.searchParams.get('hub'), VALID_HUBS, true);
     const hydrogenType = validateEnum(url.searchParams.get('type'), VALID_HYDROGEN_TYPES, true);
     const includeTimeseries = validateBoolean(url.searchParams.get('timeseries'), false);
+    const variantKey = buildVariantKey({ province, hub, hydrogenType, includeTimeseries });
 
     // Fetch hydrogen facilities
     let facilitiesQuery = supabase
@@ -194,13 +205,29 @@ serve(async (req: Request) => {
           calgary_banff_rail: projects?.find(p => p.id === 'h2proj-002') || null,
         }
       },
+      snapshot_type: 'live',
+      snapshot_stored_at: null,
+      is_fallback: false,
       metadata: {
         province,
         last_updated: new Date().toISOString(),
         data_source: 'Canada Energy Dashboard',
         strategic_context: '$300M federal investment, Edmonton/Calgary hydrogen hubs',
+        snapshot_type: 'live',
+        snapshot_stored_at: null,
+        is_fallback: false,
       }
     };
+
+    await saveDashboardSummarySnapshot({
+      dashboardKey: HYDROGEN_DASHBOARD_KEY,
+      variantKey,
+      summaryPayload: response,
+      sourceLabel: 'Canada Energy Dashboard',
+      sourceUpdatedAt: response.metadata.last_updated,
+      isPartial: false,
+      notes: 'Hydrogen hub summary snapshot persisted after successful live assembly.',
+    });
 
     return new Response(JSON.stringify(response), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -208,6 +235,45 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Hydrogen Hub API error:', err);
+    try {
+      const url = new URL(req.url);
+      const province = validateProvince(url.searchParams.get('province'), 'AB');
+      const hub = validateEnum(url.searchParams.get('hub'), VALID_HUBS, true);
+      const hydrogenType = validateEnum(url.searchParams.get('type'), VALID_HYDROGEN_TYPES, true);
+      const includeTimeseries = validateBoolean(url.searchParams.get('timeseries'), false);
+      const variantKey = buildVariantKey({ province, hub, hydrogenType, includeTimeseries });
+      const snapshot = await loadDashboardSummarySnapshot<any>({
+        dashboardKey: HYDROGEN_DASHBOARD_KEY,
+        variantKey,
+      });
+
+      if (snapshot) {
+        const payload = snapshot.summary_payload;
+        const metadata = payload?.metadata ?? {};
+        return new Response(JSON.stringify({
+          ...payload,
+          snapshot_type: 'persisted_snapshot',
+          snapshot_stored_at: snapshot.snapshot_stored_at,
+          is_fallback: true,
+          metadata: {
+            ...metadata,
+            province,
+            last_updated: snapshot.source_updated_at ?? metadata.last_updated ?? snapshot.snapshot_stored_at,
+            data_source: `${snapshot.source_label || metadata.data_source || 'Canada Energy Dashboard'} (persisted snapshot)`,
+            strategic_context: metadata.strategic_context ?? '$300M federal investment, Edmonton/Calgary hydrogen hubs',
+            snapshot_type: 'persisted_snapshot',
+            snapshot_stored_at: snapshot.snapshot_stored_at,
+            is_fallback: true,
+          },
+        }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 200,
+        });
+      }
+    } catch (snapshotErr) {
+      console.error('Hydrogen Hub snapshot fallback error:', snapshotErr);
+    }
+
     return errorResponse('Failed to fetch hydrogen economy data', 500, corsHeaders, err);
   }
 });

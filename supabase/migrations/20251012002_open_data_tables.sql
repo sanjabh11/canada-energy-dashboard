@@ -19,9 +19,9 @@ CREATE TABLE IF NOT EXISTS mineral_production_stats (
   UNIQUE(province, mineral, year)
 );
 
-CREATE INDEX idx_mineral_production_province ON mineral_production_stats(province);
-CREATE INDEX idx_mineral_production_mineral ON mineral_production_stats(mineral);
-CREATE INDEX idx_mineral_production_year ON mineral_production_stats(year DESC);
+CREATE INDEX IF NOT EXISTS idx_mineral_production_province ON mineral_production_stats(province);
+CREATE INDEX IF NOT EXISTS idx_mineral_production_mineral ON mineral_production_stats(mineral);
+CREATE INDEX IF NOT EXISTS idx_mineral_production_year ON mineral_production_stats(year DESC);
 
 COMMENT ON TABLE mineral_production_stats IS 'Annual mineral production statistics from Natural Resources Canada and Statistics Canada';
 
@@ -45,10 +45,10 @@ CREATE TABLE IF NOT EXISTS cer_compliance_records (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_cer_compliance_date ON cer_compliance_records(date DESC);
-CREATE INDEX idx_cer_compliance_province ON cer_compliance_records(province);
-CREATE INDEX idx_cer_compliance_severity ON cer_compliance_records(severity);
-CREATE INDEX idx_cer_compliance_status ON cer_compliance_records(status);
+CREATE INDEX IF NOT EXISTS idx_cer_compliance_date ON cer_compliance_records(date DESC);
+CREATE INDEX IF NOT EXISTS idx_cer_compliance_province ON cer_compliance_records(province);
+CREATE INDEX IF NOT EXISTS idx_cer_compliance_severity ON cer_compliance_records(severity);
+CREATE INDEX IF NOT EXISTS idx_cer_compliance_status ON cer_compliance_records(status);
 
 COMMENT ON TABLE cer_compliance_records IS 'Canada Energy Regulator compliance and enforcement records from open data';
 
@@ -73,11 +73,11 @@ CREATE TABLE IF NOT EXISTS climate_policies (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_climate_policy_jurisdiction ON climate_policies(jurisdiction);
-CREATE INDEX idx_climate_policy_sector ON climate_policies(sector);
-CREATE INDEX idx_climate_policy_instrument ON climate_policies(instrument_type);
-CREATE INDEX idx_climate_policy_status ON climate_policies(status);
-CREATE INDEX idx_climate_policy_effective ON climate_policies(date_effective DESC);
+CREATE INDEX IF NOT EXISTS idx_climate_policy_jurisdiction ON climate_policies(jurisdiction);
+CREATE INDEX IF NOT EXISTS idx_climate_policy_sector ON climate_policies(sector);
+CREATE INDEX IF NOT EXISTS idx_climate_policy_instrument ON climate_policies(instrument_type);
+CREATE INDEX IF NOT EXISTS idx_climate_policy_status ON climate_policies(status);
+CREATE INDEX IF NOT EXISTS idx_climate_policy_effective ON climate_policies(date_effective DESC);
 
 COMMENT ON TABLE climate_policies IS 'Canadian climate policies from PRISM inventory and 440 Megatonnes tracker';
 
@@ -92,7 +92,7 @@ CREATE TABLE IF NOT EXISTS api_cache (
   expires_at TIMESTAMP
 );
 
-CREATE INDEX idx_api_cache_expires ON api_cache(expires_at);
+CREATE INDEX IF NOT EXISTS idx_api_cache_expires ON api_cache(expires_at);
 
 COMMENT ON TABLE api_cache IS 'Response cache for external API calls to reduce load and improve performance';
 

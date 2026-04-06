@@ -17,10 +17,13 @@ CREATE INDEX IF NOT EXISTS idx_provincial_generation_fuel_type
 
 -- Add constraint for valid fuel types
 ALTER TABLE public.provincial_generation
+  DROP CONSTRAINT IF EXISTS chk_fuel_type;
+
+ALTER TABLE public.provincial_generation
   ADD CONSTRAINT chk_fuel_type CHECK (
     fuel_type IS NULL OR fuel_type IN (
       'hydro', 'nuclear', 'wind', 'solar', 'biomass', 'geothermal',
-      'natural_gas', 'coal', 'petroleum', 'oil', 'diesel'
+      'natural_gas', 'coal', 'petroleum', 'oil', 'diesel', 'mixed'
     )
   );
 

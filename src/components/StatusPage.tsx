@@ -34,56 +34,28 @@ import { OpsHealthPanel } from './OpsHealthPanel';
 import { SEOHead } from './SEOHead';
 import { HIGH_RISK_SOURCE_REGISTRY, UPTIME_MONITORS } from '../lib/opsMonitoring';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import DataTrustNotice from './DataTrustNotice';
 
 interface EndpointStatus {
   name: string;
   url: string;
-  status: 'healthy' | 'degraded' | 'down';
-  lastChecked: string;
-  responseTime?: number;
+  status: 'healthy' | 'degraded' | 'down' | 'reference';
+  expectedStatus: string;
+  intervalMinutes: number;
 }
 
 const StatusPage: React.FC = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
-  const [endpoints] = useState<EndpointStatus[]>([
-    { 
-      name: 'Homepage', 
-      url: '/', 
-      status: 'healthy', 
-      lastChecked: new Date().toISOString(),
-      responseTime: 120
-    },
-    { 
-      name: 'Lead Capture API', 
-      url: '/api/leads/intake', 
-      status: 'healthy', 
-      lastChecked: new Date().toISOString(),
-      responseTime: 245
-    },
-    { 
-      name: 'Health Endpoint', 
-      url: '/ops-health', 
-      status: 'healthy', 
-      lastChecked: new Date().toISOString(),
-      responseTime: 89
-    },
-    { 
-      name: 'TIER Calculator', 
-      url: '/roi-calculator', 
-      status: 'healthy', 
-      lastChecked: new Date().toISOString(),
-      responseTime: 156
-    },
-    { 
-      name: 'Municipal Page', 
-      url: '/municipal', 
-      status: 'healthy', 
-      lastChecked: new Date().toISOString(),
-      responseTime: 134
-    }
-  ]);
+  const endpoints: EndpointStatus[] = UPTIME_MONITORS.map((monitor) => ({
+    name: monitor.name,
+    url: monitor.url,
+    status: 'reference',
+    expectedStatus: monitor.expectedStatus.join(', '),
+    intervalMinutes: monitor.intervalMinutes,
+  }));
 
   const hasNonLiveHighRiskSources = HIGH_RISK_SOURCE_REGISTRY.some((item) => item.meta.freshnessStatus !== 'live');
+  const liveHighRiskSourceCount = HIGH_RISK_SOURCE_REGISTRY.filter((item) => item.meta.freshnessStatus === 'live').length;
   const statusBannerTitle = hasNonLiveHighRiskSources ? 'Operational status overview' : 'All Systems Operational';
   const statusBannerCopy = hasNonLiveHighRiskSources
     ? 'System health is tracked below with explicit live, stale, and demo labels. Some high-risk sources are not live, so the page avoids claiming full operational parity.'
@@ -109,6 +81,8 @@ const StatusPage: React.FC = () => {
       case 'down':
       case 'unknown':
         return <XCircle className="h-5 w-5 text-red-500" />;
+      case 'reference':
+        return <Clock className="h-5 w-5 text-slate-400" />;
       default:
         return <Activity className="h-5 w-5 text-slate-400" />;
     }
@@ -126,6 +100,8 @@ const StatusPage: React.FC = () => {
       case 'down':
       case 'unknown':
         return `${baseClasses} bg-red-100 text-red-800`;
+      case 'reference':
+        return `${baseClasses} bg-slate-100 text-slate-700`;
       default:
         return `${baseClasses} bg-slate-100 text-slate-800`;
     }
@@ -182,11 +158,18 @@ const StatusPage: React.FC = () => {
               <p className="text-emerald-700">{statusBannerCopy}</p>
             </div>
             <div className="text-right">
-              <div className="text-3xl font-bold text-emerald-600">99.9%</div>
-              <div className="text-sm text-emerald-600">Uptime (30 days)</div>
+              <div className="text-3xl font-bold text-emerald-600">{liveHighRiskSourceCount}/{HIGH_RISK_SOURCE_REGISTRY.length}</div>
+              <div className="text-sm text-emerald-600">Live high-risk sources</div>
             </div>
           </div>
         </div>
+
+        <DataTrustNotice
+          mode="mock"
+          title="Some operational sections are still reference-only"
+          message="Source freshness and ops-health panels are the canonical trust layer on this page. Endpoint coverage and uptime history below are currently reference views derived from monitor configuration, not live ping evidence or persisted SLA history."
+          className="mb-8"
+        />
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-3 gap-8">
@@ -280,7 +263,7 @@ const StatusPage: React.FC = () => {
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Globe className="h-5 w-5 text-slate-500" />
-                Endpoint Status
+                Endpoint Coverage
               </h2>
               <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
                 <div className="divide-y divide-slate-200">
@@ -292,12 +275,11 @@ const StatusPage: React.FC = () => {
                           <span className="font-medium text-slate-900">{endpoint.name}</span>
                         </div>
                         <span className={getStatusBadge(endpoint.status)}>
-                          {endpoint.status.toUpperCase()}
+                          {endpoint.status === 'reference' ? 'REFERENCE' : endpoint.status.toUpperCase()}
                         </span>
                       </div>
                       <div className="text-xs text-slate-500 ml-7">
-                        {endpoint.responseTime && `${endpoint.responseTime}ms • `}
-                        Checked {new Date(endpoint.lastChecked).toLocaleTimeString()}
+                        Expected status: {endpoint.expectedStatus} • Every {endpoint.intervalMinutes} min
                       </div>
                     </div>
                   ))}
@@ -309,31 +291,11 @@ const StatusPage: React.FC = () => {
             <section>
               <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                 <Server className="h-5 w-5 text-slate-500" />
-                Uptime History (30 Days)
+                Uptime History (Pending Live Feed)
               </h2>
               <div className="bg-white border border-slate-200 rounded-xl p-4">
-                <div className="space-y-3">
-                  {[
-                    { service: 'Main Application', uptime: 99.97 },
-                    { service: 'Lead Capture API', uptime: 99.95 },
-                    { service: 'Edge Functions', uptime: 99.99 },
-                    { service: 'Supabase Database', uptime: 100.0 }
-                  ].map((service, index) => (
-                    <div key={index} className="flex items-center justify-between">
-                      <span className="text-sm text-slate-600">{service.service}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 bg-slate-200 rounded-full h-2">
-                          <div 
-                            className="bg-emerald-500 h-2 rounded-full" 
-                            style={{ width: `${service.uptime}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-slate-900 w-12 text-right">
-                          {service.uptime.toFixed(2)}%
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-slate-600">
+                  Persisted uptime history is not wired into this page yet. Until live monitor history is connected, treat uptime as unknown here and rely on the source freshness registry plus ops-health panel above.
                 </div>
               </div>
             </section>

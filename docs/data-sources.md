@@ -28,7 +28,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Climate Bonds Initiative labelled bond database.
   - Issuer sustainability reports and investor presentations.
 - **Ingestion path:**
-  - Currently: seed/sample data in migration `20251122_esg_dashboard.sql`.
+  - Currently: seed/sample data in migration `20251122002_esg_dashboard.sql`.
   - Production: expected via curated CSV imports (e.g., from research spreadsheets) into `green_bonds`.
 - **Cadence:** Ad hoc updates when new bonds are issued or when research files are updated.
 - **Notes:** Ensure labelled bonds meet Green Bond Principles / CBI criteria before including them as green.
@@ -38,7 +38,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Bank and issuer press releases (TD, RBC, CIBC, BMO, etc.).
   - Annual and sustainability reports describing loan KPIs and ratchets.
 - **Ingestion path:**
-  - Seed/sample rows in `20251122_esg_dashboard.sql`.
+  - Seed/sample rows in `20251122002_esg_dashboard.sql`.
   - Future: CSV imports managed via research workflow (not yet automated in this repo).
 - **Cadence:** Ad hoc, as new facilities are announced.
 - **Notes:** Pay attention to KPI definitions (intensity vs absolute emissions) and step-up / step-down mechanics when interpreting loan impact.
@@ -48,7 +48,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Company-reported annual emissions (Mt CO₂e) from sustainability / TCFD reports.
   - Canada&apos;s carbon price schedule (current and projected 2030 price).
 - **Ingestion path:**
-  - Seed/example data in `20251122_esg_dashboard.sql`.
+  - Seed/example data in `20251122002_esg_dashboard.sql`.
   - Future production deployments should link calculations to `facility_emissions` and policy scenario configuration.
 - **Cadence:** Annual (aligned with emissions reporting) or when carbon price policy changes.
 
@@ -75,7 +75,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Company-reported methane baselines and current-year emissions.
   - Federal 75% methane reduction target (vs 2012/2019 baselines).
 - **Ingestion path:**
-  - Seed/example records in `20251122_industrial_decarb.sql`.
+  - Seed/example records in `20251122001_industrial_decarb.sql`.
   - Future: curated CSV imports or direct manual entry via Supabase.
 - **Cadence:** Annual or when companies update methane disclosures.
 - **Notes:** Often reported at the company or asset-level, not always per-facility.
@@ -85,7 +85,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Provincial and federal Output-Based Pricing System (OBPS/TIER) compliance reports.
   - Public datasets listing facility-level credits/debits and, where published, market prices.
 - **Ingestion path:**
-  - Table defined and seeded in `20251122_industrial_decarb.sql`.
+  - Table defined and seeded in `20251122001_industrial_decarb.sql`.
   - CSV helper: `scripts/import_obps_compliance.py` (CSV → Supabase upsert on `facility_name, reporting_year`).
 - **Cadence:** Annual, following OBPS/TIER compliance reporting cycles.
 - **Notes:** Credit prices can be volatile; when estimating `financial_value_cad`, document the assumed price and date.
@@ -96,7 +96,7 @@ This document summarizes the primary data sources used by the **Sustainable Fina
   - Emissions Reduction Alberta (ERA) funded project database.
   - Company sustainability and climate strategy reports.
 - **Ingestion path:**
-  - Table defined and seeded in `20251122_industrial_decarb.sql`.
+  - Table defined and seeded in `20251122001_industrial_decarb.sql`.
   - CSV helper: `scripts/import_efficiency_projects.py` (CSV → Supabase upsert).
 - **Cadence:** Ad hoc, as new projects are announced or funded.
 - **Notes:** Not all projects are captured; dashboard focuses on larger, high-impact initiatives suitable for sponsor demos and scenario analysis.

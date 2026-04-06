@@ -1,4 +1,4 @@
--- supabase/migrations/20251122_esg_dashboard.sql
+-- supabase/migrations/20251122002_esg_dashboard.sql
 -- ESG & Sustainable Finance tables for Sustainable Finance & ESG Dashboard
 
 -- Green Bonds Table
@@ -97,7 +97,8 @@ VALUES
   ('Capital Power Corporation', 'utility', 300000000, '2022-03-10', '2032-03-10', 3.10, ARRAY['renewable_energy', 'battery_storage'], ARRAY['climate_bonds_initiative']),
   ('Enbridge Inc.', 'oil_gas', 750000000, '2021-10-05', '2031-10-05', 2.95, ARRAY['renewable_natural_gas', 'carbon_capture'], ARRAY['green_bond_principles']),
   ('TC Energy', 'oil_gas', 500000000, '2023-01-20', '2033-01-20', 3.25, ARRAY['renewable_energy', 'emission_reduction'], ARRAY['green_bond_principles']),
-  ('Hydro-Québec', 'utility', 1000000000, '2020-09-15', '2030-09-15', 2.45, ARRAY['renewable_energy', 'grid_modernization'], ARRAY['climate_bonds_initiative', 'green_bond_principles']);
+  ('Hydro-Québec', 'utility', 1000000000, '2020-09-15', '2030-09-15', 2.45, ARRAY['renewable_energy', 'grid_modernization'], ARRAY['climate_bonds_initiative', 'green_bond_principles'])
+ON CONFLICT DO NOTHING;
 
 -- Insert sample ESG ratings
 INSERT INTO esg_ratings (company, sector, msci_score, msci_score_numeric, sustainalytics_risk_score, sp_global_score, cdp_climate_score, rating_date, peer_percentile, trend)
@@ -107,14 +108,16 @@ VALUES
   ('TransAlta', 'utility', 'A', 6.5, 22.8, 68, 'A-', '2024-12-01', 72, 'improving'),
   ('Capital Power', 'utility', 'BBB', 5.5, 25.5, 62, 'B', '2024-12-01', 58, 'improving'),
   ('Brookfield Renewable', 'renewable', 'AA', 7.5, 18.2, 78, 'A', '2024-12-01', 88, 'stable'),
-  ('Teck Resources', 'mining', 'A', 6.0, 24.1, 65, 'A-', '2024-12-01', 65, 'improving');
+  ('Teck Resources', 'mining', 'A', 6.0, 24.1, 65, 'A-', '2024-12-01', 65, 'improving')
+ON CONFLICT DO NOTHING;
 
 -- Insert sample sustainability-linked loans
 INSERT INTO sustainability_linked_loans (company, lender, amount_cad, announcement_date, maturity_years, kpi_type, kpi_target, rate_adjustment_bps, current_status)
 VALUES
   ('TransAlta', 'TD Bank', 1200000000, '2021-06-01', 5, ARRAY['renewable_capacity', 'emission_intensity'], 'Increase renewable capacity to 4 GW by 2025, reduce emission intensity by 40%', 25, 'achieved'),
   ('Capital Power', 'CIBC', 800000000, '2022-09-15', 7, ARRAY['renewable_capacity'], 'Achieve 50% renewable generation by 2028', 20, 'on_track'),
-  ('Suncor Energy', 'RBC', 2500000000, '2023-03-20', 5, ARRAY['emission_intensity', 'water_efficiency'], 'Reduce oil sands emission intensity by 15% by 2027', 30, 'on_track');
+  ('Suncor Energy', 'RBC', 2500000000, '2023-03-20', 5, ARRAY['emission_intensity', 'water_efficiency'], 'Reduce oil sands emission intensity by 15% by 2027', 30, 'on_track')
+ON CONFLICT DO NOTHING;
 
 -- Insert sample carbon pricing exposure
 INSERT INTO carbon_pricing_exposure (company, sector, annual_emissions_mt, current_carbon_price_per_tonne, current_annual_cost_millions, projected_2030_price, projected_2030_cost_millions, revenue_at_risk_percent, mitigation_strategy)
@@ -122,4 +125,5 @@ VALUES
   ('Suncor Energy', 'oil_gas', 28.5, 65, 1852.5, 170, 4845.0, 8.2, ARRAY['ccus', 'renewable_power', 'electrification']),
   ('Canadian Natural Resources', 'oil_gas', 32.1, 65, 2086.5, 170, 5457.0, 9.5, ARRAY['ccus', 'methane_reduction']),
   ('Imperial Oil', 'oil_gas', 24.8, 65, 1612.0, 170, 4216.0, 7.8, ARRAY['ccus', 'hydrogen']),
-  ('Cenovus Energy', 'oil_gas', 19.2, 65, 1248.0, 170, 3264.0, 6.5, ARRAY['ccus', 'renewable_power']);
+  ('Cenovus Energy', 'oil_gas', 19.2, 65, 1248.0, 170, 3264.0, 6.5, ARRAY['ccus', 'renewable_power'])
+ON CONFLICT DO NOTHING;

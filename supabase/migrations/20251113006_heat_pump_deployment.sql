@@ -115,12 +115,66 @@ CREATE TABLE IF NOT EXISTS heat_pump_installations (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_hp_province ON heat_pump_installations(province_code);
-CREATE INDEX idx_hp_type ON heat_pump_installations(heat_pump_type);
-CREATE INDEX idx_hp_install_date ON heat_pump_installations(installation_date);
-CREATE INDEX idx_hp_previous_system ON heat_pump_installations(previous_heating_system);
-CREATE INDEX idx_hp_climate_zone ON heat_pump_installations(climate_zone);
-CREATE INDEX idx_hp_building_type ON heat_pump_installations(building_type);
+ALTER TABLE public.heat_pump_installations
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS installation_id TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS postal_code_fsa TEXT,
+  ADD COLUMN IF NOT EXISTS municipality TEXT,
+  ADD COLUMN IF NOT EXISTS climate_zone TEXT,
+  ADD COLUMN IF NOT EXISTS building_type TEXT,
+  ADD COLUMN IF NOT EXISTS building_age_years INTEGER,
+  ADD COLUMN IF NOT EXISTS building_size_sqft INTEGER,
+  ADD COLUMN IF NOT EXISTS building_insulation_level TEXT,
+  ADD COLUMN IF NOT EXISTS heat_pump_type TEXT,
+  ADD COLUMN IF NOT EXISTS manufacturer TEXT,
+  ADD COLUMN IF NOT EXISTS model TEXT,
+  ADD COLUMN IF NOT EXISTS rated_heating_capacity_btu NUMERIC,
+  ADD COLUMN IF NOT EXISTS rated_cooling_capacity_btu NUMERIC,
+  ADD COLUMN IF NOT EXISTS hspf NUMERIC,
+  ADD COLUMN IF NOT EXISTS hspf2 NUMERIC,
+  ADD COLUMN IF NOT EXISTS seer NUMERIC,
+  ADD COLUMN IF NOT EXISTS seer2 NUMERIC,
+  ADD COLUMN IF NOT EXISTS cop NUMERIC,
+  ADD COLUMN IF NOT EXISTS minimum_operating_temperature_c NUMERIC,
+  ADD COLUMN IF NOT EXISTS installation_date DATE,
+  ADD COLUMN IF NOT EXISTS installer_company TEXT,
+  ADD COLUMN IF NOT EXISTS installer_certified BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS previous_heating_system TEXT,
+  ADD COLUMN IF NOT EXISTS previous_heating_fuel TEXT,
+  ADD COLUMN IF NOT EXISTS backup_heating BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS backup_heating_type TEXT,
+  ADD COLUMN IF NOT EXISTS hybrid_configuration BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS includes_domestic_hot_water BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS equipment_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS installation_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_project_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS federal_rebate_amount_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS provincial_rebate_amount_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS utility_rebate_amount_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS total_rebates_received_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS net_cost_to_homeowner_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS rebate_program_names TEXT[],
+  ADD COLUMN IF NOT EXISTS estimated_annual_energy_savings_kwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS estimated_annual_cost_savings_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS estimated_ghg_reduction_tonnes_co2e_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS actual_annual_electricity_consumption_kwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS actual_annual_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS actual_cop_average NUMERIC,
+  ADD COLUMN IF NOT EXISTS customer_satisfaction_rating INTEGER,
+  ADD COLUMN IF NOT EXISTS would_recommend BOOLEAN,
+  ADD COLUMN IF NOT EXISTS data_source TEXT DEFAULT 'Rebate Program Database',
+  ADD COLUMN IF NOT EXISTS data_collection_consent BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_hp_province ON heat_pump_installations(province_code);
+CREATE INDEX IF NOT EXISTS idx_hp_type ON heat_pump_installations(heat_pump_type);
+CREATE INDEX IF NOT EXISTS idx_hp_install_date ON heat_pump_installations(installation_date);
+CREATE INDEX IF NOT EXISTS idx_hp_previous_system ON heat_pump_installations(previous_heating_system);
+CREATE INDEX IF NOT EXISTS idx_hp_climate_zone ON heat_pump_installations(climate_zone);
+CREATE INDEX IF NOT EXISTS idx_hp_building_type ON heat_pump_installations(building_type);
 
 COMMENT ON TABLE heat_pump_installations IS 'Privacy-protected tracking of heat pump installations, rebates, and performance';
 
@@ -217,11 +271,61 @@ CREATE TABLE IF NOT EXISTS heat_pump_rebate_programs (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_hp_rebate_level ON heat_pump_rebate_programs(program_level);
-CREATE INDEX idx_hp_rebate_province ON heat_pump_rebate_programs(province_code);
-CREATE INDEX idx_hp_rebate_type ON heat_pump_rebate_programs(program_type);
-CREATE INDEX idx_hp_rebate_status ON heat_pump_rebate_programs(status);
-CREATE INDEX idx_hp_rebate_dates ON heat_pump_rebate_programs(program_start_date, program_end_date);
+ALTER TABLE public.heat_pump_rebate_programs
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS program_name TEXT,
+  ADD COLUMN IF NOT EXISTS program_administrator TEXT,
+  ADD COLUMN IF NOT EXISTS program_level TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS utility_territory TEXT,
+  ADD COLUMN IF NOT EXISTS program_type TEXT,
+  ADD COLUMN IF NOT EXISTS eligible_heat_pump_types TEXT[],
+  ADD COLUMN IF NOT EXISTS income_qualified_only BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS maximum_household_income_cad INTEGER,
+  ADD COLUMN IF NOT EXISTS homeowner_only BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS renter_eligible BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS base_rebate_amount_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS low_income_bonus_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS rural_bonus_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS oil_conversion_bonus_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS max_rebate_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS maximum_rebate_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS minimum_hspf NUMERIC,
+  ADD COLUMN IF NOT EXISTS minimum_seer NUMERIC,
+  ADD COLUMN IF NOT EXISTS minimum_cop NUMERIC,
+  ADD COLUMN IF NOT EXISTS cold_climate_certified_required BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS energy_star_certified_required BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS certified_installer_required BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS pre_approval_required BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS post_installation_inspection BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS total_program_budget_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS allocated_budget_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS committed_budget_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS remaining_budget_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS installations_funded INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS target_installations INTEGER,
+  ADD COLUMN IF NOT EXISTS program_start_date DATE,
+  ADD COLUMN IF NOT EXISTS program_end_date DATE,
+  ADD COLUMN IF NOT EXISTS application_deadline DATE,
+  ADD COLUMN IF NOT EXISTS funding_exhausted_date DATE,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active - Accepting Applications',
+  ADD COLUMN IF NOT EXISTS application_url TEXT,
+  ADD COLUMN IF NOT EXISTS eligibility_checker_url TEXT,
+  ADD COLUMN IF NOT EXISTS average_processing_time_days INTEGER,
+  ADD COLUMN IF NOT EXISTS stackable_with_federal BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS stackable_with_provincial BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS stackable_with_utility BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS total_ghg_reduction_tonnes_co2e NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_oil_furnaces_replaced INTEGER,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_hp_rebate_level ON heat_pump_rebate_programs(program_level);
+CREATE INDEX IF NOT EXISTS idx_hp_rebate_province ON heat_pump_rebate_programs(province_code);
+CREATE INDEX IF NOT EXISTS idx_hp_rebate_type ON heat_pump_rebate_programs(program_type);
+CREATE INDEX IF NOT EXISTS idx_hp_rebate_status ON heat_pump_rebate_programs(status);
+CREATE INDEX IF NOT EXISTS idx_hp_rebate_dates ON heat_pump_rebate_programs(program_start_date, program_end_date);
 
 COMMENT ON TABLE heat_pump_rebate_programs IS 'Federal, provincial, utility, and municipal heat pump rebate programs';
 
@@ -277,8 +381,40 @@ CREATE TABLE IF NOT EXISTS heat_pump_deployment_stats (
   UNIQUE(province_code, reporting_period_start, reporting_period_end)
 );
 
-CREATE INDEX idx_hp_stats_province ON heat_pump_deployment_stats(province_code);
-CREATE INDEX idx_hp_stats_period ON heat_pump_deployment_stats(reporting_period_start);
+ALTER TABLE public.heat_pump_deployment_stats
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS tracking_year INTEGER,
+  ADD COLUMN IF NOT EXISTS tracking_quarter TEXT,
+  ADD COLUMN IF NOT EXISTS reporting_period_start DATE,
+  ADD COLUMN IF NOT EXISTS reporting_period_end DATE,
+  ADD COLUMN IF NOT EXISTS heat_pumps_installed INTEGER,
+  ADD COLUMN IF NOT EXISTS ashp_installed INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS ccashp_installed INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS gshp_installed INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS oil_to_heat_pump_conversions INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS gas_to_heat_pump_conversions INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS electric_baseboard_to_heat_pump_conversions INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cumulative_heat_pumps_installed INTEGER,
+  ADD COLUMN IF NOT EXISTS heat_pump_market_penetration_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_rebates_paid_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_rebate_per_installation_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_equipment_spending_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_ghg_reduction_tonnes_co2e NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_oil_displaced_liters NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_gas_displaced_m3 NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_equipment_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_installation_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_total_project_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS federal_target_installations INTEGER,
+  ADD COLUMN IF NOT EXISTS federal_target_ghg_reduction_tonnes NUMERIC,
+  ADD COLUMN IF NOT EXISTS on_track_to_meet_target BOOLEAN,
+  ADD COLUMN IF NOT EXISTS data_source TEXT DEFAULT 'NRCan, Provincial Rebate Programs',
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_hp_stats_province ON heat_pump_deployment_stats(province_code);
+CREATE INDEX IF NOT EXISTS idx_hp_stats_period ON heat_pump_deployment_stats(reporting_period_start);
 
 COMMENT ON TABLE heat_pump_deployment_stats IS 'Aggregated heat pump deployment statistics by province and time period';
 
@@ -293,7 +429,7 @@ INSERT INTO heat_pump_rebate_programs (
   program_type,
   eligible_heat_pump_types,
   income_qualified_only, maximum_household_income_cad,
-  base_rebate_amount_cad, low_income_bonus_cad, maximum_rebate_cad,
+  base_rebate_amount_cad, low_income_bonus_cad, max_rebate_cad, maximum_rebate_cad,
   minimum_hspf, cold_climate_certified_required, energy_star_certified_required,
   certified_installer_required,
   total_program_budget_cad,
@@ -309,7 +445,7 @@ INSERT INTO heat_pump_rebate_programs (
   'Oil to Heat Pump Conversion',
   ARRAY['Air Source Heat Pump (ASHP)', 'Cold Climate Air Source Heat Pump (ccASHP)', 'Ground Source Heat Pump (GSHP)'],
   TRUE, 70000,
-  10000, 5000, 15000,
+  10000, 5000, 15000, 15000,
   9.0, TRUE, TRUE,
   TRUE,
   250000000,
@@ -318,7 +454,7 @@ INSERT INTO heat_pump_rebate_programs (
   'https://natural-resources.canada.ca/energy-efficiency/homes/oil-heat-pump-affordability-program',
   TRUE,
   'Federal grants up to $15,000 for low-to-median income households converting from oil heating. Income limits: $70,000 base, $80,000 if 3+ occupants. Cold climate certified heat pump required. One-time $250 bonus payment. Stackable with provincial programs.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Federal: Canada Greener Homes Loan
 INSERT INTO heat_pump_rebate_programs (
@@ -326,7 +462,7 @@ INSERT INTO heat_pump_rebate_programs (
   program_level, province_code,
   program_type,
   eligible_heat_pump_types,
-  base_rebate_amount_cad, maximum_rebate_cad,
+  base_rebate_amount_cad, max_rebate_cad, maximum_rebate_cad,
   program_start_date, program_end_date,
   status,
   application_url,
@@ -337,12 +473,12 @@ INSERT INTO heat_pump_rebate_programs (
   'Federal', 'CA',
   'Interest-Free Loan',
   ARRAY['Air Source Heat Pump (ASHP)', 'Cold Climate Air Source Heat Pump (ccASHP)', 'Ground Source Heat Pump (GSHP)'],
-  40000, 40000,
+  40000, 40000, 40000,
   '2022-01-01', '2027-03-31',
   'Active - Accepting Applications',
   'https://natural-resources.canada.ca/energy-efficiency/homes/canada-greener-homes-initiative',
   '$40,000 interest-free loan for home energy retrofits including heat pumps. Program remains open (Grant closed Feb 2024 but Loan continues).'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Ontario: Enbridge Home Efficiency Rebate Plus
 INSERT INTO heat_pump_rebate_programs (
@@ -350,7 +486,7 @@ INSERT INTO heat_pump_rebate_programs (
   program_level, province_code, utility_territory,
   program_type,
   eligible_heat_pump_types,
-  base_rebate_amount_cad, maximum_rebate_cad,
+  base_rebate_amount_cad, max_rebate_cad, maximum_rebate_cad,
   energy_star_certified_required,
   program_start_date, program_end_date,
   status,
@@ -363,14 +499,14 @@ INSERT INTO heat_pump_rebate_programs (
   'Utility', 'ON', 'Enbridge Gas Ontario',
   'Equipment Rebate',
   ARRAY['Air Source Heat Pump (ASHP)', 'Cold Climate Air Source Heat Pump (ccASHP)'],
-  5000, 7500,
+  5000, 7500, 7500,
   TRUE,
   '2024-07-15', '2025-12-31',
   'Active - Accepting Applications',
   'https://www.enbridgegas.com/ontario/rebates-energy-conservation/home-efficiency-rebate-plus',
   TRUE,
   'Up to $7,500 for heat pump upgrades. Effective July 15, 2024. Runs until December 2025. Energy Star certification required. Stackable with federal OHPA program.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Quebec: Chauffez vert (Heat Green)
 INSERT INTO heat_pump_rebate_programs (
@@ -378,7 +514,7 @@ INSERT INTO heat_pump_rebate_programs (
   program_level, province_code,
   program_type,
   eligible_heat_pump_types,
-  base_rebate_amount_cad, oil_conversion_bonus_cad, maximum_rebate_cad,
+  base_rebate_amount_cad, oil_conversion_bonus_cad, max_rebate_cad, maximum_rebate_cad,
   program_start_date,
   status,
   stackable_with_federal,
@@ -389,12 +525,12 @@ INSERT INTO heat_pump_rebate_programs (
   'Provincial', 'QC',
   'Oil to Heat Pump Conversion',
   ARRAY['Air Source Heat Pump (ASHP)', 'Cold Climate Air Source Heat Pump (ccASHP)', 'Ground Source Heat Pump (GSHP)'],
-  4000, 3000, 7000,
+  4000, 3000, 7000, 7000,
   '2023-01-01',
   'Active - Accepting Applications',
   TRUE,
   'Up to $7,000 for replacing oil heating with heat pump. $4,000 base + $3,000 oil conversion bonus. Quebec leading Canada in heat pump adoption.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- HEAT PUMP DEPLOYMENT STATISTICS SEED DATA
@@ -403,6 +539,7 @@ INSERT INTO heat_pump_rebate_programs (
 -- 2024 Q4 - Ontario
 INSERT INTO heat_pump_deployment_stats (
   province_code,
+  tracking_year, tracking_quarter,
   reporting_period_start, reporting_period_end,
   heat_pumps_installed, ashp_installed, ccashp_installed, gshp_installed,
   oil_to_heat_pump_conversions, gas_to_heat_pump_conversions,
@@ -413,6 +550,7 @@ INSERT INTO heat_pump_deployment_stats (
   data_source, notes
 ) VALUES (
   'ON',
+  2024, 'Q4',
   '2024-10-01', '2024-12-31',
   12500, 8000, 3500, 1000,
   3200, 4500,
@@ -427,6 +565,7 @@ INSERT INTO heat_pump_deployment_stats (
 -- 2024 Q4 - Quebec (leading province)
 INSERT INTO heat_pump_deployment_stats (
   province_code,
+  tracking_year, tracking_quarter,
   reporting_period_start, reporting_period_end,
   heat_pumps_installed, ashp_installed, ccashp_installed, gshp_installed,
   oil_to_heat_pump_conversions,
@@ -438,6 +577,7 @@ INSERT INTO heat_pump_deployment_stats (
   data_source, notes
 ) VALUES (
   'QC',
+  2024, 'Q4',
   '2024-10-01', '2024-12-31',
   18500, 11000, 6000, 1500,
   5200,

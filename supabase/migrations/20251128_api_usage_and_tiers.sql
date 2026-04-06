@@ -17,6 +17,14 @@ CREATE TABLE IF NOT EXISTS api_usage (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
+ALTER TABLE api_usage
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS api_key_id UUID,
+  ADD COLUMN IF NOT EXISTS endpoint TEXT,
+  ADD COLUMN IF NOT EXISTS request_count INT DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS date DATE DEFAULT CURRENT_DATE,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT now();
+
 CREATE INDEX IF NOT EXISTS idx_api_usage_key_date ON api_usage(api_key_id, date);
 CREATE INDEX IF NOT EXISTS idx_api_usage_endpoint ON api_usage(endpoint);
 

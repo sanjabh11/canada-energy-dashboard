@@ -32,6 +32,24 @@ const Tab: React.FC<TabProps> = ({ active, onClick, icon, label }) => (
   </button>
 );
 
+export interface RenewableTruthState {
+  showGenericMockNotice: boolean;
+  showMockPerformanceNotice: boolean;
+  showMockAwardNotice: boolean;
+}
+
+export function resolveRenewableTruthState(flags: {
+  usingMockData: boolean;
+  usingMockPerformance: boolean;
+  usingMockAwardMetrics: boolean;
+}): RenewableTruthState {
+  return {
+    showGenericMockNotice: flags.usingMockData,
+    showMockPerformanceNotice: flags.usingMockPerformance && !flags.usingMockAwardMetrics,
+    showMockAwardNotice: flags.usingMockAwardMetrics,
+  };
+}
+
 const RenewableOptimizationHub: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'forecasts' | 'performance' | 'curtailment' | 'storage'>('forecasts');
   const [province, setProvince] = useState('ON');
@@ -40,6 +58,8 @@ const RenewableOptimizationHub: React.FC = () => {
   const [performance, setPerformance] = useState<ForecastPerformance[]>([]);
   const [awardMetrics, setAwardMetrics] = useState<AwardEvidenceMetrics | null>(null);
   const [usingMockData, setUsingMockData] = useState(false);
+  const [usingMockPerformance, setUsingMockPerformance] = useState(false);
+  const [usingMockAwardMetrics, setUsingMockAwardMetrics] = useState(false);
 
   // Load data
   useEffect(() => {
@@ -62,6 +82,7 @@ const RenewableOptimizationHub: React.FC = () => {
         console.log('[FORECAST] Solar MAE:', solarData.map(p => p.mae_percent));
         console.log('[FORECAST] Wind MAE:', windData.map(p => p.mae_percent));
         setPerformance(data);
+        setUsingMockPerformance(false);
       } else {
         console.warn('[FORECAST] No performance data from database, using mock data');
         // Generate realistic mock performance metrics
@@ -112,6 +133,7 @@ const RenewableOptimizationHub: React.FC = () => {
           }
         ];
         setPerformance(mockPerformance as any);
+        setUsingMockPerformance(true);
         setUsingMockData(true);
       }
     } catch (dbError) {
@@ -140,6 +162,7 @@ const RenewableOptimizationHub: React.FC = () => {
         }
       ];
       setPerformance(mockPerformance as any);
+      setUsingMockPerformance(true);
       setUsingMockData(true);
     }
   };
@@ -147,6 +170,9 @@ const RenewableOptimizationHub: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setUsingMockData(false);
+      setUsingMockPerformance(false);
+      setUsingMockAwardMetrics(false);
 
       // Generate fresh forecasts
       const solarForecastsResult = await fetchEdgeJson([
@@ -172,6 +198,7 @@ const RenewableOptimizationHub: React.FC = () => {
         
         if (perfResponse.json?.metrics) {
           setPerformance(perfResponse.json.metrics);
+          setUsingMockPerformance(false);
         } else {
           // Try database fallback
           await loadPerformanceFromDatabase(province);
@@ -189,6 +216,7 @@ const RenewableOptimizationHub: React.FC = () => {
         
         if (awardResponse.json) {
           setAwardMetrics(awardResponse.json);
+          setUsingMockAwardMetrics(false);
         } else {
           // Set realistic mock metrics if API returns empty
           const mockMetrics = {
@@ -215,6 +243,8 @@ const RenewableOptimizationHub: React.FC = () => {
             calculated_at: new Date().toISOString()
           };
           setAwardMetrics(mockMetrics as unknown as AwardEvidenceMetrics);
+          setUsingMockAwardMetrics(true);
+          setUsingMockData(true);
         }
       } catch (error) {
         console.error('Award metrics API not available, using mock data:', error);
@@ -243,6 +273,8 @@ const RenewableOptimizationHub: React.FC = () => {
           calculated_at: new Date().toISOString()
         };
         setAwardMetrics(mockMetrics as unknown as AwardEvidenceMetrics);
+        setUsingMockAwardMetrics(true);
+        setUsingMockData(true);
       }
 
     } catch (error) {
@@ -386,6 +418,12 @@ const RenewableOptimizationHub: React.FC = () => {
     return () => { canceled = true; };
   }, [province, performance]);
 
+  const renewableTruthState = resolveRenewableTruthState({
+    usingMockData,
+    usingMockPerformance,
+    usingMockAwardMetrics,
+  });
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -397,11 +435,29 @@ const RenewableOptimizationHub: React.FC = () => {
   return (
     <div className="min-h-screen bg-slate-900 dashboard-analytics">
       <div className={CONTAINER_CLASSES.page}>
-        {usingMockData && (
+        {renewableTruthState.showGenericMockNotice && (
           <DataTrustNotice
             mode="mock"
             title="Illustrative forecast metrics active"
             message="Renewable optimization is displaying sample forecast accuracy metrics for demonstration. MAE/MAPE values and performance statistics are illustrative examples, not live operational data."
+            className="mb-6"
+          />
+        )}
+
+        {renewableTruthState.showMockPerformanceNotice && (
+          <DataTrustNotice
+            mode="mock"
+            title="Illustrative performance metrics active"
+            message="Forecast operations are source-backed where available, but the forecast-performance cards are currently using illustrative MAE/MAPE metrics because no verified performance history was returned for this province."
+            className="mb-6"
+          />
+        )}
+
+        {renewableTruthState.showMockAwardNotice && (
+          <DataTrustNotice
+            mode="mock"
+            title="Illustrative award-evidence metrics active"
+            message="Award-evidence KPIs such as curtailment avoided, storage efficiency, and opportunity cost recovered are currently illustrative demo values. Use the forecast operations tabs separately from these evidence metrics until a verified evidence feed is connected."
             className="mb-6"
           />
         )}
@@ -447,7 +503,11 @@ const RenewableOptimizationHub: React.FC = () => {
                 <Target className="h-6 w-6 text-blue-600 flex-shrink-0 mt-1" />
                 <div>
                   <h3 className="text-lg font-semibold text-slate-900">Award Evidence Metrics</h3>
-                  <p className="text-sm text-slate-600">Performance metrics for AI for Renewable Energy Solutions nomination</p>
+                  <p className="text-sm text-slate-600">
+                    {usingMockAwardMetrics
+                      ? 'Illustrative nomination metrics for demo mode'
+                      : 'Performance metrics for AI for Renewable Energy Solutions nomination'}
+                  </p>
                 </div>
               </div>
               

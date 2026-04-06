@@ -45,17 +45,21 @@ create index if not exists idx_edubiz_users_email on public.edubiz_users(email);
 alter table public.edubiz_users enable row level security;
 
 -- Policy: Users can view and update their own record
+drop policy if exists edubiz_users_select_own on public.edubiz_users;
 create policy edubiz_users_select_own on public.edubiz_users
   for select using (auth.uid() = user_id);
 
+drop policy if exists edubiz_users_update_own on public.edubiz_users;
 create policy edubiz_users_update_own on public.edubiz_users
   for update using (auth.uid() = user_id);
 
 -- Policy: Anyone can insert (for signup)
+drop policy if exists edubiz_users_insert_authenticated on public.edubiz_users;
 create policy edubiz_users_insert_authenticated on public.edubiz_users
   for insert with check (auth.uid() = user_id);
 
 -- Policy: Service role can do anything (for Stripe webhooks)
+drop policy if exists edubiz_users_service_role_all on public.edubiz_users;
 create policy edubiz_users_service_role_all on public.edubiz_users
   for all using (auth.role() = 'service_role');
 
@@ -69,6 +73,7 @@ end;
 $$ language plpgsql;
 
 -- Trigger to auto-update updated_at
+drop trigger if exists edubiz_users_updated_at on public.edubiz_users;
 create trigger edubiz_users_updated_at
   before update on public.edubiz_users
   for each row
@@ -101,9 +106,11 @@ on conflict (slug) do nothing;
 -- RLS for certificate tracks (public read, admin write)
 alter table public.certificate_tracks enable row level security;
 
+drop policy if exists certificate_tracks_select_all on public.certificate_tracks;
 create policy certificate_tracks_select_all on public.certificate_tracks
   for select using (true); -- Anyone can view tracks
 
+drop policy if exists certificate_tracks_modify_service_role on public.certificate_tracks;
 create policy certificate_tracks_modify_service_role on public.certificate_tracks
   for all using (auth.role() = 'service_role');
 
@@ -131,9 +138,11 @@ create index if not exists idx_certificate_modules_track on public.certificate_m
 -- RLS
 alter table public.certificate_modules enable row level security;
 
+drop policy if exists certificate_modules_select_all on public.certificate_modules;
 create policy certificate_modules_select_all on public.certificate_modules
   for select using (true);
 
+drop policy if exists certificate_modules_modify_service_role on public.certificate_modules;
 create policy certificate_modules_modify_service_role on public.certificate_modules
   for all using (auth.role() = 'service_role');
 
@@ -164,25 +173,30 @@ create index if not exists idx_user_progress_status on public.user_progress(stat
 -- RLS
 alter table public.user_progress enable row level security;
 
+drop policy if exists user_progress_select_own on public.user_progress;
 create policy user_progress_select_own on public.user_progress
   for select using (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
   );
 
+drop policy if exists user_progress_insert_own on public.user_progress;
 create policy user_progress_insert_own on public.user_progress
   for insert with check (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
   );
 
+drop policy if exists user_progress_update_own on public.user_progress;
 create policy user_progress_update_own on public.user_progress
   for update using (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
   );
 
+drop policy if exists user_progress_service_role_all on public.user_progress;
 create policy user_progress_service_role_all on public.user_progress
   for all using (auth.role() = 'service_role');
 
 -- Trigger for updated_at
+drop trigger if exists user_progress_updated_at on public.user_progress;
 create trigger user_progress_updated_at
   before update on public.user_progress
   for each row
@@ -216,9 +230,11 @@ on conflict (slug) do nothing;
 -- RLS
 alter table public.badges enable row level security;
 
+drop policy if exists badges_select_all on public.badges;
 create policy badges_select_all on public.badges
   for select using (true);
 
+drop policy if exists badges_modify_service_role on public.badges;
 create policy badges_modify_service_role on public.badges
   for all using (auth.role() = 'service_role');
 
@@ -240,14 +256,17 @@ create index if not exists idx_user_badges_badge on public.user_badges(badge_id)
 -- RLS
 alter table public.user_badges enable row level security;
 
+drop policy if exists user_badges_select_own on public.user_badges;
 create policy user_badges_select_own on public.user_badges
   for select using (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
   );
 
+drop policy if exists user_badges_insert_service_role on public.user_badges;
 create policy user_badges_insert_service_role on public.user_badges
   for insert with check (auth.role() = 'service_role');
 
+drop policy if exists user_badges_service_role_all on public.user_badges;
 create policy user_badges_service_role_all on public.user_badges
   for all using (auth.role() = 'service_role');
 
@@ -285,13 +304,16 @@ create index if not exists idx_webinars_scheduled on public.webinars(scheduled_a
 -- RLS
 alter table public.webinars enable row level security;
 
+drop policy if exists webinars_select_all on public.webinars;
 create policy webinars_select_all on public.webinars
   for select using (true);
 
+drop policy if exists webinars_modify_service_role on public.webinars;
 create policy webinars_modify_service_role on public.webinars
   for all using (auth.role() = 'service_role');
 
 -- Trigger
+drop trigger if exists webinars_updated_at on public.webinars;
 create trigger webinars_updated_at
   before update on public.webinars
   for each row
@@ -319,18 +341,21 @@ create index if not exists idx_webinar_registrations_user on public.webinar_regi
 -- RLS
 alter table public.webinar_registrations enable row level security;
 
+drop policy if exists webinar_registrations_select_own on public.webinar_registrations;
 create policy webinar_registrations_select_own on public.webinar_registrations
   for select using (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
     or email = (select email from auth.users where id = auth.uid())
   );
 
+drop policy if exists webinar_registrations_insert_authenticated on public.webinar_registrations;
 create policy webinar_registrations_insert_authenticated on public.webinar_registrations
   for insert with check (
     user_id in (select id from public.edubiz_users where auth.uid() = edubiz_users.user_id)
     or auth.uid() is not null
   );
 
+drop policy if exists webinar_registrations_service_role_all on public.webinar_registrations;
 create policy webinar_registrations_service_role_all on public.webinar_registrations
   for all using (auth.role() = 'service_role');
 

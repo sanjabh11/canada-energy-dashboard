@@ -105,10 +105,59 @@ CREATE TABLE IF NOT EXISTS vpp_platforms (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_vpp_operator ON vpp_platforms(operator_company);
-CREATE INDEX idx_vpp_type ON vpp_platforms(platform_type);
-CREATE INDEX idx_vpp_status ON vpp_platforms(status);
-CREATE INDEX idx_vpp_capacity ON vpp_platforms(aggregated_capacity_mw DESC);
+ALTER TABLE public.vpp_platforms
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS platform_name TEXT,
+  ADD COLUMN IF NOT EXISTS operator TEXT,
+  ADD COLUMN IF NOT EXISTS operator_company TEXT,
+  ADD COLUMN IF NOT EXISTS platform_type TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT[],
+  ADD COLUMN IF NOT EXISTS iso_participation TEXT[],
+  ADD COLUMN IF NOT EXISTS aggregation_technology TEXT,
+  ADD COLUMN IF NOT EXISTS control_mechanism TEXT,
+  ADD COLUMN IF NOT EXISTS enrolled_assets_count INTEGER,
+  ADD COLUMN IF NOT EXISTS aggregated_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS available_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS energy_capacity_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS residential_assets_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS commercial_assets_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS industrial_assets_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS battery_storage_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS ev_chargers_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS smart_thermostats_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS solar_installations_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS generators_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS controllable_loads_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS demand_response BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS frequency_regulation BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS voltage_support BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS capacity_market_participation BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS energy_arbitrage BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS renewable_firming BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS ieso_peak_perks_program BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS aeso_demand_response BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS wholesale_market_participant BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS average_dispatch_response_time_seconds INTEGER,
+  ADD COLUMN IF NOT EXISTS reliability_score_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_energy_curtailed_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_energy_shifted_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS customer_compensation_model TEXT,
+  ADD COLUMN IF NOT EXISTS average_customer_payment_cad_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS enrollment_open BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS minimum_participation_requirements TEXT,
+  ADD COLUMN IF NOT EXISTS customer_app_available BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active',
+  ADD COLUMN IF NOT EXISTS launch_date DATE,
+  ADD COLUMN IF NOT EXISTS website_url TEXT,
+  ADD COLUMN IF NOT EXISTS enrollment_url TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_vpp_operator ON vpp_platforms(operator_company);
+CREATE INDEX IF NOT EXISTS idx_vpp_type ON vpp_platforms(platform_type);
+CREATE INDEX IF NOT EXISTS idx_vpp_status ON vpp_platforms(status);
+CREATE INDEX IF NOT EXISTS idx_vpp_capacity ON vpp_platforms(aggregated_capacity_mw DESC);
 
 COMMENT ON TABLE vpp_platforms IS 'Virtual Power Plant platforms and DER aggregation services';
 
@@ -192,11 +241,47 @@ CREATE TABLE IF NOT EXISTS der_assets (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_der_vpp ON der_assets(vpp_platform_id);
-CREATE INDEX idx_der_type ON der_assets(der_type);
-CREATE INDEX idx_der_province ON der_assets(province_code);
-CREATE INDEX idx_der_customer_type ON der_assets(customer_type);
-CREATE INDEX idx_der_active ON der_assets(active_participation) WHERE active_participation = TRUE;
+ALTER TABLE public.der_assets
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS vpp_platform_id UUID,
+  ADD COLUMN IF NOT EXISTS asset_id TEXT,
+  ADD COLUMN IF NOT EXISTS asset_name TEXT,
+  ADD COLUMN IF NOT EXISTS customer_type TEXT,
+  ADD COLUMN IF NOT EXISTS customer_id TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS postal_code_fsa TEXT,
+  ADD COLUMN IF NOT EXISTS utility_territory TEXT,
+  ADD COLUMN IF NOT EXISTS der_type TEXT,
+  ADD COLUMN IF NOT EXISTS rated_capacity_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS energy_capacity_kwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS dispatchable_capacity_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS manufacturer TEXT,
+  ADD COLUMN IF NOT EXISTS model TEXT,
+  ADD COLUMN IF NOT EXISTS installation_date DATE,
+  ADD COLUMN IF NOT EXISTS controllable BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS communication_protocol TEXT,
+  ADD COLUMN IF NOT EXISTS telemetry_interval_seconds INTEGER,
+  ADD COLUMN IF NOT EXISTS v2g_capable BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS bidirectional_power_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS enrollment_date DATE,
+  ADD COLUMN IF NOT EXISTS opt_out_date DATE,
+  ADD COLUMN IF NOT EXISTS active_participation BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS total_dispatch_events INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS successful_dispatch_responses INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS response_rate_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_energy_curtailed_kwh NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS total_energy_exported_kwh NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS cumulative_compensation_cad NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS last_payment_date DATE,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_der_vpp ON der_assets(vpp_platform_id);
+CREATE INDEX IF NOT EXISTS idx_der_type ON der_assets(der_type);
+CREATE INDEX IF NOT EXISTS idx_der_province ON der_assets(province_code);
+CREATE INDEX IF NOT EXISTS idx_der_customer_type ON der_assets(customer_type);
+CREATE INDEX IF NOT EXISTS idx_der_active ON der_assets(active_participation) WHERE active_participation = TRUE;
 
 COMMENT ON TABLE der_assets IS 'Individual distributed energy resources enrolled in VPP programs';
 
@@ -256,10 +341,35 @@ CREATE TABLE IF NOT EXISTS vpp_dispatch_events (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_vpp_dispatch_platform ON vpp_dispatch_events(vpp_platform_id);
-CREATE INDEX idx_vpp_dispatch_time ON vpp_dispatch_events(event_start_time);
-CREATE INDEX idx_vpp_dispatch_type ON vpp_dispatch_events(event_type);
-CREATE INDEX idx_vpp_dispatch_status ON vpp_dispatch_events(status);
+ALTER TABLE public.vpp_dispatch_events
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS vpp_platform_id UUID,
+  ADD COLUMN IF NOT EXISTS event_id TEXT,
+  ADD COLUMN IF NOT EXISTS event_type TEXT,
+  ADD COLUMN IF NOT EXISTS event_start_time TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS event_end_time TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS event_duration_minutes INTEGER,
+  ADD COLUMN IF NOT EXISTS target_reduction_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS target_increase_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS invited_assets_count INTEGER,
+  ADD COLUMN IF NOT EXISTS participating_assets_count INTEGER,
+  ADD COLUMN IF NOT EXISTS participation_rate_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS actual_reduction_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS actual_increase_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS performance_accuracy_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS grid_frequency_hz NUMERIC,
+  ADD COLUMN IF NOT EXISTS grid_demand_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS lmp_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_compensation_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS compensation_rate_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Scheduled',
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_vpp_dispatch_platform ON vpp_dispatch_events(vpp_platform_id);
+CREATE INDEX IF NOT EXISTS idx_vpp_dispatch_time ON vpp_dispatch_events(event_start_time);
+CREATE INDEX IF NOT EXISTS idx_vpp_dispatch_type ON vpp_dispatch_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_vpp_dispatch_status ON vpp_dispatch_events(status);
 
 COMMENT ON TABLE vpp_dispatch_events IS 'VPP dispatch events and performance tracking';
 
@@ -322,10 +432,41 @@ CREATE TABLE IF NOT EXISTS demand_response_programs (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_dr_program_operator ON demand_response_programs(program_operator);
-CREATE INDEX idx_dr_program_province ON demand_response_programs(province_code);
-CREATE INDEX idx_dr_program_type ON demand_response_programs(program_type);
-CREATE INDEX idx_dr_program_status ON demand_response_programs(status);
+ALTER TABLE public.demand_response_programs
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS program_name TEXT,
+  ADD COLUMN IF NOT EXISTS operator TEXT,
+  ADD COLUMN IF NOT EXISTS program_operator TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS program_type TEXT,
+  ADD COLUMN IF NOT EXISTS target_customer_segments TEXT[],
+  ADD COLUMN IF NOT EXISTS enrolled_participants INTEGER,
+  ADD COLUMN IF NOT EXISTS target_participants INTEGER,
+  ADD COLUMN IF NOT EXISTS enrolled_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS target_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS participation_incentive_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS per_event_payment_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS equipment_incentive_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS minimum_load_reduction_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS maximum_events_per_year INTEGER,
+  ADD COLUMN IF NOT EXISTS maximum_event_duration_hours NUMERIC,
+  ADD COLUMN IF NOT EXISTS advance_notice_hours NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_load_reduction_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_events_called INTEGER,
+  ADD COLUMN IF NOT EXISTS participant_response_rate_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Active',
+  ADD COLUMN IF NOT EXISTS program_start_date DATE,
+  ADD COLUMN IF NOT EXISTS program_end_date DATE,
+  ADD COLUMN IF NOT EXISTS program_url TEXT,
+  ADD COLUMN IF NOT EXISTS eligibility_requirements TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_dr_program_operator ON demand_response_programs(program_operator);
+CREATE INDEX IF NOT EXISTS idx_dr_program_province ON demand_response_programs(province_code);
+CREATE INDEX IF NOT EXISTS idx_dr_program_type ON demand_response_programs(program_type);
+CREATE INDEX IF NOT EXISTS idx_dr_program_status ON demand_response_programs(status);
 
 COMMENT ON TABLE demand_response_programs IS 'Demand response programs offered by utilities and ISOs';
 
@@ -336,7 +477,7 @@ COMMENT ON TABLE demand_response_programs IS 'Demand response programs offered b
 -- IESO Peak Perks Program (EnergyHub)
 INSERT INTO vpp_platforms (
   id, platform_name,
-  operator_company, platform_type,
+  operator, operator_company, platform_type,
   province_code, iso_participation,
   aggregation_technology, control_mechanism,
   enrolled_assets_count, aggregated_capacity_mw, available_capacity_mw,
@@ -349,7 +490,7 @@ INSERT INTO vpp_platforms (
 ) VALUES (
   'cc0e8400-e29b-41d4-a716-446655440001',
   'IESO Save on Energy Peak Perks',
-  'Independent Electricity System Operator (IESO)', 'Utility VPP Program',
+  'Independent Electricity System Operator (IESO)', 'Independent Electricity System Operator (IESO)', 'Utility VPP Program',
   ARRAY['ON'], ARRAY['IESO'],
   'EnergyHub', 'Smart Thermostat',
   100000, 90, 90,
@@ -360,12 +501,12 @@ INSERT INTO vpp_platforms (
   TRUE, 'Active', '2024-01-01',
   'https://saveonenergy.ca/For-Your-Home/Offers-and-Programs/Peak-Perks',
   'Canada''s largest VPP. 100,000+ homes enrolled in 6 months. Fastest-growing flexibility program in EnergyHub portfolio. Up to 90 MW demand reduction capability.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Edmonton Blatchford VPP (sonnen)
 INSERT INTO vpp_platforms (
   id, platform_name,
-  operator_company, platform_type,
+  operator, operator_company, platform_type,
   province_code, iso_participation,
   control_mechanism,
   enrolled_assets_count, aggregated_capacity_mw, energy_capacity_mwh,
@@ -376,7 +517,7 @@ INSERT INTO vpp_platforms (
 ) VALUES (
   'cc0e8400-e29b-41d4-a716-446655440002',
   'Blatchford Lands Residential VPP',
-  'sonnen / EPCOR', 'Residential DER Aggregator',
+  'sonnen / EPCOR', 'sonnen / EPCOR', 'Residential DER Aggregator',
   ARRAY['AB'], ARRAY['AESO'],
   'Battery Management System',
   8, 0.5, 2.0,
@@ -385,12 +526,12 @@ INSERT INTO vpp_platforms (
   'Active', '2024-01-01',
   'https://www.epcor.com/ca/en/ab/edmonton/operations/electricity/electricity-grid-modernization/virtual-power-plant.html',
   'First battery-based residential VPP in master-planned Canadian community. 8 net-zero homes operational, 18 more by end 2025, target 100 homes by mid-2027. ~500 kW power, 2 MWh storage.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Solartility Alberta VPP
 INSERT INTO vpp_platforms (
   id, platform_name,
-  operator_company, platform_type,
+  operator, operator_company, platform_type,
   province_code, iso_participation,
   control_mechanism,
   battery_storage_count, solar_installations_count,
@@ -401,7 +542,7 @@ INSERT INTO vpp_platforms (
 ) VALUES (
   'cc0e8400-e29b-41d4-a716-446655440003',
   'Solartility Green VPP',
-  'Solartility Inc.', 'Residential DER Aggregator',
+  'Solartility Inc.', 'Solartility Inc.', 'Residential DER Aggregator',
   ARRAY['AB'], ARRAY['AESO'],
   'Mixed',
   NULL, NULL,
@@ -410,14 +551,14 @@ INSERT INTO vpp_platforms (
   TRUE, 'Pilot', '2024-06-01',
   'https://www.solartility.ca/',
   'Alberta''s first wholly green residential VPP. Solar + storage aggregation. Claims up to 30% energy cost savings for customers.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- DEMAND RESPONSE PROGRAMS SEED DATA
 -- ============================================================================
 
 INSERT INTO demand_response_programs (
-  id, program_name, program_operator,
+  id, program_name, operator, program_operator,
   province_code, program_type,
   target_customer_segments,
   enrolled_participants, enrolled_capacity_mw,
@@ -428,7 +569,7 @@ INSERT INTO demand_response_programs (
   program_url, notes
 ) VALUES (
   'dd0e8400-e29b-41d4-a716-446655440001',
-  'IESO Save on Energy Peak Perks', 'IESO',
+  'IESO Save on Energy Peak Perks', 'IESO', 'IESO',
   'ON', 'Residential Smart Thermostat',
   ARRAY['Residential'],
   100000, 90,
@@ -438,7 +579,7 @@ INSERT INTO demand_response_programs (
   'Active', '2024-01-01',
   'https://saveonenergy.ca/For-Your-Home/Offers-and-Programs/Peak-Perks',
   'Free enrollment for smart thermostat owners. $75 annual bill credit. Up to 20 events per year, max 4 hours per event, 1 hour advance notice.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- VIEWS FOR ANALYTICS

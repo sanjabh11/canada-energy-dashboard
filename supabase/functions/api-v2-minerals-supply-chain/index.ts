@@ -5,6 +5,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
+import { loadDashboardSummarySnapshot, saveDashboardSummarySnapshot } from "../_shared/dashboardSnapshots.ts";
 import {
   validateProvince,
   validateEnum,
@@ -15,9 +16,15 @@ import {
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+const VERIFICATION_FALLBACK_TOKEN = Deno.env.get("CEIP_VERIFICATION_FALLBACK_TOKEN") || "";
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 'Rare Earth Elements'] as const;
+const CRITICAL_MINERALS_DASHBOARD_KEY = 'critical_minerals_supply_chain';
+
+function buildVariantKey(args: { mineral: string | null; province: string | null; priorityOnly: boolean }) {
+  return `mineral:${args.mineral || 'all'}|province:${args.province || 'all'}|priority:${args.priorityOnly ? 'true' : 'false'}`;
+}
 
 serve(async (req: Request) => {
   const rl = applyRateLimit(req, 'api-v2-minerals-supply-chain');
@@ -31,11 +38,15 @@ serve(async (req: Request) => {
 
   try {
     const url = new URL(req.url);
+    if (VERIFICATION_FALLBACK_TOKEN && req.headers.get('x-ceip-verify-fallback') === VERIFICATION_FALLBACK_TOKEN) {
+      throw new Error('Forced critical minerals snapshot fallback verification');
+    }
 
     // Validate input parameters
     const mineral = validateEnum(url.searchParams.get('mineral'), PRIORITY_MINERALS, true);
     const province = url.searchParams.get('province') ? validateProvince(url.searchParams.get('province')) : null;
     const priorityOnly = validateBoolean(url.searchParams.get('priority'), false);
+    const variantKey = buildVariantKey({ mineral, province, priorityOnly });
 
     // Fetch critical minerals projects
     let projectsQuery = supabase
@@ -185,13 +196,29 @@ serve(async (req: Request) => {
         supply_chain_gaps: identifyGaps(supplyChain || []),
         investment_opportunities: identifyInvestmentOpportunities(projects || [], evDemand || []),
       },
+      snapshot_type: 'live',
+      snapshot_stored_at: null,
+      is_fallback: false,
       metadata: {
         last_updated: new Date().toISOString(),
         data_source: 'NRCan, Statistics Canada, Canada Energy Dashboard',
         strategic_context: '$6.4B federal investment, 30% exploration tax credit, national security priority',
         priority_minerals: PRIORITY_MINERALS,
+        snapshot_type: 'live',
+        snapshot_stored_at: null,
+        is_fallback: false,
       }
     };
+
+    await saveDashboardSummarySnapshot({
+      dashboardKey: CRITICAL_MINERALS_DASHBOARD_KEY,
+      variantKey,
+      summaryPayload: response,
+      sourceLabel: 'NRCan, Statistics Canada, Canada Energy Dashboard',
+      sourceUpdatedAt: response.metadata.last_updated,
+      isPartial: false,
+      notes: 'Critical minerals supply-chain summary snapshot persisted after successful live assembly.',
+    });
 
     return new Response(JSON.stringify(response), {
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
@@ -199,6 +226,44 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error('Minerals Supply Chain API error:', err);
+    try {
+      const url = new URL(req.url);
+      const mineral = validateEnum(url.searchParams.get('mineral'), PRIORITY_MINERALS, true);
+      const province = url.searchParams.get('province') ? validateProvince(url.searchParams.get('province')) : null;
+      const priorityOnly = validateBoolean(url.searchParams.get('priority'), false);
+      const variantKey = buildVariantKey({ mineral, province, priorityOnly });
+      const snapshot = await loadDashboardSummarySnapshot<any>({
+        dashboardKey: CRITICAL_MINERALS_DASHBOARD_KEY,
+        variantKey,
+      });
+
+      if (snapshot) {
+        const payload = snapshot.summary_payload;
+        const metadata = payload?.metadata ?? {};
+        return new Response(JSON.stringify({
+          ...payload,
+          snapshot_type: 'persisted_snapshot',
+          snapshot_stored_at: snapshot.snapshot_stored_at,
+          is_fallback: true,
+          metadata: {
+            ...metadata,
+            last_updated: snapshot.source_updated_at ?? metadata.last_updated ?? snapshot.snapshot_stored_at,
+            data_source: `${snapshot.source_label || metadata.data_source || 'Critical minerals supply chain'} (persisted snapshot)`,
+            strategic_context: metadata.strategic_context ?? '$6.4B federal investment, 30% exploration tax credit, national security priority',
+            priority_minerals: metadata.priority_minerals ?? PRIORITY_MINERALS,
+            snapshot_type: 'persisted_snapshot',
+            snapshot_stored_at: snapshot.snapshot_stored_at,
+            is_fallback: true,
+          },
+        }), {
+          headers: { 'Content-Type': 'application/json', ...corsHeaders },
+          status: 200,
+        });
+      }
+    } catch (snapshotErr) {
+      console.error('Minerals supply chain snapshot fallback error:', snapshotErr);
+    }
+
     return errorResponse('Failed to fetch critical minerals supply chain data', 500, corsHeaders, err);
   }
 });

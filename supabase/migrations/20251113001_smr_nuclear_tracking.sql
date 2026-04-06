@@ -120,13 +120,67 @@ CREATE TABLE IF NOT EXISTS smr_projects (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_smr_province ON smr_projects(province_code);
-CREATE INDEX idx_smr_status ON smr_projects(status);
-CREATE INDEX idx_smr_operator ON smr_projects(operator);
-CREATE INDEX idx_smr_vendor ON smr_projects(reactor_vendor);
-CREATE INDEX idx_smr_model ON smr_projects(reactor_model);
-CREATE INDEX idx_smr_cnsc_stage ON smr_projects(cnsc_license_stage);
-CREATE INDEX idx_smr_target_date ON smr_projects(target_commercial_operation);
+ALTER TABLE public.smr_projects
+  ADD COLUMN IF NOT EXISTS project_name TEXT,
+  ADD COLUMN IF NOT EXISTS operator TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS location_city TEXT,
+  ADD COLUMN IF NOT EXISTS latitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS longitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS project_type TEXT,
+  ADD COLUMN IF NOT EXISTS reactor_vendor TEXT,
+  ADD COLUMN IF NOT EXISTS reactor_model TEXT,
+  ADD COLUMN IF NOT EXISTS reactor_technology TEXT,
+  ADD COLUMN IF NOT EXISTS capacity_mwe NUMERIC,
+  ADD COLUMN IF NOT EXISTS capacity_mwth NUMERIC,
+  ADD COLUMN IF NOT EXISTS units_planned INTEGER DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS units_operational INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS status TEXT,
+  ADD COLUMN IF NOT EXISTS announcement_date DATE,
+  ADD COLUMN IF NOT EXISTS feasibility_decision_date DATE,
+  ADD COLUMN IF NOT EXISTS construction_start_date DATE,
+  ADD COLUMN IF NOT EXISTS construction_license_date DATE,
+  ADD COLUMN IF NOT EXISTS target_commercial_operation DATE,
+  ADD COLUMN IF NOT EXISTS actual_commercial_operation DATE,
+  ADD COLUMN IF NOT EXISTS cnsc_license_stage TEXT,
+  ADD COLUMN IF NOT EXISTS cnsc_application_date DATE,
+  ADD COLUMN IF NOT EXISTS cnsc_decision_date DATE,
+  ADD COLUMN IF NOT EXISTS cnsc_license_expiry DATE,
+  ADD COLUMN IF NOT EXISTS estimated_capex_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS estimated_opex_cad_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS estimated_lcoe_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS federal_funding_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS provincial_funding_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS interconnection_voltage_kv NUMERIC,
+  ADD COLUMN IF NOT EXISTS transmission_upgrade_required BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS transmission_upgrade_cost_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS hydrogen_cogeneration BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS h2_production_capacity_tonnes_per_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS district_heating BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS district_heating_capacity_mwth NUMERIC,
+  ADD COLUMN IF NOT EXISTS desalination BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS water_source TEXT,
+  ADD COLUMN IF NOT EXISTS water_consumption_m3_per_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS land_area_hectares NUMERIC,
+  ADD COLUMN IF NOT EXISTS construction_jobs INTEGER,
+  ADD COLUMN IF NOT EXISTS permanent_jobs INTEGER,
+  ADD COLUMN IF NOT EXISTS indigenous_partnership BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS indigenous_communities TEXT[],
+  ADD COLUMN IF NOT EXISTS primary_purpose TEXT,
+  ADD COLUMN IF NOT EXISTS replaces_coal_gas BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS supports_ai_datacentres BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS data_source TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS last_update_date DATE,
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_smr_province ON smr_projects(province_code);
+CREATE INDEX IF NOT EXISTS idx_smr_status ON smr_projects(status);
+CREATE INDEX IF NOT EXISTS idx_smr_operator ON smr_projects(operator);
+CREATE INDEX IF NOT EXISTS idx_smr_vendor ON smr_projects(reactor_vendor);
+CREATE INDEX IF NOT EXISTS idx_smr_model ON smr_projects(reactor_model);
+CREATE INDEX IF NOT EXISTS idx_smr_cnsc_stage ON smr_projects(cnsc_license_stage);
+CREATE INDEX IF NOT EXISTS idx_smr_target_date ON smr_projects(target_commercial_operation);
 
 COMMENT ON TABLE smr_projects IS 'Registry of Small Modular Reactor projects across Canada with regulatory, economic, and technical tracking';
 
@@ -171,9 +225,16 @@ CREATE TABLE IF NOT EXISTS smr_regulatory_milestones (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_smr_milestones_project ON smr_regulatory_milestones(project_id);
-CREATE INDEX idx_smr_milestones_date ON smr_regulatory_milestones(milestone_date);
-CREATE INDEX idx_smr_milestones_type ON smr_regulatory_milestones(milestone_type);
+ALTER TABLE public.smr_regulatory_milestones
+  ADD COLUMN IF NOT EXISTS milestone_date DATE,
+  ADD COLUMN IF NOT EXISTS milestone_status TEXT DEFAULT 'Planned',
+  ADD COLUMN IF NOT EXISTS regulatory_decision_document_url TEXT,
+  ADD COLUMN IF NOT EXISTS public_consultation BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_smr_milestones_project ON smr_regulatory_milestones(project_id);
+CREATE INDEX IF NOT EXISTS idx_smr_milestones_date ON smr_regulatory_milestones(milestone_date);
+CREATE INDEX IF NOT EXISTS idx_smr_milestones_type ON smr_regulatory_milestones(milestone_type);
 
 COMMENT ON TABLE smr_regulatory_milestones IS 'Timeline of regulatory approvals and project milestones for SMR projects';
 
@@ -223,9 +284,35 @@ CREATE TABLE IF NOT EXISTS smr_technology_vendors (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_smr_vendor_name ON smr_technology_vendors(vendor_name);
-CREATE INDEX idx_smr_vendor_country ON smr_technology_vendors(vendor_country);
-CREATE INDEX idx_smr_vendor_cnsc_status ON smr_technology_vendors(cnsc_vdr_status);
+ALTER TABLE public.smr_technology_vendors
+  ADD COLUMN IF NOT EXISTS vendor_country TEXT,
+  ADD COLUMN IF NOT EXISTS reactor_design TEXT,
+  ADD COLUMN IF NOT EXISTS reactor_generation TEXT,
+  ADD COLUMN IF NOT EXISTS technology_type TEXT,
+  ADD COLUMN IF NOT EXISTS capacity_mwe NUMERIC,
+  ADD COLUMN IF NOT EXISTS modularity TEXT,
+  ADD COLUMN IF NOT EXISTS passive_safety BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS walk_away_safe BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS core_damage_frequency_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS fuel_type TEXT,
+  ADD COLUMN IF NOT EXISTS fuel_enrichment_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS refueling_frequency_months INTEGER,
+  ADD COLUMN IF NOT EXISTS cnsc_vdr_status TEXT,
+  ADD COLUMN IF NOT EXISTS cnsc_vdr_completion_date DATE,
+  ADD COLUMN IF NOT EXISTS units_operating_globally INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS units_under_construction_globally INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS first_of_kind_location TEXT,
+  ADD COLUMN IF NOT EXISTS first_of_kind_operation_date DATE,
+  ADD COLUMN IF NOT EXISTS design_maturity TEXT,
+  ADD COLUMN IF NOT EXISTS technology_readiness_level INTEGER,
+  ADD COLUMN IF NOT EXISTS website_url TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_smr_vendor_name ON smr_technology_vendors(vendor_name);
+CREATE INDEX IF NOT EXISTS idx_smr_vendor_country ON smr_technology_vendors(vendor_country);
+CREATE INDEX IF NOT EXISTS idx_smr_vendor_cnsc_status ON smr_technology_vendors(cnsc_vdr_status);
 
 COMMENT ON TABLE smr_technology_vendors IS 'Registry of SMR technology vendors and reactor designs with Canadian regulatory status';
 
@@ -276,9 +363,35 @@ CREATE TABLE IF NOT EXISTS smr_economics (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_smr_econ_project ON smr_economics(project_id);
-CREATE INDEX idx_smr_econ_date ON smr_economics(estimate_date);
-CREATE INDEX idx_smr_econ_type ON smr_economics(estimate_type);
+ALTER TABLE public.smr_economics
+  ADD COLUMN IF NOT EXISTS estimate_date DATE,
+  ADD COLUMN IF NOT EXISTS estimate_type TEXT DEFAULT 'Pre-Feasibility',
+  ADD COLUMN IF NOT EXISTS engineering_design_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS equipment_procurement_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS construction_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS commissioning_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS financing_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS contingency_cost NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_capex NUMERIC,
+  ADD COLUMN IF NOT EXISTS capex_per_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS fuel_cost_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS operations_cost_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS maintenance_cost_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS decommissioning_fund_contribution_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_opex_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS capacity_factor_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS availability_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS lcoe_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS electricity_revenue_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS hydrogen_revenue_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS heat_revenue_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS carbon_credit_revenue_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS capacity_payment_revenue_per_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_smr_econ_project ON smr_economics(project_id);
+CREATE INDEX IF NOT EXISTS idx_smr_econ_date ON smr_economics(estimate_date);
+CREATE INDEX IF NOT EXISTS idx_smr_econ_type ON smr_economics(estimate_type);
 
 COMMENT ON TABLE smr_economics IS 'Economic analysis and cost tracking for SMR projects';
 
@@ -314,7 +427,7 @@ INSERT INTO smr_projects (
   'OPG, CNSC, Canadian Nuclear Association',
   'First grid-scale SMR construction license in Canada. CNSC issued Construction License on April 4, 2025 valid until March 31, 2035. GE Hitachi awarded RPV manufacturing contract January 2025. Up to 4 units planned.',
   '2025-04-04'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- SaskPower SMR (BWRX-300) - Feasibility Stage
 INSERT INTO smr_projects (
@@ -338,7 +451,7 @@ INSERT INTO smr_projects (
   'SaskPower, GE Hitachi',
   'SaskPower selected BWRX-300 in June 2022. Fleet-based approach with OPG. Decision on proceeding expected 2029. Agreement signed with GEH in 2024 to advance planning and licensing.',
   '2024-05-01'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- NB Power Point Lepreau SMR - Exploratory
 INSERT INTO smr_projects (
@@ -362,7 +475,7 @@ INSERT INTO smr_projects (
   'NB Power, Atlantic Canada Opportunities Agency',
   'NB Power exploring SMR options adjacent to existing Point Lepreau CANDU station. Vendor selection pending.',
   '2024-01-01'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- Add OPG Darlington regulatory milestones
 INSERT INTO smr_regulatory_milestones (project_id, milestone_type, milestone_date, milestone_status, notes) VALUES
@@ -394,7 +507,7 @@ INSERT INTO smr_technology_vendors (
   'Construction-Ready', 8,
   'https://www.gevernova.com/nuclear/bwrx-300',
   'Completed CNSC VDR. Under construction at OPG Darlington (Canada) and Doosan (Poland). Scaled-down version of ESBWR.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 INSERT INTO smr_technology_vendors (
   id, vendor_name, vendor_country, reactor_design, reactor_generation, technology_type,
@@ -414,7 +527,7 @@ INSERT INTO smr_technology_vendors (
   'Basic Design', 6,
   'https://www.rolls-royce-smr.com/',
   'UK domestic design. Not pursuing Canadian market. Focus on UK and Europe.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- VIEWS FOR ANALYTICS

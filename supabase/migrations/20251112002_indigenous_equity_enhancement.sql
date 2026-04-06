@@ -43,10 +43,10 @@ CREATE TABLE IF NOT EXISTS indigenous_equity_ownership (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_indigenous_equity_community ON indigenous_equity_ownership(indigenous_community);
-CREATE INDEX idx_indigenous_equity_type ON indigenous_equity_ownership(project_type);
-CREATE INDEX idx_indigenous_equity_province ON indigenous_equity_ownership(province);
-CREATE INDEX idx_indigenous_equity_status ON indigenous_equity_ownership(status);
+CREATE INDEX IF NOT EXISTS idx_indigenous_equity_community ON indigenous_equity_ownership(indigenous_community);
+CREATE INDEX IF NOT EXISTS idx_indigenous_equity_type ON indigenous_equity_ownership(project_type);
+CREATE INDEX IF NOT EXISTS idx_indigenous_equity_province ON indigenous_equity_ownership(province);
+CREATE INDEX IF NOT EXISTS idx_indigenous_equity_status ON indigenous_equity_ownership(status);
 
 COMMENT ON TABLE indigenous_equity_ownership IS 'Indigenous community equity ownership in energy projects';
 
@@ -93,10 +93,10 @@ CREATE TABLE IF NOT EXISTS indigenous_revenue_agreements (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_indigenous_agreements_community ON indigenous_revenue_agreements(indigenous_community);
-CREATE INDEX idx_indigenous_agreements_type ON indigenous_revenue_agreements(agreement_type);
-CREATE INDEX idx_indigenous_agreements_status ON indigenous_revenue_agreements(status);
-CREATE INDEX idx_indigenous_agreements_operator ON indigenous_revenue_agreements(operator);
+CREATE INDEX IF NOT EXISTS idx_indigenous_agreements_community ON indigenous_revenue_agreements(indigenous_community);
+CREATE INDEX IF NOT EXISTS idx_indigenous_agreements_type ON indigenous_revenue_agreements(agreement_type);
+CREATE INDEX IF NOT EXISTS idx_indigenous_agreements_status ON indigenous_revenue_agreements(status);
+CREATE INDEX IF NOT EXISTS idx_indigenous_agreements_operator ON indigenous_revenue_agreements(operator);
 
 COMMENT ON TABLE indigenous_revenue_agreements IS 'Impact Benefit Agreements and revenue-sharing arrangements with Indigenous communities';
 
@@ -148,8 +148,8 @@ CREATE TABLE IF NOT EXISTS indigenous_economic_impact (
   UNIQUE(community_name, year)
 );
 
-CREATE INDEX idx_indigenous_impact_community ON indigenous_economic_impact(community_name);
-CREATE INDEX idx_indigenous_impact_year ON indigenous_economic_impact(year DESC);
+CREATE INDEX IF NOT EXISTS idx_indigenous_impact_community ON indigenous_economic_impact(community_name);
+CREATE INDEX IF NOT EXISTS idx_indigenous_impact_year ON indigenous_economic_impact(year DESC);
 
 COMMENT ON TABLE indigenous_economic_impact IS 'Annual economic impact metrics for Indigenous communities from energy sector participation';
 
@@ -168,7 +168,8 @@ VALUES
 
   ('lumos-solar', 'Lumos Clean Energy Solar Projects', 'Solar', 'Multiple Saskatchewan First Nations', 'Various', 100.0, 'Cooperative', '2019-01-01', 15000000, 10, 'Southern Saskatchewan', 'SK', 1200000, 6000000, 12, TRUE, 'Active', 'Lumos Energy Annual Reports', 'Indigenous-owned renewable energy company. Multiple community solar projects. 12 First Nations shareholders.'),
 
-  ('buffalo-atlee', 'Buffalo Atlee Wind Project', 'Wind', 'Buffalo Lake Métis Settlement', 'Buffalo Lake Métis Settlement', 25.0, 'Partnership', '2021-05-01', 12000000, 200, 'Central Alberta', 'AB', 1800000, 3600000, 2, FALSE, 'Active', 'Capital Power Partnership Agreement', '25% equity partnership with Capital Power. 200 MW wind farm. First Métis Settlement equity stake in wind energy in Canada.');
+  ('buffalo-atlee', 'Buffalo Atlee Wind Project', 'Wind', 'Buffalo Lake Métis Settlement', 'Buffalo Lake Métis Settlement', 25.0, 'Partnership', '2021-05-01', 12000000, 200, 'Central Alberta', 'AB', 1800000, 3600000, 2, FALSE, 'Active', 'Capital Power Partnership Agreement', '25% equity partnership with Capital Power. 200 MW wind farm. First Métis Settlement equity stake in wind energy in Canada.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: REVENUE AGREEMENTS (IBAs)
@@ -182,7 +183,8 @@ VALUES
 
   ('neskantaga-agreement', 'Wataynikaneyap Community Benefits Agreement', 'Wataynikaneyap Transmission', 'Neskantaga First Nation', 'Wataynikaneyap Power', 'Impact Benefit Agreement', '2018-07-01', '2078-07-01', NULL, 500000, 30000000, 5000000, '2024-08-01', 500000, 45, 3000000, 60, 55, 'Active', 'Wataynikaneyap IBA Documentation', 'IBA for transmission line through traditional territory. Annual payments: $500K. Jobs: 45 during construction. Training: electrical, heavy equipment. Procurement: 55% local.'),
 
-  ('site-c-treaty8-agreement', 'Site C Clean Energy Project Agreement', 'Site C Dam', 'Treaty 8 First Nations (West Moberly, Prophet River)', 'BC Hydro', 'Revenue Sharing', '2020-11-01', '2120-11-01', 2.5, NULL, 65000000, 8000000, '2024-07-01', 1500000, 120, 12000000, 50, 45, 'Active', 'BC Hydro Site C Agreements', '2.5% revenue share over 100 years. Total estimated value: $65M. Jobs: 120. Training: construction, environmental monitoring. Procurement target: 50%.');
+  ('site-c-treaty8-agreement', 'Site C Clean Energy Project Agreement', 'Site C Dam', 'Treaty 8 First Nations (West Moberly, Prophet River)', 'BC Hydro', 'Revenue Sharing', '2020-11-01', '2120-11-01', 2.5, NULL, 65000000, 8000000, '2024-07-01', 1500000, 120, 12000000, 50, 45, 'Active', 'BC Hydro Site C Agreements', '2.5% revenue share over 100 years. Total estimated value: $65M. Jobs: 120. Training: construction, environmental monitoring. Procurement target: 50%.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: ECONOMIC IMPACT (Sample Years)
@@ -193,25 +195,29 @@ INSERT INTO indigenous_economic_impact (community_name, year, direct_jobs, indir
 VALUES
   ('Ermineskin Cree Nation', 2023, 35, 65, 120, 15, 8500000, 12, 18500000, 2500000, 0, 0, 45000000, 5000000, 12000000, 8, 45, 75, 'Ermineskin Economic Development Annual Report 2023', 'Makwa Solar (100% owned) generating $2.5M annual dividends. Community investment fund used for education (3 scholarships), housing (15 units), and small business support (12 loans).'),
 
-  ('Ermineskin Cree Nation', 2022, 32, 60, 110, 12, 7800000, 10, 16200000, 2300000, 0, 0, 38000000, 4200000, 10000000, 6, 38, 68, 'Ermineskin Economic Development Annual Report 2022', 'Year 2 of Makwa Solar operations. Increased procurement from local Indigenous contractors.');
+  ('Ermineskin Cree Nation', 2022, 32, 60, 110, 12, 7800000, 10, 16200000, 2300000, 0, 0, 38000000, 4200000, 10000000, 6, 38, 68, 'Ermineskin Economic Development Annual Report 2022', 'Year 2 of Makwa Solar operations. Increased procurement from local Indigenous contractors.')
+ON CONFLICT DO NOTHING;
 
 -- Duncan's First Nation (2023)
 INSERT INTO indigenous_economic_impact (community_name, year, direct_jobs, indirect_jobs, training_participants, local_procurement_value_cad, total_revenue_from_energy_projects_cad, equity_dividends_cad, community_investment_fund_balance_cad, education_investment_cad, data_source)
 VALUES
   ('Duncan''s First Nation', 2023, 18, 35, 45, 4500000, 9500000, 3500000, 22000000, 2500000, 'Duncan''s First Nation Annual Report 2023'),
-  ('Duncan''s First Nation', 2022, 16, 32, 40, 4000000, 8800000, 3200000, 18500000, 2000000, 'Duncan''s First Nation Annual Report 2022');
+  ('Duncan''s First Nation', 2022, 16, 32, 40, 4000000, 8800000, 3200000, 18500000, 2000000, 'Duncan''s First Nation Annual Report 2022')
+ON CONFLICT DO NOTHING;
 
 -- Treaty 9 Communities (Wataynikaneyap - 2023)
 INSERT INTO indigenous_economic_impact (community_name, year, direct_jobs, indirect_jobs, training_participants, apprenticeships, local_procurement_value_cad, indigenous_owned_contractors, total_revenue_from_energy_projects_cad, equity_dividends_cad, iba_payments_cad, community_investment_fund_balance_cad, education_investment_cad, infrastructure_investment_cad, business_development_programs, technical_training_participants, data_source, notes)
 VALUES
   ('Treaty 9 Communities (24 First Nations)', 2023, 450, 850, 380, 95, 125000000, 45, 285000000, 15000000, 12000000, 180000000, 35000000, 85000000, 24, 220, 'Wataynikaneyap Power Annual Report 2023', 'Year 5 of construction. Peak employment: 450 direct jobs. 24 First Nations sharing equity returns. Community investment funds allocated: Education $35M, Infrastructure $85M (roads, water, broadband).'),
 
-  ('Treaty 9 Communities (24 First Nations)', 2022, 420, 800, 350, 88, 110000000, 38, 260000000, 12000000, 10000000, 150000000, 28000000, 65000000, 22, 200, 'Wataynikaneyap Power Annual Report 2022', 'Year 4 of construction. Increasing Indigenous contractor participation.');
+  ('Treaty 9 Communities (24 First Nations)', 2022, 420, 800, 350, 88, 110000000, 38, 260000000, 12000000, 10000000, 150000000, 28000000, 65000000, 22, 200, 'Wataynikaneyap Power Annual Report 2022', 'Year 4 of construction. Increasing Indigenous contractor participation.')
+ON CONFLICT DO NOTHING;
 
 -- Keeyask Cree Nations (2023)
 INSERT INTO indigenous_economic_impact (community_name, year, direct_jobs, indirect_jobs, training_participants, apprenticeships, local_procurement_value_cad, total_revenue_from_energy_projects_cad, equity_dividends_cad, royalty_payments_cad, community_investment_fund_balance_cad, education_investment_cad, infrastructure_investment_cad, housing_investment_cad, data_source, notes)
 VALUES
-  ('Keeyask Cree Nations (4 Nations)', 2023, 100, 180, 85, 25, 45000000, 125000000, 35000000, 25000000, 320000000, 28000000, 75000000, 45000000, 'Keeyask Partnership Annual Report 2023', 'First full year of operations. 51% Indigenous ownership generating significant returns. Community investments: Housing (90 units), education (scholarships), infrastructure (roads, water treatment).');
+  ('Keeyask Cree Nations (4 Nations)', 2023, 100, 180, 85, 25, 45000000, 125000000, 35000000, 25000000, 320000000, 28000000, 75000000, 45000000, 'Keeyask Partnership Annual Report 2023', 'First full year of operations. 51% Indigenous ownership generating significant returns. Community investments: Housing (90 units), education (scholarships), infrastructure (roads, water treatment).')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- AGGREGATED VIEWS FOR REPORTING

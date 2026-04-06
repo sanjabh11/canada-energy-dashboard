@@ -17,6 +17,14 @@ import { ENDPOINTS } from '../lib/constants';
 import { AcceptableFeatureInfo } from './FeatureStatusBadge';
 import { HelpButton } from './HelpButton';
 import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
+
+// Snapshot key for browser cache persistence
+const COMPLIANCE_SNAPSHOT_KEY = 'dashboard_snapshot_compliance';
+
+// Data source tracking type
+type DataSourceType = 'live' | 'mock' | 'cached' | 'unavailable';
 
 interface ComplianceRecord {
   id: string;
@@ -181,7 +189,8 @@ export const ComplianceDashboard: React.FC = () => {
   const [remediationAdvice, setRemediationAdvice] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [loadingAdvice, setLoadingAdvice] = useState(false);
-  const [usingMockData, setUsingMockData] = useState(true);
+  const [dataSource, setDataSource] = useState<DataSourceType>('mock');
+  const [dataSourceLabel, setDataSourceLabel] = useState<string>('Sample compliance data');
   const [selectedProject, setSelectedProject] = useState<string>('all');
   const [filterSeverity, setFilterSeverity] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<string>('overview');
@@ -190,28 +199,102 @@ export const ComplianceDashboard: React.FC = () => {
   const loadComplianceData = useCallback(async (projectFilter: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Try to load from API first
+      const [projectsResponse, violationsResponse, auditResponse, alertsResponse] = await Promise.all([
+        fetch('/api/compliance/projects'),
+        fetch('/api/compliance/violations'),
+        fetch('/api/compliance/audit'),
+        fetch('/api/compliance/alerts')
+      ]);
 
-      setData(prev => {
-        const projectsForScore = projectFilter === 'all'
-          ? prev.projects
-          : prev.projects.filter(project => project.id === projectFilter);
+      if (projectsResponse.ok && violationsResponse.ok && auditResponse.ok) {
+        const projectsData = await projectsResponse.json();
+        const violationsData = await violationsResponse.json();
+        const auditData = await auditResponse.json();
+        const alertsData = alertsResponse.ok ? await alertsResponse.json() : [];
 
-        const complianceScores = projectsForScore.map(project => ({
-          project: project.projectName,
-          current: project.complianceScore,
-          month1: Math.max(0, project.complianceScore - (Math.random() * 10)),
-          month2: Math.max(0, project.complianceScore + (Math.random() - 0.5) * 15),
-          month3: project.complianceScore
-        }));
+        setData({
+          projects: projectsData,
+          violations: violationsData,
+          auditLog: auditData,
+          alerts: alertsData
+        });
+        setDataSource('live');
+        setDataSourceLabel('Environment Canada & Provincial Regulator APIs');
 
-        return {
-          ...prev,
-          complianceScores
-        } as any;
-      });
+        // Save to cache for offline use
+        saveDashboardSnapshot(COMPLIANCE_SNAPSHOT_KEY, {
+          projects: projectsData,
+          violations: violationsData,
+          auditLog: auditData,
+          alerts: alertsData,
+          metadata: {
+            data_source: 'Environment Canada & Provincial Regulator APIs',
+            last_updated: new Date().toISOString(),
+            snapshot_type: 'live',
+          },
+        });
+      } else {
+        // Try to load from browser cache
+        const cachedSnapshot = loadDashboardSnapshot<{
+          projects: typeof mockComplianceData;
+          violations: typeof mockViolations;
+          auditLog: typeof mockAuditLog;
+          alerts: typeof mockAlerts;
+          metadata?: {
+            data_source?: string;
+            last_updated?: string;
+          };
+        }>(COMPLIANCE_SNAPSHOT_KEY);
+
+        if (cachedSnapshot?.payload) {
+          setData({
+            projects: cachedSnapshot.payload.projects || mockComplianceData,
+            violations: cachedSnapshot.payload.violations || mockViolations,
+            auditLog: cachedSnapshot.payload.auditLog || mockAuditLog,
+            alerts: cachedSnapshot.payload.alerts || mockAlerts
+          });
+          setDataSource('cached');
+          setDataSourceLabel(cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data');
+        } else {
+          // Fall back to mock data
+          setData({
+            projects: mockComplianceData,
+            violations: mockViolations,
+            auditLog: mockAuditLog,
+            alerts: mockAlerts
+          });
+          setDataSource('mock');
+          setDataSourceLabel('Sample compliance data');
+        }
+      }
     } catch (error) {
       console.error('Error loading compliance data:', error);
+      // Try cache on error
+      const cachedSnapshot = loadDashboardSnapshot<{
+        projects: typeof mockComplianceData;
+        violations: typeof mockViolations;
+        auditLog: typeof mockAuditLog;
+        alerts: typeof mockAlerts;
+        metadata?: {
+          data_source?: string;
+          last_updated?: string;
+        };
+      }>(COMPLIANCE_SNAPSHOT_KEY);
+
+      if (cachedSnapshot?.payload) {
+        setData({
+          projects: cachedSnapshot.payload.projects || mockComplianceData,
+          violations: cachedSnapshot.payload.violations || mockViolations,
+          auditLog: cachedSnapshot.payload.auditLog || mockAuditLog,
+          alerts: cachedSnapshot.payload.alerts || mockAlerts
+        });
+        setDataSource('cached');
+        setDataSourceLabel(cachedSnapshot.payload.metadata?.data_source || 'Cached compliance data');
+      } else {
+        setDataSource('mock');
+        setDataSourceLabel('Sample compliance data');
+      }
     } finally {
       setLoading(false);
     }
@@ -311,12 +394,20 @@ export const ComplianceDashboard: React.FC = () => {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-electric"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Feature Info */}
       <AcceptableFeatureInfo featureId="compliance_monitoring" />
 
-      {usingMockData && (
+      {dataSource === 'mock' && (
         <DataTrustNotice
           mode="mock"
           title="Illustrative compliance data in use"
@@ -324,111 +415,22 @@ export const ComplianceDashboard: React.FC = () => {
         />
       )}
 
-      {/* Dashboard Header */}
-        <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="bg-secondary0 p-3 rounded-lg">
-              <Shield className="h-8 w-8 text-white" />
-            </div>
-            <div className="flex items-center gap-3 flex-1">
-              <div className="flex-1">
-                <h1 className="text-2xl font-bold text-primary">Regulatory Compliance Monitoring</h1>
-                <p className="text-secondary">Centralized compliance tracking and audit trails for environmental and safety regulations</p>
-              </div>
-              <HelpButton id="compliance.overview" />
-            </div>
-          </div>
-
-          {/* Data Source Notice */}
-          <div className="bg-secondary border border-blue-200 rounded-lg p-3 mb-4">
-            <div className="flex items-start">
-              <Database className="h-4 w-4 text-electric mt-0.5 mr-2 flex-shrink-0" />
-              <div>
-                <p className="text-electric text-sm">
-                  <strong>Data Source:</strong> Currently using enhanced mock data for demonstration.
-                  Production deployment will integrate with Environment Canada and Provincial regulator APIs.
-                </p>
-              </div>
-            </div>
-          </div>
-
-        {/* Key Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <CheckCircle className="h-6 w-6 text-success" />
-            <div>
-              <div className="text-sm text-success font-medium">Compliant Projects</div>
-              <div className="text-xl font-bold text-green-800">
-                {data.projects.filter(p => p.complianceScore > 80).length}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <XCircle className="h-6 w-6 text-danger" />
-            <div>
-              <div className="text-sm text-danger font-medium">Critical Violations</div>
-              <div className="text-xl font-bold text-red-800">
-                {data.violations.filter(v => v.severity === 'critical').length}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <FileText className="h-6 w-6 text-electric" />
-            <div>
-              <div className="text-sm text-electric font-medium">Active Audits</div>
-              <div className="text-xl font-bold text-blue-800">3</div>
-            </div>
-          </div>
-
-          <div className="flex items-center space-x-3 p-4 bg-secondary rounded-lg">
-            <Clock className="h-6 w-6 text-electric" />
-            <div>
-              <div className="text-sm text-electric font-medium">Avg Resolution Time</div>
-              <div className="text-xl font-bold text-purple-800">12 days</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Active Alerts */}
-      {data.alerts.filter(a => a.status === 'active').length > 0 && (
-        <div className="card p-6 shadow-sm border border-[var(--border-subtle)]">
-          <div className="flex items-center space-x-2 mb-4">
-            <Bell className="h-5 w-5 text-red-500" />
-            <h2 className="text-lg font-semibold text-primary">Active Violation Alerts</h2>
-            <span className="bg-red-100 text-danger px-2 py-1 rounded-full text-sm">
-              {data.alerts.filter(a => a.status === 'active').length} new
-            </span>
-          </div>
-          <div className="space-y-3">
-            {data.alerts.filter(a => a.status === 'active').map((alert) => (
-              <div key={alert.id} className="p-4 rounded-lg border border-red-200 bg-secondary">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    {getSeverityIcon(alert.severity)}
-                    <div className="flex-1">
-                      <div className="font-semibold text-primary">
-                        {data.violations.find(v => v.ruleId === alert.ruleId)?.ruleName}
-                      </div>
-                      <div className="text-sm text-secondary mt-1">{alert.message}</div>
-                      <div className="text-xs text-tertiary mt-2">
-                        {new Date(alert.timestamp).toLocaleString()}
-                      </div>
-                    </div>
-                  </div>
-                  <button className="text-sm px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 transition-colors">
-                    Acknowledge
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+      {dataSource === 'cached' && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Cached compliance data in use"
+          message="This compliance view is restored from the last successful cached snapshot stored in this browser. Live regulator feeds are currently unavailable. Records reflect the last known state and may be stale."
+        />
       )}
 
-      {/* Main Dashboard Content */}
+      {/* Data Freshness Indicator */}
+      <div className="flex justify-end">
+        <DataFreshnessBadge
+          timestamp={new Date()}
+          status={dataSource === 'live' ? 'live' : dataSource === 'cached' ? 'stale' : 'demo'}
+          source={dataSourceLabel}
+        />
+      </div>
       <div className="card border border-[var(--border-subtle)] p-6">
         {/* Tabs */}
         <div className="flex space-x-4 mb-6 border-b border-[var(--border-subtle)]">

@@ -36,8 +36,8 @@ CREATE TABLE IF NOT EXISTS provincial_ghg_emissions (
   CONSTRAINT unique_provincial_emissions UNIQUE (province_code, reporting_year, reporting_quarter)
 );
 
-CREATE INDEX idx_provincial_emissions_province ON provincial_ghg_emissions(province_code);
-CREATE INDEX idx_provincial_emissions_year ON provincial_ghg_emissions(reporting_year);
+CREATE INDEX IF NOT EXISTS idx_provincial_emissions_province ON provincial_ghg_emissions(province_code);
+CREATE INDEX IF NOT EXISTS idx_provincial_emissions_year ON provincial_ghg_emissions(reporting_year);
 
 -- =============================================================================
 -- 2. GENERATION SOURCE EMISSIONS TABLE
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS generation_source_emissions (
   CONSTRAINT unique_generation_source_emissions UNIQUE (fuel_type, province_code)
 );
 
-CREATE INDEX idx_generation_emissions_fuel ON generation_source_emissions(fuel_type);
+CREATE INDEX IF NOT EXISTS idx_generation_emissions_fuel ON generation_source_emissions(fuel_type);
 
 -- =============================================================================
 -- 3. CARBON TARGETS TABLE
@@ -106,8 +106,8 @@ CREATE TABLE IF NOT EXISTS carbon_reduction_targets (
   CONSTRAINT unique_carbon_target UNIQUE (jurisdiction, target_year, target_type)
 );
 
-CREATE INDEX idx_carbon_targets_jurisdiction ON carbon_reduction_targets(jurisdiction);
-CREATE INDEX idx_carbon_targets_year ON carbon_reduction_targets(target_year);
+CREATE INDEX IF NOT EXISTS idx_carbon_targets_jurisdiction ON carbon_reduction_targets(jurisdiction);
+CREATE INDEX IF NOT EXISTS idx_carbon_targets_year ON carbon_reduction_targets(target_year);
 
 -- =============================================================================
 -- 4. AVOIDED EMISSIONS TABLE (Credits from Renewables/Nuclear)
@@ -143,8 +143,8 @@ CREATE TABLE IF NOT EXISTS avoided_emissions (
   CONSTRAINT unique_avoided_emissions UNIQUE (province_code, reporting_year)
 );
 
-CREATE INDEX idx_avoided_emissions_province ON avoided_emissions(province_code);
-CREATE INDEX idx_avoided_emissions_year ON avoided_emissions(reporting_year);
+CREATE INDEX IF NOT EXISTS idx_avoided_emissions_province ON avoided_emissions(province_code);
+CREATE INDEX IF NOT EXISTS idx_avoided_emissions_year ON avoided_emissions(reporting_year);
 
 -- =============================================================================
 -- 5. MATERIALIZED VIEW: Provincial Emissions Summary
@@ -168,7 +168,7 @@ LEFT JOIN avoided_emissions ae ON pge.province_code = ae.province_code AND pge.r
 WHERE pge.reporting_quarter = 'Annual'
 ORDER BY pge.reporting_year DESC, pge.total_emissions_tco2e DESC;
 
-CREATE UNIQUE INDEX idx_provincial_emissions_summary ON provincial_emissions_summary(province_code, reporting_year);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_provincial_emissions_summary ON provincial_emissions_summary(province_code, reporting_year);
 
 -- =============================================================================
 -- SEED DATA
@@ -185,7 +185,8 @@ INSERT INTO provincial_ghg_emissions (province_code, reporting_year, reporting_q
 ('NS', 2023, 'Annual', 6500000, 16000000, 550, 1030281, 15.5),
 ('NB', 2023, 'Annual', 4000000, 14000000, 290, 842725, 16.6),
 ('NL', 2023, 'Annual', 1800000, 10500000, 85, 538605, 19.5),
-('PE', 2023, 'Annual', 350000, 2000000, 45, 175853, 11.4);
+('PE', 2023, 'Annual', 350000, 2000000, 45, 175853, 11.4)
+ON CONFLICT DO NOTHING;
 
 -- Generation Source Emissions Factors (IPCC 2021)
 INSERT INTO generation_source_emissions (fuel_type, lifecycle_emissions_gco2_per_kwh, direct_emissions_gco2_per_kwh, methodology) VALUES
@@ -198,7 +199,8 @@ INSERT INTO generation_source_emissions (fuel_type, lifecycle_emissions_gco2_per
 ('Solar', 48, 0, 'IPCC 2021 Guidelines - Lifecycle PV'),
 ('Biomass', 230, 0, 'IPCC 2021 Guidelines - Sustainable'),
 ('Geothermal', 38, 0, 'IPCC 2021 Guidelines'),
-('Tidal', 15, 0, 'IPCC 2021 Guidelines');
+('Tidal', 15, 0, 'IPCC 2021 Guidelines')
+ON CONFLICT DO NOTHING;
 
 -- Carbon Reduction Targets
 INSERT INTO carbon_reduction_targets (jurisdiction, target_year, target_type, baseline_year, baseline_emissions_mtco2e, target_emissions_mtco2e, reduction_percentage, policy_instrument, legal_status) VALUES
@@ -207,14 +209,16 @@ INSERT INTO carbon_reduction_targets (jurisdiction, target_year, target_type, ba
 ('ON', 2030, 'Percentage Reduction', 2005, 200, 134, 30, 'Ontario Climate Plan', 'Policy Commitment'),
 ('QC', 2030, 'Percentage Reduction', 1990, 89, 62, 37.5, 'Quebec 2030 Plan', 'Legislated'),
 ('BC', 2030, 'Percentage Reduction', 2007, 68, 27, 40, 'CleanBC Plan', 'Legislated'),
-('AB', 2050, 'Net Zero', 2005, 280, 0, 100, 'Alberta Emissions Reduction Plan', 'Policy Commitment');
+('AB', 2050, 'Net Zero', 2005, 280, 0, 100, 'Alberta Emissions Reduction Plan', 'Policy Commitment')
+ON CONFLICT DO NOTHING;
 
 -- Avoided Emissions (2023 estimates)
 INSERT INTO avoided_emissions (province_code, reporting_year, clean_generation_gwh, total_avoided_tco2e, counterfactual_grid_intensity_gco2_per_kwh, carbon_price_cad_per_tco2e) VALUES
 ('ON', 2023, 135000, 78000000, 600, 65),
 ('QC', 2023, 195000, 113000000, 600, 65),
 ('BC', 2023, 78000, 45000000, 600, 65),
-('MB', 2023, 35000, 20000000, 600, 65);
+('MB', 2023, 35000, 20000000, 600, 65)
+ON CONFLICT DO NOTHING;
 
 -- Refresh materialized view
 REFRESH MATERIALIZED VIEW provincial_emissions_summary;

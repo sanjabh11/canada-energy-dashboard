@@ -30,8 +30,28 @@ CREATE TABLE IF NOT EXISTS alberta_grid_prices (
   UNIQUE(timestamp)
 );
 
-CREATE INDEX idx_alberta_prices_timestamp ON alberta_grid_prices(timestamp DESC);
-CREATE INDEX idx_alberta_prices_pool_price ON alberta_grid_prices(pool_price_cad_per_mwh);
+ALTER TABLE public.alberta_grid_prices
+  ADD COLUMN IF NOT EXISTS energy_price_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS ancillary_services_price_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS market_demand_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS data_quality TEXT;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'alberta_grid_prices_data_quality_check'
+      AND conrelid = 'public.alberta_grid_prices'::regclass
+  ) THEN
+    ALTER TABLE public.alberta_grid_prices
+      ADD CONSTRAINT alberta_grid_prices_data_quality_check
+      CHECK (data_quality IN ('Real-time', 'Forecast', 'Backfilled', 'Estimated'));
+  END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_alberta_prices_timestamp ON alberta_grid_prices(timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_alberta_prices_pool_price ON alberta_grid_prices(pool_price_cad_per_mwh);
 
 COMMENT ON TABLE alberta_grid_prices IS 'AESO real-time pool prices for Alberta electricity market';
 

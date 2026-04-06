@@ -57,6 +57,12 @@ export interface DashboardData {
     phase1_remaining_mw: number;
   };
   power_consumption: any[];
+  metadata?: {
+    province?: string;
+    last_updated?: string;
+    data_source?: string;
+    strategic_context?: string;
+  };
 }
 
 export interface QueueData {
@@ -86,6 +92,10 @@ export interface QueueData {
       queue_to_peak_ratio: number;
       message: string;
     };
+  };
+  metadata?: {
+    last_updated?: string;
+    data_source?: string;
   };
 }
 
@@ -125,6 +135,10 @@ export interface MetricCardProps {
   value: string | number;
   subtitle: string;
   color: 'blue' | 'green' | 'amber' | 'purple';
+  /** Optional timestamp for metric-level freshness indicator */
+  freshnessTimestamp?: Date | string | null;
+  /** Optional freshness status override */
+  freshnessStatus?: 'live' | 'stale' | 'demo' | 'unknown';
 }
 
 export const COLORS = {

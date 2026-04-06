@@ -110,7 +110,7 @@ Based on feasibility analysis, two validated revenue paths exist:
 | Enterprise | Unlimited | Custom |
 
 **Existing Infrastructure:**
-- `api_keys` table exists in `supabase/migrations/20251123_api_keys.sql`
+- `api_keys` table exists in `supabase/migrations/20251123002_api_keys.sql`
 - `validateApiKey()` function exists in Edge Functions
 - 44 API endpoints operational
 

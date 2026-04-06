@@ -1,4 +1,4 @@
--- supabase/migrations/20251122_industrial_decarb.sql
+-- supabase/migrations/20251122001_industrial_decarb.sql
 -- Industrial Decarbonization tables for Industrial Decarb Dashboard
 
 -- Facility Emissions Table (from NPRI data)
@@ -111,7 +111,8 @@ VALUES
   ('Suncor Energy', 'oil_gas', 2019, 1250000, 2024, 875000, true, true),
   ('Canadian Natural Resources', 'oil_gas', 2019, 1450000, 2024, 1087500, true, false),
   ('Imperial Oil', 'oil_gas', 2019, 980000, 2024, 735000, true, true),
-  ('Cenovus Energy', 'oil_gas', 2019, 820000, 2024, 574000, true, true);
+  ('Cenovus Energy', 'oil_gas', 2019, 820000, 2024, 574000, true, true)
+ON CONFLICT DO NOTHING;
 
 -- Insert sample OBPS compliance data
 INSERT INTO obps_compliance (facility_name, operator, province_code, reporting_year, production_volume, production_unit, baseline_emission_intensity, actual_emission_intensity, credit_market_price_per_tonne, compliance_status)
@@ -119,7 +120,8 @@ VALUES
   ('Base Plant', 'Suncor Energy', 'AB', 2023, 350000000, 'barrel', 0.082, 0.075, 65, 'surplus'),
   ('Horizon Oil Sands', 'Canadian Natural Resources', 'AB', 2023, 180000000, 'barrel', 0.095, 0.098, 65, 'deficit'),
   ('Kearl Oil Sands', 'Imperial Oil', 'AB', 2023, 280000000, 'barrel', 0.088, 0.081, 65, 'surplus'),
-  ('Christina Lake', 'Cenovus Energy', 'AB', 2023, 220000000, 'barrel', 0.078, 0.072, 65, 'surplus');
+  ('Christina Lake', 'Cenovus Energy', 'AB', 2023, 220000000, 'barrel', 0.078, 0.072, 65, 'surplus')
+ON CONFLICT DO NOTHING;
 
 -- Insert sample efficiency projects
 INSERT INTO efficiency_projects (project_name, company, facility_name, province_code, project_type, investment_cad, start_date, completion_date, status, annual_emissions_avoided_tonnes, annual_cost_savings_cad, government_funding_cad, funding_source)
@@ -127,4 +129,5 @@ VALUES
   ('Cogeneration Unit 4', 'Suncor Energy', 'Base Plant', 'AB', 'cogeneration', 450000000, '2021-01-15', '2024-06-30', 'operational', 850000, 120000000, 75000000, ARRAY['EMRF']),
   ('Heat Recovery Optimization', 'Imperial Oil', 'Kearl Oil Sands', 'AB', 'heat_recovery', 180000000, '2022-03-01', '2024-09-15', 'operational', 320000, 45000000, 30000000, ARRAY['EMRF', 'ERA']),
   ('Solvent-Assisted SAGD', 'Cenovus Energy', 'Christina Lake', 'AB', 'process_optimization', 650000000, '2020-06-01', '2023-12-31', 'operational', 1200000, 180000000, 100000000, ARRAY['EMRF']),
-  ('Electric Drive Replacement', 'Canadian Natural Resources', 'Horizon Oil Sands', 'AB', 'electrification', 220000000, '2023-01-01', '2025-12-31', 'under_construction', 450000, 65000000, 40000000, ARRAY['EMRF']);
+  ('Electric Drive Replacement', 'Canadian Natural Resources', 'Horizon Oil Sands', 'AB', 'electrification', 220000000, '2023-01-01', '2025-12-31', 'under_construction', 450000, 65000000, 40000000, ARRAY['EMRF'])
+ON CONFLICT DO NOTHING;

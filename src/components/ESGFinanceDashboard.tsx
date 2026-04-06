@@ -14,6 +14,8 @@ import {
 import { TrendingUp, DollarSign, Leaf, AlertCircle } from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { HelpButton } from './HelpButton';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 
 type View = 'overview' | 'green_bonds' | 'esg_ratings' | 'sustainability_loans' | 'carbon_exposure';
 
@@ -32,6 +34,29 @@ interface OverviewData {
 
 interface TableRow {
   [key: string]: any;
+}
+
+export interface EsgOverviewChartStates {
+  usesSampleTopPerformers: boolean;
+  usesSampleCarbonExposure: boolean;
+  overviewUsesReferenceCharts: boolean;
+}
+
+export function resolveEsgOverviewChartStates(
+  overview: OverviewData | null,
+  view: View,
+): EsgOverviewChartStates {
+  const usesSampleTopPerformers =
+    view === 'overview' && (!overview?.top_performers || overview.top_performers.length === 0);
+  const usesSampleCarbonExposure =
+    view === 'overview' &&
+    (!overview?.highest_carbon_exposure || overview.highest_carbon_exposure.length === 0);
+
+  return {
+    usesSampleTopPerformers,
+    usesSampleCarbonExposure,
+    overviewUsesReferenceCharts: usesSampleTopPerformers || usesSampleCarbonExposure,
+  };
 }
 
 const downloadCsv = (rows: TableRow[], filename: string) => {
@@ -78,6 +103,7 @@ const ESGFinanceDashboard: React.FC = () => {
   const [overview, setOverview] = useState<OverviewData | null>(null);
   const [rows, setRows] = useState<TableRow[]>([]);
   const [selectedSector, setSelectedSector] = useState<string>('All');
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
   useEffect(() => {
     fetchData();
@@ -118,6 +144,7 @@ const ESGFinanceDashboard: React.FC = () => {
       }
 
       const data = await response.json();
+      setLastUpdated(data?.metadata?.last_updated ?? null);
 
       if (view === 'overview') {
         setOverview(data as OverviewData);
@@ -202,7 +229,6 @@ const ESGFinanceDashboard: React.FC = () => {
         msci_score_numeric: Number(item.msci_score_numeric ?? 0),
       }))
     : SAMPLE_TOP_PERFORMERS;
-
   const carbonExposureData = (overview?.highest_carbon_exposure && overview.highest_carbon_exposure.length > 0)
     ? overview.highest_carbon_exposure.map((item: any) => ({
         company: item.company,
@@ -211,6 +237,11 @@ const ESGFinanceDashboard: React.FC = () => {
         projected_2030_cost_millions: Number(item.projected_2030_cost_millions ?? 0),
       }))
     : SAMPLE_CARBON_EXPOSURE;
+  const {
+    usesSampleTopPerformers,
+    usesSampleCarbonExposure,
+    overviewUsesReferenceCharts,
+  } = resolveEsgOverviewChartStates(overview, view);
 
   const renderTable = () => {
     if (!rows.length) {
@@ -273,11 +304,27 @@ const ESGFinanceDashboard: React.FC = () => {
                 Green bonds, ESG scores, sustainability-linked loans, and carbon pricing exposure for Canadian energy
                 companies.
               </p>
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  timestamp={lastUpdated}
+                  status={overviewUsesReferenceCharts ? 'demo' : undefined}
+                  source={overviewUsesReferenceCharts ? 'ESG finance overview with reference charts' : 'ESG finance edge API'}
+                  showRelative={false}
+                />
+              </div>
             </div>
             <HelpButton id="page.esg-finance" />
           </div>
         </div>
       </section>
+
+      {view === 'overview' && overviewUsesReferenceCharts && (
+        <DataTrustNotice
+          mode="mock"
+          title="Reference overview charts active"
+          message="The overview KPI cards are source-backed, but one or more overview charts are currently showing reference sample rankings because the API did not return enough chart rows for this view. Treat those visuals as illustrative until live ranking rows are available."
+        />
+      )}
 
       <div className="card shadow p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="flex flex-wrap gap-2">
@@ -375,6 +422,9 @@ const ESGFinanceDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Top ESG Performers (MSCI 0–10)</h2>
+              {usesSampleTopPerformers && (
+                <p className="mb-3 text-sm text-slate-500">Reference sample ranking shown because no verified top-performer rows were returned.</p>
+              )}
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topPerformerData}>
                   <CartesianGrid strokeDasharray="3 3" />
@@ -389,6 +439,9 @@ const ESGFinanceDashboard: React.FC = () => {
 
             <div className="card shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Highest Carbon Pricing Exposure</h2>
+              {usesSampleCarbonExposure && (
+                <p className="mb-3 text-sm text-slate-500">Reference sample exposure curve shown because no verified carbon-exposure rows were returned.</p>
+              )}
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={carbonExposureData}>
                   <CartesianGrid strokeDasharray="3 3" />

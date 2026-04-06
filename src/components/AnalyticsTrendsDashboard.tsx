@@ -36,12 +36,35 @@ import AIAnalyticsWidget from './AIAnalyticsWidget';
 import { AskDataPanel } from './AskDataPanel';
 import DataTrustNotice from './DataTrustNotice';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import { buildAnalyticsPageProvenance, extractLatestIsoTimestamp } from '../lib/scoreboardProvenance';
 
 interface AnalyticsData {
   ontarioDemand: OntarioDemandRecord[];
   provincialGeneration: ProvincialGenerationRecord[];
   weatherData: HFElectricityDemandRecord[];
   trends?: any;
+}
+
+export type RenewablePenetrationDataOrigin = 'observed' | 'supplemented' | 'reference';
+
+export interface RenewablePenetrationDatum {
+  province: string;
+  renewable_mw: number;
+  fossil_mw: number;
+  total_mw: number;
+  renewable_pct: number;
+  sources: Record<string, number>;
+  data_origin: RenewablePenetrationDataOrigin;
+}
+
+export interface RenewablePenetrationResult {
+  provinces: RenewablePenetrationDatum[];
+  summary: {
+    observedProvinceCount: number;
+    supplementedProvinceCount: number;
+    usesReferenceOnly: boolean;
+    hasSupplementedProvinces: boolean;
+  };
 }
 
 // Fallback renewable penetration data based on Canadian public energy statistics
@@ -65,20 +88,44 @@ const FALLBACK_RENEWABLE_PENETRATION: Record<string, { renewable_pct: number; so
 
 // Helper to compute renewable penetration from provincial_generation data
 // The ProvincialGenerationRecord has generation_type field to identify fuel source
-const computeRenewablePenetration = (provincialData: ProvincialGenerationRecord[]) => {
+export const computeRenewablePenetration = (provincialData: ProvincialGenerationRecord[]): RenewablePenetrationResult => {
+  const createSummary = (provinces: RenewablePenetrationDatum[]): RenewablePenetrationResult['summary'] => {
+    const observedProvinceCount = provinces.filter((item) => item.data_origin === 'observed').length;
+    const supplementedProvinceCount = provinces.filter((item) => item.data_origin !== 'observed').length;
+    return {
+      observedProvinceCount,
+      supplementedProvinceCount,
+      usesReferenceOnly: observedProvinceCount === 0,
+      hasSupplementedProvinces: supplementedProvinceCount > 0,
+    };
+  };
+
+  const createReferenceProvince = (
+    code: string,
+    data: { renewable_pct: number; sources: Record<string, number> },
+    origin: RenewablePenetrationDataOrigin,
+  ): RenewablePenetrationDatum => ({
+    province: code,
+    renewable_mw: (data.renewable_pct / 100) * 1000,
+    fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
+    total_mw: 1000,
+    renewable_pct: data.renewable_pct,
+    sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
+      acc[key] = (val / 100) * 1000;
+      return acc;
+    }, {} as Record<string, number>),
+    data_origin: origin,
+  });
+
   // Helper to generate fallback data
   const generateFallbackData = () => {
-    return Object.entries(FALLBACK_RENEWABLE_PENETRATION).map(([code, data]) => ({
-      province: code,
-      renewable_mw: (data.renewable_pct / 100) * 1000,
-      fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
-      total_mw: 1000,
-      renewable_pct: data.renewable_pct,
-      sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
-        acc[key] = (val / 100) * 1000;
-        return acc;
-      }, {} as Record<string, number>)
-    }));
+    const provinces = Object.entries(FALLBACK_RENEWABLE_PENETRATION).map(([code, data]) => (
+      createReferenceProvince(code, data, 'reference')
+    ));
+    return {
+      provinces,
+      summary: createSummary(provinces),
+    };
   };
 
   // Use fallback data when no real data is available
@@ -140,47 +187,43 @@ const computeRenewablePenetration = (provincialData: ProvincialGenerationRecord[
   });
 
   // Convert to output format
-  const result = Array.from(provinceMap.entries()).map(([code, data]) => ({
+  const observedProvinces: RenewablePenetrationDatum[] = Array.from(provinceMap.entries()).map(([code, data]) => ({
     province: code,
     renewable_mw: data.renewable,
     fossil_mw: data.fossil,
     total_mw: data.total,
     renewable_pct: data.total > 0 ? (data.renewable / data.total) * 100 : 0,
-    sources: data.sources
+    sources: data.sources,
+    data_origin: 'observed',
   }));
 
   console.log('[Analytics] Processed real data:', {
-    provinces: result.length,
-    sampleValues: result.slice(0, 3).map(r => ({ p: r.province, pct: r.renewable_pct.toFixed(1) + '%' }))
+    provinces: observedProvinces.length,
+    sampleValues: observedProvinces.slice(0, 3).map(r => ({ p: r.province, pct: r.renewable_pct.toFixed(1) + '%' }))
   });
 
   // Check if the result has meaningful data (require at least 3 provinces with data)
-  if (result.length < 3) {
-    console.log('[Analytics] Insufficient provinces in data, supplementing with fallback');
+  if (observedProvinces.length < 3) {
+    console.log('[Analytics] Insufficient provinces in data, using reference renewable penetration data');
     return generateFallbackData();
   }
 
+  const provinces = [...observedProvinces];
+
   // If we have real data but fewer provinces, supplement with fallback
-  if (result.length < Object.keys(FALLBACK_RENEWABLE_PENETRATION).length) {
-    const existingCodes = new Set(result.map(r => r.province));
+  if (observedProvinces.length < Object.keys(FALLBACK_RENEWABLE_PENETRATION).length) {
+    const existingCodes = new Set(observedProvinces.map(r => r.province));
     Object.entries(FALLBACK_RENEWABLE_PENETRATION).forEach(([code, data]) => {
       if (!existingCodes.has(code)) {
-        result.push({
-          province: code,
-          renewable_mw: (data.renewable_pct / 100) * 1000,
-          fossil_mw: ((100 - data.renewable_pct) / 100) * 1000,
-          total_mw: 1000,
-          renewable_pct: data.renewable_pct,
-          sources: Object.entries(data.sources).reduce((acc, [key, val]) => {
-            acc[key] = (val / 100) * 1000;
-            return acc;
-          }, {} as Record<string, number>)
-        });
+        provinces.push(createReferenceProvince(code, data, 'supplemented'));
       }
     });
   }
 
-  return result;
+  return {
+    provinces,
+    summary: createSummary(provinces),
+  };
 };
 
 export const AnalyticsTrendsDashboard: React.FC = () => {
@@ -354,15 +397,15 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   const weatherCorrelationData = data.weatherData.length > 0
     ? data.weatherData.slice(0, 50).map((record, index) => ({
       name: `Point ${index + 1}`,
-      value: 0.65 + (Math.random() * 0.3),
+      value: Math.min(0.95, Math.max(0.45, 0.58 + ((record.temperature ?? 20) - 15) * 0.01 + ((index % 5) * 0.03))),
       temperature: record.temperature || 20,
-      correlation: 0.65 + (Math.random() * 0.3)
+      correlation: Math.min(0.95, Math.max(0.45, 0.58 + ((record.temperature ?? 20) - 15) * 0.01 + ((index % 5) * 0.03)))
     }))
     : Array.from({ length: 20 }, (_, i) => ({
       name: `Point ${i + 1}`,
-      value: 0.6 + (Math.random() * 0.35),
+      value: 0.55 + ((i % 6) * 0.04),
       temperature: 15 + i,
-      correlation: 0.6 + (Math.random() * 0.35)
+      correlation: 0.55 + ((i % 6) * 0.04)
     }));
 
   const averageCorrelation = weatherCorrelationData.reduce((sum, d) => sum + d.correlation, 0) / weatherCorrelationData.length;
@@ -382,14 +425,14 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
         return {
           name: `Day ${idx + 1}`,
-          value: gwh > 0 ? gwh : (15 + Math.random() * 5), // Fallback to realistic value
-          generation: gwh > 0 ? gwh : (15 + Math.random() * 5)
+          value: gwh > 0 ? gwh : (15 + ((idx % 6) * 0.8)),
+          generation: gwh > 0 ? gwh : (15 + ((idx % 6) * 0.8))
         };
       })
     : Array.from({ length: 30 }, (_, i) => ({
       name: `Day ${i + 1}`,
-      value: 15 + Math.random() * 5, // 15-20 GWh range
-      generation: 15 + Math.random() * 5
+      value: 15 + ((i % 6) * 0.8),
+      generation: 15 + ((i % 6) * 0.8)
     }));
 
   const analyticsConnectionState = useMemo(() => {
@@ -401,13 +444,21 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
   }, [connectionStatuses]);
 
   const analyticsUsesSupplementedData = data.provincialGeneration.length === 0 || data.ontarioDemand.length === 0 || excludedLowQualityCount > 0;
-  const analyticsIsDemo = analyticsConnectionState === 'demo' || analyticsUsesSupplementedData;
-  const analyticsStatus = analyticsIsDemo ? 'demo' : analyticsConnectionState === 'live' ? 'live' : 'unknown';
-  const analyticsSourceLabel = analyticsIsDemo
-    ? 'Mixed analytics fallback inputs'
-    : analyticsConnectionState === 'live'
-      ? 'Provincial generation + Ontario demand datasets'
-      : 'Analytics provenance unavailable';
+  const renewablePenetration = useMemo(() => (
+    computeRenewablePenetration(data.provincialGeneration)
+  ), [data.provincialGeneration]);
+  const analyticsLastUpdated = extractLatestIsoTimestamp(
+    ...data.ontarioDemand.map((record) => record.datetime),
+    ...data.provincialGeneration.map((record) => record.date),
+    ...data.weatherData.map((record) => record.datetime),
+  );
+  const analyticsFreshnessMeta = buildAnalyticsPageProvenance({
+    connectionStatuses,
+    lastUpdated: analyticsLastUpdated,
+    hasSupplementedData: analyticsUsesSupplementedData,
+    excludedLowQualityCount,
+  });
+  const analyticsIsDemo = analyticsFreshnessMeta.isFallback;
 
   return (
     <div className="min-h-screen bg-slate-900 dashboard-analytics">
@@ -433,9 +484,10 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
               )}
               <div className="mt-3">
                 <DataFreshnessBadge
-                  timestamp={new Date().toISOString()}
-                  status={analyticsStatus}
-                  source={analyticsSourceLabel}
+                  timestamp={analyticsFreshnessMeta.lastUpdated}
+                  status={analyticsFreshnessMeta.freshnessStatus}
+                  source={analyticsFreshnessMeta.source}
+                  showRelative={false}
                 />
               </div>
             </div>
@@ -458,7 +510,17 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
           <DataTrustNotice
             mode="fallback"
             title="Fallback analytics inputs active"
-            message="Some analytics cards are using seeded or supplemented values because upstream generation or Ontario demand inputs are incomplete. Treat the charts as directional rather than audit-grade."
+            message="Some analytics cards are using seeded or supplemented values because upstream generation or Ontario demand inputs are incomplete. Weather-correlation and trend visuals remain directional modeling aids until every tile is backed by source-level provenance."
+          />
+        )}
+
+        {renewablePenetration.summary.hasSupplementedProvinces && (
+          <DataTrustNotice
+            mode="fallback"
+            title={renewablePenetration.summary.usesReferenceOnly ? 'Reference renewable map in use' : 'Supplemented renewable map in use'}
+            message={renewablePenetration.summary.usesReferenceOnly
+              ? 'The renewable penetration heatmap is currently based on reference provincial values because there are not enough observed generation records to support a trustworthy comparative map.'
+              : `${renewablePenetration.summary.supplementedProvinceCount} provinces or territories are currently marked as supplemented reference values so observed and modeled entries are not blended silently.`}
           />
         )}
 
@@ -477,10 +539,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
 
         {/* Renewable Penetration Heatmap - Uses real data with fallback */}
         <RenewablePenetrationHeatmap
-          provincialData={(() => {
-            // Use real provincial_generation data with fallback to reference data
-            return computeRenewablePenetration(data.provincialGeneration);
-          })()}
+          provincialData={renewablePenetration.provinces}
         />
 
         {/* Enhanced Modular Charts */}
@@ -513,11 +572,12 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
         {/* Provincial Energy Mix - Pie Chart */}
         <ModularChartWidget
           title="Provincial Energy Mix Distribution"
-          data={computeRenewablePenetration(data.provincialGeneration).map(item => ({
+          data={renewablePenetration.provinces.map(item => ({
             name: item.province,
             value: item.renewable_pct,
             renewable: item.renewable_pct,
-            fossil: 100 - item.renewable_pct
+            fossil: 100 - item.renewable_pct,
+            data_origin: item.data_origin,
           }))}
           chartType="pie"
           dataKeys={['value']}

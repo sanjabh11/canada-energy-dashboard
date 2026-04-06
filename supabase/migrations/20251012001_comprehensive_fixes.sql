@@ -11,6 +11,7 @@ BEGIN
     FROM information_schema.tables
     WHERE table_schema = 'public'
       AND table_name = 'grid_snapshots'
+      AND table_type = 'BASE TABLE'
   ) THEN
     EXECUTE 'ALTER TABLE grid_snapshots
       ADD COLUMN IF NOT EXISTS curtailment_risk BOOLEAN DEFAULT FALSE';
@@ -18,6 +19,8 @@ BEGIN
     EXECUTE 'UPDATE grid_snapshots
       SET curtailment_risk = (renewable_generation_mw > demand_mw * 0.8)
       WHERE curtailment_risk IS NULL';
+  ELSE
+    RAISE NOTICE 'Skipping grid_snapshots curtailment_risk patch because grid_snapshots is not a base table';
   END IF;
 END $$;
 
@@ -94,12 +97,25 @@ CREATE INDEX IF NOT EXISTS idx_data_purge_log_purged
 ON data_purge_log(purged_at DESC);
 
 -- 6. Ensure storage_dispatch_log has all required columns
-ALTER TABLE IF EXISTS storage_dispatch_log
-ADD COLUMN IF NOT EXISTS grid_service_provided TEXT,
-ADD COLUMN IF NOT EXISTS reasoning TEXT,
-ADD COLUMN IF NOT EXISTS execution_status TEXT DEFAULT 'completed',
-ADD COLUMN IF NOT EXISTS energy_mwh NUMERIC,
-ADD COLUMN IF NOT EXISTS revenue_impact_cad NUMERIC;
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'storage_dispatch_log'
+      AND table_type = 'BASE TABLE'
+  ) THEN
+    EXECUTE 'ALTER TABLE public.storage_dispatch_log
+      ADD COLUMN IF NOT EXISTS grid_service_provided TEXT,
+      ADD COLUMN IF NOT EXISTS reasoning TEXT,
+      ADD COLUMN IF NOT EXISTS execution_status TEXT DEFAULT ''completed'',
+      ADD COLUMN IF NOT EXISTS energy_mwh NUMERIC,
+      ADD COLUMN IF NOT EXISTS revenue_impact_cad NUMERIC';
+  ELSE
+    RAISE NOTICE 'Skipping storage_dispatch_log patch because storage_dispatch_log is not a base table';
+  END IF;
+END $$;
 
 -- 7. Add completeness tracking to provincial_generation
 ALTER TABLE IF EXISTS provincial_generation
@@ -142,8 +158,21 @@ ON CONFLICT (province) DO NOTHING;
 CREATE INDEX IF NOT EXISTS idx_renewable_forecasts_generated 
 ON renewable_forecasts(generated_at DESC, source_type, province);
 
-CREATE INDEX IF NOT EXISTS idx_storage_dispatch_log_timestamp 
-ON storage_dispatch_log(decision_timestamp DESC, province);
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'storage_dispatch_log'
+      AND table_type = 'BASE TABLE'
+  ) THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_storage_dispatch_log_timestamp
+      ON public.storage_dispatch_log(decision_timestamp DESC, province)';
+  ELSE
+    RAISE NOTICE 'Skipping storage_dispatch_log index because storage_dispatch_log is not a base table';
+  END IF;
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_curtailment_events_occurred 
 ON curtailment_events(occurred_at DESC, province);
@@ -168,9 +197,23 @@ END $$;
 
 -- 11. Grant necessary permissions
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon, authenticated;
-GRANT INSERT, UPDATE ON storage_dispatch_log TO anon, authenticated;
 GRANT INSERT ON error_logs TO anon, authenticated;
 GRANT INSERT ON job_execution_log TO anon, authenticated;
+
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM information_schema.tables
+    WHERE table_schema = 'public'
+      AND table_name = 'storage_dispatch_log'
+      AND table_type = 'BASE TABLE'
+  ) THEN
+    EXECUTE 'GRANT INSERT, UPDATE ON public.storage_dispatch_log TO anon, authenticated';
+  ELSE
+    RAISE NOTICE 'Skipping storage_dispatch_log grants because storage_dispatch_log is not a base table';
+  END IF;
+END $$;
 
 -- 12. Add comments for documentation
 

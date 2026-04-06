@@ -28,6 +28,11 @@ import {
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
 import { isEdgeFetchEnabled } from '../lib/config';
+import DataTrustNotice from './DataTrustNotice';
+import { DataFreshnessBadge, DataFreshnessIndicator } from './ui/DataFreshnessBadge';
+import { buildDataProvenance } from '../lib/foundation';
+import { resolveDashboardDeliveryMode } from '../lib/dashboardDeliveryMode';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
 
 interface DashboardData {
   projects: any[];
@@ -50,6 +55,15 @@ interface DashboardData {
     supply_chain_gaps: any[];
     investment_opportunities: any[];
   };
+  metadata?: {
+    last_updated?: string;
+    data_source?: string;
+    strategic_context?: string;
+    priority_minerals?: string[];
+    snapshot_type?: 'live' | 'persisted_snapshot';
+    snapshot_stored_at?: string | null;
+    is_fallback?: boolean;
+  };
 }
 
 const COLORS = {
@@ -66,21 +80,39 @@ const PRIORITY_MINERALS = ['Lithium', 'Cobalt', 'Nickel', 'Graphite', 'Copper', 
 
 const SUPPLY_CHAIN_STAGES = ['Mining', 'Concentration', 'Refining', 'Processing', 'Manufacturing', 'Recycling'];
 
+const CRITICAL_MINERALS_SNAPSHOT_KEY = 'dashboard_snapshot_critical_minerals';
+
 export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedMineral, setSelectedMineral] = useState<string | null>(null);
   const [priorityOnly, setPriorityOnly] = useState(true);
+  const [usingCachedSnapshot, setUsingCachedSnapshot] = useState(false);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setUsingCachedSnapshot(false);
 
     if (!isEdgeFetchEnabled()) {
       console.warn('CriticalMineralsSupplyChainDashboard: Supabase Edge disabled or not configured; running in offline/demo mode.');
+      const cachedSnapshot = loadDashboardSnapshot<DashboardData>(CRITICAL_MINERALS_SNAPSHOT_KEY);
+      if (cachedSnapshot) {
+        setData({
+          ...cachedSnapshot.payload,
+          metadata: {
+            ...cachedSnapshot.payload.metadata,
+            last_updated: cachedSnapshot.payload.metadata?.last_updated ?? cachedSnapshot.cachedAt,
+            data_source: `${cachedSnapshot.payload.metadata?.data_source || 'Critical minerals edge API'} (cached snapshot)`,
+            is_fallback: true,
+          },
+        });
+        setUsingCachedSnapshot(true);
+      } else {
+        setData(null);
+      }
       setLoading(false);
-      setData(null);
       return;
     }
 
@@ -95,9 +127,24 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
       ]);
 
       setData(response.json);
+      saveDashboardSnapshot(CRITICAL_MINERALS_SNAPSHOT_KEY, response.json);
     } catch (err) {
       console.error('Failed to load Critical Minerals data:', err);
-      setError('Failed to load dashboard data. Please try again.');
+      const cachedSnapshot = loadDashboardSnapshot<DashboardData>(CRITICAL_MINERALS_SNAPSHOT_KEY);
+      if (cachedSnapshot) {
+        setData({
+          ...cachedSnapshot.payload,
+          metadata: {
+            ...cachedSnapshot.payload.metadata,
+            last_updated: cachedSnapshot.payload.metadata?.last_updated ?? cachedSnapshot.cachedAt,
+            data_source: `${cachedSnapshot.payload.metadata?.data_source || 'Critical minerals edge API'} (cached snapshot)`,
+            is_fallback: true,
+          },
+        });
+        setUsingCachedSnapshot(true);
+      } else {
+        setError('Live critical minerals data request failed and no persisted or browser-cached snapshot is available for the current filters.');
+      }
     } finally {
       setLoading(false);
     }
@@ -277,6 +324,40 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
     netBalance: data.exports - data.imports,
   })).sort((a, b) => b.exports - a.exports);
 
+  const deliveryMode = resolveDashboardDeliveryMode({
+    hasData: Boolean(data),
+    usingCachedSnapshot,
+    snapshotType: data.metadata?.snapshot_type,
+    isFallback: data.metadata?.is_fallback,
+  });
+  const usingPersistedSnapshot = deliveryMode === 'persisted_snapshot';
+  const usingBrowserCache = deliveryMode === 'browser_cache';
+  const mineralsIsFallback = deliveryMode === 'persisted_snapshot' || deliveryMode === 'browser_cache';
+
+  const mineralsFreshness = buildDataProvenance({
+    source: usingPersistedSnapshot
+      ? `${data.metadata?.data_source || 'Critical minerals edge API'} (persisted snapshot)`
+      : usingBrowserCache
+        ? `${data.metadata?.data_source || 'Critical minerals edge API'} (browser cache)`
+        : selectedMineral
+          ? `${data.metadata?.data_source || 'Critical minerals edge API'} (${selectedMineral} filter)`
+          : priorityOnly
+            ? `${data.metadata?.data_source || 'Critical minerals edge API'} (priority minerals filter)`
+            : data.metadata?.data_source || 'Critical minerals edge API',
+    lastUpdated: data.metadata?.last_updated ?? null,
+    isFallback: mineralsIsFallback,
+    staleAfterHours: 24,
+    note: usingPersistedSnapshot
+      ? 'Critical minerals metrics are restored from a persisted backend snapshot for this filter variant.'
+      : usingBrowserCache
+        ? 'Critical minerals metrics are restored from the last successful cached snapshot for this browser.'
+      : selectedMineral
+        ? `Critical minerals metrics are filtered to ${selectedMineral}; charts and cards show a scoped mineral slice rather than the full supply-chain landscape.`
+        : priorityOnly
+          ? 'Critical minerals metrics are filtered to the priority minerals set, not the full Canadian minerals universe.'
+          : 'Critical minerals metrics aggregate projects, supply-chain stages, pricing, trade flows, and stockpile records.',
+  });
+
   return (
     <div className="min-h-screen bg-primary p-6">
       {/* Header */}
@@ -296,11 +377,50 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
               <p className="hero-subtitle">
                 $6.4B federal investment · 30% tax credit · National security priority
               </p>
+              <div className="mt-3">
+                <DataFreshnessBadge
+                  timestamp={mineralsFreshness.lastUpdated}
+                  status={mineralsFreshness.freshnessStatus}
+                  source={mineralsFreshness.source}
+                  showRelative={false}
+                />
+              </div>
             </div>
             <HelpButton id="minerals.overview" />
           </div>
         </div>
       </section>
+
+      {/* Persisted Backend Snapshot Banner */}
+      {usingPersistedSnapshot && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Persisted backend snapshot in use"
+          message="Critical minerals metrics are restored from a persisted backend snapshot for this filter variant. Live upstream feeds are currently unavailable. Data reflects the last successfully stored state and may be stale."
+          className="mb-6"
+        />
+      )}
+
+      {/* Browser Cache Banner */}
+      {usingBrowserCache && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Cached snapshot data in use"
+          message="Critical minerals metrics are restored from the last successful cached snapshot stored in this browser. Live upstream feeds are currently unavailable. Metrics reflect the last known state and may be stale."
+          className="mb-6"
+        />
+      )}
+
+      {(selectedMineral || priorityOnly) && !mineralsIsFallback && (
+        <DataTrustNotice
+          mode="fallback"
+          title={selectedMineral ? 'Filtered mineral view active' : 'Priority-minerals filter active'}
+          message={selectedMineral
+            ? `This dashboard is currently scoped to ${selectedMineral}. Summary cards and supply-chain visuals now represent that filtered mineral slice rather than the full minerals portfolio.`
+            : 'This dashboard is currently limited to the priority minerals set. Summary cards and charts exclude non-priority minerals until the filter is cleared.'}
+          className="mb-6"
+        />
+      )}
 
       {/* Filters */}
       <div className="card p-4 mb-8">
@@ -371,6 +491,8 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           value={data.summary.projects.total_count}
           subtitle={`${data.summary.projects.priority_mineral_count} priority minerals`}
           color="purple"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={mineralsFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<DollarSign className="w-8 h-8" />}
@@ -378,6 +500,8 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           value={`$${(data.summary.projects.total_investment_cad / 1e9).toFixed(1)}B`}
           subtitle={`$${(data.summary.projects.federal_funding_cad / 1e9).toFixed(2)}B federal`}
           color="green"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={mineralsFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<Zap className="w-8 h-8" />}
@@ -385,6 +509,8 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           value={data.summary.battery_facilities.total_count}
           subtitle={`${Math.round(data.summary.battery_facilities.total_capacity_gwh)} GWh capacity`}
           color="blue"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={mineralsFreshness.freshnessStatus}
         />
         <MetricCard
           icon={<Shield className="w-8 h-8" />}
@@ -392,6 +518,8 @@ export const CriticalMineralsSupplyChainDashboard: React.FC = () => {
           value={data.insights.supply_chain_gaps.length}
           subtitle="Domestic processing missing"
           color="red"
+          freshnessTimestamp={data.metadata?.last_updated}
+          freshnessStatus={mineralsFreshness.freshnessStatus}
         />
       </div>
 
@@ -751,9 +879,11 @@ interface MetricCardProps {
   value: string | number;
   subtitle: string;
   color: 'purple' | 'green' | 'blue' | 'red';
+  freshnessTimestamp?: Date | string | null;
+  freshnessStatus?: 'live' | 'stale' | 'demo' | 'unknown';
 }
 
-const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color }) => {
+const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, color, freshnessTimestamp, freshnessStatus }) => {
   const colorClasses = {
     purple: 'bg-secondary text-electric border-purple-200',
     green: 'bg-secondary text-success border-green-200',
@@ -763,9 +893,19 @@ const MetricCard: React.FC<MetricCardProps> = ({ icon, title, value, subtitle, c
 
   return (
     <div className={`${colorClasses[color]} border rounded-xl p-6 shadow-md`}>
-      <div className="flex items-center gap-3 mb-3">
-        {icon}
-        <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {icon}
+          <h3 className="text-sm font-semibold text-secondary uppercase tracking-wide">{title}</h3>
+        </div>
+        {(freshnessTimestamp || freshnessStatus) && (
+          <DataFreshnessIndicator
+            timestamp={freshnessTimestamp}
+            status={freshnessStatus}
+            staleThresholdMinutes={360}
+            className="ml-auto"
+          />
+        )}
       </div>
       <div className="text-3xl font-bold mb-1">{value}</div>
       <p className="text-sm opacity-80">{subtitle}</p>

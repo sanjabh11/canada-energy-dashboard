@@ -88,13 +88,65 @@ CREATE TABLE IF NOT EXISTS ev_charging_stations (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ev_station_network ON ev_charging_stations(network);
-CREATE INDEX idx_ev_station_province ON ev_charging_stations(province_code);
-CREATE INDEX idx_ev_station_city ON ev_charging_stations(city);
-CREATE INDEX idx_ev_station_type ON ev_charging_stations(charger_type);
-CREATE INDEX idx_ev_station_status ON ev_charging_stations(status);
-CREATE INDEX idx_ev_station_location ON ev_charging_stations USING GIST (ll_to_earth(latitude, longitude));
-CREATE INDEX idx_ev_station_v2g ON ev_charging_stations(v2g_capable) WHERE v2g_capable = TRUE;
+ALTER TABLE public.ev_charging_stations
+  ADD COLUMN IF NOT EXISTS station_id TEXT,
+  ADD COLUMN IF NOT EXISTS station_name TEXT,
+  ADD COLUMN IF NOT EXISTS network TEXT,
+  ADD COLUMN IF NOT EXISTS operator TEXT,
+  ADD COLUMN IF NOT EXISTS ownership_type TEXT,
+  ADD COLUMN IF NOT EXISTS address TEXT,
+  ADD COLUMN IF NOT EXISTS city TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS postal_code TEXT,
+  ADD COLUMN IF NOT EXISTS latitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS longitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS location_type TEXT,
+  ADD COLUMN IF NOT EXISTS site_type TEXT,
+  ADD COLUMN IF NOT EXISTS access_type TEXT,
+  ADD COLUMN IF NOT EXISTS charger_count INTEGER DEFAULT 1,
+  ADD COLUMN IF NOT EXISTS charger_type TEXT,
+  ADD COLUMN IF NOT EXISTS max_power_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_site_capacity_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS simultaneous_charging_capacity INTEGER,
+  ADD COLUMN IF NOT EXISTS connector_types TEXT[],
+  ADD COLUMN IF NOT EXISTS ccs_connector_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS chademo_connector_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS tesla_connector_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS j1772_connector_count INTEGER DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS pricing_model TEXT,
+  ADD COLUMN IF NOT EXISTS price_per_kwh_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS price_per_minute_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS idle_fee_cad_per_minute NUMERIC,
+  ADD COLUMN IF NOT EXISTS grid_connection_type TEXT,
+  ADD COLUMN IF NOT EXISTS distribution_voltage_kv NUMERIC,
+  ADD COLUMN IF NOT EXISTS dedicated_transformer BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS onsite_solar_kw NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS onsite_battery_kwh NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS v2g_capable BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS bidirectional_charging BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Operational',
+  ADD COLUMN IF NOT EXISTS commissioned_date DATE,
+  ADD COLUMN IF NOT EXISTS last_maintenance_date DATE,
+  ADD COLUMN IF NOT EXISTS average_daily_sessions INTEGER,
+  ADD COLUMN IF NOT EXISTS average_utilization_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS peak_demand_time_start TIME,
+  ADD COLUMN IF NOT EXISTS peak_demand_time_end TIME,
+  ADD COLUMN IF NOT EXISTS amenities TEXT[],
+  ADD COLUMN IF NOT EXISTS accessibility_features BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS nrcan_id TEXT,
+  ADD COLUMN IF NOT EXISTS data_source TEXT DEFAULT 'NRCan',
+  ADD COLUMN IF NOT EXISTS last_verified_date DATE,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_ev_station_network ON ev_charging_stations(network);
+CREATE INDEX IF NOT EXISTS idx_ev_station_province ON ev_charging_stations(province_code);
+CREATE INDEX IF NOT EXISTS idx_ev_station_city ON ev_charging_stations(city);
+CREATE INDEX IF NOT EXISTS idx_ev_station_type ON ev_charging_stations(charger_type);
+CREATE INDEX IF NOT EXISTS idx_ev_station_status ON ev_charging_stations(status);
+CREATE INDEX IF NOT EXISTS idx_ev_station_location ON ev_charging_stations USING GIST (ll_to_earth(latitude, longitude));
+CREATE INDEX IF NOT EXISTS idx_ev_station_v2g ON ev_charging_stations(v2g_capable) WHERE v2g_capable = TRUE;
 
 COMMENT ON TABLE ev_charging_stations IS 'Registry of EV charging stations with power, pricing, and grid connection specifications';
 
@@ -141,8 +193,34 @@ CREATE TABLE IF NOT EXISTS ev_charging_networks (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ev_network_name ON ev_charging_networks(network_name);
-CREATE INDEX idx_ev_network_type ON ev_charging_networks(network_type);
+ALTER TABLE public.ev_charging_networks
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS network_name TEXT,
+  ADD COLUMN IF NOT EXISTS network_type TEXT,
+  ADD COLUMN IF NOT EXISTS parent_company TEXT,
+  ADD COLUMN IF NOT EXISTS headquarters_country TEXT,
+  ADD COLUMN IF NOT EXISTS provinces_served TEXT[],
+  ADD COLUMN IF NOT EXISTS station_count_canada INTEGER,
+  ADD COLUMN IF NOT EXISTS charger_count_canada INTEGER,
+  ADD COLUMN IF NOT EXISTS proprietary_connector BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS open_access BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS roaming_agreements TEXT[],
+  ADD COLUMN IF NOT EXISTS membership_required BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS membership_fee_cad_per_month NUMERIC,
+  ADD COLUMN IF NOT EXISTS accepts_credit_card BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS mobile_app_available BOOLEAN DEFAULT TRUE,
+  ADD COLUMN IF NOT EXISTS expansion_target_stations_2025 INTEGER,
+  ADD COLUMN IF NOT EXISTS expansion_target_stations_2030 INTEGER,
+  ADD COLUMN IF NOT EXISTS federal_funding_received_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS website_url TEXT,
+  ADD COLUMN IF NOT EXISTS mobile_app_url TEXT,
+  ADD COLUMN IF NOT EXISTS customer_support_phone TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_ev_network_name ON ev_charging_networks(network_name);
+CREATE INDEX IF NOT EXISTS idx_ev_network_type ON ev_charging_networks(network_type);
 
 COMMENT ON TABLE ev_charging_networks IS 'Registry of EV charging networks operating in Canada';
 
@@ -185,8 +263,31 @@ CREATE TABLE IF NOT EXISTS ev_adoption_tracking (
   UNIQUE(province_code, tracking_period_start, tracking_period_end)
 );
 
-CREATE INDEX idx_ev_adoption_province ON ev_adoption_tracking(province_code);
-CREATE INDEX idx_ev_adoption_period ON ev_adoption_tracking(tracking_period_start);
+ALTER TABLE public.ev_adoption_tracking
+  ADD COLUMN IF NOT EXISTS id UUID DEFAULT gen_random_uuid(),
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS tracking_period_start DATE,
+  ADD COLUMN IF NOT EXISTS tracking_period_end DATE,
+  ADD COLUMN IF NOT EXISTS bev_sales INTEGER,
+  ADD COLUMN IF NOT EXISTS phev_sales INTEGER,
+  ADD COLUMN IF NOT EXISTS total_ev_sales INTEGER,
+  ADD COLUMN IF NOT EXISTS total_vehicle_sales INTEGER,
+  ADD COLUMN IF NOT EXISTS ev_market_share_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS cumulative_ev_registrations INTEGER,
+  ADD COLUMN IF NOT EXISTS ev_percent_of_total_fleet NUMERIC,
+  ADD COLUMN IF NOT EXISTS federal_target_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS compliance_status TEXT,
+  ADD COLUMN IF NOT EXISTS passenger_cars_ev INTEGER,
+  ADD COLUMN IF NOT EXISTS light_trucks_ev INTEGER,
+  ADD COLUMN IF NOT EXISTS medium_duty_ev INTEGER,
+  ADD COLUMN IF NOT EXISTS heavy_duty_ev INTEGER,
+  ADD COLUMN IF NOT EXISTS buses_ev INTEGER,
+  ADD COLUMN IF NOT EXISTS data_source TEXT DEFAULT 'Statistics Canada',
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_ev_adoption_province ON ev_adoption_tracking(province_code);
+CREATE INDEX IF NOT EXISTS idx_ev_adoption_period ON ev_adoption_tracking(tracking_period_start);
 
 COMMENT ON TABLE ev_adoption_tracking IS 'EV adoption rates and federal mandate compliance tracking';
 
@@ -219,8 +320,22 @@ CREATE TABLE IF NOT EXISTS ev_charging_power_consumption (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ev_power_station ON ev_charging_power_consumption(station_id);
-CREATE INDEX idx_ev_power_timestamp ON ev_charging_power_consumption(timestamp);
+ALTER TABLE public.ev_charging_power_consumption
+  ADD COLUMN IF NOT EXISTS station_id UUID,
+  ADD COLUMN IF NOT EXISTS timestamp TIMESTAMP,
+  ADD COLUMN IF NOT EXISTS instantaneous_power_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_site_power_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS active_chargers INTEGER,
+  ADD COLUMN IF NOT EXISTS grid_import_kw NUMERIC,
+  ADD COLUMN IF NOT EXISTS solar_generation_kw NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS battery_discharge_kw NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS v2g_discharge_kw NUMERIC DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS active_sessions INTEGER,
+  ADD COLUMN IF NOT EXISTS energy_delivered_kwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_ev_power_station ON ev_charging_power_consumption(station_id);
+CREATE INDEX IF NOT EXISTS idx_ev_power_timestamp ON ev_charging_power_consumption(timestamp);
 
 COMMENT ON TABLE ev_charging_power_consumption IS 'Time-series tracking of EV charging station power consumption and grid impact';
 
@@ -280,7 +395,7 @@ INSERT INTO ev_charging_networks (
   TRUE,
   NULL,
   'https://www.petro-canada.ca/en/personal/fuel/electric-vehicle-charging', 'Petro-Canada retail locations. Coast-to-coast coverage on Trans-Canada Highway.'
-) ON CONFLICT (id) DO NOTHING;
+) ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: Sample Charging Stations

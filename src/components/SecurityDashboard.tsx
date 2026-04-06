@@ -3,12 +3,30 @@ import { CONTAINER_CLASSES } from '../lib/ui/layout';
 import { useStreamingData } from '../hooks/useStreamingData';
 import { useWebSocketConsultation } from '../hooks/useWebSocket';
 import { fetchEdgeJson } from '../lib/edge';
+import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
 import { BarChart, LineChart, ResponsiveContainer, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Line, Bar, PieChart, Pie, Cell, ScatterChart, Scatter } from 'recharts';
-import { Shield, AlertTriangle, Eye, Lock, Zap, Activity, TrendingUp, Target, Clock, Wifi, WifiOff, AlertCircle } from 'lucide-react';
+import { Shield, AlertTriangle, Eye, Lock, Zap, Activity, TrendingUp, Target, Clock, Wifi, WifiOff, AlertCircle, RefreshCw } from 'lucide-react';
 import { PartialFeatureWarning } from './FeatureStatusBadge';
 import { HelpButton } from './HelpButton';
 import DataTrustNotice from './DataTrustNotice';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+
+// Snapshot key for browser cache persistence
+const SECURITY_SNAPSHOT_KEY = 'dashboard_snapshot_security';
+
+// Security snapshot payload structure
+interface SecurityDashboardSnapshot {
+  threatModels: ThreatModel[];
+  incidents: SecurityIncident[];
+  securityMetrics: SecurityMetrics;
+  mitigationStrategies: MitigationStrategy[];
+  metadata?: {
+    data_source?: string;
+    last_updated?: string;
+    snapshot_type?: string;
+    is_fallback?: boolean;
+  };
+}
 
 // Interfaces for Security Dashboard
 export interface ThreatModel {
@@ -66,6 +84,8 @@ const SecurityDashboard: React.FC = () => {
   const [selectedTimeframe, setSelectedTimeframe] = useState('24h');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deliveryMode, setDeliveryMode] = useState<'live' | 'persisted_snapshot' | 'browser_cache' | 'unavailable'>('live');
+  const [dataSource, setDataSource] = useState<string>('Security metrics API');
 
   // Use streaming data for security monitoring
   const { data: securityData, connectionStatus, isUsingRealData } = useStreamingData('security-events');
@@ -171,6 +191,7 @@ const SecurityDashboard: React.FC = () => {
   const loadSecurityData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
 
       const [threatResult, incidentResult, metricsResult, mitigationResult] = await Promise.all([
         fetchEdgeJson([
@@ -203,20 +224,60 @@ const SecurityDashboard: React.FC = () => {
       const mappedStrategies: MitigationStrategy[] = extractMitigations(mitigationResult.json);
       setMitigationStrategies(mappedStrategies);
 
+      // Determine delivery mode based on response metadata
+      const threatMetadata = threatResult.json?.metadata;
+      const isPersistedSnapshot = threatMetadata?.snapshot_type === 'persisted_snapshot' || threatMetadata?.is_fallback === true;
+      
+      if (isPersistedSnapshot) {
+        setDeliveryMode('persisted_snapshot');
+        setDataSource(threatMetadata?.data_source || 'Persisted security snapshot');
+      } else {
+        setDeliveryMode('live');
+        setDataSource(threatMetadata?.data_source || 'Security metrics API');
+      }
+
+      // Save successful response to browser cache
+      const snapshotPayload: SecurityDashboardSnapshot = {
+        threatModels: mappedThreats,
+        incidents: mappedIncidents,
+        securityMetrics: mappedMetrics!,
+        mitigationStrategies: mappedStrategies,
+        metadata: {
+          data_source: threatMetadata?.data_source || 'Security metrics API',
+          last_updated: threatMetadata?.last_updated || new Date().toISOString(),
+          snapshot_type: isPersistedSnapshot ? 'persisted_snapshot' : 'live',
+          is_fallback: isPersistedSnapshot,
+        },
+      };
+      saveDashboardSnapshot(SECURITY_SNAPSHOT_KEY, snapshotPayload);
+
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       const isEdgeDisabled = message.includes('VITE_ENABLE_EDGE_FETCH=false');
+      
       if (!isEdgeDisabled) {
         console.error('Failed to load security data', err);
       }
 
-      setError(
-        isEdgeDisabled
-          ? 'Supabase Edge fetch disabled via configuration. Showing security fallback dataset.'
-          : err instanceof Error
-            ? err.message
-            : 'Failed to load security data'
-      );
+      // Try to restore from browser cache when edge fails
+      const cachedSnapshot = loadDashboardSnapshot<SecurityDashboardSnapshot>(SECURITY_SNAPSHOT_KEY);
+      if (cachedSnapshot?.payload) {
+        setThreatModels(cachedSnapshot.payload.threatModels || []);
+        setIncidents(cachedSnapshot.payload.incidents || []);
+        setSecurityMetrics(cachedSnapshot.payload.securityMetrics || null);
+        setMitigationStrategies(cachedSnapshot.payload.mitigationStrategies || []);
+        setDeliveryMode('browser_cache');
+        setDataSource(cachedSnapshot.payload.metadata?.data_source || 'Cached security snapshot');
+        setError(null); // Clear error since we have cached data
+      } else {
+        // No cache available - show unavailable state
+        setDeliveryMode('unavailable');
+        setError(
+          isEdgeDisabled
+            ? 'Supabase Edge fetch disabled via configuration. No persisted or browser-cached security snapshot is available.'
+            : 'Security source-backed snapshot unavailable. No persisted or browser-cached snapshot is available for the current filters.'
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -264,11 +325,15 @@ const SecurityDashboard: React.FC = () => {
     };
   }, [securityMetrics, incidents]);
 
-  const securityFreshnessStatus = connectionStatus === 'fallback'
-    ? 'demo'
-    : securityMetrics?.lastUpdated
-      ? 'live'
-      : 'unknown';
+  const securityFreshnessStatus = deliveryMode === 'browser_cache' || deliveryMode === 'persisted_snapshot'
+    ? 'stale'
+    : deliveryMode === 'unavailable'
+      ? 'unknown'
+      : connectionStatus === 'fallback'
+        ? 'demo'
+        : securityMetrics?.lastUpdated
+          ? 'live'
+          : 'unknown';
 
   // Prepare threat model data for scatter plot
   const threatScatterData = useMemo(() => {
@@ -360,7 +425,34 @@ const SecurityDashboard: React.FC = () => {
         {/* Feature Warning */}
         <PartialFeatureWarning featureId="security_assessment" />
 
-        {connectionStatus === 'fallback' && (
+        {deliveryMode === 'persisted_snapshot' && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Persisted backend snapshot in use"
+            message="This security view is restored from a persisted backend snapshot. Live security feeds are currently unavailable. Metrics reflect the last known persisted state and may be stale."
+            className="mb-6"
+          />
+        )}
+
+        {deliveryMode === 'browser_cache' && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Cached snapshot data in use"
+            message="This security view is restored from the last successful cached snapshot stored in this browser. Live upstream feeds are currently unavailable. Metrics reflect the last known state and may be stale."
+            className="mb-6"
+          />
+        )}
+
+        {deliveryMode === 'unavailable' && (
+          <DataTrustNotice
+            mode="fallback"
+            title="Security source-backed snapshot unavailable"
+            message="No live security response or persisted/browser-cached snapshot is available. Required upstream sources include threat models, incidents, metrics, and mitigation strategy feeds."
+            className="mb-6"
+          />
+        )}
+
+        {connectionStatus === 'fallback' && deliveryMode === 'live' && (
           <DataTrustNotice
             mode="fallback"
             title="Fallback monitoring mode active"
@@ -389,7 +481,7 @@ const SecurityDashboard: React.FC = () => {
                   <DataFreshnessBadge
                     timestamp={securityMetrics?.lastUpdated}
                     status={securityFreshnessStatus}
-                    source={connectionStatus === 'fallback' ? 'Fallback security telemetry' : 'Security metrics API'}
+                    source={dataSource}
                   />
                 </div>
               </div>

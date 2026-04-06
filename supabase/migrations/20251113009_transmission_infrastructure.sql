@@ -52,10 +52,10 @@ CREATE TABLE IF NOT EXISTS transmission_lines (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_transmission_lines_province ON transmission_lines(province_code);
-CREATE INDEX idx_transmission_lines_operator ON transmission_lines(operator);
-CREATE INDEX idx_transmission_lines_voltage ON transmission_lines(voltage_kv);
-CREATE INDEX idx_transmission_lines_status ON transmission_lines(status);
+CREATE INDEX IF NOT EXISTS idx_transmission_lines_province ON transmission_lines(province_code);
+CREATE INDEX IF NOT EXISTS idx_transmission_lines_operator ON transmission_lines(operator);
+CREATE INDEX IF NOT EXISTS idx_transmission_lines_voltage ON transmission_lines(voltage_kv);
+CREATE INDEX IF NOT EXISTS idx_transmission_lines_status ON transmission_lines(status);
 
 -- =============================================================================
 -- 2. SUBSTATIONS TABLE
@@ -97,9 +97,9 @@ CREATE TABLE IF NOT EXISTS substations (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_substations_province ON substations(province_code);
-CREATE INDEX idx_substations_operator ON substations(operator);
-CREATE INDEX idx_substations_location ON substations USING GIST (
+CREATE INDEX IF NOT EXISTS idx_substations_province ON substations(province_code);
+CREATE INDEX IF NOT EXISTS idx_substations_operator ON substations(operator);
+CREATE INDEX IF NOT EXISTS idx_substations_location ON substations USING GIST (
   ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)
 ) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
 
@@ -149,10 +149,10 @@ CREATE TABLE IF NOT EXISTS transmission_congestion (
   CONSTRAINT unique_congestion_event UNIQUE (transmission_line_id, congestion_timestamp)
 );
 
-CREATE INDEX idx_congestion_line ON transmission_congestion(transmission_line_id);
-CREATE INDEX idx_congestion_timestamp ON transmission_congestion(congestion_timestamp);
-CREATE INDEX idx_congestion_date ON transmission_congestion(congestion_date);
-CREATE INDEX idx_congestion_severity ON transmission_congestion(congestion_severity);
+CREATE INDEX IF NOT EXISTS idx_congestion_line ON transmission_congestion(transmission_line_id);
+CREATE INDEX IF NOT EXISTS idx_congestion_timestamp ON transmission_congestion(congestion_timestamp);
+CREATE INDEX IF NOT EXISTS idx_congestion_date ON transmission_congestion(congestion_date);
+CREATE INDEX IF NOT EXISTS idx_congestion_severity ON transmission_congestion(congestion_severity);
 
 -- =============================================================================
 -- 4. GRID EXPANSION PROJECTS TABLE
@@ -205,9 +205,9 @@ CREATE TABLE IF NOT EXISTS grid_expansion_projects (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_grid_expansion_province ON grid_expansion_projects(province_code);
-CREATE INDEX idx_grid_expansion_status ON grid_expansion_projects(project_status);
-CREATE INDEX idx_grid_expansion_in_service ON grid_expansion_projects(expected_in_service_date);
+CREATE INDEX IF NOT EXISTS idx_grid_expansion_province ON grid_expansion_projects(province_code);
+CREATE INDEX IF NOT EXISTS idx_grid_expansion_status ON grid_expansion_projects(project_status);
+CREATE INDEX IF NOT EXISTS idx_grid_expansion_in_service ON grid_expansion_projects(expected_in_service_date);
 
 -- =============================================================================
 -- 5. MATERIALIZED VIEW: Transmission Congestion Summary
@@ -229,7 +229,7 @@ WHERE tc.congestion_date >= CURRENT_DATE - INTERVAL '30 days'
 GROUP BY tl.province_code, tl.operator, tl.voltage_kv
 ORDER BY congestion_events DESC;
 
-CREATE INDEX idx_transmission_congestion_summary_province ON transmission_congestion_summary(province_code);
+CREATE INDEX IF NOT EXISTS idx_transmission_congestion_summary_province ON transmission_congestion_summary(province_code);
 
 -- =============================================================================
 -- SEED DATA
@@ -241,14 +241,16 @@ INSERT INTO transmission_lines (line_name, line_code, operator, province_code, v
 ('Alberta-BC Intertie', 'L1L', 'AESO', 'AB', 500, 'AC', 1200, 'Langdon', 'BC Border', 185, 1985, 'In Service'),
 ('Nelson River HVDC', 'NR-HVDC', 'Manitoba Hydro', 'MB', 500, 'DC HVDC', 2000, 'Radisson', 'Dorsey', 890, 1977, 'In Service'),
 ('Hydro-Québec 735kV Backbone', 'HQ735-1', 'Hydro-Québec', 'QC', 735, 'AC', 5000, 'James Bay', 'Montréal', 1100, 1978, 'In Service'),
-('Interior-Lower Mainland', 'ILM', 'BC Hydro', 'BC', 500, 'AC', 2800, 'Mica', 'Vancouver', 620, 1982, 'In Service');
+('Interior-Lower Mainland', 'ILM', 'BC Hydro', 'BC', 500, 'AC', 2800, 'Mica', 'Vancouver', 620, 1982, 'In Service')
+ON CONFLICT DO NOTHING;
 
 -- Substations (Sample)
 INSERT INTO substations (substation_name, substation_code, operator, province_code, substation_type, voltage_levels, transformer_capacity_mva, latitude, longitude, commissioned_year, status) VALUES
 ('Bruce Transmission Station', 'BRUCE-TS', 'Hydro One', 'ON', 'Transmission', ARRAY[500, 230], 6600, 44.3319, -81.5997, 1977, 'In Service'),
 ('Dorsey Converter Station', 'DORSEY-CS', 'Manitoba Hydro', 'MB', 'Converter Station', ARRAY[500, 230], 2000, 50.0153, -97.0369, 1972, 'In Service'),
 ('Langdon Substation', 'LANGDON-SS', 'AESO', 'AB', 'Transmission', ARRAY[500, 240], 1500, 50.9753, -113.7545, 1985, 'In Service'),
-('Arnaud Substation', 'ARNAUD', 'Hydro-Québec', 'QC', 'Transmission', ARRAY[735, 315], 4500, 45.9517, -73.7489, 1985, 'In Service');
+('Arnaud Substation', 'ARNAUD', 'Hydro-Québec', 'QC', 'Transmission', ARRAY[735, 315], 4500, 45.9517, -73.7489, 1985, 'In Service')
+ON CONFLICT DO NOTHING;
 
 -- Transmission Congestion Events (Sample)
 INSERT INTO transmission_congestion (transmission_line_id, congestion_timestamp, congestion_hour, actual_flow_mw, flow_limit_mw, congestion_severity, congestion_cause, congestion_cost_cad)
@@ -261,14 +263,16 @@ SELECT
   CASE WHEN RANDOM() > 0.7 THEN 'Moderate' ELSE 'Minor' END AS congestion_severity,
   'High Demand' AS congestion_cause,
   (RANDOM() * 50000)::NUMERIC(10,2) AS congestion_cost_cad
-FROM generate_series(0, 23) AS n;
+FROM generate_series(0, 23) AS n
+ON CONFLICT DO NOTHING;
 
 -- Grid Expansion Projects (Sample)
 INSERT INTO grid_expansion_projects (project_name, project_type, operator, province_code, voltage_kv, capacity_increase_mw, expected_in_service_date, project_status, estimated_capex_cad_millions, primary_driver) VALUES
 ('Waasigan Transmission Line', 'New Transmission Line', 'Hydro One', 'ON', 230, 800, '2025-12-31', 'Under Construction', 777, 'Renewable Integration'),
 ('Eastern Alberta Transmission Line', 'New Transmission Line', 'AESO', 'AB', 240, 600, '2026-06-30', 'Under Construction', 615, 'Renewable Integration'),
 ('Keeyask Transmission Project', 'New Transmission Line', 'Manitoba Hydro', 'MB', 230, 695, '2024-12-31', 'In Service', 1425, 'Renewable Integration'),
-('Lower Churchill Transmission', 'HVDC Interconnection', 'Nalcor Energy', 'NL', 500, 900, '2025-12-31', 'Under Construction', 3200, 'Interconnection');
+('Lower Churchill Transmission', 'HVDC Interconnection', 'Nalcor Energy', 'NL', 500, 900, '2025-12-31', 'Under Construction', 3200, 'Interconnection')
+ON CONFLICT DO NOTHING;
 
 -- Refresh materialized view
 REFRESH MATERIALIZED VIEW transmission_congestion_summary;

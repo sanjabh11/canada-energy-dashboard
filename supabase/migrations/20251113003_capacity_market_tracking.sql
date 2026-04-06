@@ -78,12 +78,66 @@ CREATE TABLE IF NOT EXISTS capacity_market_auctions (
   UNIQUE(province_code, auction_year, obligation_period, zone_name)
 );
 
-CREATE INDEX idx_capacity_auction_province ON capacity_market_auctions(province_code);
-CREATE INDEX idx_capacity_auction_iso ON capacity_market_auctions(iso_operator);
-CREATE INDEX idx_capacity_auction_year ON capacity_market_auctions(auction_year);
-CREATE INDEX idx_capacity_auction_period ON capacity_market_auctions(obligation_period);
-CREATE INDEX idx_capacity_auction_status ON capacity_market_auctions(status);
-CREATE INDEX idx_capacity_auction_date ON capacity_market_auctions(auction_date);
+ALTER TABLE public.capacity_market_auctions
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS iso_operator TEXT,
+  ADD COLUMN IF NOT EXISTS auction_id TEXT,
+  ADD COLUMN IF NOT EXISTS auction_name TEXT,
+  ADD COLUMN IF NOT EXISTS auction_year INTEGER,
+  ADD COLUMN IF NOT EXISTS obligation_period TEXT,
+  ADD COLUMN IF NOT EXISTS obligation_start_date DATE,
+  ADD COLUMN IF NOT EXISTS obligation_end_date DATE,
+  ADD COLUMN IF NOT EXISTS obligation_duration_months INTEGER,
+  ADD COLUMN IF NOT EXISTS auction_date DATE,
+  ADD COLUMN IF NOT EXISTS qualification_deadline DATE,
+  ADD COLUMN IF NOT EXISTS results_announcement_date DATE,
+  ADD COLUMN IF NOT EXISTS target_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS target_capacity_met BOOLEAN,
+  ADD COLUMN IF NOT EXISTS cleared_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS clearing_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS clearing_price_cad_per_mw_month NUMERIC,
+  ADD COLUMN IF NOT EXISTS clearing_price_cad_per_kw_year NUMERIC,
+  ADD COLUMN IF NOT EXISTS zone_name TEXT,
+  ADD COLUMN IF NOT EXISTS zone_clearing_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS qualified_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS bid_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS offer_count INTEGER,
+  ADD COLUMN IF NOT EXISTS cleared_offer_count INTEGER,
+  ADD COLUMN IF NOT EXISTS cleared_capacity_by_type JSONB,
+  ADD COLUMN IF NOT EXISTS total_auction_value_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS average_availability_payment_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS previous_auction_clearing_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS price_change_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS demand_curve_type TEXT,
+  ADD COLUMN IF NOT EXISTS administrative_price_cap_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS penalty_rate_cad_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'Announced',
+  ADD COLUMN IF NOT EXISTS auction_report_url TEXT,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+ALTER TABLE public.capacity_market_auctions
+  ALTER COLUMN cleared_capacity_mw DROP NOT NULL,
+  ALTER COLUMN clearing_price_cad_per_mw_day DROP NOT NULL,
+  ALTER COLUMN clearing_price_cad_per_mw_month DROP NOT NULL,
+  ALTER COLUMN clearing_price_cad_per_kw_year DROP NOT NULL,
+  ALTER COLUMN target_capacity_met DROP NOT NULL,
+  ALTER COLUMN qualified_capacity_mw DROP NOT NULL,
+  ALTER COLUMN bid_capacity_mw DROP NOT NULL,
+  ALTER COLUMN offer_count DROP NOT NULL,
+  ALTER COLUMN cleared_offer_count DROP NOT NULL,
+  ALTER COLUMN total_auction_value_cad DROP NOT NULL,
+  ALTER COLUMN average_availability_payment_cad DROP NOT NULL,
+  ALTER COLUMN previous_auction_clearing_price_cad_per_mw_day DROP NOT NULL,
+  ALTER COLUMN price_change_percent DROP NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_province ON capacity_market_auctions(province_code);
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_iso ON capacity_market_auctions(iso_operator);
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_year ON capacity_market_auctions(auction_year);
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_period ON capacity_market_auctions(obligation_period);
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_status ON capacity_market_auctions(status);
+CREATE INDEX IF NOT EXISTS idx_capacity_auction_date ON capacity_market_auctions(auction_date);
 
 COMMENT ON TABLE capacity_market_auctions IS 'Capacity market auction results tracking clearing prices, procured capacity, and market performance';
 
@@ -163,11 +217,45 @@ CREATE TABLE IF NOT EXISTS capacity_market_commitments (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_capacity_commit_auction ON capacity_market_commitments(auction_id);
-CREATE INDEX idx_capacity_commit_facility ON capacity_market_commitments(facility_name);
-CREATE INDEX idx_capacity_commit_type ON capacity_market_commitments(resource_type);
-CREATE INDEX idx_capacity_commit_cleared ON capacity_market_commitments(cleared);
-CREATE INDEX idx_capacity_commit_province ON capacity_market_commitments(province_code);
+ALTER TABLE public.capacity_market_commitments
+  ADD COLUMN IF NOT EXISTS auction_id UUID,
+  ADD COLUMN IF NOT EXISTS facility_name TEXT,
+  ADD COLUMN IF NOT EXISTS facility_operator TEXT,
+  ADD COLUMN IF NOT EXISTS facility_id TEXT,
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS location_city TEXT,
+  ADD COLUMN IF NOT EXISTS latitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS longitude NUMERIC,
+  ADD COLUMN IF NOT EXISTS resource_type TEXT,
+  ADD COLUMN IF NOT EXISTS fuel_type TEXT,
+  ADD COLUMN IF NOT EXISTS emissions_intensity_kg_co2_per_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS nameplate_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS committed_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS committed_capacity_mwh NUMERIC,
+  ADD COLUMN IF NOT EXISTS cleared BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS offer_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS clearing_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS total_availability_payment_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS monthly_availability_payment_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS must_offer_hours_per_day INTEGER,
+  ADD COLUMN IF NOT EXISTS must_offer_window_start_time TIME,
+  ADD COLUMN IF NOT EXISTS must_offer_window_end_time TIME,
+  ADD COLUMN IF NOT EXISTS availability_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS forced_outage_hours NUMERIC,
+  ADD COLUMN IF NOT EXISTS planned_outage_hours NUMERIC,
+  ADD COLUMN IF NOT EXISTS performance_penalty_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS online_date DATE,
+  ADD COLUMN IF NOT EXISTS retirement_date DATE,
+  ADD COLUMN IF NOT EXISTS refurbishment_planned BOOLEAN DEFAULT FALSE,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_capacity_commit_auction ON capacity_market_commitments(auction_id);
+CREATE INDEX IF NOT EXISTS idx_capacity_commit_facility ON capacity_market_commitments(facility_name);
+CREATE INDEX IF NOT EXISTS idx_capacity_commit_type ON capacity_market_commitments(resource_type);
+CREATE INDEX IF NOT EXISTS idx_capacity_commit_cleared ON capacity_market_commitments(cleared);
+CREATE INDEX IF NOT EXISTS idx_capacity_commit_province ON capacity_market_commitments(province_code);
 
 COMMENT ON TABLE capacity_market_commitments IS 'Individual resource capacity commitments and performance tracking';
 
@@ -205,9 +293,24 @@ CREATE TABLE IF NOT EXISTS capacity_market_performance (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_capacity_perf_commitment ON capacity_market_performance(commitment_id);
-CREATE INDEX idx_capacity_perf_date ON capacity_market_performance(performance_date);
-CREATE INDEX idx_capacity_perf_availability ON capacity_market_performance(availability_percent);
+ALTER TABLE public.capacity_market_performance
+  ADD COLUMN IF NOT EXISTS commitment_id UUID,
+  ADD COLUMN IF NOT EXISTS performance_date DATE,
+  ADD COLUMN IF NOT EXISTS performance_hour INTEGER,
+  ADD COLUMN IF NOT EXISTS available_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS committed_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS availability_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS outage_type TEXT,
+  ADD COLUMN IF NOT EXISTS outage_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS energy_market_offer_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS energy_market_dispatch_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS non_performance_penalty_cad NUMERIC,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_capacity_perf_commitment ON capacity_market_performance(commitment_id);
+CREATE INDEX IF NOT EXISTS idx_capacity_perf_date ON capacity_market_performance(performance_date);
+CREATE INDEX IF NOT EXISTS idx_capacity_perf_availability ON capacity_market_performance(availability_percent);
 
 COMMENT ON TABLE capacity_market_performance IS 'Time-series tracking of capacity resource availability and performance';
 
@@ -240,8 +343,21 @@ CREATE TABLE IF NOT EXISTS capacity_market_price_history (
   UNIQUE(province_code, delivery_year, delivery_period)
 );
 
-CREATE INDEX idx_capacity_price_province ON capacity_market_price_history(province_code);
-CREATE INDEX idx_capacity_price_year ON capacity_market_price_history(delivery_year);
+ALTER TABLE public.capacity_market_price_history
+  ADD COLUMN IF NOT EXISTS province_code TEXT,
+  ADD COLUMN IF NOT EXISTS iso_operator TEXT,
+  ADD COLUMN IF NOT EXISTS delivery_year INTEGER,
+  ADD COLUMN IF NOT EXISTS delivery_period TEXT,
+  ADD COLUMN IF NOT EXISTS auction_year INTEGER,
+  ADD COLUMN IF NOT EXISTS clearing_price_cad_per_mw_day NUMERIC,
+  ADD COLUMN IF NOT EXISTS cleared_capacity_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS peak_demand_mw NUMERIC,
+  ADD COLUMN IF NOT EXISTS reserve_margin_percent NUMERIC,
+  ADD COLUMN IF NOT EXISTS notes TEXT,
+  ADD COLUMN IF NOT EXISTS created_at TIMESTAMP DEFAULT NOW();
+
+CREATE INDEX IF NOT EXISTS idx_capacity_price_province ON capacity_market_price_history(province_code);
+CREATE INDEX IF NOT EXISTS idx_capacity_price_year ON capacity_market_price_history(delivery_year);
 
 COMMENT ON TABLE capacity_market_price_history IS 'Historical capacity market clearing prices for trend analysis';
 
@@ -437,6 +553,24 @@ ORDER BY auction_year DESC, obligation_period;
 
 COMMENT ON VIEW capacity_auction_trends IS 'Historical capacity auction results for trend analysis';
 
+DO $$
+BEGIN
+  IF EXISTS (
+    SELECT 1
+    FROM pg_class
+    WHERE relname = 'capacity_resource_mix'
+      AND relkind = 'v'
+  ) THEN
+    EXECUTE 'DROP VIEW public.capacity_resource_mix';
+  ELSIF EXISTS (
+    SELECT 1
+    FROM pg_class
+    WHERE relname = 'capacity_resource_mix'
+      AND relkind IN ('r', 'p')
+  ) THEN
+    EXECUTE 'DROP TABLE public.capacity_resource_mix';
+  END IF;
+END $$;
 CREATE OR REPLACE VIEW capacity_resource_mix AS
 SELECT
   cm.province_code,

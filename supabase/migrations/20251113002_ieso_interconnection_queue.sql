@@ -118,13 +118,13 @@ CREATE TABLE IF NOT EXISTS ieso_interconnection_queue (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ieso_queue_type ON ieso_interconnection_queue(project_type);
-CREATE INDEX idx_ieso_queue_status ON ieso_interconnection_queue(status);
-CREATE INDEX idx_ieso_queue_capacity ON ieso_interconnection_queue(capacity_mw DESC);
-CREATE INDEX idx_ieso_queue_region ON ieso_interconnection_queue(location_region);
-CREATE INDEX idx_ieso_queue_in_service_date ON ieso_interconnection_queue(proposed_in_service_date);
-CREATE INDEX idx_ieso_queue_procurement ON ieso_interconnection_queue(procurement_program);
-CREATE INDEX idx_ieso_queue_position ON ieso_interconnection_queue(queue_position);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_type ON ieso_interconnection_queue(project_type);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_status ON ieso_interconnection_queue(status);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_capacity ON ieso_interconnection_queue(capacity_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_region ON ieso_interconnection_queue(location_region);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_in_service_date ON ieso_interconnection_queue(proposed_in_service_date);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_procurement ON ieso_interconnection_queue(procurement_program);
+CREATE INDEX IF NOT EXISTS idx_ieso_queue_position ON ieso_interconnection_queue(queue_position);
 
 COMMENT ON TABLE ieso_interconnection_queue IS 'IESO interconnection queue tracking renewable energy, storage, and generation projects seeking Ontario grid connection';
 
@@ -184,9 +184,9 @@ CREATE TABLE IF NOT EXISTS ieso_procurement_programs (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_ieso_programs_type ON ieso_procurement_programs(program_type);
-CREATE INDEX idx_ieso_programs_status ON ieso_procurement_programs(status);
-CREATE INDEX idx_ieso_programs_in_service ON ieso_procurement_programs(target_in_service_year);
+CREATE INDEX IF NOT EXISTS idx_ieso_programs_type ON ieso_procurement_programs(program_type);
+CREATE INDEX IF NOT EXISTS idx_ieso_programs_status ON ieso_procurement_programs(status);
+CREATE INDEX IF NOT EXISTS idx_ieso_programs_in_service ON ieso_procurement_programs(target_in_service_year);
 
 COMMENT ON TABLE ieso_procurement_programs IS 'IESO renewable energy and storage procurement programs (LT RFPs, capacity auctions, etc.)';
 
@@ -248,11 +248,11 @@ CREATE TABLE IF NOT EXISTS provincial_interconnection_queues (
   updated_at TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_prov_queue_province ON provincial_interconnection_queues(province_code);
-CREATE INDEX idx_prov_queue_iso ON provincial_interconnection_queues(iso_operator);
-CREATE INDEX idx_prov_queue_type ON provincial_interconnection_queues(project_type);
-CREATE INDEX idx_prov_queue_status ON provincial_interconnection_queues(status);
-CREATE INDEX idx_prov_queue_capacity ON provincial_interconnection_queues(capacity_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_prov_queue_province ON provincial_interconnection_queues(province_code);
+CREATE INDEX IF NOT EXISTS idx_prov_queue_iso ON provincial_interconnection_queues(iso_operator);
+CREATE INDEX IF NOT EXISTS idx_prov_queue_type ON provincial_interconnection_queues(project_type);
+CREATE INDEX IF NOT EXISTS idx_prov_queue_status ON provincial_interconnection_queues(status);
+CREATE INDEX IF NOT EXISTS idx_prov_queue_capacity ON provincial_interconnection_queues(capacity_mw DESC);
 
 COMMENT ON TABLE provincial_interconnection_queues IS 'Unified cross-Canada interconnection queue tracking for all provinces and ISOs';
 

@@ -70,12 +70,12 @@ CREATE TABLE IF NOT EXISTS grid_queue_projects (
   last_updated TIMESTAMP DEFAULT NOW()
 );
 
-CREATE INDEX idx_grid_queue_province ON grid_queue_projects(province);
-CREATE INDEX idx_grid_queue_operator ON grid_queue_projects(grid_operator);
-CREATE INDEX idx_grid_queue_status ON grid_queue_projects(queue_status);
-CREATE INDEX idx_grid_queue_fuel_type ON grid_queue_projects(fuel_type);
-CREATE INDEX idx_grid_queue_capacity ON grid_queue_projects(capacity_mw DESC);
-CREATE INDEX idx_grid_queue_in_service_date ON grid_queue_projects(expected_in_service_date);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_province ON grid_queue_projects(province);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_operator ON grid_queue_projects(grid_operator);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_status ON grid_queue_projects(queue_status);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_fuel_type ON grid_queue_projects(fuel_type);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_capacity ON grid_queue_projects(capacity_mw DESC);
+CREATE INDEX IF NOT EXISTS idx_grid_queue_in_service_date ON grid_queue_projects(expected_in_service_date);
 
 COMMENT ON TABLE grid_queue_projects IS 'Multi-province grid connection queue tracking with real data from AESO, IESO, SaskPower, BC Hydro';
 
@@ -109,8 +109,8 @@ CREATE TABLE IF NOT EXISTS grid_queue_milestones (
   UNIQUE(project_id, milestone_type)
 );
 
-CREATE INDEX idx_queue_milestones_project ON grid_queue_milestones(project_id);
-CREATE INDEX idx_queue_milestones_status ON grid_queue_milestones(status);
+CREATE INDEX IF NOT EXISTS idx_queue_milestones_project ON grid_queue_milestones(project_id);
+CREATE INDEX IF NOT EXISTS idx_queue_milestones_status ON grid_queue_milestones(status);
 
 COMMENT ON TABLE grid_queue_milestones IS 'Interconnection study and construction milestones for queue projects';
 
@@ -150,8 +150,8 @@ CREATE TABLE IF NOT EXISTS grid_queue_statistics (
   UNIQUE(province, grid_operator, snapshot_date)
 );
 
-CREATE INDEX idx_queue_stats_province ON grid_queue_statistics(province);
-CREATE INDEX idx_queue_stats_date ON grid_queue_statistics(snapshot_date DESC);
+CREATE INDEX IF NOT EXISTS idx_queue_stats_province ON grid_queue_statistics(province);
+CREATE INDEX IF NOT EXISTS idx_queue_stats_date ON grid_queue_statistics(snapshot_date DESC);
 
 COMMENT ON TABLE grid_queue_statistics IS 'Historical queue statistics snapshots for trend analysis';
 
@@ -170,14 +170,16 @@ VALUES
 
   ('aeso-wind-001', 'Windrise Wind Project', 'TransAlta', 'AB', 'AESO', 'Southern Alberta', 'Wind', 206, 'In-Service', '2019-08-01', '2021-10-01', 138, 'Multiple substations', 'AESO Connection Queue (Public)', '206 MW wind farm. Operational October 2021. One of TransAlta''s largest wind projects.'),
 
-  ('aeso-wind-002', 'Jenner Wind Power Project', 'BluEarth Renewables', 'AB', 'AESO', 'Southern Alberta', 'Wind', 78, 'In-Service', '2019-11-01', '2022-12-01', 138, 'Jenner 870S Substation', 'AESO Connection Queue (Public)', '78 MW wind project. Operational December 2022.');
+  ('aeso-wind-002', 'Jenner Wind Power Project', 'BluEarth Renewables', 'AB', 'AESO', 'Southern Alberta', 'Wind', 78, 'In-Service', '2019-11-01', '2022-12-01', 138, 'Jenner 870S Substation', 'AESO Connection Queue (Public)', '78 MW wind project. Operational December 2022.')
+ON CONFLICT DO NOTHING;
 
 -- AESO Battery Storage Projects
 INSERT INTO grid_queue_projects (id, project_name, proponent, province, grid_operator, region, fuel_type, technology_detail, capacity_mw, storage_duration_hours, queue_status, application_date, expected_in_service_date, interconnection_voltage_kv, data_source, notes)
 VALUES
   ('aeso-storage-001', 'Alder Flats Battery Storage', 'TransAlta', 'AB', 'AESO', 'Central Alberta', 'Storage - Battery', 'Lithium-ion BESS', 20, 4, 'In-Service', '2020-06-01', '2023-09-01', 138, 'AESO Connection Queue (Public)', '20 MW / 80 MWh battery storage. Operational September 2023. Co-located with wind farm.'),
 
-  ('aeso-storage-002', 'Cascade Battery Storage Project', 'Capital Power', 'AB', 'AESO', 'Southern Alberta', 'Storage - Battery', 'Lithium-ion BESS', 150, 2, 'Facility Study', '2022-11-15', '2026-06-01', 240, 'AESO Connection Queue (Public)', '150 MW / 300 MWh utility-scale battery. Facility study underway.');
+  ('aeso-storage-002', 'Cascade Battery Storage Project', 'Capital Power', 'AB', 'AESO', 'Southern Alberta', 'Storage - Battery', 'Lithium-ion BESS', 150, 2, 'Facility Study', '2022-11-15', '2026-06-01', 240, 'AESO Connection Queue (Public)', '150 MW / 300 MWh utility-scale battery. Facility study underway.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: ONTARIO (IESO) - Real Projects from Public Queue
@@ -190,7 +192,8 @@ VALUES
 
   ('ieso-solar-002', 'Loyalist Township Solar Project', 'Boralex', 'ON', 'IESO', 'Eastern Ontario', 'Solar', 20, 'In-Service', '2014-03-15', '2016-11-01', 44, 'Ontario IESO', 'Signed', 'IESO Connection Queue (Public)', '20 MW solar project near Kingston. Operational November 2016.'),
 
-  ('ieso-solar-003', 'North Stormont Solar Project', 'Renewable Energy Systems Canada', 'ON', 'IESO', 'Eastern Ontario', 'Solar', 44, 'Active', '2021-09-10', '2026-06-01', 115, 'Ontario IESO', 'Under Negotiation', 'IESO Connection Queue (Public)', '44 MW solar project. LRP contract awarded.');
+  ('ieso-solar-003', 'North Stormont Solar Project', 'Renewable Energy Systems Canada', 'ON', 'IESO', 'Eastern Ontario', 'Solar', 44, 'Active', '2021-09-10', '2026-06-01', 115, 'Ontario IESO', 'Under Negotiation', 'IESO Connection Queue (Public)', '44 MW solar project. LRP contract awarded.')
+ON CONFLICT DO NOTHING;
 
 -- IESO Wind Projects
 INSERT INTO grid_queue_projects (id, project_name, proponent, province, grid_operator, region, fuel_type, capacity_mw, queue_status, application_date, expected_in_service_date, interconnection_voltage_kv, offtaker, ppa_status, data_source, notes)
@@ -199,14 +202,16 @@ VALUES
 
   ('ieso-wind-002', 'Bornish Wind Energy Centre', 'EDF Renewables', 'ON', 'IESO', 'Southwest Ontario', 'Wind', 93, 'In-Service', '2011-07-15', '2014-12-01', 230, 'Ontario IESO', 'Signed', 'IESO Connection Queue (Public)', '93 MW wind farm. Part of Ontario FIT program. Operational December 2014.'),
 
-  ('ieso-wind-003', 'North Kent Wind 1', 'Boralex / Enel', 'ON', 'IESO', 'Southwest Ontario', 'Wind', 100, 'In-Service', '2013-04-01', '2016-11-01', 230, 'Ontario IESO', 'Signed', 'IESO Connection Queue (Public)', '100 MW wind project. Operational November 2016.');
+  ('ieso-wind-003', 'North Kent Wind 1', 'Boralex / Enel', 'ON', 'IESO', 'Southwest Ontario', 'Wind', 100, 'In-Service', '2013-04-01', '2016-11-01', 230, 'Ontario IESO', 'Signed', 'IESO Connection Queue (Public)', '100 MW wind project. Operational November 2016.')
+ON CONFLICT DO NOTHING;
 
 -- IESO Battery Storage
 INSERT INTO grid_queue_projects (id, project_name, proponent, province, grid_operator, region, fuel_type, technology_detail, capacity_mw, storage_duration_hours, queue_status, application_date, expected_in_service_date, interconnection_voltage_kv, data_source, notes)
 VALUES
   ('ieso-storage-001', 'Oneida Energy Storage', 'NRStor', 'ON', 'IESO', 'Southwest Ontario', 'Storage - Battery', 'Lithium-ion BESS', 250, 2, 'In-Service', '2018-11-01', '2020-07-01', 230, 'IESO Connection Queue (Public)', '250 MW / 500 MWh battery storage. Operational July 2020. One of Canada''s largest utility-scale batteries.'),
 
-  ('ieso-storage-002', 'Goreway Energy Storage', 'LS Power / Atura Power', 'ON', 'IESO', 'Greater Toronto Area', 'Storage - Battery', 'Lithium-ion BESS', 250, 2, 'Under Construction', '2021-03-15', '2025-12-01', 230, 'IESO Connection Queue (Public)', '250 MW / 500 MWh battery in Brampton. Expected operational late 2025.');
+  ('ieso-storage-002', 'Goreway Energy Storage', 'LS Power / Atura Power', 'ON', 'IESO', 'Greater Toronto Area', 'Storage - Battery', 'Lithium-ion BESS', 250, 2, 'Under Construction', '2021-03-15', '2025-12-01', 230, 'IESO Connection Queue (Public)', '250 MW / 500 MWh battery in Brampton. Expected operational late 2025.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: SASKATCHEWAN (SaskPower)
@@ -218,7 +223,8 @@ VALUES
 
   ('sk-wind-001', 'Blue Hill Wind Facility', 'Algonquin Power / Pattern Energy', 'SK', 'SaskPower', 'Southern Saskatchewan', 'Wind', 175, 'In-Service', '2019-06-01', '2021-12-01', 230, 'SaskPower Public Announcements', '175 MW wind farm. Operational December 2021. 25-year PPA with SaskPower.'),
 
-  ('sk-wind-002', 'Bekevar Wind Project', 'Algonquin Power', 'SK', 'SaskPower', 'Southern Saskatchewan', 'Wind', 200, 'In-Service', '2020-08-15', '2023-10-01', 230, 'SaskPower Public Announcements', '200 MW wind farm. Operational October 2023.');
+  ('sk-wind-002', 'Bekevar Wind Project', 'Algonquin Power', 'SK', 'SaskPower', 'Southern Saskatchewan', 'Wind', 200, 'In-Service', '2020-08-15', '2023-10-01', 230, 'SaskPower Public Announcements', '200 MW wind farm. Operational October 2023.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: BRITISH COLUMBIA (BC Hydro)
@@ -230,7 +236,8 @@ VALUES
 
   ('bc-hydro-001', 'Site C Clean Energy Project', 'BC Hydro', 'BC', 'BC Hydro', 'Northeast BC', 'Hydro', 1100, 'Under Construction', '2014-12-15', '2025-12-01', 500, 'BC Hydro Official Project Website', '1,100 MW hydroelectric dam on Peace River. Expected operational 2025. 83-year lifespan. Third dam on Peace River.'),
 
-  ('bc-solar-001', 'Kimberley Solar Project', 'FortisBC', 'BC', 'BC Hydro', 'Southeast BC', 'Solar', 1, 'In-Service', '2018-06-01', '2019-12-01', 25, 'BC Hydro Public Announcements', '1 MW community solar project. Operational December 2019.');
+  ('bc-solar-001', 'Kimberley Solar Project', 'FortisBC', 'BC', 'BC Hydro', 'Southeast BC', 'Solar', 1, 'In-Service', '2018-06-01', '2019-12-01', 25, 'BC Hydro Public Announcements', '1 MW community solar project. Operational December 2019.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: MANITOBA (Manitoba Hydro)
@@ -240,7 +247,8 @@ INSERT INTO grid_queue_projects (id, project_name, proponent, province, grid_ope
 VALUES
   ('mb-hydro-001', 'Keeyask Generating Station', 'Manitoba Hydro / Keeyask Hydropower Limited Partnership', 'MB', 'Manitoba Hydro', 'Northern Manitoba', 'Hydro', 695, 'In-Service', '2009-06-01', '2021-03-01', 230, 'Manitoba Hydro Public Announcements', '695 MW hydroelectric station on Nelson River. 7-unit facility. Operational March 2021. Partnership with four Cree Nations.'),
 
-  ('mb-wind-001', 'St. Joseph Wind Farm', 'St. Joseph Wind Farm Corporation', 'MB', 'Manitoba Hydro', 'Southern Manitoba', 'Wind', 138, 'In-Service', '2010-11-01', '2011-09-01', 230, 'Manitoba Hydro Public Announcements', '138 MW wind farm. Operational September 2011. Manitoba''s first commercial wind farm.');
+  ('mb-wind-001', 'St. Joseph Wind Farm', 'St. Joseph Wind Farm Corporation', 'MB', 'Manitoba Hydro', 'Southern Manitoba', 'Wind', 138, 'In-Service', '2010-11-01', '2011-09-01', 230, 'Manitoba Hydro Public Announcements', '138 MW wind farm. Operational September 2011. Manitoba''s first commercial wind farm.')
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- SEED DATA: QUEUE STATISTICS (2024 Snapshot)
@@ -252,7 +260,8 @@ VALUES
   ('ON', 'IESO', '2024-11-01', 280, 12000, 60, 18, 180, 22, 3500, 5500, 2000, 800, 200, 12, 20, 28),
   ('SK', 'SaskPower', '2024-11-01', 45, 2500, 12, 3, 25, 5, 800, 1400, 200, 80, 20, 2, 4, 6),
   ('BC', 'BC Hydro', '2024-11-01', 35, 2800, 8, 2, 22, 3, 400, 800, 100, 1400, 100, 1, 2, 5),
-  ('MB', 'Manitoba Hydro', '2024-11-01', 15, 1500, 3, 1, 10, 1, 100, 600, 50, 700, 50, 0, 1, 2);
+  ('MB', 'Manitoba Hydro', '2024-11-01', 15, 1500, 3, 1, 10, 1, 100, 600, 50, 700, 50, 0, 1, 2)
+ON CONFLICT DO NOTHING;
 
 -- ============================================================================
 -- VIEWS FOR REPORTING

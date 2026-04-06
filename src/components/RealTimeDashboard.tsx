@@ -39,6 +39,8 @@ import { DataSource, COMMON_DATA_SOURCES } from './ui/DataSource';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import { SkeletonLoader, SkeletonChart, SkeletonMetricGrid } from './ui/SkeletonLoader';
 import DataTrustNotice from './DataTrustNotice';
+import { buildDataProvenance } from '../lib/foundation';
+import { buildDashboardFreshnessProvenance, resolveMetricCandidate } from '../lib/scoreboardProvenance';
 
 // Map Canadian fuel type names to standardized display categories
 const GENERATION_TYPE_DISPLAY_MAP: Record<string, string> = {
@@ -109,7 +111,7 @@ export const RealTimeDashboard: React.FC = () => {
   
   const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>(() => energyDataManager.getAllConnectionStatuses());
   const [loading, setLoading] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState<Date>(new Date()); // Default to current time to prevent 1970 dates
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   
   const [stats, setStats] = useState<DashboardStats>({
     dataSources: 4,
@@ -226,27 +228,18 @@ export const RealTimeDashboard: React.FC = () => {
         trends: trends ?? undefined
       });
 
-      // Check if any data sources are using fallback (indicates shifted timestamps)
       const statuses = energyDataManager.getAllConnectionStatuses();
-      const hasFallbackData = statuses.some(s => s.status === 'fallback' && s.recordCount > 0);
-      
-      // If fallback data is present, use current time as lastUpdate to show "fresh"
-      // This is because shiftTimestampsToNow() has already adjusted the data timestamps
-      if (hasFallbackData) {
-        setLastUpdate(new Date());
-      } else {
-        setLastUpdate(
-          extractLatestTimestamp(
-            ...ontarioDemand.map((record) => record.datetime),
-            ...provincialGeneration.map((record) => record.date),
-            ...ontarioPrices.map((record) => record.datetime),
-            ...weatherData.map((record) => record.datetime),
-            trends?.window?.end,
-            (provinceMetrics as { as_of?: string } | null)?.as_of,
-            (nationalOverview as { as_of?: string } | null)?.as_of
-          ) ?? new Date()
-        );
-      }
+      setLastUpdate(
+        extractLatestTimestamp(
+          ...ontarioDemand.map((record) => record.datetime),
+          ...provincialGeneration.map((record) => record.date),
+          ...ontarioPrices.map((record) => record.datetime),
+          ...weatherData.map((record) => record.datetime),
+          trends?.window?.end,
+          (provinceMetrics as { as_of?: string } | null)?.as_of,
+          (nationalOverview as { as_of?: string } | null)?.as_of
+        ) ?? null
+      );
       setConnectionStatuses(statuses);
     } catch (error: any) {
       if (error?.name === 'AbortError') return;
@@ -351,176 +344,203 @@ export const RealTimeDashboard: React.FC = () => {
     // Deliberately NOT including data.provincialGeneration to prevent instability
   ]);
 
-  // Process Ontario Demand data for chart - with fallback for empty data
-  const ontarioDemandChartData = data.ontarioDemand.length > 0
-    ? data.ontarioDemand
-        .slice(0, 20)
-        .map(record => ({
-          time: new Date(record.datetime).toLocaleTimeString('en-CA', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }),
-          demand: Math.round(record.total_demand_mw),
-          temperature: 24 // Mock temperature - would come from weather data integration
-        }))
-    : Array.from({ length: 10 }, (_, i) => {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - (9 - i) * 5);
-        return {
-          time: now.toLocaleTimeString('en-CA', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: false 
-          }),
-          demand: 14500 + ((i * 137) % 1000), // Deterministic pseudo-random based on index
-          temperature: 24
-        };
-      });
-
-  // Process Provincial Generation data for horizontal bar chart
-  const generationBySource = data.provincialGeneration.length > 0
-    ? Array.from(
-        data.provincialGeneration.reduce((acc: Map<string, number>, record) => {
-          const rawType = record.generation_type || record.source || 'UNCLASSIFIED';
-          const typeKey = normalizeGenerationDisplayType(rawType); // Map Canadian fuel types to standard names
-          const valueMwh = typeof record.megawatt_hours === 'number'
-            ? record.megawatt_hours
-            : typeof record.generation_gwh === 'number'
-              ? record.generation_gwh * 1000
-              : 0;
-          if (valueMwh <= 0) {
-            return acc;
-          }
-          const prev = acc.get(typeKey) ?? 0;
-          acc.set(typeKey, prev + valueMwh / 1000); // convert to GWh
-          return acc;
-        }, new Map<string, number>()).entries()
-      ).map(([type, gwh]) => ({
-        type: String(type),
-        gwh: Number(gwh)
-      }))
-    : (provinceMetrics?.generation?.by_source?.length
-        ? provinceMetrics.generation.by_source.map((record: { source?: string; generation_gwh?: number }) => ({
-            type: normalizeGenerationDisplayType(record.source ?? 'unspecified'),
-            gwh: Number(record.generation_gwh ?? 0)
-          }))
-        : []);
-
-  // Filter UNCLASSIFIED and UNKNOWN from generation mix, sort by value
-  const generationChartSeries = generationBySource.length > 0
-    ? generationBySource
-        .filter(item => 
-          item.gwh > 0 && 
-          item.type !== 'UNCLASSIFIED' && 
-          item.type !== 'UNKNOWN' &&
-          item.type !== 'UNSPECIFIED'
-        )
-        .sort((a, b) => b.gwh - a.gwh)
-        .slice(0, 6)
-    : [
-        { type: 'NUCLEAR', gwh: 550 },
-        { type: 'HYDRO', gwh: 280 },
-        { type: 'GAS', gwh: 45 },
-        { type: 'WIND', gwh: 28 },
-        { type: 'SOLAR', gwh: 8 },
-        { type: 'BIOFUEL', gwh: 2 }
-      ];
-
-  // Fallbacks for Top Source & Renewable Share using streaming/fallback generation mix
-  const topSourceFromStreaming: string | null = generationChartSeries.length
-    ? generationChartSeries[0].type
-    : null;
-
-  const renewableShareFromStreaming: number | null = (() => {
-    if (!generationChartSeries.length) return null;
-    const renewableTypes = new Set([
-      'HYDRO',
-      'HYDROELECTRIC',
-      'WIND',
-      'SOLAR',
-      'BIOMASS',
-      'BIOFUEL',
-      'GEOTHERMAL',
-      'TIDAL',
-      'MARINE',
-    ]);
-
-    const total = generationChartSeries.reduce((sum, item) => sum + (item.gwh || 0), 0);
-    if (total <= 0) return null;
-
-    const renewableTotal = generationChartSeries
-      .filter(item => renewableTypes.has(String(item.type).toUpperCase()))
-      .reduce((sum, item) => sum + (item.gwh || 0), 0);
-
-    return (renewableTotal / total) * 100;
-  })();
-
-  const fallbackSupplyDemandData = data.ontarioPrices
-    .slice(0, 20)
-    .map((record, index) => {
-      const baseSupply = 14706;
-      const baseDemand = 12842;
-      const price = record.lmp_price ?? 0;
-      const priceMultiplier = Math.max(0.8, Math.min(1.2, price / 50));
-      return {
-        label: new Date(record.datetime).toLocaleTimeString('en-CA', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }),
-        supply: Math.round(baseSupply * priceMultiplier + (((index * 53) % 300) - 150)),
-        demand: Math.round(baseDemand * priceMultiplier + (((index * 97) % 250) - 125)),
-        price
-      };
-    });
-
-  const demandTrendChartData = trends?.ontario_demand?.map((row: { date: string; average_mw: number | null }) => ({
-    label: row.date,
-    demand: row.average_mw ?? 0
-  }));
-
-  const supplyDemandChartData = demandTrendChartData?.length ? demandTrendChartData : fallbackSupplyDemandData;
-  const hasDemandTrend = !!demandTrendChartData?.length;
-  const trendWindowStart = demandTrendChartData?.[0]?.label ?? trends?.window?.start ?? '—';
-  const trendWindowEnd = demandTrendChartData?.[Math.max((demandTrendChartData?.length ?? 1) - 1, 0)]?.label ?? trends?.window?.end ?? '—';
-
-  // Process Weather Correlation data
-  const weatherCorrelationData = data.weatherData
-    .slice(0, 30)
-    .map(record => ({
-      temperature: record.temperature,
-      correlation: Math.min(1, record.electricity_demand / 1000) // Normalize to correlation
-    }));
-
-  // Calculate current values - REPLACE MOCK WITH REAL DATA
-  const currentDemand = nationalOverview?.demand?.ontario_demand_mw
-    ?? provinceMetrics?.latest_demand?.market_demand_mw
-    ?? data.ontarioDemand[0]?.total_demand_mw
-    ?? null;
-  const currentTemperature = data.weatherData.length > 0
-    ? data.weatherData[0]?.temperature || 15 // Use real weather data if available
-    : 15; // Default temperature for Toronto area
-
-  const albertaLatest = nationalOverview?.alberta;
-  const currentSupply = albertaLatest?.total_gen_mw
-    ?? (fallbackSupplyDemandData[0]?.supply ?? null);
-  const currentDemandAlberta = albertaLatest?.total_demand_mw
-    ?? (fallbackSupplyDemandData[0]?.demand ?? null);
-  const currentPrice = albertaLatest?.pool_price_cad
-    ?? (fallbackSupplyDemandData[0]?.price ?? null);
-
-  // Calculate correlation from actual weather and demand data
-  const averageCorrelation = data.weatherData.length > 0 && data.ontarioDemand.length > 0
-    ? Math.min(1, Math.max(0, 0.3 + ((data.weatherData.length * 0.1) % 0.4))) // Deterministic from data length
-    : 0.65; // Default correlation
-
   const activeDataSources = connectionStatuses.filter((s) =>
     s.status === 'connected' ||
     s.status === 'connecting' ||
     (s.status === 'fallback' && s.recordCount > 0)
   ).length;
   const displayedDataSources = activeDataSources > 0 ? activeDataSources : DATASETS.length;
+  const hasFallbackData = React.useMemo(() => {
+    return connectionStatuses.some(status => status.status === 'fallback' || status.source === 'fallback');
+  }, [connectionStatuses]);
+  const ontarioDemandStatus = connectionStatuses.find((status) => status.dataset === 'ontario_demand');
+  const provincialGenerationStatus = connectionStatuses.find((status) => status.dataset === 'provincial_generation');
+  const dashboardLastUpdatedIso = lastUpdate?.toISOString() ?? null;
+  const kpiLastUpdated = kpis?.meta?.generated_at ?? kpis?.meta?.freshness ?? null;
+  const nationalOverviewLastUpdated = (nationalOverview as { as_of?: string } | null)?.as_of ?? null;
+  const provinceMetricsLastUpdated = (provinceMetrics as { as_of?: string } | null)?.as_of ?? null;
+  const streamingGenerationMwh = data.provincialGeneration.reduce((sum, record) => {
+    const valueMwh = typeof record.megawatt_hours === 'number'
+      ? record.megawatt_hours
+      : typeof record.generation_gwh === 'number'
+        ? record.generation_gwh * 1000
+        : 0;
+    return sum + valueMwh;
+  }, 0);
+  const generationChartSeries = React.useMemo(() => {
+    const buckets = new Map<string, number>();
+    for (const record of data.provincialGeneration) {
+      const type = normalizeGenerationDisplayType(record.generation_type ?? 'other');
+      const valueGwh = typeof record.megawatt_hours === 'number'
+        ? record.megawatt_hours / 1000
+        : typeof record.generation_gwh === 'number'
+          ? record.generation_gwh
+          : 0;
+      buckets.set(type, (buckets.get(type) ?? 0) + valueGwh);
+    }
+
+    return Array.from(buckets.entries())
+      .map(([type, gwh]) => ({ type, gwh: Number(gwh.toFixed(2)) }))
+      .sort((a, b) => b.gwh - a.gwh);
+  }, [data.provincialGeneration]);
+  const topSourceFromStreaming = generationChartSeries[0]?.type ?? null;
+  const renewableTypes = new Set(['HYDRO', 'WIND', 'SOLAR', 'BIOMASS', 'BIOFUEL', 'GEOTHERMAL']);
+  const renewableShareFromStreaming = React.useMemo(() => {
+    const totalGwh = generationChartSeries.reduce((sum, item) => sum + item.gwh, 0);
+    if (totalGwh <= 0) return null;
+    const renewableGwh = generationChartSeries
+      .filter((item) => renewableTypes.has(item.type))
+      .reduce((sum, item) => sum + item.gwh, 0);
+    return Number(((renewableGwh / totalGwh) * 100).toFixed(1));
+  }, [generationChartSeries]);
+  const normalizedSourceValue = (value: string | null | undefined) => {
+    const normalized = value ? String(value).toUpperCase().trim() : null;
+    if (!normalized || ['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED', '', 'KAGGLE'].includes(normalized)) {
+      return null;
+    }
+    return normalized;
+  };
+  const totalGenerationMetric = resolveMetricCandidate<number>([
+    {
+      value: typeof kpis?.kpis?.total_mwh === 'number' && kpis.kpis.total_mwh > 0 ? kpis.kpis.total_mwh : null,
+      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
+      lastUpdated: kpiLastUpdated,
+      isFallback: kpis?.meta?.is_fallback ?? false,
+      staleAfterHours: 1,
+      note: 'Displayed as total generation from the KPI service when available.',
+    },
+    {
+      value: typeof nationalOverview?.generation?.total_generation_gwh === 'number' && nationalOverview.generation.total_generation_gwh > 0
+        ? nationalOverview.generation.total_generation_gwh * 1000
+        : null,
+      source: 'National overview analytics API',
+      lastUpdated: nationalOverviewLastUpdated,
+      staleAfterHours: 24,
+      note: 'Fallback to national overview aggregate when KPI service is unavailable.',
+    },
+    {
+      value: typeof provinceMetrics?.generation?.total_gwh === 'number' && provinceMetrics.generation.total_gwh > 0
+        ? provinceMetrics.generation.total_gwh * 1000
+        : null,
+      source: 'Provincial metrics analytics API',
+      lastUpdated: provinceMetricsLastUpdated,
+      staleAfterHours: 24,
+      note: 'Derived from the provincial metrics response.',
+    },
+    {
+      value: streamingGenerationMwh > 0 ? streamingGenerationMwh : null,
+      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
+      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+      isFallback: provincialGenerationStatus?.source === 'fallback',
+      staleAfterHours: 1,
+      note: 'Calculated from the currently loaded generation records.',
+    },
+  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified generation source is currently available for this KPI.', staleAfterHours: 1 });
+  const topSourceMetric = resolveMetricCandidate<string>([
+    {
+      value: normalizedSourceValue(topSourceFromAPI),
+      source: 'Provincial metrics analytics API',
+      lastUpdated: provinceMetricsLastUpdated,
+      staleAfterHours: 24,
+      note: 'Top source from the provincial metrics API.',
+    },
+    {
+      value: normalizedSourceValue(kpis?.kpis?.top_source?.type),
+      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
+      lastUpdated: kpiLastUpdated,
+      isFallback: kpis?.meta?.is_fallback ?? false,
+      staleAfterHours: 1,
+      note: 'Top source returned by the KPI service.',
+    },
+    {
+      value: normalizedSourceValue(topSourceFromStreaming),
+      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
+      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+      isFallback: provincialGenerationStatus?.source === 'fallback',
+      staleAfterHours: 1,
+      note: 'Derived from the displayed generation mix when API values are unavailable.',
+    },
+  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified top source is currently available for this KPI.', staleAfterHours: 1 });
+  const renewableShareMetric = resolveMetricCandidate<number>([
+    {
+      value: typeof renewableShareFromAPI === 'number' && renewableShareFromAPI > 0 ? renewableShareFromAPI : null,
+      source: 'Provincial metrics analytics API',
+      lastUpdated: provinceMetricsLastUpdated,
+      staleAfterHours: 24,
+      note: 'Renewable share from the analytics API.',
+    },
+    {
+      value: typeof kpis?.kpis?.renewable_share === 'number' && kpis.kpis.renewable_share > 0 ? kpis.kpis.renewable_share * 100 : null,
+      source: kpis?.meta?.is_fallback ? 'Transition KPI fallback service' : 'Transition KPI service',
+      lastUpdated: kpiLastUpdated,
+      isFallback: kpis?.meta?.is_fallback ?? false,
+      staleAfterHours: 1,
+      note: 'Renewable share returned by the KPI service.',
+    },
+    {
+      value: typeof renewableShareFromStreaming === 'number' && renewableShareFromStreaming > 0 ? renewableShareFromStreaming : null,
+      source: provincialGenerationStatus?.source === 'fallback' ? 'Fallback provincial generation stream' : 'Provincial generation stream',
+      lastUpdated: provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso,
+      isFallback: provincialGenerationStatus?.source === 'fallback',
+      staleAfterHours: 1,
+      note: 'Derived from the displayed generation mix when API values are unavailable.',
+    },
+  ], { defaultSource: 'Fallback generation sample', defaultNote: 'No verified renewable share is currently available for this KPI.', staleAfterHours: 1 });
+  const connectedDashboardFreshnessMeta = buildDashboardFreshnessProvenance({
+    connectionStatuses,
+    lastUpdated: dashboardLastUpdatedIso,
+    fallbackLastUpdated: trendDemandLastUpdated,
+  });
+  const dashboardFreshnessMeta = buildDataProvenance({
+    source: trendDemandProvenance?.source ?? connectedDashboardFreshnessMeta.source,
+    lastUpdated: trendDemandLastUpdated ?? dashboardLastUpdatedIso,
+    isFallback: trendDemandIsFallback || hasFallbackData,
+    staleAfterHours: 1,
+    note: trendDemandIsFallback
+      ? 'Ontario demand trend is currently modeled or supplemented.'
+      : connectedDashboardFreshnessMeta.note,
+  });
+  const ontarioDemandChartData = React.useMemo(() => {
+    return [...data.ontarioDemand]
+      .sort((a, b) => a.datetime.localeCompare(b.datetime))
+      .slice(-48)
+      .map((record) => ({
+        time: new Date(record.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        demand: record.total_demand_mw,
+      }));
+  }, [data.ontarioDemand]);
+  const currentDemand = ontarioDemandChartData.length > 0
+    ? ontarioDemandChartData[ontarioDemandChartData.length - 1]?.demand ?? null
+    : null;
+  const supplyDemandChartData = React.useMemo(() => {
+    if (Array.isArray(trends?.ontario_demand) && trends.ontario_demand.length > 0) {
+      return trends.ontario_demand.map((row: { date?: string; average_mw?: number; bucket_date?: string }) => {
+        const label = row.date ?? row.bucket_date ?? '';
+        return {
+          label,
+          demand: row.average_mw ?? 0,
+        };
+      });
+    }
+
+    return [...data.ontarioDemand]
+      .sort((a, b) => a.datetime.localeCompare(b.datetime))
+      .slice(-24)
+      .map((record) => ({
+        label: new Date(record.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        demand: record.total_demand_mw,
+      }));
+  }, [trends, data.ontarioDemand]);
+  const hasDemandTrend = Array.isArray(trends?.ontario_demand) && trends.ontario_demand.length > 0;
+  const trendWindowStart = trends?.window?.start ? new Date(trends.window.start).toLocaleDateString() : '—';
+  const trendWindowEnd = trends?.window?.end ? new Date(trends.window.end).toLocaleDateString() : '—';
+  const currentSupply = null;
+  const currentDemandAlberta = supplyDemandChartData.length > 0
+    ? supplyDemandChartData[supplyDemandChartData.length - 1]?.demand ?? null
+    : null;
+  const currentPrice = data.ontarioPrices.length > 0
+    ? data.ontarioPrices[0]?.energy_price ?? null
+    : null;
   const sourceText = (key: DatasetType) => {
     try {
       const s = energyDataManager.getConnectionStatus(key);
@@ -541,7 +561,13 @@ export const RealTimeDashboard: React.FC = () => {
 
   // Calculate if data is actually live (freshness check + data presence check)
   const isDataLive = React.useMemo(() => {
+    if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
+      return false;
+    }
     const stalenessThresholdMs = 5 * 60 * 1000; // 5 minutes
+    if (!lastUpdate) {
+      return false;
+    }
     const now = Date.now();
     const isFresh = (now - lastUpdate.getTime()) < stalenessThresholdMs;
     const hasData = data.ontarioDemand.length > 0 || 
@@ -549,22 +575,23 @@ export const RealTimeDashboard: React.FC = () => {
                     (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
                     (currentDemand !== null && currentDemand > 0);
     return isFresh && hasData;
-  }, [lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastUpdate, data, totalGenerationGwh, currentDemand]);
 
   // Check for partial data (fresh timestamp but some metrics missing)
   const hasPartialData = React.useMemo(() => {
+    if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
+      return false;
+    }
     const stalenessThresholdMs = 5 * 60 * 1000;
+    if (!lastUpdate) {
+      return false;
+    }
     const now = Date.now();
     const isFresh = (now - lastUpdate.getTime()) < stalenessThresholdMs;
     const hasSomeData = data.ontarioDemand.length > 0 || data.provincialGeneration.length > 0;
     const hasAllData = totalGenerationGwh > 0 && currentDemand > 0 && data.ontarioDemand.length > 5;
     return isFresh && hasSomeData && !hasAllData;
-  }, [lastUpdate, data, totalGenerationGwh, currentDemand]);
-
-  // Check if any data is from fallback sources
-  const hasFallbackData = React.useMemo(() => {
-    return connectionStatuses.some(status => status.status === 'fallback' || status.source === 'fallback');
-  }, [connectionStatuses]);
+  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastUpdate, data, totalGenerationGwh, currentDemand]);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -696,72 +723,50 @@ export const RealTimeDashboard: React.FC = () => {
           <span className="metric-label">Total Generation</span>
           <span className="metric-value">
             {
-              (typeof kpis?.kpis?.total_mwh === 'number' && kpis.kpis.total_mwh > 0)
-                ? Math.round(kpis.kpis.total_mwh).toLocaleString()
-                : (typeof totalGenerationGwh === 'number' && totalGenerationGwh > 0
-                    ? Math.round(totalGenerationGwh * 1000).toLocaleString()
-                    : (() => {
-                        // Calculate fallback from streaming data
-                        const fallbackFromStream = data.provincialGeneration.reduce((sum, record) => {
-                          const valueMwh = typeof record.megawatt_hours === 'number'
-                            ? record.megawatt_hours
-                            : typeof record.generation_gwh === 'number'
-                              ? record.generation_gwh * 1000
-                              : 0;
-                          return sum + valueMwh;
-                        }, 0);
-                        return fallbackFromStream > 0 
-                          ? Math.round(fallbackFromStream).toLocaleString()
-                          : '14,600'; // Ontario typical daily generation
-                      })()
-                    )
+              typeof totalGenerationMetric.value === 'number'
+                ? Math.round(totalGenerationMetric.value).toLocaleString()
+                : '—'
             } MWh
           </span>
+          <div className="mt-2 flex justify-center">
+            <DataFreshnessBadge
+              timestamp={totalGenerationMetric.meta.lastUpdated}
+              status={totalGenerationMetric.meta.freshnessStatus}
+              source={totalGenerationMetric.meta.source}
+              compact={true}
+              showRelative={false}
+            />
+          </div>
         </div>
         <div className="card card-metric">
           <span className="metric-label">Top Source</span>
           <span className="metric-value">
-            {
-              (() => {
-                const normalize = (value: string | null | undefined) =>
-                  value ? String(value).toUpperCase().trim() : null;
-                const badValues = ['UNCLASSIFIED', 'UNKNOWN', 'UNSPECIFIED', '', 'KAGGLE'];
-                const candidates = [
-                  normalize(topSourceFromAPI),
-                  normalize(kpis?.kpis?.top_source?.type),
-                  normalize(topSourceFromStreaming)
-                ];
-                const selected = candidates.find(
-                  (value) => value && !badValues.includes(value)
-                );
-                return selected ?? '—';
-              })()
-            }
+            {topSourceMetric.value ?? '—'}
           </span>
+          <div className="mt-2 flex justify-center">
+            <DataFreshnessBadge
+              timestamp={topSourceMetric.meta.lastUpdated}
+              status={topSourceMetric.meta.freshnessStatus}
+              source={topSourceMetric.meta.source}
+              compact={true}
+              showRelative={false}
+            />
+          </div>
         </div>
         <div className="card card-metric">
           <span className="metric-label">Renewable Share</span>
           <span className="metric-value">
-            {
-              (() => {
-                const shareFromStream =
-                  typeof renewableShareFromStreaming === 'number' && renewableShareFromStreaming > 0
-                    ? renewableShareFromStreaming
-                    : null;
-                const shareFromApi =
-                  typeof renewableShareFromAPI === 'number' && renewableShareFromAPI > 0
-                    ? renewableShareFromAPI
-                    : null;
-                const shareFromKpi =
-                  typeof kpis?.kpis?.renewable_share === 'number' && kpis!.kpis!.renewable_share > 0
-                    ? kpis!.kpis!.renewable_share * 100
-                    : null;
-
-                const pct = shareFromStream ?? shareFromApi ?? shareFromKpi;
-                return pct !== null && pct !== undefined ? `${pct.toFixed(1)}%` : '—';
-              })()
-            }
+            {typeof renewableShareMetric.value === 'number' ? `${renewableShareMetric.value.toFixed(1)}%` : '—'}
           </span>
+          <div className="mt-2 flex justify-center">
+            <DataFreshnessBadge
+              timestamp={renewableShareMetric.meta.lastUpdated}
+              status={renewableShareMetric.meta.freshnessStatus}
+              source={renewableShareMetric.meta.source}
+              compact={true}
+              showRelative={false}
+            />
+          </div>
         </div>
       </div>
 
@@ -781,8 +786,8 @@ export const RealTimeDashboard: React.FC = () => {
                   showRefreshButton={true}
                   onRefresh={loadDashboardData}
                   isRefreshing={loading}
-                  status={trendDemandFreshness}
-                  source={trendDemandProvenance?.source}
+                  status={trendDemandFreshness ?? dashboardFreshnessMeta.freshnessStatus}
+                  source={dashboardFreshnessMeta.source}
                 />
               </div>
               <div className="flex items-center space-x-4">
@@ -852,7 +857,12 @@ export const RealTimeDashboard: React.FC = () => {
                       <p className="text-sm text-secondary">Current electricity demand</p>
                     </div>
                     <DataQualityBadge
-                      provenance={createProvenance('real_stream', 'IESO', 0.95, { completeness: data.ontarioDemand.length / 96 })}
+                      provenance={createProvenance(
+                        ontarioDemandStatus?.source === 'fallback' ? 'proxy_indicative' : 'real_stream',
+                        ontarioDemandStatus?.source === 'fallback' ? 'Fallback Ontario demand sample' : 'IESO',
+                        ontarioDemandStatus?.source === 'fallback' ? 0.65 : 0.95,
+                        { completeness: data.ontarioDemand.length / 96 }
+                      )}
                       sampleCount={data.ontarioDemand.length}
                       showDetails={true}
                     />
@@ -883,7 +893,7 @@ export const RealTimeDashboard: React.FC = () => {
               <div className="flex items-center justify-center gap-4 mt-2">
                 <DataSource 
                   {...COMMON_DATA_SOURCES.IESO_DEMAND}
-                  date={lastUpdate.toISOString()}
+                  date={ontarioDemandStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso ?? undefined}
                   compact={true}
                 />
                 <span className="text-xs text-slate-500">
@@ -948,7 +958,7 @@ export const RealTimeDashboard: React.FC = () => {
                 <DataSource 
                   dataset="Provincial Generation Mix"
                   url="https://www.ieso.ca/en/Power-Data/Supply-Overview/Hourly-Ontario-Energy-Price"
-                  date={lastUpdate.toISOString()}
+                  date={provincialGenerationStatus?.lastUpdate?.toISOString() ?? dashboardLastUpdatedIso ?? undefined}
                   compact={true}
                 />
                 <span className="text-xs text-slate-500">
@@ -1023,7 +1033,7 @@ export const RealTimeDashboard: React.FC = () => {
                 {!hasDemandTrend && (
                   <DataSource 
                     {...COMMON_DATA_SOURCES.AESO_DEMAND}
-                    date={lastUpdate.toISOString()}
+                    date={dashboardLastUpdatedIso ?? undefined}
                     compact={true}
                   />
                 )}
@@ -1066,7 +1076,7 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="flex items-center gap-sm">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
             <span>
-              Last updated: {lastUpdate.toLocaleTimeString()} • {loading ? 'Refreshing...' : isDataLive ? 'Live streaming active' : 'Data stale - refresh needed'}
+              Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Unknown'} • {loading ? 'Refreshing...' : isDataLive ? 'Live streaming active' : 'Data stale - refresh needed'}
             </span>
           </div>
         </div>
