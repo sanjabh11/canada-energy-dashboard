@@ -62,6 +62,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
   const [edgeDisabled, setEdgeDisabled] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const fetchOpsHealth = async () => {
     abortRef.current?.abort();
@@ -107,6 +108,11 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
       console.error('Failed to fetch ops health:', err);
       setEdgeDisabled(false);
       setError(err.message || 'Failed to load');
+      // Stop polling on network/CORS errors to prevent console spam
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     } finally {
       setLoading(false);
     }
@@ -126,9 +132,12 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
     fetchOpsHealth();
 
     if (autoRefresh) {
-      const interval = setInterval(fetchOpsHealth, refreshInterval);
+      intervalRef.current = setInterval(fetchOpsHealth, refreshInterval);
       return () => {
-        clearInterval(interval);
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
         abortRef.current?.abort();
       };
     }

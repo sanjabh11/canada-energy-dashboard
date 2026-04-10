@@ -237,6 +237,9 @@ const ESGFinanceDashboard: React.FC = () => {
         projected_2030_cost_millions: Number(item.projected_2030_cost_millions ?? 0),
       }))
     : SAMPLE_CARBON_EXPOSURE;
+  // Detect if we're showing sample data (either API returned empty OR API returned sample/pre-seeded data)
+  const isShowingSampleTopPerformers = topPerformerData === SAMPLE_TOP_PERFORMERS || !lastUpdated;
+  const isShowingSampleCarbonExposure = carbonExposureData === SAMPLE_CARBON_EXPOSURE || !lastUpdated;
   const {
     usesSampleTopPerformers,
     usesSampleCarbonExposure,
@@ -422,8 +425,13 @@ const ESGFinanceDashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="card shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Top ESG Performers (MSCI 0–10)</h2>
-              {usesSampleTopPerformers && (
-                <p className="mb-3 text-sm text-slate-500">Reference sample ranking shown because no verified top-performer rows were returned.</p>
+              {isShowingSampleTopPerformers && (
+                <div className="mb-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-600 font-bold text-sm">⚠️ SAMPLE DATA</span>
+                    <span className="text-amber-700 text-sm">Reference ranking — not live market data</span>
+                  </div>
+                </div>
               )}
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={topPerformerData}>
@@ -439,8 +447,13 @@ const ESGFinanceDashboard: React.FC = () => {
 
             <div className="card shadow p-6">
               <h2 className="text-lg font-semibold mb-4">Highest Carbon Pricing Exposure</h2>
-              {usesSampleCarbonExposure && (
-                <p className="mb-3 text-sm text-slate-500">Reference sample exposure curve shown because no verified carbon-exposure rows were returned.</p>
+              {isShowingSampleCarbonExposure && (
+                <div className="mb-3 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-amber-600 font-bold text-sm">⚠️ SAMPLE DATA</span>
+                    <span className="text-amber-700 text-sm">Reference exposure curve — not live market data</span>
+                  </div>
+                </div>
               )}
               <ResponsiveContainer width="100%" height={300}>
                 <LineChart data={carbonExposureData}>

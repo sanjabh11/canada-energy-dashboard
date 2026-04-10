@@ -3,7 +3,7 @@
 // Provides typed interfaces and error handling
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from './config';
 
-const HELP_EDGE_ENABLED: boolean = (() => {
+export const HELP_EDGE_ENABLED: boolean = (() => {
   const raw = (import.meta as any)?.env?.VITE_ENABLE_HELP_FUNCTION;
   if (typeof raw === 'boolean') return raw;
   if (typeof raw === 'string') return raw.toLowerCase() === 'true';

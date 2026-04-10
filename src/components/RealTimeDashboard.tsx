@@ -112,6 +112,7 @@ export const RealTimeDashboard: React.FC = () => {
   const [connectionStatuses, setConnectionStatuses] = useState<ConnectionStatus[]>(() => energyDataManager.getAllConnectionStatuses());
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [lastRefreshSuccess, setLastRefreshSuccess] = useState<boolean | null>(null);
   
   const [stats, setStats] = useState<DashboardStats>({
     dataSources: 4,
@@ -207,16 +208,35 @@ export const RealTimeDashboard: React.FC = () => {
         provinceMetrics,
         trends
       ] = await Promise.all([
-        energyDataManager.loadData('ontario_demand', { maxRows: 200, signal }).catch(e => { console.warn('ontario_demand failed', e); return []; }),
-        energyDataManager.loadData('provincial_generation', { maxRows: 500, signal }).catch(e => { console.warn('provincial_generation failed', e); return []; }),
-        energyDataManager.loadData('ontario_prices', { maxRows: 200, signal }).catch(e => { console.warn('ontario_prices failed', e); return []; }),
-        energyDataManager.loadData('hf_electricity_demand', { maxRows: 200, signal }).catch(e => { console.warn('hf_electricity_demand failed', e); return []; }),
+        energyDataManager.loadData('ontario_demand', { maxRows: 200, signal }).catch(e => { 
+          if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
+          console.warn('ontario_demand failed', e); 
+          return []; 
+        }),
+        energyDataManager.loadData('provincial_generation', { maxRows: 500, signal }).catch(e => { 
+          if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
+          console.warn('provincial_generation failed', e); 
+          return []; 
+        }),
+        energyDataManager.loadData('ontario_prices', { maxRows: 200, signal }).catch(e => { 
+          if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
+          console.warn('ontario_prices failed', e); 
+          return []; 
+        }),
+        energyDataManager.loadData('hf_electricity_demand', { maxRows: 200, signal }).catch(e => { 
+          if (e?.name === 'AbortError') return []; // Silently ignore intentional aborts
+          console.warn('hf_electricity_demand failed', e); 
+          return []; 
+        }),
         nationalOverviewPromise,
         provinceMetricsPromise,
         trendPromise
       ]);
 
-      if (signal.aborted) return;
+      if (signal.aborted) {
+        setLastRefreshSuccess(false);
+        return;
+      }
 
       setData({
         ontarioDemand,
@@ -241,9 +261,14 @@ export const RealTimeDashboard: React.FC = () => {
         ) ?? null
       );
       setConnectionStatuses(statuses);
+      setLastRefreshSuccess(true);
     } catch (error: any) {
-      if (error?.name === 'AbortError') return;
+      if (error?.name === 'AbortError') {
+        setLastRefreshSuccess(false);
+        return;
+      }
       console.error('Error loading dashboard data:', error);
+      setLastRefreshSuccess(false);
     } finally {
       if (!controller.signal.aborted) setLoading(false);
     }
@@ -559,9 +584,12 @@ export const RealTimeDashboard: React.FC = () => {
   };
   console.log('🔧 RealTimeDashboard env check:', envDebug);
 
-  // Calculate if data is actually live (freshness check + data presence check)
+  // Calculate if data is actually live (freshness check + data presence check + last refresh success)
   const isDataLive = React.useMemo(() => {
     if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
+      return false;
+    }
+    if (lastRefreshSuccess === false) {
       return false;
     }
     const stalenessThresholdMs = 5 * 60 * 1000; // 5 minutes
@@ -575,7 +603,7 @@ export const RealTimeDashboard: React.FC = () => {
                     (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
                     (currentDemand !== null && currentDemand > 0);
     return isFresh && hasData;
-  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastRefreshSuccess, lastUpdate, data, totalGenerationGwh, currentDemand]);
 
   // Check for partial data (fresh timestamp but some metrics missing)
   const hasPartialData = React.useMemo(() => {
@@ -626,6 +654,10 @@ export const RealTimeDashboard: React.FC = () => {
               <span className="badge badge-live">● Live Data</span>
             ) : hasPartialData ? (
               <span className="badge badge-warning">◐ Partial Data — Some metrics loading</span>
+            ) : loading ? (
+              <span className="badge badge-warning">⟳ Refreshing...</span>
+            ) : lastRefreshSuccess === false ? (
+              <span className="badge badge-warning">⚠ Refresh interrupted — data may be stale</span>
             ) : (
               <span className="badge badge-warning">⚠ Data refreshing — may be stale</span>
             )}
@@ -861,7 +893,7 @@ export const RealTimeDashboard: React.FC = () => {
                         ontarioDemandStatus?.source === 'fallback' ? 'proxy_indicative' : 'real_stream',
                         ontarioDemandStatus?.source === 'fallback' ? 'Fallback Ontario demand sample' : 'IESO',
                         ontarioDemandStatus?.source === 'fallback' ? 0.65 : 0.95,
-                        { completeness: data.ontarioDemand.length / 96 }
+                        { completeness: Math.min(1, data.ontarioDemand.length / 96) }
                       )}
                       sampleCount={data.ontarioDemand.length}
                       showDetails={true}

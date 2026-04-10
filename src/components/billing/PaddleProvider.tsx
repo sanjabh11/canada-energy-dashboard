@@ -5,12 +5,14 @@ import { trackEvent } from '../../lib/analytics';
 interface PaddleContextType {
     paddle: Paddle | null;
     isLoading: boolean;
+    isFallbackMode: boolean;
     openCheckout: (priceId: string) => void;
 }
 
 const PaddleContext = createContext<PaddleContextType>({
     paddle: null,
     isLoading: true,
+    isFallbackMode: false,
     openCheckout: () => { },
 });
 
@@ -46,12 +48,17 @@ function handleCheckoutFallback(priceId: string): void {
 export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     const [paddle, setPaddle] = useState<Paddle | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [isFallbackMode, setIsFallbackMode] = useState(false);
 
     useEffect(() => {
         const initPaddle = async () => {
             try {
                 if (PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
-                    console.warn('[Paddle] Missing VITE_PADDLE_CLIENT_TOKEN. Checkout fallback will be used.');
+                    // Only warn in production; dev mode missing token is expected
+                    if (!import.meta.env.DEV) {
+                        console.warn('[Paddle] Missing VITE_PADDLE_CLIENT_TOKEN. Checkout fallback will be used.');
+                    }
+                    setIsFallbackMode(true);
                 }
                 const paddleInstance = await initializePaddle({
                     environment: PADDLE_ENVIRONMENT as 'sandbox' | 'production',
@@ -77,8 +84,12 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
                     },
                 });
                 setPaddle(paddleInstance || null);
+                if (!paddleInstance || PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
+                    setIsFallbackMode(true);
+                }
             } catch (error) {
                 console.error('Failed to initialize Paddle:', error);
+                setIsFallbackMode(true);
             } finally {
                 setIsLoading(false);
             }
@@ -88,11 +99,11 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     }, []);
 
     const openCheckout = (priceId: string) => {
-        if (!paddle || PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
-            console.error('Paddle not initialized or using test token');
+        if (!paddle || PADDLE_CLIENT_TOKEN === 'test_paddle_token' || isFallbackMode) {
+            console.error('Paddle not initialized or using test token (fallback mode)');
             trackEvent('checkout_fallback_redirected', {
                 provider: 'paddle',
-                reason: !paddle ? 'not_initialized' : 'test_token',
+                reason: !paddle ? 'not_initialized' : isFallbackMode ? 'fallback_mode' : 'test_token',
                 price_id: priceId
             });
             handleCheckoutFallback(priceId);
@@ -122,7 +133,7 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     };
 
     return (
-        <PaddleContext.Provider value={{ paddle, isLoading, openCheckout }}>
+        <PaddleContext.Provider value={{ paddle, isLoading, isFallbackMode, openCheckout }}>
             {children}
         </PaddleContext.Provider>
     );

@@ -595,14 +595,14 @@ export const StakeholderDashboard: React.FC = () => {
                   </select>
                   <div className="flex items-center space-x-2">
                     <div className={`inline-flex items-center px-2 py-1 text-xs rounded-full ${
-                      showWebSocketConnection ? 'bg-green-100 text-success' : 'bg-yellow-100 text-warning'
+                      showWebSocketConnection ? 'bg-green-100 text-success' : 'bg-amber-100 text-amber-700'
                     }`}>
                       <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
-                        showWebSocketConnection ? 'bg-secondary0' : 'bg-secondary0'
+                        showWebSocketConnection ? 'bg-green-500' : 'bg-amber-500'
                       }`}></span>
-                      {showWebSocketConnection ? 'Real-time' : 'Streaming'}
+                      {showWebSocketConnection ? 'Real-time' : 'HTTP Fallback'}
                     </div>
-                    {wsParticipants.length > 0 && (
+                    {wsParticipants.length > 0 && showWebSocketConnection && (
                       <span className="text-xs text-tertiary">
                         {wsParticipants.length} online
                       </span>

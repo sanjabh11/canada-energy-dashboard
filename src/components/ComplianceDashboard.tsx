@@ -424,7 +424,8 @@ export const ComplianceDashboard: React.FC = () => {
       )}
 
       {/* Data Freshness Indicator */}
-      <div className="flex justify-end">
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-primary">Compliance Monitoring Dashboard</h1>
         <DataFreshnessBadge
           timestamp={new Date()}
           status={dataSource === 'live' ? 'live' : dataSource === 'cached' ? 'stale' : 'demo'}

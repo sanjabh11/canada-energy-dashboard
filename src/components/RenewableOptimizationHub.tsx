@@ -541,7 +541,7 @@ const RenewableOptimizationHub: React.FC = () => {
                 
                 <div className="card p-4">
                   <div className="text-sm text-secondary mb-1">Storage Efficiency</div>
-                  <div className="text-2xl font-bold text-orange-600">{awardMetrics.avg_round_trip_efficiency_percent}%</div>
+                  <div className="text-2xl font-bold text-orange-600">{Math.min(95, awardMetrics.avg_round_trip_efficiency_percent)}%</div>
                   <div className="text-xs text-green-600 flex items-center mt-1">
                     {awardMetrics.avg_round_trip_efficiency_percent > 88 ? <CheckCircle className="h-3 w-3 mr-1" /> : <AlertTriangle className="h-3 w-3 mr-1" />}
                     Target: &gt;88%
@@ -774,12 +774,17 @@ const RenewableOptimizationHub: React.FC = () => {
 
         {activeTab === 'storage' && (
           <div className="card p-6">
-            <h3 className="text-xl font-semibold text-primary mb-6">Battery Storage Optimization</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-primary">Battery Storage Optimization</h3>
+              <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
+                <span className="text-amber-600 font-bold text-xs">⚠️ ILLUSTRATIVE</span>
+              </div>
+            </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-6">
                 <div className="text-sm text-orange-700 mb-2">Round-Trip Efficiency</div>
-                <div className="text-4xl font-bold text-orange-900">{awardMetrics?.avg_round_trip_efficiency_percent ?? 0}%</div>
+                <div className="text-4xl font-bold text-orange-900">{Math.min(95, awardMetrics?.avg_round_trip_efficiency_percent ?? 0)}%</div>
                 <div className="text-sm text-green-700 mt-2 flex items-center">
                   <CheckCircle className="h-4 w-4 mr-1" />
                   Target: &gt;88%
@@ -790,12 +795,14 @@ const RenewableOptimizationHub: React.FC = () => {
                 <div className="text-sm text-indigo-700 mb-2">Monthly Arbitrage Revenue</div>
                 <div className="text-4xl font-bold text-indigo-900">${(awardMetrics?.monthly_arbitrage_revenue_cad ?? 0).toLocaleString()}</div>
                 <div className="text-lg text-indigo-700">CAD/month</div>
+                <div className="text-xs text-amber-600 mt-1">Simulated projection</div>
               </div>
               
               <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-6">
                 <div className="text-sm text-cyan-700 mb-2">Dispatch Accuracy</div>
                 <div className="text-4xl font-bold text-cyan-900">{awardMetrics?.storage_dispatch_accuracy_percent ?? 0}%</div>
                 <div className="text-lg text-cyan-700">prediction accuracy</div>
+                <div className="text-xs text-amber-600 mt-1">Simulated metric</div>
               </div>
             </div>
           </div>

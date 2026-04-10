@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { fetchHelpManifest, type HelpManifestItem } from '../lib/helpApi';
+import { fetchHelpManifest, HELP_EDGE_ENABLED, type HelpManifestItem } from '../lib/helpApi';
 
 interface HelpContextType {
   manifest: HelpManifestItem[];
   loading: boolean;
   error: string | null;
+  isEnabled: boolean;
   refreshManifest: () => Promise<void>;
 }
 
@@ -28,6 +29,13 @@ export function HelpProvider({ children }: HelpProviderProps) {
   const [error, setError] = useState<string | null>(null);
 
   const loadManifest = async () => {
+    // Skip entirely if help is disabled - no console noise
+    if (!HELP_EDGE_ENABLED) {
+      setLoading(false);
+      setManifest([]);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -35,9 +43,7 @@ export function HelpProvider({ children }: HelpProviderProps) {
       setManifest(data);
     } catch (err) {
       // Silently fail - help system is optional
-      // console.error('Failed to load help manifest:', err);
-      setError(null); // Don't show error to user
-      // Gracefully degrade to empty manifest
+      setError(null);
       setManifest([]);
     } finally {
       setLoading(false);
@@ -53,7 +59,7 @@ export function HelpProvider({ children }: HelpProviderProps) {
   };
 
   return (
-    <HelpContext.Provider value={{ manifest, loading, error, refreshManifest }}>
+    <HelpContext.Provider value={{ manifest, loading, error, isEnabled: HELP_EDGE_ENABLED, refreshManifest }}>
       {children}
     </HelpContext.Provider>
   );
@@ -61,7 +67,8 @@ export function HelpProvider({ children }: HelpProviderProps) {
 
 // Hook to get help text for a specific ID without loading full content
 export function useHelpText(id: string): string {
-  const { manifest } = useHelp();
+  const { manifest, isEnabled } = useHelp();
+  if (!isEnabled) return 'Help';
   const item = manifest.find(item => item.id === id);
   return item?.short_text || 'Help';
 }

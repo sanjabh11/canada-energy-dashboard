@@ -92,7 +92,7 @@ serve(async (req) => {
       const dischargeActions = storageLogs?.filter(l => l.action === 'discharge') || [];
       const totalCharged = chargeActions.reduce((sum, l) => sum + Math.abs(l.power_mw * 0.25), 0);
       const totalDischarged = dischargeActions.reduce((sum, l) => sum + (l.power_mw * 0.25), 0);
-      const storageEfficiency = totalCharged > 0 ? (totalDischarged / totalCharged) * 100 : 0;
+      const storageEfficiency = totalCharged > 0 ? Math.min(95, (totalDischarged / totalCharged) * 100) : 0;
       
       // Calculate storage revenue
       const storageRevenue = storageLogs?.reduce((sum, l) => sum + (l.expected_revenue_cad || 0), 0) || 0;

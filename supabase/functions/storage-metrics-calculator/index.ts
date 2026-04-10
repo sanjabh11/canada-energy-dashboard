@@ -62,7 +62,7 @@ serve(async (req) => {
     const totalDischarged = dischargeActions.reduce((sum, l) => sum + (l.power_mw * 0.25), 0);
 
     const roundTripEfficiency = totalCharged > 0 
-      ? (totalDischarged / totalCharged) * 100 
+      ? Math.min(95, (totalDischarged / totalCharged) * 100) 
       : 88; // Default target
 
     // Calculate dispatch accuracy (how often we actually dispatched when we said we would)
