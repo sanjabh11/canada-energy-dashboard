@@ -527,7 +527,7 @@ export const CanadianClimatePolicyDashboard: React.FC = () => {
               className="flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
             >
               <Download size={16} />
-              Export Scenario
+              Export JSON Scenario
             </button>
           </div>
         </div>
@@ -553,6 +553,10 @@ export const CanadianClimatePolicyDashboard: React.FC = () => {
             </div>
           </div>
         )}
+
+        <div className="mt-3 text-xs text-slate-600">
+          Export downloads a JSON snapshot containing the selected project, its overlay analysis, and the adapter metadata.
+        </div>
 
         <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
           {projectRiskComparison.map((project) => (

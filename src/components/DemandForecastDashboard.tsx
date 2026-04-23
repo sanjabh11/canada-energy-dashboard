@@ -24,6 +24,7 @@ import {
 } from '../lib/demandForecaster';
 import { realDataService } from '../lib/realDataService';
 import { evaluateForecastDrift, runMlForecast } from '../lib/mlForecastingClient';
+import { backtestRareEventResampling } from '../lib/advancedForecasting';
 
 // ============================================================================
 // TYPES
@@ -144,6 +145,11 @@ export const DemandForecastDashboard: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
   }, [predictions]);
+
+  const handleOpenGasBasis = useCallback(() => {
+    setActiveTab('forecast');
+    setMlDomain('gas_basis');
+  }, []);
 
   const handleRunForecast = useCallback(async () => {
     if (data.length === 0) return;
@@ -295,6 +301,13 @@ export const DemandForecastDashboard: React.FC = () => {
                 source="Ontario sample/training dataset"
               />
               <button
+                onClick={handleOpenGasBasis}
+                className="flex items-center gap-2 px-4 py-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-white rounded-lg text-sm font-medium transition-colors"
+              >
+                <ArrowUpRight className="h-4 w-4" />
+                AECO / Henry Hub
+              </button>
+              <button
                 onClick={handleExportCSV}
                 disabled={predictions.length === 0}
                 className="flex items-center gap-2 px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
@@ -435,6 +448,17 @@ function OverviewTab({ stats, metrics, data }: {
       .slice(-60);
   }, [data]);
 
+  const rareEventBacktest = useMemo(() => backtestRareEventResampling([
+    { x: 0.00, y: 0.05, failure: 0 },
+    { x: 0.08, y: 0.12, failure: 0 },
+    { x: 0.12, y: 0.09, failure: 0 },
+    { x: 0.20, y: 0.16, failure: 0 },
+    { x: 0.35, y: 0.22, failure: 0 },
+    { x: 0.48, y: 0.30, failure: 0 },
+    { x: 0.82, y: 0.84, failure: 1 },
+    { x: 0.91, y: 0.95, failure: 1 },
+  ], 'failure', { minorityLabel: 1, targetMinorityCount: 8 }), []);
+
   return (
     <div className="space-y-6">
       {/* Stats Grid */}
@@ -498,6 +522,53 @@ function OverviewTab({ stats, metrics, data }: {
               Reference: Hyndman & Athanasopoulos, "Forecasting: Principles and Practice" (3rd ed.).
               Accuracy benchmarked vs persistence and seasonal naive baselines per industry standard.
             </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Rare-Event Resampling */}
+      <div className="bg-violet-950/30 border border-violet-500/30 rounded-xl p-5">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+          <div>
+            <h3 className="font-semibold text-white mb-2">Rare-Event Resampling</h3>
+            <p className="text-slate-300 text-sm">
+              KMeans-SMOTE backtest summary for minority-event training slices. Synthetic rows are training-only and never shown as operational results.
+            </p>
+          </div>
+          <div className="text-xs text-violet-200">
+            {rareEventBacktest.modelVersion} · {rareEventBacktest.sourceProfile}
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3">
+            <div className="text-slate-400">Recall Before</div>
+            <div className="text-white font-semibold">{(rareEventBacktest.before.recall * 100).toFixed(0)}%</div>
+          </div>
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3">
+            <div className="text-slate-400">Recall After</div>
+            <div className="text-white font-semibold">{(rareEventBacktest.after.recall * 100).toFixed(0)}%</div>
+          </div>
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3">
+            <div className="text-slate-400">Recall Uplift</div>
+            <div className="text-violet-100 font-semibold">{(rareEventBacktest.recallUplift * 100).toFixed(0)}%</div>
+          </div>
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3">
+            <div className="text-slate-400">F1 Uplift</div>
+            <div className="text-violet-100 font-semibold">{((rareEventBacktest.after.f1 - rareEventBacktest.before.f1) * 100).toFixed(0)}%</div>
+          </div>
+        </div>
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3 text-sm">
+            <div className="text-slate-400 mb-1">Synthetic lineage</div>
+            <div className="text-violet-100">
+              {rareEventBacktest.syntheticLineage.map((cluster) => `cluster ${cluster.clusterIndex}: ${cluster.syntheticCount} synthetic / ${cluster.sourceCount} source`).join(' · ') || 'none'}
+            </div>
+          </div>
+          <div className="rounded-lg border border-violet-500/20 bg-slate-900/40 p-3 text-sm">
+            <div className="text-slate-400 mb-1">Backtest warnings</div>
+            <div className="text-violet-100">
+              {rareEventBacktest.warnings.join(' ') || 'No warnings emitted.'}
+            </div>
           </div>
         </div>
       </div>
