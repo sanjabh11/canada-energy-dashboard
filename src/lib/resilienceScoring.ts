@@ -43,6 +43,17 @@ export interface AssetProfile {
   area_sq_km: number;
 }
 
+export const RESILIENCE_FUSION_METHOD = 'chebyshev_ipa_v2';
+
+export interface ResilienceAssessment {
+  overallScore: number;
+  hazardBreakdown: Record<ClimateHazard, number>;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  limitingFactor: ClimateHazard;
+  limitingFactorLabel: string;
+  fusionMethod: string;
+}
+
 // ========== CORE ENGINE ==========
 
 /**
@@ -116,11 +127,7 @@ export class ResilienceScoringEngine {
       criticalDependents: number;
     },
     localHazards: Record<ClimateHazard, number>
-  ): {
-    overallScore: number;
-    hazardBreakdown: Record<ClimateHazard, number>;
-    riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  } {
+  ): ResilienceAssessment {
 
     // Calculate vulnerability for each hazard
     const hazardBreakdown: Record<ClimateHazard, number> = {} as Record<ClimateHazard, number>;
@@ -170,10 +177,17 @@ export class ResilienceScoringEngine {
     else if (adjustedScore >= 40) riskLevel = 'medium';
     else riskLevel = 'low';
 
+    const limitingFactorEntry = Object.entries(hazardBreakdown).sort((left, right) => right[1] - left[1])[0];
+    const limitingFactor = (limitingFactorEntry?.[0] as ClimateHazard) ?? ClimateHazard.FLOODING;
+    const limitingFactorLabel = limitingFactor.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
+
     return {
       overallScore: Math.round(adjustedScore),
       hazardBreakdown,
-      riskLevel
+      riskLevel,
+      limitingFactor,
+      limitingFactorLabel,
+      fusionMethod: RESILIENCE_FUSION_METHOD,
     };
   }
 }

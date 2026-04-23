@@ -8,7 +8,7 @@
  * Monetization: Affiliate commissions + $3/mo premium alerts
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
     TrendingUp,
@@ -40,6 +40,7 @@ import {
     DATA_SNAPSHOT_DATE,
     type RetailerOffer
 } from '../lib/aesoService';
+import { evaluateRateWatchdogScenario } from '../lib/mlForecastingClient';
 import DataTrustNotice from './DataTrustNotice';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import {
@@ -123,6 +124,8 @@ export function RROAlertSystem() {
     const [lastUpdated, setLastUpdated] = useState(new Date());
     const [isLoading, setIsLoading] = useState(true);
     const [dataSource, setDataSource] = useState<'live' | 'cached'>('cached');
+    const [watchdogEvaluation, setWatchdogEvaluation] = useState<any>(null);
+    const [watchdogSource, setWatchdogSource] = useState<'edge' | 'local_fallback'>('local_fallback');
 
     // Fetch real data on mount
     useEffect(() => {
@@ -171,8 +174,34 @@ export function RROAlertSystem() {
 
     const rroTrend = forecastRRO > currentRRO ? 'up' : 'down';
     const shouldSwitch = currentRRO > 14 || forecastRRO > 16;
-    const activeRetailers = retailers.length > 0 ? retailers : RETAILERS.map(r => ({ ...r, greenOption: false }));
+    const activeRetailers = useMemo(
+        () => retailers.length > 0 ? retailers : RETAILERS.map(r => ({ ...r, greenOption: false })),
+        [retailers]
+    );
     const lowestFixed = Math.min(...activeRetailers.map(r => r.fixedRate));
+
+    useEffect(() => {
+        let cancelled = false;
+        evaluateRateWatchdogScenario({
+            province: 'AB',
+            usageKwh: 700,
+            currentRateCadPerKwh: currentRRO / 100,
+            provider: 'Default RoLR provider',
+            retailerOffers: activeRetailers.map((offer) => ({
+                id: offer.id,
+                name: offer.name,
+                fixedRateCadPerKwh: offer.fixedRate / 100,
+                termMonths: offer.term,
+                cancellationFeeCad: offer.cancellationFee,
+            })),
+            asOfDate: DATA_SNAPSHOT_DATE,
+        }).then(({ data, source }) => {
+            if (cancelled) return;
+            setWatchdogEvaluation(data);
+            setWatchdogSource(source);
+        });
+        return () => { cancelled = true; };
+    }, [activeRetailers, currentRRO]);
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
@@ -256,7 +285,7 @@ export function RROAlertSystem() {
                     <DataTrustNotice
                         mode="fallback"
                         title="Snapshot-era Alberta price guidance"
-                        message={`Browser access to live Alberta pricing is not guaranteed in this surface. RRO estimates and retailer comparisons may reflect ${DATA_SNAPSHOT_LABEL} snapshot data (${DATA_SNAPSHOT_DATE}) rather than a confirmed live market quote.`}
+                        message={`Browser access to live Alberta pricing is not confirmed in this surface. RoLR estimates and retailer comparisons may reflect ${DATA_SNAPSHOT_LABEL} snapshot data (${DATA_SNAPSHOT_DATE}) rather than a confirmed live market quote.`}
                         className="mb-6"
                     />
                 )}
@@ -319,7 +348,10 @@ export function RROAlertSystem() {
                             <span className="text-slate-500 mb-1">/kWh</span>
                         </div>
                         <div className="text-sm text-emerald-400">
-                            Save {((currentRRO - lowestFixed) / currentRRO * 100).toFixed(0)}% by switching
+                            Estimated {((currentRRO - lowestFixed) / currentRRO * 100).toFixed(0)}% rate spread
+                        </div>
+                        <div className="mt-2 text-xs text-slate-500">
+                            Watchdog: {watchdogEvaluation?.meta?.model_version ?? 'rate-watchdog-v1'} via {watchdogSource === 'edge' ? 'Supabase Edge' : 'local fallback'}
                         </div>
                     </div>
                 </div>
@@ -347,7 +379,7 @@ export function RROAlertSystem() {
                                 </div>
                                 <div className="text-xs text-slate-400">
                                     {lowestFixed < 12
-                                        ? `Save ${((12 - lowestFixed) * 12000 / 100).toFixed(0)} CAD/year`
+                                        ? `Est. ${((12 - lowestFixed) * 12000 / 100).toFixed(0)} CAD/year`
                                         : 'RoLR is competitive'}
                                 </div>
                             </div>
@@ -363,7 +395,7 @@ export function RROAlertSystem() {
                             <div>
                                 <div className="font-medium text-white">Price Alert: Consider Switching to Fixed Rate</div>
                                 <div className="text-sm text-slate-400">
-                                    RRO is forecast to hit {forecastRRO}¢/kWh. Lock in {lowestFixed}¢ now.
+                                    RoLR/RRO estimate is forecast to hit {forecastRRO}¢/kWh. Compare the {lowestFixed}¢ fixed-rate option before switching.
                                 </div>
                             </div>
                         </div>

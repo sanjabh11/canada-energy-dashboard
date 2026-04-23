@@ -4,12 +4,14 @@
  * Shows 776% ROI story for Industrial clients
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator, TrendingUp, DollarSign, Percent, ArrowRight, CheckCircle, Info, Mail, ExternalLink, HelpCircle } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import { persistLeadIntake } from '../lib/leadIntake';
 import { useTIERPricing, calculateArbitrageSpread } from '../lib/tierPricing';
+import { evaluateTierScenario } from '../lib/mlForecastingClient';
+import type { TierScenarioResult } from '../lib/mlForecasting';
 
 interface ROIResults {
     fundPayment: number;
@@ -29,6 +31,8 @@ export const TIERROICalculator: React.FC = () => {
     const [emailCapture, setEmailCapture] = useState('');
     const [emailSubmitted, setEmailSubmitted] = useState(false);
     const [emailError, setEmailError] = useState('');
+    const [simulatorResult, setSimulatorResult] = useState<TierScenarioResult | null>(null);
+    const [simulatorSource, setSimulatorSource] = useState<'edge' | 'local_fallback'>('local_fallback');
 
     // TIER Pricing configuration (single source of truth)
     const tierPricing = useTIERPricing();
@@ -64,6 +68,27 @@ export const TIERROICalculator: React.FC = () => {
             bestOption
         };
     }, [benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE]);
+
+    useEffect(() => {
+        let cancelled = false;
+        evaluateTierScenario({
+            annualEmissionsTonnes: annualEmissions,
+            benchmarkExceedanceTonnes: benchmarkExceedance,
+            directInvestmentCapexCad: directInvestCapex,
+            creditAssumptions: {
+                fundPriceCadPerTonne: FUND_PRICE,
+                marketCreditPriceCadPerTonne: MARKET_PRICE,
+                directInvestmentCreditRate: DI_CREDIT_RATE,
+                lastVerifiedAt: tierPricing.lastVerifiedAt,
+            },
+            discountRate: 0.08,
+        }).then(({ data, source }) => {
+            if (cancelled) return;
+            setSimulatorResult(data);
+            setSimulatorSource(source);
+        });
+        return () => { cancelled = true; };
+    }, [annualEmissions, benchmarkExceedance, directInvestCapex, FUND_PRICE, MARKET_PRICE, tierPricing.lastVerifiedAt]);
 
     const handleEmailSubmit = async () => {
         if (!emailCapture || !emailCapture.includes('@')) {
@@ -238,6 +263,10 @@ export const TIERROICalculator: React.FC = () => {
                                 ${ARBITRAGE_SPREAD}/tonne arbitrage opportunity
                             </span>
                         </div>
+                        <div className="mt-3 text-xs text-slate-500">
+                            Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
+                            {simulatorResult?.meta.staleness_status === 'stale' ? ' Pricing assumptions need reverification.' : ''}
+                        </div>
                     </div>
                 </div>
 
@@ -316,10 +345,15 @@ export const TIERROICalculator: React.FC = () => {
                             <TrendingUp className="h-4 w-4" />
                             <span>
                                 {results.roiPercent >= 500
-                                    ? "Exceptional ROI - You're leaving money on the table without CEIP"
-                                    : "Strong ROI - CEIP pays for itself many times over"}
+                                    ? "Scenario shows exceptional estimated ROI under current assumptions"
+                                    : "Scenario shows CEIP may pay for itself under current assumptions"}
                             </span>
                         </div>
+                        {simulatorResult?.warnings.map((warning) => (
+                            <p key={warning} className="mt-2 text-xs text-amber-200">
+                                {warning}
+                            </p>
+                        ))}
                     </div>
 
                     {/* Direct Investment Result */}
@@ -350,7 +384,7 @@ export const TIERROICalculator: React.FC = () => {
                         onClick={() => window.location.href = '/enterprise?tier=industrial'}
                         className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
                     >
-                        Start Saving {formatCurrency(results.netSavings)} This Year
+                        Estimate {formatCurrency(results.netSavings)} in Scenario Savings
                         <ArrowRight className="h-5 w-5" />
                     </button>
                 </div>

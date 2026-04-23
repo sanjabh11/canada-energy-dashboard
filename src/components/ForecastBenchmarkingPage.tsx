@@ -1,14 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, Download, TrendingUp, Wind, Sun, Activity, Info, ExternalLink } from 'lucide-react';
 import { SEOHead } from './SEOHead';
 import { ForecastAccuracyPanel } from './ForecastAccuracyPanel';
 import { DataFreshnessBadge } from './DataFreshnessBadge';
 import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
 import { Link } from 'react-router-dom';
+import { runMlForecast } from '../lib/mlForecastingClient';
 
 const ForecastBenchmarkingPage: React.FC = () => {
   const [resourceType, setResourceType] = useState<'solar' | 'wind'>('solar');
   const [province, setProvince] = useState('ON');
+  const [mlRun, setMlRun] = useState<any>(null);
+  const [marketSpikeRun, setMarketSpikeRun] = useState<any>(null);
 
   const provinces = [
     { value: 'ON', label: 'Ontario' },
@@ -16,6 +19,40 @@ const ForecastBenchmarkingPage: React.FC = () => {
     { value: 'BC', label: 'British Columbia' },
     { value: 'QC', label: 'Quebec' },
   ];
+
+  useEffect(() => {
+    let cancelled = false;
+    runMlForecast({
+      domain: resourceType,
+      province,
+      horizon_hours: 24,
+      scenario: { reserveMarginPercent: 8 },
+    }).then(({ data }) => {
+      if (!cancelled) setMlRun(data);
+    });
+    return () => { cancelled = true; };
+  }, [resourceType, province]);
+
+  useEffect(() => {
+    let cancelled = false;
+    runMlForecast({
+      domain: 'price_spike',
+      province,
+      horizon_hours: 24,
+      scenario: {
+        poolPriceCadPerMwh: province === 'AB' ? 250 : 180,
+        demandMw: province === 'AB' ? 10800 : 9200,
+        reserveMarginPercent: province === 'AB' ? 7 : 10,
+        windGenerationMw: province === 'AB' ? 420 : 600,
+        temperatureC: province === 'AB' ? -18 : 6,
+      },
+    }).then(({ data }) => {
+      if (!cancelled) setMarketSpikeRun(data);
+    }).catch(() => {
+      if (!cancelled) setMarketSpikeRun(null);
+    });
+    return () => { cancelled = true; };
+  }, [province]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -131,6 +168,41 @@ const ForecastBenchmarkingPage: React.FC = () => {
             province={province}
           />
         </div>
+
+        {mlRun?.meta && (
+          <div className="bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-5 mb-8">
+            <h2 className="text-white font-semibold mb-2">Latest ML Governance Run</h2>
+            <p className="text-sm text-slate-300">
+              {mlRun.meta.model_version} · {mlRun.province} · {mlRun.predictions?.length ?? 0} predictions · confidence {(mlRun.meta.confidence_score * 100).toFixed(0)}%
+            </p>
+            <p className="text-xs text-slate-500 mt-2">
+              Reads from the `ml-forecast` adapter when Edge is enabled; otherwise shows local fallback metadata. Uplift still requires backtest evidence.
+            </p>
+          </div>
+        )}
+
+        {marketSpikeRun?.analysis && (
+          <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-5 mb-8">
+            <h2 className="text-white font-semibold mb-2">Wholesale Spike Screen</h2>
+            <p className="text-sm text-slate-300">
+              {marketSpikeRun.meta.model_version} · risk {(Number(marketSpikeRun.analysis.riskScore ?? 0) * 100).toFixed(0)}% · threshold {Number(marketSpikeRun.analysis.spikeThresholdCadPerMwh ?? 1000).toFixed(0)} CAD/MWh
+            </p>
+            <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg border border-amber-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Drivers</div>
+                <div className="text-white font-semibold">{(marketSpikeRun.analysis.reasons ?? []).join(', ') || 'n/a'}</div>
+              </div>
+              <div className="rounded-lg border border-amber-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Confidence</div>
+                <div className="text-white font-semibold">{(Number(marketSpikeRun.meta.confidence_score ?? 0) * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-amber-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Calibration</div>
+                <div className="text-cyan-100">Backtest against historical Alberta pool-price spikes before using as an operational trigger.</div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Use Cases */}
         <div className="grid md:grid-cols-3 gap-6 mb-8">

@@ -8,7 +8,11 @@ Use the Canada Energy Intelligence Platform (CEIP) as a credibility asset for:
 2. Teaching, cohort training, and invited-expert engagements
 3. Immigration-adjacent business visitor, employer-sponsored, and partner-led opportunities in Canada
 
-This brief is designed to be handed to Perplexity Computer for target discovery and campaign execution.
+This brief is the strategy layer. The execution-ready companion lives in:
+
+- [CEIP Outreach Campaign Assets](/Users/sanjayb/minimax/canada-energy-dashboard/docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md)
+
+Use this matrix for positioning and the companion file for target tables, outreach templates, and channel execution.
 
 ## What The Website Can Realistically Do
 
@@ -309,13 +313,14 @@ Output format:
 
 ## Recommended Execution Order
 
-1. Use Perplexity to build the 20-target tables.
-2. Filter targets by audience lane and channel fit.
+1. Use the target tables in `CEIP_OUTREACH_CAMPAIGN_ASSETS.md` as the starting list.
+2. Filter targets by audience lane, geography, and channel fit.
 3. Produce 3 campaign variants:
    - public-interest / nonprofit
    - commercial / enterprise
    - immigration-adjacent / teaching / invited-expert
 4. Reuse the CEIP landing pages and resume asset as the supporting proof bundle.
+5. Track response rate by lane and revise the table weekly.
 
 ## Ranked Target Spreadsheet Template
 

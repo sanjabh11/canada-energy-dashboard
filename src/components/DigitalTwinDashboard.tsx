@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { digitalTwin, type SystemState, type SimulationScenario, type SimulationResult } from '../lib/digitalTwin';
 import { getGridOptimizationRecommendations, type GridOptimizationResponse } from '../lib/llmClient';
+import { evaluateGridRiskScenario, runMlForecast } from '../lib/mlForecastingClient';
 import { HelpButton } from './HelpButton';
 
 interface DigitalTwinState {
@@ -34,6 +35,10 @@ interface SystemMetrics {
   carbonIntensity: number;
   systemStability: string;
   economicCost: number;
+}
+
+function roundShortCircuit(voltageKv: number, capacityMw: number) {
+  return Math.max(0, Math.round((((voltageKv * Math.max(1, capacityMw)) / 1_000) + 4) * 10) / 10);
 }
 
 export const DigitalTwinDashboard: React.FC = () => {
@@ -56,6 +61,8 @@ export const DigitalTwinDashboard: React.FC = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [aiInsights, setAiInsights] = useState<GridOptimizationResponse | null>(null);
+  const [gridRisk, setGridRisk] = useState<any>(null);
+  const [shortCircuitInsights, setShortCircuitInsights] = useState<any>(null);
   
   // Real-time system metrics
   const [metrics, setMetrics] = useState<SystemMetrics>({
@@ -100,6 +107,62 @@ export const DigitalTwinDashboard: React.FC = () => {
     });
   }, []);
 
+  const evaluateConstraintRisk = useCallback(async (state: SystemState) => {
+    const { data } = await evaluateGridRiskScenario({
+      region: 'canada',
+      reserveMarginPercent: state.reserve_margin_percent,
+      frequencyHz: state.frequency_hz,
+      recommendations: [
+        {
+          id: 'digital-twin-hold',
+          action: 'hold',
+          magnitudeMw: 0,
+          maxCapacityMw: Math.max(0, state.reserve_margin_percent * 100),
+          rampLimitMwPerHour: 500,
+        },
+      ],
+      topology: {
+        nodes: state.nodes.map((node) => ({
+          id: node.id,
+          status: node.status,
+          capacityMw: node.capacity.rated_mw,
+        })),
+        edges: state.flows.map((flow) => ({
+          fromNodeId: flow.from_node,
+          toNodeId: flow.to_node,
+          limitMw: flow.constraints.max_capacity_mw,
+          currentMw: flow.power_mw,
+        })),
+      },
+    });
+    setGridRisk(data);
+    const weakNodes = state.nodes.map((node) => ({
+      id: node.id,
+      shortCircuitKa: Math.max(3, roundShortCircuit(node.real_time_data.voltage_kv, node.capacity.rated_mw)),
+    }));
+    const shortCircuit = await runMlForecast({
+      domain: 'short_circuit',
+      province: 'AB',
+      horizon_hours: 24,
+      scenario: {
+        shortCircuitLevelKa: weakNodes.length ? Math.min(...weakNodes.map((node) => node.shortCircuitKa)) : 5.4,
+        minimumShortCircuitKa: 8,
+        inverterPenetrationPct: Math.min(80, Math.max(15, state.renewable_percentage * 0.7)),
+        reserveMarginPercent: state.reserve_margin_percent,
+        topology: {
+          nodes: weakNodes,
+          edges: state.flows.map((flow) => ({
+            fromNodeId: flow.from_node,
+            toNodeId: flow.to_node,
+            limitMw: flow.constraints.max_capacity_mw,
+            currentMw: flow.power_mw,
+          })),
+        },
+      },
+    });
+    setShortCircuitInsights(shortCircuit.data);
+  }, []);
+
   const loadInitialSystemState = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -107,6 +170,7 @@ export const DigitalTwinDashboard: React.FC = () => {
       const state = await digitalTwin.getCurrentSystemState('canada');
       setSystemState(state);
       updateMetrics(state);
+      evaluateConstraintRisk(state).catch((riskError) => console.warn('Grid risk evaluation failed:', riskError));
       setTwinState(prev => ({
         ...prev,
         systemHealth:
@@ -155,6 +219,7 @@ export const DigitalTwinDashboard: React.FC = () => {
 
         setSystemState(demoState);
         updateMetrics(demoState);
+        evaluateConstraintRisk(demoState).catch((riskError) => console.warn('Grid risk evaluation failed:', riskError));
         setTwinState(prev => ({
           ...prev,
           systemHealth: 'good'
@@ -174,7 +239,7 @@ export const DigitalTwinDashboard: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [updateMetrics]);
+  }, [evaluateConstraintRisk, updateMetrics]);
 
   useEffect(() => {
     loadInitialSystemState();
@@ -408,6 +473,27 @@ export const DigitalTwinDashboard: React.FC = () => {
         {!error && isDemoMode && (
           <div className="mt-2 text-sm text-yellow-200">
             <p>Digital Twin running in demo simulation mode (no backend connection).</p>
+          </div>
+        )}
+        {gridRisk && (
+          <div className="mt-3 rounded-lg border border-cyan-300/30 bg-cyan-950/30 px-4 py-3 text-sm text-cyan-100">
+            Constraint validator: {gridRisk.modelVersion ?? gridRisk.meta?.model_version} · {gridRisk.systemStatus} · risk {(gridRisk.riskScore * 100).toFixed(0)}%.
+            <span className="ml-2 text-cyan-200">Advisory validation only; not a full AC power-flow solver.</span>
+          </div>
+        )}
+        {shortCircuitInsights?.analysis && (
+          <div className="mt-3 rounded-lg border border-amber-300/30 bg-amber-950/30 px-4 py-4 text-sm text-amber-100">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                Weak-grid screening: {shortCircuitInsights.analysis.status} · short-circuit {Number(shortCircuitInsights.analysis.shortCircuitLevelKa ?? 0).toFixed(1)} kA · risk {(Number(shortCircuitInsights.analysis.weakGridRiskScore ?? 0) * 100).toFixed(0)}%.
+                <div className="mt-1 text-amber-200">Targets low short-circuit and inverter-heavy conditions; still advisory, not a protection study.</div>
+              </div>
+              <div className="rounded-lg border border-amber-200/30 bg-white/10 px-3 py-2 text-xs text-amber-50 md:min-w-[250px]">
+                <div className="font-semibold">Alert condition: {shortCircuitInsights.analysis.alertCondition ?? shortCircuitInsights.analysis.status}</div>
+                <div className="mt-1">Weak nodes: {(shortCircuitInsights.analysis.weakNodes ?? []).join(', ') || 'none'}</div>
+                <div className="mt-1">AESO mappings: {(shortCircuitInsights.analysis.ruleMappings ?? []).filter((rule: any) => rule.triggered).map((rule: any) => rule.ruleLabel).join(', ') || 'none'}</div>
+              </div>
+            </div>
           </div>
         )}
 

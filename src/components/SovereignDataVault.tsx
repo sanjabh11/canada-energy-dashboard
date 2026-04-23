@@ -13,7 +13,7 @@
  * - Data replication controls
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
     Shield,
     Lock,
@@ -49,6 +49,12 @@ interface DataAsset {
     encrypted: boolean;
 }
 
+interface VaultKeyInfo {
+    publicKeyFingerprint: string;
+    sessionId: string;
+    generatedAt: string;
+}
+
 const SAMPLE_ASSETS: DataAsset[] = [
     { id: '1', name: 'Housing Energy Consumption', type: 'housing', recordCount: 245, lastUpdated: '2025-12-24', encrypted: true },
     { id: '2', name: 'Community Infrastructure', type: 'infrastructure', recordCount: 12, lastUpdated: '2025-12-20', encrypted: true },
@@ -69,6 +75,18 @@ export const SovereignDataVault: React.FC = () => {
 
     const [showKeys, setShowKeys] = useState(false);
     const [assets] = useState<DataAsset[]>(SAMPLE_ASSETS);
+    const [vaultKeyInfo, setVaultKeyInfo] = useState<VaultKeyInfo | null>(null);
+
+    useEffect(() => {
+        const randomBytes = new Uint8Array(24);
+        crypto.getRandomValues(randomBytes);
+        const hex = Array.from(randomBytes).map((value) => value.toString(16).padStart(2, '0')).join('');
+        setVaultKeyInfo({
+            publicKeyFingerprint: `pk_sovereign_${hex.slice(0, 8)}...${hex.slice(-8)}`,
+            sessionId: `vault-${hex.slice(8, 20)}`,
+            generatedAt: new Date().toISOString(),
+        });
+    }, []);
 
     const ocapCompliance = {
         ownership: config.keyHolder === 'nation',
@@ -86,7 +104,10 @@ export const SovereignDataVault: React.FC = () => {
             ocapCompliance: ocapCompliance,
             exportedAt: new Date().toISOString(),
             exportedBy: 'CEIP Sovereign Vault',
-            dataOwner: config.nationName || 'Nation (Not Specified)'
+            dataOwner: config.nationName || 'Nation (Not Specified)',
+            vaultKeyFingerprint: vaultKeyInfo?.publicKeyFingerprint ?? null,
+            custodyMode: config.keyHolder,
+            localSessionId: vaultKeyInfo?.sessionId ?? null,
         };
 
         const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
@@ -273,7 +294,7 @@ export const SovereignDataVault: React.FC = () => {
                                     <label className="block text-sm text-slate-400 mb-1">Public Key</label>
                                     <div className="flex items-center gap-2">
                                         <code className="flex-1 px-3 py-2 bg-slate-900 rounded text-xs text-slate-300 font-mono truncate">
-                                            {showKeys ? 'pk_sovereign_a8f3...9d2e' : '••••••••••••••••'}
+                                            {showKeys ? (vaultKeyInfo?.publicKeyFingerprint ?? 'generating_local_key_fingerprint') : '••••••••••••••••'}
                                         </code>
                                         <button
                                             onClick={() => setShowKeys(!showKeys)}
@@ -285,6 +306,9 @@ export const SovereignDataVault: React.FC = () => {
                                 </div>
                                 <p className="text-xs text-purple-400">
                                     Private key held by: {config.keyHolder === 'nation' ? 'Nation' : config.keyHolder === 'split' ? 'Split custody' : 'CEIP'}
+                                </p>
+                                <p className="text-xs text-slate-400">
+                                    Local custody session: {vaultKeyInfo?.sessionId ?? 'initializing'} · generated {vaultKeyInfo?.generatedAt ? new Date(vaultKeyInfo.generatedAt).toLocaleString() : 'pending'}
                                 </p>
                             </div>
                         </div>

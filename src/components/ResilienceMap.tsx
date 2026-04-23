@@ -18,6 +18,8 @@ import { resilienceEngine, ResilienceUtils, AssetType, ClimateHazard, DefaultCli
 import { fetchEdgeJson } from '../lib/edge';
 import { realDataService } from '../lib/realDataService';
 import { isEdgeFetchEnabled } from '../lib/config';
+import { ingestGroundsourceEvents } from '../lib/mlForecastingClient';
+import { buildResilienceFusionSummary, buildCascadeRiskSummary } from '../lib/resilienceFusion';
 
 type ResilienceAsset = {
   asset_uuid: string;
@@ -135,6 +137,7 @@ export const ResilienceMap: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isFallbackData, setIsFallbackData] = useState<boolean>(false);
+  const [intelligenceEvents, setIntelligenceEvents] = useState<any[]>([]);
 
   const loadFallbackData = useCallback(async (reason?: string) => {
     const fallbackAssetsRaw = await realDataService.getInfrastructureAssets();
@@ -314,6 +317,17 @@ export const ResilienceMap: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadFallbackData]);
 
+  useEffect(() => {
+    let cancelled = false;
+    if (!isEdgeFetchEnabled()) return () => { cancelled = true; };
+    ingestGroundsourceEvents({ source_group: 'utility_public', max_items: 2 })
+      .then(({ data }) => {
+        if (!cancelled) setIntelligenceEvents(data.events ?? []);
+      })
+      .catch((err) => console.warn('Groundsource miner unavailable:', err));
+    return () => { cancelled = true; };
+  }, []);
+
   const selectedAsset = useMemo(
     () => assets.find((asset) => asset.asset_uuid === selectedAssetId) ?? null,
     [assets, selectedAssetId]
@@ -460,6 +474,8 @@ export const ResilienceMap: React.FC = () => {
   const adaptationUpper = analysis.asset.currentValue > 0 ? analysis.asset.currentValue * 0.3 : 0;
   const scenarioMeta = SCENARIOS[selectedScenario];
   const riskInfo = ResilienceUtils.getRiskLevelInfo(analysis.assessment.riskLevel);
+  const fusionSummary = buildResilienceFusionSummary(analysis.assessment);
+  const cascadeSummary = buildCascadeRiskSummary(analysis.assessment, intelligenceEvents.length);
 
   return (
     <div className="space-y-6">
@@ -485,6 +501,15 @@ export const ResilienceMap: React.FC = () => {
             }
           >
             {error}
+          </div>
+        )}
+
+        {intelligenceEvents.length > 0 && (
+          <div className="mb-4 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
+            <strong>Groundsource intelligence:</strong> {intelligenceEvents.length} public utility/policy event(s) extracted from allowlisted sources.
+            <div className="mt-1 text-xs text-cyan-800">
+              {intelligenceEvents.slice(0, 2).map((event) => event.summary).join(' | ')}
+            </div>
           </div>
         )}
 
@@ -556,6 +581,28 @@ export const ResilienceMap: React.FC = () => {
               <div className="text-2xl font-bold text-slate-800">{formatNumber(dependentCount)}</div>
               <div className="text-sm text-slate-600">People Dependent</div>
             </div>
+          </div>
+          <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
+            <div className="rounded-full bg-cyan-50 px-4 py-2 text-sm text-cyan-900 border border-cyan-200">
+              {fusionSummary.limitingFactorText}
+            </div>
+            <div className="rounded-full bg-slate-100 px-4 py-2 text-sm text-slate-700 border border-slate-200 font-mono">
+              {fusionSummary.fusionText}
+            </div>
+          </div>
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left text-sm text-amber-950">
+            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+              <div>
+                <strong>Cascading transmission sentinel:</strong> the non-compensatory fusion keeps the current limiting factor visible so high regional resilience does not mask a local substation failure.
+                <div className="mt-2 text-xs text-amber-900">{cascadeSummary.driverText}</div>
+              </div>
+              <div className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs text-slate-700 md:min-w-[240px]">
+                <div className="font-semibold text-slate-900">Cascade risk {(Number(cascadeSummary.cascadeRiskScore ?? 0) * 100).toFixed(0)}%</div>
+                <div>{cascadeSummary.thresholdText}</div>
+                <div className="mt-1">Alert condition: <span className="font-medium">{cascadeSummary.alertCondition}</span></div>
+              </div>
+            </div>
+            <div className="mt-3 text-xs text-amber-900">Public intelligence events in scope: {intelligenceEvents.length}. {cascadeSummary.recommendation}</div>
           </div>
         </div>
       </div>

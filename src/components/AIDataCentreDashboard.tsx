@@ -27,6 +27,7 @@ import { HelpButton } from './HelpButton';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { AIDemandScenarioSlider } from './AIDemandScenarioSlider';
 import DataTrustNotice from './DataTrustNotice';
+import { runMlForecast } from '../lib/mlForecastingClient';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import { buildDataProvenance } from '../lib/foundation';
 import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
@@ -57,6 +58,7 @@ export const AIDataCentreDashboard: React.FC = () => {
   const [selectedProvince, setSelectedProvince] = useState('AB'); // Alberta focus
   const [activeTab, setActiveTab] = useState<'current' | 'history'>('current');
   const [selectedDataCentre, setSelectedDataCentre] = useState<DashboardData['data_centres'][0] | null>(null);
+  const [byopInsights, setByopInsights] = useState<any>(null);
 
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
@@ -148,6 +150,28 @@ export const AIDataCentreDashboard: React.FC = () => {
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  useEffect(() => {
+    if (!dcData || selectedProvince !== 'AB') return;
+    const baseLoadMw = Math.max(40, Number(dcData.grid_impact?.total_dc_load_mw ?? dcData.summary.total_contracted_capacity_mw ?? 120) * 0.12);
+    runMlForecast({
+      domain: 'byop_load',
+      province: selectedProvince,
+      horizon_hours: 24,
+      scenario: {
+        baseLoadMw,
+        flexibilityPct: 20,
+        onSiteGenerationMw: Math.max(15, baseLoadMw * 0.35),
+        storageCapacityMwh: Math.max(60, baseLoadMw * 1.4),
+        storagePowerMw: Math.max(20, baseLoadMw * 0.3),
+        utilityImportCapMw: Math.max(30, baseLoadMw * 0.82),
+        priceSignalCadPerMwh: 155,
+      },
+    }).then(({ data }) => setByopInsights(data)).catch((error) => {
+      console.warn('BYOP forecast adapter failed:', error);
+      setByopInsights(null);
+    });
+  }, [dcData, selectedProvince]);
 
   if (loading) {
     return (
@@ -1138,6 +1162,50 @@ export const AIDataCentreDashboard: React.FC = () => {
       <div className="mt-8">
         <AIDemandScenarioSlider initialDemand={15} maxDemand={100} showDetails={true} />
       </div>
+
+      {byopInsights?.analysis && (
+        <div className="mt-8 rounded-2xl border border-cyan-500/30 bg-cyan-950/20 p-6">
+          <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h3 className="text-lg font-semibold text-primary">BYOP Load Coordination</h3>
+              <p className="text-sm text-secondary">
+                {byopInsights.meta?.model_version} scenario for Alberta AI data centre import shaping.
+              </p>
+            </div>
+            <p className="text-xs text-cyan-200">
+              Confidence {(Number(byopInsights.meta?.confidence_score ?? 0) * 100).toFixed(0)}% · scenario-based
+            </p>
+          </div>
+          <div className="mt-4 grid gap-4 md:grid-cols-5">
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">
+              <div className="text-xs uppercase tracking-wide text-tertiary">Peak Import</div>
+              <div className="mt-1 text-2xl font-semibold text-primary">{Number(byopInsights.analysis.peakImportMw ?? 0).toFixed(1)} MW</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">
+              <div className="text-xs uppercase tracking-wide text-tertiary">Grid Reduction</div>
+              <div className="mt-1 text-2xl font-semibold text-primary">{Number(byopInsights.analysis.gridReductionMw ?? 0).toFixed(1)} MW</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">
+              <div className="text-xs uppercase tracking-wide text-tertiary">Policy Sensitivity</div>
+              <div className="mt-1 text-2xl font-semibold text-primary">{(Number(byopInsights.analysis.policySensitivity ?? 0) * 100).toFixed(0)}%</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">
+              <div className="text-xs uppercase tracking-wide text-tertiary">Onsite Generation</div>
+              <div className="mt-1 text-2xl font-semibold text-primary">{Number(byopInsights.analysis.agentSummary?.onsiteGeneration?.ratedMw ?? 0).toFixed(1)} MW</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">
+              <div className="text-xs uppercase tracking-wide text-tertiary">Utility Import Cap</div>
+              <div className="mt-1 text-2xl font-semibold text-primary">{Number(byopInsights.analysis.agentSummary?.utility?.importCapMw ?? 0).toFixed(1)} MW</div>
+            </div>
+          </div>
+          <p className="mt-3 text-xs text-secondary">
+            Agent outputs are rolled into the macro-load view so the dashboard can show the grid impact of self-supplied capacity before site-verified telemetry is available.
+          </p>
+          <p className="mt-4 text-xs text-secondary">
+            This panel lifts BYOP from queue observation into an operational macro-load scenario. It does not claim actual self-supply penetration without site-verified telemetry.
+          </p>
+        </div>
+      )}
 
       {/* Footer */}
       <div className="text-center text-sm text-tertiary mt-8">

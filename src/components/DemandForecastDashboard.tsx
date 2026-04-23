@@ -22,6 +22,8 @@ import {
   type ForecastMetrics,
   type SeasonalProfile,
 } from '../lib/demandForecaster';
+import { realDataService } from '../lib/realDataService';
+import { evaluateForecastDrift, runMlForecast } from '../lib/mlForecastingClient';
 
 // ============================================================================
 // TYPES
@@ -44,6 +46,9 @@ export const DemandForecastDashboard: React.FC = () => {
   const [seasonalProfile, setSeasonalProfile] = useState<SeasonalProfile | null>(null);
   const [horizonHours, setHorizonHours] = useState(168);
   const [testHours, setTestHours] = useState(168);
+  const [mlDomain, setMlDomain] = useState<'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit'>('load');
+  const [mlInsights, setMlInsights] = useState<any>(null);
+  const [driftAssessment, setDriftAssessment] = useState<any>(null);
 
   const stats = useMemo(() => computeDemandStats(data), [data]);
 
@@ -85,6 +90,49 @@ export const DemandForecastDashboard: React.FC = () => {
     return () => { cancelled = true; };
   }, [forecaster, testHours]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function assessDrift() {
+      if (data.length < 336) {
+        setDriftAssessment(null);
+        return;
+      }
+
+      const demandSeries = data.map((record) => Number(record.total_demand_mw)).filter(Number.isFinite);
+      if (demandSeries.length < 336) {
+        setDriftAssessment(null);
+        return;
+      }
+
+      const recent = demandSeries.slice(-168);
+      const baseline = demandSeries.slice(Math.max(0, demandSeries.length - 336), Math.max(0, demandSeries.length - 168));
+      if (baseline.length < 24 || recent.length < 24) {
+        setDriftAssessment(null);
+        return;
+      }
+
+      const { data: driftResult } = await evaluateForecastDrift({
+        domain: 'load',
+        province: 'ON',
+        model_key: 'ontario-demand-seasonal',
+        threshold: 0.25,
+        baseline: { demand_mw: baseline },
+        recent: { demand_mw: recent },
+      });
+
+      if (!cancelled) setDriftAssessment(driftResult);
+    }
+
+    assessDrift().catch(() => {
+      if (!cancelled) setDriftAssessment(null);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [data]);
+
   const handleExportCSV = useCallback(() => {
     if (predictions.length === 0) return;
     const csv = forecastToCSV(predictions);
@@ -97,7 +145,7 @@ export const DemandForecastDashboard: React.FC = () => {
     URL.revokeObjectURL(url);
   }, [predictions]);
 
-  const handleRunForecast = useCallback(() => {
+  const handleRunForecast = useCallback(async () => {
     if (data.length === 0) return;
     try {
       forecaster.train(data);
@@ -110,10 +158,101 @@ export const DemandForecastDashboard: React.FC = () => {
       setPredictions(forecastPoints);
       const state = forecaster.getModelState();
       if (state) setSeasonalProfile(state.seasonal_profile);
+      const gasBasisHistory = mlDomain === 'gas_basis'
+        ? await realDataService.getGasBasisHistory()
+        : null;
+      const { data: mlResult } = await runMlForecast({
+        domain: mlDomain,
+        province: mlDomain === 'load' ? 'ON' : 'AB',
+        horizon_hours: Math.min(horizonHours, 168),
+        scenario: mlDomain === 'gas_basis'
+          ? {
+            aecoCadPerGj: 1.62,
+            henryHubCadPerGj: 3.08,
+            pipelineCurtailmentPct: 8,
+            storageDeficitPct: 11,
+            temperatureC: -14,
+            basisLag1: 1.42,
+            basisLag7: 1.38,
+            historyRows: gasBasisHistory?.rows ?? [],
+            backtestRows: gasBasisHistory?.backtestRows ?? [],
+            sourceProfile: gasBasisHistory?.sourceProfile ?? 'synthetic',
+          }
+          : mlDomain === 'byop_load'
+            ? {
+              baseLoadMw: Math.max(80, (forecastPoints[0]?.forecast_mw ?? 12000) / 100),
+              flexibilityPct: 20,
+              onSiteGenerationMw: 45,
+              storageCapacityMwh: 180,
+              storagePowerMw: 42,
+              utilityImportCapMw: 110,
+              priceSignalCadPerMwh: 155,
+            }
+            : mlDomain === 'pv_fault'
+              ? {
+                nodes: [
+                  { id: 'inv-1', expectedOutputMw: 2.6, observedOutputMw: 1.1, voltageV: 540, inverterTempC: 61, irradiance: 780 },
+                  { id: 'inv-2', expectedOutputMw: 2.4, observedOutputMw: 2.2, voltageV: 598, inverterTempC: 43, irradiance: 760 },
+                  { id: 'inv-3', expectedOutputMw: 2.1, observedOutputMw: 1.6, voltageV: 565, inverterTempC: 57, irradiance: 740 },
+                ],
+                edges: [
+                  { fromNodeId: 'inv-1', toNodeId: 'inv-2', weight: 1 },
+                  { fromNodeId: 'inv-2', toNodeId: 'inv-3', weight: 1 },
+                ],
+              }
+              : mlDomain === 'policy_overlay'
+                ? {
+                  assetLifeYears: 25,
+                  emissionsIntensity: 540,
+                  carbonPriceCadPerTonne: 95,
+                  policyDeadlineYear: 2035,
+                  ccusOptionalityScore: 0.35,
+                  electrificationReadinessScore: 0.4,
+                }
+                : mlDomain === 'short_circuit'
+                  ? {
+                    shortCircuitLevelKa: 5.4,
+                    minimumShortCircuitKa: 8,
+                    inverterPenetrationPct: 42,
+                    reserveMarginPercent: 6,
+                    topology: {
+                      nodes: [
+                        { id: 'pincher-1', shortCircuitKa: 5.2 },
+                        { id: 'pincher-2', shortCircuitKa: 6.1 },
+                        { id: 'pincher-3', shortCircuitKa: 8.8 },
+                      ],
+                      edges: [
+                        { fromNodeId: 'pincher-1', toNodeId: 'pincher-2', limitMw: 180, currentMw: 166 },
+                        { fromNodeId: 'pincher-2', toNodeId: 'pincher-3', limitMw: 210, currentMw: 154 },
+                      ],
+                    },
+                  }
+                  : {
+                    demandMw: forecastPoints[0]?.forecast_mw,
+                    reserveMarginPercent: 8,
+                    poolPriceCadPerMwh: 250,
+                  },
+      });
+      const driftMultiplier = Number(driftAssessment?.confidenceMultiplier ?? 1);
+      const warnings = Array.from(new Set([
+        ...(Array.isArray(mlResult?.meta?.warnings) ? mlResult.meta.warnings : []),
+        ...(driftAssessment?.status === 'drift_detected'
+          ? [String(driftAssessment?.recommendation ?? 'Recent demand drift detected; forecast confidence downgraded.')]
+          : []),
+      ]));
+      setMlInsights({
+        ...mlResult,
+        monitoring: driftAssessment,
+        meta: {
+          ...mlResult.meta,
+          confidence_score: Math.max(0, Math.min(1, Number(mlResult?.meta?.confidence_score ?? 0) * driftMultiplier)),
+          warnings,
+        },
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Forecast failed');
     }
-  }, [data, forecaster, horizonHours]);
+  }, [data, driftAssessment, forecaster, horizonHours, mlDomain]);
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
     { key: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
@@ -217,8 +356,12 @@ export const DemandForecastDashboard: React.FC = () => {
                 setHorizonHours={setHorizonHours}
                 onRunForecast={handleRunForecast}
                 metrics={metrics}
-              />
-            )}
+              mlDomain={mlDomain}
+              setMlDomain={setMlDomain}
+              mlInsights={mlInsights}
+              driftAssessment={driftAssessment}
+            />
+          )}
             {activeTab === 'decomposition' && (
               <DecompositionTab seasonalProfile={seasonalProfile} data={data} />
             )}
@@ -387,12 +530,16 @@ function OverviewTab({ stats, metrics, data }: {
   );
 }
 
-function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast, metrics }: {
+function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast, metrics, mlDomain, setMlDomain, mlInsights, driftAssessment }: {
   predictions: ForecastPoint[];
   horizonHours: number;
   setHorizonHours: (h: number) => void;
   onRunForecast: () => void;
   metrics: ForecastMetrics | null;
+  mlDomain: 'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit';
+  setMlDomain: (domain: 'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit') => void;
+  mlInsights: any;
+  driftAssessment: any;
 }) {
   const chartData = useMemo(() =>
     predictions.slice(0, 168).map(p => ({
@@ -431,7 +578,218 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
           <TrendingUp className="h-4 w-4" />
           Generate Forecast
         </button>
+        <div className="flex items-center gap-2">
+          <Target className="h-4 w-4 text-slate-400" />
+          <label className="text-sm text-slate-300">ML Adapter:</label>
+          <select
+            value={mlDomain}
+            onChange={e => setMlDomain(e.target.value as 'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit')}
+            className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm"
+          >
+            <option value="load">Load + SVM-RFE</option>
+            <option value="price_spike">AB Price Spike</option>
+            <option value="solar">Solar Drift-Ready</option>
+            <option value="wind">Wind Drift-Ready</option>
+            <option value="gas_basis">AECO vs Henry Hub</option>
+            <option value="byop_load">BYOP MAS</option>
+            <option value="pv_fault">PV Fault Graph</option>
+            <option value="policy_overlay">Policy Overlay</option>
+            <option value="short_circuit">Weak Grid / SCED</option>
+          </select>
+        </div>
       </div>
+
+      {mlInsights?.meta && (
+        <div className="bg-cyan-950/30 border border-cyan-500/30 rounded-xl p-5">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h3 className="text-white font-semibold">ML Governance Adapter</h3>
+              <p className="text-sm text-slate-400">
+                {mlInsights.meta.model_version} · confidence {(mlInsights.meta.confidence_score * 100).toFixed(0)}% · {mlInsights.meta.staleness_status}
+              </p>
+            </div>
+            <div className="text-xs text-cyan-200">
+              {mlInsights.feature_ranking?.retainedFeatures?.length
+                ? `Retained features: ${mlInsights.feature_ranking.retainedFeatures.join(', ')}`
+                : 'No retained feature artifact available'}
+            </div>
+          </div>
+          {driftAssessment?.status && (
+            <div className={`mt-3 rounded-lg border px-3 py-2 text-xs ${driftAssessment.status === 'drift_detected'
+              ? 'border-amber-500/40 bg-amber-950/20 text-amber-100'
+              : 'border-emerald-500/30 bg-emerald-950/20 text-emerald-100'
+              }`}>
+              {driftAssessment.status === 'drift_detected' ? 'Recent demand drift detected.' : 'No demand drift detected.'} {driftAssessment.recommendation}
+            </div>
+          )}
+          {mlInsights.meta.warnings?.map((warning: string) => (
+            <p key={warning} className="mt-2 text-xs text-amber-200">{warning}</p>
+          ))}
+          {mlInsights.feature_ranking?.trainingSummary && (
+            <div className="mt-4 grid md:grid-cols-4 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Training Samples</div>
+                <div className="text-white font-semibold">{Number(mlInsights.feature_ranking.trainingSummary.samples ?? 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Positive Rate</div>
+                <div className="text-white font-semibold">{(Number(mlInsights.feature_ranking.trainingSummary.positiveRate ?? 0) * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Target Threshold</div>
+                <div className="text-cyan-100">{Number(mlInsights.feature_ranking.trainingSummary.targetThreshold ?? 0).toFixed(2)}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Margin</div>
+                <div className="text-cyan-100">{Number(mlInsights.feature_ranking.trainingSummary.margin ?? 0).toFixed(3)}</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.feature_ranking?.droppedFeatures?.length > 0 && (
+            <p className="mt-3 text-xs text-slate-300">
+              Dropped features: {mlInsights.feature_ranking.droppedFeatures.slice(0, 4).map((feature: any) => `${feature.feature} (${feature.reason})`).join(', ')}
+            </p>
+          )}
+          {mlInsights.analysis?.predictedSpreadCadPerGj != null && (
+            <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Predicted Spread</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.predictedSpreadCadPerGj.toFixed(2)} CAD/GJ</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Widening Risk</div>
+                <div className="text-white font-semibold">{(mlInsights.analysis.wideningRisk * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Drivers</div>
+                <div className="text-cyan-100">{(mlInsights.analysis.drivers ?? []).join(', ') || 'n/a'}</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.backtest && (
+            <div className="mt-4 grid md:grid-cols-4 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Backtest Samples</div>
+                <div className="text-white font-semibold">{Number(mlInsights.analysis.backtest.sampleCount ?? 0).toLocaleString()}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">MAE</div>
+                <div className="text-white font-semibold">{Number(mlInsights.analysis.backtest.maeCadPerGj ?? 0).toFixed(3)} CAD/GJ</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Directional Accuracy</div>
+                <div className="text-cyan-100">{(Number(mlInsights.analysis.backtest.directionalAccuracy ?? 0) * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Source Profile</div>
+                <div className="text-cyan-100">{mlInsights.analysis.backtest.sourceProfile}</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.peakImportMw != null && (
+            <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Peak Import</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.peakImportMw.toFixed(1)} MW</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Grid Reduction</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.gridReductionMw.toFixed(1)} MW</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Policy Sensitivity</div>
+                <div className="text-cyan-100">{(mlInsights.analysis.policySensitivity * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Utility Import Cap</div>
+                <div className="text-cyan-100">{Number(mlInsights.analysis.agentSummary?.utility?.importCapMw ?? 0).toFixed(1)} MW</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Agent Steps</div>
+                <div className="text-cyan-100">{Number(mlInsights.analysis.aggregateLoadSeries?.length ?? 0).toLocaleString()} hours</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.nodeAssessments?.length > 0 && (
+            <div className="mt-4 rounded-lg border border-amber-500/20 bg-slate-900/40 p-4 text-sm">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-slate-400">Weak-grid node tagging</div>
+                  <div className="text-white font-semibold">{(mlInsights.analysis.nodeAssessments.filter((node: any) => node.flagged).length)} tagged node(s)</div>
+                </div>
+                <div className="text-xs text-amber-200">
+                  {mlInsights.analysis.alertCondition ?? 'monitor'}
+                </div>
+              </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                {(mlInsights.analysis.nodeAssessments ?? []).slice(0, 4).map((node: any) => (
+                  <div key={node.nodeId} className="rounded-lg border border-amber-500/20 bg-slate-950/50 p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-white font-medium">{node.nodeId}</span>
+                      <span className="text-amber-200">{Number(node.shortCircuitKa ?? 0).toFixed(1)} kA</span>
+                    </div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      {node.riskBand} · {(node.ruleTags ?? []).join(', ') || 'no rule tags'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-3 text-xs text-amber-200">
+                AESO rule mappings: {(mlInsights.analysis.ruleMappings ?? []).filter((rule: any) => rule.triggered).map((rule: any) => rule.ruleLabel).join(', ') || 'none'}
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.faultClass && (
+            <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Fault Class</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.faultClass}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Top Suspects</div>
+                <div className="text-cyan-100">{(mlInsights.analysis.topSuspects ?? []).map((suspect: any) => suspect.nodeId).join(', ') || 'n/a'}</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.topEdges?.length > 0 && (
+            <p className="mt-3 text-xs text-slate-300">
+              Top fault edges: {mlInsights.analysis.topEdges.slice(0, 3).map((edge: any) => `${edge.fromNodeId}->${edge.toNodeId}`).join(', ')}
+            </p>
+          )}
+          {mlInsights.analysis?.strandedAssetRiskScore != null && (
+            <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Stranded Asset Risk</div>
+                <div className="text-white font-semibold">{(mlInsights.analysis.strandedAssetRiskScore * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Dominant Driver</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.dominantDriver}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Horizon</div>
+                <div className="text-cyan-100">{mlInsights.analysis.horizonYears} years</div>
+              </div>
+            </div>
+          )}
+          {mlInsights.analysis?.shortCircuitLevelKa != null && (
+            <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Short-Circuit Strength</div>
+                <div className="text-white font-semibold">{mlInsights.analysis.shortCircuitLevelKa.toFixed(1)} kA</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Weak Grid Risk</div>
+                <div className="text-white font-semibold">{(mlInsights.analysis.weakGridRiskScore * 100).toFixed(0)}%</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Weak Nodes</div>
+                <div className="text-cyan-100">{(mlInsights.analysis.weakNodes ?? []).join(', ') || 'n/a'}</div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Forecast vs Actual Chart */}
       <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
