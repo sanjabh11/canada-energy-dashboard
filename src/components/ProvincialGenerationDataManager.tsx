@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { provincialGenerationRepo, type ProvincialGenerationRecord } from '../lib/provincialGenerationStreamer';
+import { getRecordCountFact } from '../lib/platformFacts';
 
 interface DataManagerProps {
   onDataLoaded?: (data: ProvincialGenerationRecord[]) => void;
@@ -125,6 +126,8 @@ export const ProvincialGenerationDataManager: React.FC<DataManagerProps> = ({
       });
   };
 
+  const loadedRecordsFact = getRecordCountFact(stats.totalRecords, 'loaded');
+
   const clearCache = async () => {
     try {
       if (typeof window !== 'undefined' && (window as any).ceipDb) {
@@ -153,10 +156,8 @@ export const ProvincialGenerationDataManager: React.FC<DataManagerProps> = ({
         {/* Stats Display */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
           <div className="bg-blue-50 rounded p-3">
-            <div className="text-sm text-blue-600 font-medium">Total Records</div>
-            <div className="text-xl font-bold text-blue-800">
-              {stats.totalRecords.toLocaleString()}
-            </div>
+            <div className="text-sm text-blue-600 font-medium">{loadedRecordsFact.label}</div>
+            <div className="text-xl font-bold text-blue-800">{loadedRecordsFact.value}</div>
           </div>
           
           <div className="bg-green-50 rounded p-3">

@@ -11,6 +11,8 @@
  * - DEFERRED: <3.5/5 - Not available in Phase 1 launch
  */
 
+import { getFeatureReleaseDisplay as getPlatformFeatureReleaseDisplay } from './platformFacts';
+
 export type FeatureStatus = 'production_ready' | 'acceptable' | 'partial' | 'deferred';
 
 export interface FeatureConfig {
@@ -28,6 +30,13 @@ export interface FeatureConfig {
 
 export function isPhase4SurfaceEnabled(): boolean {
   return import.meta.env.DEV || import.meta.env.VITE_ENABLE_PHASE4_EXPERIMENTS === 'true';
+}
+
+export function getFeatureReleaseDisplay(
+  feature: Pick<FeatureConfig, 'status' | 'estimatedRelease' | 'comingSoon'>,
+  now = new Date(),
+) {
+  return getPlatformFeatureReleaseDisplay(feature, now);
 }
 
 /**

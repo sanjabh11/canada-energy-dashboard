@@ -7,7 +7,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { CheckCircle, Clock, AlertTriangle, AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
-import { FEATURE_REGISTRY, getDeploymentStats, type FeatureStatus, type FeatureConfig } from '../lib/featureFlags';
+import { FEATURE_REGISTRY, getDeploymentStats, getFeatureReleaseDisplay, type FeatureStatus, type FeatureConfig } from '../lib/featureFlags';
 import { CONTAINER_CLASSES } from '../lib/ui/layout';
 
 const STATUS_CONFIG = {
@@ -36,7 +36,7 @@ const STATUS_CONFIG = {
     badge: '🟠',
   },
   deferred: {
-    label: 'Coming Soon',
+    label: 'Roadmap',
     icon: Clock,
     color: 'text-gray-600',
     bgColor: 'bg-gray-50',
@@ -45,10 +45,34 @@ const STATUS_CONFIG = {
   },
 };
 
+const ROADMAP_CONFIG = {
+  comingSoon: {
+    label: 'Coming Soon',
+    icon: Clock,
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-50',
+    borderColor: 'border-gray-200',
+    badge: '🔜',
+  },
+  overdue: {
+    label: 'Overdue',
+    icon: Clock,
+    color: 'text-red-700',
+    bgColor: 'bg-red-50',
+    borderColor: 'border-red-200',
+    badge: '⚠️',
+  },
+} as const;
+
 const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
   const [expanded, setExpanded] = useState(false);
-  const config = STATUS_CONFIG[feature.status];
+  const releaseDisplay = feature.status === 'deferred' ? getFeatureReleaseDisplay(feature) : null;
+  const config = feature.status === 'deferred'
+    ? (releaseDisplay?.tone === 'danger' ? ROADMAP_CONFIG.overdue : ROADMAP_CONFIG.comingSoon)
+    : STATUS_CONFIG[feature.status];
   const Icon = config.icon;
+  const statusLabel = releaseDisplay?.label ?? config.label;
+  const statusNote = releaseDisplay?.note ?? (feature.estimatedRelease ? `Est. ${feature.estimatedRelease}` : undefined);
 
   return (
     <div className={`border-2 ${config.borderColor} rounded-lg p-4 ${config.bgColor}`}>
@@ -61,10 +85,10 @@ const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
               <span className="text-xl">{config.badge}</span>
             </div>
             <div className="flex items-center gap-3 text-xs text-gray-600 mb-2">
-              <span className={`font-medium ${config.color}`}>{config.label}</span>
+              <span className={`font-medium ${config.color}`}>{statusLabel}</span>
               <span>Rating: {feature.rating}/5</span>
-              {feature.estimatedRelease && (
-                <span className="text-gray-500">• Est: {feature.estimatedRelease}</span>
+              {statusNote && (
+                <span className="text-gray-500">• {statusNote}</span>
               )}
             </div>
 
@@ -96,7 +120,7 @@ const FeatureCard: React.FC<{ feature: FeatureConfig }> = ({ feature }) => {
 
             {!feature.enabled && feature.status === 'deferred' && (
               <div className="mt-2 text-xs text-gray-600 italic">
-                This feature is under development for Phase 2 release.
+                This roadmap item is not enabled yet.
               </div>
             )}
           </div>
@@ -159,7 +183,7 @@ export const FeatureAvailability: React.FC = () => {
             </div>
             <div className="bg-gray-50 border-2 border-gray-200 rounded-lg p-4 text-center">
               <div className="text-3xl font-bold text-gray-700">{stats.deferred}</div>
-              <div className="text-xs text-gray-700 mt-1">Coming Soon</div>
+              <div className="text-xs text-gray-700 mt-1">Roadmap</div>
             </div>
           </div>
         </div>
@@ -214,7 +238,7 @@ export const FeatureAvailability: React.FC = () => {
                 : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
             }`}
           >
-            🔜 Coming Soon ({stats.deferred})
+            🔜 Roadmap ({stats.deferred})
           </button>
         </div>
 
@@ -279,10 +303,10 @@ export const FeatureAvailability: React.FC = () => {
             <div>
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <span className="text-3xl">🔜</span>
-                Coming in Phase 2 - Q1 2026
+                Roadmap & Deferred Features
               </h2>
               <p className="text-gray-600 mb-4">
-                These features are under active development and will be available in the Phase 2 release.
+                These features are not yet enabled. Release estimates are shown per feature and marked overdue when the target window has passed.
               </p>
               <div className="space-y-3">
                 {groupedFeatures.deferred.map(feature => (

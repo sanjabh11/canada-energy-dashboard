@@ -5,6 +5,7 @@
 import React from 'react';
 import { Radio, Wifi, Signal, Gauge, MapPin, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { type ConnectionStatus } from '../../lib/dataManager';
+import { getRecordCountFact } from '../../lib/platformFacts';
 
 interface ProvincesTabProps {
   connectionStatuses: ConnectionStatus[];
@@ -12,6 +13,11 @@ interface ProvincesTabProps {
 }
 
 export function ProvincesTab({ connectionStatuses, onNavigate }: ProvincesTabProps) {
+  const loadedRecordsFact = getRecordCountFact(
+    connectionStatuses.reduce((sum, status) => sum + status.recordCount, 0),
+    'loaded',
+  );
+
   return (
     <div className="space-y-8">
       {/* Page Header */}
@@ -100,10 +106,8 @@ export function ProvincesTab({ connectionStatuses, onNavigate }: ProvincesTabPro
                 <div className="text-sm text-tertiary">Active Streams</div>
               </div>
               <div className="bg-secondary p-4 rounded-lg">
-                <div className="text-2xl font-bold text-success">
-                  {connectionStatuses.reduce((sum, s) => sum + s.recordCount, 0).toLocaleString()}
-                </div>
-                <div className="text-sm text-tertiary">Total Records</div>
+                <div className="text-2xl font-bold text-success">{loadedRecordsFact.value}</div>
+                <div className="text-sm text-tertiary">{loadedRecordsFact.label}</div>
               </div>
             </div>
 

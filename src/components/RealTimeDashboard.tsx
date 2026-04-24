@@ -41,6 +41,7 @@ import { SkeletonLoader, SkeletonChart, SkeletonMetricGrid } from './ui/Skeleton
 import DataTrustNotice from './DataTrustNotice';
 import { buildDataProvenance } from '../lib/foundation';
 import { buildDashboardFreshnessProvenance, resolveMetricCandidate } from '../lib/scoreboardProvenance';
+import { describeFreshness, getProvinceCoverageFact } from '../lib/platformFacts';
 
 // Map Canadian fuel type names to standardized display categories
 const GENERATION_TYPE_DISPLAY_MAP: Record<string, string> = {
@@ -95,7 +96,7 @@ interface DashboardData {
 
 interface DashboardStats {
   dataSources: number;
-  coverage: number;
+  coverage: string;
   updateFreq: string;
   architecture: string;
 }
@@ -113,13 +114,7 @@ export const RealTimeDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
   const [lastRefreshSuccess, setLastRefreshSuccess] = useState<boolean | null>(null);
-  
-  const [stats, setStats] = useState<DashboardStats>({
-    dataSources: 4,
-    coverage: 13,
-    updateFreq: 'Real-time',
-    architecture: 'Resilient'
-  });
+  const [kpiStatus, setKpiStatus] = useState<'loading' | 'ready' | 'error' | 'disabled'>('loading');
 
   // KPIs from server
   const [kpis, setKpis] = useState<TransitionKpisResponse | null>(null);
@@ -314,20 +309,29 @@ export const RealTimeDashboard: React.FC = () => {
     (async () => {
       if (!isEdgeFetchEnabled()) {
         if (!controller.signal.aborted) {
+          setKpiStatus('disabled');
+        }
+        if (!controller.signal.aborted) {
           setKpis(null);
         }
         return;
       }
       try {
         const data = await getTransitionKpis('provincial_generation', 'recent', { signal: controller.signal });
-        if (!controller.signal.aborted) setKpis(data);
+        if (!controller.signal.aborted) {
+          setKpis(data);
+          setKpiStatus('ready');
+        }
       } catch (e: any) {
         if (e?.name === 'AbortError') return;
         console.warn('KPI load failed', e);
+        if (!controller.signal.aborted) setKpiStatus('error');
       }
     })();
     return () => controller.abort();
   }, []);
+
+  const dashboardCoverageFact = React.useMemo(() => getProvinceCoverageFact(), []);
 
   // Memoize generation calculations - PRIORITIZE API data over streaming for stability
   const totalGenerationGwh = React.useMemo(() => {
@@ -525,6 +529,23 @@ export const RealTimeDashboard: React.FC = () => {
       ? 'Ontario demand trend is currently modeled or supplemented.'
       : connectedDashboardFreshnessMeta.note,
   });
+  const dashboardFreshnessLabel = React.useMemo(() => describeFreshness({
+    timestamp: lastUpdate?.toISOString() ?? trendDemandLastUpdated ?? dashboardLastUpdatedIso ?? null,
+    status: dashboardFreshnessMeta.freshnessStatus,
+    isFallback: dashboardFreshnessMeta.isFallback,
+    staleAfterHours: 1,
+  }), [dashboardFreshnessMeta.freshnessStatus, dashboardFreshnessMeta.isFallback, dashboardLastUpdatedIso, lastUpdate, trendDemandLastUpdated]);
+
+  const dashboardFreshnessDisplay = kpiStatus === 'error'
+    ? 'Unavailable'
+    : dashboardFreshnessLabel;
+
+  const dashboardStats: DashboardStats = React.useMemo(() => ({
+    dataSources: displayedDataSources,
+    coverage: dashboardCoverageFact.value,
+    updateFreq: dashboardFreshnessDisplay,
+    architecture: 'Resilient',
+  }), [dashboardCoverageFact.value, dashboardFreshnessDisplay, displayedDataSources]);
   const ontarioDemandChartData = React.useMemo(() => {
     return [...data.ontarioDemand]
       .sort((a, b) => a.datetime.localeCompare(b.datetime))
@@ -586,7 +607,7 @@ export const RealTimeDashboard: React.FC = () => {
 
   // Calculate if data is actually live (freshness check + data presence check + last refresh success)
   const isDataLive = React.useMemo(() => {
-    if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
+    if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback || kpiStatus === 'error') {
       return false;
     }
     if (lastRefreshSuccess === false) {
@@ -603,10 +624,16 @@ export const RealTimeDashboard: React.FC = () => {
                     (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
                     (currentDemand !== null && currentDemand > 0);
     return isFresh && hasData;
-  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastRefreshSuccess, lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, kpiStatus, lastRefreshSuccess, lastUpdate, data, totalGenerationGwh, currentDemand]);
 
   // Check for partial data (fresh timestamp but some metrics missing)
   const hasPartialData = React.useMemo(() => {
+    if (kpiStatus === 'error') {
+      return data.ontarioDemand.length > 0 ||
+        data.provincialGeneration.length > 0 ||
+        (totalGenerationGwh !== null && totalGenerationGwh > 0) ||
+        (currentDemand !== null && currentDemand > 0);
+    }
     if (hasFallbackData || trendDemandIsFallback || dashboardFreshnessMeta.isFallback) {
       return false;
     }
@@ -619,7 +646,7 @@ export const RealTimeDashboard: React.FC = () => {
     const hasSomeData = data.ontarioDemand.length > 0 || data.provincialGeneration.length > 0;
     const hasAllData = totalGenerationGwh > 0 && currentDemand > 0 && data.ontarioDemand.length > 5;
     return isFresh && hasSomeData && !hasAllData;
-  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, lastUpdate, data, totalGenerationGwh, currentDemand]);
+  }, [hasFallbackData, trendDemandIsFallback, dashboardFreshnessMeta.isFallback, kpiStatus, lastUpdate, data, totalGenerationGwh, currentDemand]);
 
   return (
     <div className="min-h-screen bg-primary">
@@ -636,6 +663,14 @@ export const RealTimeDashboard: React.FC = () => {
           mode="fallback"
           title="Analytics trend demand series is modeled"
           message="The 30-day Ontario demand trend currently includes synthetic fallback data. Use the trend view for directional context, not as an observed market record."
+          className="mx-6 mt-4"
+        />
+      )}
+      {kpiStatus === 'error' && (
+        <DataTrustNotice
+          mode="fallback"
+          title="Transition KPI endpoint unavailable"
+          message="The transition KPI service failed to return a trustworthy response, so the dashboard freshness label is downgraded to avoid implying a live system state."
           className="mx-6 mt-4"
         />
       )}
@@ -667,25 +702,25 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="grid grid-auto gap-md mt-6">
             <div className="card card-metric">
               <Database className="h-10 w-10 text-electric mx-auto mb-3" />
-              <span className="metric-value">{displayedDataSources}</span>
+              <span className="metric-value">{dashboardStats.dataSources}</span>
               <span className="metric-label">Active Data Sources</span>
             </div>
 
             <div className="card card-metric">
               <MapPin className="h-10 w-10 text-success mx-auto mb-3" />
-              <span className="metric-value">{stats.coverage}</span>
+              <span className="metric-value">{dashboardStats.coverage}</span>
               <span className="metric-label">Provinces Covered</span>
             </div>
 
             <div className="card card-metric">
               <Activity className="h-10 w-10 text-electric mx-auto mb-3" />
-              <span className="metric-value">{stats.updateFreq}</span>
+              <span className="metric-value">{dashboardStats.updateFreq}</span>
               <span className="metric-label">Update Frequency</span>
             </div>
 
             <div className="card card-metric">
               <CheckCircle className="h-10 w-10 text-success mx-auto mb-3" />
-              <span className="metric-value">{stats.architecture}</span>
+              <span className="metric-value">{dashboardStats.architecture}</span>
               <span className="metric-label">Architecture</span>
             </div>
           </div>
@@ -901,12 +936,12 @@ export const RealTimeDashboard: React.FC = () => {
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm text-secondary">Current Demand</div>
-                  <div className="text-lg font-semibold text-electric">
-                    {typeof currentDemand === 'number'
-                      ? `${Math.round(currentDemand).toLocaleString()} MW`
-                      : '—'}
-                  </div>
+              <div className="text-sm text-secondary">Current Demand</div>
+              <div className="text-lg font-semibold text-electric">
+                {typeof currentDemand === 'number'
+                  ? `${Math.round(currentDemand).toLocaleString()} MW`
+                  : '—'}
+              </div>
                 </div>
               </div>
             </div>
@@ -1108,7 +1143,7 @@ export const RealTimeDashboard: React.FC = () => {
           <div className="flex items-center gap-sm">
             <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
             <span>
-              Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Unknown'} • {loading ? 'Refreshing...' : isDataLive ? 'Live streaming active' : 'Data stale - refresh needed'}
+              Last updated: {lastUpdate ? lastUpdate.toLocaleTimeString() : 'Unknown'} • {loading ? 'Refreshing...' : kpiStatus === 'error' ? 'KPI unavailable - refresh needed' : isDataLive ? 'Live streaming active' : 'Data stale - refresh needed'}
             </span>
           </div>
         </div>

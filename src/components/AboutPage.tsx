@@ -8,8 +8,11 @@
 import React from 'react';
 import { Users, Target, Award, Shield, Clock, MapPin, Mail, Phone, Globe, ArrowLeft } from 'lucide-react';
 import { CONTAINER_CLASSES, TEXT_CLASSES } from '../lib/ui/layout';
+import { DASHBOARD_POLLING_CADENCE, getProvinceCoverageFact } from '../lib/platformFacts';
 
 export const AboutPage: React.FC = () => {
+  const provinceCoverageFact = getProvinceCoverageFact();
+
   return (
     <div className="min-h-screen bg-primary">
       {/* Header */}
@@ -120,12 +123,12 @@ export const AboutPage: React.FC = () => {
             <h3 className="text-xl font-semibold text-primary mb-6">Platform Capabilities</h3>
             <div className="space-y-4">
               {[
-                { label: 'Data Sources', value: '4+ Active' },
-                { label: 'Provinces Covered', value: '10/10' },
-                { label: 'Update Frequency', value: '< 30 seconds' },
-                { label: 'Uptime SLA', value: '99.9%' },
-                { label: 'Data Retention', value: '5+ years' },
-                { label: 'API Endpoints', value: '25+' }
+                { label: 'Data Sources', value: '4 connected' },
+                { label: provinceCoverageFact.label, value: provinceCoverageFact.value },
+                { label: 'Update Frequency', value: DASHBOARD_POLLING_CADENCE },
+                { label: 'Uptime Monitoring', value: 'Best-effort' },
+                { label: 'Data Retention', value: 'Policy-defined' },
+                { label: 'API Surface', value: 'Route catalog + edge functions' }
               ].map((stat, index) => (
                 <div
                   key={index}
@@ -136,6 +139,9 @@ export const AboutPage: React.FC = () => {
                 </div>
               ))}
             </div>
+            <p className="mt-4 text-xs text-secondary">
+              Coverage figures are province-only. Territories are surfaced in their own experiences so jurisdiction counts do not drift.
+            </p>
           </div>
         </div>
 

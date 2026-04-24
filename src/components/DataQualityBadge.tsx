@@ -137,7 +137,7 @@ export const DataQualitySummary: React.FC<DataQualitySummaryProps> = ({
       
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-secondary">Total Records:</span>
+          <span className="text-secondary">Loaded Records:</span>
           <span className="font-medium text-primary">{totalRecords.toLocaleString()}</span>
         </div>
         

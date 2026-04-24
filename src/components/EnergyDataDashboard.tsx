@@ -41,6 +41,7 @@ import FooterSettingsMenu from './FooterSettingsMenu';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { ThemeToggle } from './ui/ThemeToggle';
 import { isFeatureEnabled, getFeature, type FeatureStatus } from '../lib/featureFlags';
+import { getRecordCountFact } from '../lib/platformFacts';
 const HouseholdEnergyAdvisor = React.lazy(() => import('./HouseholdEnergyAdvisor'));
 const AnalyticsTrendsDashboard = React.lazy(() => import('./AnalyticsTrendsDashboard'));
 const RenewableOptimizationHub = React.lazy(() => import('./RenewableOptimizationHub'));
@@ -398,6 +399,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
 
   const activeDatasetInfo = DATASETS.find(d => d.key === state.activeDataset)!;
   const activeStatus = connectionStatuses.find(s => s.dataset === activeDatasetInfo.name);
+  const visibleRecordsFact = getRecordCountFact(state.filteredData.length, 'visible');
 
   // Determine SEO config based on active tab
   const getSEOConfig = () => {
@@ -449,10 +451,8 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
           </ul>
           <div className="flex items-center gap-md">
             <div className="text-right">
-              <div className="text-tertiary text-small">Total Records</div>
-              <div className="metric-value text-electric">
-                {state.filteredData.length.toLocaleString()}
-              </div>
+              <div className="text-tertiary text-small">{visibleRecordsFact.label}</div>
+              <div className="metric-value text-electric">{visibleRecordsFact.value}</div>
               <div className="ml-4">
                 <AuthButton />
               </div>
