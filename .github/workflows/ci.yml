@@ -32,6 +32,9 @@ jobs:
       - name: Verify Supabase migrations
         run: node scripts/verify-supabase-migrations.mjs
 
+      - name: Check placeholder model-weight deadline
+        run: node scripts/check-placeholder-weight-deadline.mjs
+
       - name: Type check
         run: pnpm exec tsc -b
 

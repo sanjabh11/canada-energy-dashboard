@@ -1,0 +1,74 @@
+name: Train Dispatch PINN
+
+on:
+  workflow_dispatch:
+
+jobs:
+  train-dispatch-pinn:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r training/requirements.txt
+
+      - name: Prepare output directories
+        run: |
+          mkdir -p training/dispatch_pinn/out
+
+      - name: Generate pandapower scenarios
+        run: |
+          python -m training.dispatch_pinn.generate_scenarios \
+            --out training/dispatch_pinn/out/scenarios.jsonl \
+            --manifest training/dispatch_pinn/out/manifest.json \
+            --count 5000 \
+            --seed 42
+
+      - name: Train pandapower-calibrated weights
+        run: |
+          python -m training.dispatch_pinn.train \
+            --input training/dispatch_pinn/out/scenarios.jsonl \
+            --out-weights src/lib/modelWeights/dispatch-pinn-v2.json \
+            --out-metrics training/dispatch_pinn/out/metrics.json \
+            --count 5000 \
+            --seed 42 \
+            --epochs 800 \
+            --hidden-dim 64 \
+            --learning-rate 0.004
+
+      - name: Evaluate pandapower-calibrated weights
+        run: |
+          python -m training.dispatch_pinn.eval \
+            --weights src/lib/modelWeights/dispatch-pinn-v2.json \
+            --input training/dispatch_pinn/out/scenarios.jsonl \
+            --out-report training/dispatch_pinn/out/eval.json \
+            --out-fixture tests/fixtures/dispatch-pinn-conformance.json \
+            --seed 42
+
+      - name: Publish artifact ledger entry
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GIT_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          node scripts/record-artifact.mjs --weights src/lib/modelWeights/dispatch-pinn-v2.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dispatch-pinn-train-${{ github.run_number }}
+          path: |
+            src/lib/modelWeights/dispatch-pinn-v2.json
+            training/dispatch_pinn/out
+          if-no-files-found: error

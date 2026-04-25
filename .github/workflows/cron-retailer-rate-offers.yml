@@ -1,0 +1,27 @@
+name: Retailer Rate Offers Cron
+
+on:
+  schedule:
+    - cron: '20 6 * * 1'
+  workflow_dispatch:
+
+jobs:
+  trigger-retailer-rate-offers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Retailer Rate Offers Ingestion
+        run: |
+          echo "Triggering retailer rate offers ingestion..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-retailer-rate-offers" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-supabase-cron: true" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Retailer rate offers ingestion returned HTTP $HTTP_CODE"
+          fi
