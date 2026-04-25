@@ -23,11 +23,12 @@ import {
   type SeasonalProfile,
 } from '../lib/demandForecaster';
 import { realDataService } from '../lib/realDataService';
-import { evaluateForecastDrift, runMlForecast } from '../lib/mlForecastingClient';
+import { runMlForecast } from '../lib/mlForecastingClient';
 import { backtestRareEventResampling } from '../lib/advancedForecasting';
 import { fetchGasBasisTrainingWindow } from '../lib/timeseriesSource';
 import { DISPATCH_INPUT_WIDTH } from '../lib/modelInference';
 import { DEFAULT_WEAK_GRID_FIXTURE_KEY, getWeakGridFixture } from '../lib/weakGridFixtures';
+import { detectWassersteinDrift } from '../lib/mlForecasting';
 
 // ============================================================================
 // TYPES
@@ -98,7 +99,7 @@ export const DemandForecastDashboard: React.FC = () => {
   useEffect(() => {
     let cancelled = false;
 
-    async function assessDrift() {
+    function assessDrift() {
       if (data.length < 336) {
         setDriftAssessment(null);
         return;
@@ -117,10 +118,7 @@ export const DemandForecastDashboard: React.FC = () => {
         return;
       }
 
-      const { data: driftResult } = await evaluateForecastDrift({
-        domain: 'load',
-        province: 'ON',
-        model_key: 'ontario-demand-seasonal',
+      const driftResult = detectWassersteinDrift({
         threshold: 0.25,
         baseline: { demand_mw: baseline },
         recent: { demand_mw: recent },
@@ -129,9 +127,11 @@ export const DemandForecastDashboard: React.FC = () => {
       if (!cancelled) setDriftAssessment(driftResult);
     }
 
-    assessDrift().catch(() => {
+    try {
+      assessDrift();
+    } catch {
       if (!cancelled) setDriftAssessment(null);
-    });
+    }
 
     return () => {
       cancelled = true;
@@ -363,6 +363,22 @@ export const DemandForecastDashboard: React.FC = () => {
           </div>
         ) : (
           <>
+            <div className="mb-6 rounded-lg border border-amber-500/20 bg-slate-900/40 p-4 text-sm" data-testid="weak-grid-discoverability-card">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-slate-400">Weak-grid fixture catalog</div>
+                  <div className="text-white font-semibold">{weakGridFixture.label}</div>
+                </div>
+                <div className="text-xs text-amber-200">
+                  {mlDomain === 'short_circuit' ? 'Weak Grid / SCED active' : 'Switch ML domain to Weak Grid / SCED'}
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                {mlDomain === 'short_circuit'
+                  ? `Scenario source: ${weakGridFixture.label} · ${weakGridFixture.note}`
+                  : 'Fixture-backed short-circuit diagnostics are available, but the detailed provenance block appears only when the ML domain is set to Weak Grid / SCED.'}
+              </p>
+            </div>
             {activeTab === 'overview' && (
               <OverviewTab stats={stats} metrics={metrics} data={data} />
             )}
@@ -871,10 +887,10 @@ function ForecastTab({
                   Scenario source: {weakGridFixtureLabel} · {weakGridFixtureNote}
                 </div>
               )}
-            </div>
-          )}
-          {mlInsights.analysis?.faultClass && (
-            <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm">
+        </div>
+      )}
+      {mlInsights.analysis?.faultClass && (
+        <div className="mt-4 grid md:grid-cols-2 gap-3 text-sm">
               <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
                 <div className="text-slate-400">Fault Class</div>
                 <div className="text-white font-semibold">{mlInsights.analysis.faultClass}</div>

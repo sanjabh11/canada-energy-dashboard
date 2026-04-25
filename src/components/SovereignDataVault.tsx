@@ -99,6 +99,16 @@ export const SovereignDataVault: React.FC = () => {
     'Encrypted files stay in the browser/device workflow only. There is no on-prem runtime or residency enforcement in this release.',
     'Audit history is local-first browser storage. Multi-device sync and append-only server attestation remain out of scope.',
   ];
+  const exportRequirements = [
+    consentAccepted ? null : 'accept the local-custody consent gate',
+    config.nationName.trim() ? null : 'enter the Nation or community name',
+    exportPassphrase.trim() ? null : 'enter an export passphrase',
+  ].filter(Boolean) as string[];
+  const importRequirements = [
+    consentAccepted ? null : 'accept the local-custody consent gate',
+    pendingImportText ? null : 'choose an encrypted vault file',
+    importPassphrase.trim() ? null : 'enter the import passphrase',
+  ].filter(Boolean) as string[];
 
   function refreshAuditEntries() {
     setAuditEntries(getSovereignVaultAuditEntries());
@@ -315,7 +325,9 @@ export const SovereignDataVault: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="mb-2 block text-sm text-slate-400">Nation or community name</label>
+                  <label className="mb-2 block text-sm text-slate-400">
+                    Nation or community name <span className="text-rose-300">*</span>
+                  </label>
                   <input
                     aria-label="Nation or community name"
                     type="text"
@@ -460,6 +472,11 @@ export const SovereignDataVault: React.FC = () => {
                 >
                   Export encrypted snapshot
                 </button>
+                {exportRequirements.length > 0 && (
+                  <p className="text-xs text-amber-200" data-testid="vault-export-requirements">
+                    Export remains disabled until you {exportRequirements.join(', ')}.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -496,6 +513,11 @@ export const SovereignDataVault: React.FC = () => {
                 >
                   Import encrypted snapshot
                 </button>
+                {importRequirements.length > 0 && (
+                  <p className="text-xs text-amber-200" data-testid="vault-import-requirements">
+                    Import remains disabled until you {importRequirements.join(', ')}.
+                  </p>
+                )}
               </div>
             </section>
 

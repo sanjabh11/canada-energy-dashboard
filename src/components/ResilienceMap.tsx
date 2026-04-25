@@ -18,7 +18,7 @@ import { resilienceEngine, ResilienceUtils, AssetType, ClimateHazard, DefaultCli
 import { fetchEdgeJson } from '../lib/edge';
 import { realDataService } from '../lib/realDataService';
 import { isEdgeFetchEnabled } from '../lib/config';
-import { ingestGroundsourceEvents } from '../lib/mlForecastingClient';
+import { getGroundsourceSnapshot } from '../lib/groundsourceSnapshotSource';
 import { buildResilienceFusionSummary, buildCascadeRiskSummary } from '../lib/resilienceFusion';
 import { isTrainedPvFaultEnabled } from '../lib/featureFlags';
 import { isPvFaultProductionArtifact } from '../lib/modelInference';
@@ -143,6 +143,7 @@ export const ResilienceMap: React.FC = () => {
   const [isFallbackData, setIsFallbackData] = useState<boolean>(false);
   const [intelligenceEvents, setIntelligenceEvents] = useState<any[]>([]);
   const [groundsourceSnapshot, setGroundsourceSnapshot] = useState<any | null>(null);
+  const [groundsourceReady, setGroundsourceReady] = useState<boolean>(false);
 
   const loadFallbackData = useCallback(async (reason?: string) => {
     const fallbackAssetsRaw = await realDataService.getInfrastructureAssets();
@@ -324,15 +325,27 @@ export const ResilienceMap: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    ingestGroundsourceEvents({ source_group: 'utility_public', max_items: 2 })
-      .then(({ data }) => {
+    getGroundsourceSnapshot('utility_public')
+      .then(({ payload, snapshotStoredAt }) => {
         if (!cancelled) {
-          setIntelligenceEvents(data.events ?? []);
-          setGroundsourceSnapshot(data);
+          setIntelligenceEvents(Array.isArray(payload.events) ? payload.events : []);
+          setGroundsourceSnapshot({
+            ...payload,
+            snapshot_stored_at: snapshotStoredAt,
+          });
+          setGroundsourceReady(true);
         }
       })
-      .catch((err) => console.warn('Groundsource miner unavailable:', err));
-    return () => { cancelled = true; };
+      .catch(() => {
+        if (!cancelled) {
+          setIntelligenceEvents([]);
+          setGroundsourceSnapshot(null);
+          setGroundsourceReady(true);
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const selectedAsset = useMemo(
@@ -454,8 +467,8 @@ export const ResilienceMap: React.FC = () => {
       .map((event) => event.event_timestamp ?? event.created_at)
       .filter((value): value is string => Boolean(value))
       .sort();
-    return values.at(-1) ?? null;
-  }, [intelligenceEvents]);
+    return values.at(-1) ?? groundsourceSnapshot?.meta?.valid_at ?? groundsourceSnapshot?.snapshot_stored_at ?? null;
+  }, [groundsourceSnapshot, intelligenceEvents]);
 
   const scenarioComparison = useMemo(() => {
     if (!selectedAsset) return [];
@@ -488,12 +501,26 @@ export const ResilienceMap: React.FC = () => {
     });
   }, [selectedAsset, hazards, timeHorizon]);
 
-  const pvContractActive = isTrainedPvFaultEnabled() && isPvFaultProductionArtifact(pvWeights as any);
+  const pvFlagEnabled = isTrainedPvFaultEnabled();
+  const pvArtifactHealthy = isPvFaultProductionArtifact(pvWeights as any);
+  const pvContractActive = pvFlagEnabled && pvArtifactHealthy;
+  const pvFallbackReason = !pvFlagEnabled
+    ? 'feature flag disabled'
+    : !pvArtifactHealthy
+      ? 'artifact gate failed'
+      : !isEdgeFetchEnabled()
+        ? 'runtime edge disabled'
+        : 'runtime edge unavailable';
   const pvContractPreview = useMemo(
     () => (pvContractActive ? buildPvFaultContractPreview() : null),
     [pvContractActive],
   );
   const pvMetrics = pvWeights.manifest.metrics as Record<string, number>;
+  const groundsourceEmptyState = groundsourceSnapshot?.fallback_reason === 'no_snapshot_available'
+    ? 'No persisted groundsource snapshot is available yet; the resilience map is retaining provenance only.'
+    : groundsourceSnapshot?.fallback_reason === 'snapshot_read_failed'
+      ? 'Groundsource snapshot could not be read from Supabase; the resilience map is retaining provenance only.'
+      : 'No structured events were extracted in the latest protected ingestion run; the resilience map is retaining provenance only.';
 
   if (loading) {
     return (
@@ -551,7 +578,7 @@ export const ResilienceMap: React.FC = () => {
           </div>
         )}
 
-        {(groundsourceSnapshot || intelligenceEvents.length > 0) && (
+        {groundsourceReady && groundsourceSnapshot && (
           <div className="mb-4 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900" data-testid="groundsource-provenance">
             <strong>Groundsource intelligence:</strong> {intelligenceEvents.length} public utility/policy event(s) extracted from allowlisted sources.
             {intelligenceEvents.length > 0 ? (
@@ -560,7 +587,7 @@ export const ResilienceMap: React.FC = () => {
               </div>
             ) : (
               <div className="mt-1 text-xs text-cyan-800">
-                No structured events were extracted in this run; the resilience map is retaining provenance only.
+                {groundsourceEmptyState}
               </div>
             )}
             <div className="mt-1 text-[11px] text-cyan-700">
@@ -650,6 +677,9 @@ export const ResilienceMap: React.FC = () => {
               <div className="font-semibold text-slate-800">PV fault contract advisory</div>
               <div className="text-xs text-slate-600">
                 Simulator-calibrated PV fault scoring is gated off. The resilience map continues to use the heuristic graph-message fallback until the trained artifact gate and feature flag are both enabled.
+              </div>
+              <div className="mt-1 text-[11px] text-slate-500">
+                Advisory reason: {pvFallbackReason}
               </div>
             </div>
           )}

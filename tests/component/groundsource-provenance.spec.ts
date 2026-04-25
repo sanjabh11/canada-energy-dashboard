@@ -59,16 +59,28 @@ const groundsourceFallbackPayload = {
 
 test.describe('Groundsource provenance chip', () => {
   test('renders heuristic fallback provenance on /resilience', async ({ page }) => {
-    await page.route('**/groundsource-miner**', async (route) => {
+    let ingestRequests = 0;
+    page.on('request', (request) => {
+      if (request.url().includes('groundsource-miner')) {
+        ingestRequests += 1;
+      }
+    });
+
+    await page.route('**/rest/v1/dashboard_summary_snapshots*', async (route) => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(groundsourceFallbackPayload),
+        body: JSON.stringify({
+          summary_payload: groundsourceFallbackPayload,
+          snapshot_stored_at: '2026-04-24T00:00:00.000Z',
+          source_updated_at: '2026-04-24T00:00:00.000Z',
+          source_label: 'groundsource-miner',
+        }),
       });
     });
 
     await page.goto(`${BASE_URL}/resilience`);
-    await expect(page.getByRole('heading', { name: 'Infrastructure Resilience Map' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'Infrastructure Resilience Map' })).toBeVisible({ timeout: 30000 });
 
     const provenance = page.getByTestId('groundsource-provenance');
 
@@ -80,5 +92,6 @@ test.describe('Groundsource provenance chip', () => {
     await expect(provenance).toContainText('Source count: 2');
     await expect(provenance).toContainText('Fallback reason: llm_parse_failed');
     await expect(provenance).toContainText('Claim label: advisory');
+    expect(ingestRequests).toBe(0);
   });
 });

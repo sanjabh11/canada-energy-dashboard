@@ -194,3 +194,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/groundsource-miner/deno.json"
 entrypoint = "./functions/groundsource-miner/index.ts"
+
+[functions.model-monitor]
+enabled = true
+verify_jwt = false
+import_map = "./functions/model-monitor/deno.json"
+entrypoint = "./functions/model-monitor/index.ts"

@@ -8,6 +8,7 @@ import { Link } from 'react-router-dom';
 import { runMlForecast } from '../lib/mlForecastingClient';
 import { fetchGasBasisTrainingWindow, fetchMarketSpikeTrainingWindow } from '../lib/timeseriesSource';
 import { getLatestRetainedFeatures } from '../lib/featureRankingsSource';
+import { fetchFeatureRankingParitySummary } from '../lib/featureRankingParitySource';
 
 const ForecastBenchmarkingPage: React.FC = () => {
   const [resourceType, setResourceType] = useState<'solar' | 'wind'>('solar');
@@ -16,6 +17,7 @@ const ForecastBenchmarkingPage: React.FC = () => {
   const [marketSpikeRun, setMarketSpikeRun] = useState<any>(null);
   const [gasBasisRun, setGasBasisRun] = useState<any>(null);
   const [retainedFeatures, setRetainedFeatures] = useState<string[]>([]);
+  const [paritySummary, setParitySummary] = useState<any>(null);
 
   const provinces = [
     { value: 'ON', label: 'Ontario' },
@@ -30,6 +32,11 @@ const ForecastBenchmarkingPage: React.FC = () => {
       if (!cancelled) setRetainedFeatures(result.retainedFeatures);
     }).catch(() => {
       if (!cancelled) setRetainedFeatures([]);
+    });
+    fetchFeatureRankingParitySummary().then((result) => {
+      if (!cancelled) setParitySummary(result);
+    }).catch(() => {
+      if (!cancelled) setParitySummary(null);
     });
     return () => { cancelled = true; };
   }, []);
@@ -251,6 +258,67 @@ const ForecastBenchmarkingPage: React.FC = () => {
             </p>
           </div>
         )}
+
+        <div className="bg-slate-800 border border-slate-700 rounded-xl p-5 mb-8" data-testid="feature-ranking-benchmark-card">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-white font-semibold">Feature Ranking / Parity Benchmark</h2>
+              <p className="text-sm text-slate-400">
+                Retained sensor set from the live SVM-RFE adapter plus the latest aligned parity benchmark snapshot.
+              </p>
+            </div>
+            <div className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              paritySummary?.available && paritySummary?.artifact?.parityPassed
+                ? 'bg-emerald-500/15 text-emerald-200'
+                : 'bg-amber-500/15 text-amber-200'
+            }`}>
+              {paritySummary?.statusLabel ?? 'artifact not uploaded yet'}
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-4 text-sm">
+            <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+              <div className="text-slate-500">Retained features</div>
+              <div className="mt-1 text-white font-medium">{retainedFeatures.length}</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+              <div className="text-slate-500">Parity overlap</div>
+              <div className="mt-1 text-white font-medium">
+                {paritySummary?.artifact ? `${(Number(paritySummary.artifact.overlapRatio) * 100).toFixed(0)}%` : 'Artifact unavailable'}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+              <div className="text-slate-500">Dataset fingerprint</div>
+              <div className="mt-1 break-all text-xs text-slate-300">
+                {paritySummary?.artifact?.datasetFingerprint ?? 'Artifact unavailable'}
+              </div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-900/40 p-3">
+              <div className="text-slate-500">Seed / samples</div>
+              <div className="mt-1 text-white font-medium">
+                {paritySummary?.artifact ? `${paritySummary.artifact.seed} / ${Number(paritySummary.artifact.sampleCount).toLocaleString()}` : '42 / n/a'}
+              </div>
+            </div>
+          </div>
+          {retainedFeatures.length > 0 && (
+            <p className="mt-4 text-sm text-cyan-200">
+              Retained set: {retainedFeatures.join(', ')}
+            </p>
+          )}
+          {paritySummary?.artifact ? (
+            <>
+              <p className="mt-2 text-xs text-slate-400">
+                TypeScript source of truth: {paritySummary.artifact.tsModelVersion} · aligned reference: {paritySummary.artifact.referenceModelVersion}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                Reference retained set: {paritySummary.artifact.referenceRetainedFeatures.join(', ')}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-xs text-slate-500">
+              The ranking UI is live, but the benchmark artifact has not been uploaded into this deployment yet.
+            </p>
+          )}
+        </div>
 
         {marketSpikeRun?.analysis && (
           <div className="bg-amber-950/30 border border-amber-500/30 rounded-xl p-5 mb-8">

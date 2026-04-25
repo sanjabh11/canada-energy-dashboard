@@ -14,7 +14,7 @@ import {
 async function postWithFallback<T>(
   pathCandidates: string[],
   body: unknown,
-  fallback: () => T,
+  fallback: (reason?: string) => T,
   options: EdgeFetchOptions = {},
   fallbackEvent?: {
     jobName: string;
@@ -42,11 +42,34 @@ async function postWithFallback<T>(
       });
     }
     return {
-      data: fallback(),
+      data: fallback(classifyEdgeFallbackReason(reason)),
       source: 'local_fallback',
       error: reason,
     };
   }
+}
+
+export function classifyEdgeFallbackReason(reason: string): string {
+  const normalized = reason.toLowerCase();
+  if (normalized.includes('request failed: 401') || normalized.includes('request failed: 403')) {
+    return 'edge_unauthorized';
+  }
+  if (normalized.includes('request failed: 404')) {
+    return 'edge_undeployed';
+  }
+  if (normalized.includes('disabled via configuration')) {
+    return 'edge_disabled';
+  }
+  if (normalized.includes('not configured')) {
+    return 'edge_unconfigured';
+  }
+  if (normalized.includes('aborterror') || normalized.includes('timeout') || normalized.includes('aborted')) {
+    return 'edge_timeout';
+  }
+  if (normalized.includes('failed to fetch') || normalized.includes('networkerror') || normalized.includes('load failed')) {
+    return 'edge_cors_failed';
+  }
+  return 'edge_function_unavailable';
 }
 
 export async function runDispatchScenario(
@@ -220,13 +243,13 @@ export function ingestGroundsourceEvents(
   return postWithFallback(
     ['groundsource-miner/ingest'],
     input,
-    () => ({
+    (fallbackReason) => ({
       source_group: input.source_group ?? 'utility_public',
       source_count: 0,
       llm_source_count: 0,
       heuristic_source_count: 0,
       extraction_mode: 'heuristic',
-      fallback_reason: 'edge_function_unavailable',
+      fallback_reason: fallbackReason ?? 'edge_function_unavailable',
       documents: [],
       events: [],
       event_count: 0,

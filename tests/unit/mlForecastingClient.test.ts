@@ -9,7 +9,7 @@ vi.mock('../../src/lib/edge', () => ({
 }));
 
 import { logFallbackEvent } from '../../src/lib/jobExecutionLog';
-import { ingestGroundsourceEvents, runMlForecast } from '../../src/lib/mlForecastingClient';
+import { classifyEdgeFallbackReason, ingestGroundsourceEvents, runMlForecast } from '../../src/lib/mlForecastingClient';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -89,5 +89,12 @@ describe('mlForecastingClient groundsource routing', () => {
     expect(result.data.meta.claim_label).toBe('advisory');
     expect(result.data.meta.is_fallback).toBe(true);
     expect(result.data.event_count).toBe(0);
+  });
+
+  it('classifies common browser edge failures into actionable fallback reasons', () => {
+    expect(classifyEdgeFallbackReason('Request failed: 404 Not Found')).toBe('edge_undeployed');
+    expect(classifyEdgeFallbackReason('Request failed: 401 Unauthorized')).toBe('edge_unauthorized');
+    expect(classifyEdgeFallbackReason('Failed to fetch')).toBe('edge_cors_failed');
+    expect(classifyEdgeFallbackReason('Supabase Edge fetch disabled via configuration')).toBe('edge_disabled');
   });
 });

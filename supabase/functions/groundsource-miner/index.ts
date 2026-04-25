@@ -4,6 +4,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.4";
 import { createCorsHeaders, handleCorsOptions } from "../_shared/cors.ts";
 import { applyRateLimit } from "../_shared/rateLimit.ts";
 import { buildMeta } from "../_shared/mlForecasting.ts";
+import { saveDashboardSummarySnapshot } from "../_shared/dashboardSnapshots.ts";
 import { callLLM } from "../llm/call_llm_adapter.ts";
 import { finishOpsRun, logFallbackEvent, logJobExecution, startOpsRun } from "../_shared/jobLogging.ts";
 import {
@@ -53,6 +54,26 @@ type SourceDescriptor = {
   text?: string;
   html?: string;
 };
+
+async function persistGroundsourceSnapshot(
+  sourceGroup: string,
+  summaryPayload: Record<string, unknown>,
+  sourceUpdatedAt?: string | null,
+) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    return;
+  }
+
+  await saveDashboardSummarySnapshot({
+    dashboardKey: "groundsource_intelligence",
+    variantKey: sourceGroup,
+    summaryPayload,
+    sourceLabel: "groundsource-miner",
+    sourceUpdatedAt: sourceUpdatedAt ?? new Date().toISOString(),
+    isPartial: Boolean(summaryPayload.meta && (summaryPayload.meta as Record<string, unknown>).claim_label === "advisory"),
+    notes: "Persisted protected groundsource ingestion summary for anon-safe browser reads.",
+  });
+}
 
 async function sha256(value: string): Promise<string> {
   const bytes = new TextEncoder().encode(value);
@@ -360,6 +381,8 @@ serve(async (req) => {
         }),
       };
 
+      await persistGroundsourceSnapshot(sourceGroup, response, response.meta.valid_at).catch(() => null);
+
       if (supabase && opsRunId) {
         await logFallbackEvent(supabase, {
           jobName: "groundsource-miner",
@@ -581,6 +604,31 @@ serve(async (req) => {
       claimLabel: runSummary.claim_label,
     });
 
+    const responsePayload = {
+      source_group: sourceGroup,
+      scheduled_run: scheduledRun,
+      source_count: runSummary.source_count,
+      llm_source_count: runSummary.llm_source_count,
+      heuristic_source_count: runSummary.heuristic_source_count,
+      extraction_mode: runSummary.extraction_mode,
+      fallback_reason: runSummary.fallback_reason,
+      documents,
+      events,
+      provenance_score: confidenceScore,
+      event_count: runSummary.event_count,
+      budget: {
+        requested_events: requestedEvents,
+        remaining_events: remainingEventBudget,
+        token_budget_used: estimatedTokensUsed,
+        token_budget_limit: GROUNDSOURCE_DAILY_TOKEN_BUDGET,
+        duration_budget_remaining_ms: remainingDurationBudgetMs,
+      },
+      warnings: meta.warnings,
+      meta,
+    };
+
+    await persistGroundsourceSnapshot(sourceGroup, responsePayload, meta.valid_at).catch(() => null);
+
     if (supabase && opsRunId) {
       if (runSummary.claim_label === "advisory") {
         await logFallbackEvent(supabase, {
@@ -641,28 +689,7 @@ serve(async (req) => {
       }).catch(() => null);
     }
 
-    return new Response(JSON.stringify({
-      source_group: sourceGroup,
-      scheduled_run: scheduledRun,
-      source_count: runSummary.source_count,
-      llm_source_count: runSummary.llm_source_count,
-      heuristic_source_count: runSummary.heuristic_source_count,
-      extraction_mode: runSummary.extraction_mode,
-      fallback_reason: runSummary.fallback_reason,
-      documents,
-      events,
-      provenance_score: confidenceScore,
-      event_count: runSummary.event_count,
-      budget: {
-        requested_events: requestedEvents,
-        remaining_events: remainingEventBudget,
-        token_budget_used: estimatedTokensUsed,
-        token_budget_limit: GROUNDSOURCE_DAILY_TOKEN_BUDGET,
-        duration_budget_remaining_ms: remainingDurationBudgetMs,
-      },
-      warnings: meta.warnings,
-      meta,
-    }), { status: 200, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
+    return new Response(JSON.stringify(responsePayload), { status: 200, headers: { ...cors, ...jsonHeaders, ...rl.headers } });
   } catch (error) {
     if (supabase && opsRunId) {
       await finishOpsRun(supabase, opsRunId, "failure", {

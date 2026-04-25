@@ -6,8 +6,10 @@ test.describe('Sovereign vault edge-v1 contract', () => {
   test('exports and re-imports an encrypted local vault snapshot', async ({ page }, testInfo) => {
     await page.goto(`${BASE_URL}/sovereign-vault`);
 
-    await expect(page.getByTestId('vault-consent-gate')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Edge Vault V1' })).toBeVisible({ timeout: 30000 });
+    await expect(page.getByRole('heading', { name: 'Consent and local custody gate' })).toBeVisible({ timeout: 15000 });
     await expect(page.getByRole('button', { name: 'Export encrypted snapshot' })).toBeDisabled();
+    await expect(page.getByText(/Export remains disabled until you/i)).toContainText('enter the Nation or community name');
 
     await page.getByLabel('Nation or community name').fill('Siksika Nation');
     await page.getByLabel('Export passphrase').fill('correct horse battery staple');

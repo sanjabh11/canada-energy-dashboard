@@ -1,0 +1,86 @@
+{
+  "version": "feature-ranking-parity-v1",
+  "seed": 42,
+  "generatedAt": "2026-04-25T10:51:06.746Z",
+  "datasetFingerprint": "2001fdc37468344f5a01f800d61fc22b1a52b05c76e17da7dbcec739328c289a",
+  "sampleCount": 1832,
+  "targetKey": "target_demand_mw",
+  "targetThreshold": 18969.605,
+  "overlapFloor": 0.75,
+  "overlapRatio": 1,
+  "parityPassed": true,
+  "tsModelVersion": "svm-rfe-v2",
+  "referenceModelVersion": "python-aligned-svm-rfe-v1",
+  "tsRetainedFeatures": [
+    "previous_week_same_hour_mw",
+    "previous_day_same_hour_mw",
+    "previous_hour_mw",
+    "delta_prev_week_mw",
+    "delta_prev_hour_mw",
+    "rolling_24h_std_mw"
+  ],
+  "referenceRetainedFeatures": [
+    "previous_week_same_hour_mw",
+    "previous_day_same_hour_mw",
+    "previous_hour_mw",
+    "delta_prev_week_mw",
+    "delta_prev_hour_mw",
+    "rolling_24h_std_mw"
+  ],
+  "rankingDeltas": [
+    {
+      "feature": "previous_week_same_hour_mw",
+      "tsRank": 1,
+      "referenceRank": 1,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 1663.676354,
+      "referenceScore": 1663.676354
+    },
+    {
+      "feature": "previous_day_same_hour_mw",
+      "tsRank": 2,
+      "referenceRank": 2,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 1215.085333,
+      "referenceScore": 1215.085333
+    },
+    {
+      "feature": "previous_hour_mw",
+      "tsRank": 3,
+      "referenceRank": 3,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 959.254715,
+      "referenceScore": 959.254715
+    },
+    {
+      "feature": "delta_prev_week_mw",
+      "tsRank": 4,
+      "referenceRank": 4,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 448.59102,
+      "referenceScore": 448.59102
+    },
+    {
+      "feature": "delta_prev_hour_mw",
+      "tsRank": 5,
+      "referenceRank": 5,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 255.830618,
+      "referenceScore": 255.830618
+    },
+    {
+      "feature": "rolling_24h_std_mw",
+      "tsRank": 9,
+      "referenceRank": 9,
+      "retainedByTs": true,
+      "retainedByReference": true,
+      "tsScore": 3.693076,
+      "referenceScore": 3.693076
+    }
+  ]
+}
