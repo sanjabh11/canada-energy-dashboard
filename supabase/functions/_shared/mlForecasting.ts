@@ -1,5 +1,48 @@
 export type MlDataSource = { name: string; url?: string; lastUpdated?: string };
 
+export type EvaluationSummary = {
+  mae?: number;
+  rmse?: number;
+  directional_accuracy?: number;
+  auc?: number;
+  precision?: number;
+  recall?: number;
+  mape?: number;
+  physics_violation_rate?: number;
+  f1?: number;
+  top3_localization_accuracy?: number;
+  validation_loss?: number;
+  sample_count: number;
+};
+
+export type SimulatorConfig = {
+  name: string;
+  version: string;
+  scenario_count: number;
+  topology?: string;
+};
+
+export type ForecastTrainingDataProfile = 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated';
+
+export type SharedForecastMeta = {
+  model_version: string;
+  generated_at: string;
+  valid_at: string;
+  confidence_score: number;
+  data_sources: MlDataSource[];
+  is_fallback: boolean;
+  staleness_status: 'fresh' | 'stale' | 'unknown';
+  methodology: string;
+  warnings: string[];
+  training_data_profile?: ForecastTrainingDataProfile;
+  evaluation_summary?: EvaluationSummary;
+  calibration_status?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claim_label?: 'estimated' | 'advisory' | 'validated';
+  training_artifact_sha?: string;
+  simulator_config?: SimulatorConfig;
+  trained_at?: string;
+};
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 function clamp(value: number, min = 0, max = 1): number {
@@ -30,6 +73,13 @@ export function buildMeta(params: {
   warnings?: string[];
   generatedAt?: string;
   staleAfterDays?: number;
+  trainingDataProfile?: ForecastTrainingDataProfile;
+  evaluationSummary?: EvaluationSummary;
+  calibrationStatus?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
+  trainingArtifactSha?: string;
+  simulatorConfig?: SimulatorConfig;
+  trainedAt?: string;
 }) {
   const generatedAt = params.generatedAt ?? new Date().toISOString();
   const freshestSourceDate = params.dataSources
@@ -42,7 +92,7 @@ export function buildMeta(params: {
     ? daysBetween(freshestSourceDate, generatedAt) > staleAfterDays ? 'stale' : 'fresh'
     : 'unknown';
 
-  return {
+  const meta: SharedForecastMeta = {
     model_version: params.modelVersion,
     generated_at: generatedAt,
     valid_at: params.validAt,
@@ -53,6 +103,16 @@ export function buildMeta(params: {
     methodology: params.methodology,
     warnings: params.warnings ?? [],
   };
+
+  if (params.trainingDataProfile !== undefined) meta.training_data_profile = params.trainingDataProfile;
+  if (params.evaluationSummary !== undefined) meta.evaluation_summary = params.evaluationSummary;
+  if (params.calibrationStatus !== undefined) meta.calibration_status = params.calibrationStatus;
+  if (params.claimLabel !== undefined) meta.claim_label = params.claimLabel;
+  if (params.trainingArtifactSha !== undefined) meta.training_artifact_sha = params.trainingArtifactSha;
+  if (params.simulatorConfig !== undefined) meta.simulator_config = params.simulatorConfig;
+  if (params.trainedAt !== undefined) meta.trained_at = params.trainedAt;
+
+  return meta;
 }
 
 export function calculateTierScenario(input: any) {
@@ -104,6 +164,7 @@ export function calculateTierScenario(input: any) {
       methodology: 'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
+      claimLabel: 'estimated',
     }),
   };
 }
@@ -148,6 +209,7 @@ export function evaluateRateWatchdog(input: any) {
       isFallback: true,
       methodology: 'Rate comparison calculator using current/default RoLR rate and user usage assumptions.',
       warnings,
+      claimLabel: 'estimated',
     }),
   };
 }

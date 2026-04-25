@@ -141,7 +141,7 @@ export class ResilienceScoringEngine {
       );
     }
 
-    // Weighted overall score based on hazard severity and asset criticality
+    // Chebyshev-style non-compensatory fusion: the most severe limiting term dominates.
     const hazardWeights: Record<ClimateHazard, number> = {
       [ClimateHazard.FLOODING]: 0.25,
       [ClimateHazard.HURRICANE]: 0.25,
@@ -153,22 +153,21 @@ export class ResilienceScoringEngine {
       [ClimateHazard.EROSION]: 0.12
     };
 
-    let weightedScore = 0;
-    let totalWeight = 0;
-
-    for (const [hazard, weight] of Object.entries(hazardWeights)) {
-      if (hazard in hazardBreakdown) {
-        weightedScore += hazardBreakdown[hazard as ClimateHazard] * weight;
-        totalWeight += weight;
-      }
-    }
-
-    if (totalWeight === 0) weightedScore = 0;
-    else weightedScore = weightedScore / totalWeight;
-
-    // Adjust based on critical dependents (socio-economic impact)
-    const dependentsMultiplier = 1 + (asset.criticalDependents / 100000) * 0.3;
-    const adjustedScore = Math.min(weightedScore * dependentsMultiplier, 100);
+    const hazardTerms = Object.entries(hazardWeights)
+      .filter(([hazard]) => hazard in hazardBreakdown)
+      .map(([hazard, weight]) => {
+        const rawScore = hazardBreakdown[hazard as ClimateHazard] ?? 0;
+        return {
+          hazard: hazard as ClimateHazard,
+          weightedRisk: (rawScore / 100) * weight,
+          rawScore,
+        };
+      });
+    const dependentsPressure = Math.min(1, (asset.criticalDependents / 100000) * 0.3);
+    const limitingTerm = hazardTerms.length > 0
+      ? hazardTerms.reduce((max, term) => Math.max(max, term.weightedRisk), dependentsPressure)
+      : dependentsPressure;
+    const adjustedScore = Math.min(100, Math.round(limitingTerm * 100));
 
     // Determine risk level
     let riskLevel: 'low' | 'medium' | 'high' | 'critical';
@@ -177,12 +176,13 @@ export class ResilienceScoringEngine {
     else if (adjustedScore >= 40) riskLevel = 'medium';
     else riskLevel = 'low';
 
-    const limitingFactorEntry = Object.entries(hazardBreakdown).sort((left, right) => right[1] - left[1])[0];
-    const limitingFactor = (limitingFactorEntry?.[0] as ClimateHazard) ?? ClimateHazard.FLOODING;
+    const limitingFactorEntry = hazardTerms
+      .sort((left, right) => right.weightedRisk - left.weightedRisk || right.rawScore - left.rawScore)[0];
+    const limitingFactor = limitingFactorEntry?.hazard ?? ClimateHazard.FLOODING;
     const limitingFactorLabel = limitingFactor.replace(/_/g, ' ').replace(/\b\w/g, (char) => char.toUpperCase());
 
     return {
-      overallScore: Math.round(adjustedScore),
+      overallScore: adjustedScore,
       hazardBreakdown,
       riskLevel,
       limitingFactor,

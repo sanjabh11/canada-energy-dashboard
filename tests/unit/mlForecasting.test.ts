@@ -1,6 +1,8 @@
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   buildLocalMlForecastRun,
   calculateTierScenario,
+  analyzePvFaultGraph,
   evaluateRateWatchdog,
   rankFeaturesRfeV1,
   detectWassersteinDrift,
@@ -11,6 +13,11 @@ import {
   buildForecastResponseMeta,
   backtestRareEventResampling,
 } from '../../src/lib/mlForecasting';
+import pvWeights from '../../src/lib/modelWeights/pv-gnn-v2.json';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 describe('mlForecasting shared engine', () => {
   it('calculates deterministic TIER pathways with stale pricing warnings', () => {
@@ -132,11 +139,83 @@ describe('mlForecasting shared engine', () => {
       isFallback: true,
       methodology: 'test',
       warnings: ['sample warning'],
+      trainingDataProfile: 'real',
+      evaluationSummary: { sample_count: 4, mae: 1.2, rmse: 1.4 },
+      calibrationStatus: 'calibrated',
+      claimLabel: 'validated',
     });
 
     expect(meta.confidence_score).toBe(0);
     expect(meta.staleness_status).toBe('fresh');
     expect(meta.warnings).toContain('sample warning');
+    expect(meta.training_data_profile).toBe('real');
+    expect(meta.evaluation_summary?.sample_count).toBe(4);
+    expect(meta.calibration_status).toBe('calibrated');
+    expect(meta.claim_label).toBe('validated');
+  });
+
+  it('preserves simulator-calibrated provenance only when explicitly provided', () => {
+    const enriched = buildForecastResponseMeta({
+      modelVersion: 'ml-v2',
+      validAt: '2026-04-23T00:00:00.000Z',
+      confidenceScore: 0.9,
+      dataSources: [{ name: 'simulator', lastUpdated: '2026-04-01' }],
+      isFallback: false,
+      methodology: 'placeholder',
+      trainingDataProfile: 'simulator-calibrated',
+      trainingArtifactSha: 'sha-42',
+      simulatorConfig: {
+        name: 'pandapower',
+        version: 'placeholder-0.0.0',
+        scenario_count: 50000,
+        topology: 'IEEE-30',
+      },
+      trainedAt: '2026-04-24T00:00:00.000Z',
+    });
+
+    expect(enriched.training_data_profile).toBe('simulator-calibrated');
+    expect(enriched.training_artifact_sha).toBe('sha-42');
+    expect(enriched.simulator_config?.scenario_count).toBe(50000);
+    expect(enriched.trained_at).toBe('2026-04-24T00:00:00.000Z');
+
+    const minimal = buildForecastResponseMeta({
+      modelVersion: 'ml-v2',
+      validAt: '2026-04-23T00:00:00.000Z',
+      confidenceScore: 0.9,
+      dataSources: [{ name: 'simulator', lastUpdated: '2026-04-01' }],
+      isFallback: false,
+      methodology: 'placeholder',
+    });
+
+    expect('training_data_profile' in minimal).toBe(false);
+    expect('training_artifact_sha' in minimal).toBe(false);
+    expect('simulator_config' in minimal).toBe(false);
+    expect('trained_at' in minimal).toBe(false);
+  });
+
+  it('keeps dispatch on the heuristic path until the simulator-calibrated gate opens', () => {
+    const dispatchRun = buildLocalMlForecastRun({
+      domain: 'dispatch',
+      province: 'AB',
+      horizon_hours: 6,
+      scenario: {
+        loadMw: 10250,
+        temperatureC: -18,
+        windGenerationMw: 380,
+        solarGenerationMw: 40,
+        reserveMarginPercent: 7,
+        rampLimitMwPerHour: 320,
+        previousDispatchMw: 10140,
+      },
+    });
+
+    expect(dispatchRun.analysis.runtimeMode).toBe('heuristic');
+    expect(dispatchRun.analysis.fallbackReason).toBeDefined();
+    expect(dispatchRun.meta.model_version).toBe('physics-constrained-dispatch-v2');
+    expect(dispatchRun.meta.training_data_profile).toBeUndefined();
+    expect(dispatchRun.meta.claim_label).toBe('advisory');
+    expect(dispatchRun.predictions).toHaveLength(6);
+    expect(dispatchRun.analysis.featureContributions.previousDispatch).toBe(10140);
   });
 
   it('screens weak grids with short-circuit and inverter pressure', () => {
@@ -221,7 +300,7 @@ describe('mlForecasting shared engine', () => {
       },
     });
 
-    expect(gasBasis.backtest.sampleCount).toBeGreaterThan(0);
+    expect(gasBasis.backtest.sample_count).toBeGreaterThan(0);
     expect(gasBasis.sourceProfile).toBe('real');
     expect(gasBasis.backtest.directionalAccuracy).toBeGreaterThanOrEqual(0);
     expect(mlGasBasis.analysis).toBeTruthy();
@@ -266,10 +345,33 @@ describe('mlForecasting shared engine', () => {
     expect(byop.analysis?.modelVersion).toBe('byop-mas-v1');
     expect(byop.predictions.length).toBeGreaterThan(0);
     expect(byop.analysis?.agentSummary?.utility?.importCapMw).toBeGreaterThan(0);
-    expect(pvFault.analysis?.modelVersion).toBe('pv-gnn-v1');
+    expect(pvFault.analysis?.modelVersion).toBe('graph-message-passing-pv-fault-v2');
     expect(pvFault.analysis?.topEdges?.length).toBeGreaterThan(0);
     expect(pvFault.predictions.length).toBe(0);
     expect(weakGrid.analysis?.modelVersion).toBe('weak-grid-short-circuit-v1');
+  });
+
+  it('activates the simulator-calibrated pv fault runtime when the flag is enabled', () => {
+    vi.stubEnv('VITE_TRAINED_PV_FAULT_ENABLED', 'true');
+    const trained = analyzePvFaultGraph({
+      nodes: [
+        { id: 'pv-a', expectedOutputMw: 2.8, observedOutputMw: 2.6, voltageV: 596, inverterTempC: 41, irradiance: 820 },
+        { id: 'pv-b', expectedOutputMw: 2.7, observedOutputMw: 1.2, voltageV: 548, inverterTempC: 68, irradiance: 690 },
+        { id: 'pv-c', expectedOutputMw: 2.5, observedOutputMw: 0.2, voltageV: 505, inverterTempC: 81, irradiance: 640, offline: true },
+      ],
+      edges: [
+        { fromNodeId: 'pv-a', toNodeId: 'pv-b', weight: 0.5 },
+        { fromNodeId: 'pv-b', toNodeId: 'pv-c', weight: 0.4 },
+      ],
+      trainedWeights: pvWeights as any,
+    });
+
+    expect(trained.runtimeMode).toBe('trained');
+    expect(trained.claimLabel).toBe('validated');
+    expect(trained.calibrationStatus).toBe('calibrated');
+    expect(trained.trainingArtifactSha).toBe(pvWeights.manifest.training_artifact_sha);
+    expect(trained.simulatorConfig?.scenario_count).toBe(20000);
+    expect(trained.topSuspects.map((entry) => entry.nodeId)).toEqual(['pv-b', 'pv-a', 'pv-c']);
   });
 
   it('tracks SMOTE synthetic lineage and backtest metrics without surfacing synthetic rows', () => {

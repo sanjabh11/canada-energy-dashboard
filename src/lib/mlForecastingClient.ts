@@ -1,4 +1,5 @@
 import { fetchEdgePostJson, type EdgeFetchOptions } from './edge';
+import { logFallbackEvent } from './jobExecutionLog';
 import {
   buildLocalMlForecastRun,
   calculateTierScenario,
@@ -15,17 +16,117 @@ async function postWithFallback<T>(
   body: unknown,
   fallback: () => T,
   options: EdgeFetchOptions = {},
+  fallbackEvent?: {
+    jobName: string;
+    domain?: string;
+    source?: string;
+    metadata?: Record<string, unknown>;
+  },
 ): Promise<{ data: T; source: 'edge' | 'local_fallback'; error?: string }> {
   try {
     const { json } = await fetchEdgePostJson(pathCandidates, body, options);
     return { data: json as T, source: 'edge' };
   } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    if (fallbackEvent) {
+      await logFallbackEvent({
+        jobName: fallbackEvent.jobName,
+        reason,
+        source: fallbackEvent.source ?? 'edge_fallback',
+        domain: fallbackEvent.domain,
+        metadata: {
+          ...(fallbackEvent.metadata ?? {}),
+          edge_error: reason,
+          path_candidates: pathCandidates,
+        },
+      });
+    }
     return {
       data: fallback(),
       source: 'local_fallback',
-      error: error instanceof Error ? error.message : String(error),
+      error: reason,
     };
   }
+}
+
+export async function runDispatchScenario(
+  input: {
+    domain: MlForecastDomain | string;
+    province: string;
+    horizon_hours: number;
+    scenario?: Record<string, unknown>;
+    force_refresh?: boolean;
+  },
+  _options: EdgeFetchOptions = {},
+) {
+  const data = buildLocalMlForecastRun({
+    ...input,
+    domain: 'dispatch',
+  });
+  const analysis = data.analysis as {
+    runtimeMode?: 'heuristic' | 'trained';
+    fallbackReason?: string;
+  } | null;
+
+  if (analysis?.runtimeMode !== 'trained') {
+    await logFallbackEvent({
+      jobName: 'ml-forecast:dispatch-runtime',
+      reason: analysis?.fallbackReason ?? 'dispatch_runtime_heuristic',
+      source: 'local_dispatch_runtime',
+      domain: 'dispatch',
+      modelVersion: data.meta?.model_version,
+      metadata: {
+        claim_label: data.meta?.claim_label ?? null,
+        training_data_profile: data.meta?.training_data_profile ?? null,
+      },
+    });
+  }
+
+  return {
+    data,
+    source: 'local_fallback' as const,
+    error: analysis?.runtimeMode === 'trained' ? undefined : analysis?.fallbackReason,
+  };
+}
+
+export async function runPvFaultScenario(
+  input: {
+    domain: MlForecastDomain | string;
+    province: string;
+    horizon_hours: number;
+    scenario?: Record<string, unknown>;
+    force_refresh?: boolean;
+  },
+  _options: EdgeFetchOptions = {},
+) {
+  const data = buildLocalMlForecastRun({
+    ...input,
+    domain: 'pv_fault',
+  });
+  const analysis = data.analysis as {
+    runtimeMode?: 'heuristic' | 'trained';
+    fallbackReason?: string;
+  } | null;
+
+  if (analysis?.runtimeMode !== 'trained') {
+    await logFallbackEvent({
+      jobName: 'ml-forecast:pv-fault-runtime',
+      reason: analysis?.fallbackReason ?? 'pv_fault_runtime_heuristic',
+      source: 'local_pv_fault_runtime',
+      domain: 'pv_fault',
+      modelVersion: data.meta?.model_version,
+      metadata: {
+        claim_label: data.meta?.claim_label ?? null,
+        training_data_profile: data.meta?.training_data_profile ?? null,
+      },
+    });
+  }
+
+  return {
+    data,
+    source: 'local_fallback' as const,
+    error: analysis?.runtimeMode === 'trained' ? undefined : analysis?.fallbackReason,
+  };
 }
 
 export function evaluateTierScenario(
@@ -69,11 +170,22 @@ export function runMlForecast(
   },
   options?: EdgeFetchOptions,
 ) {
+  if (input.domain === 'dispatch') {
+    return runDispatchScenario(input, options);
+  }
+  if (input.domain === 'pv_fault') {
+    return runPvFaultScenario(input, options);
+  }
   return postWithFallback(
     ['ml-forecast/run'],
     input,
     () => buildLocalMlForecastRun(input),
     options,
+    {
+      jobName: `ml-forecast:${String(input.domain ?? 'load')}`,
+      domain: String(input.domain ?? 'load'),
+      source: 'edge_fallback',
+    },
   );
 }
 

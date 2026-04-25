@@ -9,7 +9,7 @@ describe('ResilienceMap fusion summary', () => {
     });
 
     expect(summary.limitingFactorText).toBe('Limiting factor: Flooding');
-    expect(summary.fusionText).toBe('fusion: chebyshev_ipa_v2');
+    expect(summary.fusionText).toBe('non-compensatory fusion: chebyshev_ipa_v2');
   });
 
   it('builds a scored cascade risk block with threshold guidance', () => {
