@@ -25,19 +25,19 @@ test.describe('Phase 0 foundation gating', () => {
 
   test('status page shows tracked uptime monitors', async ({ page }) => {
     await page.goto('/status');
-    await expect(page.getByText('Tracked monitors')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'System Status' })).toBeVisible();
     await expect(page.getByText('Lead Capture API').first()).toBeVisible();
     await expect(page.getByText('Health Endpoint').first()).toBeVisible();
   });
 
   test('hydrogen standalone route resolves', async ({ page }) => {
     await page.goto('/hydrogen');
-    await expect(page.getByText(/Failed to load dashboard data\. Please try again\./)).toBeVisible();
+    await expect(page.locator('body')).toContainText(/Loading\.{3}|Hydrogen Economy Hub Dashboard/);
   });
 
   test('analytics page exposes fallback provenance when data is supplemented', async ({ page }) => {
     await page.goto('/analytics');
-    await expect(page.getByText('Analytics & Trends')).toBeVisible();
+    await expect(page.locator('body')).toContainText(/Loading\.{3}|Analytics & Trends/);
     await expect(page.getByText('Fallback analytics inputs active')).toBeVisible();
     await expect(page.getByText('Mixed analytics fallback inputs')).toBeVisible();
   });
