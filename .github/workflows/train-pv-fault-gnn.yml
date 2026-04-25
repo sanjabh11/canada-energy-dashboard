@@ -52,6 +52,7 @@ jobs:
             --weights src/lib/modelWeights/pv-gnn-v2.json \
             --input training/pv_fault_gnn/out/scenarios.jsonl \
             --out-report training/pv_fault_gnn/out/eval.json \
+            --out-fixture tests/fixtures/pv-gnn-conformance.json \
             --seed 42
 
       - name: Publish artifact ledger entry
