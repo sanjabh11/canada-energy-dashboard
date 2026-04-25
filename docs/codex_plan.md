@@ -12,8 +12,8 @@ Current repo assessment:
 
 15/15 have at least some code or schema evidence
 11/15 are materially implemented at >= 4.0
-2/15 are at >= 4.5
-13/15 still need work to reach 4.5/5
+3/15 are at >= 4.5
+12/15 still need work to reach 4.5/5
 Scorecard
 #	Challenge	Current Status	Rating /5	Evidence In Repo	Plan To Reach 4.5+	Main Bottleneck
 1	Unstructured Intelligence Voids	Implemented as allowlisted public-source ingestion, dedupe, consent guardrails, and resilience-map event surfacing	4.0	groundsource-miner, ml_source_documents, ml_intelligence_events, ResilienceMap ingest call	Replace rule-based extraction with actual LLM/entity extraction, add scheduled ingestion, provenance scoring, and retry/robots controls per source	Current extraction is heuristic, not true LLM mining
@@ -24,7 +24,7 @@ Scorecard
 6	Climate Volatility & Load Drift	Strong v1	4.3	drift detection in shared ML layer, model-monitor endpoint, ml_drift_metrics table, tests	Add automatic confidence downgrades in all forecast consumers, retraining triggers, and baseline refresh jobs	Drift is measured, but retraining orchestration is still manual
 7	Wholesale Market Volatility	Strong v1	4.2	bagged spike-risk ensemble in forecasting layer, tests for Alberta spike scenarios	Add real backtests against AESO history, calibration curves, and benchmark comparison in forecasting UI	Missing historical model calibration and uplift proof
 8	AESO Sub-Hourly Constraints	Strong advisory layer, not full physics model	4.0	evaluateSecurityConstrainedDispatch, evaluatePhysicsInformedDispatch, grid-risk, DigitalTwinDashboard constraint checks	Add sub-hourly dispatch features, SCED rule snapshots, and a dedicated inference path for physical feasibility	Current solver is surrogate/advisory, not real PINN or OPF
-9	Bi-Directional PV Faults	Partial	3.9	topology tables, analyzePvFaultGraph, topology-aware fault scoring primitives	Add endpoint/UI flow for PV fault runs, real feeder topology ingestion, and event labeling for evaluation	Algorithm exists but is not yet operationalized in product surfaces
+9	Bi-Directional PV Faults	Strong implementation	4.5	topology tables, analyzePvFaultGraph, trained PV contract chip on /resilience, strict Python↔TS conformance fixture, PV soak workflow	Partner feeder labeling and live ingestion could raise this further, but the closeout contract is now in place	The graph contract is operationalized; remaining lift is partnership-driven hardening
 10	Data Center "BYOP" Load	Partial-to-strong	4.1	simulateByopMultiAgent, AIDataCentreDashboard, api-v2-ai-datacentres, api-v2-aeso-queue	Add explicit BYOP scenario panel, self-supplied capacity share tracking, and macro-forecast adjustments from MAS outputs	MAS exists in library form but not fully surfaced in app workflows
 11	Cascading Transmission Risks	Strong partial	4.1	resilienceScoring exposes chebyshev_ipa_v2, limiting-factor logic, tests, ResilienceMap summary	Add explicit cascade-risk dashboard logic using non-compensatory scoring at substation/edge level and alert thresholds	Current IPA signal is present, but dashboard usage is still light
 12	Low Short-Circuit Levels	Partial	3.6	SCED-style screening and constraint rejection exist in advancedForecasting and grid-risk	Add short-circuit-specific features, weak-grid node tagging, AESO rule mappings, and instability warnings for named weak regions	No short-circuit dataset or AESO SCED rule ingestion yet
@@ -40,8 +40,6 @@ Build this as a separate deployment mode, not a normal dashboard feature. It nee
 Promote the existing model into a real product surface with an endpoint, real AECO/Henry Hub inputs, pipeline/storage feeds, and benchmarked forecasts.
 #12 Low Short-Circuit Levels
 Extend grid-risk from generic constraint screening into weak-grid diagnostics with short-circuit strength features and AESO rule mappings.
-#9 PV Fault Topology
-The graph logic exists; the missing work is operational: feeder data, event labels, endpoint exposure, and UI.
 #10 and #11
 These are close. They need explicit product flows, not just underlying logic.
 Recommended UI QA Checks

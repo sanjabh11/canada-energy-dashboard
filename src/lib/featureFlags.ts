@@ -32,6 +32,23 @@ export function isPhase4SurfaceEnabled(): boolean {
   return import.meta.env.DEV || import.meta.env.VITE_ENABLE_PHASE4_EXPERIMENTS === 'true';
 }
 
+function parseBooleanFlag(raw: string | boolean | undefined, fallback = false): boolean {
+  if (typeof raw === 'boolean') return raw;
+  if (typeof raw === 'string') return raw.toLowerCase() === 'true';
+  return fallback;
+}
+
+export const TRAINED_DISPATCH_ENABLED = parseBooleanFlag(import.meta.env.VITE_TRAINED_DISPATCH_ENABLED, false);
+export const TRAINED_PV_FAULT_ENABLED = parseBooleanFlag(import.meta.env.VITE_TRAINED_PV_FAULT_ENABLED, false);
+
+export function isTrainedDispatchEnabled(): boolean {
+  return parseBooleanFlag(import.meta.env.VITE_TRAINED_DISPATCH_ENABLED, TRAINED_DISPATCH_ENABLED);
+}
+
+export function isTrainedPvFaultEnabled(): boolean {
+  return parseBooleanFlag(import.meta.env.VITE_TRAINED_PV_FAULT_ENABLED, TRAINED_PV_FAULT_ENABLED);
+}
+
 export function getFeatureReleaseDisplay(
   feature: Pick<FeatureConfig, 'status' | 'estimatedRelease' | 'comingSoon'>,
   now = new Date(),

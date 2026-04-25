@@ -1,0 +1,27 @@
+name: Market Spike Series Cron
+
+on:
+  schedule:
+    - cron: '30 2 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-market-spike-series:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Market Spike Series Ingestion
+        run: |
+          echo "Triggering market spike series ingestion..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-market-spike-series" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-supabase-cron: true" \
+            -H "Content-Type: application/json" \
+            -d '{"days":730}')
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Market spike series ingestion returned HTTP $HTTP_CODE"
+          fi

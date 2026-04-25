@@ -10,12 +10,38 @@ import {
   rankFeaturesSvmRfeV2,
   simulateByopMultiAgent,
 } from './advancedForecasting';
+import dispatchWeights from './modelWeights/dispatch-pinn-v2.json';
+import pvWeights from './modelWeights/pv-gnn-v2.json';
 
 export interface MlDataSource {
   name: string;
   url?: string;
   lastUpdated?: string;
 }
+
+export interface EvaluationSummary {
+  mae?: number;
+  rmse?: number;
+  directional_accuracy?: number;
+  auc?: number;
+  precision?: number;
+  recall?: number;
+  mape?: number;
+  physics_violation_rate?: number;
+  f1?: number;
+  top3_localization_accuracy?: number;
+  validation_loss?: number;
+  sample_count: number;
+}
+
+export interface SimulatorConfig {
+  name: string;
+  version: string;
+  scenario_count: number;
+  topology?: string;
+}
+
+export type ForecastTrainingDataProfile = 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated';
 
 export interface SharedForecastMeta {
   model_version: string;
@@ -27,6 +53,13 @@ export interface SharedForecastMeta {
   staleness_status: 'fresh' | 'stale' | 'unknown';
   methodology: string;
   warnings: string[];
+  training_data_profile?: ForecastTrainingDataProfile;
+  evaluation_summary?: EvaluationSummary;
+  calibration_status?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claim_label?: 'estimated' | 'advisory' | 'validated';
+  training_artifact_sha?: string;
+  simulator_config?: SimulatorConfig;
+  trained_at?: string;
 }
 
 export {
@@ -72,6 +105,13 @@ export function buildForecastResponseMeta(params: {
   warnings?: string[];
   generatedAt?: string;
   staleAfterDays?: number;
+  trainingDataProfile?: ForecastTrainingDataProfile;
+  evaluationSummary?: EvaluationSummary;
+  calibrationStatus?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
+  trainingArtifactSha?: string;
+  simulatorConfig?: SimulatorConfig;
+  trainedAt?: string;
 }): SharedForecastMeta {
   const generatedAt = params.generatedAt ?? new Date().toISOString();
   const staleAfterDays = params.staleAfterDays ?? 90;
@@ -85,7 +125,7 @@ export function buildForecastResponseMeta(params: {
     ? daysBetween(freshestSourceDate, generatedAt) > staleAfterDays ? 'stale' : 'fresh'
     : 'unknown';
 
-  return {
+  const meta: SharedForecastMeta = {
     model_version: params.modelVersion,
     generated_at: generatedAt,
     valid_at: params.validAt,
@@ -96,6 +136,16 @@ export function buildForecastResponseMeta(params: {
     methodology: params.methodology,
     warnings: params.warnings ?? [],
   };
+
+  if (params.trainingDataProfile !== undefined) meta.training_data_profile = params.trainingDataProfile;
+  if (params.evaluationSummary !== undefined) meta.evaluation_summary = params.evaluationSummary;
+  if (params.calibrationStatus !== undefined) meta.calibration_status = params.calibrationStatus;
+  if (params.claimLabel !== undefined) meta.claim_label = params.claimLabel;
+  if (params.trainingArtifactSha !== undefined) meta.training_artifact_sha = params.trainingArtifactSha;
+  if (params.simulatorConfig !== undefined) meta.simulator_config = params.simulatorConfig;
+  if (params.trainedAt !== undefined) meta.trained_at = params.trainedAt;
+
+  return meta;
 }
 
 export interface TierScenarioInput {
@@ -185,6 +235,7 @@ export function calculateTierScenario(input: TierScenarioInput): TierScenarioRes
       methodology: 'Deterministic compliance pathway cost comparison; estimates are not binding financial advice.',
       warnings,
       generatedAt: `${asOfDate}T00:00:00.000Z`,
+      claimLabel: 'estimated',
     }),
   };
 }
@@ -242,6 +293,7 @@ export function evaluateRateWatchdog(input: {
       isFallback: true,
       methodology: 'Rate comparison calculator using current/default RoLR rate and user usage assumptions.',
       warnings,
+      claimLabel: 'estimated',
       generatedAt: `${input.asOfDate ?? new Date().toISOString().slice(0, 10)}T00:00:00.000Z`,
     }),
   };
@@ -331,6 +383,7 @@ export function forecastPriceSpikeRisk(input: {
   reserveMarginPercent: number;
   windGenerationMw: number;
   temperatureC: number;
+  trainingRows?: Array<Parameters<typeof forecastPriceSpikeRiskForest>[0]['trainingRows'] extends Array<infer T> ? T : never>;
 }) {
   return {
     ...forecastPriceSpikeRiskForest(input),
@@ -503,6 +556,7 @@ export type MlForecastDomain =
   | 'solar'
   | 'wind'
   | 'gas_basis'
+  | 'dispatch'
   | 'byop_load'
   | 'pv_fault'
   | 'policy_overlay'
@@ -539,6 +593,12 @@ export function buildLocalMlForecastRun(input: {
   let confidenceScore = 0.76;
   let methodology = 'Lightweight v1 forecast adapter with positive forecasts, feature ranking, and baseline-ready metadata.';
   let warnings = ['Backtest against persistence and seasonal-naive baselines before claiming uplift.'];
+  let isFallback = true;
+  let dataSources: MlDataSource[] = [{ name: 'Existing weather/load/AESO feature adapters' }];
+  let trainingDataProfile: 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated' | undefined;
+  let evaluationSummary: EvaluationSummary | undefined;
+  let calibrationStatus: 'calibrated' | 'uncalibrated' | 'drifting' | undefined;
+  let claimLabel: 'estimated' | 'advisory' | 'validated' | undefined;
   let predictions = Array.from({ length: horizonHours }, (_, index) => {
     const validAt = new Date(now.getTime() + (index + 1) * 60 * 60 * 1000).toISOString();
     const predictedValue = positiveForecast(domain === 'solar' ? 400 : 10000, index + 1, domain);
@@ -563,11 +623,16 @@ export function buildLocalMlForecastRun(input: {
       reserveMarginPercent: Number(scenario.reserveMarginPercent ?? 8),
       windGenerationMw: Number(scenario.windGenerationMw ?? 500),
       temperatureC: Number(scenario.temperatureC ?? 0),
+      trainingRows: Array.isArray(scenario.trainingRows) ? scenario.trainingRows as any : undefined,
     });
     analysis = spike;
     modelVersion = spike.modelVersion;
     confidenceScore = Math.max(0.45, 1 - spike.riskScore / 2);
     methodology = spike.methodology;
+    trainingDataProfile = spike.trainingDataProfile;
+    evaluationSummary = spike.evaluationSummary;
+    calibrationStatus = spike.calibrationStatus;
+    claimLabel = spike.claimLabel;
     predictions = predictions.map((prediction) => ({
       ...prediction,
       target_name: 'pool_price',
@@ -576,6 +641,53 @@ export function buildLocalMlForecastRun(input: {
       risk_score: spike.riskScore,
       drivers: spike.reasons,
     }));
+  } else if (domain === 'dispatch') {
+    const dispatchResult = evaluatePhysicsInformedDispatch({
+      loadMw: Number(scenario.loadMw ?? scenario.demandMw ?? 10000),
+      temperatureC: Number(scenario.temperatureC ?? 0),
+      windGenerationMw: Number(scenario.windGenerationMw ?? 500),
+      solarGenerationMw: Number(scenario.solarGenerationMw ?? 0),
+      reserveMarginPercent: Number(scenario.reserveMarginPercent ?? 8),
+      rampLimitMwPerHour: Number(scenario.rampLimitMwPerHour ?? 300),
+      availableGenerationMw: Number(scenario.availableGenerationMw ?? Math.max(1000, Number(scenario.loadMw ?? scenario.demandMw ?? 10000) * 1.1)),
+      previousDispatchMw: scenario.previousDispatchMw != null ? Number(scenario.previousDispatchMw) : undefined,
+      hourOfDay: scenario.hourOfDay != null ? Number(scenario.hourOfDay) : undefined,
+    }, dispatchWeights as any);
+    analysis = dispatchResult;
+    modelVersion = dispatchResult.modelVersion;
+    confidenceScore = dispatchResult.confidenceScore;
+    methodology = dispatchResult.methodology;
+    warnings = dispatchResult.runtimeMode === 'trained'
+      ? ['Simulator-calibrated dispatch runtime active; partner-data validation still pending.']
+      : [
+        dispatchResult.fallbackReason === 'placeholder_artifact_gate'
+          ? 'Dispatch runtime remains heuristic until simulator-trained weights replace the placeholder artifact.'
+          : 'Dispatch runtime remains heuristic until trained weights are enabled.',
+      ];
+    trainingDataProfile = dispatchResult.trainingDataProfile;
+    evaluationSummary = dispatchResult.evaluationSummary;
+    calibrationStatus = dispatchResult.calibrationStatus;
+    claimLabel = dispatchResult.claimLabel;
+    isFallback = dispatchResult.runtimeMode !== 'trained';
+    dataSources = dispatchResult.runtimeMode === 'trained'
+      ? [{ name: dispatchResult.simulatorConfig?.name ?? 'pandapower IEEE-30 simulator', lastUpdated: dispatchResult.trainedAt }]
+      : [{ name: 'Existing weather/load/AESO feature adapters' }];
+    predictions = Array.from({ length: horizonHours }, (_, index) => {
+      const validAt = new Date(now.getTime() + (index + 1) * 60 * 60 * 1000).toISOString();
+      return {
+        valid_at: validAt,
+        target_name: 'dispatch_mw',
+        predicted_value: round(dispatchResult.predictedDispatchMw, 4),
+        unit: 'MW',
+        confidence_lower: round(Math.max(0, dispatchResult.predictedDispatchMw * 0.92), 4),
+        confidence_upper: round(dispatchResult.predictedDispatchMw * 1.08, 4),
+        risk_score: round(1 - dispatchResult.confidenceScore, 4),
+        drivers: dispatchResult.constraintViolations.length > 0
+          ? dispatchResult.constraintViolations
+          : ['load', 'temperature', 'wind', 'solar', 'reserve', 'ramp'],
+        synthetic: false,
+      };
+    });
   } else if (domain === 'gas_basis') {
     const gasBasis = forecastGasBasisSpread({
       aecoCadPerGj: Number(scenario.aecoCadPerGj ?? 1.65),
@@ -595,11 +707,28 @@ export function buildLocalMlForecastRun(input: {
     modelVersion = gasBasis.modelVersion;
     confidenceScore = Math.max(0.48, 1 - gasBasis.wideningRisk / 2);
     methodology = gasBasis.methodology;
+    trainingDataProfile = gasBasis.sourceProfile;
+    evaluationSummary = {
+      sample_count: gasBasis.backtest.sample_count,
+      mae: gasBasis.backtest.maeCadPerGj,
+      rmse: gasBasis.backtest.rmseCadPerGj,
+      directional_accuracy: gasBasis.backtest.directionalAccuracy,
+    };
+    calibrationStatus = gasBasis.backtest.sample_count > 0 && gasBasis.backtest.directionalAccuracy >= 0.6
+      ? 'calibrated'
+      : gasBasis.backtest.sample_count > 0
+        ? 'drifting'
+        : 'uncalibrated';
+    claimLabel = gasBasis.sourceProfile === 'real' && gasBasis.backtest.sample_count > 0
+      ? 'validated'
+      : gasBasis.sourceProfile === 'mixed'
+        ? 'advisory'
+        : 'estimated';
     warnings = gasBasis.sourceProfile === 'synthetic'
       ? ['Synthetic default corpus is used unless real AECO and Henry Hub history is supplied.']
       : [
         'AECO/Henry Hub history supplied; backtest metrics are computed against observed spread rows.',
-        ...(gasBasis.backtest.sampleCount > 0 ? [] : ['Gas basis backtest history is empty; confidence should remain advisory.']),
+        ...(gasBasis.backtest.sample_count > 0 ? [] : ['Gas basis backtest history is empty; confidence should remain advisory.']),
       ];
     predictions = predictions.map((prediction, index) => {
       const drift = Math.sin(((index + 1) / 24) * Math.PI * 2) * 0.05;
@@ -631,6 +760,8 @@ export function buildLocalMlForecastRun(input: {
     confidenceScore = 0.81;
     methodology = byop.methodology;
     warnings = ['BYOP results are scenario-based and do not replace site-specific interconnection studies.'];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = byop.aggregateLoadSeries.map((point) => ({
       valid_at: new Date(now.getTime() + (point.hour + 1) * 60 * 60 * 1000).toISOString(),
       target_name: 'net_import',
@@ -653,12 +784,34 @@ export function buildLocalMlForecastRun(input: {
         { fromNodeId: 'inv-1', toNodeId: 'inv-2', weight: 1 },
         { fromNodeId: 'inv-2', toNodeId: 'inv-3', weight: 1 },
       ],
+      trainedWeights: pvWeights as any,
     });
     analysis = pvFault;
     modelVersion = pvFault.modelVersion;
     confidenceScore = pvFault.confidenceScore;
     methodology = pvFault.methodology;
-    warnings = ['Graph fault localization should be validated against feeder events before automated dispatch actions.'];
+    warnings = pvFault.runtimeMode === 'trained'
+      ? ['Simulator-calibrated PV fault runtime active; partner feeder validation remains pending.']
+      : ['Graph fault localization should be validated against feeder events before automated dispatch actions.'];
+    trainingDataProfile = pvFault.runtimeMode === 'trained'
+      ? pvFault.trainingDataProfile
+      : 'synthetic';
+    evaluationSummary = pvFault.runtimeMode === 'trained'
+      ? pvFault.evaluationSummary
+      : undefined;
+    calibrationStatus = pvFault.runtimeMode === 'trained'
+      ? pvFault.calibrationStatus
+      : undefined;
+    claimLabel = pvFault.runtimeMode === 'trained'
+      ? pvFault.claimLabel
+      : 'advisory';
+    isFallback = pvFault.runtimeMode !== 'trained';
+    dataSources = pvFault.runtimeMode === 'trained'
+      ? [{ name: pvFault.simulatorConfig?.name ?? 'pvlib simulator', lastUpdated: pvFault.trainedAt }]
+      : [{ name: 'Existing inverter telemetry and feeder topology adapters' }];
+    if (pvFault.runtimeMode === 'trained') {
+      modelVersion = pvFault.modelVersion;
+    }
     predictions = [];
   } else if (domain === 'policy_overlay') {
     const overlay = calculatePolicyOverlayRisk({
@@ -675,6 +828,8 @@ export function buildLocalMlForecastRun(input: {
     confidenceScore = Math.max(0.5, 1 - overlay.strandedAssetRiskScore / 2);
     methodology = overlay.methodology;
     warnings = ['Policy overlay is scenario-based and should be paired with project-specific regulatory review.'];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = Array.from({ length: Math.min(horizonHours, 12) }, (_, index) => {
       const year = (Number(scenario.currentYear ?? new Date().getFullYear()) + index);
       const risk = clamp(overlay.strandedAssetRiskScore + index * 0.03);
@@ -704,6 +859,8 @@ export function buildLocalMlForecastRun(input: {
     confidenceScore = Math.max(0.45, 1 - weakGrid.weakGridRiskScore / 2);
     methodology = weakGrid.methodology;
     warnings = weakGrid.warnings.length ? weakGrid.warnings : ['Weak-grid screening is advisory and not a replacement for protection studies.'];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = [];
   }
 
@@ -711,10 +868,14 @@ export function buildLocalMlForecastRun(input: {
     modelVersion,
     validAt: predictions[0]?.valid_at ?? now.toISOString(),
     confidenceScore,
-    dataSources: [{ name: 'Existing weather/load/AESO feature adapters' }],
-    isFallback: true,
+    dataSources,
+    isFallback,
     methodology,
     warnings,
+    trainingDataProfile,
+    evaluationSummary,
+    calibrationStatus,
+    claimLabel,
   });
 
   return {

@@ -6,12 +6,15 @@ import { DataFreshnessBadge } from './DataFreshnessBadge';
 import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
 import { Link } from 'react-router-dom';
 import { runMlForecast } from '../lib/mlForecastingClient';
+import { fetchMarketSpikeTrainingWindow } from '../lib/timeseriesSource';
+import { getLatestRetainedFeatures } from '../lib/featureRankingsSource';
 
 const ForecastBenchmarkingPage: React.FC = () => {
   const [resourceType, setResourceType] = useState<'solar' | 'wind'>('solar');
   const [province, setProvince] = useState('ON');
   const [mlRun, setMlRun] = useState<any>(null);
   const [marketSpikeRun, setMarketSpikeRun] = useState<any>(null);
+  const [retainedFeatures, setRetainedFeatures] = useState<string[]>([]);
 
   const provinces = [
     { value: 'ON', label: 'Ontario' },
@@ -19,6 +22,16 @@ const ForecastBenchmarkingPage: React.FC = () => {
     { value: 'BC', label: 'British Columbia' },
     { value: 'QC', label: 'Quebec' },
   ];
+
+  useEffect(() => {
+    let cancelled = false;
+    getLatestRetainedFeatures('svm-rfe-adapter-v1').then((result) => {
+      if (!cancelled) setRetainedFeatures(result.retainedFeatures);
+    }).catch(() => {
+      if (!cancelled) setRetainedFeatures([]);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,7 +48,7 @@ const ForecastBenchmarkingPage: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    runMlForecast({
+    fetchMarketSpikeTrainingWindow(730).then((trainingRows) => runMlForecast({
       domain: 'price_spike',
       province,
       horizon_hours: 24,
@@ -45,8 +58,9 @@ const ForecastBenchmarkingPage: React.FC = () => {
         reserveMarginPercent: province === 'AB' ? 7 : 10,
         windGenerationMw: province === 'AB' ? 420 : 600,
         temperatureC: province === 'AB' ? -18 : 6,
+        trainingRows,
       },
-    }).then(({ data }) => {
+    })).then(({ data }) => {
       if (!cancelled) setMarketSpikeRun(data);
     }).catch(() => {
       if (!cancelled) setMarketSpikeRun(null);
@@ -175,6 +189,33 @@ const ForecastBenchmarkingPage: React.FC = () => {
             <p className="text-sm text-slate-300">
               {mlRun.meta.model_version} · {mlRun.province} · {mlRun.predictions?.length ?? 0} predictions · confidence {(mlRun.meta.confidence_score * 100).toFixed(0)}%
             </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-4 text-xs text-slate-300">
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-500">Training data</div>
+                <div className="text-white font-medium">{mlRun.meta.training_data_profile ?? 'unknown'}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-500">Calibration</div>
+                <div className="text-white font-medium">{mlRun.meta.calibration_status ?? 'uncalibrated'}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-500">Claim label</div>
+                <div className="text-white font-medium">{mlRun.meta.claim_label ?? 'estimated'}</div>
+              </div>
+              <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-500">Evaluation</div>
+                <div className="text-white font-medium">
+                  {mlRun.meta.evaluation_summary
+                    ? `${mlRun.meta.evaluation_summary.sample_count} samples`
+                    : 'n/a'}
+                </div>
+              </div>
+            </div>
+            {retainedFeatures.length > 0 && (
+              <p className="mt-3 text-xs text-cyan-200">
+                Latest SVM-RFE retained set: {retainedFeatures.join(', ')}
+              </p>
+            )}
             <p className="text-xs text-slate-500 mt-2">
               Reads from the `ml-forecast` adapter when Edge is enabled; otherwise shows local fallback metadata. Uplift still requires backtest evidence.
             </p>
@@ -197,10 +238,17 @@ const ForecastBenchmarkingPage: React.FC = () => {
                 <div className="text-white font-semibold">{(Number(marketSpikeRun.meta.confidence_score ?? 0) * 100).toFixed(0)}%</div>
               </div>
               <div className="rounded-lg border border-amber-500/20 bg-slate-900/40 p-3">
-                <div className="text-slate-400">Calibration</div>
-                <div className="text-cyan-100">Backtest against historical Alberta pool-price spikes before using as an operational trigger.</div>
+                <div className="text-slate-400">Evaluation</div>
+                <div className="text-cyan-100">
+                  {marketSpikeRun.meta.evaluation_summary
+                    ? `AUC ${(marketSpikeRun.meta.evaluation_summary.auc ?? 0).toFixed(2)} · P ${(marketSpikeRun.meta.evaluation_summary.precision ?? 0).toFixed(2)} · R ${(marketSpikeRun.meta.evaluation_summary.recall ?? 0).toFixed(2)}`
+                    : 'Backtest against historical Alberta pool-price spikes before using as an operational trigger.'}
+                </div>
               </div>
             </div>
+            <p className="mt-3 text-xs text-amber-200">
+              Training profile: {marketSpikeRun.meta.training_data_profile ?? 'unknown'} · claim {marketSpikeRun.meta.claim_label ?? 'estimated'} · calibration {marketSpikeRun.meta.calibration_status ?? 'uncalibrated'}
+            </p>
           </div>
         )}
 

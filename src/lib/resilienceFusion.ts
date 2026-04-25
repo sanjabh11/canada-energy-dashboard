@@ -4,7 +4,7 @@ export function buildResilienceFusionSummary(assessment: {
 }) {
   return {
     limitingFactorText: `Limiting factor: ${assessment.limitingFactorLabel}`,
-    fusionText: `fusion: ${assessment.fusionMethod}`,
+    fusionText: `non-compensatory fusion: ${assessment.fusionMethod}`,
   };
 }
 
@@ -31,7 +31,7 @@ export function buildCascadeRiskSummary(assessment: {
     alertCondition,
     thresholdExceeded: cascadeRiskScore >= 0.55,
     limitingFactorText: `Cascade limiting factor: ${assessment.limitingFactorLabel}`,
-    driverText: `Risk is amplified by ${assessment.fusionMethod} and ${intelligenceEventCount} intelligence event(s).`,
+    driverText: `Risk is amplified by ${assessment.fusionMethod} and ${intelligenceEventCount} intelligence event(s); the score is non-compensatory.`,
     thresholdText: 'Thresholds: monitor 55%, operator watch 75%, immediate review above 75%',
     recommendation:
       alertCondition === 'immediate_review'

@@ -12,6 +12,35 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+async function resolveTierInput(body: any) {
+  const resolved = { ...body };
+  if (!supabase) return resolved;
+
+  const missingMarketPrice = resolved?.creditAssumptions?.marketCreditPriceCadPerTonne == null
+    && resolved?.creditAssumptions?.market_credit_price_cad_per_tonne == null;
+  const missingFundPrice = resolved?.creditAssumptions?.fundPriceCadPerTonne == null
+    && resolved?.creditAssumptions?.fund_price_cad_per_tonne == null;
+  if (!missingMarketPrice && !missingFundPrice) return resolved;
+
+  const { data } = await supabase
+    .from("tier_market_rates")
+    .select("*")
+    .order("observed_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (!data) return resolved;
+
+  resolved.creditAssumptions = {
+    ...(resolved.creditAssumptions ?? {}),
+    marketCreditPriceCadPerTonne: Number(resolved?.creditAssumptions?.marketCreditPriceCadPerTonne ?? data.market_credit_price_cad_per_tonne ?? 25),
+    fundPriceCadPerTonne: Number(resolved?.creditAssumptions?.fundPriceCadPerTonne ?? data.fund_price_cad_per_tonne ?? 95),
+    lastVerifiedAt: resolved?.creditAssumptions?.lastVerifiedAt ?? data.observed_at,
+  };
+
+  return resolved;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return handleCorsOptions(req);
   const rl = applyRateLimit(req, "tier-simulator");
@@ -24,16 +53,17 @@ serve(async (req) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const result = calculateTierScenario(body);
+  const resolvedBody = await resolveTierInput(body);
+  const result = calculateTierScenario(resolvedBody);
 
   if (supabase) {
     await supabase.from("ml_alert_evaluations").insert({
       alert_type: "tier_simulator",
       province: "AB",
       subject_key: "tier_pathway",
-      input_payload: body,
+      input_payload: resolvedBody,
       result_payload: result,
-      claim_label: "estimated",
+      claim_label: result.meta.claim_label ?? "estimated",
       confidence_score: result.meta.confidence_score,
       warnings: result.warnings,
     });

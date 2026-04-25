@@ -10,6 +10,8 @@
  * For production, set VITE_AESO_API_KEY environment variable.
  */
 
+import { fetchActiveRetailerOffers } from './ratesSource';
+
 // Types
 export interface AESOPoolPrice {
   timestamp: string;
@@ -24,6 +26,10 @@ export interface AESORRORate {
   rroRate: number; // cents per kWh
   provider: string;
   effectiveDate: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  observedAt?: string;
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
 }
 
 export interface AESODemandData {
@@ -227,9 +233,33 @@ export interface RetailerOffer {
   url: string;
   greenOption: boolean;
   cancellationFee?: number;
+  sourceName?: string;
+  sourceUrl?: string;
+  observedAt?: string;
+  active?: boolean;
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
 }
 
 export async function getRetailerOffers(): Promise<RetailerOffer[]> {
+  const sourceRows = await fetchActiveRetailerOffers();
+  if (sourceRows.length > 0) {
+    return sourceRows.map((offer) => ({
+      id: offer.retailer_key,
+      name: offer.retailer_name,
+      fixedRate: Number(offer.fixed_rate_cad_per_kwh),
+      term: Number(offer.term_months),
+      promo: offer.promo_text ?? undefined,
+      url: offer.source_url ?? 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      greenOption: Boolean(offer.green_option),
+      cancellationFee: Number(offer.cancellation_fee_cad ?? 0),
+      sourceName: offer.source_name,
+      sourceUrl: offer.source_url,
+      observedAt: offer.observed_at,
+      active: offer.active ?? true,
+      claimLabel: offer.claim_label ?? 'estimated',
+    }));
+  }
+
   // Retailer data as of DATA_SNAPSHOT_DATE
   // Source: https://ucahelps.alberta.ca/cost-comparison-tool.aspx
   return [
@@ -241,7 +271,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'No deposit required',
       url: 'https://www.enmax.com/',
       greenOption: true,
-      cancellationFee: 0
+      cancellationFee: 0,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     },
     {
       id: 'direct',
@@ -251,7 +286,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'Lock in low rate for 2 years',
       url: 'https://www.directenergy.ca/',
       greenOption: true,
-      cancellationFee: 50
+      cancellationFee: 50,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     },
     {
       id: 'epcor',
@@ -261,7 +301,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'Smart home energy bundle',
       url: 'https://www.epcor.com/',
       greenOption: false,
-      cancellationFee: 0
+      cancellationFee: 0,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     },
     {
       id: 'atco',
@@ -271,7 +316,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'Price match guarantee',
       url: 'https://www.atcoenergy.com/',
       greenOption: true,
-      cancellationFee: 75
+      cancellationFee: 75,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     },
     {
       id: 'justenergy',
@@ -281,7 +331,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'Flexible terms available',
       url: 'https://www.justenergy.com/',
       greenOption: true,
-      cancellationFee: 100
+      cancellationFee: 100,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     },
     {
       id: 'solarus',
@@ -291,7 +346,12 @@ export async function getRetailerOffers(): Promise<RetailerOffer[]> {
       promo: 'Lowest rate guarantee',
       url: 'https://www.solarus.ca/',
       greenOption: false,
-      cancellationFee: 25
+      cancellationFee: 25,
+      sourceName: 'UCA Alberta Cost Comparison Tool',
+      sourceUrl: 'https://ucahelps.alberta.ca/cost-comparison-tool.aspx',
+      observedAt: DATA_SNAPSHOT_DATE,
+      active: true,
+      claimLabel: 'estimated',
     }
   ];
 }

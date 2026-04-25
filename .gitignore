@@ -4,7 +4,6 @@ node_modules
 .env.*
 .env.local
 .env.production
-.env.development
 .env.test
 !.env.example
 !.env.local.example
@@ -33,3 +32,10 @@ canada-energy-dashboard/
 
 # Temporary markdown files
 docs/archive/
+
+# Generated local artifacts
+*.DS_Store
+.playwright-mcp/
+playwright-report/
+training/**/__pycache__/
+training/**/out/

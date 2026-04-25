@@ -1,0 +1,27 @@
+name: TIER Market Rates Cron
+
+on:
+  schedule:
+    - cron: '10 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-tier-market-rates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger TIER Market Rates Ingestion
+        run: |
+          echo "Triggering TIER market rates ingestion..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/ingest-tier-market-rates" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+            -H "x-supabase-cron: true" \
+            -H "Content-Type: application/json" \
+            -d '{}')
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "TIER market rates ingestion returned HTTP $HTTP_CODE"
+          fi

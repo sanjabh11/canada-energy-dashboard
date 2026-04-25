@@ -69,14 +69,15 @@ const generateHistoricalData = () => {
 };
 
 // Alberta electricity retailers (as of DATA_SNAPSHOT_DATE)
-const RETAILERS = [
+const RETAILERS: RetailerOffer[] = [
     {
         id: 'enmax',
         name: 'ENMAX',
         fixedRate: 9.99,
         term: 12,
         promo: 'No deposit required',
-        url: 'https://www.enmax.com/'
+        url: 'https://www.enmax.com/',
+        greenOption: false,
     },
     {
         id: 'direct',
@@ -84,7 +85,8 @@ const RETAILERS = [
         fixedRate: 9.49,
         term: 24,
         promo: 'Lock in low rate',
-        url: 'https://www.directenergy.ca/'
+        url: 'https://www.directenergy.ca/',
+        greenOption: false,
     },
     {
         id: 'epcor',
@@ -92,7 +94,8 @@ const RETAILERS = [
         fixedRate: 9.79,
         term: 12,
         promo: 'Smart home energy bundle',
-        url: 'https://www.epcor.com/'
+        url: 'https://www.epcor.com/',
+        greenOption: false,
     },
     {
         id: 'atco',
@@ -100,7 +103,8 @@ const RETAILERS = [
         fixedRate: 9.29,
         term: 36,
         promo: 'Price match guarantee',
-        url: 'https://www.atcoenergy.com/'
+        url: 'https://www.atcoenergy.com/',
+        greenOption: false,
     },
     {
         id: 'solarus',
@@ -108,7 +112,8 @@ const RETAILERS = [
         fixedRate: 8.99,
         term: 24,
         promo: 'Lowest rate guarantee',
-        url: 'https://www.solarus.ca/'
+        url: 'https://www.solarus.ca/',
+        greenOption: false,
     }
 ];
 
@@ -178,6 +183,13 @@ export function RROAlertSystem() {
         () => retailers.length > 0 ? retailers : RETAILERS.map(r => ({ ...r, greenOption: false })),
         [retailers]
     );
+    const latestRetailerObservedAt = useMemo(() => {
+        const values = activeRetailers
+            .map((retailer) => retailer.observedAt)
+            .filter((value): value is string => Boolean(value))
+            .sort();
+        return values.at(-1) ?? DATA_SNAPSHOT_DATE;
+    }, [activeRetailers]);
     const lowestFixed = Math.min(...activeRetailers.map(r => r.fixedRate));
 
     useEffect(() => {
@@ -194,14 +206,14 @@ export function RROAlertSystem() {
                 termMonths: offer.term,
                 cancellationFeeCad: offer.cancellationFee,
             })),
-            asOfDate: DATA_SNAPSHOT_DATE,
+            asOfDate: latestRetailerObservedAt,
         }).then(({ data, source }) => {
             if (cancelled) return;
             setWatchdogEvaluation(data);
             setWatchdogSource(source);
         });
         return () => { cancelled = true; };
-    }, [activeRetailers, currentRRO]);
+    }, [activeRetailers, currentRRO, latestRetailerObservedAt]);
 
     const handleSubscribe = (e: React.FormEvent) => {
         e.preventDefault();
@@ -280,6 +292,9 @@ export function RROAlertSystem() {
                         status={dataSource === 'live' ? 'live' : 'stale'}
                         source={dataSource === 'live' ? 'AESO-derived browser fetch' : `Snapshot inputs verified ${DATA_SNAPSHOT_LABEL}`}
                     />
+                    <span className="rounded-full border border-slate-700 bg-slate-800 px-3 py-1 text-xs text-slate-300">
+                        Retailer source vintage: {new Date(latestRetailerObservedAt).toLocaleDateString()}
+                    </span>
                 </div>
                 {dataSource === 'cached' && (
                     <DataTrustNotice
@@ -352,6 +367,7 @@ export function RROAlertSystem() {
                         </div>
                         <div className="mt-2 text-xs text-slate-500">
                             Watchdog: {watchdogEvaluation?.meta?.model_version ?? 'rate-watchdog-v1'} via {watchdogSource === 'edge' ? 'Supabase Edge' : 'local fallback'}
+                            {watchdogEvaluation?.meta?.claim_label ? ` · ${watchdogEvaluation.meta.claim_label}` : ''}
                         </div>
                     </div>
                 </div>
@@ -477,6 +493,13 @@ export function RROAlertSystem() {
                                     <div>
                                         <div className="font-medium text-white">{retailer.name}</div>
                                         <div className="text-xs text-slate-500">{retailer.promo}</div>
+                                        <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+                                            <span>{retailer.sourceName ?? 'Static snapshot'}</span>
+                                            <span>•</span>
+                                            <span>{retailer.observedAt ? `Observed ${new Date(retailer.observedAt).toLocaleDateString()}` : 'Observation date unavailable'}</span>
+                                            <span>•</span>
+                                            <span>{retailer.claimLabel ?? 'estimated'}</span>
+                                        </div>
                                     </div>
                                 </div>
 

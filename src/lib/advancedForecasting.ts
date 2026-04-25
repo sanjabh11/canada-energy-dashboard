@@ -1,3 +1,14 @@
+import { isTrainedDispatchEnabled, isTrainedPvFaultEnabled } from './featureFlags';
+import {
+  buildPvFaultNodeFeatureVector,
+  forwardGnn,
+  forwardMlp,
+  isDispatchProductionArtifact,
+  isPvFaultProductionArtifact,
+  type GnnWeights,
+  type MlpWeights,
+} from './modelInference';
+
 export type NumericRecord = Record<string, number>;
 export type LabeledRecord = Record<string, number | string | boolean | null | undefined>;
 
@@ -598,6 +609,16 @@ export interface PriceSpikeForestResult {
   voteShare: number;
   reasons: string[];
   featureImportance: Record<string, number>;
+  trainingDataProfile: 'synthetic' | 'mixed' | 'real';
+  evaluationSummary: {
+    sample_count: number;
+    precision: number;
+    recall: number;
+    auc: number;
+  };
+  calibrationBins: Array<{ bin: number; predictedProbability: number; observedRate: number; count: number }>;
+  calibrationStatus: 'calibrated' | 'uncalibrated' | 'drifting';
+  claimLabel: 'estimated' | 'advisory' | 'validated';
   methodology: string;
 }
 
@@ -644,6 +665,41 @@ function buildSyntheticSpikeCorpus(): SpikeTrainingRow[] {
   }
 
   return corpus;
+}
+
+function spikeLabelFromRow(row: Partial<SpikeTrainingRow>) {
+  return Number(row.poolPriceCadPerMwh) >= 1000
+    || Number(row.reserveMarginPercent) <= 5
+    || (Number(row.demandMw) >= 11000 && Number(row.windGenerationMw) <= 250)
+    || Number(row.temperatureC) <= -25
+    || Number(row.temperatureC) >= 30
+      ? 1
+      : 0;
+}
+
+function inferSpikeProfile(rows: Array<Partial<SpikeTrainingRow>>): 'synthetic' | 'mixed' | 'real' {
+  if (rows.length === 0) return 'synthetic';
+  const sourceCount = rows.filter((row) => Boolean((row as any).source_name || (row as any).sourceName)).length;
+  const spikeCount = rows.filter((row) => Number.isFinite(Number((row as any).spike)) || Number.isFinite(Number((row as any).spike_label))).length;
+  if (sourceCount === 0) return 'synthetic';
+  if (sourceCount === rows.length && spikeCount === rows.length) return 'real';
+  if (sourceCount > 0 || spikeCount > 0) return 'mixed';
+  return 'synthetic';
+}
+
+function computeAuc(pairs: Array<{ score: number; actual: number }>): number {
+  const positives = pairs.filter((pair) => pair.actual === 1);
+  const negatives = pairs.filter((pair) => pair.actual === 0);
+  if (positives.length === 0 || negatives.length === 0) return 0.5;
+  let wins = 0;
+  let ties = 0;
+  for (const positive of positives) {
+    for (const negative of negatives) {
+      if (positive.score > negative.score) wins += 1;
+      else if (positive.score === negative.score) ties += 1;
+    }
+  }
+  return (wins + ties * 0.5) / (positives.length * negatives.length);
 }
 
 function trainDecisionStump(rows: SpikeTrainingRow[], featureNames: Array<keyof SpikeTrainingRow>) {
@@ -695,10 +751,23 @@ export function forecastPriceSpikeRiskForest(input: {
   reserveMarginPercent: number;
   windGenerationMw: number;
   temperatureC: number;
-  trainingRows?: SpikeTrainingRow[];
+  trainingRows?: Array<SpikeTrainingRow | (Partial<SpikeTrainingRow> & { observed_at?: string; source_name?: string; sourceName?: string; spike?: number; spike_label?: number | boolean })>;
   treeCount?: number;
 }): PriceSpikeForestResult {
-  const trainingRows = input.trainingRows?.length ? input.trainingRows : buildSyntheticSpikeCorpus();
+  const trainingRowsRaw = input.trainingRows?.length ? input.trainingRows : buildSyntheticSpikeCorpus();
+  const trainingDataProfile = inferSpikeProfile(trainingRowsRaw);
+  const trainingRows = trainingRowsRaw.map((row) => ({
+    poolPriceCadPerMwh: Number(row.poolPriceCadPerMwh),
+    demandMw: Number(row.demandMw),
+    reserveMarginPercent: Number(row.reserveMarginPercent),
+    windGenerationMw: Number(row.windGenerationMw),
+    temperatureC: Number(row.temperatureC),
+    spike: Number.isFinite(Number((row as any).spike))
+      ? Number((row as any).spike)
+      : Number.isFinite(Number((row as any).spike_label))
+        ? Number((row as any).spike_label)
+        : spikeLabelFromRow(row),
+  })) as SpikeTrainingRow[];
   const treeCount = Math.max(9, input.treeCount ?? 27);
   const featureNames: Array<keyof SpikeTrainingRow> = [
     'poolPriceCadPerMwh',
@@ -708,8 +777,12 @@ export function forecastPriceSpikeRiskForest(input: {
     'temperatureC',
   ];
 
+  const holdoutSize = Math.max(4, Math.round(trainingRows.length * 0.2));
+  const trainRows = trainingRows.length > holdoutSize ? trainingRows.slice(0, trainingRows.length - holdoutSize) : trainingRows;
+  const evalRows = trainingRows.length > holdoutSize ? trainingRows.slice(trainingRows.length - holdoutSize) : trainingRows;
+
   const trees = Array.from({ length: treeCount }, () => {
-    const bootstrap = sampleWithReplacement(trainingRows, trainingRows.length);
+    const bootstrap = sampleWithReplacement(trainRows, trainRows.length);
     const candidateFeatures = [...featureNames].sort(() => Math.random() - 0.5).slice(0, Math.max(2, Math.round(Math.sqrt(featureNames.length))));
     return trainDecisionStump(bootstrap, candidateFeatures);
   });
@@ -760,6 +833,45 @@ export function forecastPriceSpikeRiskForest(input: {
       }
     });
 
+  const evaluationPairs = evalRows.map((row) => {
+    const scores = trees.map((tree) => {
+      const value = Number(row[tree.feature]);
+      return value <= tree.threshold ? tree.leftLabel : tree.rightLabel;
+    });
+    const score = scores.filter((vote) => vote === 1).length / Math.max(1, scores.length);
+    return { score, actual: row.spike };
+  });
+  const predictedPositive = evaluationPairs.filter((pair) => pair.score >= 0.5).length;
+  const actualPositive = evaluationPairs.filter((pair) => pair.actual === 1).length;
+  const truePositive = evaluationPairs.filter((pair) => pair.score >= 0.5 && pair.actual === 1).length;
+  const falsePositive = evaluationPairs.filter((pair) => pair.score >= 0.5 && pair.actual === 0).length;
+  const falseNegative = evaluationPairs.filter((pair) => pair.score < 0.5 && pair.actual === 1).length;
+  const precision = truePositive / Math.max(1, truePositive + falsePositive);
+  const recall = truePositive / Math.max(1, truePositive + falseNegative);
+  const auc = computeAuc(evaluationPairs);
+  const calibrationBins = Array.from({ length: 5 }, (_, index) => {
+    const lower = index / 5;
+    const upper = (index + 1) / 5;
+    const binPairs = evaluationPairs.filter((pair) => pair.score >= lower && (index === 4 ? pair.score <= upper : pair.score < upper));
+    return {
+      bin: index + 1,
+      predictedProbability: round(binPairs.reduce((sum, pair) => sum + pair.score, 0) / Math.max(1, binPairs.length), 4),
+      observedRate: round(binPairs.filter((pair) => pair.actual === 1).length / Math.max(1, binPairs.length), 4),
+      count: binPairs.length,
+    };
+  });
+  const calibrationGap = calibrationBins.reduce((sum, bin) => sum + Math.abs(bin.predictedProbability - bin.observedRate), 0) / Math.max(1, calibrationBins.length);
+  const calibrationStatus: 'calibrated' | 'uncalibrated' | 'drifting' = calibrationGap <= 0.12 && auc >= 0.72
+    ? 'calibrated'
+    : calibrationGap <= 0.2
+      ? 'drifting'
+      : 'uncalibrated';
+  const claimLabel: 'estimated' | 'advisory' | 'validated' = trainingDataProfile === 'real' && auc >= 0.72 && precision >= 0.6
+    ? 'validated'
+    : trainingDataProfile === 'mixed'
+      ? 'advisory'
+      : 'estimated';
+
   return {
     modelVersion: 'random-forest-price-spike-v1',
     province: input.province,
@@ -769,6 +881,16 @@ export function forecastPriceSpikeRiskForest(input: {
     voteShare: round(probability, 4),
     reasons,
     featureImportance,
+    trainingDataProfile,
+    evaluationSummary: {
+      sample_count: evaluationPairs.length,
+      precision: round(precision, 4),
+      recall: round(recall, 4),
+      auc: round(auc, 4),
+    },
+    calibrationBins,
+    calibrationStatus,
+    claimLabel,
     methodology: 'Bagged decision-tree ensemble calibrated on canonical Alberta market scenarios.',
   };
 }
@@ -872,9 +994,27 @@ export interface PhysicsDispatchResult {
   confidenceScore: number;
   featureContributions: Record<string, number>;
   methodology: string;
+  runtimeMode?: 'heuristic' | 'trained';
+  fallbackReason?: string;
+  trainingDataProfile?: 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated';
+  evaluationSummary?: {
+    sample_count: number;
+    mape?: number;
+    physics_violation_rate?: number;
+  };
+  calibrationStatus?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
+  trainingArtifactSha?: string;
+  simulatorConfig?: {
+    name: string;
+    version: string;
+    scenario_count: number;
+    topology?: string;
+  };
+  trainedAt?: string;
 }
 
-export function evaluatePhysicsInformedDispatch(input: {
+export interface DispatchFeatureInput {
   loadMw: number;
   temperatureC: number;
   windGenerationMw: number;
@@ -884,12 +1024,31 @@ export function evaluatePhysicsInformedDispatch(input: {
   availableGenerationMw?: number;
   previousDispatchMw?: number;
   hourOfDay?: number;
-}): PhysicsDispatchResult {
+}
+
+export function buildDispatchFeatureVector(input: DispatchFeatureInput): number[] {
+  return [
+    input.loadMw,
+    input.temperatureC,
+    input.windGenerationMw,
+    input.solarGenerationMw,
+    input.reserveMarginPercent,
+    input.rampLimitMwPerHour,
+    input.previousDispatchMw ?? input.loadMw,
+  ];
+}
+
+export function evaluatePhysicsInformedDispatch(input: DispatchFeatureInput, trainedWeights?: MlpWeights): PhysicsDispatchResult {
   const hour = input.hourOfDay ?? new Date().getHours();
   const hourSin = Math.sin((hour / 24) * Math.PI * 2);
   const hourCos = Math.cos((hour / 24) * Math.PI * 2);
 
-  const baselineLoad = input.loadMw
+  const availableGenerationMw = input.availableGenerationMw ?? input.loadMw * 1.15;
+  const reserveHeadroomMw = Math.max(0, availableGenerationMw * (input.reserveMarginPercent / 100));
+  const feasibleUpperBound = Math.max(0, availableGenerationMw - reserveHeadroomMw);
+  const dispatchFeatures = buildDispatchFeatureVector(input);
+
+  const heuristicBaselineLoad = input.loadMw
     + (20 - input.temperatureC) * 38
     - input.windGenerationMw * 0.09
     - input.solarGenerationMw * 0.13
@@ -897,15 +1056,17 @@ export function evaluatePhysicsInformedDispatch(input: {
     + hourSin * 90
     + hourCos * 40;
 
-  const availableGenerationMw = input.availableGenerationMw ?? input.loadMw * 1.15;
-  const reserveHeadroomMw = Math.max(0, availableGenerationMw * (input.reserveMarginPercent / 100));
-  const feasibleUpperBound = Math.max(0, availableGenerationMw - reserveHeadroomMw);
-  const predictedDispatchMw = Math.max(0, Math.min(feasibleUpperBound, baselineLoad));
+  const hasTrainedWeights = Boolean(trainedWeights && isTrainedDispatchEnabled() && isDispatchProductionArtifact(trainedWeights));
+  const trainedDispatchMw = hasTrainedWeights
+    ? forwardMlp(trainedWeights as MlpWeights, dispatchFeatures)
+    : heuristicBaselineLoad;
+
+  const predictedDispatchMw = Math.max(0, Math.min(feasibleUpperBound, trainedDispatchMw));
 
   const rampViolation = input.previousDispatchMw != null
     ? Math.max(0, Math.abs(predictedDispatchMw - input.previousDispatchMw) - input.rampLimitMwPerHour)
     : 0;
-  const capacityViolation = Math.max(0, predictedDispatchMw - feasibleUpperBound);
+  const capacityViolation = Math.max(0, trainedDispatchMw - feasibleUpperBound);
   const reserveViolation = Math.max(0, input.loadMw - feasibleUpperBound);
 
   const physicsLoss = round((capacityViolation ** 2 + reserveViolation ** 2 + rampViolation ** 2) / Math.max(1, feasibleUpperBound), 6);
@@ -919,7 +1080,7 @@ export function evaluatePhysicsInformedDispatch(input: {
   const confidenceScore = clamp(1 - Math.min(1, physicsLoss + dataLoss / Math.max(1, input.loadMw)));
 
   return {
-    modelVersion: 'pinn-surrogate-v1',
+    modelVersion: hasTrainedWeights ? trainedWeights!.manifest.model_version : 'physics-constrained-dispatch-v2',
     predictedDispatchMw: round(predictedDispatchMw, 4),
     physicsLoss,
     dataLoss,
@@ -933,8 +1094,30 @@ export function evaluatePhysicsInformedDispatch(input: {
       reserve: round((10 - input.reserveMarginPercent) * 14, 4),
       hourSin: round(hourSin * 90, 4),
       hourCos: round(hourCos * 40, 4),
+      previousDispatch: round(input.previousDispatchMw ?? input.loadMw, 4),
     },
-    methodology: 'Physics-informed dispatch surrogate with power-balance, reserve, and ramp penalties.',
+    methodology: hasTrainedWeights
+      ? 'Simulator-calibrated dispatch MLP with physics safety clamps.'
+      : 'Physics-constrained dispatch surrogate with power-balance, reserve, and ramp penalties.',
+    runtimeMode: hasTrainedWeights ? 'trained' : 'heuristic',
+    fallbackReason: hasTrainedWeights ? undefined : trainedWeights
+      ? (isTrainedDispatchEnabled() ? 'placeholder_artifact_gate' : 'feature_flag_disabled')
+      : 'trained_weights_missing',
+    trainingDataProfile: hasTrainedWeights ? trainedWeights!.manifest.training_data_profile : undefined,
+    evaluationSummary: hasTrainedWeights
+      ? {
+        sample_count: trainedWeights!.manifest.simulator_config.scenario_count,
+        mape: trainedWeights!.manifest.metrics.mape,
+        physics_violation_rate: trainedWeights!.manifest.metrics.physics_violation_rate,
+      }
+      : undefined,
+    calibrationStatus: hasTrainedWeights
+      ? (trainedWeights!.manifest.metrics.physics_violation_rate <= 0.1 ? 'calibrated' : 'drifting')
+      : undefined,
+    claimLabel: hasTrainedWeights ? 'validated' : 'advisory',
+    trainingArtifactSha: hasTrainedWeights ? trainedWeights!.manifest.training_artifact_sha : undefined,
+    simulatorConfig: hasTrainedWeights ? trainedWeights!.manifest.simulator_config : undefined,
+    trainedAt: hasTrainedWeights ? trainedWeights!.manifest.trained_at : undefined,
   };
 }
 
@@ -948,7 +1131,27 @@ export interface PvFaultResult {
   topEdges: Array<{ fromNodeId: string; toNodeId: string; riskScore: number }>;
   faultClass: string;
   confidenceScore: number;
+  classProbabilities: Record<string, number>;
   methodology: string;
+  runtimeMode?: 'heuristic' | 'trained';
+  fallbackReason?: string;
+  trainingDataProfile?: 'real' | 'mixed' | 'synthetic' | 'simulator-calibrated';
+  evaluationSummary?: {
+    sample_count: number;
+    f1?: number;
+    top3_localization_accuracy?: number;
+    validation_loss?: number;
+  };
+  calibrationStatus?: 'calibrated' | 'uncalibrated' | 'drifting';
+  claimLabel?: 'estimated' | 'advisory' | 'validated';
+  trainingArtifactSha?: string;
+  simulatorConfig?: {
+    name: string;
+    version: string;
+    scenario_count: number;
+    topology?: string;
+  };
+  trainedAt?: string;
 }
 
 export function analyzePvFaultGraph(input: {
@@ -963,10 +1166,55 @@ export function analyzePvFaultGraph(input: {
   }>;
   edges: Array<{ fromNodeId: string; toNodeId: string; weight?: number }>;
   iterations?: number;
+  trainedWeights?: GnnWeights;
 }): PvFaultResult {
   const iterations = Math.max(1, input.iterations ?? 4);
   const nodeMap = new Map<string, number>();
   const localEvidence = new Map<string, number>();
+  const runtimeNodes = input.nodes.map((node) => ({
+    id: node.id,
+    features: buildPvFaultNodeFeatureVector(node),
+  }));
+
+  const hasTrainedWeights = Boolean(input.trainedWeights && isTrainedPvFaultEnabled() && isPvFaultProductionArtifact(input.trainedWeights));
+
+  if (hasTrainedWeights) {
+    const trained = forwardGnn(input.trainedWeights!, runtimeNodes, input.edges.map((edge) => ({
+      from: edge.fromNodeId,
+      to: edge.toNodeId,
+      weight: edge.weight,
+    })));
+    return {
+      modelVersion: input.trainedWeights!.manifest.model_version,
+      topSuspects: trained.topSuspects.map((entry) => ({
+        nodeId: entry.nodeId,
+        riskScore: entry.riskScore,
+        reason: entry.reason,
+      })),
+      topEdges: trained.topEdges.map((entry) => ({
+        fromNodeId: entry.from,
+        toNodeId: entry.to,
+        riskScore: entry.riskScore,
+      })),
+      faultClass: trained.faultClass,
+      confidenceScore: trained.confidenceScore,
+      classProbabilities: trained.classProbabilities,
+      methodology: 'Simulator-calibrated scalar graph model over inverter output, voltage, thermal, and irradiance penalties.',
+      runtimeMode: 'trained',
+      trainingDataProfile: input.trainedWeights!.manifest.training_data_profile,
+      evaluationSummary: {
+        sample_count: input.trainedWeights!.manifest.simulator_config.scenario_count,
+        f1: input.trainedWeights!.manifest.metrics.f1,
+        top3_localization_accuracy: input.trainedWeights!.manifest.metrics.top3_localization_accuracy,
+        validation_loss: input.trainedWeights!.manifest.metrics.validation_loss,
+      },
+      calibrationStatus: input.trainedWeights!.manifest.metrics.validation_loss <= 0.1 ? 'calibrated' : 'drifting',
+      claimLabel: 'validated',
+      trainingArtifactSha: input.trainedWeights!.manifest.training_artifact_sha,
+      simulatorConfig: input.trainedWeights!.manifest.simulator_config,
+      trainedAt: input.trainedWeights!.manifest.trained_at,
+    };
+  }
 
   for (const node of input.nodes) {
     const outputDelta = Math.abs(node.expectedOutputMw - node.observedOutputMw) / Math.max(1, node.expectedOutputMw);
@@ -1012,7 +1260,7 @@ export function analyzePvFaultGraph(input: {
         : (localEvidence.get(nodeId) ?? 0) >= 0.5 ? 'graph_propagated_anomaly'
         : 'background_signal',
     }))
-    .sort((left, right) => right.riskScore - left.riskScore)
+    .sort((left, right) => (right.riskScore - left.riskScore) || left.nodeId.localeCompare(right.nodeId))
     .slice(0, 5);
 
   const topEdges = input.edges
@@ -1025,23 +1273,43 @@ export function analyzePvFaultGraph(input: {
         riskScore: round(((left + right) / 2) * (edge.weight ?? 1), 4),
       };
     })
-    .sort((left, right) => right.riskScore - left.riskScore)
+    .sort((left, right) => (right.riskScore - left.riskScore)
+      || left.fromNodeId.localeCompare(right.fromNodeId)
+      || left.toNodeId.localeCompare(right.toNodeId))
     .slice(0, 5);
 
-  const confidenceScore = clamp(topSuspects[0]?.riskScore ?? 0);
-  const faultClass = topSuspects[0]?.riskScore >= 0.75
-    ? 'localized_pv_fault'
-    : topSuspects[0]?.riskScore >= 0.45
-      ? 'regional_derating'
-      : 'healthy_cluster';
+  const topScore = topSuspects[0]?.riskScore ?? 0;
+  const confidenceScore = clamp(topScore);
+  const faultClass = topScore >= (0.75)
+    ? 'localized_short_circuit'
+    : topScore >= 0.55
+      ? 'hot_spot_derating'
+      : topScore >= 0.4
+        ? 'soiling_cluster'
+        : topScore >= 0.25
+          ? 'inverter_trip'
+          : 'healthy_cluster';
+
+  const classProbabilities = {
+    healthy_cluster: round(clamp(1 - topScore), 4),
+    inverter_trip: round(clamp(topScore * 0.55), 4),
+    soiling_cluster: round(clamp(topScore * 0.72), 4),
+    hot_spot_derating: round(clamp(topScore * 0.88), 4),
+    localized_short_circuit: round(clamp(topScore), 4),
+  };
 
   return {
-    modelVersion: 'pv-gnn-v1',
+    modelVersion: 'graph-message-passing-pv-fault-v2',
     topSuspects,
     topEdges,
     faultClass,
     confidenceScore: round(confidenceScore, 4),
-    methodology: 'Graph message-passing localization over inverter, voltage, and output deviations.',
+    classProbabilities,
+    methodology: 'Graph message-passing localization over inverter, voltage, and output deviations with honest non-learned labeling.',
+    runtimeMode: 'heuristic',
+    fallbackReason: input.trainedWeights
+      ? (isTrainedPvFaultEnabled() ? 'placeholder_artifact_gate' : 'feature_flag_disabled')
+      : 'trained_weights_missing',
   };
 }
 
@@ -1152,7 +1420,7 @@ export interface GasBasisForecastResult {
   featureWeights: Record<string, number>;
   drivers: string[];
   backtest: {
-    sampleCount: number;
+    sample_count: number;
     maeCadPerGj: number;
     rmseCadPerGj: number;
     directionalAccuracy: number;
@@ -1312,7 +1580,7 @@ export function forecastGasBasisSpread(input: {
     featureWeights,
     drivers,
     backtest: {
-      sampleCount: backtestPredictions.length,
+      sample_count: backtestPredictions.length,
       maeCadPerGj: round(mean(backtestResiduals.map((value) => Math.abs(value))), 4),
       rmseCadPerGj: round(Math.sqrt(mean(backtestResiduals.map((value) => value ** 2))), 4),
       directionalAccuracy: round(directionalAccuracy, 4),
