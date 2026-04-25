@@ -20,6 +20,10 @@ import { realDataService } from '../lib/realDataService';
 import { isEdgeFetchEnabled } from '../lib/config';
 import { ingestGroundsourceEvents } from '../lib/mlForecastingClient';
 import { buildResilienceFusionSummary, buildCascadeRiskSummary } from '../lib/resilienceFusion';
+import { isTrainedPvFaultEnabled } from '../lib/featureFlags';
+import { isPvFaultProductionArtifact } from '../lib/modelInference';
+import { buildPvFaultContractPreview } from '../lib/pvFaultContractPreview';
+import pvWeights from '../lib/modelWeights/pv-gnn-v2.json';
 
 type ResilienceAsset = {
   asset_uuid: string;
@@ -407,6 +411,7 @@ export const ResilienceMap: React.FC = () => {
         const typeLabel = typeof rawType === 'string' ? rawType : asset.assetType;
 
         return {
+          kind: 'asset',
           x: asset.longitude,
           y: asset.latitude,
           risk: result.overallScore,
@@ -416,6 +421,38 @@ export const ResilienceMap: React.FC = () => {
       })
       .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
   }, [assets, hazards, selectedScenario, timeHorizon]);
+
+  const intelligencePins = useMemo(() => {
+    return intelligenceEvents
+      .map((event) => ({
+        kind: 'event',
+        x: Number(event.longitude ?? event.lon ?? event.longitude_deg ?? NaN),
+        y: Number(event.latitude ?? event.lat ?? event.latitude_deg ?? NaN),
+        risk: Number(
+          event.severity === 'critical'
+            ? 95
+            : event.severity === 'high'
+              ? 80
+              : event.severity === 'medium'
+                ? 60
+                : 35,
+        ),
+        name: event.location_name ?? event.affected_asset ?? event.summary?.slice(0, 24) ?? 'Intelligence event',
+        type: String(event.event_type ?? 'other').replace(/_/g, ' ').toUpperCase(),
+        summary: String(event.summary ?? ''),
+        eventTimestamp: event.event_timestamp ?? event.created_at ?? null,
+        sourceUrl: event.source_url ?? null,
+      }))
+      .filter((point) => Number.isFinite(point.x) && Number.isFinite(point.y));
+  }, [intelligenceEvents]);
+
+  const latestIntelligenceVintage = useMemo(() => {
+    const values = intelligenceEvents
+      .map((event) => event.event_timestamp ?? event.created_at)
+      .filter((value): value is string => Boolean(value))
+      .sort();
+    return values.at(-1) ?? null;
+  }, [intelligenceEvents]);
 
   const scenarioComparison = useMemo(() => {
     if (!selectedAsset) return [];
@@ -447,6 +484,13 @@ export const ResilienceMap: React.FC = () => {
       };
     });
   }, [selectedAsset, hazards, timeHorizon]);
+
+  const pvContractActive = isTrainedPvFaultEnabled() && isPvFaultProductionArtifact(pvWeights as any);
+  const pvContractPreview = useMemo(
+    () => (pvContractActive ? buildPvFaultContractPreview() : null),
+    [pvContractActive],
+  );
+  const pvMetrics = pvWeights.manifest.metrics as Record<string, number>;
 
   if (loading) {
     return (
@@ -510,8 +554,81 @@ export const ResilienceMap: React.FC = () => {
             <div className="mt-1 text-xs text-cyan-800">
               {intelligenceEvents.slice(0, 2).map((event) => event.summary).join(' | ')}
             </div>
+            {latestIntelligenceVintage && (
+              <div className="mt-1 text-[11px] text-cyan-700">
+                Latest vintage: {new Date(latestIntelligenceVintage).toLocaleString()}
+              </div>
+            )}
           </div>
         )}
+
+        <div
+          className={`mb-4 rounded-lg border p-4 text-sm ${
+            pvContractActive
+              ? 'border-violet-200 bg-violet-50 text-violet-950'
+              : 'border-slate-200 bg-slate-50 text-slate-700'
+          }`}
+          data-testid="pv-contract-chip"
+          title={pvContractActive
+            ? `${pvWeights.manifest.model_version} trained on ${pvWeights.manifest.simulator_config.version}`
+            : 'PV fault is advisory until the simulator-calibrated artifact gate and flag are enabled.'}
+        >
+          {pvContractActive ? (
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <div className="font-semibold text-violet-900">PV fault contract active</div>
+                  <div className="text-[11px] font-medium uppercase tracking-wide text-violet-700">
+                    Simulator-Calibrated V1
+                  </div>
+                  <div className="text-xs text-violet-800">
+                    {pvWeights.manifest.model_version} · {pvWeights.manifest.simulator_config.version}
+                  </div>
+                  <div className="mt-1 text-xs text-violet-800">
+                    Trained at {new Date(pvWeights.manifest.trained_at).toLocaleString()} · SHA {pvWeights.manifest.training_artifact_sha}
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 gap-1 text-xs text-violet-800 md:text-right">
+                  <div>F1 {Number(pvMetrics.f1 ?? 0).toFixed(2)}</div>
+                  <div>Top-3 localization {Number(pvMetrics.top3_localization_accuracy ?? 0).toFixed(2)}</div>
+                  <div>Validation loss {Number(pvMetrics.validation_loss ?? 0).toFixed(2)}</div>
+                  <div>Scenario count {pvWeights.manifest.simulator_config.scenario_count.toLocaleString()}</div>
+                </div>
+              </div>
+              {pvContractPreview && (
+                <div className="rounded-md border border-violet-200 bg-white/70 p-3">
+                  <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                    Risk-ranked suspect order
+                  </div>
+                  <ol
+                    className="mt-2 space-y-1 text-xs text-violet-900"
+                    data-testid="pv-contract-suspects"
+                  >
+                    {pvContractPreview.topSuspects.map((entry, index) => (
+                      <li
+                        key={entry.nodeId}
+                        data-node-id={entry.nodeId}
+                        className="flex items-center gap-2"
+                      >
+                        <span className="font-medium text-violet-700">{index + 1}.</span>
+                        <span className="font-semibold">{entry.nodeId}</span>
+                        <span className="text-violet-700">{entry.reason}</span>
+                        <span className="text-violet-700">{entry.riskScore.toFixed(6)}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div>
+              <div className="font-semibold text-slate-800">PV fault contract advisory</div>
+              <div className="text-xs text-slate-600">
+                Simulator-calibrated PV fault scoring is gated off. The resilience map continues to use the heuristic graph-message fallback until the trained artifact gate and feature flag are both enabled.
+              </div>
+            </div>
+          )}
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div>
@@ -593,7 +710,7 @@ export const ResilienceMap: React.FC = () => {
           <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-left text-sm text-amber-950">
             <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
               <div>
-                <strong>Cascading transmission sentinel:</strong> the non-compensatory fusion keeps the current limiting factor visible so high regional resilience does not mask a local substation failure.
+              <strong>Cascading transmission limiting factor:</strong> the non-compensatory fusion keeps the current limiting factor visible so high regional resilience does not mask a local substation failure.
                 <div className="mt-2 text-xs text-amber-900">{cascadeSummary.driverText}</div>
               </div>
               <div className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs text-slate-700 md:min-w-[240px]">
@@ -727,13 +844,36 @@ export const ResilienceMap: React.FC = () => {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="x" name="Longitude" unit="°" />
                 <YAxis dataKey="y" name="Latitude" unit="°" />
-                <Tooltip cursor={{ strokeDasharray: '3 3' }} />
+                <Tooltip
+                  cursor={{ strokeDasharray: '3 3' }}
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const point: any = payload[0]?.payload;
+                    if (!point) return null;
+                    return (
+                      <div className="rounded-lg border border-slate-200 bg-white p-3 text-xs shadow-lg">
+                        <div className="font-semibold text-slate-900">{point.name}</div>
+                        <div className="text-slate-600">{point.type}</div>
+                        <div className="text-slate-700 mt-1">Risk {Number(point.risk ?? 0).toFixed(0)}</div>
+                        {point.kind === 'event' && (
+                          <div className="mt-1 text-slate-500">
+                            {point.eventTimestamp ? `Vintage ${new Date(point.eventTimestamp).toLocaleString()}` : 'Vintage unavailable'}
+                          </div>
+                        )}
+                        {point.kind === 'event' && point.summary && (
+                          <div className="mt-1 max-w-[220px] text-slate-500">{point.summary}</div>
+                        )}
+                      </div>
+                    );
+                  }}
+                />
                 <Legend />
                 <Scatter name="Assets" data={heatmapData} fill="#f97316" />
+                <Scatter name="Groundsource events" data={intelligencePins} fill="#06b6d4" />
               </ScatterChart>
             </ResponsiveContainer>
             <div className="mt-2 text-sm text-slate-500">
-              Risk hotspot map derived from Supabase resilience assessments (higher values indicate greater risk).
+              Risk hotspot map derived from Supabase resilience assessments and persisted intelligence pins (higher values indicate greater risk).
             </div>
           </div>
         </div>

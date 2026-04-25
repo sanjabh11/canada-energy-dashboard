@@ -153,7 +153,16 @@ export const AIDataCentreDashboard: React.FC = () => {
 
   useEffect(() => {
     if (!dcData || selectedProvince !== 'AB') return;
-    const baseLoadMw = Math.max(40, Number(dcData.grid_impact?.total_dc_load_mw ?? dcData.summary.total_contracted_capacity_mw ?? 120) * 0.12);
+    const queueRequestedMw = Number(queueData?.summary?.total_requested_mw ?? 0);
+    const queueProjectCount = Number(queueData?.summary?.total_projects ?? 0);
+    const phase1Utilization = Number(queueData?.insights?.phase1_allocation_status?.utilization_percentage ?? 0);
+    const dcLoadAnchor = Number(dcData.grid_impact?.total_dc_load_mw ?? dcData.summary.total_contracted_capacity_mw ?? 120);
+    const baseLoadMw = Math.max(
+      40,
+      dcLoadAnchor * 0.12
+      + (queueRequestedMw / Math.max(1, queueProjectCount || 1)) * 0.08
+      + (phase1Utilization / 100) * 12,
+    );
     runMlForecast({
       domain: 'byop_load',
       province: selectedProvince,
@@ -161,17 +170,20 @@ export const AIDataCentreDashboard: React.FC = () => {
       scenario: {
         baseLoadMw,
         flexibilityPct: 20,
-        onSiteGenerationMw: Math.max(15, baseLoadMw * 0.35),
+        onSiteGenerationMw: Math.max(15, baseLoadMw * (0.28 + Math.min(0.2, phase1Utilization / 500))),
         storageCapacityMwh: Math.max(60, baseLoadMw * 1.4),
         storagePowerMw: Math.max(20, baseLoadMw * 0.3),
-        utilityImportCapMw: Math.max(30, baseLoadMw * 0.82),
+        utilityImportCapMw: Math.max(30, dcLoadAnchor * 0.85),
         priceSignalCadPerMwh: 155,
+        queueRequestedMw,
+        queueProjectCount,
+        phase1Utilization,
       },
     }).then(({ data }) => setByopInsights(data)).catch((error) => {
       console.warn('BYOP forecast adapter failed:', error);
       setByopInsights(null);
     });
-  }, [dcData, selectedProvince]);
+  }, [dcData, queueData, selectedProvince]);
 
   if (loading) {
     return (
@@ -1171,10 +1183,31 @@ export const AIDataCentreDashboard: React.FC = () => {
               <p className="text-sm text-secondary">
                 {byopInsights.meta?.model_version} scenario for Alberta AI data centre import shaping.
               </p>
+              <p className="text-xs text-cyan-200 mt-1">
+                {edgeDisabled || usingCachedSnapshot ? 'fixture-backed' : 'source-backed'} · queue-derived base load
+              </p>
             </div>
             <p className="text-xs text-cyan-200">
-              Confidence {(Number(byopInsights.meta?.confidence_score ?? 0) * 100).toFixed(0)}% · scenario-based
+              Confidence {(Number(byopInsights.meta?.confidence_score ?? 0) * 100).toFixed(0)}% · {byopInsights.meta?.claim_label ?? 'advisory'}
             </p>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-4 text-xs text-slate-300">
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-3">
+              <div className="text-tertiary">Training profile</div>
+              <div className="text-primary font-semibold">{byopInsights.meta?.training_data_profile ?? 'synthetic'}</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-3">
+              <div className="text-tertiary">Calibration</div>
+              <div className="text-primary font-semibold">{byopInsights.meta?.calibration_status ?? 'uncalibrated'}</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-3">
+              <div className="text-tertiary">Evaluation</div>
+              <div className="text-primary font-semibold">{byopInsights.meta?.evaluation_summary?.sample_count ?? 0} samples</div>
+            </div>
+            <div className="rounded-xl border border-cyan-500/20 bg-secondary p-3">
+              <div className="text-tertiary">Source mode</div>
+              <div className="text-primary font-semibold">{edgeDisabled || usingCachedSnapshot ? 'fixture' : 'live queue'}</div>
+            </div>
           </div>
           <div className="mt-4 grid gap-4 md:grid-cols-5">
             <div className="rounded-xl border border-cyan-500/20 bg-secondary p-4">

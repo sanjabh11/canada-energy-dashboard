@@ -87,9 +87,16 @@ export default defineConfig({
 
   // Run local dev server before starting tests
   webServer: {
-    command: 'VITE_ENABLE_EDGE_FETCH=true VITE_SUPABASE_URL=http://127.0.0.1:5173 VITE_SUPABASE_ANON_KEY=test-key pnpm run test:e2e:server',
+    command: 'pnpm run test:e2e:server',
+    env: {
+      VITE_ENABLE_EDGE_FETCH: 'true',
+      VITE_TRAINED_DISPATCH_ENABLED: 'true',
+      VITE_TRAINED_PV_FAULT_ENABLED: 'true',
+      VITE_SUPABASE_URL: 'http://127.0.0.1:5173',
+      VITE_SUPABASE_ANON_KEY: 'test-key',
+    },
     url: 'http://127.0.0.1:5173',
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120 * 1000,
   },
 });

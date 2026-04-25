@@ -25,6 +25,8 @@ import {
 import { realDataService } from '../lib/realDataService';
 import { evaluateForecastDrift, runMlForecast } from '../lib/mlForecastingClient';
 import { backtestRareEventResampling } from '../lib/advancedForecasting';
+import { fetchGasBasisTrainingWindow } from '../lib/timeseriesSource';
+import { DISPATCH_INPUT_WIDTH } from '../lib/modelInference';
 
 // ============================================================================
 // TYPES
@@ -165,7 +167,18 @@ export const DemandForecastDashboard: React.FC = () => {
       const state = forecaster.getModelState();
       if (state) setSeasonalProfile(state.seasonal_profile);
       const gasBasisHistory = mlDomain === 'gas_basis'
-        ? await realDataService.getGasBasisHistory()
+        ? await (async () => {
+          const sourceRows = await fetchGasBasisTrainingWindow(730);
+          if (sourceRows.length > 0) {
+            return {
+              rows: sourceRows,
+              backtestRows: sourceRows.slice(-Math.max(6, Math.floor(sourceRows.length / 3))),
+              sourceProfile: 'real' as const,
+              provenanceLabel: 'Source-backed AECO / Henry Hub history',
+            };
+          }
+          return realDataService.getGasBasisHistory();
+        })()
         : null;
       const { data: mlResult } = await runMlForecast({
         domain: mlDomain,
@@ -678,11 +691,41 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
               <p className="text-sm text-slate-400">
                 {mlInsights.meta.model_version} · confidence {(mlInsights.meta.confidence_score * 100).toFixed(0)}% · {mlInsights.meta.staleness_status}
               </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+                <span className="inline-flex items-center rounded-full border border-cyan-500/30 bg-cyan-950/40 px-3 py-1 text-cyan-100">
+                  Dispatch contract · {DISPATCH_INPUT_WIDTH}-input calibrated
+                </span>
+                <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-950/30 px-3 py-1 text-emerald-100">
+                  previous_dispatch_mw active
+                </span>
+              </div>
             </div>
             <div className="text-xs text-cyan-200">
               {mlInsights.feature_ranking?.retainedFeatures?.length
                 ? `Retained features: ${mlInsights.feature_ranking.retainedFeatures.join(', ')}`
                 : 'No retained feature artifact available'}
+            </div>
+          </div>
+          <div className="mt-3 grid gap-3 md:grid-cols-4 text-xs text-slate-300">
+            <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+              <div className="text-slate-400">Training profile</div>
+              <div className="text-white font-semibold">{mlInsights.meta.training_data_profile ?? 'unknown'}</div>
+            </div>
+            <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+              <div className="text-slate-400">Calibration</div>
+              <div className="text-white font-semibold">{mlInsights.meta.calibration_status ?? 'uncalibrated'}</div>
+            </div>
+            <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+              <div className="text-slate-400">Claim label</div>
+              <div className="text-white font-semibold">{mlInsights.meta.claim_label ?? 'advisory'}</div>
+            </div>
+            <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
+              <div className="text-slate-400">Evaluation</div>
+              <div className="text-white font-semibold">
+                {mlInsights.meta.evaluation_summary
+                  ? `${mlInsights.meta.evaluation_summary.sample_count} samples`
+                  : 'n/a'}
+              </div>
             </div>
           </div>
           {driftAssessment?.status && (
@@ -741,7 +784,7 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
             <div className="mt-4 grid md:grid-cols-4 gap-3 text-sm">
               <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
                 <div className="text-slate-400">Backtest Samples</div>
-                <div className="text-white font-semibold">{Number(mlInsights.analysis.backtest.sampleCount ?? 0).toLocaleString()}</div>
+                <div className="text-white font-semibold">{Number(mlInsights.analysis.backtest.sample_count ?? 0).toLocaleString()}</div>
               </div>
               <div className="rounded-lg border border-cyan-500/20 bg-slate-900/40 p-3">
                 <div className="text-slate-400">MAE</div>
@@ -756,6 +799,14 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
                 <div className="text-cyan-100">{mlInsights.analysis.backtest.sourceProfile}</div>
               </div>
             </div>
+          )}
+          {mlInsights.meta.evaluation_summary && (
+            <p className="mt-3 text-xs text-cyan-200">
+              {mlInsights.meta.evaluation_summary.mae != null ? `MAE ${mlInsights.meta.evaluation_summary.mae.toFixed(3)} · ` : ''}
+              {mlInsights.meta.evaluation_summary.rmse != null ? `RMSE ${mlInsights.meta.evaluation_summary.rmse.toFixed(3)} · ` : ''}
+              {mlInsights.meta.evaluation_summary.directional_accuracy != null ? `Directional ${(mlInsights.meta.evaluation_summary.directional_accuracy * 100).toFixed(0)}% · ` : ''}
+              claim {mlInsights.meta.claim_label ?? 'advisory'}
+            </p>
           )}
           {mlInsights.analysis?.peakImportMw != null && (
             <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-5 gap-3 text-sm">

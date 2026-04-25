@@ -12,6 +12,7 @@ import { persistLeadIntake } from '../lib/leadIntake';
 import { useTIERPricing, calculateArbitrageSpread } from '../lib/tierPricing';
 import { evaluateTierScenario } from '../lib/mlForecastingClient';
 import type { TierScenarioResult } from '../lib/mlForecasting';
+import { fetchLatestTierMarketRate } from '../lib/ratesSource';
 
 interface ROIResults {
     fundPayment: number;
@@ -33,12 +34,43 @@ export const TIERROICalculator: React.FC = () => {
     const [emailError, setEmailError] = useState('');
     const [simulatorResult, setSimulatorResult] = useState<TierScenarioResult | null>(null);
     const [simulatorSource, setSimulatorSource] = useState<'edge' | 'local_fallback'>('local_fallback');
+    const [liveTierMarketRate, setLiveTierMarketRate] = useState<number | null>(null);
+    const [liveTierMarketRateSource, setLiveTierMarketRateSource] = useState<{
+        sourceName?: string;
+        sourceUrl?: string;
+        observedAt?: string;
+        claimLabel?: 'estimated' | 'advisory' | 'validated';
+    } | null>(null);
 
     // TIER Pricing configuration (single source of truth)
     const tierPricing = useTIERPricing();
     const FUND_PRICE = tierPricing.fundPrice;
-    const MARKET_PRICE = tierPricing.marketCreditPrice;
-    const ARBITRAGE_SPREAD = calculateArbitrageSpread(tierPricing);
+    const MARKET_PRICE = liveTierMarketRate ?? tierPricing.marketCreditPrice;
+    const ARBITRAGE_SPREAD = calculateArbitrageSpread({ ...tierPricing, marketCreditPrice: MARKET_PRICE });
+
+    useEffect(() => {
+        let cancelled = false;
+        fetchLatestTierMarketRate().then((rate) => {
+            if (cancelled) return;
+            if (rate) {
+                setLiveTierMarketRate(Number(rate.market_credit_price_cad_per_tonne));
+                setLiveTierMarketRateSource({
+                    sourceName: rate.source_name,
+                    sourceUrl: rate.source_url,
+                    observedAt: rate.observed_at,
+                    claimLabel: rate.claim_label,
+                });
+            } else {
+                setLiveTierMarketRate(null);
+                setLiveTierMarketRateSource(null);
+            }
+        }).catch(() => {
+            if (cancelled) return;
+            setLiveTierMarketRate(null);
+            setLiveTierMarketRateSource(null);
+        });
+        return () => { cancelled = true; };
+    }, []);
 
     // CEIP service fees (business model constants)
     const CEIP_BASE_FEE = 18000; // $1,500/mo × 12
@@ -246,7 +278,18 @@ export const TIERROICalculator: React.FC = () => {
                     </div>
 
                     <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
-                        <h4 className="text-sm font-medium text-slate-400 mb-3">2025-2026 Market Prices</h4>
+                        <div className="flex items-center justify-between mb-3">
+                            <h4 className="text-sm font-medium text-slate-400">2025-2026 Market Prices</h4>
+                            <div className={`text-xs px-2 py-1 rounded-full border ${
+                                liveTierMarketRateSource
+                                    ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+                                    : 'border-amber-500/30 bg-amber-500/10 text-amber-300'
+                            }`}>
+                                {liveTierMarketRateSource
+                                    ? `Live source: ${liveTierMarketRateSource.sourceName ?? 'tier_market_rates'}`
+                                    : 'Fallback pricing in use'}
+                            </div>
+                        </div>
                         <div className="flex justify-between items-center">
                             <div>
                                 <div className="text-sm text-red-400">TIER Fund Price</div>
@@ -256,6 +299,11 @@ export const TIERROICalculator: React.FC = () => {
                             <div className="text-right">
                                 <div className="text-sm text-emerald-400">Market Credit Price</div>
                                 <div className="text-2xl font-bold text-emerald-400">${MARKET_PRICE}/t</div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                    {liveTierMarketRateSource
+                                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                                        : `Fallback sourced from ${tierPricing.lastVerifiedAt}`}
+                                </div>
                             </div>
                         </div>
                         <div className="mt-3 text-center">
