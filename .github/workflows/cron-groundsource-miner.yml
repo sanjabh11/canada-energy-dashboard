@@ -1,0 +1,36 @@
+name: Groundsource Miner Cron
+
+on:
+  schedule:
+    - cron: '15 4 * * *'
+  workflow_dispatch:
+
+jobs:
+  trigger-groundsource-miner:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        source_group:
+          - utility_public
+          - policy_public
+
+    steps:
+      - name: Trigger Groundsource Miner
+        run: |
+          echo "Triggering groundsource miner for ${{ matrix.source_group }}..."
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://qnymbecjgeaoxsfphrti.functions.supabase.co/groundsource-miner/ingest" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "x-supabase-cron: true" \
+            -H "Content-Type: application/json" \
+            -d '{"source_group":"${{ matrix.source_group }}","scheduled_run":true,"max_items":15,"max_events":100,"allow_indigenous_consent":false}')
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          echo "Response: $BODY"
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "Groundsource miner returned HTTP $HTTP_CODE"
+            exit 1
+          fi

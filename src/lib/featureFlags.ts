@@ -13,6 +13,27 @@
 
 import { getFeatureReleaseDisplay as getPlatformFeatureReleaseDisplay } from './platformFacts';
 
+type ViteEnvLike = Record<string, string | boolean | undefined> & {
+  DEV?: boolean;
+};
+
+const viteEnv: ViteEnvLike = ((import.meta as ImportMeta & { env?: ViteEnvLike }).env ?? {});
+
+function getEnvValue(key: string): string | boolean | undefined {
+  if (typeof process !== 'undefined' && process.env && process.env[key] !== undefined) {
+    return process.env[key];
+  }
+  return viteEnv[key];
+}
+
+function isDevEnvironment(): boolean {
+  if (typeof viteEnv.DEV === 'boolean') return viteEnv.DEV;
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV) {
+    return process.env.NODE_ENV !== 'production';
+  }
+  return false;
+}
+
 export type FeatureStatus = 'production_ready' | 'acceptable' | 'partial' | 'deferred';
 
 export interface FeatureConfig {
@@ -29,7 +50,7 @@ export interface FeatureConfig {
 }
 
 export function isPhase4SurfaceEnabled(): boolean {
-  return import.meta.env.DEV || import.meta.env.VITE_ENABLE_PHASE4_EXPERIMENTS === 'true';
+  return isDevEnvironment() || getEnvValue('VITE_ENABLE_PHASE4_EXPERIMENTS') === 'true';
 }
 
 function parseBooleanFlag(raw: string | boolean | undefined, fallback = false): boolean {
@@ -38,15 +59,15 @@ function parseBooleanFlag(raw: string | boolean | undefined, fallback = false): 
   return fallback;
 }
 
-export const TRAINED_DISPATCH_ENABLED = parseBooleanFlag(import.meta.env.VITE_TRAINED_DISPATCH_ENABLED, false);
-export const TRAINED_PV_FAULT_ENABLED = parseBooleanFlag(import.meta.env.VITE_TRAINED_PV_FAULT_ENABLED, false);
+export const TRAINED_DISPATCH_ENABLED = parseBooleanFlag(getEnvValue('VITE_TRAINED_DISPATCH_ENABLED'), false);
+export const TRAINED_PV_FAULT_ENABLED = parseBooleanFlag(getEnvValue('VITE_TRAINED_PV_FAULT_ENABLED'), false);
 
 export function isTrainedDispatchEnabled(): boolean {
-  return parseBooleanFlag(import.meta.env.VITE_TRAINED_DISPATCH_ENABLED, TRAINED_DISPATCH_ENABLED);
+  return parseBooleanFlag(getEnvValue('VITE_TRAINED_DISPATCH_ENABLED'), TRAINED_DISPATCH_ENABLED);
 }
 
 export function isTrainedPvFaultEnabled(): boolean {
-  return parseBooleanFlag(import.meta.env.VITE_TRAINED_PV_FAULT_ENABLED, TRAINED_PV_FAULT_ENABLED);
+  return parseBooleanFlag(getEnvValue('VITE_TRAINED_PV_FAULT_ENABLED'), TRAINED_PV_FAULT_ENABLED);
 }
 
 export function getFeatureReleaseDisplay(
@@ -448,8 +469,8 @@ export function isFeatureEnabled(featureId: string): boolean {
   }
   
   // In development, allow override via environment variable
-  if (import.meta.env.DEV) {
-    const envOverride = import.meta.env[`VITE_FEATURE_${featureId.toUpperCase()}`];
+  if (isDevEnvironment()) {
+    const envOverride = getEnvValue(`VITE_FEATURE_${featureId.toUpperCase()}`);
     if (envOverride !== undefined) {
       return envOverride === 'true';
     }
@@ -535,7 +556,7 @@ export function validateFeatureFlags(): { valid: boolean; errors: string[] } {
 }
 
 // Log deployment stats on module load
-if (import.meta.env.DEV) {
+if (isDevEnvironment()) {
   const stats = getDeploymentStats();
   console.log('🚀 Feature Flag System Initialized');
   console.log('📊 Deployment Stats:', stats);

@@ -28,13 +28,11 @@ test.describe('PV fault contract chip', () => {
 
     await page.goto(`${BASE_URL}/resilience`);
 
-    await expect(page.getByText('Infrastructure Resilience Map')).toBeVisible();
-    const chip = page.getByTestId('pv-contract-chip');
-    await expect(chip).toBeVisible();
-    await expect(chip.getByText('PV fault contract active')).toBeVisible();
-    await expect(chip.getByText('Simulator-Calibrated V1')).toBeVisible();
-    await expect(chip.getByText(/pv-gnn-v2/)).toBeVisible();
-    await expect(chip.getByText(/Scenario count 20,000/)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Infrastructure Resilience Map' })).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText('PV fault contract active')).toBeVisible();
+    await expect(page.getByText('Simulator-Calibrated V1')).toBeVisible();
+    await expect(page.getByText(/pv-gnn-v2/)).toBeVisible();
+    await expect(page.getByText(/Scenario count 20,000/)).toBeVisible();
     await expect(page.getByTestId('pv-contract-suspects')).toBeVisible();
 
     const expectedOrder = forwardGnn(

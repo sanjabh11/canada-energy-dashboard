@@ -1,0 +1,175 @@
+name: Model Retrain Dispatcher
+
+on:
+  workflow_dispatch:
+    inputs:
+      model_key:
+        description: Model key to retrain
+        required: false
+        default: pinn-dispatch-v2
+        type: string
+      domain:
+        description: Forecast domain that triggered the retrain request
+        required: false
+        default: load
+        type: string
+      province:
+        description: Province or market scope for the retrain request
+        required: false
+        default: AB
+        type: string
+      status:
+        description: Upstream drift status
+        required: false
+        default: drift_detected
+        type: string
+      recommendation:
+        description: Human-readable retrain recommendation
+        required: false
+        default: Drift threshold exceeded; refresh the calibrated artifact.
+        type: string
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve retrain route
+        id: route
+        run: |
+          model_key="${{ github.event.inputs.model_key }}"
+          if [ -z "$model_key" ]; then
+            model_key="pinn-dispatch-v2"
+          fi
+
+          case "$model_key" in
+            pinn-dispatch-v2)
+              echo "model_kind=dispatch" >> "$GITHUB_OUTPUT"
+              ;;
+            pv-gnn-v2)
+              echo "model_kind=pv_fault" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "model_kind=skip" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
+
+          echo "model_key=$model_key" >> "$GITHUB_OUTPUT"
+
+      - name: Report unsupported model key
+        if: steps.route.outputs.model_kind == 'skip'
+        run: |
+          echo "Skipping retrain for unsupported model key: ${{ steps.route.outputs.model_key }}"
+          echo "Supported keys: pinn-dispatch-v2, pv-gnn-v2"
+
+      - name: Setup Python
+        if: steps.route.outputs.model_kind != 'skip'
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        if: steps.route.outputs.model_kind != 'skip'
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r training/requirements.txt
+
+      - name: Prepare dispatch output directories
+        if: steps.route.outputs.model_kind == 'dispatch'
+        run: |
+          mkdir -p training/dispatch_pinn/out
+
+      - name: Generate dispatch scenarios
+        if: steps.route.outputs.model_kind == 'dispatch'
+        run: |
+          python -m training.dispatch_pinn.generate_scenarios \
+            --out training/dispatch_pinn/out/scenarios.jsonl \
+            --manifest training/dispatch_pinn/out/manifest.json \
+            --count 5000 \
+            --seed 42
+
+      - name: Train dispatch artifact
+        if: steps.route.outputs.model_kind == 'dispatch'
+        run: |
+          python -m training.dispatch_pinn.train \
+            --input training/dispatch_pinn/out/scenarios.jsonl \
+            --out-weights src/lib/modelWeights/dispatch-pinn-v2.json \
+            --out-metrics training/dispatch_pinn/out/metrics.json \
+            --count 5000 \
+            --seed 42 \
+            --epochs 800 \
+            --hidden-dim 64 \
+            --learning-rate 0.004
+
+      - name: Evaluate dispatch artifact
+        if: steps.route.outputs.model_kind == 'dispatch'
+        run: |
+          python -m training.dispatch_pinn.eval \
+            --weights src/lib/modelWeights/dispatch-pinn-v2.json \
+            --input training/dispatch_pinn/out/scenarios.jsonl \
+            --out-report training/dispatch_pinn/out/eval.json \
+            --out-fixture tests/fixtures/dispatch-pinn-conformance.json \
+            --seed 42
+
+      - name: Prepare PV output directories
+        if: steps.route.outputs.model_kind == 'pv_fault'
+        run: |
+          mkdir -p training/pv_fault_gnn/out
+
+      - name: Generate PV scenarios
+        if: steps.route.outputs.model_kind == 'pv_fault'
+        run: |
+          python -m training.pv_fault_gnn.generate_scenarios \
+            --out training/pv_fault_gnn/out/scenarios.jsonl \
+            --manifest training/pv_fault_gnn/out/manifest.json \
+            --count 20000 \
+            --seed 42
+
+      - name: Train PV artifact
+        if: steps.route.outputs.model_kind == 'pv_fault'
+        run: |
+          python -m training.pv_fault_gnn.train \
+            --input training/pv_fault_gnn/out/scenarios.jsonl \
+            --out-weights src/lib/modelWeights/pv-gnn-v2.json \
+            --out-metrics training/pv_fault_gnn/out/metrics.json \
+            --count 20000 \
+            --seed 42
+
+      - name: Evaluate PV artifact
+        if: steps.route.outputs.model_kind == 'pv_fault'
+        run: |
+          python -m training.pv_fault_gnn.eval \
+            --weights src/lib/modelWeights/pv-gnn-v2.json \
+            --input training/pv_fault_gnn/out/scenarios.jsonl \
+            --out-report training/pv_fault_gnn/out/eval.json \
+            --out-fixture tests/fixtures/pv-gnn-conformance.json \
+            --seed 42
+
+      - name: Publish artifact ledger entry
+        if: steps.route.outputs.model_kind != 'skip'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GIT_COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if [ "${{ steps.route.outputs.model_kind }}" = "dispatch" ]; then
+            node scripts/record-artifact.mjs --weights src/lib/modelWeights/dispatch-pinn-v2.json
+          else
+            node scripts/record-artifact.mjs --weights src/lib/modelWeights/pv-gnn-v2.json
+          fi
+
+      - name: Upload retrain artifacts
+        if: steps.route.outputs.model_kind != 'skip'
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrain-${{ steps.route.outputs.model_key }}-${{ github.run_number }}
+          path: |
+            src/lib/modelWeights
+            training/dispatch_pinn/out
+            training/pv_fault_gnn/out
+          if-no-files-found: error

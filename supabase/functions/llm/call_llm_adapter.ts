@@ -10,7 +10,9 @@ function buildPrompt(messages: Msg[]): string {
   return messages.map(m => `[${(m.role || 'user').toUpperCase()}]\n${m.content}`).join('\n\n');
 }
 
-async function callGoogleGeminiNative({ messages, model, maxTokens }: { messages: Msg[]; model?: string; maxTokens: number; }): Promise<string | Record<string, unknown>> {
+async function callGoogleGeminiNative(
+  { messages, model, maxTokens, responseMimeType, thinkingBudget }: { messages: Msg[]; model?: string; maxTokens: number; responseMimeType?: string; thinkingBudget?: number; },
+): Promise<string | Record<string, unknown>> {
   const mdl = model || Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
   const apiKey = Deno.env.get('GEMINI_API_KEY') || Deno.env.get('GOOGLE_API_KEY');
   const oauthBearer = Deno.env.get('GEMINI_OAUTH_BEARER');
@@ -23,6 +25,8 @@ async function callGoogleGeminiNative({ messages, model, maxTokens }: { messages
     generationConfig: {
       temperature: 0.2,
       maxOutputTokens: maxTokens,
+      ...(responseMimeType ? { responseMimeType } : {}),
+      ...(typeof thinkingBudget === 'number' ? { thinkingConfig: { thinkingBudget } } : {}),
     },
   };
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(mdl)}:generateContent`;
@@ -36,14 +40,23 @@ async function callGoogleGeminiNative({ messages, model, maxTokens }: { messages
   }
   const json = await resp.json();
   // Parse common Gemini shapes
+  const candidateParts = Array.isArray(json?.candidates?.[0]?.content?.parts)
+    ? json.candidates[0].content.parts
+        .map((part: Record<string, unknown>) => typeof part?.text === 'string' ? part.text : '')
+        .filter(Boolean)
+        .join('\n')
+    : '';
   const textOut = (json?.candidates?.[0]?.content?.text)
+    ?? candidateParts
     ?? (json?.output?.[0]?.content?.text)
     ?? json?.text
     ?? JSON.stringify(json);
   return textOut;
 }
 
-async function callOpenAIGateway({ messages, model, maxTokens }: { messages: Msg[]; model?: string; maxTokens: number; }): Promise<string | Record<string, unknown>> {
+async function callOpenAIGateway(
+  { messages, model, maxTokens }: { messages: Msg[]; model?: string; maxTokens: number; responseMimeType?: string; thinkingBudget?: number; },
+): Promise<string | Record<string, unknown>> {
   const apiUrl = Deno.env.get('GEMINI_API_URL');
   const apiKey = Deno.env.get('GEMINI_API_KEY');
   const mdl = model || Deno.env.get('GEMINI_MODEL') || 'gemini-2.5-flash';
@@ -63,10 +76,12 @@ async function callOpenAIGateway({ messages, model, maxTokens }: { messages: Msg
   return JSON.stringify(json);
 }
 
-export async function callLLM({ messages, model, maxTokens = 800 }: { messages: Array<{role: string; content: string}>; model?: string; maxTokens?: number; }): Promise<string | Record<string, unknown>> {
+export async function callLLM(
+  { messages, model, maxTokens = 800, responseMimeType, thinkingBudget }: { messages: Array<{role: string; content: string}>; model?: string; maxTokens?: number; responseMimeType?: string; thinkingBudget?: number; },
+): Promise<string | Record<string, unknown>> {
   const provider = (Deno.env.get('GEMINI_PROVIDER') || 'google').toLowerCase();
   if (provider === 'google') {
-    return await callGoogleGeminiNative({ messages, model, maxTokens });
+    return await callGoogleGeminiNative({ messages, model, maxTokens, responseMimeType, thinkingBudget });
   }
-  return await callOpenAIGateway({ messages, model, maxTokens });
+  return await callOpenAIGateway({ messages, model, maxTokens, responseMimeType, thinkingBudget });
 }

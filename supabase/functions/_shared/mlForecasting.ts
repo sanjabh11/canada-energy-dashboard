@@ -82,11 +82,13 @@ export function buildMeta(params: {
   trainedAt?: string;
 }) {
   const generatedAt = params.generatedAt ?? new Date().toISOString();
-  const freshestSourceDate = params.dataSources
+  const orderedSourceDates = params.dataSources
     .map((source) => source.lastUpdated)
     .filter((value): value is string => Boolean(value))
-    .sort()
-    .at(-1);
+    .sort();
+  const freshestSourceDate = orderedSourceDates.length > 0
+    ? orderedSourceDates[orderedSourceDates.length - 1]
+    : undefined;
   const staleAfterDays = params.staleAfterDays ?? 90;
   const stalenessStatus = freshestSourceDate
     ? daysBetween(freshestSourceDate, generatedAt) > staleAfterDays ? 'stale' : 'fresh'

@@ -4,8 +4,12 @@ vi.mock('../../src/lib/jobExecutionLog', () => ({
   logFallbackEvent: vi.fn().mockResolvedValue(undefined),
 }));
 
+vi.mock('../../src/lib/edge', () => ({
+  fetchEdgePostJson: vi.fn().mockRejectedValue(new Error('edge unavailable')),
+}));
+
 import { logFallbackEvent } from '../../src/lib/jobExecutionLog';
-import { runMlForecast } from '../../src/lib/mlForecastingClient';
+import { ingestGroundsourceEvents, runMlForecast } from '../../src/lib/mlForecastingClient';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -69,5 +73,21 @@ describe('mlForecastingClient pv_fault routing', () => {
     expect(result.data.meta.training_data_profile).toBe('simulator-calibrated');
     expect(result.data.meta.claim_label).toBe('validated');
     expect(logFallbackEvent).not.toHaveBeenCalled();
+  });
+});
+
+describe('mlForecastingClient groundsource routing', () => {
+  it('returns a heuristic fallback payload when the edge call fails', async () => {
+    const result = await ingestGroundsourceEvents({
+      source_group: 'utility_public',
+      max_items: 2,
+    });
+
+    expect(result.source).toBe('local_fallback');
+    expect(result.data.extraction_mode).toBe('heuristic');
+    expect(result.data.fallback_reason).toBe('edge_function_unavailable');
+    expect(result.data.meta.claim_label).toBe('advisory');
+    expect(result.data.meta.is_fallback).toBe(true);
+    expect(result.data.event_count).toBe(0);
   });
 });

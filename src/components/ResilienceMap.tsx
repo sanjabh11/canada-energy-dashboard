@@ -142,6 +142,7 @@ export const ResilienceMap: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isFallbackData, setIsFallbackData] = useState<boolean>(false);
   const [intelligenceEvents, setIntelligenceEvents] = useState<any[]>([]);
+  const [groundsourceSnapshot, setGroundsourceSnapshot] = useState<any | null>(null);
 
   const loadFallbackData = useCallback(async (reason?: string) => {
     const fallbackAssetsRaw = await realDataService.getInfrastructureAssets();
@@ -323,10 +324,12 @@ export const ResilienceMap: React.FC = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!isEdgeFetchEnabled()) return () => { cancelled = true; };
     ingestGroundsourceEvents({ source_group: 'utility_public', max_items: 2 })
       .then(({ data }) => {
-        if (!cancelled) setIntelligenceEvents(data.events ?? []);
+        if (!cancelled) {
+          setIntelligenceEvents(data.events ?? []);
+          setGroundsourceSnapshot(data);
+        }
       })
       .catch((err) => console.warn('Groundsource miner unavailable:', err));
     return () => { cancelled = true; };
@@ -548,12 +551,34 @@ export const ResilienceMap: React.FC = () => {
           </div>
         )}
 
-        {intelligenceEvents.length > 0 && (
-          <div className="mb-4 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900">
+        {(groundsourceSnapshot || intelligenceEvents.length > 0) && (
+          <div className="mb-4 rounded-lg border border-cyan-200 bg-cyan-50 p-3 text-sm text-cyan-900" data-testid="groundsource-provenance">
             <strong>Groundsource intelligence:</strong> {intelligenceEvents.length} public utility/policy event(s) extracted from allowlisted sources.
-            <div className="mt-1 text-xs text-cyan-800">
-              {intelligenceEvents.slice(0, 2).map((event) => event.summary).join(' | ')}
+            {intelligenceEvents.length > 0 ? (
+              <div className="mt-1 text-xs text-cyan-800">
+                {intelligenceEvents.slice(0, 2).map((event) => event.summary).join(' | ')}
+              </div>
+            ) : (
+              <div className="mt-1 text-xs text-cyan-800">
+                No structured events were extracted in this run; the resilience map is retaining provenance only.
+              </div>
+            )}
+            <div className="mt-1 text-[11px] text-cyan-700">
+              Extraction mode: {groundsourceSnapshot?.extraction_mode ?? 'unknown'} ·
+              LLM sources: {groundsourceSnapshot?.llm_source_count ?? 0} ·
+              Heuristic sources: {groundsourceSnapshot?.heuristic_source_count ?? 0} ·
+              Source count: {groundsourceSnapshot?.source_count ?? 0}
             </div>
+            {groundsourceSnapshot?.fallback_reason && (
+              <div className="mt-1 text-[11px] text-cyan-700">
+                Fallback reason: {groundsourceSnapshot.fallback_reason}
+              </div>
+            )}
+            {groundsourceSnapshot?.meta?.claim_label && (
+              <div className="mt-1 text-[11px] text-cyan-700">
+                Claim label: {groundsourceSnapshot.meta.claim_label}
+              </div>
+            )}
             {latestIntelligenceVintage && (
               <div className="mt-1 text-[11px] text-cyan-700">
                 Latest vintage: {new Date(latestIntelligenceVintage).toLocaleString()}

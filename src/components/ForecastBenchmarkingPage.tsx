@@ -6,7 +6,7 @@ import { DataFreshnessBadge } from './DataFreshnessBadge';
 import { DATA_SNAPSHOT_DATE, DATA_SNAPSHOT_LABEL } from '../lib/aesoService';
 import { Link } from 'react-router-dom';
 import { runMlForecast } from '../lib/mlForecastingClient';
-import { fetchMarketSpikeTrainingWindow } from '../lib/timeseriesSource';
+import { fetchGasBasisTrainingWindow, fetchMarketSpikeTrainingWindow } from '../lib/timeseriesSource';
 import { getLatestRetainedFeatures } from '../lib/featureRankingsSource';
 
 const ForecastBenchmarkingPage: React.FC = () => {
@@ -14,6 +14,7 @@ const ForecastBenchmarkingPage: React.FC = () => {
   const [province, setProvince] = useState('ON');
   const [mlRun, setMlRun] = useState<any>(null);
   const [marketSpikeRun, setMarketSpikeRun] = useState<any>(null);
+  const [gasBasisRun, setGasBasisRun] = useState<any>(null);
   const [retainedFeatures, setRetainedFeatures] = useState<string[]>([]);
 
   const provinces = [
@@ -67,6 +68,35 @@ const ForecastBenchmarkingPage: React.FC = () => {
     });
     return () => { cancelled = true; };
   }, [province]);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchGasBasisTrainingWindow(730).then((trainingRows) => {
+      const latest = trainingRows.at(-1);
+      return runMlForecast({
+        domain: 'gas_basis',
+        province: 'AB',
+        horizon_hours: 24,
+        scenario: {
+          aecoCadPerGj: latest?.aecoCadPerGj ?? 1.62,
+          henryHubCadPerGj: latest?.henryHubCadPerGj ?? 3.08,
+          pipelineCurtailmentPct: latest?.pipelineCurtailmentPct ?? 8,
+          storageDeficitPct: latest?.storageDeficitPct ?? 11,
+          temperatureC: latest?.temperatureC ?? -14,
+          basisLag1: latest?.basisLag1 ?? 1.42,
+          basisLag7: latest?.basisLag7 ?? 1.38,
+          historyRows: trainingRows,
+          backtestRows: trainingRows.slice(-Math.max(30, Math.floor(trainingRows.length / 4))),
+          sourceProfile: trainingRows.length > 0 ? 'real' : 'synthetic',
+        },
+      });
+    }).then(({ data }) => {
+      if (!cancelled) setGasBasisRun(data);
+    }).catch(() => {
+      if (!cancelled) setGasBasisRun(null);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -248,6 +278,54 @@ const ForecastBenchmarkingPage: React.FC = () => {
             </div>
             <p className="mt-3 text-xs text-amber-200">
               Training profile: {marketSpikeRun.meta.training_data_profile ?? 'unknown'} · claim {marketSpikeRun.meta.claim_label ?? 'estimated'} · calibration {marketSpikeRun.meta.calibration_status ?? 'uncalibrated'}
+            </p>
+          </div>
+        )}
+
+        {gasBasisRun?.analysis && (
+          <div className="bg-emerald-950/30 border border-emerald-500/30 rounded-xl p-5 mb-8">
+            <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+              <div>
+                <h2 className="text-white font-semibold mb-1">AECO vs Henry Hub Basis Benchmark</h2>
+                <p className="text-sm text-slate-300">
+                  Alberta-focused gas-basis screen sourced from the existing `gas_basis_series` corpus when rows are available.
+                </p>
+              </div>
+              <p className="text-xs text-emerald-200">
+                {gasBasisRun.meta.model_version} · widening risk {(Number(gasBasisRun.analysis.wideningRisk ?? 0) * 100).toFixed(0)}%
+              </p>
+            </div>
+            <div className="mt-4 grid md:grid-cols-4 gap-3 text-sm">
+              <div className="rounded-lg border border-emerald-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Predicted spread</div>
+                <div className="text-white font-semibold">{Number(gasBasisRun.analysis.predictedSpreadCadPerGj ?? 0).toFixed(3)} CAD/GJ</div>
+              </div>
+              <div className="rounded-lg border border-emerald-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Dominant drivers</div>
+                <div className="text-white font-semibold">{(gasBasisRun.analysis.drivers ?? []).join(', ') || 'n/a'}</div>
+              </div>
+              <div className="rounded-lg border border-emerald-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Backtest</div>
+                <div className="text-emerald-100">
+                  {gasBasisRun.meta.evaluation_summary
+                    ? `MAE ${(gasBasisRun.meta.evaluation_summary.mae ?? 0).toFixed(3)} · RMSE ${(gasBasisRun.meta.evaluation_summary.rmse ?? 0).toFixed(3)}`
+                    : 'Backtest summary unavailable'}
+                </div>
+              </div>
+              <div className="rounded-lg border border-emerald-500/20 bg-slate-900/40 p-3">
+                <div className="text-slate-400">Directional accuracy</div>
+                <div className="text-white font-semibold">
+                  {gasBasisRun.meta.evaluation_summary?.directional_accuracy != null
+                    ? `${(gasBasisRun.meta.evaluation_summary.directional_accuracy * 100).toFixed(0)}%`
+                    : 'n/a'}
+                </div>
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-emerald-200">
+              Training profile: {gasBasisRun.meta.training_data_profile ?? 'unknown'} · claim {gasBasisRun.meta.claim_label ?? 'estimated'} · calibration {gasBasisRun.meta.calibration_status ?? 'uncalibrated'}
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              This benchmark remains Alberta-focused even when another province is selected above because AECO-C vs Henry Hub is the governing gas-basis spread used in the source corpus.
             </p>
           </div>
         )}

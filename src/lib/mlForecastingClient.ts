@@ -222,8 +222,15 @@ export function ingestGroundsourceEvents(
     input,
     () => ({
       source_group: input.source_group ?? 'utility_public',
+      source_count: 0,
+      llm_source_count: 0,
+      heuristic_source_count: 0,
+      extraction_mode: 'heuristic',
+      fallback_reason: 'edge_function_unavailable',
       documents: [],
       events: [],
+      event_count: 0,
+      provenance_score: 0,
       meta: {
         model_version: 'groundsource-miner-v1',
         generated_at: new Date().toISOString(),
@@ -234,6 +241,7 @@ export function ingestGroundsourceEvents(
         staleness_status: 'unknown',
         methodology: 'Groundsource Edge endpoint unavailable.',
         warnings: ['No public intelligence events were ingested in fallback mode.'],
+        claim_label: 'advisory',
       },
     }),
     options,

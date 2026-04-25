@@ -188,3 +188,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/api-v2-ccus/deno.json"
 entrypoint = "./functions/api-v2-ccus/index.ts"
+
+[functions.groundsource-miner]
+enabled = true
+verify_jwt = false
+import_map = "./functions/groundsource-miner/deno.json"
+entrypoint = "./functions/groundsource-miner/index.ts"

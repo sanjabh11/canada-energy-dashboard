@@ -2,5 +2,6 @@ numpy>=1.26,<3
 pandas>=2.2,<3
 pandapower>=2.14,<3
 pvlib>=0.10,<0.12
+scikit-learn>=1.5,<2
 supabase>=2.6,<3
 torch>=2.2,<3

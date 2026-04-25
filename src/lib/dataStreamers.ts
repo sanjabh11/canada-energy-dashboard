@@ -10,11 +10,6 @@
 
 import { getEdgeBaseUrl, getEdgeHeaders } from './config';
 import { fetchEdgeJson, fetchEdgeWithParams } from './edge';
-
-import provincialGenerationSample from '../../public/data/provincial_generation_sample.json';
-import ontarioDemandSample from '../../public/data/ontario_demand_sample.json';
-import ontarioPricesSample from '../../public/data/ontario_prices_sample.json';
-import hfElectricityDemandSample from '../../public/data/hf_electricity_demand_sample.json';
 // Types
 export interface StreamingOptions {
   limit?: number;
@@ -153,6 +148,22 @@ const getBaseDataUrl = () => {
   return `${base}data/`;
 };
 
+const sampleDataCache = new Map<string, Promise<unknown>>();
+
+async function loadSampleData<T>(fileName: string): Promise<T> {
+  const cached = sampleDataCache.get(fileName);
+  if (cached) return cached as Promise<T>;
+
+  const promise = fetch(`${getBaseDataUrl()}${fileName}`).then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`Failed to load sample dataset ${fileName}: ${response.status} ${response.statusText}`);
+    }
+    return await response.json();
+  });
+  sampleDataCache.set(fileName, promise);
+  return promise as Promise<T>;
+}
+
 /**
  * Shifts an array of records so their timestamps end at the current time.
  */
@@ -264,7 +275,9 @@ export class ProvincialGenerationStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<ProvincialGenerationRecord[]> {
-    const raw = provincialGenerationSample as Array<Omit<ProvincialGenerationRecord, 'source' | 'version' | 'ingested_at'>>;
+    const raw = await loadSampleData<Array<Omit<ProvincialGenerationRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'provincial_generation_sample.json',
+    );
     const now = new Date();
     const shifted = shiftTimestampsToNow(raw, 'date');
     return shifted.map((record, index) => ({
@@ -339,7 +352,9 @@ export class OntarioDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioDemandRecord[]> {
-    const raw = ontarioDemandSample as Array<Omit<OntarioDemandRecord, 'source' | 'version' | 'ingested_at'>>;
+    const raw = await loadSampleData<Array<Omit<OntarioDemandRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'ontario_demand_sample.json',
+    );
     const shifted = shiftTimestampsToNow(raw, 'datetime');
     return shifted.map((record, index) => ({
       ...record,
@@ -413,7 +428,9 @@ export class OntarioPricesStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<OntarioPricesRecord[]> {
-    const raw = ontarioPricesSample as Array<Omit<OntarioPricesRecord, 'source' | 'version' | 'ingested_at'>>;
+    const raw = await loadSampleData<Array<Omit<OntarioPricesRecord, 'source' | 'version' | 'ingested_at'>>>(
+      'ontario_prices_sample.json',
+    );
     const shifted = shiftTimestampsToNow(raw, 'datetime');
     return shifted.map((record, index) => ({
       ...record,
@@ -491,7 +508,9 @@ export class HFElectricityDemandStreamer extends BaseDataStreamer {
   }
 
   async loadFallbackData(): Promise<HFElectricityDemandRecord[]> {
-    const raw = hfElectricityDemandSample as Array<HFElectricityDemandRecord & { datetime: string }>;
+    const raw = await loadSampleData<Array<HFElectricityDemandRecord & { datetime: string }>>(
+      'hf_electricity_demand_sample.json',
+    );
     const shifted = shiftTimestampsToNow(raw, 'datetime');
     return shifted.map((record) => ({
       ...record,

@@ -27,6 +27,7 @@ import { evaluateForecastDrift, runMlForecast } from '../lib/mlForecastingClient
 import { backtestRareEventResampling } from '../lib/advancedForecasting';
 import { fetchGasBasisTrainingWindow } from '../lib/timeseriesSource';
 import { DISPATCH_INPUT_WIDTH } from '../lib/modelInference';
+import { DEFAULT_WEAK_GRID_FIXTURE_KEY, getWeakGridFixture } from '../lib/weakGridFixtures';
 
 // ============================================================================
 // TYPES
@@ -52,6 +53,7 @@ export const DemandForecastDashboard: React.FC = () => {
   const [mlDomain, setMlDomain] = useState<'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit'>('load');
   const [mlInsights, setMlInsights] = useState<any>(null);
   const [driftAssessment, setDriftAssessment] = useState<any>(null);
+  const weakGridFixture = useMemo(() => getWeakGridFixture(DEFAULT_WEAK_GRID_FIXTURE_KEY), []);
 
   const stats = useMemo(() => computeDemandStats(data), [data]);
 
@@ -230,21 +232,10 @@ export const DemandForecastDashboard: React.FC = () => {
                 }
                 : mlDomain === 'short_circuit'
                   ? {
-                    shortCircuitLevelKa: 5.4,
-                    minimumShortCircuitKa: 8,
-                    inverterPenetrationPct: 42,
-                    reserveMarginPercent: 6,
-                    topology: {
-                      nodes: [
-                        { id: 'pincher-1', shortCircuitKa: 5.2 },
-                        { id: 'pincher-2', shortCircuitKa: 6.1 },
-                        { id: 'pincher-3', shortCircuitKa: 8.8 },
-                      ],
-                      edges: [
-                        { fromNodeId: 'pincher-1', toNodeId: 'pincher-2', limitMw: 180, currentMw: 166 },
-                        { fromNodeId: 'pincher-2', toNodeId: 'pincher-3', limitMw: 210, currentMw: 154 },
-                      ],
-                    },
+                    ...weakGridFixture.scenario,
+                    fixtureKey: weakGridFixture.key,
+                    fixtureLabel: weakGridFixture.label,
+                    sourceMode: weakGridFixture.sourceMode,
                   }
                   : {
                     demandMw: forecastPoints[0]?.forecast_mw,
@@ -271,7 +262,7 @@ export const DemandForecastDashboard: React.FC = () => {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Forecast failed');
     }
-  }, [data, driftAssessment, forecaster, horizonHours, mlDomain]);
+  }, [data, driftAssessment, forecaster, horizonHours, mlDomain, weakGridFixture]);
 
   const tabs: { key: TabType; label: string; icon: React.ReactNode }[] = [
     { key: 'overview', label: 'Overview', icon: <BarChart3 className="h-4 w-4" /> },
@@ -382,12 +373,14 @@ export const DemandForecastDashboard: React.FC = () => {
                 setHorizonHours={setHorizonHours}
                 onRunForecast={handleRunForecast}
                 metrics={metrics}
-              mlDomain={mlDomain}
-              setMlDomain={setMlDomain}
-              mlInsights={mlInsights}
-              driftAssessment={driftAssessment}
-            />
-          )}
+                mlDomain={mlDomain}
+                setMlDomain={setMlDomain}
+                mlInsights={mlInsights}
+                driftAssessment={driftAssessment}
+                weakGridFixtureLabel={weakGridFixture.label}
+                weakGridFixtureNote={weakGridFixture.note}
+              />
+            )}
             {activeTab === 'decomposition' && (
               <DecompositionTab seasonalProfile={seasonalProfile} data={data} />
             )}
@@ -614,7 +607,19 @@ function OverviewTab({ stats, metrics, data }: {
   );
 }
 
-function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast, metrics, mlDomain, setMlDomain, mlInsights, driftAssessment }: {
+function ForecastTab({
+  predictions,
+  horizonHours,
+  setHorizonHours,
+  onRunForecast,
+  metrics,
+  mlDomain,
+  setMlDomain,
+  mlInsights,
+  driftAssessment,
+  weakGridFixtureLabel,
+  weakGridFixtureNote,
+}: {
   predictions: ForecastPoint[];
   horizonHours: number;
   setHorizonHours: (h: number) => void;
@@ -624,6 +629,8 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
   setMlDomain: (domain: 'load' | 'price_spike' | 'solar' | 'wind' | 'gas_basis' | 'byop_load' | 'pv_fault' | 'policy_overlay' | 'short_circuit') => void;
   mlInsights: any;
   driftAssessment: any;
+  weakGridFixtureLabel: string;
+  weakGridFixtureNote: string;
 }) {
   const chartData = useMemo(() =>
     predictions.slice(0, 168).map(p => ({
@@ -859,6 +866,11 @@ function ForecastTab({ predictions, horizonHours, setHorizonHours, onRunForecast
               <div className="mt-3 text-xs text-amber-200">
                 AESO rule mappings: {(mlInsights.analysis.ruleMappings ?? []).filter((rule: any) => rule.triggered).map((rule: any) => rule.ruleLabel).join(', ') || 'none'}
               </div>
+              {mlDomain === 'short_circuit' && (
+                <div className="mt-2 text-xs text-slate-400">
+                  Scenario source: {weakGridFixtureLabel} · {weakGridFixtureNote}
+                </div>
+              )}
             </div>
           )}
           {mlInsights.analysis?.faultClass && (

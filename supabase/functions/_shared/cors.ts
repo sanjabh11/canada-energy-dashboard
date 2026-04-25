@@ -1,3 +1,4 @@
+declare const Deno: { env: { get(name: string): string | undefined } };
 /**
  * Shared CORS Utility for Supabase Edge Functions
  * 

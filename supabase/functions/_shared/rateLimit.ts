@@ -1,3 +1,4 @@
+declare const Deno: { env: { get(name: string): string | undefined } };
 /**
  * Shared Rate Limiting and API Usage Logging Utility
  * 
