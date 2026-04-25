@@ -144,7 +144,7 @@ function forecastGasBasisSpread(input: {
     featureWeights,
     drivers,
     backtest: {
-      sampleCount: backtestPredictions.length,
+      sample_count: backtestPredictions.length,
       maeCadPerGj: round(mean(backtestResiduals.map((value) => Math.abs(value))), 4),
       rmseCadPerGj: round(Math.sqrt(mean(backtestResiduals.map((value) => value ** 2))), 4),
       directionalAccuracy: round(directionalAccuracy, 4),
@@ -277,12 +277,12 @@ function analyzePvFaultGraph(input: {
   })).sort((left, right) => right.riskScore - left.riskScore);
   const topScore = scores[0]?.riskScore ?? 0;
   return {
-    modelVersion: 'pv-gnn-v1',
+    modelVersion: 'graph-message-passing-pv-fault-v2',
     topSuspects: scores.slice(0, 5),
     topEdges: topEdges.slice(0, 5),
     faultClass: topScore >= 0.75 ? 'localized_pv_fault' : topScore >= 0.45 ? 'regional_derating' : 'healthy_cluster',
     confidenceScore: round(topScore, 4),
-    methodology: 'Graph message-passing localization over inverter, voltage, and output deviations.',
+    methodology: 'Graph message-passing localization over inverter, voltage, and output deviations with honest non-learned labeling.',
   };
 }
 
@@ -381,6 +381,151 @@ function evaluateWeakGridShortCircuit(input: {
   };
 }
 
+type SpikeTrainingRow = {
+  observed_at: string;
+  province: string;
+  poolPriceCadPerMwh: number;
+  demandMw: number;
+  reserveMarginPercent: number;
+  windGenerationMw: number;
+  temperatureC: number;
+  spike: number;
+  sourceName: string;
+};
+
+function spikeRiskScore(row: SpikeTrainingRow): number {
+  const rules = [
+    row.poolPriceCadPerMwh >= 700,
+    row.reserveMarginPercent <= 5,
+    row.demandMw >= 11000,
+    row.windGenerationMw <= 250,
+    row.temperatureC <= -25 || row.temperatureC >= 30,
+  ];
+  return rules.filter(Boolean).length / rules.length;
+}
+
+function inferSpikeTrainingProfile(rows: SpikeTrainingRow[]): 'synthetic' | 'mixed' | 'real' {
+  if (rows.length === 0) return 'synthetic';
+  const hasSource = rows.every((row) => Boolean(row.sourceName));
+  const hasObservedLabels = rows.every((row) => Number.isFinite(row.spike));
+  if (hasSource && hasObservedLabels) return 'real';
+  if (hasSource || hasObservedLabels) return 'mixed';
+  return 'synthetic';
+}
+
+function computeAuc(pairs: Array<{ score: number; actual: number }>): number {
+  const positives = pairs.filter((pair) => pair.actual === 1);
+  const negatives = pairs.filter((pair) => pair.actual === 0);
+  if (positives.length === 0 || negatives.length === 0) return 0.5;
+  let wins = 0;
+  let ties = 0;
+  for (const positive of positives) {
+    for (const negative of negatives) {
+      if (positive.score > negative.score) wins += 1;
+      else if (positive.score === negative.score) ties += 1;
+    }
+  }
+  return (wins + ties * 0.5) / (positives.length * negatives.length);
+}
+
+function buildSpikeEvaluationSummary(rows: SpikeTrainingRow[]) {
+  const evaluationRows = rows.length > 6 ? rows.slice(Math.floor(rows.length * 0.8)) : rows;
+  const pairs = evaluationRows.map((row) => ({
+    score: spikeRiskScore(row),
+    actual: row.spike,
+  }));
+  const truePositive = pairs.filter((pair) => pair.score >= 0.5 && pair.actual === 1).length;
+  const falsePositive = pairs.filter((pair) => pair.score >= 0.5 && pair.actual === 0).length;
+  const falseNegative = pairs.filter((pair) => pair.score < 0.5 && pair.actual === 1).length;
+  const calibrationBins = Array.from({ length: 5 }, (_, index) => {
+    const lower = index / 5;
+    const upper = (index + 1) / 5;
+    const binPairs = pairs.filter((pair) => pair.score >= lower && (index === 4 ? pair.score <= upper : pair.score < upper));
+    return {
+      bin: index + 1,
+      predictedProbability: binPairs.length > 0 ? binPairs.reduce((sum, pair) => sum + pair.score, 0) / binPairs.length : 0,
+      observedRate: binPairs.length > 0 ? binPairs.filter((pair) => pair.actual === 1).length / binPairs.length : 0,
+      count: binPairs.length,
+    };
+  });
+  const calibrationGap = calibrationBins.reduce((sum, bin) => sum + Math.abs(bin.predictedProbability - bin.observedRate), 0) / Math.max(1, calibrationBins.length);
+  const calibrationStatus: 'calibrated' | 'uncalibrated' | 'drifting' = calibrationGap <= 0.12
+    ? 'calibrated'
+    : calibrationGap <= 0.2
+      ? 'drifting'
+      : 'uncalibrated';
+  const trainingProfile = inferSpikeTrainingProfile(rows);
+  const precision = truePositive / Math.max(1, truePositive + falsePositive);
+  const recall = truePositive / Math.max(1, truePositive + falseNegative);
+  const auc = computeAuc(pairs);
+  const claimLabel: 'estimated' | 'advisory' | 'validated' = trainingProfile === 'real' && auc >= 0.72 && precision >= 0.6
+    ? 'validated'
+    : trainingProfile === 'mixed'
+      ? 'advisory'
+      : 'estimated';
+
+  return {
+    trainingProfile,
+    calibrationStatus,
+    claimLabel,
+    evaluationSummary: {
+      sample_count: pairs.length,
+      precision,
+      recall,
+      auc,
+    },
+    calibrationBins,
+  };
+}
+
+function toSpikeTrainingRows(rows: Array<Record<string, unknown>>): SpikeTrainingRow[] {
+  return rows.map((row) => {
+    const spikeLabel = row.spike_label ?? row.spike ?? (
+      Number(row.pool_price_cad_per_mwh) >= 1000
+      || Number(row.reserve_margin_percent) <= 5
+      || (Number(row.demand_mw) >= 11000 && Number(row.wind_generation_mw) <= 250)
+      || Number(row.temperature_c) <= -25
+      || Number(row.temperature_c) >= 30
+    );
+
+    return {
+      observed_at: String(row.observed_at ?? row.timestamp ?? new Date().toISOString()),
+      province: String(row.province ?? 'AB').toUpperCase(),
+      poolPriceCadPerMwh: Number(row.pool_price_cad_per_mwh ?? row.poolPriceCadPerMwh ?? 0),
+      demandMw: Number(row.demand_mw ?? row.demandMw ?? 0),
+      reserveMarginPercent: Number(row.reserve_margin_percent ?? row.reserveMarginPercent ?? 0),
+      windGenerationMw: Number(row.wind_generation_mw ?? row.windGenerationMw ?? 0),
+      temperatureC: Number(row.temperature_c ?? row.temperatureC ?? 0),
+      spike: spikeLabel ? 1 : 0,
+      sourceName: String(row.source_name ?? row.sourceName ?? 'market_spike_series'),
+    };
+  });
+}
+
+async function fetchMarketSpikeTrainingRows(province: string): Promise<SpikeTrainingRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('market_spike_series')
+    .select('*')
+    .eq('province', province)
+    .order('observed_at', { ascending: true })
+    .limit(730);
+  if (error || !Array.isArray(data)) return [];
+  return toSpikeTrainingRows(data as Array<Record<string, unknown>>);
+}
+
+async function fetchGasBasisTrainingRows(province: string) {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from('gas_basis_series')
+    .select('*')
+    .eq('province', province)
+    .order('observed_at', { ascending: true })
+    .limit(730);
+  if (error || !Array.isArray(data)) return [];
+  return data as Array<Record<string, unknown>>;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return handleCorsOptions(req);
   const rl = applyRateLimit(req, "ml-forecast");
@@ -398,6 +543,14 @@ serve(async (req) => {
   const horizonHours = Math.min(168, Math.max(1, Number(body.horizon_hours ?? body.horizonHours ?? 24)));
   const now = new Date();
   const scenario = body.scenario ?? {};
+  let trainingDataProfile: 'real' | 'mixed' | 'synthetic' | undefined;
+  let evaluationSummary: { sample_count: number; precision?: number; recall?: number; auc?: number; mae?: number; rmse?: number; directional_accuracy?: number } | undefined;
+  let calibrationStatus: 'calibrated' | 'uncalibrated' | 'drifting' | undefined;
+  let claimLabel: 'estimated' | 'advisory' | 'validated' | undefined;
+  let dataSources: Array<{ name: string; url?: string; lastUpdated?: string }> = [
+    { name: 'Existing weather/load/AESO feature adapters' },
+  ];
+  let isFallback = true;
   const sampleRows = [
     { temperature_c: -15, demand_mw: 11500, reserve_margin_percent: 4, wind_generation_mw: 150, target: 850 },
     { temperature_c: 5, demand_mw: 9800, reserve_margin_percent: 12, wind_generation_mw: 900, target: 120 },
@@ -438,11 +591,55 @@ serve(async (req) => {
   });
 
   if (domain === "price_spike") {
+    const sourceTrainingRows = Array.isArray(scenario.trainingRows) && scenario.trainingRows.length
+      ? toSpikeTrainingRows(scenario.trainingRows as Array<Record<string, unknown>>)
+      : await fetchMarketSpikeTrainingRows(province);
+    const spikeSummary = sourceTrainingRows.length > 0 ? buildSpikeEvaluationSummary(sourceTrainingRows) : null;
     analysis = priceSpike;
     modelVersion = priceSpike.modelVersion;
-    confidenceScore = Math.max(0.45, 1 - priceSpike.riskScore / 2);
+    confidenceScore = spikeSummary
+      ? Math.max(0.45, 1 - priceSpike.riskScore / 2 + Math.min(0.1, (spikeSummary.evaluationSummary.precision ?? 0) * 0.05))
+      : Math.max(0.45, 1 - priceSpike.riskScore / 2);
     methodology = "Bagged threshold ensemble calibrated for Alberta price-spike screening.";
+    trainingDataProfile = spikeSummary?.trainingProfile ?? 'synthetic';
+    evaluationSummary = spikeSummary?.evaluationSummary;
+    calibrationStatus = spikeSummary?.calibrationStatus;
+    claimLabel = spikeSummary?.claimLabel;
+    dataSources = sourceTrainingRows.length > 0
+      ? [{ name: 'AESO historical pool-price CSV', url: 'https://www.aeso.ca/', lastUpdated: sourceTrainingRows.at(-1)?.observed_at }]
+      : [{ name: 'Existing weather/load/AESO feature adapters' }];
+    isFallback = sourceTrainingRows.length === 0;
+    warnings = sourceTrainingRows.length > 0
+      ? [
+        'Source-backed Alberta pool-price history loaded from market_spike_series.',
+        ...(spikeSummary?.calibrationStatus === 'drifting' ? ['Spike calibration is drifting; review the threshold ensemble.'] : []),
+      ]
+      : ['Backtest against persistence and seasonal-naive baselines before claiming uplift.'];
   } else if (domain === "gas_basis") {
+    const sourceHistoryRowsRaw = Array.isArray(scenario.historyRows) && scenario.historyRows.length
+      ? scenario.historyRows as Array<Record<string, unknown>>
+      : await fetchGasBasisTrainingRows(province);
+    const sourceHistoryRows = sourceHistoryRowsRaw.map((row) => ({
+      observed_at: String(row.observed_at ?? row.timestamp ?? new Date().toISOString()),
+      aecoCadPerGj: Number(row.aeco_cad_per_gj ?? row.aecoCadPerGj ?? 0),
+      henryHubCadPerGj: Number(row.henry_hub_cad_per_gj ?? row.henryHubCadPerGj ?? 0),
+      pipelineCurtailmentPct: Number(row.pipeline_curtailment_pct ?? row.pipelineCurtailmentPct ?? 0),
+      storageDeficitPct: Number(row.storage_deficit_pct ?? row.storageDeficitPct ?? 0),
+      temperatureC: Number(row.temperature_c ?? row.temperatureC ?? 0),
+      basisLag1: Number(row.basis_lag1 ?? row.basisLag1 ?? 0),
+      basisLag7: Number(row.basis_lag7 ?? row.basisLag7 ?? 0),
+      spreadCadPerGj: Number.isFinite(Number(row.spread_cad_per_gj ?? row.spreadCadPerGj))
+        ? Number(row.spread_cad_per_gj ?? row.spreadCadPerGj)
+        : (
+          Number(row.henry_hub_cad_per_gj ?? row.henryHubCadPerGj ?? 0)
+          - Number(row.aeco_cad_per_gj ?? row.aecoCadPerGj ?? 0)
+          + (Number(row.pipeline_curtailment_pct ?? row.pipelineCurtailmentPct ?? 0) * 0.015)
+          + (Number(row.storage_deficit_pct ?? row.storageDeficitPct ?? 0) * 0.02)
+          + (Math.max(0, -Number(row.temperature_c ?? row.temperatureC ?? 0)) * 0.004)
+          + (Number(row.basis_lag1 ?? row.basisLag1 ?? 0) * 0.22)
+          + (Number(row.basis_lag7 ?? row.basisLag7 ?? 0) * 0.11)
+        ),
+    }));
     const gasBasis = forecastGasBasisSpread({
       aecoCadPerGj: Number(scenario.aecoCadPerGj ?? 1.65),
       henryHubCadPerGj: Number(scenario.henryHubCadPerGj ?? 3.05),
@@ -451,12 +648,45 @@ serve(async (req) => {
       temperatureC: Number(scenario.temperatureC ?? -12),
       basisLag1: Number(scenario.basisLag1 ?? 1.45),
       basisLag7: Number(scenario.basisLag7 ?? 1.4),
+      trainingRows: sourceHistoryRows.length > 0 ? sourceHistoryRows as any : Array.isArray(scenario.historyRows) ? scenario.historyRows as any : undefined,
+      backtestRows: Array.isArray(scenario.backtestRows) ? scenario.backtestRows as any : undefined,
+      sourceProfile: sourceHistoryRows.length > 0
+        ? 'real'
+        : (scenario.sourceProfile === 'real' || scenario.sourceProfile === 'mixed' || scenario.sourceProfile === 'synthetic')
+          ? scenario.sourceProfile
+          : Array.isArray(scenario.historyRows) ? 'mixed' : 'synthetic',
     });
     analysis = gasBasis;
     modelVersion = gasBasis.modelVersion;
     confidenceScore = Math.max(0.48, 1 - gasBasis.wideningRisk / 2);
     methodology = gasBasis.methodology;
-    warnings = ["Synthetic default corpus is used unless real AECO and Henry Hub history is supplied."];
+    trainingDataProfile = gasBasis.sourceProfile;
+    evaluationSummary = {
+      sample_count: gasBasis.backtest.sample_count,
+      mae: gasBasis.backtest.maeCadPerGj,
+      rmse: gasBasis.backtest.rmseCadPerGj,
+      directional_accuracy: gasBasis.backtest.directionalAccuracy,
+    };
+    calibrationStatus = gasBasis.backtest.sample_count > 0 && gasBasis.backtest.directionalAccuracy >= 0.6
+      ? 'calibrated'
+      : gasBasis.backtest.sample_count > 0
+        ? 'drifting'
+        : 'uncalibrated';
+    claimLabel = gasBasis.sourceProfile === 'real' && gasBasis.backtest.sample_count > 0
+      ? 'validated'
+      : gasBasis.sourceProfile === 'mixed'
+        ? 'advisory'
+        : 'estimated';
+    dataSources = sourceHistoryRows.length > 0
+      ? [{ name: 'NGX AECO daily close + EIA Henry Hub CSV', url: 'https://www.ngx.com/', lastUpdated: sourceHistoryRows.at(-1)?.observed_at }]
+      : [{ name: 'Existing weather/load/AESO feature adapters' }];
+    isFallback = sourceHistoryRows.length === 0;
+    warnings = sourceHistoryRows.length > 0
+      ? [
+        'Source-backed AECO/Henry Hub history loaded from gas_basis_series.',
+        ...(gasBasis.backtest.sample_count > 0 ? [] : ['Gas basis backtest history is empty; confidence should remain advisory.']),
+      ]
+      : ['Synthetic default corpus is used unless real AECO and Henry Hub history is supplied.'];
     predictions = predictions.map((prediction, index) => {
       const drift = Math.sin(((index + 1) / 24) * Math.PI * 2) * 0.05;
       const spread = Math.max(0, gasBasis.predictedSpreadCadPerGj + drift);
@@ -487,6 +717,8 @@ serve(async (req) => {
     confidenceScore = 0.81;
     methodology = byop.methodology;
     warnings = ["BYOP results are scenario-based and do not replace site-specific interconnection studies."];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = byop.aggregateLoadSeries.map((point) => ({
       valid_at: new Date(now.getTime() + (point.hour + 1) * 60 * 60 * 1000).toISOString(),
       target_name: "net_import",
@@ -515,6 +747,8 @@ serve(async (req) => {
     confidenceScore = pvFault.confidenceScore;
     methodology = pvFault.methodology;
     warnings = ["Graph fault localization should be validated against feeder events before automated dispatch actions."];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = [];
   } else if (domain === "policy_overlay") {
     const overlay = calculatePolicyOverlayRisk({
@@ -531,6 +765,8 @@ serve(async (req) => {
     confidenceScore = Math.max(0.5, 1 - overlay.strandedAssetRiskScore / 2);
     methodology = overlay.methodology;
     warnings = ["Policy overlay is scenario-based and should be paired with project-specific regulatory review."];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = Array.from({ length: Math.min(horizonHours, 12) }, (_, index) => {
       const year = Number(scenario.currentYear ?? new Date().getFullYear()) + index;
       const risk = clamp(overlay.strandedAssetRiskScore + index * 0.03);
@@ -560,6 +796,8 @@ serve(async (req) => {
     confidenceScore = Math.max(0.45, 1 - weakGrid.weakGridRiskScore / 2);
     methodology = weakGrid.methodology;
     warnings = weakGrid.warnings.length ? weakGrid.warnings : ["Weak-grid screening is advisory and not a replacement for protection studies."];
+    trainingDataProfile = 'synthetic';
+    claimLabel = 'advisory';
     predictions = [];
   }
 
@@ -567,10 +805,14 @@ serve(async (req) => {
     modelVersion,
     validAt: predictions[0]?.valid_at ?? now.toISOString(),
     confidenceScore,
-    dataSources: [{ name: "Existing weather/load/AESO feature adapters" }],
-    isFallback: true,
+    dataSources,
+    isFallback,
     methodology,
     warnings,
+    trainingDataProfile,
+    evaluationSummary,
+    calibrationStatus,
+    claimLabel,
   });
 
   let runId: string | null = null;
