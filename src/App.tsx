@@ -69,6 +69,7 @@ const CreditBankingDashboard = React.lazy(() => import('./components/CreditBanki
 const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastBenchmarkingPage'));
 // P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
+const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Trust & Transparency Dashboards
@@ -221,6 +222,8 @@ const router = createBrowserRouter(
         { path: '/demand-forecast', element: <DemandForecastDashboard /> },
         { path: '/load-forecast', element: <DemandForecastDashboard /> },
         { path: '/ontario-forecast', element: <DemandForecastDashboard /> },
+        { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
+        { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
 
         // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
         { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },

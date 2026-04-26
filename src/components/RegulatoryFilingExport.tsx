@@ -236,7 +236,15 @@ export const RegulatoryFilingExport: React.FC = () => {
         </div>
 
         {/* Cross-links */}
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
+        <div className="mt-8 grid md:grid-cols-4 gap-4">
+          <Link
+            to="/utility-demand-forecast"
+            className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-amber-500/50 transition-colors group"
+          >
+            <Scale className="h-5 w-5 text-cyan-400 mb-2" />
+            <h4 className="text-white font-medium text-sm group-hover:text-amber-400">Utility Forecast Lane</h4>
+            <p className="text-slate-500 text-xs mt-1">Run utility-specific planning cases and export filing-ready load packs</p>
+          </Link>
           <Link
             to="/demand-forecast"
             className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-amber-500/50 transition-colors group"

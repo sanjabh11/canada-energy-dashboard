@@ -418,7 +418,12 @@ export const AssetHealthDashboard: React.FC = () => {
         )}
 
         {/* Cross-links */}
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
+        <div className="mt-8 grid md:grid-cols-4 gap-4">
+          <Link to="/utility-demand-forecast" className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-cyan-500/50 transition-colors group">
+            <Building2 className="h-5 w-5 text-sky-400 mb-2" />
+            <h4 className="text-white font-medium text-sm group-hover:text-cyan-400">Utility Forecast Lane</h4>
+            <p className="text-slate-500 text-xs mt-1">Tie asset decisions back to utility demand growth and planning scenarios</p>
+          </Link>
           <Link to="/regulatory-filing" className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-cyan-500/50 transition-colors group">
             <FileText className="h-5 w-5 text-amber-400 mb-2" />
             <h4 className="text-white font-medium text-sm group-hover:text-cyan-400">Regulatory Filing</h4>

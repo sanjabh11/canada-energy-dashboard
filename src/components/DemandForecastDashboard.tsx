@@ -412,7 +412,15 @@ export const DemandForecastDashboard: React.FC = () => {
         )}
 
         {/* Cross-links */}
-        <div className="mt-8 grid md:grid-cols-3 gap-4">
+        <div className="mt-8 grid md:grid-cols-4 gap-4">
+          <Link
+            to="/utility-demand-forecast"
+            className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-colors group"
+          >
+            <TrendingUp className="h-5 w-5 text-cyan-400 mb-2" />
+            <h4 className="text-white font-medium text-sm group-hover:text-emerald-400">Utility Forecast Lane</h4>
+            <p className="text-slate-500 text-xs mt-1">Upload-first utility demand planning without the advanced ML domains</p>
+          </Link>
           <Link
             to="/forecast-benchmarking"
             className="bg-slate-800 border border-slate-700 rounded-xl p-4 hover:border-emerald-500/50 transition-colors group"
