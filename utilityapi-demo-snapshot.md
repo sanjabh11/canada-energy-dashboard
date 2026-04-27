@@ -1,0 +1,121 @@
+- generic [ref=e3]:
+  - link "Skip to main content" [ref=e4] [cursor=pointer]:
+    - /url: "#main-content"
+  - region "Notifications alt+T"
+  - main [ref=e6]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - img [ref=e10]
+          - text: UtilityAPI DEMO only
+        - generic [ref=e12]:
+          - heading "UtilityAPI Demo Lane" [level=1] [ref=e13]
+          - paragraph [ref=e14]: Separate sales-demo route for UtilityAPI DEMO authorizations and Green Button XML replay. This surface does not unlock London Hydro or Alectra submission readiness.
+        - generic [ref=e15]:
+          - generic [ref=e16]: Not London Hydro readiness
+          - generic [ref=e17]: Not Alectra readiness
+          - generic [ref=e18]: 3-month live collection cap
+          - generic [ref=e19]: Fixture replay is fully client-bundled
+      - generic [ref=e20]:
+        - generic [ref=e21]: Current state
+        - generic [ref=e22]: "Status: idle"
+        - generic [ref=e23]: "Mode: none"
+        - generic [ref=e24]: "Edge live mode: reachable"
+        - generic [ref=e25]: "Operator auth: configured"
+        - generic [ref=e26]: "Operator session: required for live mode"
+        - generic [ref=e27]: "Auto phase: none"
+        - generic [ref=e28]: "Navigation flag: direct route only"
+    - generic [ref=e29]:
+      - generic [ref=e30]:
+        - generic [ref=e32]:
+          - heading "Demo controls" [level=2] [ref=e33]
+          - paragraph [ref=e34]: Live mode uses UtilityAPI DEMO only. Replay mode uses a bundled XML fixture and makes zero edge-network requests.
+        - button "Fixture Replay" [ref=e36] [cursor=pointer]:
+          - img [ref=e37]
+          - text: Fixture Replay
+        - generic [ref=e40]:
+          - generic [ref=e42]:
+            - heading "Operator Live Access" [level=3] [ref=e43]
+            - paragraph [ref=e44]: Fixture Replay stays public. Live UtilityAPI DEMO actions require a Supabase magic-link session and an allowlisted operator email.
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - text: Operator email
+              - textbox "Operator email" [ref=e47]:
+                - /placeholder: operator@company.com
+            - button "Email magic link" [ref=e48] [cursor=pointer]
+          - button "Continue with Fixture Replay" [ref=e50] [cursor=pointer]:
+            - img [ref=e51]
+            - text: Continue with Fixture Replay
+        - generic [ref=e54]: Live UtilityAPI controls stay hidden until an operator session is active. Public visitors can keep using Fixture Replay without any network dependency.
+        - generic [ref=e55]:
+          - generic [ref=e57]: 1. Auth pending
+          - generic [ref=e60]: 2. Meters discovered
+          - generic [ref=e63]: 3. Collecting history
+          - generic [ref=e66]: 4. Forecast ready
+      - complementary [ref=e68]:
+        - heading "Session metadata" [level=2] [ref=e69]
+        - generic [ref=e70]:
+          - generic [ref=e71]:
+            - term [ref=e72]: Session ID
+            - definition [ref=e73]: No active session
+          - generic [ref=e74]:
+            - term [ref=e75]: Referral
+            - definition [ref=e76]: Pending
+          - generic [ref=e77]:
+            - term [ref=e78]: Authorization UID
+            - definition [ref=e79]: Pending
+          - generic [ref=e80]:
+            - term [ref=e81]: Meter UIDs
+            - definition [ref=e82]: No meters yet
+          - generic [ref=e83]:
+            - term [ref=e84]: Collection duration
+            - definition [ref=e85]: Not activated
+          - generic [ref=e86]:
+            - term [ref=e87]: Next poll
+            - definition [ref=e88]: Not available
+          - generic [ref=e89]:
+            - term [ref=e90]: Terminal reason
+            - definition [ref=e91]: None
+          - generic [ref=e92]:
+            - term [ref=e93]: Storage model
+            - definition [ref=e94]: IndexedDB for XML/rows/package, sessionStorage pointer only
+        - generic [ref=e95]:
+          - button "Delete Session" [disabled] [ref=e96]:
+            - img [ref=e97]
+            - text: Delete Session
+          - button "Clear All Demo Sessions" [ref=e100] [cursor=pointer]:
+            - img [ref=e101]
+            - text: Clear All Demo Sessions
+        - generic [ref=e104]:
+          - generic [ref=e105]: Hold line
+          - paragraph [ref=e106]: This route does not write to utility connector account tables, does not modify submission readiness, and does not replace the London Hydro bridge program.
+          - link "Return to utility-demand-forecast" [ref=e107] [cursor=pointer]:
+            - /url: /utility-demand-forecast
+    - generic [ref=e108]:
+      - generic [ref=e109]:
+        - heading "Replay summary" [level=2] [ref=e110]
+        - generic [ref=e111]:
+          - generic [ref=e112]:
+            - generic [ref=e113]: Intervals
+            - generic [ref=e114]: "0"
+          - generic [ref=e115]:
+            - generic [ref=e116]: Peak demand
+            - generic [ref=e117]: Not ready
+          - generic [ref=e118]:
+            - generic [ref=e119]: Average demand
+            - generic [ref=e120]: Not ready
+          - generic [ref=e121]:
+            - generic [ref=e122]: Coverage end
+            - generic [ref=e123]: Not available
+        - generic [ref=e124]:
+          - generic [ref=e125]: Interval preview
+          - generic [ref=e126]: Run Fixture Replay or complete a live sync to render interval history.
+      - generic [ref=e127]:
+        - heading "Forecast surface" [level=2] [ref=e128]
+        - paragraph [ref=e129]: Uses the existing Ontario Green Button XML parser and utility forecast package builder. Parsed artifacts are persisted to IndexedDB under the active session id.
+        - generic [ref=e130]:
+          - generic [ref=e131]: Expected case preview
+          - generic [ref=e132]: Forecast artifacts appear here after XML parsing completes.
+        - generic [ref=e133]:
+          - generic [ref=e134]: Warnings
+          - paragraph [ref=e135]: No parser or forecast warnings recorded for the current session.
