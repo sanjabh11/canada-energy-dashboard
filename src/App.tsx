@@ -50,6 +50,7 @@ const WatchdogApp = React.lazy(() => import('./components/whop/WatchdogApp').the
 // Legal Pages (Whop Compliance - Criteria 14, 15)
 const PrivacyPolicy = React.lazy(() => import('./components/legal/PrivacyPolicy').then(m => ({ default: m.PrivacyPolicy })));
 const TermsOfService = React.lazy(() => import('./components/legal/TermsOfService').then(m => ({ default: m.TermsOfService })));
+const UtilitySecurityStatement = React.lazy(() => import('./components/legal/UtilitySecurityStatement').then(m => ({ default: m.UtilitySecurityStatement })));
 const RefundPolicy = React.lazy(() => import('./components/legal/RefundPolicy').then(m => ({ default: m.RefundPolicy })));
 // Enterprise (Bypasses Whop for B2B)
 const EnterprisePage = React.lazy(() => import('./components/enterprise/EnterprisePage').then(m => ({ default: m.EnterprisePage })));
@@ -70,6 +71,7 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 // P2-P4: Demand Forecasting, Regulatory Filing, Asset Health
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
+const UtilityApiDemoPage = React.lazy(() => import('./components/UtilityApiDemoPage'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Trust & Transparency Dashboards
@@ -224,6 +226,7 @@ const router = createBrowserRouter(
         { path: '/ontario-forecast', element: <DemandForecastDashboard /> },
         { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
         { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
+        { path: '/utilityapi-demo', element: <UtilityApiDemoPage /> },
 
         // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
         { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
@@ -261,6 +264,7 @@ const router = createBrowserRouter(
         { path: '/legal', element: <Navigate to="/privacy" replace /> },
         { path: '/privacy', element: <PrivacyPolicy /> },
         { path: '/terms', element: <TermsOfService /> },
+        { path: '/utility-security', element: <UtilitySecurityStatement /> },
         { path: '/refund', element: <RefundPolicy /> },
 
         // Enterprise (Bypasses Whop for B2B - whop_criterias.md Section 7)

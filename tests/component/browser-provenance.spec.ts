@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5173';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4175';
 
 // Edge function URL helper - ensures consistent URL construction
 const EDGE_BASE = `${BASE_URL}/functions/v1`;

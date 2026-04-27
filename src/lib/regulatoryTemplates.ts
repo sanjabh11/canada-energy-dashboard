@@ -116,6 +116,33 @@ export interface OEB_DSP_Reliability_Row {
   trend: 'improving' | 'stable' | 'declining';
 }
 
+export interface OEB_DSP_ScenarioMatrix_Row {
+  horizon_year: number;
+  scenario: 'low' | 'base' | 'high';
+  peak_demand_mw: number;
+  annual_energy_gwh: number;
+  delta_vs_base_mw: number;
+  reliability_proxy_score: number;
+  notes: string;
+}
+
+export interface AUC_DSP_DataSchedule_Row {
+  horizon_year: number;
+  geography_id: string;
+  geography_level: string;
+  peak_demand_mw: number;
+  annual_energy_gwh: number;
+  customer_count: number;
+  growth_rate_pct: number;
+  large_point_load_mw: number;
+  industrial_opt_out_mw: number;
+  der_offset_mw: number;
+  deferred_peak_load_mw: number;
+  reliability_proxy_score: number;
+  hosting_capacity_limit_mw: number;
+  notes: string;
+}
+
 // ============================================================================
 // TEMPLATE DEFINITIONS
 // ============================================================================
@@ -127,7 +154,9 @@ export type TemplateType =
   | 'rule005_schedule_22'
   | 'oeb_dsp_asset_condition'
   | 'oeb_dsp_load_forecast'
-  | 'oeb_dsp_reliability';
+  | 'oeb_dsp_reliability'
+  | 'oeb_dsp_scenario_matrix'
+  | 'auc_dsp_data_schedule';
 
 export interface TemplateDefinition {
   id: TemplateType;
@@ -305,6 +334,55 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
       'OEB targets based on 3rd quartile of Ontario LDC peer group performance.',
     ],
   },
+  oeb_dsp_scenario_matrix: {
+    id: 'oeb_dsp_scenario_matrix',
+    name: 'Scenario Matrix — Low / Base / High',
+    jurisdiction: 'Ontario',
+    regulation: 'OEB Chapter 5 DSP',
+    description: 'Side-by-side demand scenarios for planning and sensitivity review, aligned to low, base, and high growth assumptions.',
+    columns: [
+      { key: 'horizon_year', label: 'Horizon Year', type: 'number' },
+      { key: 'scenario', label: 'Scenario', type: 'string' },
+      { key: 'peak_demand_mw', label: 'Peak Demand (MW)', type: 'number' },
+      { key: 'annual_energy_gwh', label: 'Energy (GWh)', type: 'number' },
+      { key: 'delta_vs_base_mw', label: 'Delta vs Base (MW)', type: 'number' },
+      { key: 'reliability_proxy_score', label: 'Reliability Proxy Score', type: 'number' },
+      { key: 'notes', label: 'Notes', type: 'string' },
+    ],
+    notes: [
+      'Scenario matrix supports low, base, and high planning cases for sensitivity analysis and filing support.',
+      'Base scenario reflects the primary utility planning assumption pack; low and high cases must reference the same historical baseline.',
+      'Reliability proxy score is advisory and should be supported with feeder-specific engineering review for major capital decisions.',
+    ],
+  },
+  auc_dsp_data_schedule: {
+    id: 'auc_dsp_data_schedule',
+    name: 'Distribution Plan Data Schedule',
+    jurisdiction: 'Alberta',
+    regulation: 'AUC Distribution System Plan',
+    description: 'Planning data schedule for Alberta distribution-system submissions, including growth, reliability, DER, and large-load overlays.',
+    columns: [
+      { key: 'horizon_year', label: 'Horizon Year', type: 'number' },
+      { key: 'geography_id', label: 'Geography ID', type: 'string' },
+      { key: 'geography_level', label: 'Geography Level', type: 'string' },
+      { key: 'peak_demand_mw', label: 'Peak Demand (MW)', type: 'number' },
+      { key: 'annual_energy_gwh', label: 'Energy (GWh)', type: 'number' },
+      { key: 'customer_count', label: 'Customers', type: 'number' },
+      { key: 'growth_rate_pct', label: 'Growth Rate (%)', type: 'percent' },
+      { key: 'large_point_load_mw', label: 'Large Point-Load (MW)', type: 'number' },
+      { key: 'industrial_opt_out_mw', label: 'Industrial Opt-Out (MW)', type: 'number' },
+      { key: 'der_offset_mw', label: 'DER Offset (MW)', type: 'number' },
+      { key: 'deferred_peak_load_mw', label: 'Deferred Peak Load (MW)', type: 'number' },
+      { key: 'reliability_proxy_score', label: 'Reliability Proxy Score', type: 'number' },
+      { key: 'hosting_capacity_limit_mw', label: 'Hosting Capacity Limit (MW)', type: 'number' },
+      { key: 'notes', label: 'Notes', type: 'string' },
+    ],
+    notes: [
+      'Aligned to the Alberta distribution-system planning reporting direction introduced in Bulletin 2026-02.',
+      'Large point-load, industrial opt-out, and DER fields isolate non-organic drivers of system need.',
+      'Reliability proxy and hosting-capacity fields are advisory planning metrics and do not replace formal utility engineering studies.',
+    ],
+  },
 };
 
 // ============================================================================
@@ -391,6 +469,26 @@ export function generateSampleOEB_Reliability(): OEB_DSP_Reliability_Row[] {
   ];
 }
 
+export function generateSampleOEB_ScenarioMatrix(): OEB_DSP_ScenarioMatrix_Row[] {
+  return [
+    { horizon_year: 1, scenario: 'low', peak_demand_mw: 72.5, annual_energy_gwh: 315.2, delta_vs_base_mw: -2.8, reliability_proxy_score: 88, notes: 'Lower electrification and stronger DER offset.' },
+    { horizon_year: 1, scenario: 'base', peak_demand_mw: 75.3, annual_energy_gwh: 320.1, delta_vs_base_mw: 0, reliability_proxy_score: 84, notes: 'Base planning case.' },
+    { horizon_year: 1, scenario: 'high', peak_demand_mw: 79.4, annual_energy_gwh: 329.6, delta_vs_base_mw: 4.1, reliability_proxy_score: 78, notes: 'Higher committed loads and faster EV adoption.' },
+    { horizon_year: 5, scenario: 'low', peak_demand_mw: 78.1, annual_energy_gwh: 333.4, delta_vs_base_mw: -4.6, reliability_proxy_score: 84, notes: 'Lower growth sensitivity case.' },
+    { horizon_year: 5, scenario: 'base', peak_demand_mw: 82.7, annual_energy_gwh: 341.8, delta_vs_base_mw: 0, reliability_proxy_score: 79, notes: 'Base planning case.' },
+    { horizon_year: 5, scenario: 'high', peak_demand_mw: 89.6, annual_energy_gwh: 358.0, delta_vs_base_mw: 6.9, reliability_proxy_score: 72, notes: 'Large-load and electrification upside.' },
+  ];
+}
+
+export function generateSampleAucDspDataSchedule(): AUC_DSP_DataSchedule_Row[] {
+  return [
+    { horizon_year: 1, geography_id: 'AB-FEEDER-1', geography_level: 'feeder', peak_demand_mw: 24.5, annual_energy_gwh: 97.2, customer_count: 4800, growth_rate_pct: 1.7, large_point_load_mw: 6, industrial_opt_out_mw: 0, der_offset_mw: 1.4, deferred_peak_load_mw: 1.1, reliability_proxy_score: 82, hosting_capacity_limit_mw: 3.5, notes: 'Residential feeder with EV growth.' },
+    { horizon_year: 1, geography_id: 'AB-FEEDER-3', geography_level: 'feeder', peak_demand_mw: 28.8, annual_energy_gwh: 108.6, customer_count: 190, growth_rate_pct: 1.7, large_point_load_mw: 8, industrial_opt_out_mw: 2, der_offset_mw: 0.8, deferred_peak_load_mw: 0.9, reliability_proxy_score: 76, hosting_capacity_limit_mw: 4.5, notes: 'Industrial feeder with BYOP sensitivity.' },
+    { horizon_year: 5, geography_id: 'AB-FEEDER-1', geography_level: 'feeder', peak_demand_mw: 27.4, annual_energy_gwh: 102.4, customer_count: 5120, growth_rate_pct: 1.7, large_point_load_mw: 8, industrial_opt_out_mw: 0, der_offset_mw: 2.1, deferred_peak_load_mw: 1.4, reliability_proxy_score: 77, hosting_capacity_limit_mw: 3.5, notes: 'Peak review required before reinforcement deferral.' },
+    { horizon_year: 5, geography_id: 'AB-FEEDER-3', geography_level: 'feeder', peak_demand_mw: 32.5, annual_energy_gwh: 115.8, customer_count: 205, growth_rate_pct: 1.7, large_point_load_mw: 10, industrial_opt_out_mw: 3, der_offset_mw: 1.1, deferred_peak_load_mw: 1.0, reliability_proxy_score: 69, hosting_capacity_limit_mw: 4.5, notes: 'BYOP and industrial self-supply both materially affect planning case.' },
+  ];
+}
+
 // ============================================================================
 // EXPORT UTILITIES
 // ============================================================================
@@ -424,8 +522,10 @@ export function generateAllTemplatesZip(): { filename: string; content: string }
   return [
     { filename: 'AUC_Rule005_Schedule_4_2_Capital_Additions.csv', content: templateToCSV(REGULATORY_TEMPLATES.rule005_schedule_4_2, generateSampleRule005_4_2() as unknown as Record<string, unknown>[]) },
     { filename: 'AUC_Rule005_Schedule_10_Income_Statement.csv', content: templateToCSV(REGULATORY_TEMPLATES.rule005_schedule_10, generateSampleRule005_10() as unknown as Record<string, unknown>[]) },
+    { filename: 'AUC_DSP_Data_Schedule.csv', content: templateToCSV(REGULATORY_TEMPLATES.auc_dsp_data_schedule, generateSampleAucDspDataSchedule() as unknown as Record<string, unknown>[]) },
     { filename: 'OEB_DSP_Section_5_2_Asset_Condition.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_asset_condition, generateSampleOEB_AssetCondition() as unknown as Record<string, unknown>[]) },
     { filename: 'OEB_DSP_Section_5_3_Load_Forecast.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_load_forecast, generateSampleOEB_LoadForecast() as unknown as Record<string, unknown>[]) },
     { filename: 'OEB_DSP_Section_5_4_Reliability.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_reliability, generateSampleOEB_Reliability() as unknown as Record<string, unknown>[]) },
+    { filename: 'OEB_DSP_Scenario_Matrix.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_scenario_matrix, generateSampleOEB_ScenarioMatrix() as unknown as Record<string, unknown>[]) },
   ];
 }

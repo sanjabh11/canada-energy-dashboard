@@ -6,8 +6,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Shield, Mail, Database, Eye, Lock } from 'lucide-react';
+import { getPublicAppUrl } from '@/lib/config';
 
 export function PrivacyPolicy() {
+    const publicAppUrl = getPublicAppUrl() || 'https://<set-VITE_PUBLIC_APP_URL>';
+    const publicAppHostLabel = publicAppUrl.replace(/^https?:\/\//, '');
+
     return (
         <div className="min-h-screen bg-slate-900 text-slate-300">
             {/* Header */}
@@ -31,7 +35,7 @@ export function PrivacyPolicy() {
             <main className="max-w-4xl mx-auto px-6 py-12">
                 <div className="prose prose-invert prose-slate max-w-none">
                     <p className="text-slate-400 mb-8">
-                        <strong>Last Updated:</strong> December 2024
+                        <strong>Last Updated:</strong> April 2026
                     </p>
 
                     <section className="mb-10">
@@ -46,6 +50,8 @@ export function PrivacyPolicy() {
                         <ul className="space-y-2 mt-4">
                             <li><strong>Account Information:</strong> Email address (when provided for upgrades or newsletters)</li>
                             <li><strong>Usage Data:</strong> Quiz progress, settings preferences (stored locally in your browser)</li>
+                            <li><strong>Utility-Authorized Energy Data:</strong> Customer-authorized Green Button or utility batch interval history, connector metadata, and planning provenance used for utility demand forecasting workflows</li>
+                            <li><strong>Connector Security Records:</strong> Token-expiry metadata, revocation events, payload fingerprints, and audit logs required to prove authorization and disconnection behavior</li>
                             <li><strong>Payment Information:</strong> Processed securely by Whop.com or Stripe. We never see or store your credit card details.</li>
                         </ul>
                     </section>
@@ -58,9 +64,14 @@ export function PrivacyPolicy() {
                         <ul className="space-y-2">
                             <li>To provide and improve our energy intelligence services</li>
                             <li>To track your quiz progress and issue certificates</li>
+                            <li>To ingest, normalize, and analyze utility-authorized energy data for planning, benchmarking, and export workflows</li>
+                            <li>To honor authorization, revocation, retention, and audit obligations associated with Green Button and utility connector access</li>
                             <li>To send service-related communications (if you opt in)</li>
                             <li>To comply with legal obligations</li>
                         </ul>
+                        <p className="mt-4">
+                            We do <strong>not</strong> use utility-authorized customer data for unrelated model training, advertising, or onward sharing outside the customer-approved workflow.
+                        </p>
                     </section>
 
                     <section className="mb-10">
@@ -75,6 +86,9 @@ export function PrivacyPolicy() {
                         <p className="mt-4">
                             For users with accounts, data is stored securely on servers located in North America,
                             protected by industry-standard encryption (TLS 1.3, AES-256).
+                        </p>
+                        <p className="mt-4">
+                            Connector tokens are encrypted at rest. When a customer or utility revokes access, CEIP stops presenting the connector as live and purges stored token material once revocation is confirmed.
                         </p>
                     </section>
 
@@ -100,6 +114,15 @@ export function PrivacyPolicy() {
                                     </td>
                                 </tr>
                                 <tr className="border-b border-slate-800">
+                                    <td className="py-2">Supabase</td>
+                                    <td className="py-2">Secure data storage, edge functions, and connector audit custody</td>
+                                    <td className="py-2">
+                                        <a href="https://supabase.com/privacy" className="text-cyan-400 hover:underline" target="_blank" rel="noopener noreferrer">
+                                            supabase.com/privacy
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr className="border-b border-slate-800">
                                     <td className="py-2">AESO</td>
                                     <td className="py-2">Alberta Electricity Data</td>
                                     <td className="py-2">
@@ -107,6 +130,11 @@ export function PrivacyPolicy() {
                                             aeso.ca/privacy
                                         </a>
                                     </td>
+                                </tr>
+                                <tr className="border-b border-slate-800">
+                                    <td className="py-2">Ontario / Alberta Utilities</td>
+                                    <td className="py-2">Customer-authorized Green Button and utility data-sharing workflows</td>
+                                    <td className="py-2">Utility-specific Green Button and privacy terms apply</td>
                                 </tr>
                                 <tr className="border-b border-slate-800">
                                     <td className="py-2">Netlify</td>
@@ -129,6 +157,7 @@ export function PrivacyPolicy() {
                             <li>Request correction of inaccurate data</li>
                             <li>Request deletion of your data ("right to be forgotten")</li>
                             <li>Export your data in a portable format</li>
+                            <li>Revoke a utility data-sharing authorization and request purge of retained connector tokens</li>
                             <li>Opt out of marketing communications</li>
                         </ul>
                     </section>
@@ -165,8 +194,8 @@ export function PrivacyPolicy() {
                         </p>
                         <p className="mt-2">
                             <strong>Website:</strong>{' '}
-                            <a href="https://canada-energy-dashboard.netlify.app" className="text-cyan-400 hover:underline">
-                                canada-energy-dashboard.netlify.app
+                            <a href={publicAppUrl} className="text-cyan-400 hover:underline">
+                                {publicAppHostLabel}
                             </a>
                         </p>
                     </section>
@@ -182,8 +211,9 @@ export function PrivacyPolicy() {
                 </div>
 
                 {/* Footer links */}
-                <div className="mt-12 pt-8 border-t border-slate-800 flex gap-6">
+                <div className="mt-12 pt-8 border-t border-slate-800 flex gap-6 flex-wrap">
                     <Link to="/terms" className="text-cyan-400 hover:underline">Terms of Service</Link>
+                    <Link to="/utility-security" className="text-cyan-400 hover:underline">Utility Security Statement</Link>
                     <Link to="/" className="text-cyan-400 hover:underline">Home</Link>
                 </div>
             </main>

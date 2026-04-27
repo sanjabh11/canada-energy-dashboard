@@ -47,7 +47,12 @@ describe('utilityForecasting', () => {
     expect(forecastPackage.summary.granularity).toBe('hourly');
     expect(forecastPackage.benchmark.sample_size).toBeGreaterThan(0);
     expect(forecastPackage.cases.expected.yearly).toHaveLength(10);
+    expect(forecastPackage.scenario_matrix.base.label).toBe('expected');
     expect(forecastPackage.oeb_rows).toHaveLength(5);
+    expect(forecastPackage.reliability_proxy.horizon_scores).toHaveLength(10);
+    expect(forecastPackage.profiles_8760[0]?.points).toHaveLength(8760);
+    expect(forecastPackage.regulatory_exports.ontario.scenario_matrix_rows.length).toBeGreaterThan(0);
+    expect(forecastPackage.input_provenance_summary.live_surfaces.length).toBeGreaterThan(0);
     expect(forecastPackage.assumptions.length).toBeGreaterThanOrEqual(4);
   });
 
@@ -75,13 +80,17 @@ describe('utilityForecasting', () => {
       scenario: buildScenario('Ontario'),
       sourceLabel: 'ontario-monthly.csv',
       isSampleData: false,
+      sourceKind: 'green_button_cmd',
     });
 
     const csv = utilityForecastPackageToCsv(forecastPackage);
 
     expect(forecastPackage.summary.granularity).toBe('monthly');
     expect(csv).toContain('# Utility Demand Forecast Package');
+    expect(csv).toContain('reliability_proxy_horizon');
+    expect(csv).toContain('live_surface_source');
     expect(csv).toContain('expected');
+    expect(forecastPackage.input_provenance_summary.source_kind).toBe('green_button_cmd');
   });
 
   it('exports Alberta planning summaries with horizon rows', () => {
@@ -94,8 +103,27 @@ describe('utilityForecasting', () => {
 
     const csv = utilityForecastPackageToAlbertaCsv(forecastPackage);
 
-    expect(csv).toContain('# Alberta Utility Planning Summary');
-    expect(csv).toContain('1y');
-    expect(csv).toContain('10y');
+    expect(csv).toContain('# Alberta Distribution Plan Data Schedule');
+    expect(csv).toContain('horizon_year,geography_id,geography_level');
+    expect(csv).toContain('AB-FEEDER');
+  });
+
+  it('applies gross-load reconstitution when the input provides gross demand above net demand', () => {
+    const customCsv = [
+      'timestamp,geography_level,geography_id,customer_class,demand_mw,net_load_mw,gross_load_mw,customer_count',
+      '2025-01-01T00:00:00.000Z,feeder,ON-FEEDER-9,residential,10,10,12,1500',
+      '2025-01-01T01:00:00.000Z,feeder,ON-FEEDER-9,residential,10.2,10.2,12.1,1500',
+      '2025-01-01T02:00:00.000Z,feeder,ON-FEEDER-9,residential,10.4,10.4,12.3,1500',
+    ].join('\n');
+    const parsed = parseUtilityHistoricalLoadCsv(customCsv);
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: parsed.rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'gross-test.csv',
+      isSampleData: false,
+    });
+
+    expect(forecastPackage.input_provenance_summary.gross_reconstitution_applied).toBe(true);
+    expect(forecastPackage.input_provenance_summary.quality_counts.some((entry) => entry.flag === 'gross_reconstituted' && entry.count > 0)).toBe(true);
   });
 });

@@ -200,3 +200,9 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/model-monitor/deno.json"
 entrypoint = "./functions/model-monitor/index.ts"
+
+[functions.utilityapi-demo]
+enabled = true
+verify_jwt = false
+import_map = "./functions/utilityapi-demo/deno.json"
+entrypoint = "./functions/utilityapi-demo/index.ts"

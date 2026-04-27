@@ -1,5 +1,7 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const baseUrl = 'http://127.0.0.1:4175';
+
 /**
  * Playwright Configuration for Component Tests
  * 
@@ -30,7 +32,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for tests
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: baseUrl,
     
     // Collect trace on retry
     trace: 'on-first-retry',
@@ -87,16 +89,16 @@ export default defineConfig({
 
   // Run local dev server before starting tests
   webServer: {
-    command: 'pnpm run test:e2e:server',
+    command: 'npm run test:e2e:preview',
     env: {
       VITE_ENABLE_EDGE_FETCH: 'true',
       VITE_TRAINED_DISPATCH_ENABLED: 'true',
       VITE_TRAINED_PV_FAULT_ENABLED: 'true',
-      VITE_SUPABASE_URL: 'http://127.0.0.1:5173',
+      VITE_SUPABASE_URL: baseUrl,
       VITE_SUPABASE_ANON_KEY: 'test-key',
     },
-    url: 'http://127.0.0.1:5173',
+    url: baseUrl,
     reuseExistingServer: false,
-    timeout: 120 * 1000,
+    timeout: 240 * 1000,
   },
 });

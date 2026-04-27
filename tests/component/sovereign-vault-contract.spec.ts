@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5173';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4175';
 
 test.describe('Sovereign vault edge-v1 contract', () => {
   test('exports and re-imports an encrypted local vault snapshot', async ({ page }, testInfo) => {

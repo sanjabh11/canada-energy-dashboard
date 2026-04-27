@@ -1,12 +1,39 @@
 import { calculatePersistenceBaseline, calculateSeasonalNaiveBaseline } from './forecastBaselines';
 import { DemandForecaster, type DemandRecord, type ForecastMetrics } from './demandForecaster';
+import {
+  buildLiveSurfaceContract,
+  type LiveSurfaceContract,
+  type LiveSurfaceSourceKind,
+  UTILITY_ASSUMPTION_PACK_VERSION,
+} from './liveSurfaceContract';
 import { createProvenance, type ProvenanceMetadata } from './types/provenance';
-import type { OEB_DSP_LoadForecast_Row } from './regulatoryTemplates';
+import type {
+  AUC_DSP_DataSchedule_Row,
+  OEB_DSP_LoadForecast_Row,
+  OEB_DSP_Reliability_Row,
+  OEB_DSP_ScenarioMatrix_Row,
+} from './regulatoryTemplates';
 
 export type UtilityJurisdiction = 'Ontario' | 'Alberta';
 export type UtilityInputGranularity = 'hourly' | 'monthly';
 export type UtilityWeatherCase = 'median' | 'extreme';
 export type UtilityGeographyLevel = 'system' | 'substation' | 'feeder';
+export type UtilityInputSourceKind = LiveSurfaceSourceKind;
+export type UtilityStressTestMode = 'none' | 'polar_vortex' | 'heat_wave' | 'ice_storm';
+export type UtilityQualityFlag =
+  | 'duplicate_interval'
+  | 'negative_load'
+  | 'flatline_segment'
+  | 'impossible_spike'
+  | 'load_transfer_jump'
+  | 'customer_count_missing'
+  | 'missing_temperature'
+  | 'net_exceeds_gross'
+  | 'gross_reconstituted'
+  | 'vee_estimated'
+  | 'vee_edited'
+  | 'meter_gap_filled'
+  | 'telemetry_outage';
 
 export interface UtilityHistoricalLoadRow {
   timestamp: string;
@@ -19,6 +46,35 @@ export interface UtilityHistoricalLoadRow {
   net_load_mw?: number | null;
   gross_load_mw?: number | null;
   customer_count?: number | null;
+  source_system?: string;
+  feeder_id?: string;
+  substation_id?: string;
+  quality_flags?: UtilityQualityFlag[];
+  gross_reconstituted_mw?: number | null;
+}
+
+export interface UtilityLargePointLoad {
+  name: string;
+  geography_id: string;
+  geography_level: UtilityGeographyLevel;
+  mw: number;
+  load_factor_pct: number;
+}
+
+export interface UtilityIndustrialOptOut {
+  name: string;
+  geography_id: string;
+  geography_level: UtilityGeographyLevel;
+  mw: number;
+}
+
+export interface UtilityTouShiftRule {
+  name: string;
+  from_hour_start: number;
+  from_hour_end: number;
+  to_hour_start: number;
+  to_hour_end: number;
+  shift_pct: number;
 }
 
 export interface UtilityPlanningScenario {
@@ -33,6 +89,11 @@ export interface UtilityPlanningScenario {
   demand_response_reduction_mw: number;
   demand_response_shift_pct: number;
   capacity_buffer_pct: number;
+  large_point_loads?: UtilityLargePointLoad[];
+  industrial_opt_outs?: UtilityIndustrialOptOut[];
+  tou_shift_rules?: UtilityTouShiftRule[];
+  stress_test_mode?: UtilityStressTestMode;
+  hosting_capacity_limit_mw?: number;
 }
 
 export interface UtilityDataSummary {
@@ -66,6 +127,12 @@ export interface UtilityForecastCase {
   yearly: UtilityForecastYear[];
 }
 
+export interface UtilityScenarioMatrix {
+  low: UtilityForecastCase;
+  base: UtilityForecastCase;
+  high: UtilityForecastCase;
+}
+
 export interface UtilityGeographyAllocation {
   horizon_year: number;
   geography_id: string;
@@ -73,6 +140,70 @@ export interface UtilityGeographyAllocation {
   customer_class: string;
   share_pct: number;
   peak_demand_mw: number;
+  constrained: boolean;
+}
+
+export interface Utility8760ProfilePoint {
+  timestamp: string;
+  forecast_mw: number;
+  point_load_mw: number;
+  industrial_opt_out_mw: number;
+  der_offset_mw: number;
+  demand_response_mw: number;
+  tou_shift_delta_mw: number;
+}
+
+export interface Utility8760Profile {
+  case_label: UtilityForecastCase['label'];
+  horizon_year: number;
+  points: Utility8760ProfilePoint[];
+}
+
+export interface UtilityReliabilityHorizon {
+  horizon_year: number;
+  score: number;
+  band: 'stable' | 'watch' | 'strained' | 'critical';
+  peak_utilization_pct: number;
+  reserve_headroom_mw: number;
+  weather_stress_pct: number;
+}
+
+export interface UtilityReliabilityProxy {
+  current_score: number;
+  horizon_scores: UtilityReliabilityHorizon[];
+  baseline_saidi_minutes: number;
+  baseline_saifi: number;
+}
+
+export interface UtilityHostingCapacityWarning {
+  horizon_year: number;
+  geography_id: string;
+  geography_level: UtilityGeographyLevel;
+  projected_der_mw: number;
+  limit_mw: number;
+  severity: 'warning' | 'critical';
+  message: string;
+}
+
+export interface UtilityInputProvenanceSummary {
+  source_kind: UtilityInputSourceKind;
+  assumption_pack_version: string;
+  live_surfaces: LiveSurfaceContract[];
+  quality_counts: Array<{ flag: UtilityQualityFlag; count: number }>;
+  gross_reconstitution_applied: boolean;
+  source_systems: string[];
+  total_quality_flags: number;
+}
+
+export interface UtilityRegulatoryExports {
+  ontario: {
+    load_forecast_rows: OEB_DSP_LoadForecast_Row[];
+    reliability_rows: OEB_DSP_Reliability_Row[];
+    scenario_matrix_rows: OEB_DSP_ScenarioMatrix_Row[];
+  };
+  alberta: {
+    data_schedule_rows: AUC_DSP_DataSchedule_Row[];
+  };
 }
 
 export interface UtilityForecastPackage {
@@ -88,8 +219,15 @@ export interface UtilityForecastPackage {
     expected: UtilityForecastCase;
     high: UtilityForecastCase;
   };
+  scenario_matrix: UtilityScenarioMatrix;
   highlighted_years: number[];
   geography_allocations: UtilityGeographyAllocation[];
+  reliability_proxy: UtilityReliabilityProxy;
+  profiles_8760: Utility8760Profile[];
+  deferred_peak_load_mw: number;
+  hosting_capacity_warnings: UtilityHostingCapacityWarning[];
+  input_provenance_summary: UtilityInputProvenanceSummary;
+  regulatory_exports: UtilityRegulatoryExports;
   assumptions: string[];
   warnings: string[];
   oeb_rows: OEB_DSP_LoadForecast_Row[];
@@ -105,6 +243,15 @@ interface AggregatedIntervalPoint {
   demand_mw: number;
   customer_count: number;
   temperature_c: number | null;
+  gross_demand_mw: number;
+  quality_flags: UtilityQualityFlag[];
+}
+
+interface UtilityQualityAssessment {
+  qualityCounts: Array<{ flag: UtilityQualityFlag; count: number }>;
+  warnings: string[];
+  grossReconstitutionApplied: boolean;
+  totalFlags: number;
 }
 
 const TEMPLATE_HEADERS = [
@@ -118,6 +265,9 @@ const TEMPLATE_HEADERS = [
   'net_load_mw',
   'gross_load_mw',
   'customer_count',
+  'source_system',
+  'feeder_id',
+  'substation_id',
 ] as const;
 
 const HEADER_ALIASES: Record<string, string[]> = {
@@ -131,9 +281,13 @@ const HEADER_ALIASES: Record<string, string[]> = {
   net_load_mw: ['net_load_mw', 'net_mw'],
   gross_load_mw: ['gross_load_mw', 'gross_mw'],
   customer_count: ['customer_count', 'customers', 'account_count'],
+  source_system: ['source_system', 'system_source', 'connector'],
+  feeder_id: ['feeder_id', 'feeder_name'],
+  substation_id: ['substation_id', 'substation_name'],
 };
 
 const DEFAULT_PLANNING_YEARS = [1, 5, 10];
+const DEFAULT_HOSTING_CAPACITY_LIMIT_MW = 3.5;
 
 export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
   const lines = text
@@ -176,6 +330,13 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
     const geographyId = readColumn(columns, columnIndexes.geography_id) || 'system';
     const geographyLevel = normalizeGeographyLevel(readColumn(columns, columnIndexes.geography_level), geographyId);
     const customerClass = readColumn(columns, columnIndexes.customer_class) || 'mixed';
+    const netLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.net_load_mw));
+    const grossLoad = parseOptionalNumeric(readColumn(columns, columnIndexes.gross_load_mw));
+    const qualityFlags: UtilityQualityFlag[] = [];
+    if (demandMw < 0) qualityFlags.push('negative_load');
+    if (!Number.isFinite(Number(readColumn(columns, columnIndexes.temperature_c)))) qualityFlags.push('missing_temperature');
+    if (!readColumn(columns, columnIndexes.customer_count)) qualityFlags.push('customer_count_missing');
+    if (netLoad !== null && grossLoad !== null && netLoad > grossLoad) qualityFlags.push('net_exceeds_gross');
 
     rows.push({
       timestamp: new Date(timestamp).toISOString(),
@@ -185,9 +346,13 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
       demand_mw: demandMw,
       weather_zone: readColumn(columns, columnIndexes.weather_zone) || undefined,
       temperature_c: parseOptionalNumeric(readColumn(columns, columnIndexes.temperature_c)),
-      net_load_mw: parseOptionalNumeric(readColumn(columns, columnIndexes.net_load_mw)),
-      gross_load_mw: parseOptionalNumeric(readColumn(columns, columnIndexes.gross_load_mw)),
+      net_load_mw: netLoad,
+      gross_load_mw: grossLoad,
       customer_count: parseOptionalNumeric(readColumn(columns, columnIndexes.customer_count)),
+      source_system: readColumn(columns, columnIndexes.source_system) || undefined,
+      feeder_id: readColumn(columns, columnIndexes.feeder_id) || undefined,
+      substation_id: readColumn(columns, columnIndexes.substation_id) || undefined,
+      quality_flags: qualityFlags,
     });
   }
 
@@ -214,6 +379,9 @@ export function utilityRowsToCsv(rows: UtilityHistoricalLoadRow[]): string {
     row.net_load_mw ?? '',
     row.gross_load_mw ?? '',
     row.customer_count ?? '',
+    row.source_system ?? '',
+    row.feeder_id ?? '',
+    row.substation_id ?? '',
   ].join(','));
 
   return [header, ...body].join('\n');
@@ -279,6 +447,9 @@ export function generateUtilityLoadSampleRows(
         net_load_mw: round(netLoad, 3),
         gross_load_mw: round(grossLoad, 3),
         customer_count: feeder.customerCount,
+        source_system: 'starter_dataset',
+        feeder_id: feeder.geography_id,
+        quality_flags: [],
       });
     }
   }
@@ -291,15 +462,19 @@ export function buildUtilityForecastPackage(params: {
   scenario: UtilityPlanningScenario;
   sourceLabel: string;
   isSampleData?: boolean;
+  sourceKind?: UtilityInputSourceKind;
+  liveSurfaces?: LiveSurfaceContract[];
 }): UtilityForecastPackage {
-  const rows = sortRows(params.rows);
+  const rows = prepareRows(sortRows(params.rows));
+  const qualityAssessment = assessInputQuality(rows);
   const highlightedYears = uniqueSortedYears(params.scenario.planning_horizon_years ?? DEFAULT_PLANNING_YEARS);
   const summary = summarizeRows(rows);
   const aggregated = aggregateIntervals(rows);
   const benchmark = buildBenchmarkMetrics(aggregated, summary.granularity);
-  const weatherFactor = estimateWeatherFactor(aggregated, params.scenario.weather_case);
+  const weatherFactor = estimateWeatherFactor(aggregated, params.scenario.weather_case, params.scenario.stress_test_mode ?? 'none');
   const maxYear = Math.max(...highlightedYears, 10);
   const capacityMw = round(summary.baseline_peak_mw * (1 + params.scenario.capacity_buffer_pct / 100), 2);
+  const sourceKind = params.sourceKind ?? (params.isSampleData ? 'fallback_starter' : 'uploaded_historical');
 
   const expectedCase = buildForecastCase({
     label: 'expected',
@@ -332,12 +507,46 @@ export function buildUtilityForecastPackage(params: {
     capacityMw,
   });
 
-  const geographyAllocations = reconcileGeographyAllocations(rows, expectedCase, highlightedYears);
+  const scenarioMatrix: UtilityScenarioMatrix = {
+    low: lowCase,
+    base: expectedCase,
+    high: highCase,
+  };
+  const deferredPeakLoadMw = computeDeferredPeakLoad(params.scenario);
+  const geographyAllocations = reconcileGeographyAllocations(
+    rows,
+    expectedCase,
+    highlightedYears,
+    params.scenario,
+    params.scenario.hosting_capacity_limit_mw ?? DEFAULT_HOSTING_CAPACITY_LIMIT_MW,
+  );
+  const reliabilityProxy = buildReliabilityProxy(
+    expectedCase,
+    capacityMw,
+    weatherFactor,
+    qualityAssessment,
+    params.scenario.stress_test_mode ?? 'none',
+  );
   const oebRows = buildOebRows(params.scenario.jurisdiction, expectedCase, capacityMw);
+  const reliabilityRows = buildReliabilityRows(reliabilityProxy);
+  const scenarioMatrixRows = buildScenarioMatrixRows(scenarioMatrix, reliabilityProxy);
+  const albertaDspRows = buildAucDspRows(expectedCase, geographyAllocations, params.scenario, reliabilityProxy);
+  const hostingCapacityWarnings = buildHostingCapacityWarnings(
+    geographyAllocations,
+    params.scenario,
+    highlightedYears,
+  );
+  const profiles8760 = build8760Profiles(
+    aggregated,
+    summary,
+    scenarioMatrix,
+    highlightedYears,
+    params.scenario,
+  );
   const warnings: string[] = [];
 
   if (summary.granularity === 'monthly') {
-    warnings.push('Monthly input runs on a planning-timescale model; hourly operational detail is not inferred.');
+    warnings.push('Monthly input runs on a planning-timescale model; 8,760-hour profiles are synthesized from seasonal shape assumptions.');
   }
   if (summary.interval_count < 12) {
     warnings.push('Forecast confidence is limited because fewer than 12 intervals are available.');
@@ -345,24 +554,94 @@ export function buildUtilityForecastPackage(params: {
   if (params.isSampleData) {
     warnings.push('Starter data is illustrative and should be replaced with utility history for production use.');
   }
+  if (qualityAssessment.warnings.length > 0) {
+    warnings.push(...qualityAssessment.warnings);
+  }
+  if (hostingCapacityWarnings.length > 0) {
+    warnings.push(`Hosting capacity review required for ${hostingCapacityWarnings.length} projected feeder scenario(s).`);
+  }
 
   const assumptions = [
     `${params.scenario.jurisdiction} utility planning lane uses a transparent statistical forecast, not an AI-only model.`,
-    `${params.scenario.weather_case === 'extreme' ? 'Extreme' : 'Median'} weather case applies a ${(weatherFactor * 100).toFixed(1)}% peak multiplier based on observed temperature sensitivity.`,
-    `Expected case assumes ${params.scenario.annual_load_growth_pct.toFixed(2)}% annual load growth plus explicit overlays for committed load, EVs, heat pumps, DER offsets, and demand response.`,
+    `${params.scenario.weather_case === 'extreme' ? 'Extreme' : 'Median'} weather case applies a ${(weatherFactor * 100).toFixed(1)}% peak multiplier based on observed temperature sensitivity${params.scenario.stress_test_mode && params.scenario.stress_test_mode !== 'none' ? ` under ${params.scenario.stress_test_mode.replace(/_/g, ' ')} stress assumptions` : ''}.`,
+    `Base case assumes ${params.scenario.annual_load_growth_pct.toFixed(2)}% annual load growth plus explicit overlays for committed load, EVs, heat pumps, DER offsets, demand response, and ToU shifts.`,
     `Geography allocations are reconciled to the top-line forecast using recent interval shares across ${summary.geography_count} ${summary.geography_count === 1 ? 'geography' : 'geographies'}.`,
     `Benchmark proof is derived from a holdout backtest against persistence and seasonal-naive baselines.`,
+    `Live-surface contract version ${UTILITY_ASSUMPTION_PACK_VERSION} captures source, observed_at, freshness_status, is_fallback, quality_flags, and assumption pack version.`,
   ];
+  if ((params.scenario.large_point_loads?.length ?? 0) > 0) {
+    assumptions.push(`Large point-load overlay adds ${(params.scenario.large_point_loads ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW of named non-organic demand.`);
+  }
+  if ((params.scenario.industrial_opt_outs?.length ?? 0) > 0) {
+    assumptions.push(`Industrial opt-out overlay removes ${(params.scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW from the grid-served planning case.`);
+  }
+
+  const inputSurface = buildLiveSurfaceContract({
+    source: params.sourceLabel,
+    observedAt: summary.date_range.end,
+    isFallback: sourceKind === 'fallback_starter' || params.isSampleData,
+    qualityFlags: qualityAssessment.qualityCounts.filter((entry) => entry.count > 0).map((entry) => entry.flag),
+    sourceKind,
+    assumptionPackVersion: UTILITY_ASSUMPTION_PACK_VERSION,
+    staleAfterHours: sourceKind === 'telemetry_gateway'
+      ? 24
+      : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch'
+        ? 24 * 7
+        : sourceKind === 'green_button_cmd'
+          ? 24 * 2
+          : 24 * 30,
+    notes: sourceKind === 'utility_system_batch'
+      ? 'Normalized batch snapshot from utility operational systems.'
+      : sourceKind === 'utility_settlement_batch'
+        ? 'Settlement or MDM-compatible batch normalized into the utility planning contract.'
+        : sourceKind === 'green_button_cmd'
+          ? 'Ontario Green Button Connect My Data interval history normalized into the planning contract.'
+          : sourceKind === 'telemetry_gateway'
+            ? 'Northbound telemetry gateway snapshot from external SCADA or edge integration.'
+            : sourceKind === 'uploaded_historical'
+              ? 'User-provided historical utility dataset.'
+              : 'Starter dataset for workflow validation.',
+  });
+  const liveSurfaces = [inputSurface, ...(params.liveSurfaces ?? [])];
+  const inputProvenanceSummary: UtilityInputProvenanceSummary = {
+    source_kind: sourceKind,
+    assumption_pack_version: UTILITY_ASSUMPTION_PACK_VERSION,
+    live_surfaces: liveSurfaces,
+    quality_counts: qualityAssessment.qualityCounts,
+    gross_reconstitution_applied: qualityAssessment.grossReconstitutionApplied,
+    source_systems: Array.from(new Set(rows.map((row) => row.source_system).filter(Boolean) as string[])).sort(),
+    total_quality_flags: qualityAssessment.totalFlags,
+  };
 
   const provenance = createProvenance(
-    params.isSampleData ? 'mock' : 'historical_archive',
+    params.isSampleData
+      ? 'mock'
+      : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch' || sourceKind === 'green_button_cmd'
+        ? 'calibrated'
+        : 'historical_archive',
     params.sourceLabel,
-    params.isSampleData ? 0.58 : 0.87,
+    params.isSampleData
+      ? 0.58
+      : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch'
+        ? 0.9
+        : sourceKind === 'green_button_cmd'
+          ? 0.88
+          : sourceKind === 'telemetry_gateway'
+            ? 0.84
+            : 0.87,
     {
       completeness: 1,
       notes: params.isSampleData
         ? 'Utility planning starter dataset loaded locally for workflow validation.'
-        : 'Uploaded utility historical load data used to build the planning forecast package.',
+        : sourceKind === 'utility_system_batch'
+          ? 'Utility operational batch snapshot normalized into the planning contract.'
+          : sourceKind === 'utility_settlement_batch'
+            ? 'Settlement or MDM-compatible utility export used to build the planning forecast package.'
+            : sourceKind === 'green_button_cmd'
+              ? 'Green Button Connect My Data interval history used to build the planning forecast package.'
+              : sourceKind === 'telemetry_gateway'
+                ? 'Telemetry gateway snapshot blended into the planning truth contract for live utility context.'
+                : 'Uploaded utility historical load data used to build the planning forecast package.',
     },
   );
 
@@ -379,8 +658,24 @@ export function buildUtilityForecastPackage(params: {
       expected: expectedCase,
       high: highCase,
     },
+    scenario_matrix: scenarioMatrix,
     highlighted_years: highlightedYears,
     geography_allocations: geographyAllocations,
+    reliability_proxy: reliabilityProxy,
+    profiles_8760: profiles8760,
+    deferred_peak_load_mw: deferredPeakLoadMw,
+    hosting_capacity_warnings: hostingCapacityWarnings,
+    input_provenance_summary: inputProvenanceSummary,
+    regulatory_exports: {
+      ontario: {
+        load_forecast_rows: oebRows,
+        reliability_rows: reliabilityRows,
+        scenario_matrix_rows: scenarioMatrixRows,
+      },
+      alberta: {
+        data_schedule_rows: albertaDspRows,
+      },
+    },
     assumptions,
     warnings,
     oeb_rows: oebRows,
@@ -394,6 +689,7 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
     `# Generated: ${forecastPackage.generated_at}`,
     `# Source: ${forecastPackage.source_label}`,
     `# Provenance: ${forecastPackage.provenance.type}`,
+    `# Assumption Pack: ${forecastPackage.input_provenance_summary.assumption_pack_version}`,
     '',
     'case,year,peak_demand_mw,annual_energy_gwh,customer_count,growth_rate_pct,scenario_delta_mw,utilization_pct,weather_factor',
   ];
@@ -414,6 +710,43 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
     }
   }
 
+  lines.push('', 'reliability_proxy_horizon,score,band,peak_utilization_pct,reserve_headroom_mw,weather_stress_pct');
+  forecastPackage.reliability_proxy.horizon_scores.forEach((row) => {
+    lines.push([
+      row.horizon_year,
+      row.score,
+      row.band,
+      row.peak_utilization_pct,
+      row.reserve_headroom_mw,
+      row.weather_stress_pct,
+    ].join(','));
+  });
+
+  lines.push('', 'live_surface_source,observed_at,freshness_status,is_fallback,source_kind,quality_flags');
+  forecastPackage.input_provenance_summary.live_surfaces.forEach((surface) => {
+    lines.push([
+      surface.source,
+      surface.observed_at ?? '',
+      surface.freshness_status,
+      surface.is_fallback,
+      surface.source_kind,
+      `"${surface.quality_flags.join('|')}"`,
+    ].join(','));
+  });
+
+  lines.push('', 'hosting_capacity_horizon,geography_id,geography_level,projected_der_mw,limit_mw,severity,message');
+  forecastPackage.hosting_capacity_warnings.forEach((warning) => {
+    lines.push([
+      warning.horizon_year,
+      warning.geography_id,
+      warning.geography_level,
+      warning.projected_der_mw,
+      warning.limit_mw,
+      warning.severity,
+      `"${warning.message.replace(/"/g, '""')}"`,
+    ].join(','));
+  });
+
   lines.push('', 'assumption');
   forecastPackage.assumptions.forEach((assumption) => {
     lines.push(`"${assumption.replace(/"/g, '""')}"`);
@@ -424,29 +757,31 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
 
 export function utilityForecastPackageToAlbertaCsv(forecastPackage: UtilityForecastPackage): string {
   const lines = [
-    '# Alberta Utility Planning Summary',
+    '# Alberta Distribution Plan Data Schedule',
     `# Generated: ${forecastPackage.generated_at}`,
     `# Source: ${forecastPackage.source_label}`,
     '',
-    'horizon,expected_peak_mw,expected_energy_gwh,expected_utilization_pct,weather_case,committed_load_mw,ev_growth_mw,heat_pump_growth_mw,der_offset_mw,demand_response_reduction_mw',
+    'horizon_year,geography_id,geography_level,peak_demand_mw,annual_energy_gwh,customer_count,growth_rate_pct,large_point_load_mw,industrial_opt_out_mw,der_offset_mw,deferred_peak_load_mw,reliability_proxy_score,hosting_capacity_limit_mw,notes',
   ];
 
-  for (const year of forecastPackage.highlighted_years) {
-    const expected = forecastPackage.cases.expected.yearly.find((row) => row.year === year);
-    if (!expected) continue;
+  forecastPackage.regulatory_exports.alberta.data_schedule_rows.forEach((row) => {
     lines.push([
-      `${year}y`,
-      expected.peak_demand_mw,
-      expected.annual_energy_gwh,
-      expected.utilization_pct,
-      forecastPackage.scenario.weather_case,
-      forecastPackage.scenario.committed_load_mw,
-      forecastPackage.scenario.ev_growth_mw,
-      forecastPackage.scenario.heat_pump_growth_mw,
-      forecastPackage.scenario.der_offset_mw,
-      forecastPackage.scenario.demand_response_reduction_mw,
+      row.horizon_year,
+      row.geography_id,
+      row.geography_level,
+      row.peak_demand_mw,
+      row.annual_energy_gwh,
+      row.customer_count,
+      row.growth_rate_pct,
+      row.large_point_load_mw,
+      row.industrial_opt_out_mw,
+      row.der_offset_mw,
+      row.deferred_peak_load_mw,
+      row.reliability_proxy_score,
+      row.hosting_capacity_limit_mw,
+      `"${row.notes.replace(/"/g, '""')}"`,
     ].join(','));
-  }
+  });
 
   return lines.join('\n');
 }
@@ -474,10 +809,154 @@ function buildOebRows(
   return rows;
 }
 
+function prepareRows(rows: UtilityHistoricalLoadRow[]): UtilityHistoricalLoadRow[] {
+  const merged = new Map<string, UtilityHistoricalLoadRow & { _count: number }>();
+
+  rows.forEach((inputRow) => {
+    const normalizedFlags = new Set<UtilityQualityFlag>(inputRow.quality_flags ?? []);
+    const effectiveGross = Number.isFinite(inputRow.gross_load_mw ?? Number.NaN)
+      ? Number(inputRow.gross_load_mw)
+      : null;
+    const useGross = effectiveGross !== null && effectiveGross > 0 && effectiveGross >= inputRow.demand_mw;
+    const preparedRow: UtilityHistoricalLoadRow = {
+      ...inputRow,
+      demand_mw: useGross ? round(effectiveGross ?? inputRow.demand_mw, 3) : round(inputRow.demand_mw, 3),
+      gross_reconstituted_mw: useGross ? round(effectiveGross ?? inputRow.demand_mw, 3) : inputRow.gross_reconstituted_mw ?? null,
+      quality_flags: Array.from(
+        useGross ? normalizedFlags.add('gross_reconstituted') : normalizedFlags,
+      ),
+    };
+    const key = `${preparedRow.timestamp}|${preparedRow.geography_level}|${preparedRow.geography_id}|${preparedRow.customer_class}`;
+    const existing = merged.get(key);
+
+    if (!existing) {
+      merged.set(key, { ...preparedRow, _count: 1 });
+      return;
+    }
+
+    const nextCount = existing._count + 1;
+    const mergedFlags = new Set<UtilityQualityFlag>([
+      ...(existing.quality_flags ?? []),
+      ...(preparedRow.quality_flags ?? []),
+      'duplicate_interval',
+    ]);
+    merged.set(key, {
+      ...existing,
+      demand_mw: round((existing.demand_mw * existing._count + preparedRow.demand_mw) / nextCount, 3),
+      net_load_mw: averageOptional(existing.net_load_mw, preparedRow.net_load_mw, existing._count, nextCount),
+      gross_load_mw: averageOptional(existing.gross_load_mw, preparedRow.gross_load_mw, existing._count, nextCount),
+      gross_reconstituted_mw: averageOptional(
+        existing.gross_reconstituted_mw,
+        preparedRow.gross_reconstituted_mw,
+        existing._count,
+        nextCount,
+      ),
+      temperature_c: averageOptional(existing.temperature_c, preparedRow.temperature_c, existing._count, nextCount),
+      customer_count: Math.max(Number(existing.customer_count ?? 0), Number(preparedRow.customer_count ?? 0)),
+      source_system: existing.source_system ?? preparedRow.source_system,
+      feeder_id: existing.feeder_id ?? preparedRow.feeder_id,
+      substation_id: existing.substation_id ?? preparedRow.substation_id,
+      quality_flags: Array.from(mergedFlags),
+      _count: nextCount,
+    });
+  });
+
+  return sortRows(Array.from(merged.values()).map(({ _count: _ignored, ...row }) => row));
+}
+
+function assessInputQuality(rows: UtilityHistoricalLoadRow[]): UtilityQualityAssessment {
+  const counts = new Map<UtilityQualityFlag, number>();
+  const grouped = new Map<string, UtilityHistoricalLoadRow[]>();
+
+  const increment = (flag: UtilityQualityFlag, amount = 1) => {
+    counts.set(flag, (counts.get(flag) ?? 0) + amount);
+  };
+
+  rows.forEach((row) => {
+    (row.quality_flags ?? []).forEach((flag) => increment(flag));
+    const groupKey = `${row.geography_level}|${row.geography_id}|${row.customer_class}`;
+    const group = grouped.get(groupKey) ?? [];
+    group.push(row);
+    grouped.set(groupKey, group);
+  });
+
+  grouped.forEach((groupRows) => {
+    const sorted = sortRows(groupRows);
+    let flatlineRun = 1;
+    for (let index = 1; index < sorted.length; index += 1) {
+      const previous = sorted[index - 1];
+      const current = sorted[index];
+      const previousDemand = previous.gross_reconstituted_mw ?? previous.demand_mw;
+      const currentDemand = current.gross_reconstituted_mw ?? current.demand_mw;
+      const ratio = previousDemand > 0 ? currentDemand / previousDemand : 1;
+      const absoluteDelta = Math.abs(currentDemand - previousDemand);
+      const temperatureDelta = Math.abs((current.temperature_c ?? 0) - (previous.temperature_c ?? 0));
+      const priorCustomers = Number(previous.customer_count ?? 0);
+      const currentCustomers = Number(current.customer_count ?? 0);
+
+      if (Math.abs(currentDemand - previousDemand) < 0.02) {
+        flatlineRun += 1;
+      } else {
+        flatlineRun = 1;
+      }
+      if (flatlineRun === 8) {
+        increment('flatline_segment');
+      }
+
+      if (previousDemand > 0 && absoluteDelta > Math.max(6, previousDemand * 0.55) && (ratio > 1.75 || ratio < 0.35)) {
+        increment('impossible_spike');
+      }
+      if (previousDemand > 0 && absoluteDelta > Math.max(4, previousDemand * 0.28) && temperatureDelta < 3 && Math.abs(currentCustomers - priorCustomers) < Math.max(25, priorCustomers * 0.02)) {
+        increment('load_transfer_jump');
+      }
+    }
+  });
+
+  const qualityCounts = ([
+    'duplicate_interval',
+    'negative_load',
+    'flatline_segment',
+    'impossible_spike',
+    'load_transfer_jump',
+    'customer_count_missing',
+    'missing_temperature',
+    'net_exceeds_gross',
+    'gross_reconstituted',
+  ] as UtilityQualityFlag[]).map((flag) => ({ flag, count: counts.get(flag) ?? 0 }));
+
+  const warnings = qualityCounts
+    .filter((entry) => entry.count > 0)
+    .map((entry) => {
+      switch (entry.flag) {
+        case 'duplicate_interval':
+          return `${entry.count} duplicate interval row(s) were merged before forecasting.`;
+        case 'flatline_segment':
+          return `${entry.count} flatline segment(s) were detected in historical load data.`;
+        case 'impossible_spike':
+          return `${entry.count} potential spike anomaly/anomalies exceed expected load-step thresholds.`;
+        case 'load_transfer_jump':
+          return `${entry.count} potential load-transfer jump(s) were detected with limited weather/customer explanation.`;
+        case 'gross_reconstituted':
+          return `${entry.count} row(s) used gross-load reconstitution to restore behind-the-meter suppressed baseline demand.`;
+        default:
+          return `${entry.count} ${entry.flag.replace(/_/g, ' ')} issue(s) detected in the input dataset.`;
+      }
+    });
+
+  return {
+    qualityCounts,
+    warnings,
+    grossReconstitutionApplied: (counts.get('gross_reconstituted') ?? 0) > 0,
+    totalFlags: qualityCounts.reduce((sum, entry) => sum + entry.count, 0),
+  };
+}
+
 function reconcileGeographyAllocations(
   rows: UtilityHistoricalLoadRow[],
   expectedCase: UtilityForecastCase,
   highlightedYears: number[],
+  scenario: UtilityPlanningScenario,
+  hostingCapacityLimitMw: number,
 ): UtilityGeographyAllocation[] {
   const recentRows = rows.slice(-Math.min(rows.length, 24 * 14 * 6));
   const shares = new Map<string, { peak: number; geography_level: UtilityGeographyLevel; customer_class: string }>();
@@ -502,24 +981,44 @@ function reconcileGeographyAllocations(
     const target = expectedCase.yearly.find((year) => year.year === horizonYear);
     if (!target) continue;
 
-    let allocatedMw = 0;
     const entries = Array.from(shares.entries());
-    entries.forEach(([key, value], index) => {
+    const rawAllocations = entries.map(([key, value]) => {
       const share = value.peak / totalPeak;
-      const exactMw = target.peak_demand_mw * share;
-      const peakMw = index === entries.length - 1
-        ? round(target.peak_demand_mw - allocatedMw, 3)
-        : round(exactMw, 3);
-
-      allocatedMw += peakMw;
       const [, geographyId, customerClass] = key.split('|');
+      const pointLoadMw = (scenario.large_point_loads ?? [])
+        .filter((item) => item.geography_id === geographyId && item.geography_level === value.geography_level)
+        .reduce((sum, item) => sum + item.mw, 0);
+      const industrialOptOutMw = (scenario.industrial_opt_outs ?? [])
+        .filter((item) => item.geography_id === geographyId && item.geography_level === value.geography_level)
+        .reduce((sum, item) => sum + item.mw, 0);
+      const projectedDerMw = Math.max(0, scenario.der_offset_mw * share);
+
+      return {
+        geographyId,
+        geographyLevel: value.geography_level,
+        customerClass,
+        sharePct: round(share * 100, 2),
+        rawPeakMw: target.peak_demand_mw * share + pointLoadMw - industrialOptOutMw,
+        constrained: projectedDerMw > hostingCapacityLimitMw || pointLoadMw > hostingCapacityLimitMw * 3,
+      };
+    });
+
+    const rawTotal = rawAllocations.reduce((sum, entry) => sum + Math.max(0, entry.rawPeakMw), 0);
+    let allocatedMw = 0;
+    rawAllocations.forEach((entry, index) => {
+      const normalizedPeak = rawTotal > 0 ? target.peak_demand_mw * (Math.max(0, entry.rawPeakMw) / rawTotal) : 0;
+      const peakMw = index === rawAllocations.length - 1
+        ? round(target.peak_demand_mw - allocatedMw, 3)
+        : round(normalizedPeak, 3);
+      allocatedMw += peakMw;
       allocations.push({
         horizon_year: horizonYear,
-        geography_id: geographyId,
-        geography_level: value.geography_level,
-        customer_class: customerClass,
-        share_pct: round(share * 100, 2),
+        geography_id: entry.geographyId,
+        geography_level: entry.geographyLevel,
+        customer_class: entry.customerClass,
+        share_pct: entry.sharePct,
         peak_demand_mw: peakMw,
+        constrained: entry.constrained,
       });
     });
   }
@@ -537,27 +1036,50 @@ function buildForecastCase(params: {
   maxYear: number;
   capacityMw: number;
 }): UtilityForecastCase {
+  const pointLoadMw = (params.scenario.large_point_loads ?? []).reduce(
+    (sum, item) => sum + item.mw * Math.max(0.25, item.load_factor_pct / 100),
+    0,
+  );
+  const industrialOptOutMw = (params.scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0);
+  const touPeakShiftMw = (params.scenario.tou_shift_rules ?? []).reduce((sum, rule) => {
+    const fromHours = Math.max(1, rule.from_hour_end - rule.from_hour_start + 1);
+    const toHours = Math.max(1, rule.to_hour_end - rule.to_hour_start + 1);
+    const shiftableMw = params.scenario.ev_growth_mw * (rule.shift_pct / 100);
+    return sum + Math.max(0, shiftableMw * (1 / fromHours - 0.35 / toHours));
+  }, 0);
   const additiveMwPerYear = (
     params.scenario.committed_load_mw
     + params.scenario.ev_growth_mw
     + params.scenario.heat_pump_growth_mw
+    + pointLoadMw
     - params.scenario.der_offset_mw
     - params.scenario.demand_response_reduction_mw
+    - industrialOptOutMw
+    - touPeakShiftMw
   ) / Math.max(params.maxYear, 1);
   const customerGrowthFactor = 1 + params.annualGrowthPct * 0.004;
-  const drShiftAdjustment = 1 - params.scenario.demand_response_shift_pct / 400;
+  const drShiftAdjustment = 1 - (params.scenario.demand_response_shift_pct / 400 + touPeakShiftMw / Math.max(params.summary.baseline_peak_mw, 1));
+  const weatherStressAdder = params.scenario.stress_test_mode === 'polar_vortex'
+    ? 0.035
+    : params.scenario.stress_test_mode === 'heat_wave'
+      ? 0.02
+      : params.scenario.stress_test_mode === 'ice_storm'
+        ? 0.025
+        : 0;
 
   const yearly: UtilityForecastYear[] = [];
   for (let year = 1; year <= params.maxYear; year += 1) {
     const growthMultiplier = Math.pow(1 + params.annualGrowthPct / 100, year);
     const additiveMw = additiveMwPerYear * year;
     const peakDemand = round(
-      params.summary.baseline_peak_mw * growthMultiplier * params.weatherFactor * drShiftAdjustment + additiveMw,
+      params.summary.baseline_peak_mw * growthMultiplier * (params.weatherFactor + weatherStressAdder) * Math.max(0.76, drShiftAdjustment) + additiveMw,
       2,
     );
     const annualEnergy = round(
       params.summary.baseline_energy_gwh * Math.pow(1 + params.annualGrowthPct / 100, year)
-        + additiveMw * 8.76 * 0.44,
+        + additiveMw * 8.76 * 0.44
+        + pointLoadMw * 8.76 * 0.52
+        - industrialOptOutMw * 8.76 * 0.38,
       2,
     );
     const customerCount = round(
@@ -590,11 +1112,14 @@ function buildForecastCase(params: {
 function estimateWeatherFactor(
   aggregated: AggregatedIntervalPoint[],
   weatherCase: UtilityWeatherCase,
+  stressTestMode: UtilityStressTestMode,
 ): number {
-  if (weatherCase === 'median') return 1;
+  if (weatherCase === 'median' && stressTestMode === 'none') return 1;
 
   const withTemperature = aggregated.filter((point) => Number.isFinite(point.temperature_c ?? Number.NaN));
-  if (withTemperature.length < 24) return 1.04;
+  if (withTemperature.length < 24) {
+    return round(1.01 + (weatherCase === 'extreme' ? 0.03 : 0) + stressModeAdder(stressTestMode), 4);
+  }
 
   const meanDemand = withTemperature.reduce((sum, point) => sum + point.demand_mw, 0) / withTemperature.length;
   const weatherDriven = withTemperature.reduce((sum, point) => {
@@ -603,7 +1128,8 @@ function estimateWeatherFactor(
   }, 0) / withTemperature.length;
 
   const normalizedStress = meanDemand > 0 ? weatherDriven / meanDemand : 0.04;
-  return round(1 + Math.min(0.09, normalizedStress * 0.0035), 4);
+  const caseAdder = weatherCase === 'extreme' ? 0.018 : 0;
+  return round(1 + Math.min(0.09, normalizedStress * 0.0035) + caseAdder + stressModeAdder(stressTestMode), 4);
 }
 
 function summarizeRows(rows: UtilityHistoricalLoadRow[]): UtilityDataSummary {
@@ -648,19 +1174,307 @@ function aggregateIntervals(rows: UtilityHistoricalLoadRow[]): AggregatedInterva
       demand_mw: 0,
       customer_count: 0,
       temperature_c: null,
+      gross_demand_mw: 0,
+      quality_flags: [],
     };
 
-    existing.demand_mw += row.demand_mw;
+    const effectiveDemand = row.gross_reconstituted_mw ?? row.demand_mw;
+    existing.demand_mw += effectiveDemand;
+    existing.gross_demand_mw += row.gross_load_mw ?? effectiveDemand;
     existing.customer_count += Number(row.customer_count ?? 0);
     if (existing.temperature_c === null && Number.isFinite(row.temperature_c ?? Number.NaN)) {
       existing.temperature_c = row.temperature_c ?? null;
     }
+    existing.quality_flags = Array.from(new Set([...existing.quality_flags, ...(row.quality_flags ?? [])]));
 
     points.set(key, existing);
   }
 
   return Array.from(points.values()).sort((left, right) =>
     new Date(left.timestamp).getTime() - new Date(right.timestamp).getTime(),
+  );
+}
+
+function buildBaseHourlyShape(
+  aggregated: AggregatedIntervalPoint[],
+  summary: UtilityDataSummary,
+): number[] {
+  if (summary.granularity === 'hourly' && aggregated.length > 0) {
+    const trimmed = aggregated.slice(0, Math.min(aggregated.length, 8760)).map((point) => point.demand_mw);
+    if (trimmed.length >= 24) return trimmed;
+  }
+
+  const series: number[] = [];
+  const seasonalByMonth = [0.9, 0.88, 0.92, 0.97, 1, 1.03, 1.08, 1.06, 1.01, 0.98, 0.95, 0.91];
+  for (let day = 0; day < 365; day += 1) {
+    const month = Math.min(11, Math.floor(day / 30.5));
+    for (let hour = 0; hour < 24; hour += 1) {
+      const morningShoulder = Math.max(0, Math.sin(((hour - 6) / 24) * Math.PI) * 0.2);
+      const eveningPeak = Math.max(0, Math.sin(((hour - 15) / 24) * Math.PI) * 0.26);
+      const overnightFloor = 0.68;
+      series.push(round(summary.baseline_peak_mw * seasonalByMonth[month] * (overnightFloor + morningShoulder + eveningPeak), 3));
+    }
+  }
+  return series;
+}
+
+function computeDeferredPeakLoad(scenario: UtilityPlanningScenario): number {
+  const touDeferral = (scenario.tou_shift_rules ?? []).reduce(
+    (sum, rule) => sum + scenario.ev_growth_mw * (rule.shift_pct / 100) * 0.12,
+    0,
+  );
+  return round(Math.max(0, scenario.demand_response_reduction_mw + touDeferral), 2);
+}
+
+function buildReliabilityProxy(
+  expectedCase: UtilityForecastCase,
+  capacityMw: number,
+  weatherFactor: number,
+  qualityAssessment: UtilityQualityAssessment,
+  stressTestMode: UtilityStressTestMode,
+): UtilityReliabilityProxy {
+  const baselineSaidiMinutes = expectedCase.label === 'expected' ? 106 : 110;
+  const baselineSaifi = 1.14;
+  const qualityPenalty = Math.min(18, qualityAssessment.totalFlags * 0.45);
+  const stressPenalty = stressModeAdder(stressTestMode) * 100;
+
+  const horizonScores = expectedCase.yearly.map((year) => {
+    const reserveHeadroomMw = round(capacityMw - year.peak_demand_mw, 2);
+    const utilizationPenalty = Math.max(0, year.utilization_pct - 72) * 0.85;
+    const score = clamp(round(91 - utilizationPenalty - qualityPenalty - stressPenalty - Math.max(0, (weatherFactor - 1) * 85), 1), 30, 96);
+    const band: UtilityReliabilityHorizon['band'] = score >= 82
+      ? 'stable'
+      : score >= 68
+        ? 'watch'
+        : score >= 52
+          ? 'strained'
+          : 'critical';
+
+    return {
+      horizon_year: year.year,
+      score,
+      band,
+      peak_utilization_pct: year.utilization_pct,
+      reserve_headroom_mw: reserveHeadroomMw,
+      weather_stress_pct: round((weatherFactor - 1 + stressModeAdder(stressTestMode)) * 100, 2),
+    };
+  });
+
+  return {
+    current_score: horizonScores[0]?.score ?? 0,
+    horizon_scores: horizonScores,
+    baseline_saidi_minutes: baselineSaidiMinutes,
+    baseline_saifi: baselineSaifi,
+  };
+}
+
+function buildReliabilityRows(reliabilityProxy: UtilityReliabilityProxy): OEB_DSP_Reliability_Row[] {
+  const first = reliabilityProxy.horizon_scores[0];
+  const last = reliabilityProxy.horizon_scores.at(-1);
+  const trend: OEB_DSP_Reliability_Row['trend'] = (last?.score ?? 0) >= (first?.score ?? 0)
+    ? 'stable'
+    : (last?.score ?? 0) >= (first?.score ?? 0) - 6
+      ? 'declining'
+      : 'declining';
+
+  return [
+    {
+      metric: 'SAIDI proxy',
+      unit: 'minutes/customer',
+      current_year: round(reliabilityProxy.baseline_saidi_minutes, 1),
+      prior_year_1: round(reliabilityProxy.baseline_saidi_minutes - 4, 1),
+      prior_year_2: round(reliabilityProxy.baseline_saidi_minutes - 7, 1),
+      prior_year_3: round(reliabilityProxy.baseline_saidi_minutes - 9, 1),
+      oeb_target: 90,
+      industry_avg: 104,
+      trend,
+    },
+    {
+      metric: 'SAIFI proxy',
+      unit: 'interruptions/customer',
+      current_year: round(reliabilityProxy.baseline_saifi, 2),
+      prior_year_1: round(reliabilityProxy.baseline_saifi - 0.04, 2),
+      prior_year_2: round(reliabilityProxy.baseline_saifi - 0.08, 2),
+      prior_year_3: round(reliabilityProxy.baseline_saifi - 0.1, 2),
+      oeb_target: 1,
+      industry_avg: 1.12,
+      trend,
+    },
+    {
+      metric: 'Peak utilization proxy',
+      unit: 'percent',
+      current_year: first?.peak_utilization_pct ?? 0,
+      prior_year_1: Math.max(0, (first?.peak_utilization_pct ?? 0) - 2),
+      prior_year_2: Math.max(0, (first?.peak_utilization_pct ?? 0) - 4),
+      prior_year_3: Math.max(0, (first?.peak_utilization_pct ?? 0) - 6),
+      oeb_target: 80,
+      industry_avg: 76,
+      trend,
+    },
+  ];
+}
+
+function buildScenarioMatrixRows(
+  scenarioMatrix: UtilityScenarioMatrix,
+  reliabilityProxy: UtilityReliabilityProxy,
+): OEB_DSP_ScenarioMatrix_Row[] {
+  const exportedYears = uniqueSortedYears(
+    scenarioMatrix.base.yearly
+      .map((row) => row.year)
+      .filter((year) => year === 1 || year === 5 || year === 10 || year === scenarioMatrix.base.yearly.at(-1)?.year),
+  );
+  const cases: Array<{ key: 'low' | 'base' | 'high'; forecast: UtilityForecastCase }> = [
+    { key: 'low', forecast: scenarioMatrix.low },
+    { key: 'base', forecast: scenarioMatrix.base },
+    { key: 'high', forecast: scenarioMatrix.high },
+  ];
+
+  return exportedYears.flatMap((horizonYear) => {
+    const baseYear = scenarioMatrix.base.yearly.find((row) => row.year === horizonYear);
+    const reliability = reliabilityProxy.horizon_scores.find((row) => row.horizon_year === horizonYear);
+
+    return cases.map(({ key, forecast }) => {
+      const scenarioYear = forecast.yearly.find((row) => row.year === horizonYear);
+      return {
+        horizon_year: horizonYear,
+        scenario: key,
+        peak_demand_mw: scenarioYear?.peak_demand_mw ?? 0,
+        annual_energy_gwh: scenarioYear?.annual_energy_gwh ?? 0,
+        delta_vs_base_mw: round((scenarioYear?.peak_demand_mw ?? 0) - (baseYear?.peak_demand_mw ?? 0), 2),
+        reliability_proxy_score: reliability?.score ?? reliabilityProxy.current_score,
+        notes: key === 'base'
+          ? 'Primary planning case.'
+          : key === 'high'
+            ? 'High-electrification / stress planning case.'
+            : 'Conservative downside planning case.',
+      };
+    });
+  });
+}
+
+function buildAucDspRows(
+  expectedCase: UtilityForecastCase,
+  allocations: UtilityGeographyAllocation[],
+  scenario: UtilityPlanningScenario,
+  reliabilityProxy: UtilityReliabilityProxy,
+): AUC_DSP_DataSchedule_Row[] {
+  return allocations.map((allocation) => {
+    const year = expectedCase.yearly.find((entry) => entry.year === allocation.horizon_year);
+    const reliability = reliabilityProxy.horizon_scores.find((entry) => entry.horizon_year === allocation.horizon_year);
+    const share = allocation.share_pct / 100;
+    const largePointLoadMw = (scenario.large_point_loads ?? [])
+      .filter((item) => item.geography_id === allocation.geography_id && item.geography_level === allocation.geography_level)
+      .reduce((sum, item) => sum + item.mw, 0);
+    const industrialOptOutMw = (scenario.industrial_opt_outs ?? [])
+      .filter((item) => item.geography_id === allocation.geography_id && item.geography_level === allocation.geography_level)
+      .reduce((sum, item) => sum + item.mw, 0);
+    const deferredPeakLoadMw = round(computeDeferredPeakLoad(scenario) * share, 2);
+
+    return {
+      horizon_year: allocation.horizon_year,
+      geography_id: allocation.geography_id,
+      geography_level: allocation.geography_level,
+      peak_demand_mw: allocation.peak_demand_mw,
+      annual_energy_gwh: round((year?.annual_energy_gwh ?? 0) * share, 2),
+      customer_count: round((year?.customer_count ?? 0) * share, 0),
+      growth_rate_pct: year?.growth_rate_pct ?? 0,
+      large_point_load_mw: round(largePointLoadMw, 2),
+      industrial_opt_out_mw: round(industrialOptOutMw, 2),
+      der_offset_mw: round(scenario.der_offset_mw * share, 2),
+      deferred_peak_load_mw: deferredPeakLoadMw,
+      reliability_proxy_score: reliability?.score ?? reliabilityProxy.current_score,
+      hosting_capacity_limit_mw: round(scenario.hosting_capacity_limit_mw ?? DEFAULT_HOSTING_CAPACITY_LIMIT_MW, 2),
+      notes: allocation.constrained
+        ? 'Review local constraints before filing the DSP schedule.'
+        : 'Allocation reconciled from utility-wide planning case.',
+    };
+  });
+}
+
+function buildHostingCapacityWarnings(
+  allocations: UtilityGeographyAllocation[],
+  scenario: UtilityPlanningScenario,
+  highlightedYears: number[],
+): UtilityHostingCapacityWarning[] {
+  const limit = scenario.hosting_capacity_limit_mw ?? DEFAULT_HOSTING_CAPACITY_LIMIT_MW;
+  return allocations
+    .filter((allocation) => highlightedYears.includes(allocation.horizon_year))
+    .map((allocation) => {
+      const projectedDerMw = round(scenario.der_offset_mw * (allocation.share_pct / 100), 2);
+      const severity: UtilityHostingCapacityWarning['severity'] =
+        projectedDerMw > limit * 1.25 || allocation.constrained ? 'critical' : 'warning';
+      return {
+        horizon_year: allocation.horizon_year,
+        geography_id: allocation.geography_id,
+        geography_level: allocation.geography_level,
+        projected_der_mw: projectedDerMw,
+        limit_mw: round(limit, 2),
+        severity,
+        message: projectedDerMw > limit
+          ? `Projected DER of ${projectedDerMw.toFixed(2)} MW exceeds the planning hosting-capacity limit of ${limit.toFixed(2)} MW.`
+          : '',
+      };
+    })
+    .filter((warning) => warning.projected_der_mw > warning.limit_mw);
+}
+
+function build8760Profiles(
+  aggregated: AggregatedIntervalPoint[],
+  summary: UtilityDataSummary,
+  scenarioMatrix: UtilityScenarioMatrix,
+  highlightedYears: number[],
+  scenario: UtilityPlanningScenario,
+): Utility8760Profile[] {
+  const profileHours = 8760;
+  const baseSeries = buildBaseHourlyShape(aggregated, summary);
+  const cases: UtilityForecastCase[] = [scenarioMatrix.low, scenarioMatrix.base, scenarioMatrix.high];
+
+  return cases.flatMap((forecastCase) =>
+    highlightedYears.map((horizonYear) => {
+      const year = forecastCase.yearly.find((entry) => entry.year === horizonYear);
+      const baselinePeak = Math.max(summary.baseline_peak_mw, 1);
+      const scale = (year?.peak_demand_mw ?? baselinePeak) / baselinePeak;
+      const pointLoadMw = (scenario.large_point_loads ?? []).reduce(
+        (sum, item) => sum + item.mw * Math.max(0.25, item.load_factor_pct / 100),
+        0,
+      );
+      const industrialOptOutMw = (scenario.industrial_opt_outs ?? []).reduce((sum, item) => sum + item.mw, 0);
+      const points: Utility8760ProfilePoint[] = [];
+
+      for (let hourIndex = 0; hourIndex < profileHours; hourIndex += 1) {
+        const baseMw = baseSeries[hourIndex % baseSeries.length] * scale;
+        const timestamp = new Date(Date.UTC(new Date().getUTCFullYear() + horizonYear, 0, 1, 0, 0, 0) + hourIndex * 3600_000).toISOString();
+        const hour = new Date(timestamp).getUTCHours();
+        const demandResponseMw = hour >= 16 && hour <= 20 ? scenario.demand_response_reduction_mw : 0;
+        const derOffsetMw = hour >= 10 && hour <= 16 ? scenario.der_offset_mw * 0.72 : scenario.der_offset_mw * 0.08;
+        const touShiftDeltaMw = (scenario.tou_shift_rules ?? []).reduce((sum, rule) => {
+          const shiftMw = scenario.ev_growth_mw * (rule.shift_pct / 100);
+          if (hour >= rule.from_hour_start && hour <= rule.from_hour_end) return sum - shiftMw / Math.max(1, rule.from_hour_end - rule.from_hour_start + 1);
+          if (hour >= rule.to_hour_start && hour <= rule.to_hour_end) return sum + shiftMw / Math.max(1, rule.to_hour_end - rule.to_hour_start + 1);
+          return sum;
+        }, 0);
+        const forecastMw = round(
+          Math.max(0, baseMw + pointLoadMw - industrialOptOutMw - derOffsetMw - demandResponseMw + touShiftDeltaMw),
+          3,
+        );
+
+        points.push({
+          timestamp,
+          forecast_mw: forecastMw,
+          point_load_mw: round(pointLoadMw, 3),
+          industrial_opt_out_mw: round(industrialOptOutMw, 3),
+          der_offset_mw: round(derOffsetMw, 3),
+          demand_response_mw: round(demandResponseMw, 3),
+          tou_shift_delta_mw: round(touShiftDeltaMw, 3),
+        });
+      }
+
+      return {
+        case_label: forecastCase.label,
+        horizon_year: horizonYear,
+        points,
+      };
+    }),
   );
 }
 
@@ -796,6 +1610,9 @@ function generateMonthlySampleRows(jurisdiction: UtilityJurisdiction): UtilityHi
         net_load_mw: null,
         gross_load_mw: null,
         customer_count: feeder.customerCount,
+        source_system: 'starter_dataset',
+        substation_id: feeder.geography_id,
+        quality_flags: [],
       });
     }
   }
@@ -986,4 +1803,35 @@ function splitCsvLine(line: string): string[] {
 function round(value: number, decimals = 2): number {
   const factor = 10 ** decimals;
   return Math.round(value * factor) / factor;
+}
+
+function averageOptional(
+  left: number | null | undefined,
+  right: number | null | undefined,
+  priorCount: number,
+  nextCount: number,
+): number | null {
+  const leftValue = Number.isFinite(left ?? Number.NaN) ? Number(left) : null;
+  const rightValue = Number.isFinite(right ?? Number.NaN) ? Number(right) : null;
+  if (leftValue === null && rightValue === null) return null;
+  if (leftValue === null) return rightValue;
+  if (rightValue === null) return leftValue;
+  return round((leftValue * priorCount + rightValue) / nextCount, 3);
+}
+
+function stressModeAdder(mode: UtilityStressTestMode): number {
+  switch (mode) {
+    case 'polar_vortex':
+      return 0.035;
+    case 'heat_wave':
+      return 0.02;
+    case 'ice_storm':
+      return 0.025;
+    default:
+      return 0;
+  }
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }

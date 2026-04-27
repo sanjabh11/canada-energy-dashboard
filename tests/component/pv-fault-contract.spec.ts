@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
 import { buildPvFaultNodeFeatureVector, forwardGnn } from '../../src/lib/modelInference';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5173';
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:4175';
 
 const pvWeights = JSON.parse(
   readFileSync(new URL('../../src/lib/modelWeights/pv-gnn-v2.json', import.meta.url), 'utf8'),

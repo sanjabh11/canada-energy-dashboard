@@ -1,0 +1,14 @@
+{
+  "observed_at": "2026-04-26T12:00:00.000Z",
+  "jurisdiction": "Ontario",
+  "geography_level": "feeder",
+  "geography_id": "ON-FEEDER-7",
+  "feeder_id": "ON-FEEDER-7",
+  "substation_id": "ON-SUB-2",
+  "load_mw": 15.4,
+  "voltage_kv": 27.6,
+  "transformer_utilization_pct": 82.1,
+  "outage_state": "watch",
+  "quality_flags": ["phase_unbalanced"],
+  "source": "Integrator HTTPS gateway"
+}

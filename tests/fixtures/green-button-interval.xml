@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:espi="http://naesb.org/espi">
+  <title>Ontario Green Button Mock Feed</title>
+  <entry>
+    <content>
+      <espi:ReadingType>
+        <espi:uom>72</espi:uom>
+        <espi:powerOfTenMultiplier>0</espi:powerOfTenMultiplier>
+      </espi:ReadingType>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:RetailCustomer>
+        <espi:customerName>Ontario Test Account</espi:customerName>
+      </espi:RetailCustomer>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:UsagePoint>
+        <espi:mRID>ON-GREEN-BUTTON-77</espi:mRID>
+      </espi:UsagePoint>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:IntervalReading>
+        <espi:timePeriod>
+          <espi:duration>3600</espi:duration>
+          <espi:start>1767225600</espi:start>
+        </espi:timePeriod>
+        <espi:value>12500000</espi:value>
+        <espi:ReadingQuality>validated</espi:ReadingQuality>
+      </espi:IntervalReading>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:IntervalReading>
+        <espi:timePeriod>
+          <espi:duration>3600</espi:duration>
+          <espi:start>1767229200</espi:start>
+        </espi:timePeriod>
+        <espi:value>13250000</espi:value>
+        <espi:ReadingQuality>estimated</espi:ReadingQuality>
+      </espi:IntervalReading>
+    </content>
+  </entry>
+</feed>

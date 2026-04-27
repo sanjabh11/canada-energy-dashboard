@@ -16,6 +16,7 @@ build/
 
 # Supabase generated dumps
 tmp/
+ops/utility-connector-bridge/tmp/utilityapi-live/
 
 # Ignore nested clone
 canada-energy-dashboard/

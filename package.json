@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "test:e2e:server": "vite --host 127.0.0.1 --port 5173 --strictPort",
+    "ops:utility-bridge:evidence": "node ops/utility-connector-bridge/scripts/bridge-evidence.mjs",
+    "ops:utility-bridge:tls": "bash ops/utility-connector-bridge/scripts/layer-c-tls-evidence.sh",
+    "ops:utilityapi-demo:sanitize-xml": "tsx ops/utility-connector-bridge/scripts/sanitize-utilityapi-live-xml.ts",
+    "test:e2e:server": "vite --host 127.0.0.1 --port 4175 --strictPort",
+    "test:e2e:preview": "npm run build && vite preview --host 127.0.0.1 --port 4175 --strictPort",
     "build": "rm -rf node_modules/.vite-temp && tsc -b && vite build",
     "build:prod": "rm -rf node_modules/.vite-temp && tsc -b && BUILD_MODE=prod vite build",
     "lint": "eslint .",

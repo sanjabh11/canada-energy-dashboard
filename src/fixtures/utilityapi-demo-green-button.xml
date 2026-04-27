@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:espi="http://naesb.org/espi">
+  <title>UtilityAPI Demo Green Button Fixture</title>
+  <entry>
+    <content>
+      <espi:ReadingType>
+        <espi:uom>72</espi:uom>
+        <espi:powerOfTenMultiplier>0</espi:powerOfTenMultiplier>
+      </espi:ReadingType>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:UsagePoint>
+        <espi:mRID>ON-UTILITYAPI-DEMO-1</espi:mRID>
+      </espi:UsagePoint>
+    </content>
+  </entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767225600</espi:start></espi:timePeriod><espi:value>11800000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767229200</espi:start></espi:timePeriod><espi:value>12150000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767232800</espi:start></espi:timePeriod><espi:value>12750000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767236400</espi:start></espi:timePeriod><espi:value>13000000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767240000</espi:start></espi:timePeriod><espi:value>13300000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767243600</espi:start></espi:timePeriod><espi:value>13950000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767247200</espi:start></espi:timePeriod><espi:value>14500000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767250800</espi:start></espi:timePeriod><espi:value>14950000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767254400</espi:start></espi:timePeriod><espi:value>15400000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767258000</espi:start></espi:timePeriod><espi:value>15100000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767261600</espi:start></espi:timePeriod><espi:value>14350000</espi:value></espi:IntervalReading></content></entry>
+  <entry><content><espi:IntervalReading><espi:timePeriod><espi:duration>3600</espi:duration><espi:start>1767265200</espi:start></espi:timePeriod><espi:value>13600000</espi:value></espi:IntervalReading></content></entry>
+</feed>

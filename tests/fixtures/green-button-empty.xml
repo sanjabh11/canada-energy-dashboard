@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:espi="http://naesb.org/espi">
+  <title>Ontario Green Button Empty Feed</title>
+  <entry>
+    <content>
+      <espi:ReadingType>
+        <espi:uom>72</espi:uom>
+        <espi:powerOfTenMultiplier>0</espi:powerOfTenMultiplier>
+      </espi:ReadingType>
+    </content>
+  </entry>
+  <entry>
+    <content>
+      <espi:UsagePoint>
+        <espi:mRID>ON-GREEN-BUTTON-EMPTY</espi:mRID>
+      </espi:UsagePoint>
+    </content>
+  </entry>
+</feed>

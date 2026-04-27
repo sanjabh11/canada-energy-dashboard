@@ -31,7 +31,7 @@ export function TermsOfService() {
             <main className="max-w-4xl mx-auto px-6 py-12">
                 <div className="prose prose-invert prose-slate max-w-none">
                     <p className="text-slate-400 mb-8">
-                        <strong>Effective Date:</strong> December 2024
+                        <strong>Effective Date:</strong> April 2026
                     </p>
 
                     <section className="mb-10">
@@ -50,6 +50,8 @@ export function TermsOfService() {
                             <li><strong>Alberta Rate Watchdog:</strong> Live-when-available electricity price monitoring and forecasts using AESO data, cached snapshots, or clearly labeled demo datasets</li>
                             <li><strong>Energy Quiz Pro:</strong> Educational quizzes about Canadian energy systems</li>
                             <li><strong>CEIP Advanced:</strong> Premium dashboards and analytics (paid tier)</li>
+                            <li><strong>Utility Demand Forecasting Lane:</strong> Statistical utility planning workflows, benchmark packs, and filing exports using customer-uploaded or utility-authorized data</li>
+                            <li><strong>Utility Connector Services:</strong> Green Button and utility connector onboarding, synchronization, audit, and revocation support where explicitly enabled</li>
                         </ul>
                     </section>
 
@@ -59,6 +61,9 @@ export function TermsOfService() {
                             Some features require authentication through Whop.com. You are responsible for
                             maintaining the security of your account credentials. You must be at least 13
                             years old to use CEIP.
+                        </p>
+                        <p className="mt-4">
+                            If you connect utility-authorized data, you represent that you are permitted to authorize access to that account or are otherwise acting under a valid utility-approved agreement.
                         </p>
                     </section>
 
@@ -136,6 +141,9 @@ export function TermsOfService() {
                                 information with official sources (AESO, IESO, utilities).
                             </p>
                         </div>
+                        <p className="mt-4">
+                            Utility-authorized forecasting outputs are decision-support tools. Final planning, compliance, procurement, and regulatory submissions remain the responsibility of the customer or utility using the service.
+                        </p>
                     </section>
 
                     <section className="mb-10">
@@ -168,13 +176,18 @@ export function TermsOfService() {
                             We may terminate or suspend your access immediately, without prior notice, for
                             any breach of these Terms. Upon termination, your right to use CEIP ceases immediately.
                         </p>
+                        <p className="mt-4">
+                            Utility data-sharing connections may also be revoked by the customer, by the serving utility, or by CEIP when authorization expires, fails technical review, or no longer satisfies the applicable utility or privacy requirements. CEIP will stop claiming a connector is live once disconnection or revocation is initiated.
+                        </p>
                     </section>
 
                     <section className="mb-10">
                         <h2 className="text-xl font-semibold text-white">11. Governing Law</h2>
                         <p>
-                            These Terms are governed by the laws of the Province of Alberta, Canada. Any
-                            disputes shall be resolved in the courts of Alberta.
+                            These Terms are governed by the laws of the Province of Ontario and the applicable
+                            federal laws of Canada, unless a signed customer or utility agreement expressly
+                            states otherwise. Any disputes shall be resolved in the courts of Ontario unless
+                            another venue is required by that signed agreement.
                         </p>
                     </section>
 
@@ -201,8 +214,9 @@ export function TermsOfService() {
                 </div>
 
                 {/* Footer links */}
-                <div className="mt-12 pt-8 border-t border-slate-800 flex gap-6">
+                <div className="mt-12 pt-8 border-t border-slate-800 flex gap-6 flex-wrap">
                     <Link to="/privacy" className="text-cyan-400 hover:underline">Privacy Policy</Link>
+                    <Link to="/utility-security" className="text-cyan-400 hover:underline">Utility Security Statement</Link>
                     <Link to="/" className="text-cyan-400 hover:underline">Home</Link>
                 </div>
             </main>

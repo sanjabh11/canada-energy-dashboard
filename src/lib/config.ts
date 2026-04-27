@@ -7,6 +7,8 @@ const env = import.meta.env;
 const DEBUG = env.DEV;
 
 let warnedMissingSupabase = false;
+let warnedMissingPublicAppUrl = false;
+let warnedMissingUtilityConnectorBaseUrl = false;
 
 export function getSupabaseConfig(): { url: string; anonKey: string } {
   const url = env.VITE_SUPABASE_URL as string | undefined;
@@ -20,6 +22,24 @@ export function getSupabaseConfig(): { url: string; anonKey: string } {
     }
   }
   return { url: url || '', anonKey: anonKey || '' };
+}
+
+export function getPublicAppUrl(): string {
+  const url = (env.VITE_PUBLIC_APP_URL as string | undefined)?.trim().replace(/\/$/, '') || '';
+  if (!url && !warnedMissingPublicAppUrl) {
+    debug.warn('Public app URL missing: set VITE_PUBLIC_APP_URL to the canonical HTTPS frontend host for submission-ready artifacts.');
+    warnedMissingPublicAppUrl = true;
+  }
+  return url;
+}
+
+export function getUtilityConnectorBaseUrl(): string {
+  const url = (env.VITE_UTILITY_CONNECTOR_BASE_URL as string | undefined)?.trim().replace(/\/$/, '') || '';
+  if (!url && !warnedMissingUtilityConnectorBaseUrl) {
+    debug.warn('Utility connector bridge URL missing: set VITE_UTILITY_CONNECTOR_BASE_URL to the canonical HTTPS Green Button bridge host.');
+    warnedMissingUtilityConnectorBaseUrl = true;
+  }
+  return url;
 }
 
 export function getEdgeBaseUrl(): string {

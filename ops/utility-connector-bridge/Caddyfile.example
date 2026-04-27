@@ -1,0 +1,20 @@
+{
+  email ops@example.com
+}
+
+gb.example.com {
+  # Public server certificate for the bridge host. Do not replace this with a CA purchase
+  # until London Hydro confirms the supported CA list.
+  # Keep Caddy's modern TLS defaults unless London Hydro provides stricter protocol guidance.
+  tls /etc/ceip/london-hydro/fullchain.pem /etc/ceip/london-hydro/privkey.pem
+
+  # Caddy is router-only for /cmd/* and hands requests to the local signer service.
+  @cmd path /cmd/*
+  handle @cmd {
+    reverse_proxy 127.0.0.1:8787
+  }
+
+  handle {
+    respond "Not Found" 404
+  }
+}

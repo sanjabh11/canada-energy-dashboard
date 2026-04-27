@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:espi="http://naesb.org/espi">
+  <title>UtilityAPI-like Green Button Batch</title>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/UsagePoint/up-1" />
+    <content>
+      <espi:UsagePoint>
+        <espi:mRID>ON-UP-1</espi:mRID>
+      </espi:UsagePoint>
+    </content>
+  </entry>
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/UsagePoint/up-2" />
+    <content>
+      <espi:UsagePoint>
+        <espi:mRID>ON-UP-2</espi:mRID>
+      </espi:UsagePoint>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/ReadingType/rt-1" />
+    <content>
+      <espi:ReadingType>
+        <espi:uom>72</espi:uom>
+        <espi:powerOfTenMultiplier>0</espi:powerOfTenMultiplier>
+      </espi:ReadingType>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/LocalTimeParameters/ltp-1" />
+    <content>
+      <espi:LocalTimeParameters>
+        <espi:tzOffset>-18000</espi:tzOffset>
+      </espi:LocalTimeParameters>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/MeterReading/mr-1" />
+    <link rel="up" href="https://utilityapi.example/espi/UsagePoint/up-1" />
+    <link rel="related" href="https://utilityapi.example/espi/ReadingType/rt-1" />
+    <link rel="related" href="https://utilityapi.example/espi/LocalTimeParameters/ltp-1" />
+    <content>
+      <espi:MeterReading>
+        <espi:mRID>MR-1</espi:mRID>
+      </espi:MeterReading>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/MeterReading/mr-2" />
+    <link rel="up" href="https://utilityapi.example/espi/UsagePoint/up-2" />
+    <link rel="related" href="https://utilityapi.example/espi/ReadingType/rt-1" />
+    <content>
+      <espi:MeterReading>
+        <espi:mRID>MR-2</espi:mRID>
+      </espi:MeterReading>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/IntervalBlock/ib-1" />
+    <link rel="up" href="https://utilityapi.example/espi/MeterReading/mr-1" />
+    <content>
+      <espi:IntervalBlock>
+        <espi:IntervalReading>
+          <espi:timePeriod>
+            <espi:duration>3600</espi:duration>
+            <espi:start>1767225600</espi:start>
+          </espi:timePeriod>
+          <espi:value>11000000</espi:value>
+          <espi:ReadingQuality>validated</espi:ReadingQuality>
+        </espi:IntervalReading>
+        <espi:IntervalReading>
+          <espi:timePeriod>
+            <espi:duration>3600</espi:duration>
+            <espi:start>1767229200</espi:start>
+          </espi:timePeriod>
+          <espi:value>12000000</espi:value>
+          <espi:ReadingQuality>estimated</espi:ReadingQuality>
+        </espi:IntervalReading>
+      </espi:IntervalBlock>
+    </content>
+  </entry>
+
+  <entry>
+    <link rel="self" href="https://utilityapi.example/espi/IntervalBlock/ib-2" />
+    <link rel="up" href="https://utilityapi.example/espi/MeterReading/mr-2" />
+    <content>
+      <espi:IntervalBlock>
+        <espi:IntervalReading>
+          <espi:timePeriod>
+            <espi:duration>3600</espi:duration>
+            <espi:start>1767225600</espi:start>
+          </espi:timePeriod>
+          <espi:value>9000000</espi:value>
+          <espi:ReadingQuality>gap filled</espi:ReadingQuality>
+        </espi:IntervalReading>
+      </espi:IntervalBlock>
+    </content>
+  </entry>
+</feed>

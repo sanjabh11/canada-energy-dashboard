@@ -1,0 +1,9 @@
+{
+  "observed_at": "2026-04-26T12:10:00.000Z",
+  "jurisdiction": "Ontario",
+  "geography_level": "feeder",
+  "geography_id": "ON-FEEDER-BAD",
+  "load_mw": 11.7,
+  "quality_flags": "phase_unbalanced",
+  "source": "Integrator HTTPS gateway"
+}
