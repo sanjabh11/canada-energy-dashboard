@@ -33,7 +33,8 @@ export type UtilityQualityFlag =
   | 'vee_estimated'
   | 'vee_edited'
   | 'meter_gap_filled'
-  | 'telemetry_outage';
+  | 'telemetry_outage'
+  | 'upsampled_15min';
 
 export interface UtilityHistoricalLoadRow {
   timestamp: string;

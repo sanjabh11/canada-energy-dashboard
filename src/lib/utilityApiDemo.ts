@@ -1,4 +1,5 @@
 import { buildUtilityForecastPackage, type UtilityForecastPackage, type UtilityHistoricalLoadRow, type UtilityPlanningScenario } from './utilityForecasting';
+import { upsampleToQuarterHour } from './intervalUpsampler';
 import { parseGreenButtonXml } from './utilityLiveData';
 
 export type UtilityApiDemoMode = 'live' | 'fixture';
@@ -223,7 +224,13 @@ export function buildUtilityApiDemoSessionFromXml(params: {
   const parseResult = parseGreenButtonXml(params.rawXml, {
     jurisdiction: 'Ontario',
   });
-  const rows = parseResult.rows;
+  const upsampleResult = upsampleToQuarterHour(parseResult.rows);
+  const rows = upsampleResult.rows;
+  if (upsampleResult.wasUpsampled) {
+    parseResult.warnings.push(
+      `AI upsampled: ${upsampleResult.originalIntervalCount} hourly intervals → ${upsampleResult.upsampledIntervalCount} 15-minute intervals (60m → 15m).`,
+    );
+  }
 
   const sourceLabel = params.mode === 'fixture'
     ? 'Bundled UtilityAPI Green Button XML fixture'

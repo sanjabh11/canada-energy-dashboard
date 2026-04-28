@@ -24,6 +24,7 @@ import {
   Trash2,
   Unplug,
   WifiOff,
+  Zap,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
@@ -282,6 +283,11 @@ const UtilityApiDemoPage: React.FC = () => {
       demand_mw: row.demand_mw,
     })) ?? []
   ), [session?.parsedRows]);
+
+  const isUpsampled = useMemo(
+    () => session?.parsedRows.some((row) => row.quality_flags?.includes('upsampled_15min')) ?? false,
+    [session?.parsedRows],
+  );
 
   const forecastPreview = useMemo(() => {
     const yearly = session?.forecastPackage?.cases.expected.yearly ?? [];
@@ -1101,7 +1107,18 @@ const UtilityApiDemoPage: React.FC = () => {
           </section>
 
           <section className="rounded-3xl border border-slate-800 bg-slate-900/70 p-6" data-testid="utilityapi-demo-forecast">
-            <h2 className="text-lg font-semibold">Forecast surface</h2>
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-lg font-semibold">Forecast surface</h2>
+              {isUpsampled && (
+                <span
+                  className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-300"
+                  data-testid="upsampling-badge"
+                >
+                  <Zap className="h-3 w-3" />
+                  AI Upsampling Active: 60m → 15m
+                </span>
+              )}
+            </div>
             <p className="mt-1 text-sm text-slate-400">
               Uses the existing Ontario Green Button XML parser and utility forecast package builder. Parsed artifacts are persisted to IndexedDB under the active session id.
             </p>
