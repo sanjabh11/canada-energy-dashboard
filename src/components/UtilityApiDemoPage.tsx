@@ -1,4 +1,4 @@
-import React, { startTransition, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { Session } from '@supabase/supabase-js';
 import {
   ResponsiveContainer,
@@ -300,14 +300,12 @@ const UtilityApiDemoPage: React.FC = () => {
 
   const persistSession = async (nextSession: UtilityApiDemoSessionRecord) => {
     const { quotaExceeded } = await saveUtilityApiDemoSession(nextSession);
-    startTransition(() => {
-      setSession(nextSession);
-      if (quotaExceeded) {
-        setQuotaWarning('IndexedDB quota was exceeded. The active session pointer is preserved, but replay or reload may be required after refresh.');
-      } else {
-        setQuotaWarning(null);
-      }
-    });
+    setSession(nextSession);
+    if (quotaExceeded) {
+      setQuotaWarning('IndexedDB quota was exceeded. The active session pointer is preserved, but replay or reload may be required after refresh.');
+    } else {
+      setQuotaWarning(null);
+    }
   };
 
   const withBusy = async (task: () => Promise<void>) => {
@@ -541,7 +539,13 @@ const UtilityApiDemoPage: React.FC = () => {
       'auth_pending',
       DEFAULT_UTILITY_API_DEMO_SCENARIO,
     );
-    await persistSession(emptySession);
+    setSession(emptySession);
+    const { quotaExceeded } = await saveUtilityApiDemoSession(emptySession);
+    if (quotaExceeded) {
+      setQuotaWarning('IndexedDB quota was exceeded. The active session pointer is preserved, but replay or reload may be required after refresh.');
+    } else {
+      setQuotaWarning(null);
+    }
 
     const response = await startUtilityApiDemo(DEFAULT_UTILITY_API_DEMO_SCENARIO);
     if (response.error) {

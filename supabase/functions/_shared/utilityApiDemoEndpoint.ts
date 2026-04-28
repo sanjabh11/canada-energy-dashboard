@@ -123,6 +123,13 @@ function rateLimitHeaders(result: UtilityApiDemoCombinedRateLimitResult | null):
   };
 }
 
+function safeErrorDetail(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error);
+  return raw
+    .replace(/https?:\/\/\S+/gi, '[url]')
+    .replace(/[A-Za-z0-9_-]{24,}/g, '[redacted]');
+}
+
 function json(body: unknown, status: number, headers: Record<string, string>) {
   return new Response(JSON.stringify(body), {
     status,
@@ -285,11 +292,12 @@ async function applyDistributedRateLimit(
   let limiter: UtilityApiDemoRateLimiter;
   try {
     limiter = deps.rateLimiter ?? createUtilityApiDemoRateLimiter();
-  } catch {
+  } catch (error) {
     return {
       response: json({
         error: 'Distributed rate limiting is unavailable for UtilityAPI live mode.',
         code: 'rate_limiter_unavailable',
+        detail: safeErrorDetail(error),
       }, 503, corsHeaders),
       result: null,
       ipAddress,
@@ -304,11 +312,12 @@ async function applyDistributedRateLimit(
       ipAddress,
       now: (deps.now ?? Date.now)(),
     });
-  } catch {
+  } catch (error) {
     return {
       response: json({
         error: 'Distributed rate limiting failed for UtilityAPI live mode.',
         code: 'rate_limiter_failed',
+        detail: safeErrorDetail(error),
       }, 503, corsHeaders),
       result: null,
       ipAddress,

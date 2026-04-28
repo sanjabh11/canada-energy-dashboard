@@ -19,9 +19,11 @@ const DEFAULT_ALLOWED_ORIGINS = [
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:5176',
+  'http://localhost:4175',
   'http://localhost:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
+  'http://127.0.0.1:4175',
 ];
 
 // Whop uses dynamic subdomains like *.apps.whop.com
@@ -31,7 +33,10 @@ const WHOP_DOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.apps\.whop\.com$/;
 export function getAllowedOrigins(): string[] {
   const envOrigins = Deno.env.get('CORS_ALLOWED_ORIGINS');
   if (envOrigins) {
-    return envOrigins.split(',').map(s => s.trim()).filter(Boolean);
+    return Array.from(new Set([
+      ...DEFAULT_ALLOWED_ORIGINS,
+      ...envOrigins.split(',').map(s => s.trim()).filter(Boolean),
+    ]));
   }
   return DEFAULT_ALLOWED_ORIGINS;
 }

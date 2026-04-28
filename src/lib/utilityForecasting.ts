@@ -471,7 +471,8 @@ export function buildUtilityForecastPackage(params: {
   const highlightedYears = uniqueSortedYears(params.scenario.planning_horizon_years ?? DEFAULT_PLANNING_YEARS);
   const summary = summarizeRows(rows);
   const aggregated = aggregateIntervals(rows);
-  const benchmark = buildBenchmarkMetrics(aggregated, summary.granularity);
+  const benchmarkResult = buildBenchmarkMetricsWithFallback(aggregated, summary.granularity);
+  const benchmark = benchmarkResult.metrics;
   const weatherFactor = estimateWeatherFactor(aggregated, params.scenario.weather_case, params.scenario.stress_test_mode ?? 'none');
   const maxYear = Math.max(...highlightedYears, 10);
   const capacityMw = round(summary.baseline_peak_mw * (1 + params.scenario.capacity_buffer_pct / 100), 2);
@@ -544,7 +545,7 @@ export function buildUtilityForecastPackage(params: {
     highlightedYears,
     params.scenario,
   );
-  const warnings: string[] = [];
+  const warnings: string[] = [...benchmarkResult.warnings];
 
   if (summary.granularity === 'monthly') {
     warnings.push('Monthly input runs on a planning-timescale model; 8,760-hour profiles are synthesized from seasonal shape assumptions.');
@@ -1497,6 +1498,26 @@ function buildBenchmarkMetrics(
   }
 
   return buildSimpleSeriesMetrics(aggregated, granularity);
+}
+
+function buildBenchmarkMetricsWithFallback(
+  aggregated: AggregatedIntervalPoint[],
+  granularity: UtilityInputGranularity,
+): { metrics: ForecastMetrics; warnings: string[] } {
+  try {
+    return {
+      metrics: buildBenchmarkMetrics(aggregated, granularity),
+      warnings: [],
+    };
+  } catch (error) {
+    const reason = error instanceof Error && error.message.trim()
+      ? error.message.trim()
+      : 'unknown benchmark failure';
+    return {
+      metrics: buildSimpleSeriesMetrics(aggregated, granularity),
+      warnings: [`Benchmark backtest fallback applied: ${reason}.`],
+    };
+  }
 }
 
 function buildSimpleSeriesMetrics(

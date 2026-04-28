@@ -96,6 +96,21 @@ describe('utilityApiDemoRuntime', () => {
     expect(response.body.terminal_reason).toBe('pending_manual_after');
   });
 
+  it('derives pending_manual from authorization notes before any meters exist', async () => {
+    const response = await runPollUtilityApiDemo({
+      authorization_uid: 'auth-pending-manual-notes',
+    }, {
+      apiToken: 'demo-api-token',
+      formUid: 'form-123',
+      fetchImpl: server.fetch,
+    });
+
+    expect(response.status).toBe(200);
+    expect(response.body.stage).toBe('pending_manual');
+    expect(response.body.authorization_note_types).toEqual(['pending_manual']);
+    expect(response.body.authorization_status_message).toContain('manual');
+  });
+
   it('caps historical collection to 3 months server-side', async () => {
     const response = await runActivateUtilityApiDemo({
       authorization_uid: 'auth-demo-1',
@@ -203,10 +218,13 @@ async function startMockServer() {
         utility: 'DEMO',
         is_test: true,
         user_status: 'active',
-        meters: [
-          { uid: 'meter-1', interval_count: 96, bill_count: 3, updated: '2026-04-27T08:00:00.000Z', status: 'complete' },
-          { uid: 'meter-2', interval_count: 96, bill_count: 3, updated: '2026-04-27T08:00:00.000Z', status: 'complete' },
-        ],
+        meters: {
+          meters: [
+            { uid: 'meter-1', interval_count: 96, bill_count: 3, updated: '2026-04-27T08:00:00.000Z', status: 'complete' },
+            { uid: 'meter-2', interval_count: 96, bill_count: 3, updated: '2026-04-27T08:00:00.000Z', status: 'complete' },
+          ],
+          next: null,
+        },
       }));
     },
     '/api/v2/authorizations/auth-pending-manual': (req: IncomingMessage, res: ServerResponse) => {
@@ -227,6 +245,24 @@ async function startMockServer() {
             notes: [{ type: 'pending_manual_after' }],
           },
         ],
+      }));
+    },
+    '/api/v2/authorizations/auth-pending-manual-notes': (req: IncomingMessage, res: ServerResponse) => {
+      state.lastAuthorizationLookupUrl = req.url ?? null;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        uid: 'auth-pending-manual-notes',
+        utility: 'DEMO',
+        is_test: true,
+        user_status: 'active',
+        status: 'updated',
+        notes: [
+          {
+            type: 'pending_manual',
+            msg: 'UtilityAPI is collecting meters manually.',
+          },
+        ],
+        meters: [],
       }));
     },
     '/api/v2/authorizations/auth-collecting': (req: IncomingMessage, res: ServerResponse) => {

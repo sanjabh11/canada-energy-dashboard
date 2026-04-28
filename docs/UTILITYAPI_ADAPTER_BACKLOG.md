@@ -18,8 +18,16 @@ The demo lane now also includes:
 - monthly new-start budgeting plus authorization reuse to protect the UtilityAPI DEMO quota
 - a structured XML sanitizer workflow so raw live captures stay outside git
 - an explicit `Continue with Fixture Replay` recovery path when live mode fails closed because auth, allowlist, budget, or distributed-limiter checks reject the run
+- a confirmed first live operator capture from `2026-04-28`, including a sanitized regression fixture at `tests/fixtures/utilityapi-live-commercial-sanitized.xml`
 
 Those safeguards are intentionally scoped to the isolated demo surface. They do not reduce the adapter backlog below for the London-Hydro-first runtime.
+
+Empirical findings from the first live DEMO run:
+
+- `commercial` produced `4` demo meters after `test-submit` plus authorization polling completed.
+- UtilityAPI's authorization `include=meters` payload arrived as a nested `MeterListing` object, not just a flat array, so any future adapter code must accept `authorization.meters.meters`.
+- The first captured commercial batch used hourly intervals (`intervalLength=3600`), not `15-minute` intervals.
+- The isolated demo-lane success does not change London Hydro, Alectra, or full connector-foundation readiness.
 
 Current repo limits:
 

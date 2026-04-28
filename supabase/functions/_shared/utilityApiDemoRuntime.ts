@@ -140,6 +140,12 @@ function extractMeters(payload: unknown, authorization: Record<string, unknown>)
   if (Array.isArray(authMeters)) {
     return authMeters.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object');
   }
+  if (authMeters && typeof authMeters === 'object') {
+    const nestedMeters = listItems(authMeters);
+    if (nestedMeters.length > 0) {
+      return nestedMeters;
+    }
+  }
 
   if (payload && typeof payload === 'object' && !Array.isArray(payload)) {
     const objectPayload = payload as Record<string, unknown>;
@@ -171,6 +177,20 @@ function collectStringList(value: unknown): string[] {
           ?? stringValue(record.message);
       }
       return null;
+    })
+    .filter((item): item is string => Boolean(item));
+}
+
+function collectNoteMessages(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') return null;
+      const record = item as Record<string, unknown>;
+      return stringValue(record.msg)
+        ?? stringValue(record.message)
+        ?? stringValue(record.note)
+        ?? stringValue(record.status_message);
     })
     .filter((item): item is string => Boolean(item));
 }
@@ -219,6 +239,8 @@ function derivePollState(
     normalizeStatusSignal(stringValue(authorization.status_message)),
     normalizeStatusSignal(stringValue(authorization.user_status)),
     normalizeStatusSignal(stringValue(authorization.note)),
+    ...collectStringList(authorization.note_types).map(normalizeStatusSignal),
+    ...collectStringList(authorization.notes).map(normalizeStatusSignal),
   ].filter(Boolean);
   const meterSignals = meterStates.flatMap((meter) => [
     normalizeStatusSignal(meter.status),
@@ -378,12 +400,22 @@ function buildPollBody(
   const meterUids = meterStates.map((meter) => meter.uid).filter((value): value is string => Boolean(value));
   const intervalCount = meterStates.reduce((sum, meter) => sum + meter.interval_count, 0);
   const pollState = derivePollState(authorization, meterStates, revoked);
+  const authorizationNoteTypes = Array.from(new Set([
+    ...collectStringList(authorization.note_types),
+    ...collectStringList(authorization.notes),
+  ]));
+  const authorizationNoteMessages = collectNoteMessages(authorization.notes);
 
   return {
     ok: pollState.stage !== 'errored',
     authorization_uid: authorizationUid,
     authorization_status: stringValue(authorization.status),
-    authorization_status_message: stringValue(authorization.status_message) ?? stringValue(authorization.note),
+    authorization_status_message:
+      stringValue(authorization.status_message)
+      ?? stringValue(authorization.note)
+      ?? authorizationNoteMessages.at(-1)
+      ?? null,
+    authorization_note_types: authorizationNoteTypes,
     referral: stringValue(authorization.referral),
     utility: stringValue(authorization.utility),
     is_test: boolValue(authorization.is_test) ?? true,

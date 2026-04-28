@@ -108,6 +108,24 @@ describe('utilityForecasting', () => {
     expect(csv).toContain('AB-FEEDER');
   });
 
+  it('falls back to simple benchmark metrics when holdout backtesting cannot train safely on the available hourly window', () => {
+    const sampleRows = generateUtilityLoadSampleRows('Ontario', 'hourly');
+    const reference = sampleRows[0];
+    const rows = sampleRows
+      .filter((row) => row.geography_id === reference.geography_id && row.customer_class === reference.customer_class)
+      .slice(0, 24 * 14);
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'ontario-14-day-window.csv',
+      isSampleData: false,
+    });
+
+    expect(forecastPackage.benchmark.sample_size).toBeGreaterThan(0);
+    expect(forecastPackage.warnings).toContain('Benchmark backtest fallback applied: Insufficient data for backtesting.');
+  });
+
   it('applies gross-load reconstitution when the input provides gross demand above net demand', () => {
     const customCsv = [
       'timestamp,geography_level,geography_id,customer_class,demand_mw,net_load_mw,gross_load_mw,customer_count',

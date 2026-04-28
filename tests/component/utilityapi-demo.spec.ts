@@ -17,8 +17,9 @@ test.describe('UtilityAPI demo lane', () => {
     await page.getByRole('button', { name: 'Continue with Fixture Replay' }).click();
 
     await expect(page.getByTestId('utilityapi-demo-page').getByText('replayed')).toBeVisible();
-    await expect(page.getByTestId('utilityapi-demo-interval-count')).toHaveText('12');
+    await expect(page.getByTestId('utilityapi-demo-interval-count')).toHaveText('48');
     await expect(page.getByText('Bundled fixture replay loaded without any edge-network request.')).toBeVisible();
+    await expect(page.getByText('AI Upsampling Active: 60m → 15m')).toBeVisible();
     await expect(page.getByTestId('utilityapi-demo-forecast').getByText('Expected case preview')).toBeVisible();
   });
 });

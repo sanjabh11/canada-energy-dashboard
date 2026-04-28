@@ -131,6 +131,11 @@ Operational rule:
   - callback persistence stores token metadata, but not UtilityAPI `resourceURI`, `customerResourceURI`, or `authorizationURI`
   - sync currently assumes an existing `feed_url` when running against a remote provider
   - API revocation currently assumes `revoke_url + bearer access_token`, which does not match UtilityAPI's documented authorization revoke API
+- First live DEMO rehearsal findings from `2026-04-28`:
+  - the isolated `/utilityapi-demo` lane reached `start_demo`, `meters_discovered`, `collection_pending`, `collection_ready`, and `sync_demo` successfully against the hosted Supabase project
+  - UtilityAPI's `GET /api/v2/authorizations/{uid}?include=meters` response used the documented `MeterListing` shape (`authorization.meters.meters`), so the runtime must support nested meter listings rather than only flat meter arrays
+  - the first sanitized live commercial batch fixture is now stored at `tests/fixtures/utilityapi-live-commercial-sanitized.xml`
+  - the captured commercial feed used hourly intervals (`intervalLength=3600` and `duration=3600`), so do not claim `15-minute` DEMO commercial cadence unless a later capture proves otherwise
 - Track the adapter sprint in [UTILITYAPI_ADAPTER_BACKLOG.md](/Users/sanjayb/minimax/canada-energy-dashboard/docs/UTILITYAPI_ADAPTER_BACKLOG.md).
 
 ## Ontario Registration Packet
