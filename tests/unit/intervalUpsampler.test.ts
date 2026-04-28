@@ -84,6 +84,24 @@ describe('upsampleToQuarterHour', () => {
     expect(Math.abs(upsampledEnergyMwh - originalEnergyMwh)).toBeLessThan(1e-6);
   });
 
+  it('preserves each source hour total across its four quarter-hour children', () => {
+    const rows = [
+      makeHourlyRow(BASE_EPOCH, 7.5),
+      makeHourlyRow(BASE_EPOCH + HOUR, 12.25),
+      makeHourlyRow(BASE_EPOCH + HOUR * 2, 3.75),
+    ];
+
+    const result = upsampleToQuarterHour(rows);
+    expect(result.wasUpsampled).toBe(true);
+    expect(result.rows).toHaveLength(rows.length * 4);
+
+    rows.forEach((row, index) => {
+      const quarterHourSlice = result.rows.slice(index * 4, index * 4 + 4);
+      const sliceEnergyMwh = quarterHourSlice.reduce((sum, child) => sum + child.demand_mw * 0.25, 0);
+      expect(Math.abs(sliceEnergyMwh - row.demand_mw)).toBeLessThan(1e-6);
+    });
+  });
+
   it('adds upsampled_15min quality flag to all output rows', () => {
     const rows = [
       makeHourlyRow(BASE_EPOCH, 3.0),
