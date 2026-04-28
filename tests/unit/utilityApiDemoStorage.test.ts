@@ -69,8 +69,12 @@ describe('utilityApiDemoStorage', () => {
     });
     expect(sessionStorage.length).toBe(1);
     expect(restored?.rawXml).toContain('<espi:IntervalReading>');
-    expect(restored?.parsedRows.length).toBeGreaterThanOrEqual(12);
-    expect(restored?.forecastPackage?.summary.interval_count).toBeGreaterThanOrEqual(12);
+    expect(restored?.parsedRows.length).toBe(48);
+    expect(restored?.forecastPackage?.summary.interval_count).toBe(48);
+    expect(restored?.summary.warnings).toContain(
+      'AI upsampled: 12 hourly intervals → 48 15-minute intervals (60m → 15m).',
+    );
+    expect(restored?.parsedRows.every((row) => row.quality_flags?.includes('upsampled_15min'))).toBe(true);
   }, 15000);
 
   it('can persist a lightweight live session before XML sync is complete', async () => {

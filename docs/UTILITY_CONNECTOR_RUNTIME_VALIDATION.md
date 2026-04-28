@@ -136,6 +136,8 @@ Operational rule:
   - UtilityAPI's `GET /api/v2/authorizations/{uid}?include=meters` response used the documented `MeterListing` shape (`authorization.meters.meters`), so the runtime must support nested meter listings rather than only flat meter arrays
   - the first sanitized live commercial batch fixture is now stored at `tests/fixtures/utilityapi-live-commercial-sanitized.xml`
   - the captured commercial feed used hourly intervals (`intervalLength=3600` and `duration=3600`), so do not claim `15-minute` DEMO commercial cadence unless a later capture proves otherwise
+  - the isolated demo lane already converts that hourly feed into derived `15-minute` rows client-side with exact per-hour energy preservation plus an explicit `AI Upsampling Active: 60m → 15m` disclosure badge and warning
+  - treat the upsampling contract as `4x` interval expansion with preserved energy, not a fixed `96 interval` assumption across every fixture or live batch
 - Track the adapter sprint in [UTILITYAPI_ADAPTER_BACKLOG.md](/Users/sanjayb/minimax/canada-energy-dashboard/docs/UTILITYAPI_ADAPTER_BACKLOG.md).
 
 ## Ontario Registration Packet

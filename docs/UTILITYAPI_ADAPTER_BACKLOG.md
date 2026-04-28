@@ -27,6 +27,8 @@ Empirical findings from the first live DEMO run:
 - `commercial` produced `4` demo meters after `test-submit` plus authorization polling completed.
 - UtilityAPI's authorization `include=meters` payload arrived as a nested `MeterListing` object, not just a flat array, so any future adapter code must accept `authorization.meters.meters`.
 - The first captured commercial batch used hourly intervals (`intervalLength=3600`), not `15-minute` intervals.
+- The isolated demo lane already handles that hourly DEMO cadence with an in-repo, linear, energy-corrected `60m → 15m` upsampler and an explicit UI warning/badge. Do not add an AGPL frontend spline package as a quick fix.
+- The stable upsampling contract is `4x` interval expansion with preserved energy, not a universal `96 intervals per day` assumption.
 - The isolated demo-lane success does not change London Hydro, Alectra, or full connector-foundation readiness.
 
 Current repo limits:
