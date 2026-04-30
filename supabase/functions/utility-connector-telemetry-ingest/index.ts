@@ -29,6 +29,7 @@ serve(async (req) => {
     const supabase = getUtilityConnectorClient();
     const result = await runTelemetryIngest({
       body,
+      dryRun: body?.dry_run === true,
       utilityName: body?.utility_name ?? "Telemetry gateway",
       displayName: body?.display_name ?? `${String(body?.utility_name ?? "Telemetry gateway").trim()} HTTP gateway`,
       accountHolderRef: body?.account_holder_ref ?? null,

@@ -346,6 +346,28 @@ describe('utilityConnectorRuntime', () => {
     expect(repo.state.telemetrySnapshots).toHaveLength(1);
     expect(repo.state.telemetrySnapshots[0]?.snapshot.quality_flags).toContain('phase_unbalanced');
 
+    const dryRunRepo = createFakeConnectorRepo();
+    const dryRun = await runTelemetryIngest({
+      body: validPayload,
+      dryRun: true,
+      utilityName: 'Telemetry gateway',
+      displayName: 'Telemetry gateway HTTP',
+    }, {
+      sha256Hex: async (input) => createHash('sha256').update(input).digest('hex'),
+      upsertAccount: dryRunRepo.upsertAccount,
+      auditPayload: dryRunRepo.auditPayload,
+      insertTelemetrySnapshot: dryRunRepo.insertTelemetrySnapshot,
+      logRun: dryRunRepo.logRun,
+    });
+
+    expect(dryRun.status).toBe(200);
+    expect(dryRun.body.ok).toBe(true);
+    expect(dryRun.body.dry_run).toBe(true);
+    expect(dryRunRepo.state.accounts).toHaveLength(0);
+    expect(dryRunRepo.state.payloadAudits).toHaveLength(0);
+    expect(dryRunRepo.state.telemetrySnapshots).toHaveLength(0);
+    expect(dryRunRepo.state.runs).toHaveLength(0);
+
     const invalidQuality = await runTelemetryIngest({
       body: invalidPayload,
     }, {

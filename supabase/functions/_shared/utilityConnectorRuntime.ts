@@ -755,6 +755,7 @@ export function validateTelemetryPayload(input: unknown): { snapshot: RuntimeTel
 
 export async function runTelemetryIngest(params: {
   body: unknown;
+  dryRun?: boolean;
   utilityName?: string;
   displayName?: string;
   accountHolderRef?: string | null;
@@ -780,6 +781,20 @@ export async function runTelemetryIngest(params: {
     return {
       status: 400,
       body: { error: 'Invalid telemetry payload.', details: parsed.errors },
+    };
+  }
+
+  if (params.dryRun) {
+    return {
+      status: 200,
+      body: {
+        ok: true,
+        dry_run: true,
+        observed_at: parsed.snapshot.observed_at,
+        geography_id: parsed.snapshot.geography_id,
+        jurisdiction: parsed.snapshot.jurisdiction,
+        geography_level: parsed.snapshot.geography_level,
+      },
     };
   }
 
