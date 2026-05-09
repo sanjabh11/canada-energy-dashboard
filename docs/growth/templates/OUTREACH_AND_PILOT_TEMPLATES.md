@@ -1,51 +1,209 @@
 # Outreach and Pilot Templates
 
-## 1) Founder Outreach (Whop)
-Subject: Quick question on [community] ops bottlenecks
+## Proof-Pack Positioning
 
-Hi [Name],
+CEIP should be described as Canadian energy and utility proof packs that turn forecasts, filings, benchmarks, asset decisions, security review, billing checks, compliance savings, and reporting into buyer-ready artifacts.
 
-I am building CEIP, a compliance and risk intelligence app used in Canadian energy workflows.
-I am mapping founder pain in high-growth communities.
+Use these templates only when the named proof pack can be shown on the current route. Do not imply utility production onboarding, deployed customer history, real-time TIER price feeds, certified Indigenous data-sovereignty infrastructure, AI superiority, GPU superiority, or regulator approval.
 
-What do you still do manually that blocks growth, retention, or credibility?
+## Revised Sellability Ratings
 
-If useful, I can share a 1-page scorecard template we use to turn that pain into measurable pilot outcomes.
+| Rank | Proof pack | Buyer | Route | Rating | Outreach stance |
+|---:|---|---|---|---:|---|
+| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 | Lead when the buyer owns load forecast, DSP, growth, DER, or large-load planning pain. |
+| 2 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead when the pain is preparing or reviewing filing evidence. |
+| 3 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 | Use as trust proof attached to every forecast conversation. |
+| 4 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
+| 5 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Lead when the buyer owns Alberta compliance cost decisions. |
+| 6 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.0/5 | Attach when sharing load data or connector review is discussed. |
+| 7 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead for invoice comparison and audit-trail pilots. |
+| 8 | Indigenous funder and AICEI reporting pack | Indigenous project teams | `/funder-reporting`, `/aicei` | 3.2/5 | Use only with bounded governance and owner-supplied language. |
+| 9 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.0/5 | Use as technical follow-on after a workflow problem is clear. |
+| 10 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 2.9/5 | Use as planning overlay only, not engineering approval. |
+
+## Utility Forecast Outreach
+
+Subject: Utility forecast proof pack for {Organization}
+
+Hi {FirstName},
+
+I am building CEIP around Canadian utility planning proof packs, not generic AI forecasting.
+
+The utility forecast lane takes load history or a public-system sample and exports a planning memo with scenarios, benchmark metrics, source/fallback labels, and a security attachment.
+
+For {Organization}, I think the fit is {one-sentence planning pain: load growth, DER, large loads, OEB/AUC prep, or consultant delivery}.
+
+Would a 20-minute review of `/utility-demand-forecast` be useful?
 
 - Sanjay
 
-## 2) Consultancy Outreach
-Subject: Reduce analyst reporting hours with benchmark-ready exports
+## Regulatory Filing Outreach
 
-Hi [Name],
+Subject: OEB/AUC filing evidence pack
 
-I built CEIP to cut manual aggregation across Canadian energy datasets and produce benchmark-ready exports.
+Hi {FirstName},
 
-Typical use case: monthly analyst brief + forecast benchmarking + client-ready citation trail.
+CEIP has a filing-oriented workflow that converts forecast, asset, reliability, and assumption evidence into reviewer-friendly artifacts.
 
-Open to a 20-minute call to validate fit?
+The useful part is not another dashboard. It is a structured pack that can support OEB Chapter 5 or AUC-style planning review conversations.
+
+Would you be open to a short walkthrough of `/regulatory-filing` and the attached forecast benchmark appendix?
 
 - Sanjay
 
-## 3) 14-Day Pilot Scope Template
-- Pilot objective:
-- Segment:
-- Decision owner:
-- Success metric:
-- Baseline value:
-- Target value:
-- Data sources used:
-- Deliverables:
-- Day-14 decision: paid / extend / stop
+## Benchmark / Provenance Outreach
 
-## 4) Discovery Coding Taxonomy
-- acquisition_pain
-- retention_churn_pain
-- credibility_compliance_pain
-- reporting_export_pain
+Subject: Forecast benchmark appendix for client review
 
-## 5) Qualification Gates
-- Pain is active now (not "someday")
-- Buyer can name owner + timeline
-- Manual process cost is explicit
-- Pilot success metric is agreed in writing
+Hi {FirstName},
+
+I noticed many forecast discussions stall because the reviewer cannot see whether a model beats simple baselines.
+
+CEIP's benchmark layer makes MAE, MAPE, RMSE, persistence, seasonal-naive, source labels, fallback labels, warnings, and assumptions visible.
+
+Would a quick look at `/forecast-benchmarking` help your team evaluate whether this belongs in a pilot?
+
+- Sanjay
+
+## Asset Capex Outreach
+
+Subject: CSV-first asset replace/defer pack
+
+Hi {FirstName},
+
+CEIP includes a CSV-first asset health pack for utilities and municipal operators that need a defensible replace/defer discussion without SCADA or predictive-maintenance claims.
+
+The output is an executive capex summary and prioritized replacement CSV.
+
+Would a 20-minute walkthrough of `/asset-health` be useful for one asset class or feeder-area example?
+
+- Sanjay
+
+## TIER CFO Memo Outreach
+
+Subject: Source-dated TIER savings memo
+
+Hi {FirstName},
+
+CEIP includes a TIER savings pack that compares fund payment, market-credit assumptions, and direct-investment assumptions in a CFO-readable memo.
+
+The current version is a scenario tool, not trading advice or a real-time credit-price feed. The useful pilot is replacing starter assumptions with one facility's numbers.
+
+Would you be open to reviewing `/roi-calculator` against one facility scenario?
+
+- Sanjay
+
+## Utility Security Outreach
+
+Subject: Utility security review pack for a forecast pilot
+
+Hi {FirstName},
+
+Before any utility shares load history, CEIP can attach a security procurement pack covering control matrix, data handling, retention, questionnaire fields, owner-supplied evidence, incident contacts, and subprocessor disclosure.
+
+It is a diligence artifact, not a certification claim.
+
+Would a review of `/utility-security` help determine whether a forecast pilot is worth scoping?
+
+- Sanjay
+
+## Shadow Billing Outreach
+
+Subject: Invoice comparison proof pack
+
+Hi {FirstName},
+
+CEIP includes a shadow billing proof pack for energy managers who need to compare invoice outcomes, monthly deltas, savings caveats, and audit notes.
+
+It stays bounded to energy-supply comparison and does not replace a full bill-management platform.
+
+Would a walkthrough of `/shadow-billing` against one anonymized bill set be useful?
+
+- Sanjay
+
+## Indigenous Reporting Outreach
+
+Subject: Funder reporting workflow for energy projects
+
+Hi {FirstName},
+
+CEIP includes funder and AICEI reporting workflows for energy project teams that need quarterly exports, milestone visibility, and owner-supplied governance markers.
+
+I am careful not to claim certified sovereignty infrastructure. This is a reporting workflow that should be reviewed with a community partner before stronger claims.
+
+Would a bounded walkthrough of `/funder-reporting` or `/aicei` be useful?
+
+- Sanjay
+
+## Consultant/API Outreach
+
+Subject: Canadian energy data pack for analyst workflows
+
+Hi {FirstName},
+
+CEIP has API and CSV-oriented surfaces that can support Canadian energy research workflows after the use case is clear.
+
+The right pilot is not broad API access first; it is 5-10 endpoints, freshness labels, and a sample export tied to one client workflow.
+
+Would you be open to reviewing `/api-docs` after we pick one concrete analysis task?
+
+- Sanjay
+
+## Large-Load Overlay Outreach
+
+Subject: Large-load planning overlay, not engineering approval
+
+Hi {FirstName},
+
+CEIP has a large-load/data-centre readiness overlay that can support a planning conversation around assumptions, demand pressure, constraints, and forecast scenarios.
+
+It is not a power-flow engine or engineering approval tool.
+
+Would a short walkthrough of `/ai-datacentres` and `/utility-demand-forecast` help frame a pilot?
+
+- Sanjay
+
+## Proof-Pack 14-Day Pilot Scope Template
+
+- `proof_pack_id`:
+- `buyer_lane`:
+- `buyer`:
+- `route`:
+- `rating`:
+- `decision_owner`:
+- `active_pain`:
+- `input_data`:
+- `source_disclosure`:
+- `artifact_promised`:
+- `claim_boundary`:
+- `success_metric`:
+- `baseline_value`:
+- `target_value`:
+- `day_7_review`:
+- `day_14_decision`: paid / extend / stop
+- `do_not_claim`:
+- `next_artifact_if_success`:
+
+## Discovery Coding Taxonomy
+
+- `utility_forecast_pain`
+- `regulatory_filing_pain`
+- `benchmark_trust_pain`
+- `asset_capex_pain`
+- `tier_compliance_pain`
+- `security_procurement_pain`
+- `billing_audit_pain`
+- `funder_reporting_pain`
+- `api_data_pack_pain`
+- `large_load_planning_pain`
+- `not_active_now`
+- `proof_gap_too_large`
+
+## Qualification Gates
+
+- Buyer can name one active planning, filing, compliance, asset, billing, reporting, or data workflow.
+- Buyer can name a decision owner and a 14-day review path.
+- A visible CEIP route can demonstrate the proof pack today.
+- The pilot can use public-system sample, starter data, anonymized upload, or buyer-supplied data with explicit source disclosure.
+- The artifact is one of: planning memo, benchmark appendix, filing pack, security questionnaire, capex CSV, CFO memo, invoice delta report, reporting export, endpoint/freshness pack, readiness summary.
+- Reject or park the lead if the buyer needs production connector approval, engineering sign-off, real-time credit trading, certified sovereignty infrastructure, or AI/GPU superiority proof.

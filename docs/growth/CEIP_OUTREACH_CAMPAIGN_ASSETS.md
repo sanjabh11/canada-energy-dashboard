@@ -1,220 +1,218 @@
 # CEIP Outreach Campaign Assets
 
-This file is the execution-ready companion to `CEIP_CANADA_OUTREACH_AND_IMMIGRATION_MATRIX.md`.
+## Campaign Thesis
 
-It turns the strategy brief into:
+CEIP should be sold as Canadian energy and utility proof packs, not as a broad dashboard collection. The lead promise is a buyer-ready artifact: forecast planning memo, filing pack, benchmark appendix, capex recommendation, security questionnaire, CFO compliance memo, invoice comparison report, or reporting export.
 
-- a ranked target table by audience lane
-- channel-fit guidance
-- reusable opening angles and CTAs
-- draft outreach assets for email, LinkedIn, WhatsApp, and community posts
+Lead with the first seven proof packs. Use Indigenous reporting, API/data-pack work, UtilityAPI sandbox, broad dashboards, and large-load overlays only when the prospect's workflow clearly matches them.
 
-## Operating Guardrails
+## Commercial Targeting Rank
 
-- Keep every claim tied to a visible CEIP surface.
-- Use CEIP as proof of expertise, demo asset, teaching aid, or pilot artifact.
-- Do not frame CEIP as a direct immigration shortcut.
-- For immigration-adjacent outreach, keep language to business visitor, invited expert, guest lecturer, or employer conversation framing.
+| Priority | Buyer lane | Best route | Primary proof pack | Why it is marketable now |
+|---:|---|---|---|---|
+| 1 | Utility consultants serving LDCs, REAs, municipalities, and industrial loads | `/utility-demand-forecast` | Utility demand forecast planning pack | Consultants can evaluate a sample workflow quickly and turn the output into client-facing evidence. |
+| 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Clear utility pain and strong fit with CEIP's Canadian planning wedge. |
+| 3 | Regulatory consultants and utility filing teams | `/regulatory-filing` | OEB/AUC filing evidence pack | Structured reviewer artifacts are easier to sell than another analytics page. |
+| 4 | Forecast reviewers and planning leads | `/forecast-benchmarking` | Benchmark and provenance appendix | Trust layer strengthens every forecast conversation. |
+| 5 | Alberta industrial emitters and EPCs | `/roi-calculator` | Source-dated TIER CFO memo | Compliance-cost scenario work is a concrete budget conversation. |
+| 6 | Municipal and public-sector energy managers | `/shadow-billing` | Invoice comparison proof pack | Billing deltas and audit notes are easy to review in a pilot. |
+| 7 | Municipal utilities and asset managers | `/asset-health` | Asset health executive capex pack | Replace/defer recommendations are board-ready when data is available. |
+| 8 | Utility security, privacy, and procurement reviewers | `/utility-security` | Security procurement questionnaire | Useful attachment for any data-sharing conversation. |
+| 9 | Indigenous energy and project reporting teams | `/funder-reporting`, `/aicei` | Funder/AICEI reporting pack | Valuable but trust-sensitive; use bounded partner-review language. |
+| 10 | Energy analysts and integrators | `/api-docs` | Canadian energy data pack | Useful follow-on after a specific endpoint/freshness need is identified. |
+| 11 | Utilities and data-centre advisors | `/ai-datacentres` | Large-load readiness overlay | Keep as planning narrative support, not technical approval. |
 
-## Current Official Guardrails
+## Route And Rating Matrix
 
-These are the pages the campaign should cite when immigration-related wording comes up:
+| Rank | Proof pack | Buyer | Route | Sellability rating |
+|---:|---|---|---|---:|
+| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 |
+| 2 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 |
+| 3 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 |
+| 4 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 |
+| 5 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
+| 6 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.0/5 |
+| 7 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 |
+| 8 | Indigenous funder and AICEI reporting pack | Indigenous project teams | `/funder-reporting`, `/aicei` | 3.2/5 |
+| 9 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.0/5 |
+| 10 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 2.9/5 |
 
-- [Business visitors attending meetings, events and conferences in Canada](https://www.canada.ca/en/immigration-refugees-citizenship/services/visit-canada/business/visitors-events-conferences.html)
-- [Start-up Visa Program](https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/start-visa.html)
-- [Self-Employed Persons Program](https://www.canada.ca/en/immigration-refugees-citizenship/services/immigrate-canada/self-employed.html)
-- [Hire a foreign academic - Exemptions](https://www.canada.ca/en/employment-social-development/services/foreign-workers/academic/exemption.html)
-- [Rural Entrepreneur Stream](https://www.alberta.ca/aaip-rural-entrepreneur-stream)
-- [Foreign Graduate Entrepreneur Stream - Eligibility](https://www.alberta.ca/aaip-foreign-graduate-entrepreneur-stream-eligibility)
+## Lead Lists By Lane
 
-## Targeting Rules
-
-- Prioritize Alberta, Calgary, Ontario, universities, colleges, municipalities, utilities, Indigenous organizations, consulting firms, and conference organizers.
-- Prefer organizations that can plausibly use CEIP as a pilot demo or teaching asset.
-- Start with one contact per organization, then expand only after response signals.
-- Use cold email for institutions, LinkedIn for people, WhatsApp for warm paths, and communities for public visibility.
-
-## Lane 1: Public-Interest Targets
-
-| Rank | Organization | Location | Best Channel | Best CEIP Page | Why It Fits | Recommended CTA | Suggested Opening Angle |
-|---|---|---|---|---|---|---|---|
-| 1 | Indigenous Clean Energy | Canada-wide | LinkedIn | MunicipalLandingPage | Strong overlap on Indigenous energy, training, and community support | 20-minute intro call | Community-facing energy reporting and training support |
-| 2 | AFOA Canada | Canada-wide | LinkedIn | TrainingCoordinatorsPage | Finance + training audience that can use CEIP for energy literacy | Invite to demo session | Financial literacy for energy-linked community decisions |
-| 3 | First Nations Power Authority | Saskatchewan | Cold email | EnterprisePage | Energy project visibility and community reporting | Pilot conversation | Practical dashboard support for community energy projects |
-| 4 | Calgary Climate Hub | Calgary, AB | Community post | MunicipalLandingPage | Public-interest climate engagement and local programming | Host a demo talk | Local climate action with usable energy data |
-| 5 | Edmonton Community Foundation | Edmonton, AB | Cold email | MunicipalLandingPage | Funding and capacity-building orientation | Explore collaboration | Energy and climate reporting for grant storytelling |
-| 6 | United Way Alberta Capital Region | Edmonton, AB | Cold email | TrainingCoordinatorsPage | Workforce, affordability, and community support programs | Intro call | Energy affordability and training support |
-| 7 | Momentum | Calgary, AB | LinkedIn | TrainingCoordinatorsPage | Social enterprise and skills development fit | Discuss workshop | Energy data as a practical training tool |
-| 8 | NorQuest College | Edmonton, AB | Cold email | TrainingCoordinatorsPage | Adult learning and workforce reskilling | Guest session | Applied energy intelligence for learners |
-| 9 | Bow Valley College Foundation | Calgary, AB | Cold email | TrainingCoordinatorsPage | Community learning and applied training | Co-host a session | Energy systems literacy for non-technical audiences |
-| 10 | SAIT Centre for Energy | Calgary, AB | LinkedIn | TrainingCoordinatorsPage | Direct technical and training alignment | Guest lecture | Energy intelligence as curriculum support |
-| 11 | Indigenous Technical Services Group | Canada-wide | Cold email | MunicipalLandingPage | Technical support for communities and infrastructure | Pilot discussion | Infrastructure decisions with better data |
-| 12 | Canadian Urban Institute | Toronto, ON | Cold email | MunicipalLandingPage | Municipal and public-interest decision support | Webinar invite | Energy data for city-scale decisions |
-| 13 | Evergreen | Toronto, ON | LinkedIn | MunicipalLandingPage | Community climate and local programs | Intro to pilot | Practical climate operations intelligence |
-| 14 | Toronto Community Housing | Toronto, ON | Cold email | MunicipalLandingPage | Energy poverty and building operations fit | Explore pilot | Better visibility into building energy issues |
-| 15 | BC Non-Profit Housing Association | Vancouver, BC | Cold email | MunicipalLandingPage | Housing-energy overlap and reporting need | Demo request | Operational reporting for affordability work |
-| 16 | Habitat for Humanity Canada | Canada-wide | LinkedIn | EnterprisePage | Training, construction, and community reporting | Intro call | Applied energy and training visibility |
-| 17 | Edmonton Global | Edmonton, AB | LinkedIn | EnterprisePage | Economic development and business attraction | Partner intro | Energy intelligence as a regional story asset |
-| 18 | Calgary Chamber of Voluntary Organizations | Calgary, AB | Community post | MunicipalLandingPage | Public-interest networks and nonprofit reach | Speaker slot | Energy data for community impact work |
-| 19 | Canadian Housing and Renewal Association | Canada-wide | Cold email | MunicipalLandingPage | Energy, housing, and public interest overlap | Policy demo | Decision support for housing affordability |
-| 20 | University of Alberta Community Service-Learning | Edmonton, AB | Cold email | TrainingCoordinatorsPage | Education and public-interest engagement | Guest session | Real-world energy data in applied learning |
-
-## Lane 2: Commercial Targets
-
-| Rank | Organization | Location | Best Channel | Best CEIP Page | Why It Fits | Recommended CTA | Suggested Opening Angle |
-|---|---|---|---|---|---|---|---|
-| 1 | ENMAX | Calgary, AB | Cold email | EnterprisePage | Utility, innovation, and Calgary presence | Innovation intro | Decision-grade Canadian energy dashboards |
-| 2 | FortisAlberta | Calgary, AB | Cold email | EnterprisePage | Utility operations and Alberta energy focus | Pilot intro | Faster operational visibility for utility teams |
-| 3 | ATCO | Calgary, AB | LinkedIn | EmployersPage | Energy, infrastructure, and corporate scale | Intro call | Applied energy intelligence for corporate teams |
-| 4 | EPCOR | Edmonton, AB | Cold email | EnterprisePage | Utility and municipal overlap | Demo request | Service visibility and reporting workflows |
-| 5 | Hydro One | Toronto, ON | Cold email | EnterprisePage | Large utility and data/reporting appetite | Exploration call | Practical Canadian energy intelligence |
-| 6 | Ontario Power Generation | Toronto, ON | Cold email | EnterprisePage | Enterprise energy and stakeholder complexity | Intro to pilot | Operational visibility and stakeholder reporting |
-| 7 | Dunsky Energy + Climate Advisors | Montreal, QC | LinkedIn | EnterprisePage | Advisory and analytics fit | Beta feedback | Data-backed consulting support |
-| 8 | ICF Canada | Ottawa / Calgary | LinkedIn | EnterprisePage | Consulting and policy work | Intro call | Energy data for analyst workflows |
-| 9 | Stantec | Edmonton / Calgary | LinkedIn | EnterprisePage | Engineering + infrastructure advisory | Coffee chat | Energy dashboards for client delivery |
-| 10 | WSP Canada | Toronto / Montreal | LinkedIn | EnterprisePage | Large consulting and infrastructure footprint | Intro call | Decision support for project teams |
-| 11 | Hatch | Mississauga, ON | Cold email | EnterprisePage | Industrial and energy consulting | Pilot discussion | Energy and compliance visibility for delivery teams |
-| 12 | Navius Research | Vancouver, BC | LinkedIn | EnterprisePage | Research and analytics fit | Beta tester invite | Canadian energy analysis acceleration |
-| 13 | Econoler | Quebec City, QC | LinkedIn | EnterprisePage | Energy efficiency and program delivery | Demo request | Program reporting and advisory support |
-| 14 | GLJ Ltd. | Calgary, AB | LinkedIn | EnterprisePage | Energy analysis and market intelligence | Intro call | Analyst workflows with CEIP |
-| 15 | Energy Toolbase | United States / Canada market | Cold email | EnterprisePage | Adjacent software category | Partnership intro | Canadian market differentiation |
-| 16 | Carbonhound | Toronto, ON | LinkedIn | EnterprisePage | ESG and carbon reporting overlap | Demo request | Canadian compliance and energy data stack |
-| 17 | Measurabl | United States / Canada market | Cold email | EnterprisePage | ESG reporting adjacency | Partner exploration | Canadian-specific data gaps CEIP covers |
-| 18 | BBA | Montreal / Calgary | LinkedIn | EnterprisePage | Engineering and industrial delivery | Intro call | Dashboard support for delivery teams |
-| 19 | BDO Canada Sustainability | Canada-wide | Cold email | EnterprisePage | Advisory, finance, and reporting overlap | Walkthrough | Better energy reporting for clients |
-| 20 | Platform Calgary | Calgary, AB | LinkedIn | EnterprisePage | Innovation ecosystem and startup visibility | Speaker slot | Energy intelligence as a founder story |
-
-## Lane 3: Immigration-Adjacent Targets
-
-| Rank | Organization | Location | Best Channel | Best CEIP Page | Why It Fits | Recommended CTA | Suggested Opening Angle |
-|---|---|---|---|---|---|---|---|
-| 1 | University of Calgary | Calgary, AB | Cold email | TrainingCoordinatorsPage | Guest lectures and research consulting fit | Guest speaker invite | Applied energy intelligence for students and faculty |
-| 2 | University of Alberta | Edmonton, AB | Cold email | TrainingCoordinatorsPage | Large academic market and Alberta presence | Guest lecture | Canadian energy data as academic case material |
-| 3 | SAIT | Calgary, AB | Cold email | TrainingCoordinatorsPage | Applied teaching and industry-facing programs | Classroom demo | Practical dashboards for applied learning |
-| 4 | NAIT | Edmonton, AB | Cold email | TrainingCoordinatorsPage | Technical education and workforce development | Workshop invite | Energy systems literacy for learners |
-| 5 | Bow Valley College | Calgary, AB | Cold email | TrainingCoordinatorsPage | Adult learning and career pathways | Guest session | Energy and reporting skills for job seekers |
-| 6 | Mount Royal University | Calgary, AB | Cold email | TrainingCoordinatorsPage | Teaching and guest expert fit | Lecturer intro | Applied industry perspective for courses |
-| 7 | University of Ottawa | Ottawa, ON | Cold email | TrainingCoordinatorsPage | Policy and academic consulting fit | Guest talk | Energy policy and Canadian systems thinking |
-| 8 | Carleton University | Ottawa, ON | Cold email | TrainingCoordinatorsPage | Public policy and research setting | Guest lecture | Canadian energy intelligence in policy education |
-| 9 | Toronto Metropolitan University | Toronto, ON | Cold email | TrainingCoordinatorsPage | Urban systems, climate, and applied research | Guest lecture | Decision support for cities and systems |
-| 10 | University of Waterloo | Waterloo, ON | LinkedIn | TrainingCoordinatorsPage | Engineering and startup ecosystem | Speaker invite | Energy data for innovation-minded students |
-| 11 | Alberta Innovates | Edmonton, AB | LinkedIn | EnterprisePage | Innovation and partner ecosystem | Partner intro | Demonstrating capability through CEIP |
-| 12 | Innovate Calgary | Calgary, AB | LinkedIn | EnterprisePage | Startup and ecosystem access | Intro call | CEIP as an expert platform, not a visa shortcut |
-| 13 | Edmonton Global | Edmonton, AB | LinkedIn | EnterprisePage | Regional business attraction | Intro call | Expert-led business visitor opportunity |
-| 14 | Calgary Economic Development | Calgary, AB | LinkedIn | EnterprisePage | Business development and local introductions | Partner call | Energy expertise for ecosystem programming |
-| 15 | Platform Calgary | Calgary, AB | LinkedIn | TrainingCoordinatorsPage | Events, founders, and expert sessions | Talk request | Workshop or panel participation |
-| 16 | Canadian Council for Aboriginal Business | Toronto, ON | Cold email | MunicipalLandingPage | Indigenous business and community relevance | Speaker proposal | Community-facing energy and reporting support |
-| 17 | Canadian Association of Municipal Administrators | Canada-wide | Cold email | MunicipalLandingPage | Municipal leadership and public-interest fit | Webinar request | Municipal energy visibility for administrators |
-| 18 | Alberta Municipalities | Edmonton, AB | Cold email | MunicipalLandingPage | Municipal audience and regional relevance | Session pitch | Practical energy intelligence for municipalities |
-| 19 | The Conference Board of Canada | Ottawa, ON | Cold email | EnterprisePage | Research, policy, and speaking opportunities | Expert session | Canadian energy intelligence as a case study |
-| 20 | Canadian Energy Executive Association | Calgary, AB | LinkedIn | EnterprisePage | Senior energy network and speaker opportunities | Speaking invite | Alberta energy expertise and credibility |
-
-## Channel Notes
-
-### Cold Email
-
-Best for institutions, universities, colleges, municipalities, utilities, and conference organizers.
-
-Use:
-
-- one sentence on who you are
-- one sentence on why CEIP is relevant
-- one CTA: pilot, guest talk, or exploratory call
-
-### LinkedIn Connection
-
-Best for employers, consulting partners, municipal leaders, academics, and association contacts.
-
-Use:
-
-- short connection note
-- no attachments
-- no immigration framing in the first message
-
-### WhatsApp
-
-Best for warm intros, alumni, family, community, and smaller operators.
-
-Use:
-
-- concise personal intro
-- one relevance sentence
-- one explicit ask for referral or meeting
-
-### Community / Forum Post
-
-Best for local boards, municipal event spaces, university event listings, and association communities.
-
-Use:
-
-- educational framing
-- one practical energy use case
-- one invitation to a demo or talk
+| Lane | Example targets | Primary route | Opening angle |
+|---|---|---|---|
+| Utility planning consultants | Dunsky, ICF Canada, Guidehouse, Stantec, WSP, Hatch, BBA, Black & Veatch Canada | `/utility-demand-forecast` | 14-day proof-pack pilot for client forecast evidence. |
+| LDCs and REAs | Ontario LDC planning teams, Alberta REAs, municipal utilities, distribution planners | `/utility-demand-forecast` | Forecast planning memo with benchmark and source labels. |
+| Regulatory filing support | Utility regulatory affairs teams, rate-case consultants, filing reviewers | `/regulatory-filing` | OEB/AUC-ready evidence pack and reviewer checklist. |
+| Forecast QA | Planning directors, load forecast managers, energy model reviewers | `/forecast-benchmarking` | Baseline comparison and provenance appendix before trusting forecast claims. |
+| Industrial TIER | Alberta industrial emitters, EPCs, carbon/compliance advisors | `/roi-calculator` | CFO memo comparing source-dated scenario assumptions. |
+| Municipal billing and assets | Municipal energy managers, public housing energy teams, city facility teams | `/shadow-billing`, `/asset-health` | Invoice delta report or asset replace/defer summary. |
+| Utility security/procurement | Security reviewers, privacy officers, procurement teams | `/utility-security` | Questionnaire and evidence matrix before data-sharing discussions. |
+| Indigenous project reporting | Indigenous Clean Energy network members, project coordinators, funder-reporting teams | `/funder-reporting`, `/aicei` | Bounded reporting export with owner-supplied governance markers. |
+| Analyst/integrator | Energy analysts, data consultants, technical integrators | `/api-docs` | Five-to-ten endpoint data pack with freshness labels. |
+| Large-load/data-centre | Utility growth planners, economic development teams, data-centre advisors | `/ai-datacentres` | Planning overlay for assumptions and constraint narrative. |
 
 ## Core Outreach Angles
 
-### Public-Interest Angle
+- **Forecast proof pack:** "Can your planner or client reviewer see scenarios, assumptions, benchmarks, warnings, and source labels in one artifact?"
+- **Filing proof pack:** "Can the forecast, asset, reliability, and assumption evidence be handed to a reviewer without rebuilding the story manually?"
+- **Benchmark proof pack:** "Does the forecast beat simple baselines, and can the reviewer see that without trusting marketing copy?"
+- **Asset proof pack:** "Can a municipal utility explain replace/defer decisions from CSV data without implying SCADA or predictive maintenance?"
+- **TIER proof pack:** "Can a CFO compare fund payment, credit assumptions, and direct-investment assumptions without treating the tool as a live market feed?"
+- **Security proof pack:** "Can a utility reviewer see data handling, retention, owner responsibilities, incident contacts, and evidence boundaries before a pilot?"
+- **Shadow billing proof pack:** "Can an energy manager compare invoice deltas and audit notes from an anonymized bill set?"
 
-We help communities turn energy, climate, and training data into usable reporting and decision support.
+## Copy Blocks For Lead-Now Proof Packs
 
-### Commercial Angle
+### Utility Forecast Planning Pack
 
-We turn energy and compliance data into decision-grade dashboards and training systems.
-
-### Immigration-Adjacent Angle
-
-CEIP is an externally visible proof asset for invited expert, guest lecturer, business visitor, or partner-led conversations.
-
-## Message Assets
-
-### Cold Email Template
-
-Subject: CEIP pilot or guest session for {Organization}
-
-Body:
+Subject: Utility forecast proof pack for {Organization}
 
 Hi {FirstName},
 
-I built CEIP, a Canada-focused energy intelligence platform that turns energy, compliance, and stakeholder data into practical dashboards and training assets.
+CEIP's utility forecast lane exports a planning memo with load scenarios, assumptions, benchmark metrics, source/fallback labels, warnings, and a security attachment.
 
-I think it could be useful for {Organization} because {one-sentence fit}.
+The point is not to compete with enterprise AI forecasting. The point is a Canadian proof pack that a planner or consultant can review in a short pilot.
 
-If helpful, I can share a short demo of the most relevant CEIP page: {page link}.
+Would a 20-minute walkthrough of `/utility-demand-forecast` be useful?
 
-Would you be open to a 20-minute conversation about a pilot, guest session, or exploratory collaboration?
+### Regulatory Filing Pack
 
-Best,
-Sanjay
+Subject: OEB/AUC evidence pack for forecast and planning review
 
-### LinkedIn Connection Note
+Hi {FirstName},
 
-Hi {FirstName}, I work on CEIP, a Canada energy intelligence platform focused on dashboards, training, and applied energy workflows. Thought there could be useful overlap with your work at {Organization}. Open to connecting?
+CEIP has a filing workflow that organizes forecast, asset, reliability, and assumption evidence into a reviewer-friendly pack.
 
-### LinkedIn Follow-up
+If {Organization} is preparing or supporting distribution planning evidence, `/regulatory-filing` may be worth a short review.
 
-Thanks for connecting, {FirstName}. I’d be happy to send a short demo of the most relevant CEIP page if useful. I think it may fit {their team / program} around {topic}. Would that be helpful?
+Would you be open to a 20-minute walkthrough?
 
-### WhatsApp Intro
+### Benchmark And Provenance Pack
 
-Hi {Name}, I’m sharing CEIP, a Canada energy intelligence platform I’ve built for dashboards, training, and practical energy workflows. I think it could be useful for {reason}. If you know the right person to speak with, I’d appreciate an intro.
+Subject: Forecast benchmark appendix for client confidence
 
-### Community Post
+Hi {FirstName},
 
-CEIP is looking for a few Canadian partners for short pilot conversations, guest sessions, and training collaborations around energy intelligence, reporting, and applied dashboards. If your organization works in municipal energy, community training, or Canadian energy consulting, I’d be glad to share a demo and see if there is a fit.
+CEIP's benchmark layer makes MAE, MAPE, RMSE, persistence, seasonal-naive, source labels, fallback labels, and warnings visible before a forecast is used in a planning conversation.
+
+Would a quick walkthrough of `/forecast-benchmarking` help your team assess whether this belongs in a client pilot?
+
+### Asset Health Capex Pack
+
+Subject: CSV-first asset replace/defer summary
+
+Hi {FirstName},
+
+CEIP includes an asset health proof pack that turns utility or municipal asset rows into a replace/defer recommendation summary and prioritized CSV.
+
+It is intentionally bounded: no SCADA claim, no predictive-maintenance claim, just explainable capex support from available data.
+
+Would a short review of `/asset-health` be useful?
+
+### TIER CFO Memo Pack
+
+Subject: Source-dated TIER scenario memo
+
+Hi {FirstName},
+
+CEIP's TIER workflow turns facility assumptions into a CFO-readable scenario memo comparing fund payment, credit assumptions, and direct-investment options.
+
+It is a scenario tool, not trading advice or a real-time price feed.
+
+Would a review of `/roi-calculator` against one facility case be useful?
+
+### Utility Security Procurement Pack
+
+Subject: Security questionnaire for a forecast pilot
+
+Hi {FirstName},
+
+CEIP can attach a utility security review pack before any load-history pilot: control matrix, questionnaire fields, retention, subprocessors, incident contacts, and owner-supplied evidence boundaries.
+
+Would `/utility-security` help your team decide whether a forecast pilot is worth scoping?
+
+### Shadow Billing Invoice Pack
+
+Subject: Invoice comparison proof pack
+
+Hi {FirstName},
+
+CEIP's shadow billing route creates a monthly delta report, audit notes, and savings caveats from bill inputs.
+
+It is bounded to comparison and review, not a replacement for enterprise bill-management workflows.
+
+Would a quick walkthrough of `/shadow-billing` be useful?
+
+## Support-Only Copy
+
+### UtilityAPI Sandbox
+
+Use `/utilityapi-demo` only as a sandbox proof of parsing and data-flow concepts. Do not describe it as utility-approved onboarding, consent management, or production bridge evidence.
+
+Suggested wording:
+
+"CEIP has a UtilityAPI-style sandbox route that can support a connector discussion, but I would treat it as a demo surface until approval, OAuth, revocation, audit logs, and deployment evidence are supplied."
+
+### Broad Dashboard Context
+
+Use broad CEIP dashboard pages as context only after a proof pack has been selected. Do not lead with "many dashboards." Lead with the artifact the buyer can review.
+
+Suggested wording:
+
+"The wider CEIP dashboard gives context, but the pilot should be anchored to one proof pack and one decision artifact."
+
+### Large-Load / Data-Centre Overlay
+
+Use `/ai-datacentres` only when the prospect has an explicit large-load planning question.
+
+Suggested wording:
+
+"The large-load route is a readiness overlay for assumptions, demand pressure, and constraint narrative. It is not a power-flow tool or engineering approval path."
+
+## Immigration-Adjacent Language
+
+Immigration-adjacent language should stay secondary. Use guest, expert, advisory, business-visitor, or conference framing only when the prospect asks about in-person Canadian meetings or pilots. Do not lead commercial outreach with immigration claims.
+
+Acceptable wording:
+
+"If an in-person review is useful, I would frame it as a bounded expert or business-visitor discussion around a specific proof pack, subject to normal legal and travel review."
+
+## Do-Not-Say Guardrails
+
+- Do not claim utility production onboarding or utility-approved connector status.
+- Do not claim deployed customer history unless the buyer supplies it and approves the wording.
+- Do not claim real-time TIER credit pricing, trading recommendations, or guaranteed savings.
+- Do not claim certified Indigenous sovereignty infrastructure.
+- Do not claim the forecasting engine outperforms enterprise AI/weather vendors.
+- Do not claim power-flow, SCADA, ADMS, or engineering approval capability.
+- Do not make immigration status, work authorization, or visa outcomes part of the commercial pitch.
+
+## Minimum Campaign Logging Fields
+
+- `company`
+- `contact`
+- `buyer_lane`
+- `proof_pack_id`
+- `route`
+- `sellability_rating`
+- `variant_id`
+- `artifact_promised`
+- `caveat_used`
+- `reply_status`
+- `next_step`
 
 ## Asset Bundle To Reuse
 
-- [Enterprise page](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/enterprise/EnterprisePage.tsx)
-- [Municipal landing page](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/MunicipalLandingPage.tsx)
-- [Training coordinators page](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/TrainingCoordinatorsPage.tsx)
-- [Employers page](/Users/sanjayb/minimax/canada-energy-dashboard/src/components/EmployersPage.tsx)
-- [Resume asset](/Users/sanjayb/minimax/canada-energy-dashboard/public/resume-canada.md)
-- [Sitemap](/Users/sanjayb/minimax/canada-energy-dashboard/public/sitemap.xml)
-
-## Practical Execution Sequence
-
-1. Start with the top 5 public-interest targets and top 5 commercial targets.
-2. Send one tailored message per organization, not multiple angles at once.
-3. Log response rate by lane.
-4. Expand only after a message pattern proves effective.
-5. Keep immigration-adjacent outreach to invited-expert and business-visitor framing unless a host institution explicitly opens a different path.
+- Utility forecast proof pack: `/utility-demand-forecast`
+- Regulatory filing pack: `/regulatory-filing`
+- Benchmark/provenance appendix: `/forecast-benchmarking`
+- Security procurement questionnaire: `/utility-security`
+- Asset capex pack: `/asset-health`
+- TIER CFO memo: `/roi-calculator`
+- Shadow billing report: `/shadow-billing`
+- Consultant/API data pack: `/api-docs`
+- Large-load overlay: `/ai-datacentres`
+- Funder reporting: `/funder-reporting`
+- AICEI reporting: `/aicei`
+- UtilityAPI sandbox: `/utilityapi-demo`
