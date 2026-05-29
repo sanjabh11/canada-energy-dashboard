@@ -41,8 +41,8 @@ const CASE_STUDIES = [
     title: 'AESO Grid Analytics',
     description: 'Live-when-available integration with Alberta Electric System Operator APIs for demand monitoring, pool pricing, and storage dispatch tracking.',
     metrics: [
-      { label: 'Data Latency', value: '<1 sec' },
-      { label: 'Uptime', value: '99.9%' },
+      { label: 'Route State', value: 'Live/fallback labels' },
+      { label: 'Proof Gate', value: 'Browser smoke' },
       { label: 'API Endpoints', value: '15+' }
     ],
     tech: ['React', 'Supabase Edge Functions', 'AESO REST API', 'Recharts'],
@@ -55,21 +55,21 @@ const CASE_STUDIES = [
     description: 'OCAP-aligned workflow for First Nations energy project tracking with FPIC workflow management, governance review fields, and TEK-aware planning support.',
     metrics: [
       { label: 'FPIC Workflows', value: '3 stages' },
-      { label: 'Territory Mapping', value: 'Live' },
+      { label: 'Territory Mapping', value: 'Workflow' },
       { label: 'Data Governance', value: 'OCAP-aligned' }
     ],
-    tech: ['React', 'Mapbox', 'Supabase RLS', 'UNDRIP compliance'],
+    tech: ['React', 'Mapbox', 'Supabase RLS', 'UNDRIP-aware copy'],
     link: '/indigenous',
     image: '🏔️'
   },
   {
     id: 'compliance-automation',
-    title: 'Regulatory Compliance Automation',
-    description: 'Automated AUC Rule 007 compliance checking and CER reporting for micro-generation and pipeline operators.',
+    title: 'Regulatory Proof-Pack Workflow',
+    description: 'Sample AUC/OEB-style schedule preparation with explicit source labels, reviewer checklists, and no-submission-automation boundaries.',
     metrics: [
-      { label: 'Forms Automated', value: '5+' },
-      { label: 'Compliance Rate', value: '100%' },
-      { label: 'Time Saved', value: '40%' }
+      { label: 'Artifacts', value: '5+' },
+      { label: 'Claim Boundaries', value: 'Explicit' },
+      { label: 'Pilot Metric', value: 'Buyer-defined' }
     ],
     tech: ['Python', 'PDF parsing', 'AUC Form A', 'CER standards'],
     link: '/climate-policy',

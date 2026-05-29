@@ -50,6 +50,9 @@ jobs:
       - name: Proof-pack bundle budgets
         run: pnpm run check:proof-pack-bundles
 
+      - name: Claim-boundary guardrails
+        run: pnpm run check:claim-boundaries
+
       - name: Unit tests
         run: pnpm exec vitest run
 

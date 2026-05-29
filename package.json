@@ -12,6 +12,7 @@
     "test:e2e:preview": "sh -c 'PORT=${PLAYWRIGHT_PHASE6_PORT:-4175}; pnpm run build && vite preview --host 127.0.0.1 --port \"$PORT\" --strictPort'",
     "build": "rm -rf node_modules/.vite-temp && tsc -b && vite build",
     "build:prod": "rm -rf node_modules/.vite-temp && tsc -b && BUILD_MODE=prod vite build",
+    "check:claim-boundaries": "node scripts/check-claim-boundaries.mjs",
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "lint": "eslint .",
     "test": "vitest run",
