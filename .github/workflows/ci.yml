@@ -53,6 +53,9 @@ jobs:
       - name: Claim-boundary guardrails
         run: pnpm run check:claim-boundaries
 
+      - name: Commercial source-of-truth guardrails
+        run: pnpm run check:commercial-source
+
       - name: Unit tests
         run: pnpm exec vitest run
 

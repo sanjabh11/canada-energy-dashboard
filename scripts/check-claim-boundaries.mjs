@@ -7,6 +7,7 @@ const repoRoot = process.cwd();
 
 const ACTIVE_PATHS = [
   'src',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'docs/Top20.md',
   'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
   'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',

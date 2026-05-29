@@ -3,6 +3,7 @@
 > **Last Audited:** May 29, 2026
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
 > **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
+> **Commercial source of truth:** [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md).
 > **Confidence note:** See [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md). Current strategy confidence is 90-92%; 95% market confidence requires buyer-supplied pilot evidence.
 > **Pilot evidence checklist:** [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
 
