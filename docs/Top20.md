@@ -1,8 +1,9 @@
 # CEIP Top 20 Sellable Features for Energy and Utilities
 
-> **Last Audited:** May 8, 2026
+> **Last Audited:** May 29, 2026
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
 > **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
+> **Confidence note:** See [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md). Current strategy confidence is 90-92%; 95% market confidence requires buyer-supplied pilot evidence.
 
 ## Lead USP
 
@@ -58,6 +59,17 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 - Say "OCAP-aligned workflow language" or "owner-supplied governance markers" unless a partner-backed governance review exists.
 - Say "planning overlay" for large-load/data-centre readiness until engineering-grade validation exists.
 - Do not say CEIP outperforms enterprise AI forecasting vendors without a published benchmark and comparable data contract.
+
+## Confidence Gates Before 95%
+
+| Gate | Required evidence | Why it matters |
+|---|---|---|
+| Buyer load history | One anonymized LDC, REA, or consultant-supplied load file with benchmark appendix. | Proves the utility pack is useful beyond public or constructed samples. |
+| Forecast champion/challenger | Rolling split record across persistence, seasonal-naive, CEIP forecast, and any buyer baseline. | Prevents overclaiming forecast effectiveness. |
+| TIER buyer case | One facility scenario with refreshed pricing assumptions and compliance-review caveats. | Prevents CFO memo language from becoming trading, legal, or tax advice. |
+| Invoice proof | One buyer-approved invoice comparison artifact with field mapping and audit notes. | Moves shadow billing from constructed proof to customer proof. |
+| Security evidence | SBOM, security headers, hosting/contact/subprocessor notes, retention boundary, and dependency audit. | Reduces procurement friction without implying certification. |
+| Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
 
 ## Critical next implementation checkpoints
 
