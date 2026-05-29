@@ -2,6 +2,8 @@ const CORE_SALES_DEMO_PATHS = new Set([
   '/',
   '/solutions',
   '/use-cases',
+  '/pilot-readiness',
+  '/pilot-evidence',
   '/municipal',
   '/for-municipalities',
   '/utility-demand-forecast',

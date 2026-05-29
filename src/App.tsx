@@ -18,6 +18,7 @@ import './styles/layout.css';
 const EnergyDataDashboard = React.lazy(() => import('./components/EnergyDataDashboard').then(m => ({ default: m.EnergyDataDashboard })));
 const CommercialLandingPage = React.lazy(() => import('./components/CommercialLandingPage').then(m => ({ default: m.CommercialLandingPage })));
 const SolutionsNavigatorPage = React.lazy(() => import('./components/SolutionsNavigatorPage').then(m => ({ default: m.SolutionsNavigatorPage })));
+const PilotReadinessPage = React.lazy(() => import('./components/PilotReadinessPage').then(m => ({ default: m.PilotReadinessPage })));
 const AnalyticsTrendsDashboard = React.lazy(() => import('./components/AnalyticsTrendsDashboard'));
 const AboutPage = React.lazy(() => import('./components/AboutPage').then(m => ({ default: m.AboutPage })));
 const ContactPage = React.lazy(() => import('./components/ContactPage').then(m => ({ default: m.ContactPage })));
@@ -120,6 +121,8 @@ const router = createBrowserRouter(
         { path: '/', element: <CommercialLandingPage /> },
         { path: '/solutions', element: <SolutionsNavigatorPage /> },
         { path: '/use-cases', element: <SolutionsNavigatorPage /> },
+        { path: '/pilot-readiness', element: <PilotReadinessPage /> },
+        { path: '/pilot-evidence', element: <PilotReadinessPage /> },
         { path: '/dashboard', element: <EnergyDataDashboard /> },
 
         // Analytics & Trends - Standalone Route

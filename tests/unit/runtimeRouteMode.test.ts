@@ -21,6 +21,7 @@ describe('runtimeRouteMode', () => {
     expect(isCoreSalesDemoPath('/utility-security')).toBe(true);
     expect(isCoreSalesDemoPath('/forecast-benchmarking')).toBe(true);
     expect(isCoreSalesDemoPath('/credit-banking')).toBe(true);
+    expect(isCoreSalesDemoPath('/pilot-readiness')).toBe(true);
   });
 
   it('suppresses Whop and Paddle bootstrap on core sales demo paths only', () => {
@@ -28,6 +29,8 @@ describe('runtimeRouteMode', () => {
     expect(shouldInitializePaddleForPath('/utilityapi-demo')).toBe(false);
     expect(shouldBootstrapWhopSession('/credit-banking')).toBe(false);
     expect(shouldInitializePaddleForPath('/credit-banking')).toBe(false);
+    expect(shouldBootstrapWhopSession('/pilot-readiness')).toBe(false);
+    expect(shouldInitializePaddleForPath('/pilot-readiness')).toBe(false);
     expect(shouldBootstrapWhopSession('/pricing')).toBe(true);
     expect(shouldInitializePaddleForPath('/pricing')).toBe(true);
     expect(shouldBootstrapWhopSession('/whop/watchdog')).toBe(true);

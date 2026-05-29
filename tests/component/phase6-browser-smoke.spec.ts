@@ -8,6 +8,7 @@ type RouteCheck = {
 const ROUTE_CHECKS: RouteCheck[] = [
   { path: '/', marker: 'Prediction inside budget-owned energy workflows' },
   { path: '/utility-demand-forecast', marker: 'Utility Demand Forecasting Lane' },
+  { path: '/pilot-readiness', marker: 'Evidence gates before stronger market claims' },
   { path: '/forecast-benchmarking', marker: 'Forecast Benchmarking' },
   { path: '/regulatory-filing', marker: 'Regulatory Filing Templates' },
   { path: '/roi-calculator', marker: 'What is TIER? Alberta\'s Carbon Compliance System' },

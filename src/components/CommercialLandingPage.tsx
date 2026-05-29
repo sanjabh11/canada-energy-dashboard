@@ -64,6 +64,9 @@ export function CommercialLandingPage() {
                 <Link to="/solutions" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-cyan-300/40 hover:text-white">
                   Solutions
                 </Link>
+                <Link to="/pilot-readiness" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-cyan-300/40 hover:text-white">
+                  Pilot readiness
+                </Link>
                 <a href="#proof" className="rounded-full border border-white/10 px-4 py-2 transition hover:border-cyan-300/40 hover:text-white">
                   Proof
                 </a>
@@ -103,10 +106,10 @@ export function CommercialLandingPage() {
                     <ArrowRight className="h-4 w-4" />
                   </Link>
                   <Link
-                    to="/enterprise"
+                    to="/pilot-readiness"
                     className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:border-emerald-300/40 hover:bg-white/5"
                   >
-                    Talk to sales
+                    Check pilot evidence gates
                     <ChevronRight className="h-4 w-4" />
                   </Link>
                 </div>
@@ -300,6 +303,12 @@ export function CommercialLandingPage() {
                 >
                   Open the solutions navigator
                   <ArrowRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  to="/pilot-readiness"
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-white/15 px-6 py-3 text-sm font-semibold text-white transition hover:border-cyan-300/30 hover:bg-white/5"
+                >
+                  Check pilot readiness
                 </Link>
                 <Link
                   to="/dashboard"
