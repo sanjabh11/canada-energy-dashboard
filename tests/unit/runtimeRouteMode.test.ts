@@ -20,11 +20,14 @@ describe('runtimeRouteMode', () => {
     expect(isCoreSalesDemoPath('/regulatory-filing')).toBe(true);
     expect(isCoreSalesDemoPath('/utility-security')).toBe(true);
     expect(isCoreSalesDemoPath('/forecast-benchmarking')).toBe(true);
+    expect(isCoreSalesDemoPath('/credit-banking')).toBe(true);
   });
 
   it('suppresses Whop and Paddle bootstrap on core sales demo paths only', () => {
     expect(shouldBootstrapWhopSession('/utilityapi-demo')).toBe(false);
     expect(shouldInitializePaddleForPath('/utilityapi-demo')).toBe(false);
+    expect(shouldBootstrapWhopSession('/credit-banking')).toBe(false);
+    expect(shouldInitializePaddleForPath('/credit-banking')).toBe(false);
     expect(shouldBootstrapWhopSession('/pricing')).toBe(true);
     expect(shouldInitializePaddleForPath('/pricing')).toBe(true);
     expect(shouldBootstrapWhopSession('/whop/watchdog')).toBe(true);

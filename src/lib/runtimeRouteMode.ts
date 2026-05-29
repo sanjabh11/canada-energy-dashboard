@@ -23,6 +23,8 @@ const CORE_SALES_DEMO_PATHS = new Set([
   '/roi-calculator',
   '/industrial',
   '/tier-savings',
+  '/credit-banking',
+  '/tier-credit-banking',
   '/shadow-billing',
   '/bill-comparison',
 ]);
