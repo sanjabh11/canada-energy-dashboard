@@ -3,6 +3,7 @@
 > Date: May 29, 2026
 > Scope: Canada Energy Intelligence Platform utility, regulatory, and Alberta TIER proof-pack strategy
 > Verdict: 90-92% confidence in strategy fit; not 95% confidence in market outcome until buyer-supplied proof exists.
+> Evidence intake: use [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) before increasing confidence beyond this audit.
 
 ## Bottom Line
 
@@ -52,7 +53,7 @@ This is the right solo-developer wedge because CEIP can be specific, transparent
 ## 30-Day Path To 95% Strategy Confidence
 
 1. **Pilot evidence first**
-   - Secure one anonymized utility load file, one TIER facility scenario, and one invoice sample.
+   - Secure one anonymized utility load file, one TIER facility scenario, and one invoice sample using [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
    - Produce three buyer-ready artifacts from actual buyer-supplied data.
    - Record benchmark metrics, assumptions, data lineage, and buyer feedback.
 

@@ -4,6 +4,7 @@
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
 > **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
 > **Confidence note:** See [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md). Current strategy confidence is 90-92%; 95% market confidence requires buyer-supplied pilot evidence.
+> **Pilot evidence checklist:** [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
 
 ## Lead USP
 
@@ -70,6 +71,8 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 | Invoice proof | One buyer-approved invoice comparison artifact with field mapping and audit notes. | Moves shadow billing from constructed proof to customer proof. |
 | Security evidence | SBOM, security headers, hosting/contact/subprocessor notes, retention boundary, and dependency audit. | Reduces procurement friction without implying certification. |
 | Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
+
+Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist.
 
 ## Critical next implementation checkpoints
 
