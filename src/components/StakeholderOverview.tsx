@@ -2,8 +2,26 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2, LineChart, FileText, Zap, Shield, ArrowRight } from 'lucide-react';
 import { SEOHead } from './SEOHead';
+import ProofPackPanel from './ProofPackPanel';
+import {
+    buildConsultantEndpointFreshnessCsv,
+    buildConsultantMemoDescriptor,
+    buildConsultantNotebookStarterMarkdown,
+    buildConsultantProofBundle,
+    buildConsultantSampleExport,
+} from '../lib/consultantProofPack';
+import {
+    downloadTextArtifact,
+    renderMarkdownProofDocument,
+} from '../lib/proofPack';
 
 export const StakeholderOverview: React.FC = () => {
+    const consultantBundle = buildConsultantProofBundle();
+    const consultantMemo = consultantBundle.artifacts.find((artifact) => artifact.id === 'consultant-proof-memo');
+    const consultantSample = consultantBundle.artifacts.find((artifact) => artifact.id === 'consultant-sample-export');
+    const consultantFreshness = consultantBundle.artifacts.find((artifact) => artifact.id === 'consultant-endpoint-freshness-matrix');
+    const consultantNotebook = consultantBundle.artifacts.find((artifact) => artifact.id === 'consultant-notebook-starter');
+
     return (
         <div className="min-h-screen bg-slate-900 text-white">
             <SEOHead 
@@ -56,6 +74,47 @@ export const StakeholderOverview: React.FC = () => {
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
+                        {consultantMemo && consultantSample ? (
+                            <ProofPackPanel
+                                className="mt-6"
+                                title={consultantBundle.title}
+                                summary="Use the memo after a response, then share the sample export only when the prospect asks for concrete payload detail."
+                                artifacts={[
+                                    {
+                                        ...consultantMemo,
+                                        onDownload: () => downloadTextArtifact(
+                                            consultantMemo,
+                                            renderMarkdownProofDocument(buildConsultantMemoDescriptor()),
+                                            'text/markdown;charset=utf-8;',
+                                        ),
+                                    },
+                                    {
+                                        ...consultantSample,
+                                        onDownload: () => downloadTextArtifact(
+                                            consultantSample,
+                                            buildConsultantSampleExport(),
+                                            'application/json;charset=utf-8;',
+                                        ),
+                                    },
+                                    ...(consultantFreshness ? [{
+                                        ...consultantFreshness,
+                                        onDownload: () => downloadTextArtifact(
+                                            consultantFreshness,
+                                            buildConsultantEndpointFreshnessCsv(),
+                                            'text/csv;charset=utf-8;',
+                                        ),
+                                    }] : []),
+                                    ...(consultantNotebook ? [{
+                                        ...consultantNotebook,
+                                        onDownload: () => downloadTextArtifact(
+                                            consultantNotebook,
+                                            buildConsultantNotebookStarterMarkdown(),
+                                            'text/markdown;charset=utf-8;',
+                                        ),
+                                    }] : []),
+                                ]}
+                            />
+                        ) : null}
                     </div>
 
                     {/* Industrial TIER Pack */}

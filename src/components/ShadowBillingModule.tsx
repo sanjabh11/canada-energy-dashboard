@@ -1,323 +1,398 @@
-/**
- * Shadow Billing Module (M1)
- * Based on Value Proposition Research Dec 2025
- * 
- * Purpose: Shows users "What if I had switched?" analysis
- * - Compares actual bills vs. hypothetical RoLR/retailer rates
- * - Identifies missed savings opportunities
- * - High conversion hook for Rate Watchdog tier
- */
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
-    TrendingDown,
-    TrendingUp,
-    AlertTriangle,
-    CheckCircle,
-    DollarSign,
-    Calendar,
-    ArrowRight,
-    RefreshCcw,
-    Zap
+  AlertTriangle,
+  Building2,
+  Calendar,
+  CheckCircle2,
+  Download,
+  FileSpreadsheet,
+  RefreshCcw,
+  Upload,
 } from 'lucide-react';
-
-interface MonthlyBill {
-    month: string;
-    year: number;
-    actualRate: number; // ¢/kWh paid
-    rolrRate: number; // RoLR rate that month
-    poolPrice: number; // Avg wholesale pool price
-    consumption: number; // kWh
-}
-
-// Simulated historical data (would come from API in production)
-const HISTORICAL_DATA: MonthlyBill[] = [
-    { month: 'Jan', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 8.5, consumption: 850 },
-    { month: 'Feb', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 7.8, consumption: 820 },
-    { month: 'Mar', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 6.9, consumption: 720 },
-    { month: 'Apr', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 5.2, consumption: 650 },
-    { month: 'May', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 4.8, consumption: 580 },
-    { month: 'Jun', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 6.1, consumption: 620 },
-    { month: 'Jul', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 9.2, consumption: 780 },
-    { month: 'Aug', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 11.5, consumption: 820 },
-    { month: 'Sep', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 8.3, consumption: 700 },
-    { month: 'Oct', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 7.1, consumption: 680 },
-    { month: 'Nov', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 8.8, consumption: 750 },
-    { month: 'Dec', year: 2025, actualRate: 14.2, rolrRate: 12.0, poolPrice: 10.2, consumption: 900 },
-];
-
-// ROLR fixed at 12¢ for 2025-2026 per research
-const ROLR_RATE = 12.0;
+import ProofPackPanel from './ProofPackPanel';
+import ConstructedScenarioPanel from './ConstructedScenarioPanel';
+import DataTrustNotice from './DataTrustNotice';
+import { SHADOW_BILLING_CONSTRUCTED_SCENARIO } from '../lib/commercialScenarioBundles';
+import {
+  analyzeShadowBilling,
+  buildShadowBillingDeltaCsv,
+  buildStarterShadowBills,
+  parseShadowBillingCsv,
+} from '../lib/shadowBillingSupport';
+import {
+  buildShadowBillingExecutiveMarkdown,
+  buildShadowBillingFieldMapMarkdown,
+  buildShadowBillingMemoDescriptor,
+  buildShadowBillingProofBundle,
+  type ShadowBillingSourceMode,
+} from '../lib/shadowBillingProofPack';
+import {
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 export const ShadowBillingModule: React.FC = () => {
-    const [currentRate, setCurrentRate] = useState<number>(14.2);
-    const [showDetails, setShowDetails] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [records, setRecords] = useState(() => buildStarterShadowBills());
+  const [sourceMode, setSourceMode] = useState<ShadowBillingSourceMode>('starter_bills');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
+  const analysis = useMemo(() => analyzeShadowBilling(records), [records]);
+  const proofBundle = useMemo(() => buildShadowBillingProofBundle(sourceMode), [sourceMode]);
+  const proofActions = useMemo(() => {
+    const descriptor = buildShadowBillingMemoDescriptor(analysis, sourceMode);
 
-    // Calculate shadow billing results
-    const analysis = useMemo(() => {
-        let totalActualCost = 0;
-        let totalRolrCost = 0;
-        let totalPoolCost = 0;
-
-        const monthlyAnalysis = HISTORICAL_DATA.map(month => {
-            const actualCost = (month.consumption * currentRate) / 100;
-            const rolrCost = (month.consumption * ROLR_RATE) / 100;
-            const poolCost = (month.consumption * month.poolPrice) / 100;
-
-            totalActualCost += actualCost;
-            totalRolrCost += rolrCost;
-            totalPoolCost += poolCost;
-
-            return {
-                ...month,
-                actualCost,
-                rolrCost,
-                poolCost,
-                savingsVsRolr: actualCost - rolrCost,
-                savingsVsPool: actualCost - poolCost
-            };
-        });
-
-        const rolrSavings = totalActualCost - totalRolrCost;
-        const poolSavings = totalActualCost - totalPoolCost;
-        const recommendation = rolrSavings > 0 ? 'switch_rolr' : 'stay_current';
-
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'shadow-billing-memo') {
         return {
-            monthly: monthlyAnalysis,
-            totalActualCost,
-            totalRolrCost,
-            totalPoolCost,
-            rolrSavings,
-            poolSavings,
-            recommendation,
-            monthsOverpaid: monthlyAnalysis.filter(m => m.savingsVsRolr > 0).length
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
         };
-    }, [currentRate]);
+      }
+      if (artifact.id === 'shadow-billing-delta-csv') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildShadowBillingDeltaCsv(analysis),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'shadow-billing-field-map') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildShadowBillingFieldMapMarkdown(),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => downloadTextArtifact(
+          artifact,
+          buildShadowBillingExecutiveMarkdown(analysis),
+          'text/markdown;charset=utf-8;',
+        ),
+      };
+    });
+  }, [analysis, proofBundle.artifacts, sourceMode]);
 
-    const formatCurrency = (value: number): string => {
-        return new Intl.NumberFormat('en-CA', {
-            style: 'currency',
-            currency: 'CAD',
-            minimumFractionDigits: 2
-        }).format(value);
-    };
+  function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      minimumFractionDigits: 2,
+    }).format(value);
+  }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-            <div className="max-w-6xl mx-auto">
-                {/* Header */}
-                <div className="flex items-center gap-4 mb-8">
-                    <div className="p-4 bg-amber-600/20 rounded-2xl">
-                        <RefreshCcw className="h-10 w-10 text-amber-400" />
-                    </div>
-                    <div>
-                        <h1 className="text-3xl font-bold text-white">Shadow Billing Analysis</h1>
-                        <p className="text-slate-400 text-lg">
-                            "What if I had switched?" — See your missed savings
-                        </p>
-                    </div>
-                </div>
+  async function handleImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-                {/* Input Section */}
-                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 mb-8">
-                    <h2 className="text-lg font-semibold text-white mb-4">Your Current Rate</h2>
-                    <div className="flex items-center gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm text-slate-400 mb-2">
-                                Current Retailer Rate (¢/kWh)
-                            </label>
-                            <input
-                                type="number"
-                                value={currentRate}
-                                onChange={(e) => setCurrentRate(Number(e.target.value))}
-                                step="0.1"
-                                className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-xl font-semibold focus:border-amber-500"
-                            />
-                        </div>
-                        <div className="text-center px-6">
-                            <div className="text-sm text-slate-400">vs</div>
-                        </div>
-                        <div className="flex-1">
-                            <label className="block text-sm text-slate-400 mb-2">
-                                2025 RoLR Rate (Fixed)
-                            </label>
-                            <div className="px-4 py-3 bg-emerald-900/30 border border-emerald-500/50 rounded-lg text-emerald-400 text-xl font-semibold">
-                                12.0 ¢/kWh
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    try {
+      const text = await file.text();
+      const uploaded = parseShadowBillingCsv(text);
+      setRecords(uploaded);
+      setSourceMode('uploaded_bills');
+      setImportError(null);
+      setShowDetails(true);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Unable to parse the bill comparison file.');
+    } finally {
+      event.target.value = '';
+    }
+  }
 
-                {/* Results Summary */}
-                <div className="grid md:grid-cols-3 gap-6 mb-8">
-                    {/* What You Paid */}
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <DollarSign className="h-6 w-6 text-slate-400" />
-                            <h3 className="text-lg font-semibold text-white">What You Paid (2025)</h3>
-                        </div>
-                        <div className="text-4xl font-bold text-white">
-                            {formatCurrency(analysis.totalActualCost)}
-                        </div>
-                        <p className="text-sm text-slate-400 mt-2">
-                            At {currentRate}¢/kWh average
-                        </p>
-                    </div>
+  function resetStarterDataset() {
+    setRecords(buildStarterShadowBills());
+    setSourceMode('starter_bills');
+    setImportError(null);
+  }
 
-                    {/* What RoLR Would Cost */}
-                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-6">
-                        <div className="flex items-center gap-3 mb-4">
-                            <Zap className="h-6 w-6 text-emerald-400" />
-                            <h3 className="text-lg font-semibold text-emerald-400">RoLR Would Cost</h3>
-                        </div>
-                        <div className="text-4xl font-bold text-emerald-400">
-                            {formatCurrency(analysis.totalRolrCost)}
-                        </div>
-                        <p className="text-sm text-emerald-400/80 mt-2">
-                            At fixed 12¢/kWh
-                        </p>
-                    </div>
+  function loadConstructedScenario() {
+    const constructed = parseShadowBillingCsv(SHADOW_BILLING_CONSTRUCTED_SCENARIO.downloads[0].content);
+    setRecords(constructed);
+    setSourceMode('constructed_commercial_scenario');
+    setImportError(null);
+    setShowDetails(true);
+  }
 
-                    {/* Your Missed Savings */}
-                    <div className={`rounded-2xl p-6 ${analysis.rolrSavings > 0
-                            ? 'bg-red-900/20 border border-red-500/30'
-                            : 'bg-emerald-900/20 border border-emerald-500/30'
-                        }`}>
-                        <div className="flex items-center gap-3 mb-4">
-                            {analysis.rolrSavings > 0 ? (
-                                <TrendingDown className="h-6 w-6 text-red-400" />
-                            ) : (
-                                <TrendingUp className="h-6 w-6 text-emerald-400" />
-                            )}
-                            <h3 className="text-lg font-semibold text-white">
-                                {analysis.rolrSavings > 0 ? 'Missed Savings' : 'You Saved'}
-                            </h3>
-                        </div>
-                        <div className={`text-4xl font-bold ${analysis.rolrSavings > 0 ? 'text-red-400' : 'text-emerald-400'
-                            }`}>
-                            {formatCurrency(Math.abs(analysis.rolrSavings))}
-                        </div>
-                        <p className="text-sm text-slate-400 mt-2">
-                            {analysis.monthsOverpaid} of 12 months overpaid
-                        </p>
-                    </div>
-                </div>
+  function downloadStarterTemplate() {
+    const starterCsv = [
+      'billing_period,consumption_kwh,actual_energy_rate_cents_per_kwh,actual_supply_cost_cad,fixed_charge_cad,retailer_name,rolr_rate_cents_per_kwh,pool_price_cents_per_kwh',
+      ...buildStarterShadowBills().map((record) => [
+        record.billingPeriod,
+        record.consumptionKwh,
+        record.actualEnergyRateCentsPerKwh.toFixed(2),
+        record.actualSupplyCostCad.toFixed(2),
+        (record.fixedChargeCad ?? 0).toFixed(2),
+        `"${record.retailerName ?? ''}"`,
+        record.rolrRateCentsPerKwh.toFixed(2),
+        record.poolPriceCentsPerKwh.toFixed(2),
+      ].join(',')),
+    ].join('\n');
 
-                {/* Recommendation Card */}
-                {analysis.rolrSavings > 0 && (
-                    <div className="bg-gradient-to-r from-amber-600/20 to-red-600/20 border-2 border-amber-500 rounded-2xl p-6 mb-8">
-                        <div className="flex items-start gap-4">
-                            <AlertTriangle className="h-8 w-8 text-amber-400 flex-shrink-0" />
-                            <div className="flex-1">
-                                <h3 className="text-xl font-bold text-white mb-2">
-                                    You're Overpaying by {formatCurrency(analysis.rolrSavings)}/year
-                                </h3>
-                                <p className="text-slate-300 mb-4">
-                                    The RoLR (Rate of Last Resort) is fixed at 12¢/kWh until December 2026.
-                                    At your current rate of {currentRate}¢/kWh, you're paying a premium of{' '}
-                                    {(currentRate - ROLR_RATE).toFixed(1)}¢ per kWh.
-                                </p>
-                                <div className="flex gap-4">
-                                    <button
-                                        onClick={() => window.location.href = '/pricing'}
-                                        className="px-6 py-3 bg-amber-600 hover:bg-amber-500 rounded-lg font-semibold text-white transition-all flex items-center gap-2"
-                                    >
-                                        Get Rate Watchdog Alerts
-                                        <ArrowRight className="h-4 w-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => setShowDetails(!showDetails)}
-                                        className="px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium text-white transition-all"
-                                    >
-                                        {showDetails ? 'Hide' : 'Show'} Monthly Breakdown
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Monthly Breakdown */}
-                {showDetails && (
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6 mb-8">
-                        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                            <Calendar className="h-5 w-5 text-slate-400" />
-                            Monthly Shadow Bill Comparison
-                        </h3>
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="border-b border-slate-700">
-                                        <th className="text-left py-3 px-4 text-slate-400 font-medium">Month</th>
-                                        <th className="text-right py-3 px-4 text-slate-400 font-medium">Usage (kWh)</th>
-                                        <th className="text-right py-3 px-4 text-slate-400 font-medium">You Paid</th>
-                                        <th className="text-right py-3 px-4 text-slate-400 font-medium">RoLR Cost</th>
-                                        <th className="text-right py-3 px-4 text-slate-400 font-medium">Pool Cost</th>
-                                        <th className="text-right py-3 px-4 text-slate-400 font-medium">Difference</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {analysis.monthly.map((month, idx) => (
-                                        <tr key={idx} className="border-b border-slate-700/50 hover:bg-slate-700/30">
-                                            <td className="py-3 px-4 text-white">{month.month} {month.year}</td>
-                                            <td className="py-3 px-4 text-right text-slate-300">{month.consumption}</td>
-                                            <td className="py-3 px-4 text-right text-white">{formatCurrency(month.actualCost)}</td>
-                                            <td className="py-3 px-4 text-right text-emerald-400">{formatCurrency(month.rolrCost)}</td>
-                                            <td className="py-3 px-4 text-right text-cyan-400">{formatCurrency(month.poolCost)}</td>
-                                            <td className={`py-3 px-4 text-right font-semibold ${month.savingsVsRolr > 0 ? 'text-red-400' : 'text-emerald-400'
-                                                }`}>
-                                                {month.savingsVsRolr > 0 ? '+' : ''}{formatCurrency(month.savingsVsRolr)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="bg-slate-700/30">
-                                        <td className="py-3 px-4 text-white font-semibold">Total</td>
-                                        <td className="py-3 px-4 text-right text-slate-300 font-semibold">
-                                            {HISTORICAL_DATA.reduce((sum, m) => sum + m.consumption, 0).toLocaleString()}
-                                        </td>
-                                        <td className="py-3 px-4 text-right text-white font-semibold">
-                                            {formatCurrency(analysis.totalActualCost)}
-                                        </td>
-                                        <td className="py-3 px-4 text-right text-emerald-400 font-semibold">
-                                            {formatCurrency(analysis.totalRolrCost)}
-                                        </td>
-                                        <td className="py-3 px-4 text-right text-cyan-400 font-semibold">
-                                            {formatCurrency(analysis.totalPoolCost)}
-                                        </td>
-                                        <td className={`py-3 px-4 text-right font-bold ${analysis.rolrSavings > 0 ? 'text-red-400' : 'text-emerald-400'
-                                            }`}>
-                                            {analysis.rolrSavings > 0 ? '+' : ''}{formatCurrency(analysis.rolrSavings)}
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                )}
-
-                {/* Key Insight */}
-                <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">Key 2025 Insight</h3>
-                    <div className="flex items-start gap-4">
-                        <CheckCircle className="h-6 w-6 text-emerald-500 flex-shrink-0" />
-                        <div>
-                            <p className="text-slate-300">
-                                <strong className="text-white">The RoLR is fixed at 12¢/kWh until December 2026.</strong>{' '}
-                                Unlike the old RRO which fluctuated monthly, the Rate of Last Resort provides
-                                price certainty. However, locking in at a market peak remains a risk —
-                                if wholesale prices drop significantly, you could miss savings.
-                            </p>
-                            <p className="text-sm text-slate-400 mt-3">
-                                Source: Alberta Utilities Commission (AUC), Direct Energy RoLR rate schedule
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+    downloadTextArtifact(
+      {
+        id: 'shadow-billing-starter-template',
+        label: 'Starter invoice template',
+        format: 'csv',
+        filename: 'shadow_billing_starter_template.csv',
+        audience: 'Facilities lead',
+        generatedAt: new Date().toISOString(),
+        jurisdiction: 'Alberta',
+        sourceSummary: 'Starter template',
+        sourceManifestId: 'shadow-billing-starter-template-v1',
+        verificationStatus: 'needs_buyer_data',
+        doNotClaim: [
+          'Full delivered-bill audit',
+          'Utility bill correctness certification',
+          'Savings without uploaded invoice evidence',
+        ],
+        assumptions: [],
+        claimLabel: 'advisory',
+        isFallback: true,
+        freshnessState: 'starter-template',
+        boundedClaimsDisclaimer: 'Populate this file with the buyer’s last 12 bills before using it in a paid pilot.',
+      },
+      starterCsv,
+      'text/csv;charset=utf-8;',
     );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-amber-600/20 p-4">
+              <RefreshCcw className="h-10 w-10 text-amber-400" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">Municipal and facilities wedge</div>
+              <h1 className="mt-2 text-3xl font-bold text-white">Shadow Billing Module</h1>
+              <p className="mt-2 max-w-3xl text-lg text-slate-300">
+                Review the last 12 bills against Alberta&apos;s disclosed RoLR comparison path without overclaiming full delivered-bill parity.
+              </p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="inline-flex items-center gap-2 rounded-xl bg-amber-500 px-5 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-amber-400"
+          >
+            <Upload className="h-4 w-4" />
+            Review your last 12 bills
+          </button>
+        </div>
+
+        <DataTrustNotice
+          mode={sourceMode === 'starter_bills' ? 'mock' : 'fallback'}
+          title={
+            sourceMode === 'starter_bills'
+              ? 'Starter bill set active'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'Constructed commercial scenario active'
+                : 'Uploaded invoice comparison active'
+          }
+          message={
+            sourceMode === 'starter_bills'
+              ? 'The current comparison uses a starter 12-month Alberta bill set. Upload actual invoices to replace every delta and memo with buyer-specific numbers.'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'This comparison uses a constructed Alberta municipal bill file based on realistic public-sector supply-cost assumptions. It is not a customer invoice book, and the exports keep that boundary explicit.'
+                : 'The current comparison is built from uploaded invoice data. Energy-supply-only scope and rider exclusions still stay explicit in every export.'
+          }
+          className="mb-6"
+        />
+
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6" data-testid="shadow-billing-upload-panel">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">1. Upload bill history</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Upload a 12-month invoice file with consumption, supply rate, supply cost, and optional fixed charges.
+                  </p>
+                </div>
+                <Building2 className="h-5 w-5 text-cyan-300" />
+              </div>
+
+              <div className="mt-4 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5">
+                <label className="flex cursor-pointer flex-col items-center gap-3 text-center">
+                  <Upload className="h-8 w-8 text-cyan-300" />
+                  <div>
+                    <div className="font-medium text-white">Upload 12-month billing CSV</div>
+                    <div className="mt-1 text-xs text-slate-400">
+                      Required columns: `billing_period`, `consumption_kwh`, `actual_energy_rate_cents_per_kwh`, `actual_supply_cost_cad`.
+                    </div>
+                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv,text/csv"
+                    className="hidden"
+                    onChange={handleImport}
+                  />
+                  <span className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">Select billing file</span>
+                </label>
+              </div>
+
+              {importError && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-100">
+                  {importError}
+                </div>
+              )}
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <button
+                  onClick={loadConstructedScenario}
+                  className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-left text-sm text-cyan-50 transition-colors hover:border-cyan-400"
+                >
+                  <div className="font-medium">Load constructed municipal scenario</div>
+                  <div className="mt-1 text-xs text-cyan-100/80">Swap in a semi-real Alberta municipal bill file for pilot demos and outreach.</div>
+                </button>
+                <button
+                  onClick={downloadStarterTemplate}
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                >
+                  <div className="font-medium">Download starter invoice template</div>
+                  <div className="mt-1 text-xs text-slate-500">Use this schema to replace the seeded comparison with buyer invoices.</div>
+                </button>
+                <button
+                  onClick={resetStarterDataset}
+                  className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                >
+                  <div className="font-medium">Reload starter bill set</div>
+                  <div className="mt-1 text-xs text-slate-500">Switch back to the seeded Alberta starter set for demos.</div>
+                </button>
+              </div>
+            </div>
+
+            <ConstructedScenarioPanel
+              scenario={SHADOW_BILLING_CONSTRUCTED_SCENARIO}
+              onLoad={loadConstructedScenario}
+              testId="shadow-billing-constructed-scenario"
+            />
+
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-300" data-testid="shadow-billing-source-mode">
+                <CheckCircle2 className="h-4 w-4" />
+                {sourceMode === 'starter_bills'
+                  ? 'Starter bill set active'
+                  : sourceMode === 'constructed_commercial_scenario'
+                    ? 'Constructed municipal invoice scenario active'
+                    : 'Uploaded 12-month invoice history active'}
+              </div>
+              <h2 className="mt-4 text-xl font-semibold text-white">Annual comparison summary</h2>
+              <p className="mt-2 text-sm text-slate-400">
+                Default comparison scope is energy-supply-only. Fixed charges remain directional unless the buyer provides them in the import file.
+              </p>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <SummaryCard label="Actual supply cost" value={formatCurrency(analysis.totalActualSupplyCostCad)} tone="slate" />
+                <SummaryCard label="RoLR comparison cost" value={formatCurrency(analysis.totalRolrSupplyCostCad)} tone="emerald" />
+                <SummaryCard label="Delta vs RoLR" value={formatCurrency(analysis.deltaVsRolrCad)} tone={analysis.deltaVsRolrCad > 0 ? 'amber' : 'emerald'} />
+                <SummaryCard label="Months above RoLR" value={`${analysis.monthsOverRolr} / ${analysis.rows.length}`} tone="slate" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-amber-500/30 bg-amber-900/20 p-5">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
+                <div>
+                  <div className="font-medium text-white">Comparison boundary</div>
+                  <p className="mt-2 text-sm text-amber-100">
+                    This route does not claim full delivered-bill reconstruction unless rider and fixed-charge mapping are explicitly supplied. The current proof pack stays honest by leading with supply-cost deltas first.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowDetails((current) => !current)}
+              className="inline-flex items-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-600"
+            >
+              <Calendar className="h-4 w-4" />
+              {showDetails ? 'Hide monthly comparison' : 'Show monthly comparison'}
+            </button>
+          </section>
+        </div>
+
+        {showDetails && (
+          <div className="mt-8 rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+            <h3 className="text-lg font-semibold text-white">Monthly invoice comparison</h3>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700 text-slate-400">
+                    <th className="px-4 py-3 text-left">Period</th>
+                    <th className="px-4 py-3 text-right">Usage (kWh)</th>
+                    <th className="px-4 py-3 text-right">Actual supply</th>
+                    <th className="px-4 py-3 text-right">RoLR supply</th>
+                    <th className="px-4 py-3 text-right">Pool supply</th>
+                    <th className="px-4 py-3 text-right">Delta vs RoLR</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {analysis.rows.map((row) => (
+                    <tr key={row.id} className="border-b border-slate-800 text-slate-200">
+                      <td className="px-4 py-3">{row.billingPeriod}</td>
+                      <td className="px-4 py-3 text-right">{row.consumptionKwh.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right">{formatCurrency(row.actualSupplyCostCad)}</td>
+                      <td className="px-4 py-3 text-right text-emerald-300">{formatCurrency((row.consumptionKwh * row.rolrRateCentsPerKwh) / 100)}</td>
+                      <td className="px-4 py-3 text-right text-cyan-300">{formatCurrency(row.poolSupplyCostCad)}</td>
+                      <td className={`px-4 py-3 text-right font-semibold ${row.deltaVsRolrCad > 0 ? 'text-amber-300' : 'text-emerald-300'}`}>
+                        {formatCurrency(row.deltaVsRolrCad)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 };
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: 'slate' | 'emerald' | 'amber';
+}) {
+  const toneClasses = tone === 'emerald'
+    ? 'border-emerald-500/30 bg-emerald-900/20 text-emerald-300'
+    : tone === 'amber'
+      ? 'border-amber-500/30 bg-amber-900/20 text-amber-300'
+      : 'border-slate-700 bg-slate-900/70 text-white';
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClasses}`}>
+      <div className="text-sm text-slate-400">{label}</div>
+      <div className="mt-2 text-2xl font-bold">{value}</div>
+    </div>
+  );
+}
 
 export default ShadowBillingModule;

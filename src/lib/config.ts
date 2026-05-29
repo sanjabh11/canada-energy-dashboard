@@ -67,8 +67,17 @@ export function getEdgeHeaders(): Record<string, string> {
 
 export function isEdgeFetchEnabled(): boolean {
   const raw = env.VITE_ENABLE_EDGE_FETCH as string | boolean | undefined;
+  const allowLocalEdgeFetch = String(env.VITE_ALLOW_LOCAL_EDGE_FETCH ?? '').toLowerCase() === 'true';
   
   if (DEBUG) debug.log('isEdgeFetchEnabled - raw value:', raw, 'type:', typeof raw);
+
+  if (typeof window !== 'undefined') {
+    const host = window.location?.hostname || '';
+    if ((host === 'localhost' || host === '127.0.0.1') && !allowLocalEdgeFetch) {
+      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected without local Edge opt-in, returning false');
+      return false;
+    }
+  }
 
   // If explicitly set, honor that setting (works for both localhost and production)
   if (typeof raw === 'boolean') {
@@ -81,19 +90,26 @@ export function isEdgeFetchEnabled(): boolean {
     return result;
   }
 
-  // If not explicitly set, disable on localhost to avoid noisy CORS failures during development
-  if (typeof window !== 'undefined') {
-    const host = window.location?.hostname || '';
-    if (host === 'localhost' || host === '127.0.0.1') {
-      if (DEBUG) debug.log('isEdgeFetchEnabled - localhost detected, no explicit setting, returning false');
-      return false;
-    }
-  }
-
   // For production deployments without explicit setting, enable if Supabase is configured
   const fallback = Boolean(env.VITE_SUPABASE_URL && env.VITE_SUPABASE_ANON_KEY);
   if (DEBUG) debug.log('isEdgeFetchEnabled - using fallback:', fallback);
   return fallback;
+}
+
+function isEnvFlagEnabled(name: string): boolean {
+  return String(env[name] ?? '').toLowerCase() === 'true';
+}
+
+export function isForecastAccuracyEdgeFetchEnabled(): boolean {
+  return isEdgeFetchEnabled() && isEnvFlagEnabled('VITE_ENABLE_FORECAST_ACCURACY_EDGE_FETCH');
+}
+
+export function isMlEdgeFetchEnabled(): boolean {
+  return isEdgeFetchEnabled() && isEnvFlagEnabled('VITE_ENABLE_ML_EDGE_FETCH');
+}
+
+export function isAiDataCentreEdgeFetchEnabled(): boolean {
+  return isEdgeFetchEnabled() && isEnvFlagEnabled('VITE_ENABLE_AI_DATACENTRE_EDGE_FETCH');
 }
 
 export function getFeatureFlagUseStreaming(): boolean {

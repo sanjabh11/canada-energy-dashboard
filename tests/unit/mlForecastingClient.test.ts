@@ -78,6 +78,8 @@ describe('mlForecastingClient pv_fault routing', () => {
 
 describe('mlForecastingClient groundsource routing', () => {
   it('returns a heuristic fallback payload when the edge call fails', async () => {
+    vi.stubEnv('VITE_ENABLE_ML_EDGE_FETCH', 'true');
+
     const result = await ingestGroundsourceEvents({
       source_group: 'utility_public',
       max_items: 2,
@@ -89,6 +91,18 @@ describe('mlForecastingClient groundsource routing', () => {
     expect(result.data.meta.claim_label).toBe('advisory');
     expect(result.data.meta.is_fallback).toBe(true);
     expect(result.data.event_count).toBe(0);
+  });
+
+  it('keeps ML edge calls opt-in for public proof-pack routes', async () => {
+    vi.stubEnv('VITE_ENABLE_ML_EDGE_FETCH', 'false');
+
+    const result = await ingestGroundsourceEvents({
+      source_group: 'utility_public',
+      max_items: 2,
+    });
+
+    expect(result.source).toBe('local_fallback');
+    expect(result.data.fallback_reason).toBe('edge_disabled');
   });
 
   it('classifies common browser edge failures into actionable fallback reasons', () => {

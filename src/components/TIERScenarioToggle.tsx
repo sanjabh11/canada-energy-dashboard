@@ -1,8 +1,9 @@
 /**
  * TIER Scenario Toggle - Carbon Price Modeling Widget
  * 
- * Research Finding: TIER credit price crashed from $95 (headline) to $18-$20 (market)
- * This creates a "dual pricing" reality that must be modeled for accurate compliance forecasting.
+ * Research Finding: the 2026 Alberta fund-price basis is now $110/tonne, while
+ * secondary-market pricing still needs a buyer-specific quote. This widget keeps
+ * the fallback market case clearly labeled as planning-only.
  * 
  * Reference: MonetizationResearch_Overall.md §2.1 - "The Pricing Anomaly"
  */
@@ -22,26 +23,26 @@ interface TIERScenario {
 const TIER_SCENARIOS: TIERScenario[] = [
     {
         id: 'alberta_fund',
-        label: 'TIER Fund Price',
-        price: 95,
-        year: 2025,
-        description: 'Frozen by Alberta government. Pay-to-government compliance option.',
+        label: '2026 Alberta Fund',
+        price: 110,
+        year: 2026,
+        description: 'Official Alberta planning basis for 2026 compliance payments.',
         color: 'text-amber-400'
     },
     {
         id: 'market_reality',
-        label: 'Secondary Market',
-        price: 20,
-        year: 2025,
-        description: 'Actual credit trading price. Collapsed due to oversupply.',
+        label: 'Market Snapshot',
+        price: 25,
+        year: 2026,
+        description: 'Fallback planning snapshot only. Replace with a live quote before approval.',
         color: 'text-red-400'
     },
     {
-        id: 'federal_2026',
-        label: 'Federal Backstop',
-        price: 110,
-        year: 2026,
-        description: 'If Alberta system deemed non-equivalent, federal price applies.',
+        id: 'alberta_2027',
+        label: '2027 Alberta Trajectory',
+        price: 125,
+        year: 2027,
+        description: 'Next-year planning reference from the same Alberta workshop schedule.',
         color: 'text-purple-400'
     },
     {
@@ -97,9 +98,9 @@ export const TIERScenarioToggle: React.FC<TIERScenarioToggleProps> = ({
                     <div className="flex items-start gap-2">
                         <AlertTriangle className="h-4 w-4 text-amber-400 flex-shrink-0 mt-0.5" />
                         <div className="text-slate-300">
-                            <strong className="text-amber-400">Pricing Disconnect:</strong> Alberta froze TIER at $95/tonne
-                            but secondary market credits trade at ~$20 due to oversupply. Federal law requires $170 by 2030.
-                            Use this toggle to model different compliance scenarios.
+                            <strong className="text-amber-400">Planning note:</strong> Alberta's published 2026 fund-price basis is
+                            $110/tonne. The market-price card is a fallback planning snapshot, not a live quote. Use this toggle
+                            to compare scenarios, then refresh the market case before any buyer approval.
                         </div>
                     </div>
                 </div>
@@ -130,7 +131,7 @@ export const TIERScenarioToggle: React.FC<TIERScenarioToggleProps> = ({
                 <div className="flex items-center gap-2 mb-2">
                     <div className={`w-3 h-3 rounded-full ${selectedScenario.id === 'market_reality' ? 'bg-red-500' :
                             selectedScenario.id === 'alberta_fund' ? 'bg-amber-500' :
-                                selectedScenario.id === 'federal_2026' ? 'bg-purple-500' : 'bg-cyan-500'
+                                selectedScenario.id === 'alberta_2027' ? 'bg-purple-500' : 'bg-cyan-500'
                         }`} />
                     <span className="font-medium text-white">{selectedScenario.label}</span>
                 </div>
@@ -165,8 +166,8 @@ export const TIERScenarioToggle: React.FC<TIERScenarioToggleProps> = ({
                 <div className="mt-4 flex items-start gap-2 text-sm text-red-400">
                     <TrendingDown className="h-4 w-4 flex-shrink-0 mt-0.5" />
                     <span>
-                        <strong>Note:</strong> Low market prices make trading less attractive.
-                        Consider the Direct Investment Pathway for better returns.
+                        <strong>Note:</strong> This market case is illustrative.
+                        Validate a live quote and Direct Investment eligibility before using it in an external memo.
                     </span>
                 </div>
             )}

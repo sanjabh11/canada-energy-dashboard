@@ -8,8 +8,8 @@ test.describe('UtilityAPI demo lane', () => {
 
     await expect(page.getByRole('heading', { name: 'UtilityAPI Demo Lane' })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('UtilityAPI DEMO only', { exact: true })).toBeVisible();
-    await expect(page.getByText('Not London Hydro readiness')).toBeVisible();
-    await expect(page.getByText('Not Alectra readiness')).toBeVisible();
+    await expect(page.getByText('No production connector approval')).toBeVisible();
+    await expect(page.getByText('No utility submission readiness')).toBeVisible();
     await expect(page.getByTestId('utilityapi-demo-operator-panel')).toContainText('Operator Live Access');
     await expect(page.getByRole('button', { name: 'Launch Live Demo' })).toHaveCount(0);
     await expect(page.getByRole('button', { name: 'Continue with Fixture Replay' })).toBeVisible();

@@ -24,11 +24,12 @@ import {
 } from 'lucide-react';
 import { fetchEdgeJson } from '../lib/edge';
 import { HelpButton } from './HelpButton';
-import { isEdgeFetchEnabled } from '../lib/config';
+import { isAiDataCentreEdgeFetchEnabled } from '../lib/config';
 import { AIDemandScenarioSlider } from './AIDemandScenarioSlider';
 import DataTrustNotice from './DataTrustNotice';
 import { runMlForecast } from '../lib/mlForecastingClient';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
+import LargeLoadReadinessPanel from './LargeLoadReadinessPanel';
 import { buildDataProvenance } from '../lib/foundation';
 import { loadDashboardSnapshot, saveDashboardSnapshot } from '../lib/dashboardSnapshotCache';
 import { DataFreshnessIndicator } from './ui/DataFreshnessBadge';
@@ -68,8 +69,8 @@ export const AIDataCentreDashboard: React.FC = () => {
     setSourceUnavailable(false);
 
     try {
-      if (!isEdgeFetchEnabled()) {
-        console.warn('AIDataCentreDashboard: Supabase Edge disabled or not configured; no seeded fallback will be used.');
+      if (!isAiDataCentreEdgeFetchEnabled()) {
+        console.warn('AIDataCentreDashboard: live Edge fetch disabled or not configured; no seeded fallback will be used.');
         const cachedSnapshot = loadDashboardSnapshot<AIDataCentreDashboardSnapshot>(AI_DATA_CENTRE_SNAPSHOT_KEY);
         if (cachedSnapshot) {
           setDcData(cachedSnapshot.payload.dcData);
@@ -119,7 +120,7 @@ export const AIDataCentreDashboard: React.FC = () => {
         queueHistory: historyResponse,
       });
     } catch (err) {
-      console.error('Failed to load AI Data Centre data:', err);
+      console.warn('AIDataCentreDashboard: live data request failed.', err);
       const cachedSnapshot = loadDashboardSnapshot<AIDataCentreDashboardSnapshot>(AI_DATA_CENTRE_SNAPSHOT_KEY);
       if (cachedSnapshot) {
         setDcData(cachedSnapshot.payload.dcData);
@@ -206,7 +207,8 @@ export const AIDataCentreDashboard: React.FC = () => {
           <div className="flex items-start gap-4">
             <AlertTriangle className="mt-1 h-8 w-8 text-yellow-600" />
             <div>
-              <h1 className="text-2xl font-semibold text-amber-950">AI Data Centre source-backed snapshot unavailable</h1>
+              <h1 className="text-2xl font-semibold text-amber-950">AI Data Centre Energy Dashboard</h1>
+              <p className="mt-1 text-sm font-semibold text-amber-900">Source-backed snapshot unavailable</p>
               <p className="mt-2 text-sm text-amber-900">
                 This dashboard no longer falls back to seeded demo facility or queue data. No live edge response or cached source-backed snapshot is available for the selected province.
               </p>
@@ -576,6 +578,12 @@ export const AIDataCentreDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          <LargeLoadReadinessPanel
+            selectedProvince={selectedProvince}
+            queueData={queueData}
+            dcData={dcData}
+          />
 
           {/* Grid Impact Analysis - Show only when data exists */}
           {(hasProvinceData || isAlberta) && (

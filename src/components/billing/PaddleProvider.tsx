@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { initializePaddle, Paddle } from '@paddle/paddle-js';
 import { trackEvent } from '../../lib/analytics';
+import { shouldInitializePaddleForPath } from '../../lib/runtimeRouteMode';
+import { useWindowPathname } from '../../lib/useWindowPathname';
 
 interface PaddleContextType {
     paddle: Paddle | null;
@@ -49,16 +51,35 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
     const [paddle, setPaddle] = useState<Paddle | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isFallbackMode, setIsFallbackMode] = useState(false);
+    const pathname = useWindowPathname();
 
     useEffect(() => {
+        let cancelled = false;
+        const shouldInitialize = shouldInitializePaddleForPath(pathname);
+
+        if (!shouldInitialize) {
+            setPaddle(null);
+            setIsFallbackMode(true);
+            setIsLoading(false);
+            return () => {
+                cancelled = true;
+            };
+        }
+
         const initPaddle = async () => {
+            if (!cancelled) {
+                setIsLoading(true);
+                setIsFallbackMode(false);
+            }
             try {
                 if (PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
                     // Only warn in production; dev mode missing token is expected
                     if (!import.meta.env.DEV) {
                         console.warn('[Paddle] Missing VITE_PADDLE_CLIENT_TOKEN. Checkout fallback will be used.');
                     }
-                    setIsFallbackMode(true);
+                    if (!cancelled) {
+                        setIsFallbackMode(true);
+                    }
                 }
                 const paddleInstance = await initializePaddle({
                     environment: PADDLE_ENVIRONMENT as 'sandbox' | 'production',
@@ -83,20 +104,30 @@ export const PaddleProvider: React.FC<PaddleProviderProps> = ({ children }) => {
                         }
                     },
                 });
-                setPaddle(paddleInstance || null);
-                if (!paddleInstance || PADDLE_CLIENT_TOKEN === 'test_paddle_token') {
+                if (!cancelled) {
+                    setPaddle(paddleInstance || null);
+                }
+                if (!cancelled && (!paddleInstance || PADDLE_CLIENT_TOKEN === 'test_paddle_token')) {
                     setIsFallbackMode(true);
                 }
             } catch (error) {
                 console.error('Failed to initialize Paddle:', error);
-                setIsFallbackMode(true);
+                if (!cancelled) {
+                    setIsFallbackMode(true);
+                }
             } finally {
-                setIsLoading(false);
+                if (!cancelled) {
+                    setIsLoading(false);
+                }
             }
         };
 
         initPaddle();
-    }, []);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [pathname]);
 
     const openCheckout = (priceId: string) => {
         if (!paddle || PADDLE_CLIENT_TOKEN === 'test_paddle_token' || isFallbackMode) {

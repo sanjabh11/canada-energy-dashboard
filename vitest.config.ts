@@ -11,6 +11,7 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     include: ['tests/unit/**/*.test.ts'],
+    setupFiles: ['tests/setup/vitest.setup.ts'],
     clearMocks: true,
     restoreMocks: true,
     coverage: {

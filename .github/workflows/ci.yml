@@ -32,6 +32,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Security audit
+        run: pnpm audit --audit-level moderate
+
       - name: Verify Supabase migrations
         run: node scripts/verify-supabase-migrations.mjs
 
@@ -44,6 +47,9 @@ jobs:
       - name: Build
         run: pnpm exec vite build
 
+      - name: Proof-pack bundle budgets
+        run: pnpm run check:proof-pack-bundles
+
       - name: Unit tests
         run: pnpm exec vitest run
 
@@ -52,3 +58,11 @@ jobs:
 
       - name: Phase 0 smoke tests
         run: pnpm exec playwright test tests/component/foundation-phase0.spec.ts --project=chromium
+
+      - name: Phase 6 proof-pack browser smoke tests
+        env:
+          PLAYWRIGHT_PHASE6_PORT: 4199
+          TEST_BASE_URL: http://127.0.0.1:4199
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-phase6
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-phase6.json
+        run: pnpm run test:browser:phase6

@@ -1,33 +1,45 @@
-# CEIP OpenClaw Outreach Strategy — LinkedIn Cold Connection & Messaging Playbook
+# CEIP Outreach Strategy — Hermes-First Operating Playbook
 
-**Date:** March 1, 2026 (v4.0 — Blockers Removed + OpenClaw-Ready)
+**Date:** May 4, 2026 (v6.0 — Hermes Primary, OpenClaw Secondary)
 
-> **⚡ v4.0 BLOCKER FIXES APPLIED:** (1) TIER/EPC prices updated to current March 2026 data, (2) Canoe Procurement claim removed from Campaign 3, (3) Campaign 2 rewritten to ICE Network org-level entry (NO cold individual DMs), (4) Manual-first protocol enforced Weeks 1-3 before OpenClaw automation.
-**Tool:** OpenClaw Console (`https://claw.kilosessions.ai/chat?session=main`) + OpenClaw browser automation
+> **⚡ v6.0 REALIGNMENT APPLIED:** (1) Hermes is now the primary CEIP outreach operating system on this workstation, (2) OpenClaw is retained only as optional browser-side support, (3) outreach centers on the frozen MVP proof stack from `Top20.md`, (4) older `/demand-forecast` and `/overview` primacy is retired behind stronger live proof lanes, (5) TIER copy is reconciled with the current site pricing basis, (6) Campaign 2 remains relationship-first and non-automated.
+**Primary tool:** Hermes gateway + CEIP outreach skills and scripts under `~/.hermes` and `/Users/sanjayb/hermes-ops-private/skills/outreach/`
+**Secondary tool:** Local OpenClaw gateway (`http://127.0.0.1:3001/`) + browser support profile (`ceip-outreach`)
 **Aligned with:** `DEEP_RESEARCH_GTM_STRATEGY_2026.md` + `ADVERSARIAL_USP_ANALYSIS.md`
 **Live URLs:** All pages deployed at `https://canada-energy.netlify.app`
 
-> **Migration Note:** This version supersedes Comet-specific operating instructions. All outreach execution should now run through OpenClaw workflows.
+> **Migration Note:** This version supersedes both Comet-first execution and OpenClaw-first execution. Outreach control now runs through Hermes. OpenClaw remains an optional operator aid for browser inspection and draft review only.
 
 > **Companion execution docs:**
+> - `docs/HERMES_OUTREACH_OPERATING_PLAN.md` (primary daily and weekly operator runbook)
 > - `docs/OPENCLAW_MONETIZATION_IMPLEMENTATION_DELIVERABLE.md` (phase owners, KPI thresholds, acceptance gates)
-> - `docs/OPENCLAW_CONSOLE_KICKSTART_STRATEGY.md` (step-by-step OpenClaw console startup runbook)
+> - `docs/OPENCLAW_CONSOLE_KICKSTART_STRATEGY.md` (secondary OpenClaw support runbook)
 
 > **CRITICAL RULE:** Every claim in outreach must be verifiable by the prospect clicking through.
 > See `ADVERSARIAL_USP_ANALYSIS.md` for what we can and cannot claim.
 
-> **New capabilities to reference (NOW LIVE):**
-> - Ontario Demand Forecasting (seasonal decomposition, accuracy vs baselines) — `/demand-forecast`
-> - Regulatory Filing Templates (AUC Rule 005 Schedules 4.2/10/17/22 + OEB Chapter 5 Sections 5.2/5.3/5.4) — `/regulatory-filing`
+> **Primary MVP proof stack to reference first:**
+> - Utility planning lane — `/utility-demand-forecast`
+> - Regulatory export lane — `/regulatory-filing`
+> - Utility trust / security — `/utility-security`
+> - UtilityAPI / Green Button sandbox — `/utilityapi-demo`
+> - Forecast benchmarking trust layer — `/forecast-benchmarking`
+>
+> **Secondary proof pages now safe to use in outreach:**
 > - Asset Health Index (CSV-based CBRM-lite scoring, no SCADA required) — `/asset-health`
-> - OEB Innovation Sandbox pilot proposal (for credibility with Ontario LDCs) — `docs/OEB_SANDBOX_PROPOSAL.md`
+> - Open API docs — `/api-docs`
+> - Municipal landing page — `/municipal`
+> - TIER calculator — `/roi-calculator`
+> - Credit Banking — `/credit-banking`
+> - Shadow Billing — `/shadow-billing`
+> - Indigenous reporting / AICEI — `/funder-reporting`, `/aicei`
 
 ---
 
 ## TABLE OF CONTENTS
 
 1. [Safety Rules & Rate Limits](#1-safety-rules--rate-limits)
-2. [Master OpenClaw Runbook Template](#2-master-openclaw-runbook-template)
+2. [Master Outreach Drafter Template](#2-master-outreach-drafter-template)
 3. [Campaign 1: Energy Consulting Firms (Fastest Revenue)](#campaign-1-energy-consulting-firm-api-access)
 4. [Campaign 2: Indigenous Energy Coordinators (Blue Ocean)](#campaign-2-indigenous-energy-coordinators)
 5. [Campaign 3: Municipal Sustainability Officers (B2G)](#campaign-3-municipal-sustainability-officers)
@@ -35,14 +47,14 @@
 7. [Campaign 5: Alberta Residential / Rate Watchdog (B2C)](#campaign-5-alberta-rate-watchdog-b2c)
 8. [Weekly Cadence & Scaling Plan](#weekly-cadence--scaling-plan)
 9. [Tracking & Optimization](#tracking--optimization)
-10. [Feature Change Log & UI Verification (Feb 2026)](#feature-change-log--ui-verification-feb-2026)
+10. [MVP Proof Stack & UI Verification (May 2026)](#mvp-proof-stack--ui-verification-may-2026)
 11. [Optional Future Items (Not Committed)](#optional-future-items-not-committed)
 
 ---
 
 ## 1. Safety Rules & Rate Limits
 
-**Non-negotiable rules for every OpenClaw session:**
+**Non-negotiable rules for every outreach drafting session:**
 
 - Personalize every message with 1-2 specific details from the prospect's profile or recent posts
 - Connection notes: **≤250 characters** (LinkedIn hard limit)
@@ -58,25 +70,34 @@
 
 ---
 
-## 2. Master OpenClaw Runbook Template
+## 2. Master Outreach Drafter Template
 
-Copy-paste this as the base prompt in OpenClaw, then customize per campaign:
+Use this as the base prompt in Hermes, or in OpenClaw only when you explicitly need browser-side support:
 
 ```
-You are my safe OpenClaw LinkedIn outreach assistant for CEIP (Canada Energy Intelligence Platform).
+You are my safe CEIP outreach drafter.
 
-CONTEXT: CEIP is a comprehensive Canadian energy intelligence platform with 25+ sector dashboards, 44 API endpoints, a TIER compliance calculator, and OCAP-aligned Indigenous energy tools. Built by a Senior Technology & Management Consultant (GenAI + digital transformation specialist). Early-stage, seeking design partners and beta testers. Live at https://canada-energy.netlify.app
+CONTEXT: CEIP is a Canadian energy intelligence platform with live utility planning, regulatory filing, utility security, forecast benchmarking, API, TIER, municipal, and Indigenous reporting proof surfaces. Built by a Senior Technology & Management Consultant. Early-stage, seeking design partners and beta testers. Live at https://canada-energy.netlify.app
 
 IMPORTANT — DO NOT CLAIM:
 - "AI-powered" as a primary differentiator
-- Any specific EPC credit price without adding "as of March 2026" — prices are volatile (ranged $17-$41/t in the last 4 months)
+- Any market-credit price as "live" unless you explicitly have a current external quote; the site defaults to a fallback planning snapshot
+- Any TIER fund price other than the current CEIP planning basis of $110/t unless the site/source changes
 - "Used by consultants" or any social proof we don't have
-- "Nation-held encryption keys" or "full data sovereignty" (architecture exists, implementation is early-access)
+- "Nation-held encryption keys" or "full data sovereignty" (Indigenous tooling is OCAP-aligned / early-access, not hardened sovereignty infrastructure)
 - "Bill auditing" or "peak shaving alerts" for Rate Watchdog
+- Production utility onboarding, London Hydro readiness, or bridge certification
 
 GOAL: Build genuine connections with {TARGET_PERSONA}. We are NOT selling — we are offering free tools, beta access, and partnership opportunities. Position as honest early-stage builder seeking feedback.
 
 SAFETY: Follow 2026 LinkedIn best practices. Personalize deeply, engage content first (like + comment thoughtfully), add natural 2-5 min delays between actions, limit to 15-20 connection requests/day max, keep messages short and conversational. Stop if ANY warning appears.
+
+DEFAULT MVP PROOF ORDER:
+1. /utility-demand-forecast
+2. /regulatory-filing
+3. /utility-security
+4. /utilityapi-demo
+5. /forecast-benchmarking
 
 STEPS FOR EACH BATCH:
 1. Search LinkedIn: {SEARCH_QUERY} — collect 15-20 results
@@ -103,7 +124,11 @@ Start with 10 prospects today. Show me drafts for approval before sending.
 **GTM Score:** 7.5/10
 **Target MRR:** $2,500 by Month 3
 **Pricing:** $149/mo Professional or $5K-15K/yr per firm
-**Live demo URL:** `https://canada-energy.netlify.app/api-docs`
+**Live demo URLs:**
+- API docs: `https://canada-energy.netlify.app/api-docs`
+- Utility planning lane: `https://canada-energy.netlify.app/utility-demand-forecast`
+- Regulatory filing: `https://canada-energy.netlify.app/regulatory-filing`
+- Benchmarking trust: `https://canada-energy.netlify.app/forecast-benchmarking`
 
 ### Target Companies & Roles
 
@@ -117,7 +142,7 @@ Start with 10 prospects today. Show me drafts for approval before sending.
 | **Posterity Group** | Ottawa | 30+ | Climate Policy Analyst |
 | **Intrinsik** | Calgary | 40+ | Environmental Consultant |
 
-### OpenClaw Search Query
+### Search Query
 
 ```
 "Energy Analyst" OR "Energy Consultant" OR "Climate Analyst" AND (Dunsky OR ICF OR GLJ OR Navius OR Econoler OR "energy consulting") AND Canada
@@ -286,6 +311,8 @@ Happy to continue the conversation here!
 **Live demo URLs:**
 - Municipal Landing: `https://canada-energy.netlify.app/municipal`
 - ROI Calculator: `https://canada-energy.netlify.app/roi-calculator`
+- Regulatory Filing: `https://canada-energy.netlify.app/regulatory-filing`
+- Asset Health: `https://canada-energy.netlify.app/asset-health`
 - Enterprise Contact: `https://canada-energy.netlify.app/enterprise?tier=municipal`
 
 ### Target Municipalities (Alberta Focus)
@@ -301,7 +328,7 @@ Happy to continue the conversation here!
 | **Rocky View County** | 42K | Sustainability Planner |
 | **Parkland County** | 33K | Environmental Services |
 
-### OpenClaw Search Query
+### Search Query
 
 ```
 ("Sustainability" OR "Climate" OR "Environmental" OR "GHG") AND ("Coordinator" OR "Director" OR "Manager" OR "Planner") AND ("municipality" OR "county" OR "city of" OR "town of") AND Alberta
@@ -375,7 +402,7 @@ Would you be open to a free 30-day baseline audit? No commitment — you keep th
 | **Fertilizer / Ag-Chem** | Nutrien, CF Industries | Environmental Engineer |
 | **Pulp & Paper** | West Fraser, Alberta Newsprint | Environmental Coordinator |
 
-### OpenClaw Search Query
+### Search Query
 
 ```
 ("Environmental" OR "Compliance" OR "Sustainability" OR "EHS" OR "Regulatory") AND ("Manager" OR "Director" OR "Lead" OR "Engineer") AND ("TIER" OR "carbon" OR "emissions" OR "GHG") AND Alberta
@@ -383,22 +410,21 @@ Would you be open to a free 30-day baseline audit? No commitment — you keep th
 
 ### Connection Request Note (≤250 chars)
 
-> **⚡ v4.0 — TIER PRICE UPDATE:** EPC credits rebounded from $17/t (Nov 2025 low) to ~$41/t by late Jan 2026 (ClearBlue Markets / S&P Global). Fund frozen at $95/t (Alberta.ca, May 2025 announcement). Spread is now ~$54/t — still highly material. Update templates monthly; always include "as of [month]" qualifier.
+> **⚡ v5.0 — TIER CLAIM UPDATE:** CEIP now anchors the calculator to the current 2026 planning basis of `$110/t` for fund payment. Market-credit pricing in-route is a fallback planning snapshot and must be replaced by a live quote or registry-backed market view before buyer approval. Do not send cold outreach that treats fallback market pricing as a live transaction quote.
 
-**Template A — Arbitrage Hook (UPDATED PRICING):**
+**Template A — Compliance Pathway Hook:**
 ```
-Hi {FirstName}, the TIER fund-credit spread is ~$54/t right now (fund $95/t, EPC credits ~$41/t as of March 2026). I built a free 3-pathway compliance calculator (fund vs market credits vs Direct Investment). Useful for {Company}?
+Hi {FirstName}, noticed your TIER/compliance work at {Company}. I built a 3-pathway calculator anchored to the current Alberta fund basis ($110/t) with explicit market-quote replacement before approval. Useful to compare fund vs credits vs Direct Investment?
 ```
-*(241 chars — fits ≤250 limit)*
 
 **Template B — Direct Investment Hook:**
 ```
 Hi {FirstName}, saw {Company}'s sustainability work. With the new Direct Investment pathway under TIER, I built a compliance calculator comparing all 3 pathways. Happy to share — connect?
 ```
 
-**Template C — Compliance Angle (UPDATED PRICING):**
+**Template C — Scenario Audit Hook:**
 ```
-Hi {FirstName}, noticed your environmental compliance role at {Company}. I built a free TIER calculator: fund ($95/t) vs market credits (~$41/t, March 2026) vs Direct Investment. Worth a look?
+Hi {FirstName}, noticed your environmental compliance role at {Company}. I built a TIER workflow that separates fund payment, planning-market scenario, and Direct Investment with explicit pricing provenance. Worth a look?
 ```
 
 **Template D — Consultant Credibility Hook (NEW in v4.0):**
@@ -409,37 +435,36 @@ Hi {FirstName}, I published analysis on GenAI for Canadian utilities and went de
 
 ### Follow-Up DM (if accepted)
 
-**Template A — ROI Calculator Lead (UPDATED PRICING):**
+**Template A — ROI Calculator Lead (CURRENT SITE TRUTH):**
 ```
 Thanks for connecting, {FirstName}! Your compliance work at {Company} is right in my wheelhouse.
 
-Quick question: is {Company} currently paying into the TIER fund at $95/tonne, or buying market credits?
+Quick question: is {Company} currently treating TIER as a fund-payment exercise, or are you actively comparing market credits and Direct Investment options?
 
-I ask because the spread right now is significant — EPC credits are trading around $41/t (as of March 2026, up from $17/t in November 2025 — market is active), meaning facilities can save ~$54/tonne by buying credits instead of paying the fund. For a facility emitting 100K tonnes, that's potentially $5.4M/year in savings.
+The reason I ask is that CEIP now frames this as a three-pathway decision with explicit pricing provenance: current Alberta planning basis for the fund, a clearly labeled market-credit fallback scenario, and Direct Investment. It is useful for CFO/compliance conversations because it shows what still needs a live broker quote versus what is already fixed by published policy.
 
 I built a calculator that models this exactly: https://canada-energy.netlify.app/roi-calculator
 
-It also covers the new Direct Investment pathway (Dec 2025 amendments). Would a 15-minute walkthrough be useful?
+It also covers the Direct Investment pathway and ties into a follow-on credit banking workflow. Would a 15-minute walkthrough be useful?
 ```
 
-**Template B — Subject Matter Expert Approach (UPDATED PRICING):**
+**Template B — Subject Matter Expert Approach (CURRENT SITE TRUTH):**
 ```
 Appreciate the connection, {FirstName}! I've been deep in the TIER compliance space — I also published analysis on GenAI for Canadian utilities if you'd like background context.
 
 Current TIER data points:
-• Fund price: $95/t (Alberta.ca — frozen indefinitely as of May 2025; next review tied to federal carbon price negotiations by April 1, 2026)
-• Market EPC credits: ~$41/t (ClearBlue Markets / S&P Global, late Jan 2026 — up from $17/t at Nov 2025 low)
-• EPC compliance limit: 90% of obligations from 2026 onwards (up from previous cap)
+• Fund price: $110/t planning basis in the current CEIP workflow
+• Market-credit value in CEIP: fallback planning snapshot only until replaced by a live quote
 • New Direct Investment pathway: capex can offset compliance obligations
 
 I built a calculator that models the optimal compliance pathway across all three options: https://canada-energy.netlify.app/roi-calculator
 
-⚠️ Note: EPC prices are volatile — the calculator uses current data. Always confirm with your broker before transacting.
+⚠️ Note: the market-credit path should always be replaced with a live broker or registry-backed quote before approval.
 
-For a facility with 20K tonnes exceedance, the spread between fund payment and market credits is ~$1.08M/yr at current prices. Worth exploring for {Company}?
+If it helps, I can also show the follow-on credit allocation and audit trail workflow: https://canada-energy.netlify.app/credit-banking
 ```
 
-> **⚡ MONTHLY MAINTENANCE REQUIRED:** Update the EPC price in templates every month. Sources: ClearBlue Markets (clearbluemarkets.com), S&P Global Platts, or ccarbon.info. Set a calendar reminder for the 1st of each month.
+> **⚡ MONTHLY MAINTENANCE REQUIRED:** If you want to use a real market-credit number in outbound, update it monthly from a current broker or registry-backed source and mark it `as of [month year]`. Otherwise keep cold outreach on the provenance-safe planning language above.
 
 ---
 
@@ -466,7 +491,7 @@ LinkedIn outreach for Rate Watchdog should target **influencers and amplifiers**
 | **Energy bloggers / journalists** | Media coverage | 5-10 |
 | **Property managers** in Alberta | Recommend to tenants | 10-15 |
 
-### OpenClaw Search Query
+### Search Query
 
 ```
 ("Real Estate Agent" OR "Realtor" OR "Property Manager" OR "Personal Finance") AND (Calgary OR Edmonton OR Alberta) AND (energy OR electricity OR utilities)
@@ -647,12 +672,20 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 
 | Page | URL | Use Case |
 |------|-----|----------|
-| **API Docs** | `https://canada-energy.netlify.app/api-docs` | Consulting firms |
+| **Utility Planning Lane** | `https://canada-energy.netlify.app/utility-demand-forecast` | Utilities, consultants, municipal, Ontario LDC |
+| **Regulatory Filing** | `https://canada-energy.netlify.app/regulatory-filing` | Utilities, municipal, compliance/export proof |
+| **Utility Security** | `https://canada-energy.netlify.app/utility-security` | Procurement-heavy buyers, utilities |
+| **UtilityAPI Sandbox** | `https://canada-energy.netlify.app/utilityapi-demo` | Utility innovation teams, XML parser sandbox |
+| **Forecast Benchmarking** | `https://canada-energy.netlify.app/forecast-benchmarking` | Model-review and trust conversations |
+| **API Docs** | `https://canada-energy.netlify.app/api-docs` | Consulting firms, technical evaluators |
+| **Asset Health** | `https://canada-energy.netlify.app/asset-health` | Municipal, utility asset managers, advisors |
 | **Funder Reporting** | `https://canada-energy.netlify.app/funder-reporting` | Indigenous coordinators |
-| **OCAP Data Vault** | `https://canada-energy.netlify.app/sovereign-vault` | Indigenous executives |
-| **Indigenous Dashboard** | `https://canada-energy.netlify.app/indigenous` | Indigenous general |
+| **AICEI Reporting** | `https://canada-energy.netlify.app/aicei` | Alberta Indigenous clean energy programs |
+| **OCAP Data Vault** | `https://canada-energy.netlify.app/sovereign-vault` | Indigenous executives, early-access only |
 | **Municipal Landing** | `https://canada-energy.netlify.app/municipal` | Municipal officers |
 | **ROI Calculator** | `https://canada-energy.netlify.app/roi-calculator` | Industrial + Municipal |
+| **Credit Banking** | `https://canada-energy.netlify.app/credit-banking` | Industrial TIER follow-on |
+| **Shadow Billing** | `https://canada-energy.netlify.app/shadow-billing` | Bill-comparison and procurement follow-on |
 | **Rate Watchdog** | `https://canada-energy.netlify.app/watchdog` | B2C amplifiers |
 | **Competitor Comparison** | `https://canada-energy.netlify.app/compare` | All campaigns (trust) |
 | **Pricing** | `https://canada-energy.netlify.app/pricing` | All campaigns (late stage) |
@@ -661,16 +694,27 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 
 ---
 
-## Feature Change Log & UI Verification (Feb 2026)
+## MVP Proof Stack & UI Verification (May 2026)
 
-### Newly Implemented (P2–P5)
+### Primary Proof Stack (Lead With These First)
 
 | Feature | URL | Outreach Proof Point | What Prospect Sees | How to Verify (UI) |
 |---------|-----|----------------------|--------------------|--------------------|
-| Ontario Demand Forecasting (Seasonal Decomposition) | `/demand-forecast` | "We provide MAE/MAPE/RMSE vs persistence & seasonal naive baselines on Ontario load." | 4 tabs: Overview, Forecast, Decomposition, Accuracy with charts and CSV export. | Open page → Generate forecast → View charts; compare metrics block; export CSV. |
-| Regulatory Filing Templates (AUC Rule 005 + OEB Ch5) | `/regulatory-filing` | "We export AUC Rule 005 Schedules 4.2/10/17/22 and OEB Ch5 Sections 5.2/5.3/5.4 to CSV with sample data." | Template selector, jurisdiction filter, preview table, download CSV. | Select template → preview sample rows → click Export CSV downloads file. |
-| Asset Health Index (CSV CBRM-lite) | `/asset-health` | "CSV-based Health Index (age/loading/maintenance/environment) with condition/risk charts. No SCADA required." | Upload/ sample loader, condition & risk pies, age vs HI scatter, scored table, export. | Load sample → see charts populate → export results CSV; verify recommendations column. |
-| OEB Sandbox Pilot Proposal | `docs/OEB_SANDBOX_PROPOSAL.md` | "We prepared a 12-month pilot proposal for small Ontario LDCs (<12,500 customers)." | Markdown doc with Exec Summary, Problem, Solution, Budget, Success Metrics. | Open doc; check Sections 1–9; budget table present. |
+| Utility Demand Forecasting Lane | `/utility-demand-forecast` | "We turn buyer load history into a planning and filing-ready workflow." | Scenario overlays, planning memo path, export-oriented flow, benchmark-linked narrative. | Open page → confirm planning workflow, scenario framing, and export surfaces are visible. |
+| Regulatory Filing Templates | `/regulatory-filing` | "We package forecasts and asset evidence into OEB Chapter 5 / AUC Rule 005 style exports." | Jurisdiction-aware filing pack, schedule/checklist outputs, route links into planning and asset proof. | Open page → preview filing content → verify export controls are present. |
+| Utility Security & Data Handling | `/utility-security` | "We reduce procurement friction by making review boundaries explicit." | Control matrix, checklist, evidence index, review-pack structure. | Open page → verify custody/retention/revocation and review language is visible. |
+| UtilityAPI / Green Button Sandbox | `/utilityapi-demo` | "We can parse Green Button-style XML and build a forecast package in a safe sandbox." | Fixture replay, interval summary, forecast preview, operator-gated live controls. | Open page → click `Continue with Fixture Replay` → verify `replayed` and `Intervals: 48`. |
+| Forecast Benchmarking Trust Layer | `/forecast-benchmarking` | "We show MAE/MAPE/RMSE and baseline comparisons instead of black-box claims." | Benchmark metrics, persistence and seasonal-naive baselines, trust framing. | Open page → verify metrics blocks and baseline comparisons render. |
+
+### Secondary Proof Surfaces (Use by Persona)
+
+| Feature | URL | Outreach Proof Point | What Prospect Sees | How to Verify (UI) |
+|---------|-----|----------------------|--------------------|--------------------|
+| Asset Health Index (CSV CBRM-lite) | `/asset-health` | "CSV-based health scoring with no SCADA requirement." | Upload/sample loader, charts, scored table, export path. | Load sample → verify charts and results populate. |
+| TIER Compliance Savings Calculator | `/roi-calculator` | "Three-pathway TIER scenario with explicit pricing provenance." | Fund vs market-scenario vs Direct Investment comparison and memo outputs. | Open page → verify provenance text and artifact actions are visible. |
+| Credit Banking Dashboard | `/credit-banking` | "Compliance-year allocation and expiry-risk audit trail." | Position summary, allocation schedule, expiry-risk outputs. | Open page → confirm import/export and allocation workflow elements are visible. |
+| Shadow Billing Module | `/shadow-billing` | "Energy-supply-only bill comparison with memo and delta outputs." | Upload table, comparison outputs, explicit scope disclaimer. | Open page → confirm supply-only disclosure is present. |
+| AICEI Reporting | `/aicei` | "Alberta-specific Indigenous reporting support." | Portfolio/reporting workflow with approval-gap handling and exports. | Open page → verify Alberta program framing and export controls. |
 
 ### Optional Future Items (Not Committed / Use Carefully)
 - 12CP Peak Shaving Calculator (L2) — not built; do NOT promise.
@@ -679,10 +723,11 @@ Generate next batch of 15 prospects for Campaign {X}, following updated template
 - OCAP data vault hardening (encryption, key mgmt) — still early-access; be transparent.
 
 ### UI Smoke Test Steps (before outreach claims)
-1) **Demand Forecast:** Go to `/demand-forecast` → click "Generate Forecast" → confirm charts render and metrics show values.
-2) **Regulatory Templates:** Go to `/regulatory-filing` → choose AUC Rule 005 Schedule 4.2 → click Export CSV → file downloads.
-3) **Asset Health:** Go to `/asset-health` → click "Load Sample Data" → pies/scatter/table populate → export results.
-4) **Docs:** Open `docs/OEB_SANDBOX_PROPOSAL.md` in repo → confirm budget + success metrics present.
+1) **Utility planning:** Go to `/utility-demand-forecast` → verify planning workflow, scenario framing, and proof-pack path are visible.
+2) **Regulatory filing:** Go to `/regulatory-filing` → preview a filing pack and verify export controls.
+3) **Utility security:** Go to `/utility-security` → verify explicit review-boundary language is present.
+4) **UtilityAPI sandbox:** Go to `/utilityapi-demo` → click fixture replay → confirm `replayed` and `Intervals: 48`.
+5) **Forecast benchmarking:** Go to `/forecast-benchmarking` → verify `MAE`, `MAPE`, `RMSE`, persistence, and seasonal-naive proof surfaces.
 
 ---
 
@@ -699,12 +744,15 @@ Use these as "roadmap/early thinking" only; never present as shipped:
 ## Outreach Inserts for New Features (Use in relevant campaigns)
 
 - **For Consulting Firms / Municipal / Industrial:**
-  - "We publish accuracy vs persistence + seasonal naive baselines; MAE/MAPE/RMSE are visible on `/demand-forecast`."
+  - "We publish accuracy vs persistence + seasonal-naive baselines; MAE/MAPE/RMSE are visible on `/forecast-benchmarking`."
+  - "We position forecasting as a planning and filing workflow, not a generic dashboard, at `/utility-demand-forecast`."
   - "Regulatory exports: AUC Rule 005 Schedules 4.2/10/17/22 and OEB Ch5 5.2/5.3/5.4 downloadable as CSV at `/regulatory-filing`."
 - **For Ontario LDCs / Innovation teams:**
-  - "We drafted an OEB Innovation Sandbox pilot for small LDCs (<12,500 customers) — ready to share for co-application." (Point to `docs/OEB_SANDBOX_PROPOSAL.md`)
+  - "We can show the utility-planning lane, the filing pack, and the Green Button XML sandbox in one proof sequence without overstating production onboarding."
 - **For Utility Asset Managers:**
   - "CSV-based Asset Health Index (age/loading/maintenance/environment) — no SCADA required — live at `/asset-health` with charts + export."
+- **For Industrial TIER buyers:**
+  - "The TIER workflow uses current fund-basis provenance and separates fallback planning scenarios from live market quotes."
 
 Keep honesty constraints: no AI-as-headline, no SCADA, no live pricing, no social proof claims.
 
@@ -770,17 +818,17 @@ Best,
 {Your name}
 ```
 
-**Template — Ontario LDCs (with Sandbox pitch):**
+**Template — Ontario LDCs (with MVP proof stack pitch):**
 ```
 Subject: OEB Innovation Sandbox co-application — ML for DSP
 
 Hi {FirstName},
 
 I'm building ML-assisted distribution planning tools for small Ontario LDCs (<12,500 
-customers) and have drafted an OEB Innovation Sandbox pilot proposal.
+customers) and now have a public proof stack covering utility planning, filing export, utility security, and benchmark transparency.
 
 The pilot would provide your team with:
-• Automated load forecasting (MAE/MAPE benchmarked vs baselines)
+• Planning-lane load forecasting tied to filing/export workflow
 • Asset Health Index scoring from CSV — no SCADA required
 • Pre-formatted OEB Chapter 5 DSP exports (Sections 5.2, 5.3, 5.4)
 
@@ -850,14 +898,15 @@ Best,
 You are my safe OpenClaw LinkedIn outreach assistant for CEIP (Canada Energy Intelligence Platform — https://canada-energy.netlify.app).
 
 CEIP is a comprehensive Canadian energy intelligence platform with:
-• 25+ specialized energy dashboards (AESO, IESO, hydrogen, CCUS, ESG, etc.)
-• 44 REST API endpoints with Canadian grid, emissions, and compliance data
-• TIER carbon credit compliance calculator (3-pathway: fund vs market vs Direct Investment)
-• OCAP-aligned Indigenous energy tools (early-access, seeking community co-design partner)
-• Municipal climate tools designed for simplified procurement (<$75K)
-• Funder report templates for Wah-ila-toos, CERRC, Northern REACHE programs (early-access)
+• Utility planning workflow: /utility-demand-forecast
+• Regulatory filing workflow: /regulatory-filing
+• Utility trust page: /utility-security
+• Green Button sandbox: /utilityapi-demo
+• Forecast benchmarking trust layer: /forecast-benchmarking
+• Technical/API proof: /api-docs
+• Alberta TIER, municipal, and Indigenous reporting follow-on pages
 
-DO NOT CLAIM: "AI-powered" as headline • "live pricing" • "used by consultants" • "nation-held encryption keys" • "bill auditing" or "peak shaving" • "$500/year savings" • "auto-generates reports"
+DO NOT CLAIM: "AI-powered" as headline • "live market pricing" • "used by consultants" • "nation-held encryption keys" • "bill auditing" or "peak shaving" • "$500/year savings" • "auto-generates reports" • production utility onboarding
 
 I am a solo developer relocating to Alberta. My approach is value-first: offer free tools, beta access, and design partnerships. Be honest about early-stage status. Never hard-sell.
 
@@ -874,6 +923,13 @@ SAFETY RULES (NEVER VIOLATE):
 • Stop immediately on any LinkedIn warning
 • Log all actions for my tracking sheet
 
+DEFAULT PROOF ORDER FOR ANY DEMO REQUEST:
+1. /utility-demand-forecast
+2. /regulatory-filing
+3. /utility-security
+4. /utilityapi-demo
+5. /forecast-benchmarking
+
 CONNECTION NOTE TEMPLATE:
 {Paste template}
 
@@ -885,4 +941,4 @@ Show me 10 prospect drafts for approval before sending. Include: Name, Company, 
 
 ---
 
-*Document version: 3.0 (OpenClaw migration) | Aligned with DEEP_RESEARCH_GTM_STRATEGY_2026.md | All URLs verified against live codebase*
+*Document version: 5.0 (MVP freeze realignment) | Aligned with DEEP_RESEARCH_GTM_STRATEGY_2026.md and docs/Top20.md | All primary proof URLs verified against live codebase*

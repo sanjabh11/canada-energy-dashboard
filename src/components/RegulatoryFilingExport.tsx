@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import {
   FileText, Download, Shield, Building2, MapPin,
   ChevronRight, CheckCircle2, Info, ExternalLink,
@@ -8,15 +8,24 @@ import { SEOHead } from './SEOHead';
 import { Link } from 'react-router-dom';
 import {
   REGULATORY_TEMPLATES,
+  generateRegulatorySampleData,
   templateToCSV,
-  generateSampleRule005_4_2,
-  generateSampleRule005_10,
-  generateSampleOEB_AssetCondition,
-  generateSampleOEB_LoadForecast,
-  generateSampleOEB_Reliability,
   type TemplateType,
   type TemplateDefinition,
 } from '../lib/regulatoryTemplates';
+import ProofPackPanel from './ProofPackPanel';
+import {
+  buildRegulatoryChecklistMarkdown,
+  buildRegulatoryCoverMemoDescriptor,
+  buildRegulatoryProofBundle,
+  buildRegulatoryScheduleExports,
+  getRegulatoryPackConfig,
+  type RegulatoryJurisdiction,
+} from '../lib/regulatoryProofPack';
+import {
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 // ============================================================================
 // TYPES
@@ -30,6 +39,7 @@ type Jurisdiction = 'all' | 'Alberta' | 'Ontario';
 
 export const RegulatoryFilingExport: React.FC = () => {
   const [jurisdiction, setJurisdiction] = useState<Jurisdiction>('all');
+  const [packJurisdiction, setPackJurisdiction] = useState<RegulatoryJurisdiction>('Alberta');
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType | null>(null);
   const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null);
 
@@ -42,7 +52,7 @@ export const RegulatoryFilingExport: React.FC = () => {
   const handleSelectTemplate = useCallback((id: TemplateType) => {
     setSelectedTemplate(id);
     // Load sample data for preview
-    const sampleData = getSampleData(id);
+    const sampleData = generateRegulatorySampleData(id);
     setPreviewData(sampleData);
   }, []);
 
@@ -63,6 +73,50 @@ export const RegulatoryFilingExport: React.FC = () => {
   }, []);
 
   const activeTemplate = selectedTemplate ? REGULATORY_TEMPLATES[selectedTemplate] : null;
+  const activePackBundle = useMemo(() => buildRegulatoryProofBundle(packJurisdiction), [packJurisdiction]);
+  const activePackConfig = useMemo(() => getRegulatoryPackConfig(packJurisdiction), [packJurisdiction]);
+
+  useEffect(() => {
+    if (jurisdiction === 'Alberta' || jurisdiction === 'Ontario') {
+      setPackJurisdiction(jurisdiction);
+    }
+  }, [jurisdiction]);
+
+  const packActions = useMemo(() => {
+    const coverMemoDescriptor = buildRegulatoryCoverMemoDescriptor(packJurisdiction);
+    const checklistArtifact = activePackBundle.artifacts.find((artifact) => artifact.id.includes('reviewer-checklist'));
+    const scheduleExports = buildRegulatoryScheduleExports(packJurisdiction);
+    const scheduleArtifacts = activePackBundle.artifacts.filter((artifact) => activePackConfig.templates.includes(artifact.id as TemplateType));
+
+    return [
+      {
+        ...activePackBundle.artifacts[0],
+        onDownload: () => downloadTextArtifact(
+          activePackBundle.artifacts[0],
+          renderHtmlProofDocument({ ...coverMemoDescriptor, definition: activePackBundle.artifacts[0] }),
+          'text/html;charset=utf-8;',
+        ),
+      },
+      checklistArtifact ? {
+        ...checklistArtifact,
+        onDownload: () => downloadTextArtifact(
+          checklistArtifact,
+          buildRegulatoryChecklistMarkdown(packJurisdiction),
+          'text/markdown;charset=utf-8;',
+        ),
+      } : null,
+      ...scheduleArtifacts.map((artifact) => {
+        const exportMatch = scheduleExports.find((item) => item.definition.id === artifact.id);
+        return {
+          ...artifact,
+          onDownload: () => {
+            if (!exportMatch) return;
+            downloadTextArtifact(exportMatch.definition, exportMatch.content, 'text/csv;charset=utf-8;');
+          },
+        };
+      }),
+    ].filter((artifact): artifact is NonNullable<typeof artifact> => Boolean(artifact));
+  }, [activePackBundle.artifacts, activePackConfig.templates, packJurisdiction]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -155,6 +209,30 @@ export const RegulatoryFilingExport: React.FC = () => {
           </div>
         </div>
 
+        <div className="mb-6">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {(['Alberta', 'Ontario'] as RegulatoryJurisdiction[]).map((option) => (
+              <button
+                key={option}
+                onClick={() => setPackJurisdiction(option)}
+                className={`rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                  packJurisdiction === option
+                    ? 'bg-amber-500 text-slate-950'
+                    : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                }`}
+              >
+                {option} pack
+              </button>
+            ))}
+          </div>
+
+          <ProofPackPanel
+            title={activePackBundle.title}
+            summary={activePackBundle.summary}
+            artifacts={packActions}
+          />
+        </div>
+
         {/* Jurisdiction Filter */}
         <div className="flex items-center gap-3 mb-6">
           <Shield className="h-4 w-4 text-slate-400" />
@@ -220,6 +298,7 @@ export const RegulatoryFilingExport: React.FC = () => {
               <TemplateDetail
                 template={activeTemplate}
                 data={previewData}
+                reviewerChecklist={activePackConfig.reviewerChecklist}
                 onExport={() => handleExportCSV(activeTemplate, previewData)}
               />
             ) : (
@@ -279,9 +358,10 @@ export const RegulatoryFilingExport: React.FC = () => {
 // TEMPLATE DETAIL COMPONENT
 // ============================================================================
 
-function TemplateDetail({ template, data, onExport }: {
+function TemplateDetail({ template, data, reviewerChecklist, onExport }: {
   template: TemplateDefinition;
   data: Record<string, unknown>[];
+  reviewerChecklist: string[];
   onExport: () => void;
 }) {
   return (
@@ -392,53 +472,23 @@ function TemplateDetail({ template, data, onExport }: {
             </li>
           ))}
         </ul>
+
+        <div className="mt-5 pt-4 border-t border-slate-700">
+          <h4 className="text-slate-300 text-xs font-medium uppercase tracking-wider mb-2">
+            Reviewer checklist
+          </h4>
+          <ul className="space-y-2">
+            {reviewerChecklist.slice(0, 3).map((item) => (
+              <li key={item} className="flex items-start gap-2 text-sm text-slate-400">
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
-}
-
-// ============================================================================
-// UTILITIES
-// ============================================================================
-
-function getSampleData(templateId: TemplateType): Record<string, unknown>[] {
-  switch (templateId) {
-    case 'rule005_schedule_4_2':
-      return generateSampleRule005_4_2() as unknown as Record<string, unknown>[];
-    case 'rule005_schedule_10':
-      return generateSampleRule005_10() as unknown as Record<string, unknown>[];
-    case 'rule005_schedule_17':
-      // Generate from 4.2 data — rate base is derived
-      return generateSampleRule005_4_2().map(row => ({
-        rate_base_component: row.asset_category,
-        opening_balance_cad: row.net_book_value_cad,
-        additions_cad: row.additions_current_year_cad,
-        retirements_cad: row.retirements_current_year_cad,
-        depreciation_cad: row.original_cost_cad * (row.depreciation_rate_pct / 100),
-        closing_balance_cad: row.net_book_value_cad + row.additions_current_year_cad - row.retirements_current_year_cad - (row.original_cost_cad * (row.depreciation_rate_pct / 100)),
-        mid_year_value_cad: (row.net_book_value_cad + row.net_book_value_cad + row.additions_current_year_cad - row.retirements_current_year_cad - (row.original_cost_cad * (row.depreciation_rate_pct / 100))) / 2,
-      })) as unknown as Record<string, unknown>[];
-    case 'rule005_schedule_22':
-      // Generate O&M from income statement
-      return [
-        { expense_category: 'Vegetation Management', account_number: '571', current_year_cad: 680000, prior_year_cad: 620000, budget_cad: 650000, variance_to_budget_cad: 30000, fte_count: 3, notes: 'Enhanced program' },
-        { expense_category: 'Line Maintenance', account_number: '572', current_year_cad: 520000, prior_year_cad: 490000, budget_cad: 510000, variance_to_budget_cad: 10000, fte_count: 5, notes: '' },
-        { expense_category: 'Station Maintenance', account_number: '573', current_year_cad: 380000, prior_year_cad: 350000, budget_cad: 370000, variance_to_budget_cad: 10000, fte_count: 2, notes: '' },
-        { expense_category: 'Meter Reading & Services', account_number: '586', current_year_cad: 210000, prior_year_cad: 200000, budget_cad: 215000, variance_to_budget_cad: -5000, fte_count: 2, notes: '' },
-        { expense_category: 'Customer Service', account_number: '901', current_year_cad: 420000, prior_year_cad: 395000, budget_cad: 410000, variance_to_budget_cad: 10000, fte_count: 4, notes: '' },
-        { expense_category: 'Administrative & General', account_number: '920', current_year_cad: 890000, prior_year_cad: 850000, budget_cad: 875000, variance_to_budget_cad: 15000, fte_count: 6, notes: '' },
-        { expense_category: 'Fleet & Vehicles', account_number: '935', current_year_cad: 180000, prior_year_cad: 165000, budget_cad: 175000, variance_to_budget_cad: 5000, fte_count: 1, notes: '' },
-        { expense_category: 'IT & Telecommunications', account_number: '940', current_year_cad: 320000, prior_year_cad: 290000, budget_cad: 310000, variance_to_budget_cad: 10000, fte_count: 2, notes: 'Cybersecurity upgrade' },
-      ] as unknown as Record<string, unknown>[];
-    case 'oeb_dsp_asset_condition':
-      return generateSampleOEB_AssetCondition() as unknown as Record<string, unknown>[];
-    case 'oeb_dsp_load_forecast':
-      return generateSampleOEB_LoadForecast() as unknown as Record<string, unknown>[];
-    case 'oeb_dsp_reliability':
-      return generateSampleOEB_Reliability() as unknown as Record<string, unknown>[];
-    default:
-      return [];
-  }
 }
 
 function formatCellValue(value: unknown, type: string): string {

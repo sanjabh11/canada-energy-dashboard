@@ -255,6 +255,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-secondary">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+          <h1 className="text-2xl font-bold text-primary mb-2">Hydrogen Economy Hub Dashboard</h1>
           <p className="text-lg text-secondary">
             Live Hydrogen Hub analytics are disabled in this environment (Supabase Edge offline or not configured).
           </p>
@@ -271,6 +272,7 @@ export const HydrogenEconomyDashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen bg-secondary">
         <div className="text-center">
           <AlertTriangle className="w-16 h-16 mx-auto mb-4 text-red-500" />
+          <h1 className="text-2xl font-bold text-primary mb-2">Hydrogen Economy Hub Dashboard</h1>
           <p className="text-lg text-danger">{error || 'No data available'}</p>
           <button
             onClick={loadDashboardData}

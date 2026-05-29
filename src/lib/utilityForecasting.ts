@@ -1,5 +1,5 @@
 import { calculatePersistenceBaseline, calculateSeasonalNaiveBaseline } from './forecastBaselines';
-import { DemandForecaster, type DemandRecord, type ForecastMetrics } from './demandForecaster';
+import type { ForecastMetrics } from './demandForecaster';
 import {
   buildLiveSurfaceContract,
   type LiveSurfaceContract,
@@ -207,14 +207,62 @@ export interface UtilityRegulatoryExports {
   };
 }
 
+export interface PublicSourceManifest {
+  id: string;
+  sourceUrl: string;
+  sourceFile: string;
+  fetchedAt: string;
+  hash: string;
+  transformVersion: string;
+  sourceKind: UtilityInputSourceKind;
+  disclaimer: string;
+}
+
+export interface ForecastEvidenceSplit {
+  split_id: string;
+  train_start: string;
+  train_end: string;
+  test_start: string;
+  test_end: string;
+  train_count: number;
+  test_count: number;
+  mae: number;
+  mape: number;
+  rmse: number;
+  persistence_mae: number;
+  seasonal_naive_mae: number;
+  interval_coverage_pct: number;
+}
+
+export interface ForecastEvidenceReport {
+  model_version: string;
+  validation_method: 'rolling_origin_cv';
+  rolling_origin_splits: ForecastEvidenceSplit[];
+  conformal_interval_coverage_pct: number;
+  conformal_interval_width_mw: number;
+  champion_challenger: {
+    champion: 'transparent_trend_seasonal';
+    challenger: 'persistence' | 'seasonal_naive';
+    decision_reason: string;
+  };
+  hierarchy_reconciliation: {
+    status: 'reconciled' | 'single_geography' | 'needs_review';
+    max_reconciliation_error_mw: number;
+    geography_count: number;
+  };
+  warnings: string[];
+}
+
 export interface UtilityForecastPackage {
   jurisdiction: UtilityJurisdiction;
   generated_at: string;
   provenance: ProvenanceMetadata;
   source_label: string;
+  source_manifest: PublicSourceManifest;
   summary: UtilityDataSummary;
   scenario: UtilityPlanningScenario;
   benchmark: ForecastMetrics;
+  evidence_report: ForecastEvidenceReport;
   cases: {
     low: UtilityForecastCase;
     expected: UtilityForecastCase;
@@ -232,6 +280,19 @@ export interface UtilityForecastPackage {
   assumptions: string[];
   warnings: string[];
   oeb_rows: OEB_DSP_LoadForecast_Row[];
+}
+
+export interface PublicUtilitySampleManifest {
+  id: string;
+  jurisdiction: UtilityJurisdiction;
+  label: string;
+  source_url: string;
+  source_document: string;
+  source_file: string;
+  generated_date: string;
+  sample_scope: string;
+  source_derivation_note: string;
+  disclaimer: string;
 }
 
 interface ParsedUtilityCsv {
@@ -289,8 +350,93 @@ const HEADER_ALIASES: Record<string, string[]> = {
 
 const DEFAULT_PLANNING_YEARS = [1, 5, 10];
 const DEFAULT_HOSTING_CAPACITY_LIMIT_MW = 3.5;
+const UTILITY_FORECAST_MODEL_VERSION = 'transparent-trend-seasonal-v2';
+const PUBLIC_SOURCE_TRANSFORM_VERSION = 'ieso-apo-derived-transform-v1';
+
+export const ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST: PublicUtilitySampleManifest = {
+  id: 'ieso-apo-public-system-sample-2026',
+  jurisdiction: 'Ontario',
+  label: 'IESO Hourly Demand Report Ontario public system sample',
+  source_url: 'https://reports-public.ieso.ca/public/Demand/PUB_Demand_2026.csv',
+  source_document: 'IESO Public Reports Site Hourly Demand Report, with Annual Planning Outlook context for planning use',
+  source_file: 'PUB_Demand_2026.csv',
+  generated_date: '2026-05-29',
+  sample_scope: 'public-system-sample',
+  source_derivation_note: 'CEIP now supports raw IESO Hourly Demand Report CSV transforms for Date, Hour, Market Demand, and Ontario Demand fields. The bundled public-system starter remains workflow proof and must be refreshed from the official source file during pilots.',
+  disclaimer: 'Public-derived workflow proof only. Not customer LDC history, not production utility telemetry, and not a regulator-submitted record.',
+};
+
+const IESO_DEMAND_HEADER_ALIASES = {
+  date: ['date', 'trading_date', 'delivery_date', 'for'],
+  hour: ['hour', 'hour_ending', 'hour_ending_est', 'he'],
+  marketDemand: ['market_demand', 'market_demand_mw', 'total_market_demand'],
+  ontarioDemand: ['ontario_demand', 'ontario_demand_mw'],
+} as const;
+
+function stableHash(value: string): string {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return `fnv1a-${(hash >>> 0).toString(16).padStart(8, '0')}`;
+}
+
+function buildSourceManifest(params: {
+  sourceLabel: string;
+  sourceKind: UtilityInputSourceKind;
+  rows: UtilityHistoricalLoadRow[];
+  summary: UtilityDataSummary;
+}): PublicSourceManifest {
+  const sampledRows = params.rows.length > 6000
+    ? [
+        ...params.rows.slice(0, 2000),
+        ...params.rows.slice(Math.max(0, Math.floor(params.rows.length / 2) - 1000), Math.floor(params.rows.length / 2) + 1000),
+        ...params.rows.slice(-2000),
+      ]
+    : params.rows;
+  const serialized = sampledRows
+    .map((row) => [
+      row.timestamp,
+      row.geography_id,
+      row.demand_mw,
+      row.net_load_mw ?? '',
+      row.gross_load_mw ?? '',
+      row.source_system ?? '',
+    ].join('|'))
+    .join('\n');
+  const hashInput = `${params.rows.length}:${params.summary.date_range.start}:${params.summary.date_range.end}\n${serialized}`;
+  const isPublicSystemSample = params.sourceKind === 'public_system_sample';
+  const isFallbackStarter = params.sourceKind === 'fallback_starter';
+
+  return {
+    id: isPublicSystemSample
+      ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id
+      : `utility-source-${params.sourceKind}-${stableHash(`${params.sourceLabel}:${hashInput}`).slice(-8)}`,
+    sourceUrl: isPublicSystemSample
+      ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url
+      : isFallbackStarter
+        ? 'local://ceip/starter-utility-load-template'
+        : 'owner-supplied://utility-load-history',
+    sourceFile: isPublicSystemSample
+      ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file
+      : params.sourceLabel,
+    fetchedAt: params.summary.date_range.end,
+    hash: stableHash(hashInput),
+    transformVersion: isPublicSystemSample ? PUBLIC_SOURCE_TRANSFORM_VERSION : UTILITY_ASSUMPTION_PACK_VERSION,
+    sourceKind: params.sourceKind,
+    disclaimer: isPublicSystemSample
+      ? ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer
+      : isFallbackStarter
+        ? 'Starter workflow proof only. Replace with buyer utility history before using the pack as customer evidence.'
+        : 'Owner-supplied or connector-derived utility history. Validate custody, completeness, and authorization before external use.',
+  };
+}
 
 export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
+  const iesoDemandCsv = tryParseIesoPublicDemandCsv(text);
+  if (iesoDemandCsv) return iesoDemandCsv;
+
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
@@ -360,11 +506,98 @@ export function parseUtilityHistoricalLoadCsv(text: string): ParsedUtilityCsv {
   return { rows: sortRows(rows), errors };
 }
 
+export function parseIesoPublicDemandCsv(text: string): ParsedUtilityCsv {
+  return tryParseIesoPublicDemandCsv(text) ?? {
+    rows: [],
+    errors: ['CSV must include IESO-style Date, Hour, Ontario Demand, and Market Demand columns.'],
+  };
+}
+
+function tryParseIesoPublicDemandCsv(text: string): ParsedUtilityCsv | null {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith('#'));
+
+  const headerIndex = lines.findIndex((line) => {
+    const headers = splitCsvLine(line).map(normalizeHeader);
+    return findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.date) >= 0
+      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.hour) >= 0
+      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.ontarioDemand) >= 0
+      && findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.marketDemand) >= 0;
+  });
+
+  if (headerIndex < 0) return null;
+
+  const headers = splitCsvLine(lines[headerIndex]).map(normalizeHeader);
+  const dateIndex = findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.date);
+  const hourIndex = findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.hour);
+  const ontarioDemandIndex = findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.ontarioDemand);
+  const marketDemandIndex = findHeaderIndex(headers, IESO_DEMAND_HEADER_ALIASES.marketDemand);
+  const rows: UtilityHistoricalLoadRow[] = [];
+  const errors: string[] = [];
+
+  for (let index = headerIndex + 1; index < lines.length; index += 1) {
+    const columns = splitCsvLine(lines[index]);
+    const dateValue = readColumn(columns, dateIndex);
+    const hourEnding = parseNumeric(readColumn(columns, hourIndex));
+    const ontarioDemand = parseNumeric(readColumn(columns, ontarioDemandIndex));
+    const marketDemand = parseOptionalNumeric(readColumn(columns, marketDemandIndex));
+    const timestamp = buildIesoHourEndingTimestamp(dateValue, hourEnding);
+
+    if (!timestamp || !Number.isFinite(ontarioDemand)) {
+      errors.push(`Row ${index + 1} skipped: invalid IESO date/hour or Ontario Demand value.`);
+      continue;
+    }
+
+    rows.push({
+      timestamp,
+      geography_level: 'system',
+      geography_id: 'IESO-ONTARIO-SYSTEM',
+      customer_class: 'mixed',
+      demand_mw: ontarioDemand,
+      gross_load_mw: marketDemand ?? undefined,
+      net_load_mw: ontarioDemand,
+      source_system: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id,
+      quality_flags: ['missing_temperature', 'customer_count_missing'],
+    });
+  }
+
+  if (rows.length === 0) {
+    errors.push('No valid IESO public demand rows were parsed.');
+  }
+
+  return { rows: sortRows(rows), errors };
+}
+
 export function buildUtilityStarterCsv(
   jurisdiction: UtilityJurisdiction,
   granularity: UtilityInputGranularity = 'hourly',
 ): string {
   return utilityRowsToCsv(generateUtilityLoadSampleRows(jurisdiction, granularity));
+}
+
+export function buildOntarioPublicUtilitySampleCsv(): string {
+  return utilityRowsToCsv(generateOntarioPublicUtilitySampleRows());
+}
+
+export function buildOntarioPublicUtilitySampleManifestMarkdown(
+  manifest: PublicUtilitySampleManifest = ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST,
+): string {
+  return [
+    `# ${manifest.label}`,
+    '',
+    `- Manifest ID: ${manifest.id}`,
+    `- Jurisdiction: ${manifest.jurisdiction}`,
+    `- Source URL: ${manifest.source_url}`,
+    `- Source document: ${manifest.source_document}`,
+    `- Generated date: ${manifest.generated_date}`,
+    `- Sample scope: ${manifest.sample_scope}`,
+    `- Source file: ${manifest.source_file}`,
+    `- Transform version: ${PUBLIC_SOURCE_TRANSFORM_VERSION}`,
+    `- Derivation note: ${manifest.source_derivation_note}`,
+    `- Disclaimer: ${manifest.disclaimer}`,
+  ].join('\n');
 }
 
 export function utilityRowsToCsv(rows: UtilityHistoricalLoadRow[]): string {
@@ -412,7 +645,7 @@ export function generateUtilityLoadSampleRows(
 
   const rows: UtilityHistoricalLoadRow[] = [];
   const start = Date.UTC(2025, 0, 1, 0, 0, 0);
-  const hours = 24 * 45;
+  const hours = 24 * 21;
   const baseMw = jurisdiction === 'Ontario' ? 82 : 74;
 
   for (let hourIndex = 0; hourIndex < hours; hourIndex += 1) {
@@ -458,6 +691,56 @@ export function generateUtilityLoadSampleRows(
   return rows;
 }
 
+export function generateOntarioPublicUtilitySampleRows(): UtilityHistoricalLoadRow[] {
+  const zoneProfiles = [
+    { geography_id: 'ON-PUBLIC-SYSTEM-GTA', weather_zone: 'gta', share: 0.42, customerCount: 2_280_000, commercialBias: 1.08 },
+    { geography_id: 'ON-PUBLIC-SYSTEM-SOUTHWEST', weather_zone: 'southwest', share: 0.24, customerCount: 1_160_000, commercialBias: 0.98 },
+    { geography_id: 'ON-PUBLIC-SYSTEM-EAST', weather_zone: 'east', share: 0.20, customerCount: 920_000, commercialBias: 0.94 },
+    { geography_id: 'ON-PUBLIC-SYSTEM-NORTH', weather_zone: 'north', share: 0.14, customerCount: 360_000, commercialBias: 0.88 },
+  ];
+  const rows: UtilityHistoricalLoadRow[] = [];
+  const start = Date.UTC(2025, 0, 6, 0, 0, 0);
+  const hours = 24 * 28;
+
+  for (let hourIndex = 0; hourIndex < hours; hourIndex += 1) {
+    const timestamp = new Date(start + hourIndex * 3600_000);
+    const hour = timestamp.getUTCHours();
+    const day = timestamp.getUTCDay();
+    const temperature = 1.5
+      + Math.sin((hourIndex / hours) * Math.PI * 2) * 4.8
+      - Math.max(0, Math.sin(((hourIndex - 80) / hours) * Math.PI * 2)) * 3.2
+      + Math.sin((hour / 24) * Math.PI * 2) * 1.6;
+    const morningRamp = Math.max(0, Math.sin(((hour - 5) / 24) * Math.PI)) * 0.12;
+    const eveningRamp = Math.max(0, Math.sin(((hour - 16) / 24) * Math.PI)) * 0.22;
+    const businessDay = day === 0 || day === 6 ? 0.91 : 1;
+    const coldLoad = Math.max(0, 14 - temperature) * 285;
+    const publicSystemDemandMw = 14_900 * businessDay * (0.93 + morningRamp + eveningRamp) + coldLoad;
+
+    for (const zone of zoneProfiles) {
+      const zoneDemand = publicSystemDemandMw * zone.share * zone.commercialBias;
+      const grossLoad = zoneDemand * 1.025;
+      const behindMeterOffset = Math.max(0, Math.sin(((hour - 9) / 24) * Math.PI)) * zone.share * 180;
+
+      rows.push({
+        timestamp: timestamp.toISOString(),
+        geography_level: 'system',
+        geography_id: zone.geography_id,
+        customer_class: 'mixed',
+        demand_mw: round(zoneDemand, 3),
+        weather_zone: zone.weather_zone,
+        temperature_c: round(temperature, 2),
+        net_load_mw: round(grossLoad - behindMeterOffset, 3),
+        gross_load_mw: round(grossLoad, 3),
+        customer_count: zone.customerCount,
+        source_system: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id,
+        quality_flags: [],
+      });
+    }
+  }
+
+  return rows;
+}
+
 export function buildUtilityForecastPackage(params: {
   rows: UtilityHistoricalLoadRow[];
   scenario: UtilityPlanningScenario;
@@ -477,6 +760,7 @@ export function buildUtilityForecastPackage(params: {
   const maxYear = Math.max(...highlightedYears, 10);
   const capacityMw = round(summary.baseline_peak_mw * (1 + params.scenario.capacity_buffer_pct / 100), 2);
   const sourceKind = params.sourceKind ?? (params.isSampleData ? 'fallback_starter' : 'uploaded_historical');
+  const isPublicSystemSample = sourceKind === 'public_system_sample';
 
   const expectedCase = buildForecastCase({
     label: 'expected',
@@ -556,6 +840,9 @@ export function buildUtilityForecastPackage(params: {
   if (params.isSampleData) {
     warnings.push('Starter data is illustrative and should be replaced with utility history for production use.');
   }
+  if (isPublicSystemSample) {
+    warnings.push('Public-derived Ontario system sample is workflow proof only; it is not customer LDC history or production utility telemetry.');
+  }
   if (qualityAssessment.warnings.length > 0) {
     warnings.push(...qualityAssessment.warnings);
   }
@@ -569,8 +856,13 @@ export function buildUtilityForecastPackage(params: {
     `Base case assumes ${params.scenario.annual_load_growth_pct.toFixed(2)}% annual load growth plus explicit overlays for committed load, EVs, heat pumps, DER offsets, demand response, and ToU shifts.`,
     `Geography allocations are reconciled to the top-line forecast using recent interval shares across ${summary.geography_count} ${summary.geography_count === 1 ? 'geography' : 'geographies'}.`,
     `Benchmark proof is derived from a holdout backtest against persistence and seasonal-naive baselines.`,
+    `Forecast evidence uses rolling-origin validation and conformal interval coverage when enough intervals are available.`,
+    `8,760-hour profile previews are generated for the expected case only; low and high cases remain annual scenario rows unless a full grid-planning export is added.`,
     `Live-surface contract version ${UTILITY_ASSUMPTION_PACK_VERSION} captures source, observed_at, freshness_status, is_fallback, quality_flags, and assumption pack version.`,
   ];
+  if (isPublicSystemSample) {
+    assumptions.push(`Ontario public sample manifest ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id} links to ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url} and must remain labeled as not customer LDC history.`);
+  }
   if ((params.scenario.large_point_loads?.length ?? 0) > 0) {
     assumptions.push(`Large point-load overlay adds ${(params.scenario.large_point_loads ?? []).reduce((sum, item) => sum + item.mw, 0).toFixed(1)} MW of named non-organic demand.`);
   }
@@ -591,6 +883,8 @@ export function buildUtilityForecastPackage(params: {
         ? 24 * 7
         : sourceKind === 'green_button_cmd'
           ? 24 * 2
+          : sourceKind === 'public_system_sample'
+            ? 24 * 365
           : 24 * 30,
     notes: sourceKind === 'utility_system_batch'
       ? 'Normalized batch snapshot from utility operational systems.'
@@ -598,6 +892,8 @@ export function buildUtilityForecastPackage(params: {
         ? 'Settlement or MDM-compatible batch normalized into the utility planning contract.'
         : sourceKind === 'green_button_cmd'
           ? 'Ontario Green Button Connect My Data interval history normalized into the planning contract.'
+          : sourceKind === 'public_system_sample'
+            ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label}; ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
           : sourceKind === 'telemetry_gateway'
             ? 'Northbound telemetry gateway snapshot from external SCADA or edge integration.'
             : sourceKind === 'uploaded_historical'
@@ -614,12 +910,27 @@ export function buildUtilityForecastPackage(params: {
     source_systems: Array.from(new Set(rows.map((row) => row.source_system).filter(Boolean) as string[])).sort(),
     total_quality_flags: qualityAssessment.totalFlags,
   };
+  const sourceManifest = buildSourceManifest({
+    sourceLabel: params.sourceLabel,
+    sourceKind,
+    rows,
+    summary,
+  });
+  const evidenceReport = buildForecastEvidenceReport({
+    aggregated,
+    rows,
+    granularity: summary.granularity,
+    benchmark,
+    warnings,
+  });
 
   const provenance = createProvenance(
     params.isSampleData
       ? 'mock'
       : sourceKind === 'utility_system_batch' || sourceKind === 'utility_settlement_batch' || sourceKind === 'green_button_cmd'
         ? 'calibrated'
+        : sourceKind === 'public_system_sample'
+          ? 'historical_archive'
         : 'historical_archive',
     params.sourceLabel,
     params.isSampleData
@@ -628,6 +939,8 @@ export function buildUtilityForecastPackage(params: {
         ? 0.9
         : sourceKind === 'green_button_cmd'
           ? 0.88
+          : sourceKind === 'public_system_sample'
+            ? 0.72
           : sourceKind === 'telemetry_gateway'
             ? 0.84
             : 0.87,
@@ -641,6 +954,8 @@ export function buildUtilityForecastPackage(params: {
             ? 'Settlement or MDM-compatible utility export used to build the planning forecast package.'
             : sourceKind === 'green_button_cmd'
               ? 'Green Button Connect My Data interval history used to build the planning forecast package.'
+              : sourceKind === 'public_system_sample'
+                ? `${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_derivation_note} ${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer}`
               : sourceKind === 'telemetry_gateway'
                 ? 'Telemetry gateway snapshot blended into the planning truth contract for live utility context.'
                 : 'Uploaded utility historical load data used to build the planning forecast package.',
@@ -652,9 +967,11 @@ export function buildUtilityForecastPackage(params: {
     generated_at: new Date().toISOString(),
     provenance,
     source_label: params.sourceLabel,
+    source_manifest: sourceManifest,
     summary,
     scenario: params.scenario,
     benchmark,
+    evidence_report: evidenceReport,
     cases: {
       low: lowCase,
       expected: expectedCase,
@@ -690,6 +1007,12 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
     `# Jurisdiction: ${forecastPackage.jurisdiction}`,
     `# Generated: ${forecastPackage.generated_at}`,
     `# Source: ${forecastPackage.source_label}`,
+    `# Source Kind: ${forecastPackage.input_provenance_summary.source_kind}`,
+    `# Source Manifest: ${forecastPackage.source_manifest.id}`,
+    `# Source File: ${forecastPackage.source_manifest.sourceFile}`,
+    `# Source Hash: ${forecastPackage.source_manifest.hash}`,
+    `# Transform Version: ${forecastPackage.source_manifest.transformVersion}`,
+    `# Fallback: ${forecastPackage.input_provenance_summary.live_surfaces.some((surface) => surface.is_fallback)}`,
     `# Provenance: ${forecastPackage.provenance.type}`,
     `# Assumption Pack: ${forecastPackage.input_provenance_summary.assumption_pack_version}`,
     '',
@@ -711,6 +1034,55 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
       ].join(','));
     }
   }
+
+  lines.push('', 'benchmark_metric,value');
+  [
+    ['mae', forecastPackage.benchmark.mae],
+    ['mape', forecastPackage.benchmark.mape],
+    ['rmse', forecastPackage.benchmark.rmse],
+    ['persistence_mae', forecastPackage.benchmark.persistence_mae],
+    ['persistence_mape', forecastPackage.benchmark.persistence_mape],
+    ['persistence_rmse', forecastPackage.benchmark.persistence_rmse],
+    ['seasonal_naive_mae', forecastPackage.benchmark.seasonal_naive_mae],
+    ['seasonal_naive_mape', forecastPackage.benchmark.seasonal_naive_mape],
+    ['seasonal_naive_rmse', forecastPackage.benchmark.seasonal_naive_rmse],
+    ['skill_score_vs_persistence_pct', forecastPackage.benchmark.skill_score_vs_persistence],
+    ['skill_score_vs_seasonal_naive_pct', forecastPackage.benchmark.skill_score_vs_seasonal],
+    ['sample_size', forecastPackage.benchmark.sample_size],
+  ].forEach(([metric, value]) => {
+    lines.push(`${metric},${value}`);
+  });
+
+  lines.push('', 'rolling_split,train_start,train_end,test_start,test_end,mae,mape,rmse,persistence_mae,seasonal_naive_mae,interval_coverage_pct');
+  forecastPackage.evidence_report.rolling_origin_splits.forEach((split) => {
+    lines.push([
+      split.split_id,
+      split.train_start,
+      split.train_end,
+      split.test_start,
+      split.test_end,
+      split.mae,
+      split.mape,
+      split.rmse,
+      split.persistence_mae,
+      split.seasonal_naive_mae,
+      split.interval_coverage_pct,
+    ].join(','));
+  });
+
+  lines.push('', 'evidence_metric,value');
+  [
+    ['model_version', forecastPackage.evidence_report.model_version],
+    ['validation_method', forecastPackage.evidence_report.validation_method],
+    ['conformal_interval_coverage_pct', forecastPackage.evidence_report.conformal_interval_coverage_pct],
+    ['conformal_interval_width_mw', forecastPackage.evidence_report.conformal_interval_width_mw],
+    ['champion_model', forecastPackage.evidence_report.champion_challenger.champion],
+    ['challenger_model', forecastPackage.evidence_report.champion_challenger.challenger],
+    ['hierarchy_status', forecastPackage.evidence_report.hierarchy_reconciliation.status],
+    ['hierarchy_max_error_mw', forecastPackage.evidence_report.hierarchy_reconciliation.max_reconciliation_error_mw],
+  ].forEach(([metric, value]) => {
+    lines.push(`${metric},${value}`);
+  });
 
   lines.push('', 'reliability_proxy_horizon,score,band,peak_utilization_pct,reserve_headroom_mw,weather_stress_pct');
   forecastPackage.reliability_proxy.horizon_scores.forEach((row) => {
@@ -1429,13 +1801,16 @@ function build8760Profiles(
 ): Utility8760Profile[] {
   const profileHours = 8760;
   const baseSeries = buildBaseHourlyShape(aggregated, summary);
-  const cases: UtilityForecastCase[] = [scenarioMatrix.low, scenarioMatrix.base, scenarioMatrix.high];
+  // Keep this scoped to expected-case previews. Low/high annual cases stay in the
+  // scenario matrix until the product has a full 8760 grid-planning export.
+  const cases: UtilityForecastCase[] = [scenarioMatrix.base];
 
   return cases.flatMap((forecastCase) =>
     highlightedYears.map((horizonYear) => {
       const year = forecastCase.yearly.find((entry) => entry.year === horizonYear);
       const baselinePeak = Math.max(summary.baseline_peak_mw, 1);
       const scale = (year?.peak_demand_mw ?? baselinePeak) / baselinePeak;
+      const yearStartMs = Date.UTC(new Date().getUTCFullYear() + horizonYear, 0, 1, 0, 0, 0);
       const pointLoadMw = (scenario.large_point_loads ?? []).reduce(
         (sum, item) => sum + item.mw * Math.max(0.25, item.load_factor_pct / 100),
         0,
@@ -1445,8 +1820,8 @@ function build8760Profiles(
 
       for (let hourIndex = 0; hourIndex < profileHours; hourIndex += 1) {
         const baseMw = baseSeries[hourIndex % baseSeries.length] * scale;
-        const timestamp = new Date(Date.UTC(new Date().getUTCFullYear() + horizonYear, 0, 1, 0, 0, 0) + hourIndex * 3600_000).toISOString();
-        const hour = new Date(timestamp).getUTCHours();
+        const timestamp = new Date(yearStartMs + hourIndex * 3600_000).toISOString();
+        const hour = hourIndex % 24;
         const demandResponseMw = hour >= 16 && hour <= 20 ? scenario.demand_response_reduction_mw : 0;
         const derOffsetMw = hour >= 10 && hour <= 16 ? scenario.der_offset_mw * 0.72 : scenario.der_offset_mw * 0.08;
         const touShiftDeltaMw = (scenario.tou_shift_rules ?? []).reduce((sum, rule) => {
@@ -1484,17 +1859,8 @@ function buildBenchmarkMetrics(
   aggregated: AggregatedIntervalPoint[],
   granularity: UtilityInputGranularity,
 ): ForecastMetrics {
-  if (granularity === 'hourly' && aggregated.length >= 24 * 14) {
-    const records: DemandRecord[] = aggregated.map((point) => ({
-      datetime: point.timestamp,
-      hour_ending: new Date(point.timestamp).getUTCHours(),
-      total_demand_mw: point.demand_mw,
-      hourly_demand_gwh: point.demand_mw / 1000,
-      date: point.timestamp.slice(0, 10),
-    }));
-    const forecaster = new DemandForecaster();
-    const backtestHours = Math.min(24 * 7, Math.max(24 * 3, Math.floor(records.length * 0.2)));
-    return forecaster.backtest(records, backtestHours).metrics;
+  if (granularity === 'hourly' && aggregated.length < 24 * 21) {
+    throw new Error('Insufficient data for backtesting');
   }
 
   return buildSimpleSeriesMetrics(aggregated, granularity);
@@ -1518,6 +1884,165 @@ function buildBenchmarkMetricsWithFallback(
       warnings: [`Benchmark backtest fallback applied: ${reason}.`],
     };
   }
+}
+
+function quantile(values: number[], percentile: number): number {
+  if (values.length === 0) return 0;
+  const sorted = [...values].sort((left, right) => left - right);
+  const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(percentile * sorted.length) - 1));
+  return sorted[index];
+}
+
+function buildRollingEvidenceSplit(
+  splitId: string,
+  train: AggregatedIntervalPoint[],
+  test: AggregatedIntervalPoint[],
+  granularity: UtilityInputGranularity,
+): ForecastEvidenceSplit {
+  const maxTrainRows = granularity === 'monthly' ? 60 : 24 * 90;
+  const validationTrain = train.slice(-maxTrainRows);
+  const trainValues = validationTrain.map((point) => point.demand_mw);
+  const { slope, intercept } = linearRegression(trainValues.map((_, index) => index), trainValues);
+  const seasonal = buildSeasonalProfile(validationTrain, granularity);
+  const predictions = test.map((point, index) => round(
+    intercept + slope * (validationTrain.length + index) + lookupSeasonalComponent(point.timestamp, seasonal, granularity),
+    2,
+  ));
+  const actuals = test.map((point) => point.demand_mw);
+  const persistenceMetrics = calculatePersistenceBaseline([...trainValues, ...actuals], 1);
+  const seasonalMetrics = calculateSeasonalNaiveBaseline(
+    [...trainValues, ...actuals],
+    1,
+    granularity === 'monthly' ? 12 : 24,
+  );
+  const metrics = computeMetrics(actuals, predictions, persistenceMetrics, seasonalMetrics);
+  const errors = actuals.map((actual, index) => Math.abs(actual - predictions[index]));
+  const conformalWidth = quantile(errors, 0.9);
+  const covered = conformalWidth > 0
+    ? actuals.filter((actual, index) => Math.abs(actual - predictions[index]) <= conformalWidth).length
+    : actuals.length;
+
+  return {
+    split_id: splitId,
+    train_start: validationTrain[0]?.timestamp ?? '',
+    train_end: validationTrain[validationTrain.length - 1]?.timestamp ?? '',
+    test_start: test[0]?.timestamp ?? '',
+    test_end: test[test.length - 1]?.timestamp ?? '',
+    train_count: validationTrain.length,
+    test_count: test.length,
+    mae: metrics.mae,
+    mape: metrics.mape,
+    rmse: metrics.rmse,
+    persistence_mae: metrics.persistence_mae,
+    seasonal_naive_mae: metrics.seasonal_naive_mae,
+    interval_coverage_pct: actuals.length > 0 ? round((covered / actuals.length) * 100, 2) : 0,
+  };
+}
+
+function buildRollingOriginSplits(
+  aggregated: AggregatedIntervalPoint[],
+  granularity: UtilityInputGranularity,
+): ForecastEvidenceSplit[] {
+  const testSize = granularity === 'monthly' ? 3 : 24;
+  const minTrain = granularity === 'monthly' ? 12 : 24 * 14;
+  if (aggregated.length < minTrain + testSize) return [];
+
+  const maxSplits = 3;
+  const availableSplits = Math.min(maxSplits, Math.floor((aggregated.length - minTrain) / testSize));
+  const splits: ForecastEvidenceSplit[] = [];
+  for (let index = 0; index < availableSplits; index += 1) {
+    const trainEnd = aggregated.length - (availableSplits - index) * testSize;
+    const testEnd = trainEnd + testSize;
+    const train = aggregated.slice(0, trainEnd);
+    const test = aggregated.slice(trainEnd, testEnd);
+    if (train.length >= minTrain && test.length > 0) {
+      splits.push(buildRollingEvidenceSplit(`rolling-origin-${index + 1}`, train, test, granularity));
+    }
+  }
+  return splits;
+}
+
+function buildHierarchyReconciliation(rows: UtilityHistoricalLoadRow[]): ForecastEvidenceReport['hierarchy_reconciliation'] {
+  const geographyCount = new Set(rows.map((row) => row.geography_id)).size;
+  if (geographyCount <= 1) {
+    return {
+      status: 'single_geography',
+      max_reconciliation_error_mw: 0,
+      geography_count: geographyCount,
+    };
+  }
+
+  const byTimestamp = new Map<string, { system: number; child: number; hasSystem: boolean; hasChild: boolean }>();
+  rows.forEach((row) => {
+    const current = byTimestamp.get(row.timestamp) ?? { system: 0, child: 0, hasSystem: false, hasChild: false };
+    if (row.geography_level === 'system') {
+      current.system += row.demand_mw;
+      current.hasSystem = true;
+    } else {
+      current.child += row.demand_mw;
+      current.hasChild = true;
+    }
+    byTimestamp.set(row.timestamp, current);
+  });
+
+  const comparable = Array.from(byTimestamp.values()).filter((entry) => entry.hasSystem && entry.hasChild);
+  if (comparable.length === 0) {
+    return {
+      status: 'needs_review',
+      max_reconciliation_error_mw: 0,
+      geography_count: geographyCount,
+    };
+  }
+
+  const maxError = Math.max(...comparable.map((entry) => Math.abs(entry.system - entry.child)));
+  return {
+    status: maxError <= 0.001 ? 'reconciled' : 'needs_review',
+    max_reconciliation_error_mw: round(maxError, 3),
+    geography_count: geographyCount,
+  };
+}
+
+function buildForecastEvidenceReport(params: {
+  aggregated: AggregatedIntervalPoint[];
+  rows: UtilityHistoricalLoadRow[];
+  granularity: UtilityInputGranularity;
+  benchmark: ForecastMetrics;
+  warnings: string[];
+}): ForecastEvidenceReport {
+  const rollingSplits = buildRollingOriginSplits(params.aggregated, params.granularity);
+  const averageCoverage = rollingSplits.length > 0
+    ? rollingSplits.reduce((sum, split) => sum + split.interval_coverage_pct, 0) / rollingSplits.length
+    : 0;
+  const conformalWidth = rollingSplits.length > 0
+    ? quantile(rollingSplits.map((split) => split.rmse), 0.9)
+    : params.benchmark.rmse;
+  const challenger = params.benchmark.persistence_mae <= params.benchmark.seasonal_naive_mae
+    ? 'persistence'
+    : 'seasonal_naive';
+  const challengerMae = challenger === 'persistence'
+    ? params.benchmark.persistence_mae
+    : params.benchmark.seasonal_naive_mae;
+  const decisionReason = params.benchmark.mae > 0 && challengerMae > 0 && params.benchmark.mae <= challengerMae
+    ? 'Transparent trend-seasonal model is the current champion because its holdout MAE is no worse than the strongest naive challenger.'
+    : 'Transparent trend-seasonal model remains the champion for explainability, but the challenger gap must be reviewed before making accuracy claims.';
+
+  return {
+    model_version: UTILITY_FORECAST_MODEL_VERSION,
+    validation_method: 'rolling_origin_cv',
+    rolling_origin_splits: rollingSplits,
+    conformal_interval_coverage_pct: round(averageCoverage, 2),
+    conformal_interval_width_mw: round(conformalWidth, 2),
+    champion_challenger: {
+      champion: 'transparent_trend_seasonal',
+      challenger,
+      decision_reason: decisionReason,
+    },
+    hierarchy_reconciliation: buildHierarchyReconciliation(params.rows),
+    warnings: [
+      ...params.warnings,
+      ...(rollingSplits.length < 3 ? ['Fewer than three rolling-origin splits are available; treat interval coverage as pilot evidence only.'] : []),
+    ],
+  };
 }
 
 function buildSimpleSeriesMetrics(
@@ -1766,6 +2291,10 @@ function normalizeHeader(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '_');
 }
 
+function findHeaderIndex(headers: string[], aliases: readonly string[]): number {
+  return headers.findIndex((header) => aliases.includes(header));
+}
+
 function readColumn(columns: string[], index: number): string {
   if (index < 0 || index >= columns.length) return '';
   return columns[index]?.trim() ?? '';
@@ -1790,6 +2319,25 @@ function normalizeGeographyLevel(value: string, geographyId: string): UtilityGeo
   if (geographyId.toLowerCase().includes('sub')) return 'substation';
   if (geographyId.toLowerCase().includes('feed')) return 'feeder';
   return 'system';
+}
+
+function buildIesoHourEndingTimestamp(dateValue: string, hourEnding: number): string | null {
+  const normalizedHour = Math.trunc(hourEnding);
+  if (!Number.isFinite(normalizedHour) || normalizedHour < 1 || normalizedHour > 24) return null;
+
+  const trimmed = dateValue.trim();
+  const ymd = trimmed.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/);
+  const mdy = trimmed.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  const parsed = ymd
+    ? { year: Number(ymd[1]), month: Number(ymd[2]), day: Number(ymd[3]) }
+    : mdy
+      ? { year: Number(mdy[3]), month: Number(mdy[1]), day: Number(mdy[2]) }
+      : null;
+
+  if (!parsed || parsed.month < 1 || parsed.month > 12 || parsed.day < 1 || parsed.day > 31) return null;
+
+  const timestamp = new Date(Date.UTC(parsed.year, parsed.month - 1, parsed.day, normalizedHour - 1, 0, 0));
+  return Number.isFinite(timestamp.getTime()) ? timestamp.toISOString() : null;
 }
 
 function splitCsvLine(line: string): string[] {

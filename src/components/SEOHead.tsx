@@ -189,13 +189,13 @@ export const SEO_CONFIGS = {
   },
   funderReporting: {
     title: 'Indigenous Funder Reporting Dashboard',
-    description: 'Auto-generate Wah-ila-toos, CERRC, and Northern REACHE quarterly reports. OCAP-compliant Indigenous energy project tracking with community benchmarking.',
+    description: 'Auto-generate Wah-ila-toos, CERRC, and Northern REACHE quarterly reports with OCAP-aligned workflow language, explicit governance fields, and community review before external sharing.',
     path: '/funder-reporting',
-    keywords: ['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP compliance', 'First Nations energy projects', 'funder reporting dashboard']
+    keywords: ['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP-aligned workflow', 'First Nations energy projects', 'funder reporting dashboard']
   },
   roiCalculator: {
     title: 'TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage',
-    description: 'Calculate how much your Alberta facility can save on TIER carbon compliance. Compare fund payment ($95/t) vs market credits ($25/t) vs Direct Investment.',
+    description: 'Calculate how much your Alberta facility can save on TIER carbon compliance. Compare the 2026 fund-price basis ($110/t) against the disclosed market-credit price shown in-route and the Direct Investment pathway.',
     path: '/roi-calculator',
     keywords: ['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']
   },

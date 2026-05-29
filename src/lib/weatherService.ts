@@ -16,6 +16,10 @@ import type { WeatherObservation, WeatherFeatures, WeatherSource } from './types
 const ENVIRONMENT_CANADA_BASE_URL = 'https://api.weather.gc.ca';
 const OPENWEATHERMAP_BASE_URL = 'https://api.openweathermap.org/data/3.0';
 
+function isExternalWeatherFetchEnabled(): boolean {
+  return String(import.meta.env.VITE_ENABLE_WEATHER_FETCH ?? '').toLowerCase() === 'true';
+}
+
 // Provincial capital coordinates for weather stations
 const PROVINCIAL_COORDINATES: Record<string, { lat: number; lon: number; station?: string }> = {
   ON: { lat: 43.6532, lon: -79.3832, station: 'YYZ' }, // Toronto
@@ -206,6 +210,10 @@ export async function fetchWeatherForProvince(
   province: string,
   options: WeatherServiceOptions = {}
 ): Promise<WeatherObservation | null> {
+  if (!isExternalWeatherFetchEnabled()) {
+    return null;
+  }
+
   const {
     preferredSource = 'environment_canada',
     fallbackEnabled = true,

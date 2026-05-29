@@ -14,6 +14,7 @@ import { TrendingUp, TrendingDown, Wind, Sun, Activity, CheckCircle, AlertTriang
 import { DataQualityBadge } from './DataQualityBadge';
 import { createProvenance } from '../lib/types/provenance';
 import { computeUplift } from '../lib/forecastBaselines';
+import { isForecastAccuracyEdgeFetchEnabled } from '../lib/config';
 
 interface HorizonMetrics {
   horizon_hours: number;
@@ -113,6 +114,14 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
 
       setLoading(true);
       try {
+        if (!isForecastAccuracyEdgeFetchEnabled() || !import.meta.env.VITE_SUPABASE_EDGE_BASE) {
+          if (!cancelled) {
+            setData(generateSampleData(resourceType, province));
+            setError(null);
+          }
+          return;
+        }
+
         const response = await fetch(
           `${import.meta.env.VITE_SUPABASE_EDGE_BASE}/api-v2-forecast-performance?resource=${resourceType}&province=${province}`,
           {
@@ -132,7 +141,6 @@ export const ForecastAccuracyPanel: React.FC<ForecastAccuracyPanelProps> = ({
           setError(null);
         }
       } catch (err: any) {
-        console.error('Failed to load forecast accuracy:', err);
         if (!cancelled) {
           setData(generateSampleData(resourceType, province));
           setError(null);

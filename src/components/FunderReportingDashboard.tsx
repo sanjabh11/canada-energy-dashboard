@@ -1,83 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   FileText, Download, Calendar, DollarSign, Users, Leaf, 
   AlertTriangle, CheckCircle, Clock, Building, Filter,
   FileSpreadsheet, File, ChevronDown, ChevronRight,
-  Shield, MapPin, TrendingUp, BarChart3
+  Shield, MapPin, TrendingUp, BarChart3, Upload
 } from 'lucide-react';
 import { getEdgeBaseUrl, getEdgeHeaders, isEdgeFetchEnabled } from '../lib/config';
 import { SEOHead } from './SEOHead';
-
-// Report template types
-type ReportTemplate = 'wah-ila-toos' | 'cerrc' | 'northern-reache' | 'custom';
-type ExportFormat = 'pdf' | 'excel' | 'word' | 'json';
-
-interface ProjectData {
-  id: string;
-  name: string;
-  community: string;
-  territory_name: string;
-  energy_type: string;
-  capacity_kw?: number;
-  project_status: string;
-  start_date?: string;
-  operational_date?: string;
-  total_budget?: number;
-  actual_cost?: number;
-  funding_sources?: { source: string; amount: number }[];
-  fpic_status: string;
-  jobs_created?: number;
-  emissions_avoided_tonnes_co2?: number;
-  households_served?: number;
-  milestones?: { name: string; date: string; completed: boolean }[];
-  challenges?: string[];
-  next_quarter_plans?: string[];
-}
-
-interface ReportSection {
-  id: string;
-  title: string;
-  enabled: boolean;
-  content?: string;
-}
-
-const REPORT_TEMPLATES: Record<ReportTemplate, { name: string; description: string; sections: string[] }> = {
-  'wah-ila-toos': {
-    name: 'Wah-ila-toos Quarterly Report',
-    description: 'Standard quarterly report for Wah-ila-toos Clean Energy Program funding',
-    sections: ['project_overview', 'financial_summary', 'progress_this_quarter', 'impact_metrics', 'challenges_risks', 'next_quarter_plans']
-  },
-  'cerrc': {
-    name: 'CERRC Progress Report',
-    description: 'Clean Energy for Rural and Remote Communities program report',
-    sections: ['project_overview', 'financial_summary', 'technical_progress', 'community_engagement', 'environmental_impact']
-  },
-  'northern-reache': {
-    name: 'Northern REACHE Report',
-    description: 'Northern Responsible Energy Approach for Community Heat and Electricity',
-    sections: ['project_overview', 'financial_summary', 'capacity_building', 'energy_security', 'sustainability_plan']
-  },
-  'custom': {
-    name: 'Custom Report',
-    description: 'Build your own report with selected sections',
-    sections: ['project_overview', 'financial_summary', 'progress_this_quarter', 'impact_metrics', 'challenges_risks', 'next_quarter_plans', 'community_engagement', 'environmental_impact']
-  }
-};
-
-const SECTION_LABELS: Record<string, string> = {
-  project_overview: 'Project Overview',
-  financial_summary: 'Financial Summary',
-  progress_this_quarter: 'Progress This Quarter',
-  impact_metrics: 'Impact Metrics',
-  challenges_risks: 'Challenges & Risks',
-  next_quarter_plans: 'Next Quarter Plans',
-  technical_progress: 'Technical Progress',
-  community_engagement: 'Community Engagement',
-  environmental_impact: 'Environmental Impact',
-  capacity_building: 'Capacity Building',
-  energy_security: 'Energy Security',
-  sustainability_plan: 'Sustainability Plan'
-};
+import DataTrustNotice from './DataTrustNotice';
+import ProofPackPanel from './ProofPackPanel';
+import ConstructedScenarioPanel from './ConstructedScenarioPanel';
+import { FUNDER_REPORTING_CONSTRUCTED_SCENARIO } from '../lib/commercialScenarioBundles';
+import {
+  FUND_REPORT_TEMPLATES as REPORT_TEMPLATES,
+  FUND_SECTION_LABELS as SECTION_LABELS,
+  buildFunderSectionContent,
+  buildFunderSourceLabel,
+  buildStarterProjects,
+  mapApiProjectToFunderProjectData,
+  parseImportedProjects,
+  type FunderExportFormat as ExportFormat,
+  type FunderProjectData as ProjectData,
+  type FunderReportSection as ReportSection,
+  type FunderReportTemplate as ReportTemplate,
+  type FunderSourceMode,
+} from '../lib/funderReportingSupport';
+import {
+  buildFunderJsonPayload,
+  buildFunderOutreachCoverNote,
+  buildFunderProofBundle,
+  buildFunderReportDescriptor,
+} from '../lib/funderReportingProofPack';
+import {
+  downloadPdfArtifact,
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 export function FunderReportingDashboard() {
   const [selectedTemplate, setSelectedTemplate] = useState<ReportTemplate>('wah-ila-toos');
@@ -87,11 +45,94 @@ export function FunderReportingDashboard() {
   const [generating, setGenerating] = useState(false);
   const [reportSections, setReportSections] = useState<ReportSection[]>([]);
   const [narratives, setNarratives] = useState<Record<string, string>>({});
+  const [sourceMode, setSourceMode] = useState<FunderSourceMode>('starter_projects');
+  const [projectImportError, setProjectImportError] = useState<string | null>(null);
   const [reportPeriod, setReportPeriod] = useState({
     quarter: 'Q4',
     year: '2025'
   });
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['project_overview']));
+  const proofBundle = useMemo(() => buildFunderProofBundle(sourceMode), [sourceMode]);
+  const proofActions = useMemo(() => {
+    const selectedProjectData = projects.filter((project) => selectedProjects.includes(project.id));
+    const enabledSections = reportSections.filter((section) => section.enabled);
+    const descriptor = buildFunderReportDescriptor({
+      templateId: selectedTemplate,
+      period: reportPeriod,
+      projects: selectedProjectData,
+      sections: enabledSections,
+      narratives,
+      sourceMode,
+    });
+
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'funder-quarterly-pdf') {
+        return {
+          ...artifact,
+          onDownload: () => downloadPdfArtifact({ ...descriptor, definition: artifact }),
+        };
+      }
+      if (artifact.id === 'funder-quarterly-html') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'funder-quarterly-json') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            JSON.stringify(buildFunderJsonPayload({
+              templateId: selectedTemplate,
+              period: reportPeriod,
+              projects: selectedProjectData,
+              sections: enabledSections,
+              narratives,
+              sourceMode,
+            }), null, 2),
+            'application/json;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'funder-quarterly-csv') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildCsvExportContent(selectedProjectData),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'funder-outreach-cover-note') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildFunderOutreachCoverNote({
+              templateId: selectedTemplate,
+              period: reportPeriod,
+              projects: selectedProjectData,
+              sourceMode,
+            }),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => {
+          const rtfContent = generateRTFReport(selectedProjectData, enabledSections);
+          downloadTextArtifact(artifact, rtfContent, 'application/rtf');
+        },
+      };
+    });
+  }, [narratives, projects, proofBundle.artifacts, reportPeriod, reportSections, selectedProjects, selectedTemplate, sourceMode]);
 
   useEffect(() => {
     loadProjects();
@@ -111,6 +152,7 @@ export function FunderReportingDashboard() {
 
   async function loadProjects() {
     setLoading(true);
+    setProjectImportError(null);
     let projectsLoaded = false;
     try {
       if (isEdgeFetchEnabled()) {
@@ -121,142 +163,64 @@ export function FunderReportingDashboard() {
           });
           if (res.ok) {
             const data = await res.json();
-            const projectList = (data.projects || []).map((p: any) => {
-              const cap = p.capacity_kw || 100;
-              return {
-                id: p.id,
-                name: p.name || 'Unnamed Project',
-                community: p.community || '',
-                territory_name: p.territory_id || '',
-                energy_type: p.energy_type || 'renewable',
-                capacity_kw: cap,
-                project_status: p.stage || 'planning',
-                fpic_status: p.fpic_status || 'unknown',
-                jobs_created: p.jobs_created ?? Math.round(cap * 0.05),
-                emissions_avoided_tonnes_co2: p.emissions_avoided_tonnes_co2 ?? Math.round(cap * 5),
-                households_served: p.households_served ?? Math.round(cap * 0.4),
-                total_budget: p.total_budget ?? cap * 3000,
-                actual_cost: p.actual_cost ?? cap * 2400,
-              };
-            });
+            const projectList = (data.projects || []).map((project: Record<string, unknown>) => mapApiProjectToFunderProjectData(project));
             if (projectList.length > 0) {
               setProjects(projectList);
               setSelectedProjects([projectList[0].id]);
+              setSourceMode('live_projects');
               projectsLoaded = true;
             }
           }
         }
       }
       
-      // Fallback demo data if no projects loaded
+      // Fallback starter data if no projects loaded
       if (!projectsLoaded) {
-        const demoProjects: ProjectData[] = [
-          {
-            id: 'demo-1',
-            name: 'Northern Grid Microgeneration',
-            community: 'Cree, Ojibwe, Dene',
-            territory_name: 'Treaty 5 Territory',
-            energy_type: 'solar',
-            capacity_kw: 500,
-            project_status: 'construction',
-            fpic_status: 'obtained',
-            jobs_created: 25,
-            emissions_avoided_tonnes_co2: 2500,
-            households_served: 150,
-            total_budget: 1500000,
-            actual_cost: 1200000,
-            funding_sources: [
-              { source: 'Wah-ila-toos', amount: 750000 },
-              { source: 'Community Investment', amount: 450000 }
-            ],
-            milestones: [
-              { name: 'Site Assessment', date: '2025-01-15', completed: true },
-              { name: 'FPIC Obtained', date: '2025-03-01', completed: true },
-              { name: 'Construction Start', date: '2025-06-01', completed: true },
-              { name: 'Grid Connection', date: '2025-12-01', completed: false }
-            ],
-            challenges: ['Supply chain delays for solar panels', 'Winter construction limitations'],
-            next_quarter_plans: ['Complete electrical infrastructure', 'Begin grid connection testing']
-          },
-          {
-            id: 'demo-2',
-            name: 'James Bay Storage Upgrade',
-            community: 'Ojibwe, Cree, Oji-Cree',
-            territory_name: 'Treaty 9 Territory',
-            energy_type: 'hydro',
-            capacity_kw: 2000,
-            project_status: 'planning',
-            fpic_status: 'in_progress',
-            jobs_created: 45,
-            emissions_avoided_tonnes_co2: 8000,
-            households_served: 500,
-            total_budget: 5000000,
-            actual_cost: 800000,
-            funding_sources: [
-              { source: 'CERRC', amount: 2500000 },
-              { source: 'Provincial Grant', amount: 1500000 }
-            ]
-          }
-        ];
+        const demoProjects = buildStarterProjects();
         setProjects(demoProjects);
         setSelectedProjects(['demo-1']);
+        setSourceMode('starter_projects');
       }
     } catch (error) {
       console.error('Error loading projects:', error);
-      // Ensure demo data is shown even on error
-      const demoProjects: ProjectData[] = [
-        {
-          id: 'demo-1',
-          name: 'Northern Grid Microgeneration',
-          community: 'Cree, Ojibwe, Dene',
-          territory_name: 'Treaty 5 Territory',
-          energy_type: 'solar',
-          capacity_kw: 500,
-          project_status: 'construction',
-          fpic_status: 'obtained',
-          jobs_created: 25,
-          emissions_avoided_tonnes_co2: 2500,
-          households_served: 150,
-          total_budget: 1500000,
-          actual_cost: 1200000,
-          funding_sources: [
-            { source: 'Wah-ila-toos', amount: 750000 },
-            { source: 'Community Investment', amount: 450000 }
-          ],
-          milestones: [
-            { name: 'Site Assessment', date: '2025-01-15', completed: true },
-            { name: 'FPIC Obtained', date: '2025-03-01', completed: true },
-            { name: 'Construction Start', date: '2025-06-01', completed: true },
-            { name: 'Grid Connection', date: '2025-12-01', completed: false }
-          ],
-          challenges: ['Supply chain delays for solar panels', 'Winter construction limitations'],
-          next_quarter_plans: ['Complete electrical infrastructure', 'Begin grid connection testing']
-        },
-        {
-          id: 'demo-2',
-          name: 'James Bay Storage Upgrade',
-          community: 'Ojibwe, Cree, Oji-Cree',
-          territory_name: 'Treaty 9 Territory',
-          energy_type: 'hydro',
-          capacity_kw: 2000,
-          project_status: 'planning',
-          fpic_status: 'in_progress',
-          jobs_created: 45,
-          emissions_avoided_tonnes_co2: 8000,
-          households_served: 500,
-          total_budget: 5000000,
-          actual_cost: 800000,
-          funding_sources: [
-            { source: 'CERRC', amount: 2500000 },
-            { source: 'Provincial Grant', amount: 1500000 }
-          ]
-        }
-      ];
+      const demoProjects = buildStarterProjects();
       setProjects(demoProjects);
       setSelectedProjects(['demo-1']);
+      setSourceMode('starter_projects');
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleProjectImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const importedProjects = parseImportedProjects(file.name, text);
+      if (importedProjects.length === 0) {
+        throw new Error('The selected file did not contain any valid project rows.');
+      }
+      setProjects(importedProjects);
+      setSelectedProjects([importedProjects[0].id]);
+      setSourceMode('uploaded_projects');
+      setProjectImportError(null);
+    } catch (error) {
+      setProjectImportError(error instanceof Error ? error.message : 'Failed to parse imported project file.');
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function loadConstructedScenario() {
+    const jsonScenario = FUNDER_REPORTING_CONSTRUCTED_SCENARIO.downloads[0];
+    const importedProjects = parseImportedProjects(jsonScenario.filename, jsonScenario.content);
+    setProjects(importedProjects);
+    setSelectedProjects(importedProjects.map((project) => project.id));
+    setSelectedTemplate('wah-ila-toos');
+    setSourceMode('constructed_commercial_scenario');
+    setProjectImportError(null);
   }
 
   function toggleSection(sectionId: string) {
@@ -278,66 +242,37 @@ export function FunderReportingDashboard() {
   }
 
   function generateReportContent(project: ProjectData, sectionId: string): string {
-    switch (sectionId) {
-      case 'project_overview': {
-        return `**Project Name:** ${project.name}
-**Community:** ${project.community}
-**Territory:** ${project.territory_name}
-**Technology:** ${project.energy_type}
-**Capacity:** ${project.capacity_kw ? `${project.capacity_kw} kW` : 'TBD'}
-**Status:** ${project.project_status}
-**FPIC Status:** ${project.fpic_status}`;
-      }
+    return buildFunderSectionContent(project, sectionId);
+  }
 
-      case 'financial_summary': {
-        const budgetUsed = project.total_budget && project.actual_cost 
-          ? ((project.actual_cost / project.total_budget) * 100).toFixed(1)
-          : 'N/A';
-        return `**Total Budget:** $${(project.total_budget || 0).toLocaleString()}
-**Actual Cost to Date:** $${(project.actual_cost || 0).toLocaleString()}
-**Budget Utilization:** ${budgetUsed}%
-**Funding Sources:**
-${(project.funding_sources || []).map(f => `- ${f.source}: $${f.amount.toLocaleString()}`).join('\n') || '- Not specified'}`;
-      }
+  function buildCsvExportContent(projectData: ProjectData[]): string {
+    const rows: string[][] = [
+      ['Funder Report', `${reportPeriod.quarter} ${reportPeriod.year}`],
+      ['Template', REPORT_TEMPLATES[selectedTemplate].name],
+      ['Source Mode', buildFunderSourceLabel(sourceMode)],
+      ['Generated', new Date().toLocaleDateString()],
+      [],
+      ['Project Name', 'Community', 'Territory', 'Energy Type', 'Capacity (kW)', 'Status', 'FPIC Status', 'Budget', 'Actual Cost', 'Jobs Created', 'Emissions Avoided (tCO2)', 'Households Served'],
+    ];
 
-      case 'impact_metrics': {
-        return `**Jobs Created:** ${project.jobs_created || 0}
-**Emissions Avoided:** ${(project.emissions_avoided_tonnes_co2 || 0).toLocaleString()} tonnes CO2
-**Households Served:** ${project.households_served || 0}`;
-      }
+    projectData.forEach((project) => {
+      rows.push([
+        project.name,
+        project.community,
+        project.territory_name,
+        project.energy_type,
+        String(project.capacity_kw || ''),
+        project.project_status,
+        project.fpic_status,
+        String(project.total_budget || ''),
+        String(project.actual_cost || ''),
+        String(project.jobs_created || ''),
+        String(project.emissions_avoided_tonnes_co2 || ''),
+        String(project.households_served || ''),
+      ]);
+    });
 
-      case 'progress_this_quarter': {
-        const completedMilestones = (project.milestones || []).filter(m => m.completed);
-        return `**Milestones Achieved:**
-${completedMilestones.map(m => `- ${m.name} (${m.date})`).join('\n') || '- No milestones completed this quarter'}
-
-**Percent Complete:** ${project.milestones 
-          ? ((completedMilestones.length / project.milestones.length) * 100).toFixed(0) 
-          : 'N/A'}%`;
-      }
-
-      case 'challenges_risks': {
-        return `**Current Challenges:**
-${(project.challenges || ['No significant challenges reported']).map(c => `- ${c}`).join('\n')}
-
-**Mitigation Strategies:**
-- Regular stakeholder communication
-- Contingency budget allocation
-- Alternative supplier identification`;
-      }
-
-      case 'next_quarter_plans': {
-        return `**Planned Activities:**
-${(project.next_quarter_plans || ['Continue project development']).map(p => `- ${p}`).join('\n')}
-
-**Key Milestones:**
-${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- ${m.name} (Target: ${m.date})`).join('\n') || '- To be determined'}`;
-      }
-
-      default: {
-        return 'Section content to be added.';
-      }
-    }
+    return rows.map((row) => row.map((cell) => `"${cell}"`).join(',')).join('\n');
   }
 
   async function exportReport(format: ExportFormat) {
@@ -345,77 +280,48 @@ ${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- $
     
     const selectedProjectData = projects.filter(p => selectedProjects.includes(p.id));
     const enabledSections = reportSections.filter(s => s.enabled);
+    const descriptor = buildFunderReportDescriptor({
+      templateId: selectedTemplate,
+      period: reportPeriod,
+      projects: selectedProjectData,
+      sections: enabledSections,
+      narratives,
+      sourceMode,
+    });
     
     try {
       if (format === 'json') {
-        // JSON export
-        const reportData = {
-          template: selectedTemplate,
-          period: reportPeriod,
-          generated_at: new Date().toISOString(),
-          projects: selectedProjectData.map(project => ({
-            ...project,
-            sections: enabledSections.map(section => ({
-              id: section.id,
-              title: section.title,
-              content: narratives[`${project.id}-${section.id}`] || generateReportContent(project, section.id)
-            }))
-          }))
-        };
-        
-        const blob = new Blob([JSON.stringify(reportData, null, 2)], { type: 'application/json' });
-        downloadBlob(blob, `funder-report-${reportPeriod.quarter}-${reportPeriod.year}.json`);
+        const jsonArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-json');
+        if (!jsonArtifact) return;
+        downloadTextArtifact(
+          jsonArtifact,
+          JSON.stringify(buildFunderJsonPayload({
+            templateId: selectedTemplate,
+            period: reportPeriod,
+            projects: selectedProjectData,
+            sections: enabledSections,
+            narratives,
+            sourceMode,
+          }), null, 2),
+          'application/json;charset=utf-8;',
+        );
       }
       
       if (format === 'excel') {
-        // CSV export (Excel-compatible)
-        const rows: string[][] = [
-          ['Funder Report', `${reportPeriod.quarter} ${reportPeriod.year}`],
-          ['Template', REPORT_TEMPLATES[selectedTemplate].name],
-          ['Generated', new Date().toLocaleDateString()],
-          [],
-          ['Project Name', 'Community', 'Territory', 'Energy Type', 'Capacity (kW)', 'Status', 'FPIC Status', 'Budget', 'Actual Cost', 'Jobs Created', 'Emissions Avoided (tCO2)', 'Households Served']
-        ];
-        
-        selectedProjectData.forEach(project => {
-          rows.push([
-            project.name,
-            project.community,
-            project.territory_name,
-            project.energy_type,
-            String(project.capacity_kw || ''),
-            project.project_status,
-            project.fpic_status,
-            String(project.total_budget || ''),
-            String(project.actual_cost || ''),
-            String(project.jobs_created || ''),
-            String(project.emissions_avoided_tonnes_co2 || ''),
-            String(project.households_served || '')
-          ]);
-        });
-        
-        const csvContent = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        downloadBlob(blob, `funder-report-${reportPeriod.quarter}-${reportPeriod.year}.csv`);
+        const csvArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-csv');
+        if (!csvArtifact) return;
+        downloadTextArtifact(csvArtifact, buildCsvExportContent(selectedProjectData), 'text/csv;charset=utf-8;');
       }
       
       if (format === 'pdf') {
-        // Generate HTML for PDF (would use jsPDF in production)
-        const htmlContent = generateHTMLReport(selectedProjectData, enabledSections);
-        const blob = new Blob([htmlContent], { type: 'text/html' });
-        downloadBlob(blob, `funder-report-${reportPeriod.quarter}-${reportPeriod.year}.html`);
-        
-        // Note: For actual PDF generation, integrate jsPDF:
-        // import jsPDF from 'jspdf';
-        // const doc = new jsPDF();
-        // doc.html(htmlContent, { callback: (doc) => doc.save('report.pdf') });
+        await downloadPdfArtifact(descriptor);
       }
       
       if (format === 'word') {
-        // Generate simple RTF (Word-compatible)
         const rtfContent = generateRTFReport(selectedProjectData, enabledSections);
-        const blob = new Blob([rtfContent], { type: 'application/rtf' });
-        downloadBlob(blob, `funder-report-${reportPeriod.quarter}-${reportPeriod.year}.rtf`);
+        const rtfArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'funder-quarterly-rtf');
+        if (!rtfArtifact) return;
+        downloadTextArtifact(rtfArtifact, rtfContent, 'application/rtf');
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -423,17 +329,6 @@ ${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- $
     } finally {
       setGenerating(false);
     }
-  }
-
-  function downloadBlob(blob: Blob, filename: string) {
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   }
 
   function generateHTMLReport(projectData: ProjectData[], sections: ReportSection[]): string {
@@ -467,6 +362,7 @@ ${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- $
   <div class="header">
     <h1>${template.name}</h1>
     <p><strong>Reporting Period:</strong> ${reportPeriod.quarter} ${reportPeriod.year}</p>
+    <p><strong>Source Mode:</strong> ${buildFunderSourceLabel(sourceMode)}</p>
     <p><strong>Generated:</strong> ${new Date().toLocaleDateString('en-CA')}</p>
     <p><strong>Projects Included:</strong> ${projectData.length}</p>
   </div>
@@ -487,6 +383,7 @@ ${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- $
 
   <div class="footer">
     <p>This report was generated by the Canada Energy Intelligence Platform - Indigenous Energy Module.</p>
+    <p>Owner-supplied project fields require community review before submission.</p>
     <p>For questions about this report, contact your program officer or visit the platform dashboard.</p>
   </div>
 </body>
@@ -505,6 +402,7 @@ ${(project.milestones || []).filter(m => !m.completed).slice(0, 3).map(m => `- $
 {\\b\\fs32\\cf1 ${template.name}}\\par
 \\par
 {\\b Reporting Period:} ${reportPeriod.quarter} ${reportPeriod.year}\\par
+{\\b Source Mode:} ${buildFunderSourceLabel(sourceMode)}\\par
 {\\b Generated:} ${new Date().toLocaleDateString('en-CA')}\\par
 {\\b Projects Included:} ${projectData.length}\\par
 \\par
@@ -544,10 +442,10 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
   return (
     <div className="min-h-screen bg-slate-900 text-white">
       <SEOHead
-        title="Indigenous Funder Reporting Dashboard | OCAP-Aligned Energy Project Tracking"
-        description="Funder report templates for Wah-ila-toos, CERRC, and Northern REACHE programs. OCAP-aligned Indigenous energy project tracking with community benchmarking. Seeking community design partners."
+        title="Indigenous Funder Reporting Dashboard | OCAP-Aligned Workflow"
+        description="Funder report templates for Wah-ila-toos, CERRC, and Northern REACHE programs with OCAP-aligned workflow language, explicit governance fields, and community review before external sharing."
         path="/funder-reporting"
-        keywords={['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP compliance', 'First Nations energy projects', 'funder reporting dashboard']}
+        keywords={['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP-aligned workflow', 'First Nations energy projects', 'funder reporting dashboard']}
       />
       <header className="bg-gradient-to-r from-emerald-900 to-teal-800 shadow-lg">
         <div className="max-w-7xl mx-auto px-6 py-8">
@@ -569,17 +467,51 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* OCAP Compliance Banner */}
+        {/* Governance Banner */}
         <div className="mb-6 bg-emerald-900/30 border border-emerald-600/40 rounded-xl p-4 flex items-center gap-4">
           <Shield className="h-8 w-8 text-emerald-400 flex-shrink-0" />
           <div>
-            <h3 className="font-semibold text-emerald-300">OCAP® Compliant Platform</h3>
+            <h3 className="font-semibold text-emerald-300">OCAP-aligned reporting workflow</h3>
             <p className="text-sm text-slate-400">
-              All data follows First Nations principles of Ownership, Control, Access, and Possession.
-              Community data is encrypted with Nation-held keys and never aggregated without consent.
+              Governance, FPIC, and approval fields stay explicit throughout this route. External sharing still
+              requires community review and owner-supplied confirmation, and this workflow should not be treated as
+              certified sovereignty infrastructure.
             </p>
           </div>
         </div>
+
+        {sourceMode === 'starter_projects' ? (
+          <DataTrustNotice
+            mode="mock"
+            title="Starter project set active"
+            message="This route is showing a Wah-ila-toos-first starter portfolio so buyers can validate the reporting workflow before connecting live or uploaded projects."
+            className="mb-6"
+          />
+        ) : sourceMode === 'constructed_commercial_scenario' ? (
+          <DataTrustNotice
+            mode="fallback"
+            title="Constructed commercial scenario active"
+            message="This route is using a constructed Wah-ila-toos project set built from realistic reporting assumptions. Governance, FPIC, and approval fields remain explicit, but the data is not a community-approved submission package."
+            className="mb-6"
+          />
+        ) : (
+          <div className="mb-6 rounded-xl border border-slate-700 bg-slate-800/70 p-4">
+            <div className="text-sm font-semibold text-white">Current source mode</div>
+            <div className="mt-1 text-sm text-slate-400">
+              {buildFunderSourceLabel(sourceMode)} with explicit owner-supplied field review before export.
+            </div>
+          </div>
+        )}
+
+        {selectedProjects.length > 0 && (
+          <div className="mb-6">
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+          </div>
+        )}
 
         {/* Aggregate Impact Summary */}
         {(() => {
@@ -636,7 +568,18 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                       className="mt-1"
                     />
                     <div>
-                      <div className="font-medium">{REPORT_TEMPLATES[templateId].name}</div>
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium">{REPORT_TEMPLATES[templateId].name}</div>
+                        {REPORT_TEMPLATES[templateId].maturity === 'primary' ? (
+                          <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-[11px] uppercase tracking-wide text-emerald-300">
+                            primary
+                          </span>
+                        ) : (
+                          <span className="rounded-full border border-slate-600 bg-slate-700/50 px-2 py-0.5 text-[11px] uppercase tracking-wide text-slate-300">
+                            follow-on
+                          </span>
+                        )}
+                      </div>
                       <div className="text-xs text-slate-400 mt-1">
                         {REPORT_TEMPLATES[templateId].description}
                       </div>
@@ -679,6 +622,56 @@ ${content.replace(/\*\*/g, '').replace(/\n/g, '\\par\n')}\\par
                   </select>
                 </div>
               </div>
+            </div>
+
+            <div className="bg-slate-800 rounded-xl border border-slate-700 p-6">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Upload className="h-5 w-5 text-emerald-400" />
+                Project Import
+              </h2>
+              <p className="text-sm text-slate-400 mb-4">
+                Upload a CSV or JSON project set to replace the starter workflow without adding grant CRM behavior.
+              </p>
+              <label className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5 text-center">
+                <Upload className="h-8 w-8 text-emerald-300" />
+                <div>
+                  <div className="font-medium text-white">Upload project file</div>
+                  <div className="mt-1 text-xs text-slate-500">
+                    Supported: `.csv` or `.json` with the existing project shape.
+                  </div>
+                </div>
+                <input type="file" accept=".csv,.json,application/json,text/csv" className="hidden" onChange={handleProjectImport} />
+                <span className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500">
+                  Select file
+                </span>
+              </label>
+              <div className="mt-3 flex flex-wrap gap-3">
+                <button
+                  onClick={loadConstructedScenario}
+                  className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-50 transition-colors hover:border-emerald-400"
+                >
+                  Load constructed Wah-ila-toos case
+                </button>
+                <button
+                  onClick={loadProjects}
+                  className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-600"
+                >
+                  Reload live or starter projects
+                </button>
+              </div>
+              {projectImportError && (
+                <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-900/20 p-3 text-sm text-amber-100">
+                  {projectImportError}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <ConstructedScenarioPanel
+                scenario={FUNDER_REPORTING_CONSTRUCTED_SCENARIO}
+                onLoad={loadConstructedScenario}
+                testId="funder-constructed-scenario"
+              />
             </div>
 
             {/* Project Selection */}

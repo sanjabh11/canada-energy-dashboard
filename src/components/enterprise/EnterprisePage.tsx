@@ -64,6 +64,7 @@ export function EnterprisePage() {
     const tierParam = searchParams.get('tier') || '';
     const checkoutFallback = searchParams.get('checkout') === 'fallback';
     const priceIdParam = searchParams.get('priceId') || '';
+    const isConsultingTier = tierParam === 'consulting' || priceIdParam.includes('professional');
 
     const [formData, setFormData] = useState<EnterpriseFormData>({
         companyName: '',
@@ -155,38 +156,71 @@ export function EnterprisePage() {
         setSubmitted(true);
     };
 
-    const enterpriseFeatures = [
-        {
-            icon: <Users className="h-6 w-6" />,
-            title: 'Multi-User Accounts',
-            description: 'Unlimited team members with role-based access control'
-        },
-        {
-            icon: <BarChart3 className="h-6 w-6" />,
-            title: 'Custom Dashboards',
-            description: 'Tailored analytics for your specific energy portfolio'
-        },
-        {
-            icon: <Zap className="h-6 w-6" />,
-            title: 'API Access',
-            description: 'Full API access with dedicated rate limits and SLA'
-        },
-        {
-            icon: <Shield className="h-6 w-6" />,
-            title: 'Regulatory Compliance',
-            description: 'ESG reporting, emissions tracking, and audit trails'
-        },
-        {
-            icon: <FileText className="h-6 w-6" />,
-            title: 'Custom Invoicing',
-            description: 'NET-30/NET-60 payment terms, PO acceptance, wire transfers'
-        },
-        {
-            icon: <HeadphonesIcon className="h-6 w-6" />,
-            title: 'Priority Support',
-            description: 'Dedicated account manager, <4hr response time, on-site training'
-        }
-    ];
+    const enterpriseFeatures = isConsultingTier
+        ? [
+            {
+                icon: <Zap className="h-6 w-6" />,
+                title: 'Structured Canadian energy inputs',
+                description: 'Programmatic access for repeated consultant workflows instead of manual AESO and IESO pulls.'
+            },
+            {
+                icon: <BarChart3 className="h-6 w-6" />,
+                title: 'Forecast benchmarking trust layer',
+                description: 'A consistent proof surface for MAE, MAPE, RMSE, baseline comparisons, and bounded forecast claims.'
+            },
+            {
+                icon: <FileText className="h-6 w-6" />,
+                title: 'Consultant-ready reporting inputs',
+                description: 'Support filing, memo, and board-pack workflows with reusable datasets and bounded proof artifacts.'
+            },
+            {
+                icon: <Users className="h-6 w-6" />,
+                title: 'Multi-client workflow',
+                description: 'Separate keys, pilots, and usage tracking across internal analysts and client-facing projects.'
+            },
+            {
+                icon: <Shield className="h-6 w-6" />,
+                title: 'Bounded claims and trust controls',
+                description: 'Route-level copy and proof assets stay disciplined about freshness, scope, and fallback conditions.'
+            },
+            {
+                icon: <HeadphonesIcon className="h-6 w-6" />,
+                title: 'Sales-assisted onboarding',
+                description: 'Use the direct consultant lane for annual invoicing, pilot scoping, and higher-rate access.'
+            }
+        ]
+        : [
+            {
+                icon: <Users className="h-6 w-6" />,
+                title: 'Multi-User Accounts',
+                description: 'Unlimited team members with role-based access control'
+            },
+            {
+                icon: <BarChart3 className="h-6 w-6" />,
+                title: 'Custom Dashboards',
+                description: 'Tailored analytics for your specific energy portfolio'
+            },
+            {
+                icon: <Zap className="h-6 w-6" />,
+                title: 'API Access',
+                description: 'Full API access with dedicated rate limits and SLA'
+            },
+            {
+                icon: <Shield className="h-6 w-6" />,
+                title: 'Regulatory Compliance',
+                description: 'ESG reporting, emissions tracking, and audit trails'
+            },
+            {
+                icon: <FileText className="h-6 w-6" />,
+                title: 'Custom Invoicing',
+                description: 'NET-30/NET-60 payment terms, PO acceptance, wire transfers'
+            },
+            {
+                icon: <HeadphonesIcon className="h-6 w-6" />,
+                title: 'Priority Support',
+                description: 'Dedicated account manager, <4hr response time, on-site training'
+            }
+        ];
 
     return (
         <div className="min-h-screen bg-slate-900 text-white">
@@ -246,15 +280,18 @@ export function EnterprisePage() {
                     )}
                     <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-2 rounded-full text-sm mb-6">
                         <Lock className="h-4 w-4" />
-                        Enterprise-Grade Security Controls
+                        {isConsultingTier ? 'Consultant-grade trust stack' : 'Enterprise-Grade Security Controls'}
                     </div>
                     <h1 className="text-4xl md:text-5xl font-bold mb-6">
-                        Energy Intelligence<br />
-                        <span className="text-amber-400">for the Enterprise</span>
+                        {isConsultingTier ? 'Structured Canadian energy inputs' : 'Energy Intelligence'}<br />
+                        <span className="text-amber-400">
+                            {isConsultingTier ? 'for consulting teams' : 'for the Enterprise'}
+                        </span>
                     </h1>
                     <p className="text-xl text-slate-300 max-w-3xl mx-auto mb-8">
-                        Custom solutions for utilities, energy companies, and corporate sustainability teams.
-                        Full API access, dedicated support, and enterprise-grade security.
+                        {isConsultingTier
+                            ? 'Use CEIP to replace manual Canadian energy data collection with a proof-led workflow: API docs for technical validation, forecast benchmarking for model trust, and an overview route for executive sign-off.'
+                            : 'Custom solutions for utilities, energy companies, and corporate sustainability teams. Full API access, dedicated support, and enterprise-grade security.'}
                     </p>
                     <div className="flex items-center justify-center gap-4 flex-wrap">
                         <a
@@ -287,11 +324,11 @@ export function EnterprisePage() {
                             </a>
                         )}
                         <Link
-                            to="/api-docs"
-                            onClick={() => trackRouteIntentCta('enterprise', 'view_api_docs')}
+                            to={isConsultingTier ? '/forecast-benchmarking' : '/api-docs'}
+                            onClick={() => trackRouteIntentCta('enterprise', isConsultingTier ? 'view_forecast_benchmarking' : 'view_api_docs')}
                             className="px-8 py-4 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded-lg transition-colors"
                         >
-                            View API Docs
+                            {isConsultingTier ? 'View Forecast Benchmarking' : 'View API Docs'}
                         </Link>
                     </div>
                 </div>
@@ -327,15 +364,24 @@ export function EnterprisePage() {
                             Starting at {formatUsd(CEIP_PRICING.direct.professional)}<span className="text-xl text-slate-400">/month</span>
                         </p>
                         <p className="text-slate-300 mb-6">
-                            Annual invoicing and volume discounts available for teams of 10+
+                            {isConsultingTier
+                                ? 'Annual invoicing, consultant pilots, and higher request tiers are sales-assisted.'
+                                : 'Annual invoicing and volume discounts available for teams of 10+'}
                         </p>
                         <ul className="text-left max-w-md mx-auto space-y-3 mb-8">
-                            {[
-                                'Annual contracts with NET-30 invoicing',
-                                'Volume discounts: 15% off 5+ seats, 25% off 10+ seats',
-                                'Custom data integrations at no extra cost',
-                                'On-premise deployment options available'
-                            ].map((item, i) => (
+                            {(isConsultingTier
+                                ? [
+                                    'Professional lane starts at $149/month for consultant access',
+                                    'Use /api-docs for technical proof, /forecast-benchmarking for trust, and /overview for executive review',
+                                    'Higher request limits and team onboarding are handled through the direct enterprise route',
+                                    'Bounded proof artifacts and sample exports are available after first-touch qualification'
+                                ]
+                                : [
+                                    'Annual contracts with NET-30 invoicing',
+                                    'Volume discounts: 15% off 5+ seats, 25% off 10+ seats',
+                                    'Custom data integrations at no extra cost',
+                                    'On-premise deployment options available'
+                                ]).map((item, i) => (
                                 <li key={i} className="flex items-start gap-3">
                                     <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
                                     <span className="text-slate-300">{item}</span>
@@ -392,7 +438,9 @@ export function EnterprisePage() {
                 <div className="max-w-2xl mx-auto px-6">
                     <h2 className="text-3xl font-bold text-center mb-4">Contact Our Sales Team</h2>
                     <p className="text-slate-400 text-center mb-8">
-                        Get a custom quote tailored to your organization's needs
+                        {isConsultingTier
+                            ? 'Tell us about your consultant workflow, target volume, and proof requirements.'
+                            : 'Get a custom quote tailored to your organization\'s needs'}
                     </p>
 
                     {submitted ? (
@@ -499,10 +547,12 @@ export function EnterprisePage() {
                                     rows={4}
                                     value={formData.message}
                                     onChange={e => setFormData({ ...formData, message: e.target.value })}
-                                    className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-amber-500 focus:outline-none resize-none"
-                                    placeholder="We're looking for a platform to track emissions across our 15 facilities..."
-                                />
-                            </div>
+                                        className="w-full px-4 py-3 bg-slate-900 border border-slate-700 rounded-lg text-white focus:border-amber-500 focus:outline-none resize-none"
+                                        placeholder={isConsultingTier
+                                            ? 'We need structured Canadian energy inputs for recurring client work, plus a proof layer for forecast and compliance discussions.'
+                                            : 'We\'re looking for a platform to track emissions across our 15 facilities...'}
+                                    />
+                                </div>
 
                             {submitError && (
                                 <p className="mb-6 text-sm text-rose-400">{submitError}</p>

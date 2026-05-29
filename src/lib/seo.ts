@@ -152,7 +152,7 @@ export const PAGE_SCHEMAS = {
   indigenous: generatePageSchema({
     type: 'WebPage',
     name: 'Indigenous Energy Sovereignty - Canada Energy Intelligence Platform',
-    description: 'Track Indigenous energy projects, FPIC compliance, and UNDRIP implementation across Canada. OCAP® compliant data governance.',
+    description: 'Track Indigenous energy projects, FPIC review, and UNDRIP implementation across Canada with OCAP-aligned workflow language and explicit governance fields.',
     url: buildSeoUrl('/indigenous'),
     keywords: ['Indigenous energy', 'UNDRIP compliance', 'FPIC', 'OCAP', 'First Nations energy projects', 'Indigenous data sovereignty'],
     breadcrumb: [
@@ -234,7 +234,7 @@ export const DATASET_SCHEMAS = {
 
   indigenousProjects: generateDatasetSchema({
     name: 'Indigenous Energy Projects Dataset',
-    description: 'Tracking Indigenous-led and Indigenous-partnered energy projects across Canada. OCAP® compliant data governance.',
+    description: 'Tracking Indigenous-led and Indigenous-partnered energy projects across Canada with OCAP-aligned workflow framing and explicit governance review requirements.',
     url: buildSeoUrl('/indigenous'),
     keywords: ['Indigenous energy', 'First Nations projects', 'renewable energy Indigenous', 'energy sovereignty'],
     creator: 'Canada Energy Intelligence Platform',

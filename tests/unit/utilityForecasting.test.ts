@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildOntarioPublicUtilitySampleCsv,
+  buildOntarioPublicUtilitySampleManifestMarkdown,
   buildUtilityForecastPackage,
   buildUtilityStarterCsv,
+  generateOntarioPublicUtilitySampleRows,
   generateUtilityLoadSampleRows,
+  ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST,
+  parseIesoPublicDemandCsv,
   parseUtilityHistoricalLoadCsv,
   utilityForecastPackageToAlbertaCsv,
   utilityForecastPackageToCsv,
@@ -36,6 +41,62 @@ describe('utilityForecasting', () => {
     expect(parsed.rows[0].customer_class.length).toBeGreaterThan(0);
   });
 
+  it('publishes a public-derived Ontario system sample with a provenance manifest', () => {
+    const rows = generateOntarioPublicUtilitySampleRows();
+    const csv = buildOntarioPublicUtilitySampleCsv();
+    const manifest = buildOntarioPublicUtilitySampleManifestMarkdown();
+    const parsed = parseUtilityHistoricalLoadCsv(csv);
+
+    expect(rows.length).toBeGreaterThan(24 * 21);
+    expect(rows[0].source_system).toBe(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id);
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.rows[0].geography_level).toBe('system');
+    expect(manifest).toContain(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_url);
+    expect(manifest).toContain(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.source_file);
+    expect(manifest).toContain('customer LDC history');
+    expect(manifest).toContain('Transform version');
+
+    const forecastPackage = buildUtilityForecastPackage({
+      rows,
+      scenario: buildScenario('Ontario'),
+      sourceLabel: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label,
+      isSampleData: false,
+      sourceKind: 'public_system_sample',
+    });
+
+    expect(forecastPackage.input_provenance_summary.source_kind).toBe('public_system_sample');
+    expect(forecastPackage.source_manifest.id).toBe(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id);
+    expect(forecastPackage.source_manifest.hash).toMatch(/^fnv1a-/);
+    expect(forecastPackage.warnings).toContain('Public-derived Ontario system sample is workflow proof only; it is not customer LDC history or production utility telemetry.');
+    expect(forecastPackage.assumptions.some((assumption) => assumption.includes(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id))).toBe(true);
+  });
+
+  it('parses raw IESO public demand CSV rows into public-system forecast inputs', () => {
+    const rawIesoCsv = [
+      'Created,2026-05-29 07:31',
+      'Date,Hour,Market Demand,Ontario Demand',
+      '2026-01-01,1,16320,14520',
+      '2026-01-01,2,15840,14010',
+      '2026-01-01,24,17100,15175',
+    ].join('\n');
+
+    const parsed = parseIesoPublicDemandCsv(rawIesoCsv);
+    const genericParsed = parseUtilityHistoricalLoadCsv(rawIesoCsv);
+
+    expect(parsed.errors).toEqual([]);
+    expect(parsed.rows).toHaveLength(3);
+    expect(parsed.rows[0]).toMatchObject({
+      timestamp: '2026-01-01T00:00:00.000Z',
+      geography_level: 'system',
+      geography_id: 'IESO-ONTARIO-SYSTEM',
+      demand_mw: 14520,
+      gross_load_mw: 16320,
+      source_system: ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.id,
+    });
+    expect(parsed.rows[2].timestamp).toBe('2026-01-01T23:00:00.000Z');
+    expect(genericParsed.rows).toEqual(parsed.rows);
+  });
+
   it('builds an Ontario utility forecast package with benchmark proof and OEB rows', () => {
     const forecastPackage = buildUtilityForecastPackage({
       rows: generateUtilityLoadSampleRows('Ontario', 'hourly'),
@@ -46,11 +107,16 @@ describe('utilityForecasting', () => {
 
     expect(forecastPackage.summary.granularity).toBe('hourly');
     expect(forecastPackage.benchmark.sample_size).toBeGreaterThan(0);
+    expect(forecastPackage.evidence_report.rolling_origin_splits.length).toBeGreaterThan(0);
+    expect(forecastPackage.evidence_report.validation_method).toBe('rolling_origin_cv');
+    expect(forecastPackage.evidence_report.champion_challenger.champion).toBe('transparent_trend_seasonal');
     expect(forecastPackage.cases.expected.yearly).toHaveLength(10);
     expect(forecastPackage.scenario_matrix.base.label).toBe('expected');
     expect(forecastPackage.oeb_rows).toHaveLength(5);
     expect(forecastPackage.reliability_proxy.horizon_scores).toHaveLength(10);
     expect(forecastPackage.profiles_8760[0]?.points).toHaveLength(8760);
+    expect(new Set(forecastPackage.profiles_8760.map((profile) => profile.case_label))).toEqual(new Set(['expected']));
+    expect(forecastPackage.assumptions).toContain('8,760-hour profile previews are generated for the expected case only; low and high cases remain annual scenario rows unless a full grid-planning export is added.');
     expect(forecastPackage.regulatory_exports.ontario.scenario_matrix_rows.length).toBeGreaterThan(0);
     expect(forecastPackage.input_provenance_summary.live_surfaces.length).toBeGreaterThan(0);
     expect(forecastPackage.assumptions.length).toBeGreaterThanOrEqual(4);
@@ -87,6 +153,14 @@ describe('utilityForecasting', () => {
 
     expect(forecastPackage.summary.granularity).toBe('monthly');
     expect(csv).toContain('# Utility Demand Forecast Package');
+    expect(csv).toContain('# Source Kind: green_button_cmd');
+    expect(csv).toContain('benchmark_metric,value');
+    expect(csv).toContain('# Source Manifest:');
+    expect(csv).toContain('rolling_split,train_start,train_end');
+    expect(csv).toContain('evidence_metric,value');
+    expect(csv).toContain('mae,');
+    expect(csv).toContain('persistence_mae,');
+    expect(csv).toContain('seasonal_naive_mae,');
     expect(csv).toContain('reliability_proxy_horizon');
     expect(csv).toContain('live_surface_source');
     expect(csv).toContain('expected');

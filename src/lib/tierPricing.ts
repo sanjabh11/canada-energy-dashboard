@@ -34,6 +34,15 @@ export interface TIERPricingConfig {
   
   /** Quarter/period label for display (e.g., "Q4 2025") */
   periodLabel: string;
+
+  /** Fallback market-price source used when no live quote is available in-route */
+  marketPriceSource: string;
+
+  /** Optional URL for the fallback market-price basis */
+  marketPriceSourceUrl?: string;
+
+  /** Plain-language disclosure for the fallback market-price basis */
+  marketPriceDisclosure: string;
 }
 
 export interface TIERPricingProvenance {
@@ -46,19 +55,21 @@ export interface TIERPricingProvenance {
 /**
  * Default TIER pricing configuration
  * 
- * Fund price frozen at $95/tonne by Alberta government (May 2025)
- * Market credits trading ~$25/tonne (Q4 2025 data from S&P/ICAP)
- * Effective: May 2025 freeze | Verified: February 2026
+ * Fund price uses the 2026 Alberta planning basis published in the February 2025
+ * compliance workshop slides. Market credits remain a CEIP fallback planning
+ * snapshot until the buyer replaces them with a live quote or registry-backed view.
  */
 export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
-  fundPrice: 95,
+  fundPrice: 110,
   marketCreditPrice: 25,
-  effectiveDate: '2025-05-01',
-  source: 'Alberta.ca TIER Regulation',
-  sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-  lastVerifiedAt: '2026-02-01',
-  isFrozen: true,
-  periodLabel: 'Q4 2025'
+  effectiveDate: '2026-01-01',
+  source: 'Government of Alberta 2024 TIER Compliance Workshop slides',
+  sourceUrl: 'https://www.alberta.ca/system/files/epa-tier-compliance-workshop-2024.pdf',
+  lastVerifiedAt: '2026-04-29',
+  isFrozen: false,
+  periodLabel: 'Planning snapshot reviewed Apr 2026',
+  marketPriceSource: 'CEIP fallback secondary-market planning snapshot',
+  marketPriceDisclosure: 'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
 };
 
 /**
@@ -83,7 +94,7 @@ export function calculateSavingsPercentage(config: TIERPricingConfig = DEFAULT_T
 export function formatPricingWithProvenance(
   config: TIERPricingConfig = DEFAULT_TIER_PRICING
 ): string {
-  return `Fund: $${config.fundPrice}/t | Market: $${config.marketCreditPrice}/t (${config.periodLabel}, ${config.source})`;
+  return `Fund: $${config.fundPrice}/t (${config.source}) | Market: $${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
 }
 
 /**

@@ -52,11 +52,11 @@ const CASE_STUDIES = [
   {
     id: 'indigenous-sovereignty',
     title: 'Indigenous Data Sovereignty Dashboard',
-    description: 'OCAP®-compliant platform for First Nations energy project tracking with FPIC workflow management and TEK integration.',
+    description: 'OCAP-aligned workflow for First Nations energy project tracking with FPIC workflow management, governance review fields, and TEK-aware planning support.',
     metrics: [
       { label: 'FPIC Workflows', value: '3 stages' },
       { label: 'Territory Mapping', value: 'Live' },
-      { label: 'Data Governance', value: 'OCAP®' }
+      { label: 'Data Governance', value: 'OCAP-aligned' }
     ],
     tech: ['React', 'Mapbox', 'Supabase RLS', 'UNDRIP compliance'],
     link: '/indigenous',

@@ -28,6 +28,7 @@ const DEFAULT_ALLOWED_ORIGINS = [
 
 // Whop uses dynamic subdomains like *.apps.whop.com
 const WHOP_DOMAIN_PATTERN = /^https:\/\/[a-z0-9]+\.apps\.whop\.com$/;
+const LOCAL_DEV_ORIGIN_PATTERN = /^http:\/\/(?:localhost|127\.0\.0\.1):\d{2,5}$/;
 
 // Get allowed origins from environment or use defaults
 export function getAllowedOrigins(): string[] {
@@ -48,6 +49,10 @@ function isWhopDomain(origin: string): boolean {
   return WHOP_DOMAIN_PATTERN.test(origin);
 }
 
+function isLocalDevOrigin(origin: string): boolean {
+  return LOCAL_DEV_ORIGIN_PATTERN.test(origin);
+}
+
 /**
  * Resolve the appropriate origin for CORS response
  * Returns the request origin if it's in the allowlist, otherwise returns the first allowed origin
@@ -63,6 +68,11 @@ export function resolveOrigin(req: Request): string {
 
   // Allow Whop dynamic subdomains (*.apps.whop.com)
   if (requestOrigin && isWhopDomain(requestOrigin)) {
+    return requestOrigin;
+  }
+
+  // Allow local preview/dev ports without broad wildcard CORS.
+  if (requestOrigin && isLocalDevOrigin(requestOrigin)) {
     return requestOrigin;
   }
 

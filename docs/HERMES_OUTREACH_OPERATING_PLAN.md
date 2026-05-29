@@ -1,7 +1,7 @@
 # CEIP Hermes Outreach Operating Plan
 
-**Last updated:** May 8, 2026  
-**Primary runtime:** Hermes CLI + gateway on this workstation  
+**Last updated:** May 29, 2026
+**Primary runtime:** Hermes CLI + gateway on this workstation
 **Secondary support only:** OpenClaw local gateway and `ceip-outreach` browser profile
 
 ## Summary
@@ -33,16 +33,17 @@
 
 | Rank | `proof_pack_id` | Buyer lane | Route | Rating | Lead / attach / park |
 |---:|---|---|---|---:|---|
-| 1 | `utility_forecast_planning_pack` | Utility planners, LDCs, REAs, consultants | `/utility-demand-forecast` | 4.5/5 | Lead |
-| 2 | `regulatory_filing_pack` | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead |
-| 3 | `forecast_benchmark_provenance` | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 | Attach to every forecast claim |
-| 4 | `asset_health_capex_pack` | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead when capex/replace/defer pain is explicit |
-| 5 | `tier_cfo_savings_pack` | Alberta emitters, EPCs, compliance advisors | `/roi-calculator` | 4.0/5 | Lead for industrial compliance only |
-| 6 | `utility_security_procurement_pack` | Security, privacy, procurement reviewers | `/utility-security` | 4.0/5 | Attach when data sharing or procurement appears |
-| 7 | `shadow_billing_invoice_pack` | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead when invoice audit pain is explicit |
-| 8 | `indigenous_funder_aicei_pack` | Indigenous energy/project teams | `/funder-reporting`, `/aicei` | 3.2/5 | Targeted only with governance caveat |
-| 9 | `consultant_api_data_pack` | Consultants, analysts, integrators | `/api-docs` | 3.0/5 | Follow-on after workflow fit |
-| 10 | `large_load_readiness_overlay` | Utilities, data-centre advisors | `/ai-datacentres` | 2.9/5 | Overlay only |
+| 1 | `utility_forecast_planning_pack` | Utility planners, LDCs, REAs, consultants | `/utility-demand-forecast` | 4.8/5 | Lead |
+| 2 | `forecast_benchmark_provenance` | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.9/5 | Attach to every forecast claim |
+| 3 | `regulatory_filing_pack` | Regulatory teams, consultants | `/regulatory-filing` | 4.7/5 | Lead |
+| 4 | `tier_cfo_savings_pack` | Alberta emitters, EPCs, compliance advisors | `/roi-calculator` | 4.7/5 | Lead for industrial compliance |
+| 5 | `tier_credit_banking_audit_pack` | Alberta emitters, CFOs, compliance leads | `/credit-banking` | 4.5/5 | Pair with TIER CFO memo |
+| 6 | `asset_health_capex_pack` | Asset managers, municipal utilities | `/asset-health` | 4.5/5 | Lead when capex/replace/defer pain is explicit |
+| 7 | `utility_security_procurement_pack` | Security, privacy, procurement reviewers | `/utility-security` | 4.4/5 | Attach when data sharing or procurement appears |
+| 8 | `shadow_billing_invoice_pack` | Municipal/public-sector energy managers | `/shadow-billing` | 4.3/5 | Lead when invoice audit pain is explicit |
+| 9 | `large_load_readiness_overlay` | Utilities, data-centre advisors | `/ai-datacentres` | 4.2/5 | Overlay only |
+| 10 | `consultant_api_data_pack` | Consultants, analysts, integrators | `/api-docs` | 4.1/5 | Follow-on after workflow fit |
+| Reserve | `indigenous_funder_aicei_pack` | Indigenous energy/project teams | `/funder-reporting`, `/aicei` | 3.2/5 | Park until partner-backed review |
 
 ## Variant IDs
 
@@ -52,6 +53,7 @@
 - `bench_trust`: benchmark/provenance appendix.
 - `asset_capex`: asset replace/defer capex pack.
 - `tier_cfo`: TIER source-dated CFO memo.
+- `tier_credit_banking`: TIER credit allocation and expiry-risk audit pack.
 - `security_procurement`: utility security questionnaire pack.
 - `shadow_billing`: invoice comparison proof pack.
 - `indigenous_reporting`: funder/AICEI reporting pack.

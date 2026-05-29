@@ -69,18 +69,18 @@ const pricingTiers: PricingTier[] = [
     {
         id: 'professional',
         name: 'Consultant Data Pack',
-        description: 'For energy consultants & advisors',
+        description: 'Structured Canadian energy inputs plus forecast and compliance proof for consultant teams.',
         monthlyPrice: CEIP_PRICING.direct.professional,
         price: formatUsd(CEIP_PRICING.direct.professional),
         priceDetail: '/month',
         priceId: 'pri_professional_monthly',
         annualMode: 'sales_assisted',
         features: [
-            'Everything in Rate Watchdog',
+            'Structured Canadian grid and policy inputs',
             'API access (1,000 calls/day)',
-            'Multi-client dashboards',
-            'Custom report generation',
-            'Methane quantification tools',
+            'Forecast benchmarking trust layer',
+            'Regulatory-ready inputs for filing and memo workflows',
+            'Multi-client consultant workflow',
             'Priority support',
         ],
         ctaText: 'Start 14-Day Trial',
@@ -288,6 +288,13 @@ export const PricingPage: React.FC = () => {
                         <span className="text-emerald-300">Direct lane:</span> Consultancy/municipal/industrial closes ({formatUsd(CEIP_PRICING.direct.professional)}+ per month).
                     </p>
                 </div>
+                <div className="mt-4 mx-auto max-w-4xl rounded-xl border border-cyan-700/40 bg-cyan-950/20 p-4 text-sm text-left">
+                    <p className="text-cyan-200 font-semibold mb-2">Consultant pack truth stack</p>
+                    <p className="text-slate-300">
+                        The Consultant Data Pack is sold around one clear promise: structured Canadian energy inputs plus defensible forecast and compliance proof.
+                        Use <span className="text-cyan-300">/api-docs</span> for technical proof, <span className="text-cyan-300">/forecast-benchmarking</span> for model trust, and <span className="text-cyan-300">/overview</span> for the executive summary.
+                    </p>
+                </div>
 
                 {/* Billing Toggle */}
                 <div className="mt-8 inline-flex items-center gap-4 bg-slate-800 rounded-full p-1">
@@ -428,6 +435,12 @@ export const PricingPage: React.FC = () => {
                     Want to calculate TIER savings first?{' '}
                     <Link to="/roi-calculator" className="text-emerald-400 hover:underline">
                         Try our free ROI calculator →
+                    </Link>
+                </p>
+                <p className="text-slate-400">
+                    Need the consultant proof stack first?{' '}
+                    <Link to="/overview" className="text-emerald-400 hover:underline">
+                        Open the consultant overview →
                     </Link>
                 </p>
                 <p className="text-slate-400">

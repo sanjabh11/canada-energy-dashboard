@@ -1,15 +1,15 @@
-# OpenClaw Console Kickstart Strategy (CEIP)
+# OpenClaw Support Runbook (CEIP)
 
-**Document ID:** OPENCLAW-CONSOLE-KICKSTART-2026-02-28  
-**Primary Console URL:** `https://claw.kilosessions.ai/chat?session=main`  
-**Status:** Ready to run  
-**Audience:** Founder / operator launching outreach from OpenClaw immediately
+**Document ID:** OPENCLAW-CONSOLE-KICKSTART-2026-02-28
+**Primary Console URL:** `http://127.0.0.1:3001/chat?session=main`
+**Status:** Secondary support only on this workstation
+**Audience:** Founder / operator using OpenClaw only when Hermes needs browser-side help
 
 ---
 
 ## 1) What this document gives you
 
-This is an execution manual for starting outreach in OpenClaw console **today** with:
+This is a support manual for using OpenClaw alongside the Hermes-first outreach workflow with:
 
 1. Safe LinkedIn operating limits.
 2. Copy-paste command/prompt blocks.
@@ -17,13 +17,23 @@ This is an execution manual for starting outreach in OpenClaw console **today** 
 4. Daily runbook, QA checklist, and escalation playbook.
 
 It is aligned with:
+- `docs/HERMES_OUTREACH_OPERATING_PLAN.md` (primary operator runbook)
 - `docs/COMET_OUTREACH_STRATEGY.md` (now OpenClaw-migrated)
 - `docs/OPENCLAW_MONETIZATION_IMPLEMENTATION_DELIVERABLE.md`
 - `docs/ADVERSARIAL_USP_ANALYSIS.md` (truth/claim constraints)
+- `docs/MVP_DEMO_FREEZE_HANDOFF.md` (current five-page MVP proof sequence)
 
 ---
 
 ## 2) Safety and platform assumptions (must read)
+
+## Verified local workplace state
+- Codex default model is `gpt-5.4`.
+- `openclaw` CLI is installed locally.
+- Local gateway is reachable at `http://127.0.0.1:3001/`.
+- Preferred browser profile for CEIP outreach is `ceip-outreach`.
+- Older `openclaw` browser profile may be stale; do not use it as the default run profile.
+- Hermes remains the primary outreach control plane. Do not use OpenClaw as the system of record for scheduling, logging, or review.
 
 ## LinkedIn operating guardrails
 - Start at **10-20 connection requests/day**.
@@ -42,7 +52,27 @@ It is aligned with:
 
 ## 3) OpenClaw setup modes
 
-## Mode A: Hosted KiloClaw (fastest)
+## Mode A: Local OpenClaw CLI (secondary support mode on this workstation)
+
+Use this only when you need browser-side support. The environment is already installed and the gateway is already live.
+
+Verification commands:
+
+```bash
+openclaw --version
+openclaw gateway status
+openclaw browser --browser-profile ceip-outreach status
+openclaw browser --browser-profile ceip-outreach open http://127.0.0.1:3001/
+openclaw browser --browser-profile ceip-outreach tabs
+```
+
+If the `ceip-outreach` profile is not already running:
+
+```bash
+openclaw browser --browser-profile ceip-outreach start
+```
+
+## Mode B: Hosted KiloClaw (optional fallback)
 
 Use this when you want immediate startup without local infra.
 
@@ -58,7 +88,7 @@ Limitations to remember:
 - Hosted mode may have beta constraints and feature differences.
 - Validate browser control behavior before scaling actions.
 
-## Mode B: Local OpenClaw CLI (full control)
+## Mode C: Fresh local install (only if the workstation is missing OpenClaw)
 
 Prereqs:
 - Node 22+
@@ -75,8 +105,8 @@ openclaw dashboard
 Optional browser setup:
 
 ```bash
-openclaw browser --browser-profile openclaw status
-openclaw browser --browser-profile openclaw start
+openclaw browser create-profile --name ceip-outreach --driver openclaw --color '#0EA5E9'
+openclaw browser --browser-profile ceip-outreach start
 ```
 
 For extension relay into existing Chrome:
@@ -91,11 +121,18 @@ openclaw browser --browser-profile chrome tabs
 ## 4) Preflight checklist before first outreach run
 
 - [ ] LinkedIn profile optimized (photo, clear headline, value-focused summary).
-- [ ] CEIP proof links verified (all URLs load and match claims).
-- [ ] "Do not claim" constraints copied into OpenClaw session prompt.
+- [ ] CEIP proof links verified:
+  - `/utility-demand-forecast`
+  - `/regulatory-filing`
+  - `/utility-security`
+  - `/utilityapi-demo`
+  - `/forecast-benchmarking`
+- [ ] Hermes remains the active system of record for cadence, logging, and weekly review.
+- [ ] "Do not claim" constraints copied into the OpenClaw support session prompt.
 - [ ] Daily caps and stop conditions configured.
 - [ ] Tracking sheet ready (prospect, action, status, response).
 - [ ] Manual approval workflow confirmed.
+- [ ] Claim-lint pass done on all outbound templates for current TIER, OCAP, and utility-readiness truth.
 
 ---
 
@@ -104,28 +141,39 @@ openclaw browser --browser-profile chrome tabs
 ```text
 DO NOT CLAIM:
 - "AI-powered" as the core differentiator
-- "Live" TIER pricing (state based on Q4 2025 where relevant)
+- "Live" TIER pricing unless you have a current external quote
+- Any TIER fund price other than the current CEIP planning basis of $110/t unless the site/source changes
 - "Used by consultants" unless explicitly validated with named proof
 - "Nation-held encryption keys" as fully production-hardened capability
 - Rate Watchdog bill auditing or peak shaving alerts unless those are actually implemented
+- Production utility onboarding, London Hydro readiness, or bridge certification
 
 ALWAYS:
-- Keep early-access positioning honest for OCAP-related tooling
+- Keep early-access positioning honest for OCAP-aligned tooling
 - Keep messages value-first and non-pushy
 - Ask one open question in follow-up messages
+- Route prospects to the strongest live proof page instead of a generic dashboard
 ```
 
 ---
 
-## 6) Session bootstrap prompt (paste first in OpenClaw)
+## 6) Session bootstrap prompt (paste first in OpenClaw when support is needed)
 
 ```text
-You are my safe OpenClaw outreach operator for CEIP (Canada Energy Intelligence Platform, https://canada-energy.netlify.app).
+You are my safe browser-side outreach support operator for CEIP (Canada Energy Intelligence Platform, https://canada-energy.netlify.app).
 
 Mission:
-- Generate high-quality, highly personalized outreach drafts.
+- Support manual CEIP outreach with browser-side inspection and draft review.
+- DO NOT become the primary system of record for cadence, logging, or scheduled review.
 - DO NOT send any outreach actions without explicit approval.
 - Enforce all safety limits and honesty constraints.
+
+Current CEIP proof sequence:
+1) /utility-demand-forecast
+2) /regulatory-filing
+3) /utility-security
+4) /utilityapi-demo
+5) /forecast-benchmarking
 
 Operating rules:
 1) Max 15 new connection requests/day in week 1.
@@ -136,6 +184,8 @@ Operating rules:
 
 Deliverable format for each batch:
 - Name | Company | Role | Personalization signal | Connection note draft | Follow-up draft | Risk score (Low/Med/High)
+- Include the single best proof link for that prospect.
+- Flag any draft that depends on stale pricing, social proof, or production-onboarding implication.
 
 Before generating drafts, ask me:
 - Which campaign are we running?
@@ -161,6 +211,7 @@ Generate 12 prospects with:
 - personalized note under 250 chars
 - follow-up DM under 4 short paragraphs
 - one open question at the end
+- prefer proof links from /utility-demand-forecast, /regulatory-filing, /forecast-benchmarking, /api-docs
 
 Do not mention any unverified customer usage claims.
 ```
@@ -178,6 +229,7 @@ Generate 10 prospects with a respectful community-first tone:
 - use "partnership" / "co-design" framing
 - include one learning-oriented question
 - clearly signal early-access status
+- do not automate sends; manual approval only
 ```
 
 ## Campaign C — Municipal Sustainability
@@ -192,6 +244,7 @@ Generate 12 prospects and two message variants:
 - audit-first variant
 - procurement-friendly variant
 Keep under 250 chars for connection request.
+- prefer proof links from /municipal, /regulatory-filing, /asset-health, /roi-calculator
 ```
 
 ## Campaign D — Industrial TIER
@@ -206,6 +259,7 @@ Generate 10 prospects with:
 - compliance pain hypothesis
 - one quant-style hook
 - one verification-safe proof link
+- default to provenance-safe TIER language; do not inject a live market quote unless provided by the operator
 ```
 
 ---
@@ -305,6 +359,8 @@ Return corrected versions with concise rationale.
 ## 13) Day-1 Kickstart checklist (fast start)
 
 - [ ] Open console session `main`.
+- [ ] Verify local gateway at `http://127.0.0.1:3001/`.
+- [ ] Start `ceip-outreach` browser profile if needed.
 - [ ] Paste session bootstrap prompt.
 - [ ] Run Campaign A prompt for 12 prospects.
 - [ ] Manually approve and trim to first 8 sends.

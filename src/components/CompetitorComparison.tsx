@@ -102,7 +102,7 @@ export const CompetitorComparison: React.FC = () => {
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
             <SEOHead
                 title="CEIP vs Competitors | Energy Toolbase, Carbonhound, Measurabl Comparison"
-                description="Compare CEIP against Energy Toolbase, Carbonhound, and Measurabl. Only platform with Indigenous OCAP compliance, TIER arbitrage, and AI-powered Canadian energy analysis."
+                description="Compare CEIP against Energy Toolbase, Carbonhound, and Measurabl. Contrast Canadian TIER workflow support, OCAP-aligned reporting workflows, and buyer-facing proof artifacts."
                 path="/compare"
                 keywords={['CEIP vs Carbonhound', 'CEIP vs Energy Toolbase', 'Canadian energy platform comparison', 'TIER compliance software comparison', 'best energy analytics Canada']}
             />
@@ -236,8 +236,8 @@ export const CompetitorComparison: React.FC = () => {
                         </div>
                         <h3 className="text-lg font-semibold text-white mb-2">TIER Credit Arbitrage</h3>
                         <p className="text-slate-400 text-sm">
-                            Save $70/tonne by buying market credits at $25 instead of paying the $95 fund price.
-                            No competitor offers live EPC pricing or Direct Investment automation.
+                            Model the spread between Alberta's 2026 fund-price basis and the disclosed market-price input shown in-route.
+                            CEIP still requires buyer-specific pricing refresh before external approval.
                         </p>
                     </div>
 
@@ -245,10 +245,10 @@ export const CompetitorComparison: React.FC = () => {
                         <div className="p-3 bg-blue-600/20 rounded-xl inline-block mb-4">
                             <Shield className="h-8 w-8 text-blue-400" />
                         </div>
-                        <h3 className="text-lg font-semibold text-white mb-2">OCAP® Data Sovereignty</h3>
+                        <h3 className="text-lg font-semibold text-white mb-2">OCAP-aligned workflow support</h3>
                         <p className="text-slate-400 text-sm">
-                            The only platform designed for Indigenous data sovereignty. US-based competitors
-                            (Measurabl, Energy Toolbase) fail the "Possession" principle of OCAP®.
+                            CEIP includes governance, FPIC, and owner-supplied review markers in its Indigenous reporting flows.
+                            That is different from claiming certified sovereignty infrastructure or Nation-controlled hosting.
                         </p>
                     </div>
 
@@ -273,7 +273,7 @@ export const CompetitorComparison: React.FC = () => {
                     </h2>
                     <p className="text-slate-300 mb-6 max-w-2xl mx-auto">
                         Stop paying for features you don't need. Start with the only platform built
-                        specifically for Canadian energy compliance and Indigenous data sovereignty.
+                        specifically for Canadian energy compliance and OCAP-aligned reporting workflows.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Link
@@ -310,7 +310,7 @@ export const CompetitorComparison: React.FC = () => {
             <footer className="border-t border-slate-800 py-8 px-6 text-center text-sm text-slate-500">
                 <p>
                     Comparing CEIP to Energy Toolbase, Carbonhound, and Measurabl for Canadian energy compliance,
-                    Alberta TIER credit tracking, OCAP® data sovereignty, and municipal climate action planning.
+                    Alberta TIER planning, OCAP-aligned reporting workflows, and municipal climate action planning.
                 </p>
                 <p className="mt-2">
                     © {new Date().getFullYear()} Canada Energy Intelligence Platform. Built for Canada. Priced for Procurement.

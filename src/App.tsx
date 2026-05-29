@@ -16,6 +16,8 @@ import './styles/layout.css';
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
 // ============================================================================
 const EnergyDataDashboard = React.lazy(() => import('./components/EnergyDataDashboard').then(m => ({ default: m.EnergyDataDashboard })));
+const CommercialLandingPage = React.lazy(() => import('./components/CommercialLandingPage').then(m => ({ default: m.CommercialLandingPage })));
+const SolutionsNavigatorPage = React.lazy(() => import('./components/SolutionsNavigatorPage').then(m => ({ default: m.SolutionsNavigatorPage })));
 const AnalyticsTrendsDashboard = React.lazy(() => import('./components/AnalyticsTrendsDashboard'));
 const AboutPage = React.lazy(() => import('./components/AboutPage').then(m => ({ default: m.AboutPage })));
 const ContactPage = React.lazy(() => import('./components/ContactPage').then(m => ({ default: m.ContactPage })));
@@ -115,7 +117,9 @@ const router = createBrowserRouter(
     {
       errorElement: <RouteErrorFallback />,
       children: [
-        { path: '/', element: <EnergyDataDashboard /> },
+        { path: '/', element: <CommercialLandingPage /> },
+        { path: '/solutions', element: <SolutionsNavigatorPage /> },
+        { path: '/use-cases', element: <SolutionsNavigatorPage /> },
         { path: '/dashboard', element: <EnergyDataDashboard /> },
 
         // Analytics & Trends - Standalone Route
@@ -298,8 +302,8 @@ const router = createBrowserRouter(
         // /status page (Phase 0 Foundation - Uptime Monitoring)
         { path: '/status', element: <StatusPage /> },
 
-        // /features opens as an overlay on the dashboard, not a standalone route
-        { path: '/features', element: <Navigate to="/" replace /> },
+        // /features now redirects to the commercial use-case navigator
+        { path: '/features', element: <Navigate to="/solutions" replace /> },
 
         // 404 catch-all
         { path: '*', element: <RouteErrorFallback /> },

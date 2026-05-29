@@ -735,7 +735,7 @@ const UtilityApiDemoPage: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100" data-testid="utilityapi-demo-page">
       <SEOHead
         title="UtilityAPI Demo Lane | CEIP"
-        description="Separate UtilityAPI-backed sales demo for Green Button XML rehearsal without changing London Hydro readiness."
+        description="Separate UtilityAPI-backed sales demo for Green Button XML rehearsal without implying production connector approval."
         path="/utilityapi-demo"
       />
 
@@ -750,12 +750,12 @@ const UtilityApiDemoPage: React.FC = () => {
               <h1 className="text-4xl font-semibold tracking-tight">UtilityAPI Demo Lane</h1>
               <p className="mt-2 max-w-3xl text-sm text-slate-300">
                 Separate sales-demo route for UtilityAPI DEMO authorizations and Green Button XML replay. This surface does not
-                unlock London Hydro or Alectra submission readiness.
+                unlock utility submission readiness or production connector approval.
               </p>
             </div>
             <div className="flex flex-wrap gap-3 text-xs text-slate-400">
-              <span className="rounded-full border border-slate-700 px-3 py-1">Not London Hydro readiness</span>
-              <span className="rounded-full border border-slate-700 px-3 py-1">Not Alectra readiness</span>
+              <span className="rounded-full border border-slate-700 px-3 py-1">No production connector approval</span>
+              <span className="rounded-full border border-slate-700 px-3 py-1">No utility submission readiness</span>
               <span className="rounded-full border border-slate-700 px-3 py-1">3-month live collection cap</span>
               <span className="rounded-full border border-slate-700 px-3 py-1">Fixture replay is fully client-bundled</span>
             </div>

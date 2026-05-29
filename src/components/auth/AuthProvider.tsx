@@ -17,14 +17,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import {
   whopClient,
-  useWhopAccess,
   isStandaloneMode,
-  isWhopLiveMode,
-  getWhopConfigStatus,
   handleWhopCallback,
   type WhopUser,
   type WhopTier
 } from '../../lib/whop';
+import { shouldBootstrapWhopSession } from '../../lib/runtimeRouteMode';
+import { useWindowPathname } from '../../lib/useWindowPathname';
 
 // Legacy Supabase imports - kept for data fetching only
 import { supabase } from '../../lib/supabase';
@@ -82,22 +81,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<WhopUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [legacyEdubizUser, setLegacyEdubizUser] = useState<LegacyEdubizUser | null>(null);
-
-  // Get Whop access helpers
-  const whopAccess = useWhopAccess();
+  const pathname = useWindowPathname();
 
   // Initialize auth state
   useEffect(() => {
+    let cancelled = false;
+
     const initAuth = async () => {
+      const shouldBootstrap = shouldBootstrapWhopSession(pathname);
+
+      if (!cancelled) {
+        setLoading(true);
+      }
+
       try {
+        if (shouldBootstrap) {
+          await whopClient.initialize();
+        }
+
         // Check for Whop OAuth callback
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
 
-        if (code && !isStandaloneMode()) {
+        if (code && shouldBootstrap && !isStandaloneMode()) {
           // Handle Whop OAuth callback
           const result = await handleWhopCallback(code);
-          if (result.success && result.user) {
+          if (!cancelled && result.success && result.user) {
             setUser(result.user);
           }
           // Clean URL
@@ -105,19 +114,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Get existing session from Whop client
           const existingUser = whopClient.getCurrentUser();
-          if (existingUser) {
+          if (!cancelled && existingUser) {
             setUser(existingUser);
+          } else if (!cancelled && !existingUser) {
+            setUser(null);
           }
         }
       } catch (error) {
         console.error('Error initializing auth:', error);
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     initAuth();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
 
   // Sync with legacy Supabase data when user changes
   useEffect(() => {

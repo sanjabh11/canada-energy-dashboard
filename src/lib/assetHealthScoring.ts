@@ -71,6 +71,8 @@ export interface AssetHealthResult {
   asset_id: string;
   asset_name: string;
   asset_type: AssetType;
+  location: string;
+  criticality: AssetRecord['criticality'];
   health_index: number;
   condition: ConditionCategory;
   risk_priority: RiskPriority;
@@ -81,6 +83,7 @@ export interface AssetHealthResult {
   environment_factor_score: number;
   loading_pct: number;
   remaining_life_pct: number;
+  priority_reason: string;
   recommended_action: string;
   next_inspection_months: number;
 }
@@ -153,6 +156,47 @@ const WEIGHT_AGE = 0.30;
 const WEIGHT_LOADING = 0.25;
 const WEIGHT_MAINTENANCE = 0.25;
 const WEIGHT_ENVIRONMENT = 0.20;
+
+function buildPriorityReason(input: {
+  age_factor_score: number;
+  loading_factor_score: number;
+  maintenance_factor_score: number;
+  environment_factor_score: number;
+  loading_pct: number;
+  age_years: number;
+  remaining_life_pct: number;
+  criticality: AssetRecord['criticality'];
+}): string {
+  const drivers = [
+    {
+      score: input.age_factor_score,
+      message: `age has consumed most of the expected service life (${input.age_years.toFixed(1)} years in service, ${input.remaining_life_pct.toFixed(0)}% life remaining)`,
+    },
+    {
+      score: input.loading_factor_score,
+      message: `loading pressure is elevated at ${input.loading_pct.toFixed(1)}% of rated capacity`,
+    },
+    {
+      score: input.maintenance_factor_score,
+      message: 'maintenance history and emergency work increase failure risk',
+    },
+    {
+      score: input.environment_factor_score,
+      message: 'operating environment accelerates wear and inspection needs',
+    },
+  ]
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 2)
+    .map((entry) => entry.message);
+
+  const criticalityNote = input.criticality === 'essential'
+    ? ' This asset also serves an essential location.'
+    : input.criticality === 'important'
+      ? ' This asset has above-standard service consequence.'
+      : '';
+
+  return `${drivers.join('; ')}.${criticalityNote}`.trim();
+}
 
 // ============================================================================
 // SCORING ENGINE
@@ -240,11 +284,23 @@ export function scoreAssetHealth(asset: AssetRecord): AssetHealthResult {
     condition === 'fair' ? 6 : 12;
 
   const remaining_life_pct = Math.max(0, Math.min(100, (1 - age_ratio) * 100));
+  const priority_reason = buildPriorityReason({
+    age_factor_score,
+    loading_factor_score,
+    maintenance_factor_score,
+    environment_factor_score,
+    loading_pct,
+    age_years,
+    remaining_life_pct,
+    criticality: asset.criticality,
+  });
 
   return {
     asset_id: asset.asset_id,
     asset_name: asset.asset_name,
     asset_type: asset.asset_type,
+    location: asset.location,
+    criticality: asset.criticality,
     health_index,
     condition,
     risk_priority,
@@ -255,6 +311,7 @@ export function scoreAssetHealth(asset: AssetRecord): AssetHealthResult {
     environment_factor_score: Math.round(environment_factor_score),
     loading_pct: Math.round(loading_pct * 10) / 10,
     remaining_life_pct: Math.round(remaining_life_pct * 10) / 10,
+    priority_reason,
     recommended_action,
     next_inspection_months,
   };
@@ -396,16 +453,16 @@ export function parseAssetCSV(csvText: string): { assets: AssetRecord[]; errors:
 
 export function resultsToCSV(results: AssetHealthResult[]): string {
   const headers = [
-    'asset_id', 'asset_name', 'asset_type', 'health_index', 'condition', 'risk_priority',
+    'asset_id', 'asset_name', 'asset_type', 'location', 'criticality', 'health_index', 'condition', 'risk_priority',
     'age_years', 'loading_pct', 'remaining_life_pct',
     'age_score', 'loading_score', 'maintenance_score', 'environment_score',
-    'recommended_action', 'next_inspection_months',
+    'priority_reason', 'recommended_action', 'next_inspection_months',
   ];
   const rows = results.map(r => [
-    r.asset_id, r.asset_name, r.asset_type, r.health_index, r.condition, r.risk_priority,
+    r.asset_id, r.asset_name, r.asset_type, r.location, r.criticality, r.health_index, r.condition, r.risk_priority,
     r.age_years, r.loading_pct, r.remaining_life_pct,
     r.age_factor_score, r.loading_factor_score, r.maintenance_factor_score, r.environment_factor_score,
-    `"${r.recommended_action}"`, r.next_inspection_months,
+    `"${r.priority_reason}"`, `"${r.recommended_action}"`, r.next_inspection_months,
   ].join(','));
 
   return [

@@ -1,6 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const baseUrl = 'http://127.0.0.1:4175';
+const defaultPort = process.env.PLAYWRIGHT_PHASE6_PORT || '4175';
+const baseUrl = process.env.TEST_BASE_URL || `http://127.0.0.1:${defaultPort}`;
+const webServerTimeoutMs = Number(process.env.PLAYWRIGHT_WEBSERVER_TIMEOUT_MS || '420000');
+const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === 'true';
 
 /**
  * Playwright Configuration for Component Tests
@@ -25,8 +28,9 @@ export default defineConfig({
   
   // Reporter to use
   reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
+    ['html', { outputFolder: process.env.PLAYWRIGHT_HTML_OUTPUT_DIR || 'playwright-report', open: 'never' }],
     ['list'],
+    ['json', { outputFile: process.env.PLAYWRIGHT_JSON_OUTPUT_FILE || 'playwright-results.json' }],
   ],
   
   // Shared settings for all projects
@@ -87,11 +91,13 @@ export default defineConfig({
     ),
   ],
 
-  // Run local dev server before starting tests
-  webServer: {
-    command: 'npm run test:e2e:preview',
+  // Run local preview server unless a hosted/deployed URL is being tested.
+  webServer: skipWebServer ? undefined : {
+    command: 'pnpm run test:e2e:preview',
     env: {
-      VITE_ENABLE_EDGE_FETCH: 'true',
+      VITE_ENABLE_EDGE_FETCH: process.env.VITE_ENABLE_EDGE_FETCH ?? 'true',
+      VITE_ALLOW_LOCAL_EDGE_FETCH: process.env.VITE_ALLOW_LOCAL_EDGE_FETCH ?? 'true',
+      VITE_SUPABASE_EDGE_BASE: process.env.VITE_SUPABASE_EDGE_BASE ?? '',
       VITE_TRAINED_DISPATCH_ENABLED: 'true',
       VITE_TRAINED_PV_FAULT_ENABLED: 'true',
       VITE_SUPABASE_URL: baseUrl,
@@ -99,6 +105,6 @@ export default defineConfig({
     },
     url: baseUrl,
     reuseExistingServer: false,
-    timeout: 240 * 1000,
+    timeout: webServerTimeoutMs,
   },
 });
