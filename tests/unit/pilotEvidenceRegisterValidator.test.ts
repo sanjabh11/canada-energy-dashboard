@@ -104,6 +104,18 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('95% confidence gate requires each accepted confidence-moving row to reference a distinct SHA-256 evidence artifact');
   });
 
+  it('rejects 95% confidence without a commercial commitment signal', () => {
+    const result = runValidator(
+      'invalid-no-commercial-commitment-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status');
+  });
+
   it('rejects public sample evidence that tries to increase market confidence', () => {
     const result = runValidator('invalid-public-confidence-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
@@ -241,5 +253,16 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('evidence_file_reference sha256 does not match local artifact local-redacted-load.csv');
+  });
+
+  it('rejects confidence-moving local evidence artifacts that contain direct identifiers', () => {
+    const result = runValidator('invalid-local-pii-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('local evidence artifact local-pii-load.csv appears to contain a');
   });
 });

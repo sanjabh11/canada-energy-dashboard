@@ -76,6 +76,7 @@ const requiredColumns = [
   'source_label',
   'evidence_file_reference',
   'pii_screen_result',
+  'commercial_commitment_status',
   'artifact_generated',
   'time_to_artifact_hours',
   'buyer_data_coverage_pct',
@@ -244,6 +245,19 @@ const allowedPiiScreenResults = new Set([
   'redacted',
   'screened',
   'not applicable',
+]);
+const allowedCommercialCommitmentStatuses = new Set([
+  'none',
+  'design_partner_signed',
+  'paid_pilot',
+  'purchase_order',
+  'letter_of_intent',
+]);
+const strongCommercialCommitmentStatuses = new Set([
+  'design_partner_signed',
+  'paid_pilot',
+  'purchase_order',
+  'letter_of_intent',
 ]);
 const allowedBuyerLanes = new Set([
   'utility',
@@ -437,6 +451,43 @@ function verifyLocalEvidenceHash(referenceValue, rowNumber) {
   if (actualHash !== sha256) {
     failures.push(`Row ${rowNumber}: evidence_file_reference sha256 does not match local artifact ${referencePath}.`);
   }
+
+  scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber);
+}
+
+function scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber) {
+  const text = readFileSync(evidencePath, 'utf8');
+  const highRiskPatterns = [
+    {
+      label: 'email address',
+      pattern: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+    },
+    {
+      label: 'North American phone number',
+      pattern: /(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}/,
+    },
+    {
+      label: 'Canadian postal code',
+      pattern: /\b[A-Z]\d[A-Z][ -]?\d[A-Z]\d\b/i,
+    },
+    {
+      label: 'direct identifier column or label',
+      pattern: /\b(?:customer[_ -]?name|customer[_ -]?email|account[_ -]?(?:number|no|id)|meter[_ -]?(?:id|identifier|number)|service[_ -]?address|postal[_ -]?code|phone(?:[_ -]?number)?)\b\s*[,;:=]/i,
+    },
+    {
+      label: 'secret or credential assignment',
+      pattern: /\b(?:api[_ -]?key|secret|password|token)\b\s*[:=]\s*\S+/i,
+    },
+    {
+      label: 'street address',
+      pattern: /\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Road|Rd|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres)\b/i,
+    },
+  ];
+
+  const matchedPattern = highRiskPatterns.find(({ pattern }) => pattern.test(text));
+  if (matchedPattern) {
+    failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} appears to contain a ${matchedPattern.label}; retain only redacted artifacts under --evidence-root.`);
+  }
 }
 
 function isNonProduction95Register(filePath) {
@@ -517,6 +568,7 @@ if (rows.length < 2) {
       'source_label',
       'evidence_file_reference',
       'pii_screen_result',
+      'commercial_commitment_status',
       'artifact_generated',
       'claim_boundary',
       'do_not_claim',
@@ -527,6 +579,10 @@ if (rows.length < 2) {
 
     if (!allowedPiiScreenResults.has(normalizeText(row.pii_screen_result ?? ''))) {
       failures.push(`Row ${rowNumber}: pii_screen_result must exactly be no personal data, no personal data or meter identifiers found, redacted, screened, or not applicable.`);
+    }
+
+    if (!allowedCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))) {
+      failures.push(`Row ${rowNumber}: commercial_commitment_status must be one of ${Array.from(allowedCommercialCommitmentStatuses).join(', ')}.`);
     }
 
     const timeToArtifact = parseNumber(row.time_to_artifact_hours ?? '', 'time_to_artifact_hours', rowNumber, false);
@@ -652,6 +708,9 @@ if (require95 && failures.length === 0) {
     row.route === '/shadow-billing' || row.route === '/utility-security'
   ));
   const lowCoverageRows = acceptedBuyerRows.filter(({ coverage }) => coverage === null || coverage < 70);
+  const hasCommercialCommitment = acceptedBuyerRows.some(({ row }) => (
+    strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
+  ));
 
   if (!hasAcceptedUtilityForecast) {
     failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.');
@@ -679,6 +738,10 @@ if (require95 && failures.length === 0) {
 
   if (lowCoverageRows.length > 0) {
     failures.push(`95% confidence gate requires buyer_data_coverage_pct >= 70 for accepted confidence-moving rows; low rows: ${lowCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (!hasCommercialCommitment) {
+    failures.push('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status of design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
   }
 }
 

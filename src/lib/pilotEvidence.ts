@@ -264,6 +264,11 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
     label: 'Retained redacted artifact hashes',
     evidence: 'Every accepted confidence-moving row has a local redacted artifact under --evidence-root with a matching SHA-256 hash.',
   },
+  {
+    id: 'commercial-commitment',
+    label: 'Commercial commitment signal',
+    evidence: 'At least one accepted confidence-moving buyer row records a paid pilot, purchase order, letter of intent, or signed design-partner status.',
+  },
 ];
 
 export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
@@ -305,6 +310,7 @@ export const pilotStopConditions = [
   'The buyer requires production utility onboarding, engineering approval, broker execution, SOC certification, or regulator submission automation before a pilot.',
   'Source data contains personal data, meter identifiers, account numbers, unapproved customer records, or secrets.',
   'The buyer cannot name a reviewer or decision owner.',
+  'The 95% strategy claim is requested before a paid pilot, purchase order, letter of intent, or signed design-partner signal is captured.',
   'Forecast metrics are weaker than baseline and the buyer cannot accept a diagnostic artifact.',
   'TIER pricing, legal, tax, or trading advice is required instead of planning support.',
 ];

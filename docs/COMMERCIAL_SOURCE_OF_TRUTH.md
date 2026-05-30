@@ -18,7 +18,7 @@ Use these files for current CEIP positioning:
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
 | [growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md](./growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md) | Current outreach copy library. | Lead with proof packs, not broad dashboards or generic AI. |
 | [growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md](./growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md) | Email/LinkedIn and pilot templates. | Must name route, input data, artifact, caveat, and decision criteria. |
-| [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, and `reviewer_acceptance` before confidence changes. |
+| [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, `reviewer_acceptance`, and `commercial_commitment_status` before confidence changes. |
 
 ## Active Sellability Ratings
 
@@ -124,9 +124,9 @@ Before any copy says CEIP has reached 95% strategy confidence, validate the fill
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
-The evidence root must contain retained redacted artifacts only. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing or changed.
+The evidence root must contain retained redacted artifacts only. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing, changed, or appears to contain direct identifiers such as emails, phone numbers, account/meter labels, postal codes, addresses, or credential assignments.
 
-The 95% gate requires current or historical, not future-dated, evidence rows; exact privacy-screen statuses; reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; buyer/source claim-boundary wording; route-specific do-not-claim terms; and distinct locally verified SHA-256 evidence artifacts across accepted buyer proof-pack rows.
+The 95% gate requires current or historical, not future-dated, evidence rows; exact privacy-screen statuses; reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; buyer/source claim-boundary wording; route-specific do-not-claim terms; at least one accepted commercial commitment signal (`design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`); and distinct locally verified SHA-256 evidence artifacts across accepted buyer proof-pack rows.
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.
 
