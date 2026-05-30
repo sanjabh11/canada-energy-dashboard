@@ -80,6 +80,18 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('95% confidence gate requires at least three distinct accepted buyer-supplied proof_pack_id values');
   });
 
+  it('rejects 95% confidence when accepted rows reuse the same evidence hash', () => {
+    const result = runValidator(
+      'invalid-duplicate-hash-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95'],
+      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires each accepted confidence-moving row to reference a distinct SHA-256 evidence artifact');
+  });
+
   it('rejects public sample evidence that tries to increase market confidence', () => {
     const result = runValidator('invalid-public-confidence-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
@@ -95,6 +107,22 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance');
+  });
+
+  it('rejects future-dated evidence rows', () => {
+    const result = runValidator('invalid-future-date-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('record_date cannot be in the future');
+  });
+
+  it('rejects confidence movement without a reviewer role', () => {
+    const result = runValidator('invalid-missing-reviewer-role-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('reviewer_role is required for confidence-moving evidence');
   });
 
   it('rejects direct identifier columns even when the header uses display casing', () => {

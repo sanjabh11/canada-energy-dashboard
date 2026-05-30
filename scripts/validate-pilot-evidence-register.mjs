@@ -63,6 +63,7 @@ const relativeEvidenceRoot = evidenceRoot
   ? path.relative(repoRoot, evidenceRoot).split(path.sep).join('/')
   : null;
 const fixture95OverrideEnabled = allowFixture95 && process.env.CEIP_ALLOW_FIXTURE_95_FOR_TESTS === '1';
+const todayIsoDate = new Date().toISOString().slice(0, 10);
 
 const requiredColumns = [
   'record_date',
@@ -307,6 +308,12 @@ function hasImmutableEvidenceReference(value) {
   return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
 }
 
+function isValidIsoDate(value) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
 function parseEvidenceReference(value) {
   const text = value ?? '';
   const hashMatch = text.match(/sha256[=:]([a-f0-9]{64})/i);
@@ -403,8 +410,10 @@ if (rows.length < 2) {
     if (isTemplateRow && allowTemplate) return;
     if (isTemplateRow) failures.push(`Row ${rowNumber}: template placeholder row must be replaced before validation.`);
 
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(row.record_date ?? '')) {
-      failures.push(`Row ${rowNumber}: record_date must use YYYY-MM-DD.`);
+    if (!isValidIsoDate(row.record_date ?? '')) {
+      failures.push(`Row ${rowNumber}: record_date must use a valid YYYY-MM-DD calendar date.`);
+    } else if ((row.record_date ?? '') > todayIsoDate) {
+      failures.push(`Row ${rowNumber}: record_date cannot be in the future.`);
     }
 
     if (!allowedRoutes.has(row.route)) {
@@ -473,6 +482,10 @@ if (rows.length < 2) {
         failures.push(`Row ${rowNumber}: confidence_delta above 0 requires complete/accepted/approved/signed reviewer_feedback_status.`);
       }
 
+      if (confidenceDelta > 0 && isBlank(row.reviewer_role ?? '')) {
+        failures.push(`Row ${rowNumber}: reviewer_role is required for confidence-moving evidence.`);
+      }
+
       if (confidenceDelta > 0 && coverage === null) {
         failures.push(`Row ${rowNumber}: buyer_data_coverage_pct is required for confidence-moving evidence.`);
       }
@@ -536,6 +549,9 @@ if (require95 && failures.length === 0) {
     && normalizeText(row.day_14_decision ?? '') === 'proceed'
   ));
   const acceptedProofPackIds = new Set(acceptedBuyerRows.map(({ row }) => row.proof_pack_id));
+  const acceptedEvidenceHashes = new Set(acceptedBuyerRows
+    .map(({ row }) => parseEvidenceReference(row.evidence_file_reference ?? '').sha256)
+    .filter(Boolean));
   const totalConfidenceDelta = acceptedBuyerRows.reduce((sum, item) => sum + item.confidenceDelta, 0);
   const hasAcceptedUtilityForecast = acceptedBuyerRows.some(({ row }) => (
     row.route === '/utility-demand-forecast'
@@ -563,6 +579,10 @@ if (require95 && failures.length === 0) {
 
   if (acceptedProofPackIds.size < 3) {
     failures.push('95% confidence gate requires at least three distinct accepted buyer-supplied proof_pack_id values with day_14_decision=proceed.');
+  }
+
+  if (acceptedEvidenceHashes.size < acceptedBuyerRows.length) {
+    failures.push('95% confidence gate requires each accepted confidence-moving row to reference a distinct SHA-256 evidence artifact.');
   }
 
   if (totalConfidenceDelta < 0.899999) {
