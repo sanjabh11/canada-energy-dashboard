@@ -99,4 +99,20 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(1);
     expect(output).toContain('confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics');
   });
+
+  it('rejects confidence-moving TIER rows without route-specific diagnostic evidence', () => {
+    const result = runValidator('invalid-weak-tier-diagnostic-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving evidence for /roi-calculator must include pricing source, direct-investment sensitivity, and compliance diagnostic evidence');
+  });
+
+  it('rejects confidence movement from pilot readiness gate rows', () => {
+    const result = runValidator('invalid-pilot-readiness-confidence-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('/pilot-readiness is an evidence gate only and cannot increase market confidence directly');
+  });
 });

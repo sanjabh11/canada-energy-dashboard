@@ -84,6 +84,49 @@ const allowedProofPackIdsByRoute = new Map([
   ['/pilot-readiness', new Set(['pilot_readiness_gate'])],
   ['/pilot-evidence', new Set(['pilot_readiness_gate'])],
 ]);
+const evidenceGateOnlyRoutes = new Set(['/pilot-readiness', '/pilot-evidence']);
+const confidenceDiagnosticRulesByRoute = new Map([
+  ['/utility-demand-forecast', {
+    label: 'MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics',
+    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i],
+  }],
+  ['/forecast-benchmarking', {
+    label: 'MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics',
+    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i],
+  }],
+  ['/regulatory-filing', {
+    label: 'OEB or AUC mapping plus reviewer checklist or schedule evidence',
+    patterns: [/oeb|auc/i, /mapping|mapped/i, /checklist|schedule|chapter 5|rule 005/i],
+  }],
+  ['/roi-calculator', {
+    label: 'pricing source, direct-investment sensitivity, and compliance diagnostic evidence',
+    patterns: [/pricing|price/i, /direct[- ]?investment/i, /compliance/i],
+  }],
+  ['/credit-banking', {
+    label: 'credit lot or vintage, expiry risk, allocation, and liability evidence',
+    patterns: [/credit|lot|vintage/i, /expiry|expiration/i, /allocation|allocated/i, /liability|obligation/i],
+  }],
+  ['/shadow-billing', {
+    label: 'field map, monthly delta, and excluded rider or tariff evidence',
+    patterns: [/field[- ]?map|mapped field/i, /monthly[- ]?delta|delta/i, /excluded|rider|tariff/i],
+  }],
+  ['/asset-health', {
+    label: 'replace/defer, replacement-cost, and weight sensitivity evidence',
+    patterns: [/replace|defer/i, /replacement[- ]?cost|cost override|capex/i, /weight|sensitivity/i],
+  }],
+  ['/utility-security', {
+    label: 'control matrix, evidence-boundary, and owner/deployed evidence split',
+    patterns: [/control/i, /evidence|boundary|sbom|header/i, /owner[- ]?supplied|deployed|hosting|subprocessor/i],
+  }],
+  ['/ai-datacentres', {
+    label: 'assumptions, constraint, and storage or BYOP sensitivity evidence',
+    patterns: [/assumption/i, /constraint|capacity|interconnection/i, /storage|byop/i],
+  }],
+  ['/api-docs', {
+    label: 'endpoint, freshness, and OpenAPI diagnostic evidence',
+    patterns: [/endpoint/i, /freshness/i, /openapi/i],
+  }],
+]);
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const allowedBuyerLanes = new Set([
@@ -199,6 +242,13 @@ function hasForecastBenchmarkDiagnostic(value) {
     && /rmse/i.test(text)
     && /persistence/i.test(text)
     && /seasonal[- ]?naive/i.test(text);
+}
+
+function hasRequiredConfidenceDiagnostic(route, value) {
+  const rule = confidenceDiagnosticRulesByRoute.get(route);
+  if (!rule) return true;
+  const text = value ?? '';
+  return rule.patterns.every((pattern) => pattern.test(text));
 }
 
 if (!existsSync(registerPath)) {
@@ -328,10 +378,13 @@ if (rows.length < 2) {
       failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.`);
     }
 
-    if (row.route === '/api-docs'
-      && (confidenceDelta ?? 0) > 0
-      && !/endpoint|freshness|openapi/i.test(row.benchmark_lift_or_diagnostic ?? '')) {
-      failures.push(`Row ${rowNumber}: /api-docs confidence-moving evidence must mention endpoint, freshness, or OpenAPI diagnostic evidence.`);
+    if ((confidenceDelta ?? 0) > 0 && evidenceGateOnlyRoutes.has(row.route)) {
+      failures.push(`Row ${rowNumber}: ${row.route} is an evidence gate only and cannot increase market confidence directly.`);
+    }
+
+    if ((confidenceDelta ?? 0) > 0 && !hasRequiredConfidenceDiagnostic(row.route, row.benchmark_lift_or_diagnostic ?? '')) {
+      const rule = confidenceDiagnosticRulesByRoute.get(row.route);
+      failures.push(`Row ${rowNumber}: confidence-moving evidence for ${row.route} must include ${rule.label}.`);
     }
 
     evidenceRows.push({

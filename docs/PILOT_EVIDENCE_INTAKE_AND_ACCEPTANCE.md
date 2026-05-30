@@ -26,6 +26,7 @@
 | Public-source utility forecast import and manifest | `parseIesoPublicDemandCsv(csvText)` then `buildUtilityForecastPackage(rows, { sourceKind: 'public_system_sample' })` | IESO/APO-style files could not be converted into a source-labeled utility planning pack with a stable manifest. | Public-system workflow proof only; not customer LDC history. |
 | Forecast evidence appendix | `exportUtilityForecastCsv(forecastPackage)` | Exports did not carry rolling-origin splits, conformal interval coverage, hierarchy reconciliation, and benchmark evidence together. | Forecast confidence still needs buyer backtests before stronger market claims. |
 | Forecast confidence movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A utility forecast or forecast-benchmarking row could move confidence with vague benchmark text. | Confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics. |
+| Route-specific confidence diagnostic guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | TIER, credit, billing, asset, security, regulatory, large-load, and API rows could move confidence with shallow route-agnostic wording. | Confidence-moving evidence must include the diagnostic terms required for that route; `/pilot-readiness` and `/pilot-evidence` cannot move confidence directly. |
 | Proof-pack metadata gate | `pnpm exec vitest run tests/unit/proofPackGates.test.ts` | A forecast, filing, TIER, asset, billing, or security export could omit source manifest, verification status, or do-not-claim metadata without a focused test failing. | Metadata proves claim boundaries, not buyer acceptance. |
 | Pilot readiness route | Open `/pilot-readiness` or `/pilot-evidence` | There was no buyer-facing evidence gate showing exactly what inputs are needed before stronger claims. | The route is a checklist until buyer evidence is attached. |
 | Pilot outcome scorecard | On `/pilot-readiness`, record `time-to-artifact`, `buyer-data-coverage`, `benchmark-lift-or-diagnostic`, and `reviewer-acceptance` | The 14-day pilot could end with an artifact but no measurable confidence movement. | Scores move only with buyer files, reviewer notes, or paid pilot evidence. |
@@ -197,6 +198,21 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 ```
 
 The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`; and requires MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics before utility forecast or forecast-benchmarking evidence can move confidence.
+
+Confidence-moving rows must also carry route-specific diagnostic evidence:
+
+| Route | Required diagnostic terms |
+|---|---|
+| `/utility-demand-forecast`, `/forecast-benchmarking` | MAE, MAPE, RMSE, persistence, seasonal-naive |
+| `/regulatory-filing` | OEB or AUC, mapping, checklist or schedule |
+| `/roi-calculator` | pricing source, direct-investment sensitivity, compliance diagnostic |
+| `/credit-banking` | credit lot or vintage, expiry risk, allocation, liability |
+| `/shadow-billing` | field map, monthly delta, excluded rider or tariff evidence |
+| `/asset-health` | replace/defer, replacement-cost or capex, weight sensitivity |
+| `/utility-security` | control matrix, evidence boundary, owner-supplied or deployed evidence split |
+| `/ai-datacentres` | assumptions, constraint or capacity, storage or BYOP sensitivity |
+| `/api-docs` | endpoint, freshness, OpenAPI |
+| `/pilot-readiness`, `/pilot-evidence` | evidence gates only; `confidence_delta` must stay `0` |
 
 Validate the stronger 95% strategy-confidence gate only after a real pilot register has buyer evidence across the required lanes:
 
