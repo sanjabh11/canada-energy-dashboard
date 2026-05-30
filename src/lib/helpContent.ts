@@ -5523,7 +5523,7 @@ export const HELP_CONTENT_DATABASE: Record<string, HelpContentItem> = {
       
       <h4 class="font-semibold mt-4 mb-2">Indigenous Energy Fellowship (20 weeks)</h4>
       <ul class="list-disc pl-5 space-y-1 mb-4">
-        <li>FPIC/OCAP® certification</li>
+        <li>FPIC/OCAP® review workflow</li>
         <li>Consultation protocols</li>
         <li>Community partnership</li>
         <li>80% job placement rate</li>

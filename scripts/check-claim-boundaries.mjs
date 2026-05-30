@@ -81,7 +81,7 @@ const RULES = [
   },
   {
     name: 'Certification or sovereignty overclaim',
-    pattern: /\b(SOC[- ]?2(?: Type II)? (?:certified|compliant)|SOC-II Type II compliant|NERC CIP compliance|Green Button Alliance certification|certified Indigenous data sovereignty|hardened Indigenous sovereignty|nation-held encryption keys|full data sovereignty|OCAP(?:®)?[- ]compliant)\b/i,
+    pattern: /\b(SOC[- ]?2(?: Type II)? (?:certified|compliant)|SOC-II Type II compliant|NERC CIP compliance|Green Button Alliance certification|certified Indigenous data sovereignty|hardened Indigenous sovereignty|nation-held encryption keys|full data sovereignty|OCAP(?:®)?[- ]compliant|(?:FPIC\/)?OCAP(?:®)?[-/ ]?(?:aligned[- ]?)?certification|OCAP(?:®)?[- ]ready)\b/i,
   },
   {
     name: 'TIER price, trading, or savings overclaim',

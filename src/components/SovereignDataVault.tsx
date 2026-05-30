@@ -266,7 +266,7 @@ export const SovereignDataVault: React.FC = () => {
                 </span>
               </div>
               <p className="max-w-3xl text-base text-slate-300">
-                Local-only encrypted export and import for OCAP-ready workflows. This release does not claim on-prem deployment,
+                Local-only encrypted export and import for OCAP-aligned review workflows. This release does not claim on-prem deployment,
                 nation-held production keys, cloud residency enforcement, or multi-device sovereignty controls.
               </p>
             </div>
@@ -278,7 +278,7 @@ export const SovereignDataVault: React.FC = () => {
               ocapScore >= 3 ? 'bg-emerald-500/15 text-emerald-300' : 'bg-amber-500/15 text-amber-300'
             }`}
           >
-            OCAP-ready score: {ocapScore}/4
+            OCAP review score: {ocapScore}/4
           </div>
         </div>
 
@@ -575,7 +575,7 @@ export const SovereignDataVault: React.FC = () => {
         <div className="mt-8 text-center text-sm text-slate-500">
           <p>
             OCAP® is a registered trademark of the First Nations Information Governance Centre. This page is an
-            OCAP-ready local workflow, not a certified sovereignty infrastructure deployment.
+            OCAP-aligned local review workflow, not a certified sovereignty infrastructure deployment.
           </p>
         </div>
       </div>
