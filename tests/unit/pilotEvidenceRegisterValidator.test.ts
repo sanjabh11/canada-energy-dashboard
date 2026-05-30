@@ -1,0 +1,42 @@
+import { spawnSync } from 'node:child_process';
+import path from 'node:path';
+import { describe, expect, it } from 'vitest';
+
+const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
+
+function runValidator(fixtureName: string) {
+  return spawnSync(process.execPath, [
+    scriptPath,
+    path.join('tests/fixtures/pilot-evidence', fixtureName),
+  ], {
+    cwd: process.cwd(),
+    encoding: 'utf8',
+  });
+}
+
+describe('pilot evidence register validator', () => {
+  it('accepts buyer-supplied evidence with accepted reviewer feedback', () => {
+    const result = runValidator('valid-buyer-evidence-register.csv');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Pilot evidence register validation passed');
+    expect(result.stderr).toBe('');
+  });
+
+  it('rejects public sample evidence that tries to increase market confidence', () => {
+    const result = runValidator('invalid-public-confidence-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence_delta above 0 requires buyer_supplied_anonymized or buyer_supplied_confidential source_label');
+    expect(output).toContain('public_system_sample cannot increase market confidence');
+  });
+
+  it('rejects high confidence movement before reviewer acceptance', () => {
+    const result = runValidator('invalid-reviewer-confidence-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance');
+  });
+});
