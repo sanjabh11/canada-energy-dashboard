@@ -63,7 +63,16 @@ const relativeEvidenceRoot = evidenceRoot
   ? path.relative(repoRoot, evidenceRoot).split(path.sep).join('/')
   : null;
 const fixture95OverrideEnabled = allowFixture95 && process.env.CEIP_ALLOW_FIXTURE_95_FOR_TESTS === '1';
-const todayIsoDate = new Date().toISOString().slice(0, 10);
+const testTodayOverride = process.env.CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS ?? '';
+if (testTodayOverride && !fixture95OverrideEnabled) {
+  argFailures.push('CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS is test-only and requires --allow-fixture-95 with CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1.');
+}
+if (testTodayOverride && !isValidIsoDate(testTodayOverride)) {
+  argFailures.push('CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS must be a valid YYYY-MM-DD date.');
+}
+const todayIsoDate = testTodayOverride && fixture95OverrideEnabled && isValidIsoDate(testTodayOverride)
+  ? testTodayOverride
+  : new Date().toISOString().slice(0, 10);
 
 const requiredColumns = [
   'record_date',
@@ -303,6 +312,8 @@ const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
 const fastArtifactTargetHours = 48;
 const maxAcceptedArtifactHours95 = 120;
+const maxAcceptedEvidenceAgeDays95 = 365;
+const millisecondsPerDay = 24 * 60 * 60 * 1000;
 const allowedPiiScreenResults = new Set([
   'no personal data',
   'no personal data or meter identifiers found',
@@ -498,6 +509,12 @@ function isValidIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
   const date = new Date(`${value}T00:00:00Z`);
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
+
+function daysSinceIsoDate(value) {
+  const evidenceDate = new Date(`${value}T00:00:00Z`);
+  const todayDate = new Date(`${todayIsoDate}T00:00:00Z`);
+  return Math.floor((todayDate.getTime() - evidenceDate.getTime()) / millisecondsPerDay);
 }
 
 function parseEvidenceReference(value) {
@@ -843,6 +860,9 @@ if (require95 && failures.length === 0) {
   const slowArtifactRows = acceptedBuyerRows.filter(({ timeToArtifact }) => (
     timeToArtifact === null || timeToArtifact > maxAcceptedArtifactHours95
   ));
+  const staleEvidenceRows = acceptedBuyerRows.filter(({ row }) => (
+    daysSinceIsoDate(row.record_date ?? '') > maxAcceptedEvidenceAgeDays95
+  ));
   const hasFastArtifact = acceptedBuyerRows.some(({ timeToArtifact }) => (
     timeToArtifact !== null && timeToArtifact <= fastArtifactTargetHours
   ));
@@ -880,6 +900,10 @@ if (require95 && failures.length === 0) {
 
   if (slowArtifactRows.length > 0) {
     failures.push(`95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= ${maxAcceptedArtifactHours95}; slow or missing rows: ${slowArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (staleEvidenceRows.length > 0) {
+    failures.push(`95% confidence gate requires accepted confidence-moving buyer evidence to be no older than ${maxAcceptedEvidenceAgeDays95} days; stale rows: ${staleEvidenceRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (!hasFastArtifact) {

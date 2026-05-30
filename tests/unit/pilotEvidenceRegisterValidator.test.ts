@@ -3,6 +3,10 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
+const fixture95Env = {
+  CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1',
+  CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS: '2026-05-30',
+};
 
 function runValidator(
   fixtureName: string,
@@ -44,7 +48,7 @@ describe('pilot evidence register validator', () => {
     const result = runValidator(
       'valid-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
-      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+      fixture95Env,
     );
 
     expect(result.status).toBe(0);
@@ -56,7 +60,7 @@ describe('pilot evidence register validator', () => {
     const result = runValidator(
       'valid-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95'],
-      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+      fixture95Env,
     );
     const output = `${result.stderr}\n${result.stdout}`;
 
@@ -83,6 +87,16 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('--allow-fixture-95');
   });
 
+  it('rejects the test-only date override outside the fixture 95% gate', () => {
+    const result = runValidator('valid-buyer-evidence-register.csv', [], {
+      CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS: '2026-05-30',
+    });
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS is test-only');
+  });
+
   it('rejects 95% confidence when accepted evidence is too narrow', () => {
     const result = runValidator('valid-buyer-evidence-register.csv', ['--require-95']);
     const output = `${result.stderr}\n${result.stdout}`;
@@ -96,7 +110,7 @@ describe('pilot evidence register validator', () => {
     const result = runValidator(
       'invalid-duplicate-hash-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95'],
-      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+      fixture95Env,
     );
     const output = `${result.stderr}\n${result.stdout}`;
 
@@ -108,7 +122,7 @@ describe('pilot evidence register validator', () => {
     const result = runValidator(
       'invalid-no-commercial-commitment-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
-      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+      fixture95Env,
     );
     const output = `${result.stderr}\n${result.stdout}`;
 
@@ -120,13 +134,26 @@ describe('pilot evidence register validator', () => {
     const result = runValidator(
       'invalid-slow-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
-      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+      fixture95Env,
     );
     const output = `${result.stderr}\n${result.stdout}`;
 
     expect(result.status).toBe(1);
     expect(output).toContain('95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= 120');
     expect(output).toContain('95% confidence gate requires at least one accepted buyer proof pack delivered in 48 hours or less');
+  });
+
+  it('rejects 95% confidence when accepted buyer evidence is older than 12 months', () => {
+    const result = runValidator(
+      'invalid-stale-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires accepted confidence-moving buyer evidence to be no older than 365 days');
+    expect(output).toContain('stale rows: 2, 3, 4');
   });
 
   it('rejects public sample evidence that tries to increase market confidence', () => {

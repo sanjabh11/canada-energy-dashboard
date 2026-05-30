@@ -55,6 +55,7 @@ assertPassed(
   runValidator(['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'], {
     ...process.env,
     CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1',
+    CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS: '2026-05-30',
   }),
   'explicit fixture override should remain available for tests',
 );
