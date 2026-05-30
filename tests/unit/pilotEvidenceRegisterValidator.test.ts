@@ -115,4 +115,12 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(1);
     expect(output).toContain('/pilot-readiness is an evidence gate only and cannot increase market confidence directly');
   });
+
+  it('rejects confidence-moving rows without immutable evidence hashes', () => {
+    const result = runValidator('invalid-unhashed-evidence-reference-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>');
+  });
 });

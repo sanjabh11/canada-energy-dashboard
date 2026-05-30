@@ -251,6 +251,10 @@ function hasRequiredConfidenceDiagnostic(route, value) {
   return rule.patterns.every((pattern) => pattern.test(text));
 }
 
+function hasImmutableEvidenceReference(value) {
+  return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
+}
+
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${path.relative(repoRoot, registerPath)}`);
   process.exit(1);
@@ -356,6 +360,10 @@ if (rows.length < 2) {
 
       if (confidenceDelta > 0 && coverage === null) {
         failures.push(`Row ${rowNumber}: buyer_data_coverage_pct is required for confidence-moving evidence.`);
+      }
+
+      if (confidenceDelta > 0 && !hasImmutableEvidenceReference(row.evidence_file_reference ?? '')) {
+        failures.push(`Row ${rowNumber}: confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>.`);
       }
     }
 
