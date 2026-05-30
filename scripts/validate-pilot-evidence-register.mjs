@@ -184,6 +184,13 @@ const confidenceDiagnosticRulesByRoute = new Map([
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
+const allowedPiiScreenResults = new Set([
+  'no personal data',
+  'no personal data or meter identifiers found',
+  'redacted',
+  'screened',
+  'not applicable',
+]);
 const allowedBuyerLanes = new Set([
   'utility',
   'industrial',
@@ -452,8 +459,8 @@ if (rows.length < 2) {
       if (isBlank(row[column] ?? '')) failures.push(`Row ${rowNumber}: ${column} is required.`);
     }
 
-    if (!/no personal data|redacted|screened|not applicable/i.test(row.pii_screen_result ?? '')) {
-      failures.push(`Row ${rowNumber}: pii_screen_result must state no personal data, redacted, screened, or not applicable.`);
+    if (!allowedPiiScreenResults.has(normalizeText(row.pii_screen_result ?? ''))) {
+      failures.push(`Row ${rowNumber}: pii_screen_result must exactly be no personal data, no personal data or meter identifiers found, redacted, screened, or not applicable.`);
     }
 
     const timeToArtifact = parseNumber(row.time_to_artifact_hours ?? '', 'time_to_artifact_hours', rowNumber, false);

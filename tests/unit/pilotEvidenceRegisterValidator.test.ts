@@ -143,6 +143,14 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('Forbidden direct-identifier column present: Phone Number');
   });
 
+  it('rejects negated PII screen phrases that contain screened words', () => {
+    const result = runValidator('invalid-negated-pii-screen-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('pii_screen_result must exactly be no personal data');
+  });
+
   it('rejects ambiguous source labels even when they do not move confidence', () => {
     const result = runValidator('invalid-unknown-source-label-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
