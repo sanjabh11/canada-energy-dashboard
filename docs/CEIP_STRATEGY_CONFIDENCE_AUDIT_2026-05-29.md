@@ -33,7 +33,7 @@ This is the right solo-developer wedge because CEIP can be specific, transparent
 | TIER savings can become financial advice. | Compliance, credit purchases, and direct investment need legal/compliance review. | TIER and credit-banking artifacts include no-broker, no-legal-advice, freshness, and source labels. | Add pricing freshness SOP and buyer-specific validation checklist. |
 | Security copy can imply certification. | Utility procurement reviewers will reject unsupported SOC/security claims. | Security proof pack splits repo-backed design, deployed evidence, and owner-supplied boundaries. | Attach SBOM, headers, incident contact, hosting, and subprocessor evidence per pilot. |
 | Historical docs can leak old claims. | Older research docs contain aggressive OCAP, real-time, or world-class language. | Active source/docs now have CI claim-boundary guardrails. | Archive or add stale-doc banners to older strategy docs before broad reuse. |
-| "World-class" can be misunderstood as enterprise parity. | CEIP cannot match Amperon, Itron, UtilityAPI, or EnergyCAP enterprise depth. | Current strategy defines world-class as a focused proof-pack workflow, not enterprise platform parity. | Add pilot outcome dashboard: time-to-artifact, buyer data coverage, benchmark lift, reviewer acceptance. |
+| "World-class" can be misunderstood as enterprise parity. | CEIP cannot match Amperon, Itron, UtilityAPI, or EnergyCAP enterprise depth. | Current strategy defines world-class as a focused proof-pack workflow, not enterprise platform parity; `/pilot-readiness` now includes a pilot outcome scorecard for time-to-artifact, buyer data coverage, benchmark lift/diagnostic value, and reviewer acceptance. | Populate the outcome scorecard with actual pilot evidence before increasing market-confidence claims. |
 
 ## Current Top 10 Readiness After Gap Closers
 
@@ -55,7 +55,7 @@ This is the right solo-developer wedge because CEIP can be specific, transparent
 1. **Pilot evidence first**
    - Secure one anonymized utility load file, one TIER facility scenario, and one invoice sample using [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
    - Produce three buyer-ready artifacts from actual buyer-supplied data.
-   - Record benchmark metrics, assumptions, data lineage, and buyer feedback.
+   - Record benchmark metrics, assumptions, data lineage, buyer feedback, and the pilot outcome scorecard.
 
 2. **Forecast validation hardening**
    - Add champion/challenger records to every utility forecast export.

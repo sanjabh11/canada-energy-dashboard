@@ -10,6 +10,9 @@ test.describe('Pilot readiness page', () => {
     await expect(page.getByText('Buyer utility load history')).toBeVisible();
     await expect(page.getByText('TIER facility assumptions')).toBeVisible();
     await expect(page.getByText('Invoice comparison sample')).toBeVisible();
+    await expect(page.getByText('Pilot outcome scorecard')).toBeVisible();
+    await expect(page.getByText('Time to first reviewable artifact')).toBeVisible();
+    await expect(page.getByText('Benchmark lift or diagnostic value')).toBeVisible();
     await expect(page.getByText('Public-system or constructed sample only')).toBeVisible();
     await expect(page.getByText(/production utility onboarding/)).toBeVisible();
   });

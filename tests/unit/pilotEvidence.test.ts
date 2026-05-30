@@ -3,6 +3,7 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../../src/lib/pilotEvidence';
 
@@ -12,6 +13,7 @@ describe('pilotEvidence', () => {
 
     expect(summary.requirementCount).toBeGreaterThanOrEqual(9);
     expect(summary.confidenceRuleCount).toBeGreaterThanOrEqual(5);
+    expect(summary.outcomeMetricCount).toBeGreaterThanOrEqual(4);
     expect(summary.stopConditionCount).toBeGreaterThanOrEqual(5);
     expect(pilotEvidenceRequirements.map((item) => item.id)).toEqual(expect.arrayContaining([
       'buyer-load-history',
@@ -35,5 +37,21 @@ describe('pilotEvidence', () => {
     expect(pilotConfidenceRules[0].evidenceState).toMatch(/constructed sample/i);
     expect(pilotConfidenceRules[0].confidenceMovement).toMatch(/Do not increase market confidence/i);
     expect(pilotStopConditions.join(' ')).toMatch(/production utility onboarding/i);
+  });
+
+  it('defines pilot outcome metrics that tie confidence movement to buyer-review evidence', () => {
+    expect(pilotOutcomeMetrics.map((item) => item.id)).toEqual(expect.arrayContaining([
+      'time-to-artifact',
+      'buyer-data-coverage',
+      'benchmark-lift-or-diagnostic',
+      'reviewer-acceptance',
+    ]));
+
+    for (const metric of pilotOutcomeMetrics) {
+      expect(metric.requiredEvidence, metric.id).toBeTruthy();
+      expect(metric.howToMeasure, metric.id).toMatch(/record|count|divide|track/i);
+      expect(metric.confidenceUse, metric.id).toMatch(/confidence|proof|pilot|forecasting/i);
+      expect(metric.route, metric.id).toMatch(/^\//);
+    }
   });
 });

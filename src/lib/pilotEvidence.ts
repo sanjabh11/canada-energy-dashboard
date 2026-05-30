@@ -24,6 +24,15 @@ export interface PilotConfidenceRule {
   confidenceMovement: string;
 }
 
+export interface PilotOutcomeMetric {
+  id: string;
+  label: string;
+  requiredEvidence: string;
+  howToMeasure: string;
+  confidenceUse: string;
+  route: string;
+}
+
 export const pilotEvidenceRequirements: PilotEvidenceRequirement[] = [
   {
     id: 'buyer-load-history',
@@ -199,6 +208,41 @@ export const pilotConfidenceRules: PilotConfidenceRule[] = [
   },
 ];
 
+export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
+  {
+    id: 'time-to-artifact',
+    label: 'Time to first reviewable artifact',
+    requiredEvidence: 'Timestamped intake file plus exported proof pack or memo.',
+    howToMeasure: 'Count business hours from accepted evidence intake to first export shared with the buyer reviewer.',
+    confidenceUse: 'Proves the solo-developer wedge is fast to pilot; target is two business days for clean CSV evidence.',
+    route: '/pilot-readiness',
+  },
+  {
+    id: 'buyer-data-coverage',
+    label: 'Buyer data coverage',
+    requiredEvidence: 'Coverage summary showing required columns, date range, missing rows, and source labels.',
+    howToMeasure: 'Divide accepted rows/fields by the minimum required schema for the selected proof pack.',
+    confidenceUse: 'Prevents constructed or partial samples from being treated as buyer-specific proof.',
+    route: '/pilot-evidence',
+  },
+  {
+    id: 'benchmark-lift-or-diagnostic',
+    label: 'Benchmark lift or diagnostic value',
+    requiredEvidence: 'Benchmark appendix with persistence, seasonal-naive, buyer baseline when supplied, and failure notes.',
+    howToMeasure: 'Record MAE, MAPE, RMSE, interval coverage, and whether CEIP beats or explains the baseline.',
+    confidenceUse: 'Moves forecasting confidence only when the result is reviewable, even if a baseline wins.',
+    route: '/forecast-benchmarking',
+  },
+  {
+    id: 'reviewer-acceptance',
+    label: 'Reviewer acceptance',
+    requiredEvidence: 'Named reviewer comment, correction log, and day-14 proceed/park/reject decision.',
+    howToMeasure: 'Track whether the buyer reviewer can explain and reuse the artifact internally after one revision loop.',
+    confidenceUse: 'Converts route readiness into market confidence without relying on broad platform claims.',
+    route: '/pilot-readiness',
+  },
+];
+
 export const pilotStopConditions = [
   'The buyer requires production utility onboarding, engineering approval, broker execution, SOC certification, or regulator submission automation before a pilot.',
   'Source data contains personal data, meter identifiers, account numbers, unapproved customer records, or secrets.',
@@ -213,6 +257,7 @@ export function getPilotEvidenceCoverageSummary() {
     requirementCount: pilotEvidenceRequirements.length,
     laneCount: uniqueLanes.size,
     confidenceRuleCount: pilotConfidenceRules.length,
+    outcomeMetricCount: pilotOutcomeMetrics.length,
     stopConditionCount: pilotStopConditions.length,
   };
 }

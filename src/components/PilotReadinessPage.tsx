@@ -6,6 +6,7 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
 
@@ -74,6 +75,7 @@ export function PilotReadinessPage() {
                 <Metric value={`${summary.requirementCount}`} label="Evidence items" />
                 <Metric value={`${summary.laneCount}`} label="Buyer lanes" />
                 <Metric value={`${summary.confidenceRuleCount}`} label="Confidence rules" />
+                <Metric value={`${summary.outcomeMetricCount}`} label="Outcome metrics" />
                 <Metric value={`${summary.stopConditionCount}`} label="Stop conditions" />
               </div>
             </div>
@@ -137,6 +139,53 @@ export function PilotReadinessPage() {
                       </div>
                     </div>
                   </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/10 bg-slate-950">
+          <div className="mx-auto max-w-7xl px-6 py-16">
+            <div className="flex items-center gap-3 text-emerald-100">
+              <ClipboardCheck className="h-5 w-5" />
+              <span className="text-sm uppercase tracking-[0.26em]">Pilot outcome scorecard</span>
+            </div>
+            <h2 className="mt-4 text-3xl font-semibold text-white md:text-4xl">
+              What must be measured before CEIP can claim stronger market proof
+            </h2>
+            <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
+              These metrics keep the 14-day pilot focused on evidence that a buyer can review, reuse, and challenge.
+              They do not replace buyer data; they define how buyer data changes confidence.
+            </p>
+
+            <div className="mt-10 grid gap-4 lg:grid-cols-2">
+              {pilotOutcomeMetrics.map((metric) => (
+                <article key={metric.id} className="rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <h3 className="text-xl font-semibold text-white">{metric.label}</h3>
+                    <Link
+                      to={metric.route}
+                      className="inline-flex items-center gap-2 rounded-full border border-emerald-200/20 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-100 transition hover:border-emerald-200/50 hover:text-white"
+                    >
+                      Evidence route
+                      <ArrowRight className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                  <dl className="mt-5 space-y-4 border-t border-white/10 pt-5 text-sm leading-6">
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Required evidence</dt>
+                      <dd className="mt-1 text-slate-200">{metric.requiredEvidence}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Measurement syntax</dt>
+                      <dd className="mt-1 text-slate-200">{metric.howToMeasure}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Confidence use</dt>
+                      <dd className="mt-1 text-slate-200">{metric.confidenceUse}</dd>
+                    </div>
+                  </dl>
                 </article>
               ))}
             </div>
