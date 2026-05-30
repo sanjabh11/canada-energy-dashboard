@@ -19,6 +19,23 @@ Use these files for current CEIP positioning:
 | [growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md](./growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md) | Email/LinkedIn and pilot templates. | Must name route, input data, artifact, caveat, and decision criteria. |
 | [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, and `reviewer_acceptance` before confidence changes. |
 
+## Active Sellability Ratings
+
+The active outreach docs must use the current sellability-confidence ratings from the confidence audit until a real buyer-evidence register passes the 95% gate.
+
+| Rank | Proof pack | Current rating |
+|---:|---|---:|
+| 1 | Utility demand forecast planning pack | 4.5/5 |
+| 2 | Forecast benchmarking and provenance layer | 4.6/5 |
+| 3 | OEB/AUC regulatory filing packs | 4.3/5 |
+| 4 | TIER compliance savings pack | 4.0/5 |
+| 5 | TIER credit banking audit pack | 3.9/5 |
+| 6 | Asset health executive capex pack | 4.1/5 |
+| 7 | Utility security procurement pack | 4.0/5 |
+| 8 | Shadow billing invoice proof pack | 3.8/5 |
+| 9 | Large-load/data-centre readiness overlay | 3.2/5 |
+| 10 | Consultant/API Canadian energy data pack | 3.1/5 |
+
 ## Approved Lead Positioning
 
 Use this wording:

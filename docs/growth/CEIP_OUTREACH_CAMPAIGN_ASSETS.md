@@ -24,18 +24,20 @@ Lead with utility planning, benchmark/provenance, OEB/AUC filing, TIER CFO, TIER
 
 ## Route And Rating Matrix
 
+These are current sellability-confidence ratings, not target ratings. They must stay aligned with the active confidence audit until buyer-supplied evidence passes the 95% pilot gate.
+
 | Rank | Proof pack | Buyer | Route | Sellability rating |
 |---:|---|---|---|---:|
-| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.8/5 |
-| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.9/5 |
-| 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.7/5 |
-| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.7/5 |
-| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 4.5/5 |
-| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.5/5 |
-| 7 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.4/5 |
-| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 4.3/5 |
-| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 4.2/5 |
-| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 4.1/5 |
+| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 |
+| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 |
+| 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 |
+| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
+| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 |
+| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 |
+| 7 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.0/5 |
+| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 |
+| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 |
+| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 |
 | Reserve | Indigenous funder and AICEI reporting pack | Indigenous project teams | `/funder-reporting`, `/aicei` | 3.2/5 |
 
 ## Lead Lists By Lane

@@ -8,20 +8,22 @@ Use these templates only when the named proof pack can be shown on the current r
 
 Indigenous and AICEI reporting remain reserve/support outreach until a partner-backed dataset or governance review exists.
 
-## Revised Sellability Ratings
+## Current Sellability Ratings
+
+These are current sellability-confidence ratings from the active strategy audit, not target ratings. Do not increase them in outreach copy until matching buyer evidence is logged and the filled pilot evidence register passes the 95% gate.
 
 | Rank | Proof pack | Buyer | Route | Rating | Outreach stance |
 |---:|---|---|---|---:|---|
-| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.8/5 | Lead when the buyer owns load forecast, DSP, growth, DER, or large-load planning pain. |
-| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.9/5 | Use as trust proof attached to every forecast conversation. |
-| 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.7/5 | Lead when the pain is preparing or reviewing filing evidence. |
-| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.7/5 | Lead when the buyer owns Alberta compliance cost decisions. |
-| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 4.5/5 | Pair with the TIER CFO memo when credits, expiries, or liability coverage are in scope. |
-| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.5/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
-| 7 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.4/5 | Attach when sharing load data or connector review is discussed. |
-| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 4.3/5 | Lead for invoice comparison and audit-trail pilots. |
-| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 4.2/5 | Use as planning overlay only, not engineering approval. |
-| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 4.1/5 | Use as technical follow-on after a workflow problem is clear. |
+| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 | Lead when the buyer owns load forecast, DSP, growth, DER, or large-load planning pain. |
+| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 | Use as trust proof attached to every forecast conversation. |
+| 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead when the pain is preparing or reviewing filing evidence. |
+| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Lead when the buyer owns Alberta compliance cost decisions. |
+| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 | Pair with the TIER CFO memo when credits, expiries, or liability coverage are in scope. |
+| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
+| 7 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.0/5 | Attach when sharing load data or connector review is discussed. |
+| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead for invoice comparison and audit-trail pilots. |
+| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 | Use as planning overlay only, not engineering approval. |
+| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 | Use as technical follow-on after a workflow problem is clear. |
 
 ## Utility Forecast Outreach
 
