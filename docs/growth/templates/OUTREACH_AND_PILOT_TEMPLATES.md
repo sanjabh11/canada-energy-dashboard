@@ -10,7 +10,7 @@ Indigenous and AICEI reporting remain reserve/support outreach until a partner-b
 
 ## Current Sellability Ratings
 
-These are current sellability-confidence ratings from the active strategy audit, not target ratings. Do not increase them in outreach copy until matching buyer evidence is logged and the filled pilot evidence register passes the 95% gate.
+These are current sellability-confidence ratings from the active strategy audit, not target ratings. Do not increase them in outreach copy until matching buyer evidence is logged and the filled pilot evidence register passes the 95% gate with `--evidence-root` hash verification against retained redacted artifacts.
 
 | Rank | Proof pack | Buyer | Route | Rating | Outreach stance |
 |---:|---|---|---|---:|---|

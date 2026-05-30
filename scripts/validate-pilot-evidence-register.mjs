@@ -621,6 +621,10 @@ if (rows.length < 2) {
 }
 
 if (require95 && failures.length === 0) {
+  if (!evidenceRoot) {
+    failures.push('95% confidence gate requires --evidence-root with retained redacted artifacts so every confidence-moving SHA-256 reference is recomputed, not just syntactically present.');
+  }
+
   if (!fixture95OverrideEnabled && isNonProduction95Register(relativeRegisterPath)) {
     failures.push('95% confidence gate cannot be satisfied by fixture, template, or sample registers; use a buyer-evidence register path and reserve --allow-fixture-95 for tests only.');
   }

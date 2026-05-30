@@ -20,7 +20,7 @@ This repository should not be positioned as a broad dashboard suite, an enterpri
 Current strategy confidence is about 90-92%. A 95% market-confidence claim requires a filled buyer-evidence register to pass:
 
 ```bash
-pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
 ## Top 10 Sellable Proof Packs
@@ -50,12 +50,12 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | Route diagnostic movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Non-forecast proof packs could move confidence with generic acceptance text. | TIER, credit, billing, asset, security, regulatory, large-load, and API rows require route-specific diagnostic evidence. |
 | Route claim-boundary movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could carry a generic or contradictory `do_not_claim` field. | Confidence-moving rows require buyer/source boundary wording and route-specific do-not-claim terms. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point to an arbitrary file label. | Confidence-moving evidence references require a SHA-256 handle. |
-| Optional local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | SHA-256 references were syntactic unless a human checked the redacted evidence file. | When a redacted local evidence root is supplied, each confidence-moving artifact hash is recomputed and compared. |
+| Local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | SHA-256 references were syntactic unless a human checked the redacted evidence file. | Required for the 95% gate; each confidence-moving artifact hash is recomputed and compared. |
 | Pilot date and reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Future-dated or reviewer-anonymous rows could move confidence. | Confidence-moving rows require a non-future valid date and reviewer role. |
 | Exact reviewer status guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Phrases like `not accepted` or `incomplete` could satisfy loose keyword matching. | Confidence-moving rows require exact reviewer statuses: `accepted`, `approved`, or `signed`; feedback status must be `complete`, `accepted`, `approved`, or `signed`. |
 | Exact PII screen guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Phrases like `not screened` could satisfy loose privacy-screen matching. | `pii_screen_result` must exactly be `no personal data`, `no personal data or meter identifiers found`, `redacted`, `screened`, or `not applicable`. |
 | Fixture-proof 95% gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A synthetic fixture or sample register could be mistaken for buyer evidence. | The 95% gate rejects fixture, template, and sample registers; the fixture override requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1` and is test-only. |
-| 95% pilot evidence gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A pilot evidence register could pass basic validation without proving enough buyer evidence for a 95% confidence claim. | Requires accepted buyer-supplied evidence across utility forecast, TIER/credit, and billing/security lanes, with distinct evidence hashes. |
+| 95% pilot evidence gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95 --evidence-root path/to/redacted-artifacts` | A pilot evidence register could pass basic validation without proving enough buyer evidence for a 95% confidence claim. | Requires accepted buyer-supplied evidence across utility forecast, TIER/credit, and billing/security lanes, with distinct locally verified evidence hashes. |
 | Public-source utility forecast manifest | `parseIesoPublicDemandCsv(csvText)` then `buildUtilityForecastPackage(rows, { sourceKind: 'public_system_sample' })` | Public-system data could not be converted into a source-labeled planning pack with stable provenance. | Public-system workflow proof only, not customer LDC history. |
 | Forecast evidence appendix | `exportUtilityForecastCsv(forecastPackage)` | Forecast exports did not carry benchmark, rolling-origin, interval, hierarchy, and source evidence together. | Buyer-specific accuracy still needs buyer backtests. |
 | Proof-pack metadata tests | `pnpm exec vitest run tests/unit/proofPackGates.test.ts` | A proof artifact could omit source manifest, verification status, or do-not-claim metadata without a focused failure. | Metadata proves claim boundaries, not market acceptance. |
@@ -89,14 +89,10 @@ pnpm run test:browser:phase6
 For a filled buyer register:
 
 ```bash
-pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
-```
-
-When redacted buyer artifacts can be stored locally for audit, verify the hashes too:
-
-```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
+
+The evidence root must contain only retained redacted artifacts. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing or changed.
 
 ## Development
 

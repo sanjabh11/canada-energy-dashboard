@@ -129,9 +129,11 @@ const currentSellabilityRatingsByDoc = [
 ];
 
 const overconfidentOutreachRatings = ['4.7/5', '4.8/5', '4.9/5'];
+const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evidence-register\.csv --require-95(?! --evidence-root)/;
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
 const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
 const pilotEvidenceValidatorPath = path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs');
+const pilotEvidenceSourcePath = path.join(repoRoot, 'src/lib/pilotEvidence.ts');
 const currentCommercialWedgeScores = [
   ['utility-demand-forecast', 4.5],
   ['forecast-benchmarking', 4.6],
@@ -172,11 +174,18 @@ if (!existsSync(sourceDocPath)) {
   const sourceDoc = readFileSync(sourceDocPath, 'utf8');
 
   for (const docPath of requiredActiveDocs) {
-    if (!existsSync(path.join(repoRoot, docPath))) {
+    const absoluteActiveDocPath = path.join(repoRoot, docPath);
+    if (!existsSync(absoluteActiveDocPath)) {
       failures.push(`Active commercial doc is missing: ${docPath}`);
     }
     if (!sourceDoc.includes(docPath.replace(/^docs\//, '')) && !sourceDoc.includes(docPath)) {
       failures.push(`COMMERCIAL_SOURCE_OF_TRUTH.md does not reference active doc: ${docPath}`);
+    }
+    if (existsSync(absoluteActiveDocPath)) {
+      const activeDoc = readFileSync(absoluteActiveDocPath, 'utf8');
+      if (filledNinetyFiveCommandWithoutEvidenceRoot.test(activeDoc)) {
+        failures.push(`${docPath} has a 95% filled-register command without --evidence-root; 95% claims must recompute retained redacted artifact hashes.`);
+      }
     }
   }
 
@@ -231,6 +240,21 @@ if (!existsSync(sourceDocPath)) {
           failures.push(`${expectation.docPath} contains pre-pilot target rating ${rating}; keep active outreach ratings conservative until the 95% gate passes.`);
         }
       }
+    }
+
+    if (filledNinetyFiveCommandWithoutEvidenceRoot.test(doc)) {
+      failures.push(`${expectation.docPath} has a 95% filled-register command without --evidence-root; 95% claims must recompute retained redacted artifact hashes.`);
+    }
+  }
+
+  if (filledNinetyFiveCommandWithoutEvidenceRoot.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md has a 95% filled-register command without --evidence-root.');
+  }
+
+  if (existsSync(pilotEvidenceSourcePath)) {
+    const pilotEvidenceSource = readFileSync(pilotEvidenceSourcePath, 'utf8');
+    if (filledNinetyFiveCommandWithoutEvidenceRoot.test(pilotEvidenceSource)) {
+      failures.push('src/lib/pilotEvidence.ts has a 95% filled-register command without --evidence-root.');
     }
   }
 

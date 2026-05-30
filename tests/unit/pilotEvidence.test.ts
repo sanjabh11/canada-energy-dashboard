@@ -61,12 +61,14 @@ describe('pilotEvidence', () => {
 
   it('publishes a buyer-evidence gate before any 95% confidence claim', () => {
     expect(pilotNinetyFiveGateCommand).toContain('--require-95');
+    expect(pilotNinetyFiveGateCommand).toContain('--evidence-root');
     expect(pilotNinetyFiveGates.map((item) => item.id)).toEqual(expect.arrayContaining([
       'utility-forecast-benchmark',
       'tier-or-credit',
       'billing-or-security',
       'three-proof-packs',
       'coverage-and-delta',
+      'redacted-artifact-hashes',
     ]));
 
     for (const gate of pilotNinetyFiveGates) {

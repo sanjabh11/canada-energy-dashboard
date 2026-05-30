@@ -52,7 +52,7 @@ assertFailedWith(
 );
 
 assertPassed(
-  runValidator(['--require-95', '--allow-fixture-95'], {
+  runValidator(['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'], {
     ...process.env,
     CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1',
   }),

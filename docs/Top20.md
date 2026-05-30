@@ -76,7 +76,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist. Do not claim 95% strategy confidence unless a filled register passes:
 
 ```bash
-pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
 ## Critical next implementation checkpoints

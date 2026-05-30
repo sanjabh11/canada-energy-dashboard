@@ -31,7 +31,7 @@
 
 ## Route-Selection Matrix
 
-Ratings are current sellability-confidence ratings from the strategy confidence audit, not target ratings. Do not raise them in outreach material until matching buyer evidence is logged and the filled pilot evidence register passes the 95% gate.
+Ratings are current sellability-confidence ratings from the strategy confidence audit, not target ratings. Do not raise them in outreach material until matching buyer evidence is logged and the filled pilot evidence register passes the 95% gate with `--evidence-root` hash verification against retained redacted artifacts.
 
 | Rank | `proof_pack_id` | Buyer lane | Route | Rating | Lead / attach / park |
 |---:|---|---|---|---:|---|

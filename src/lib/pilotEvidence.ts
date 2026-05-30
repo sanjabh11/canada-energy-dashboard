@@ -231,7 +231,7 @@ export const pilotConfidenceRules: PilotConfidenceRule[] = [
   },
 ];
 
-export const pilotNinetyFiveGateCommand = 'pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95';
+export const pilotNinetyFiveGateCommand = 'pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts';
 
 export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   {
@@ -258,6 +258,11 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
     id: 'coverage-and-delta',
     label: 'Coverage and confidence movement',
     evidence: 'Total accepted confidence_delta is at least 0.9 and every confidence-moving row has at least 70% buyer-data coverage.',
+  },
+  {
+    id: 'redacted-artifact-hashes',
+    label: 'Retained redacted artifact hashes',
+    evidence: 'Every accepted confidence-moving row has a local redacted artifact under --evidence-root with a matching SHA-256 hash.',
   },
 ];
 

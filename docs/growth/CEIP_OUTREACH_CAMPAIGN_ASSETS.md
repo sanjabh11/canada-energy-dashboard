@@ -24,7 +24,7 @@ Lead with utility planning, benchmark/provenance, OEB/AUC filing, TIER CFO, TIER
 
 ## Route And Rating Matrix
 
-These are current sellability-confidence ratings, not target ratings. They must stay aligned with the active confidence audit until buyer-supplied evidence passes the 95% pilot gate.
+These are current sellability-confidence ratings, not target ratings. They must stay aligned with the active confidence audit until buyer-supplied evidence passes the 95% pilot gate with `--evidence-root` hash verification against retained redacted artifacts.
 
 | Rank | Proof pack | Buyer | Route | Sellability rating |
 |---:|---|---|---|---:|

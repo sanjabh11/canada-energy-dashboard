@@ -29,7 +29,7 @@
 | Route-specific confidence diagnostic guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | TIER, credit, billing, asset, security, regulatory, large-load, and API rows could move confidence with shallow route-agnostic wording. | Confidence-moving evidence must include the diagnostic terms required for that route; `/pilot-readiness` and `/pilot-evidence` cannot move confidence directly. |
 | Route-specific claim-boundary guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A row could move confidence while `claim_boundary` or `do_not_claim` stayed generic, contradictory, or empty-style. | Confidence-moving rows must include buyer/source boundary wording plus route-specific do-not-claim language. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point at an arbitrary file label with no stable evidence handle. | Confidence-moving `evidence_file_reference` values must include `sha256=<64 hex chars>` or `sha256:<64 hex chars>`. |
-| Optional local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A stable SHA-256 handle could still point at a file nobody rechecked locally. | If redacted artifacts are available, the validator recomputes each confidence-moving artifact hash. |
+| Local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A stable SHA-256 handle could still point at a file nobody rechecked locally. | Required for the 95% gate; the validator recomputes each confidence-moving artifact hash. |
 | Pilot date and reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Future-dated or reviewer-anonymous evidence could move confidence. | Confidence-moving rows require a valid non-future `record_date` and a reviewer role. |
 | Exact reviewer status guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Negated phrases such as `not accepted` or `incomplete` could satisfy loose keyword matching. | `reviewer_acceptance` must exactly be `accepted`, `approved`, or `signed`; `reviewer_feedback_status` must exactly be `complete`, `accepted`, `approved`, or `signed`. |
 | Exact PII screen guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Negated phrases such as `not screened` could satisfy loose privacy-screen matching. | `pii_screen_result` must exactly be `no personal data`, `no personal data or meter identifiers found`, `redacted`, `screened`, or `not applicable`. |
@@ -224,16 +224,12 @@ Confidence-moving rows must also carry route-specific diagnostic evidence:
 Validate the stronger 95% strategy-confidence gate only after a real pilot register has buyer evidence across the required lanes:
 
 ```bash
-pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
-```
-
-The `--require-95` gate refuses a 95% claim unless the register includes accepted buyer-supplied utility forecast evidence with MAE/MAPE/RMSE, persistence, and seasonal-naive diagnostics; accepted TIER or credit-banking evidence; accepted shadow-billing or utility-security evidence; at least three distinct proof-pack rows with `day_14_decision=proceed`; distinct SHA-256 evidence artifacts for each accepted confidence-moving row; total accepted `confidence_delta >= 0.9`; at least 70% buyer-data coverage on confidence-moving rows; and a production buyer-evidence register path, not a fixture, template, or sample register. The `--allow-fixture-95` flag exists only for unit tests and requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1`.
-
-When local redacted artifacts can be retained, run the same gate with hash verification:
-
-```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
+
+The `--require-95` gate refuses a 95% claim unless the register includes accepted buyer-supplied utility forecast evidence with MAE/MAPE/RMSE, persistence, and seasonal-naive diagnostics; accepted TIER or credit-banking evidence; accepted shadow-billing or utility-security evidence; at least three distinct proof-pack rows with `day_14_decision=proceed`; distinct locally verified SHA-256 evidence artifacts for each accepted confidence-moving row; total accepted `confidence_delta >= 0.9`; at least 70% buyer-data coverage on confidence-moving rows; and a production buyer-evidence register path, not a fixture, template, or sample register. The `--allow-fixture-95` flag exists only for unit tests and requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1`.
+
+The evidence root must contain retained redacted artifacts only. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing or changed.
 
 ## Stop Conditions
 

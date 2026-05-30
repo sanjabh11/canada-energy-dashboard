@@ -4,7 +4,7 @@
 > Scope: Canada Energy Intelligence Platform utility, regulatory, and Alberta TIER proof-pack strategy
 > Verdict: 90-92% confidence in strategy fit; not 95% confidence in market outcome until buyer-supplied proof exists.
 > Evidence intake: use [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) before increasing confidence beyond this audit.
-> 95% gate: a filled buyer-evidence register must pass `pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95`.
+> 95% gate: a filled buyer-evidence register must pass `pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts`.
 
 ## Bottom Line
 
@@ -61,7 +61,7 @@ Verdict after rechecking the current repo and current external market evidence: 
 | Negated reviewer statuses can look accepted. | Loose keyword matching can treat `not accepted` or `incomplete` as accepted evidence. | Reviewer acceptance and feedback status now use exact allowlisted statuses. | Keep status fields controlled, not prose-heavy. |
 | Negated privacy screening can look complete. | Loose keyword matching can treat `not screened` as screened evidence. | `pii_screen_result` now uses exact allowlisted privacy-screen statuses. | Keep privacy-screen status controlled, not prose-heavy. |
 | One artifact can be reused across proof packs. | Reusing one evidence hash across utility, TIER, and billing/security rows would make the 95% gate look broader than it is. | The 95% gate now requires each accepted confidence-moving row to reference a distinct SHA-256 evidence artifact. | Use separate redacted evidence handles for separate buyer decisions. |
-| Test fixtures can be mistaken for market evidence. | A synthetic register can be useful for CI but must never support a public 95% claim. | The `--require-95` gate now rejects fixture, template, and sample paths; the fixture override also requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1`, and CI runs a dedicated fixture-gate check. | Run 95% claims only against a real buyer-evidence register. |
+| Test fixtures or syntactic hashes can be mistaken for market evidence. | A synthetic register or arbitrary SHA-256 text can be useful for CI but must never support a public 95% claim. | The `--require-95` gate now rejects fixture, template, and sample paths; requires `--evidence-root` hash recomputation; the fixture override also requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1`; and CI runs a dedicated fixture-gate check. | Run 95% claims only against a real buyer-evidence register and retained redacted evidence artifacts. |
 | "World-class" can be misunderstood as enterprise parity. | CEIP cannot match Amperon, Itron, UtilityAPI, or EnergyCAP enterprise depth. | Current strategy defines world-class as a focused proof-pack workflow, not enterprise platform parity; `/pilot-readiness` now includes a pilot outcome scorecard for time-to-artifact, buyer data coverage, benchmark lift/diagnostic value, and reviewer acceptance. | Populate the outcome scorecard with actual pilot evidence before increasing market-confidence claims. |
 | Avalanche prediction wording can leak from adjacent work. | CEIP is an energy proof-pack product, not the separate avalanche forecasting project. | Claim-boundary checks now flag active source/docs that use world-class or avalanche-prediction language without boundary context. | Keep avalanche-specific prediction claims in the avalanche repo and validate them there. |
 

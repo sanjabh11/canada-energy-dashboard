@@ -43,13 +43,25 @@ describe('pilot evidence register validator', () => {
   it('accepts a filled register that satisfies the 95% strategy confidence gate', () => {
     const result = runValidator(
       'valid-95-evidence-register.csv',
-      ['--require-95', '--allow-fixture-95'],
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
       { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
     );
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Pilot evidence register validation passed');
     expect(result.stderr).toBe('');
+  });
+
+  it('rejects 95% confidence when local evidence hash verification is not supplied', () => {
+    const result = runValidator(
+      'valid-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95'],
+      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires --evidence-root');
   });
 
   it('rejects the fixture 95% override unless the test-only environment gate is explicit', () => {
