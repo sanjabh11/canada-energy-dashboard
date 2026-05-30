@@ -64,6 +64,7 @@ const allowedRoutes = new Set([
   '/asset-health',
   '/utility-security',
   '/ai-datacentres',
+  '/api-docs',
   '/pilot-readiness',
   '/pilot-evidence',
 ]);

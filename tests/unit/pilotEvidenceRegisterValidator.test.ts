@@ -23,6 +23,14 @@ describe('pilot evidence register validator', () => {
     expect(result.stderr).toBe('');
   });
 
+  it('accepts Consultant/API evidence against the API docs route', () => {
+    const result = runValidator('valid-api-evidence-register.csv');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Pilot evidence register validation passed');
+    expect(result.stderr).toBe('');
+  });
+
   it('rejects public sample evidence that tries to increase market confidence', () => {
     const result = runValidator('invalid-public-confidence-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;

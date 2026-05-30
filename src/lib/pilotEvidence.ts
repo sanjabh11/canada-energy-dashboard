@@ -3,7 +3,8 @@ export type PilotEvidenceLane =
   | 'Industrial'
   | 'Municipal/Public Sector'
   | 'Security'
-  | 'Large Load';
+  | 'Large Load'
+  | 'Consultant/API';
 
 export interface PilotEvidenceRequirement {
   id: string;
@@ -176,6 +177,22 @@ export const pilotEvidenceRequirements: PilotEvidenceRequirement[] = [
       'Scenario stays labelled as planning overlay.',
       'AESO/IESO source assumptions are timestamped.',
       'No power-flow, hosting-capacity, or engineering approval language is used.',
+    ],
+  },
+  {
+    id: 'consultant-api-data-pack',
+    lane: 'Consultant/API',
+    title: 'Consultant/API data-pack evidence',
+    requiredFor: 'Consultant/API Canadian energy data pack',
+    minimumInput: 'Selected 5-10 endpoint workflow, sample payload/export, endpoint freshness matrix, and OpenAPI parity notes.',
+    acceptedFormats: ['CSV', 'JSON', 'Markdown', 'Notebook outline'],
+    artifact: 'Endpoint freshness matrix, sample export, and notebook starter',
+    blockedClaim: 'Live-data SLA, production buyer integration, or OpenAPI parity across every endpoint.',
+    route: '/api-docs',
+    acceptance: [
+      'Endpoint freshness matrix records source surface, freshness state, fallback status, and best use.',
+      'Sample export contains only public, fallback-labelled, or buyer-approved non-sensitive fields.',
+      'No live-data SLA, buyer adoption, or production integration claim is made without external evidence.',
     ],
   },
 ];

@@ -11,7 +11,7 @@ describe('pilotEvidence', () => {
   it('defines buyer evidence gates for the top confidence gaps', () => {
     const summary = getPilotEvidenceCoverageSummary();
 
-    expect(summary.requirementCount).toBeGreaterThanOrEqual(9);
+    expect(summary.requirementCount).toBeGreaterThanOrEqual(10);
     expect(summary.confidenceRuleCount).toBeGreaterThanOrEqual(5);
     expect(summary.outcomeMetricCount).toBeGreaterThanOrEqual(4);
     expect(summary.stopConditionCount).toBeGreaterThanOrEqual(5);
@@ -21,6 +21,7 @@ describe('pilotEvidence', () => {
       'tier-credit-ledger',
       'invoice-comparison-sample',
       'security-questionnaire',
+      'consultant-api-data-pack',
     ]));
   });
 

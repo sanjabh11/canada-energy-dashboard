@@ -36,11 +36,16 @@ const requiredColumns = [
 
 const forbiddenColumns = [
   'customer_name',
+  'customer_email',
+  'email',
+  'phone',
+  'phone_number',
   'account_number',
   'meter_identifier',
   'meter_id',
   'service_address',
   'address',
+  'postal_code',
   'secret',
   'token',
   'password',

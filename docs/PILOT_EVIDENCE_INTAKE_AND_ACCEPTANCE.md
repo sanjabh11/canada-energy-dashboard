@@ -1,7 +1,7 @@
 # CEIP Pilot Evidence Intake And Acceptance Checklist
 
 > Purpose: convert the remaining 95% confidence gap into a concrete buyer-evidence workflow.
-> Scope: utility planning, forecast benchmarking, OEB/AUC filing prep, Alberta TIER, credit banking, asset capex, shadow billing, and utility security.
+> Scope: utility planning, forecast benchmarking, OEB/AUC filing prep, Alberta TIER, credit banking, asset capex, shadow billing, utility security, large-load planning overlays, and consultant/API data packs.
 > Rule: if the evidence below is not supplied, keep the route positioned as public-system, starter, constructed, sandbox, advisory, or owner-supplied workflow proof.
 
 ## Pilot Evidence Packet
@@ -17,6 +17,7 @@
 | Asset fleet subset | Asset health capex pack | asset id, asset type, age/install year, loading, maintenance, criticality, replacement-cost override if known | CSV | buyer-specific replace/defer recommendation |
 | Utility security questionnaire | Utility security procurement pack | buyer questionnaire or review checklist with named owner/contact | XLSX, DOCX, PDF, Markdown | procurement approval, SOC certification, legal/privacy approval |
 | Large-load assumptions | Large-load readiness overlay | load size, timing, location class, connection context, storage/BYOP options, buyer constraints | Markdown, CSV, memo | engineering approval, queue position, interconnection readiness |
+| Consultant/API data-pack evidence | Consultant/API Canadian energy data pack | selected 5-10 endpoint workflow, sample payload/export, endpoint freshness matrix, and OpenAPI parity notes | CSV, JSON, Markdown, notebook outline | live-data SLA, production buyer integration, OpenAPI parity across every endpoint |
 
 ## What This Phase Makes Possible
 
@@ -31,6 +32,7 @@
 | Credit banking audit pack | Use `/credit-banking` with `id,type,vintage,quantity,purchase_price,purchase_date,expiry_year,status` | CEIP could not produce an allocation/expiry-risk artifact tied to no-broker guardrails. | Not registry certification or purchase advice. |
 | Security procurement evidence split | Use `/utility-security` and attach owner-supplied questionnaire/SBOM/header evidence where available | Security copy could blur repo-backed design, deployed evidence, and buyer-owned evidence. | No SOC, legal, privacy, or procurement approval claim. |
 | Shadow billing audit trail | Use `/shadow-billing` with `billing_period,consumption_kwh,actual_energy_rate_cents_per_kwh,actual_supply_cost_cad` | Invoice checks lacked a clear field map and included/excluded-cost boundary. | Savings are limited to supplied and mapped fields. |
+| Consultant/API evidence gate | Use `/api-docs` with an endpoint freshness matrix, sample export, and notebook starter | The Consultant/API pack was listed in the Top 10 but did not have a matching pilot evidence requirement. | No live-data SLA, production integration, or full OpenAPI parity claim without external proof. |
 | Claim-boundary CI guardrail | `pnpm run check:claim-boundaries` | Unsafe phrases could remain in active source/docs without an automated failure. | Guardrail catches known claim patterns; human review still required for new wording. |
 
 ## Intake Schema Cheatsheet
@@ -103,6 +105,27 @@ Acceptance:
 - Field map identifies source columns and excluded riders/tariff elements.
 - Savings claim is limited to the included fields.
 - Audit note explains what was not reconstructed.
+
+### Consultant/API Data Pack
+
+Required evidence:
+
+```csv
+route,source_surface,freshness_state,best_use
+```
+
+Recommended evidence:
+
+```csv
+route,source_surface,freshness_state,is_fallback,sample_payload_reference,openapi_parity_note,buyer_workflow
+```
+
+Acceptance:
+
+- Select only 5-10 endpoints tied to one analyst workflow.
+- Freshness matrix identifies source surface, freshness state, fallback status, and best use.
+- Sample payload/export contains only public, fallback-labelled, or buyer-approved non-sensitive fields.
+- Do not claim live-data SLA, production buyer integration, or OpenAPI parity across every endpoint without external evidence.
 
 ## 14-Day Pilot Acceptance Plan
 
