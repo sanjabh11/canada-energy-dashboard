@@ -180,6 +180,60 @@ const confidenceDiagnosticRulesByRoute = new Map([
     patterns: [/endpoint/i, /freshness/i, /openapi/i],
   }],
 ]);
+const confidenceClaimBoundaryRulesByRoute = new Map([
+  ['/utility-demand-forecast', {
+    label: 'buyer/source boundary plus no production utility, telemetry, or control-room claim',
+    doNotClaimPatterns: [/production/i, /utility approval/i, /live|native/i, /telemetry/i, /control[- ]?room/i],
+  }],
+  ['/forecast-benchmarking', {
+    label: 'benchmark boundary plus no guaranteed accuracy or AI/GPU superiority claim',
+    doNotClaimPatterns: [/guaranteed accuracy/i, /forecast superiority/i, /ai\/gpu|gpu|ai beats/i, /enterprise superiority/i],
+  }],
+  ['/regulatory-filing', {
+    label: 'filing-prep boundary plus no regulator submission, counsel approval, or legal opinion claim',
+    doNotClaimPatterns: [/regulator/i, /submission automation|approval/i, /filing counsel/i, /legal/i],
+  }],
+  ['/roi-calculator', {
+    label: 'planning boundary plus no guaranteed savings, live market price, broker, trade, tax, or legal claim',
+    doNotClaimPatterns: [/guaranteed savings/i, /live market price|live pricing/i, /broker|trade/i, /tax|legal/i],
+  }],
+  ['/credit-banking', {
+    label: 'ledger-planning boundary plus no broker, trade, registry certification, legal, or live-price claim',
+    doNotClaimPatterns: [/broker|trade/i, /registry/i, /certification/i, /legal/i, /live market price|live pricing/i],
+  }],
+  ['/shadow-billing', {
+    label: 'supplied-field boundary plus no guaranteed or fully verified savings/tariff claim',
+    doNotClaimPatterns: [/verified savings|guaranteed savings/i, /beyond supplied/i, /tariff|rider/i, /full bill/i],
+  }],
+  ['/asset-health', {
+    label: 'planning boundary plus no predictive-maintenance, SCADA/ADMS, engineering approval, or replacement mandate claim',
+    doNotClaimPatterns: [/predictive/i, /scada|adms/i, /engineering approval/i, /replacement mandate|guaranteed replacement/i],
+  }],
+  ['/utility-security', {
+    label: 'evidence-boundary split plus no SOC/NERC certification or production approval claim',
+    doNotClaimPatterns: [/soc/i, /nerc/i, /certification|certified/i, /production approval|production utility/i],
+  }],
+  ['/ai-datacentres', {
+    label: 'assumptions-only boundary plus no engineering, interconnection, capacity, or dispatch approval claim',
+    doNotClaimPatterns: [/engineering approval/i, /interconnection approval|connection approval/i, /available capacity/i, /dispatch|control[- ]?room/i],
+  }],
+  ['/api-docs', {
+    label: 'consultant workflow boundary plus no production integration, live-data SLA, or full OpenAPI parity claim',
+    doNotClaimPatterns: [/production integration|production api/i, /live[- ]?data sla|sla/i, /full openapi parity/i],
+  }],
+]);
+const confidenceBoundaryPatterns = [
+  /buyer[- ]?supplied/i,
+  /owner[- ]?supplied/i,
+  /uploaded/i,
+  /redacted/i,
+  /planning support/i,
+  /workflow only/i,
+  /fields only/i,
+  /energy supply/i,
+  /source[- ]?labeled/i,
+  /buyer workflow/i,
+];
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
@@ -311,6 +365,18 @@ function hasRequiredConfidenceDiagnostic(route, value) {
   if (!rule) return true;
   const text = value ?? '';
   return rule.patterns.every((pattern) => pattern.test(text));
+}
+
+function hasConfidenceClaimBoundary(value) {
+  const text = value ?? '';
+  return confidenceBoundaryPatterns.some((pattern) => pattern.test(text));
+}
+
+function hasRouteDoNotClaimBoundary(route, value) {
+  const rule = confidenceClaimBoundaryRulesByRoute.get(route);
+  if (!rule) return true;
+  const text = value ?? '';
+  return rule.doNotClaimPatterns.some((pattern) => pattern.test(text));
 }
 
 function hasImmutableEvidenceReference(value) {
@@ -501,6 +567,15 @@ if (rows.length < 2) {
 
       if (confidenceDelta > 0 && !hasImmutableEvidenceReference(row.evidence_file_reference ?? '')) {
         failures.push(`Row ${rowNumber}: confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>.`);
+      }
+
+      if (confidenceDelta > 0 && !hasConfidenceClaimBoundary(row.claim_boundary ?? '')) {
+        failures.push(`Row ${rowNumber}: confidence-moving claim_boundary must state a buyer-supplied, owner-supplied, uploaded, redacted, planning-support, workflow-only, fields-only, or source-labeled boundary.`);
+      }
+
+      if (confidenceDelta > 0 && !hasRouteDoNotClaimBoundary(row.route, row.do_not_claim ?? '')) {
+        const rule = confidenceClaimBoundaryRulesByRoute.get(row.route);
+        failures.push(`Row ${rowNumber}: confidence-moving do_not_claim for ${row.route} must include ${rule.label}.`);
       }
 
       if (confidenceDelta > 0) {

@@ -93,6 +93,14 @@ const RULES = [
     pattern: /\b(AI beats|GPU forecasting|Enterprise AI\/GPU superiority|AI\/GPU superiority)\b/i,
   },
   {
+    name: 'World-class or best-of-class overclaim',
+    pattern: /\b(world[- ]class|best[- ]of[- ]class|best[- ]in[- ]class)\b/i,
+  },
+  {
+    name: 'Cross-repo avalanche prediction overclaim',
+    pattern: /\b(accurate avalanche prediction|accurate avalanche predictions|avalanche prediction product|avalanche forecasting)\b/i,
+  },
+  {
     name: 'Engineering automation or approval overclaim',
     pattern: /\b(engineering approval|power-flow|SCADA|ADMS|predictive-maintenance automation)\b/i,
   },

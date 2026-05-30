@@ -200,6 +200,15 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>');
   });
 
+  it('rejects confidence-moving rows with weak claim boundaries', () => {
+    const result = runValidator('invalid-weak-claim-boundary-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving claim_boundary must state');
+    expect(output).toContain('confidence-moving do_not_claim for /utility-demand-forecast must include');
+  });
+
   it('accepts confidence-moving local evidence when the referenced artifact hash matches', () => {
     const result = runValidator('valid-local-hash-evidence-register.csv', [
       '--evidence-root',
