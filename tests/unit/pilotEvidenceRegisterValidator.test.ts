@@ -307,6 +307,18 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('local evidence artifact local-pii-load.csv appears to contain a');
   });
 
+  it('rejects retained local evidence artifacts that omit route-specific diagnostics', () => {
+    const result = runValidator('invalid-artifact-diagnostic-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('local evidence artifact thin-redacted-utility.csv must contain retained route-specific diagnostic evidence');
+    expect(output).toContain('local forecast evidence artifact thin-redacted-utility.csv must contain MAE, MAPE, RMSE');
+  });
+
   it('rejects opaque retained artifacts that cannot be scanned as redacted text evidence', () => {
     const result = runValidator('invalid-opaque-artifact-evidence-register.csv', [
       '--evidence-root',

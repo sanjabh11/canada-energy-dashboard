@@ -514,9 +514,10 @@ function isInsideDirectory(candidatePath, rootPath) {
   return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
 }
 
-function verifyLocalEvidenceHash(referenceValue, rowNumber) {
+function verifyLocalEvidenceHash(row, rowNumber) {
   if (!evidenceRoot) return;
 
+  const referenceValue = row.evidence_file_reference ?? '';
   const { referencePath, sha256 } = parseEvidenceReference(referenceValue);
   if (!sha256) return;
 
@@ -546,10 +547,10 @@ function verifyLocalEvidenceHash(referenceValue, rowNumber) {
     failures.push(`Row ${rowNumber}: evidence_file_reference sha256 does not match local artifact ${referencePath}.`);
   }
 
-  scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber);
+  scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber);
 }
 
-function scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber) {
+function scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber) {
   const extension = path.extname(evidencePath).toLowerCase();
   if (!inspectableEvidenceExtensions.has(extension)) {
     failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} has unsupported retained-artifact extension "${extension || '(none)'}"; reference a redacted text, CSV, JSON, Markdown, HTML, YAML, or TSV artifact instead. For PDFs or scans, hash a redacted .txt or .md evidence extract under --evidence-root.`);
@@ -587,6 +588,15 @@ function scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber) {
   const matchedPattern = highRiskPatterns.find(({ pattern }) => pattern.test(text));
   if (matchedPattern) {
     failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} appears to contain a ${matchedPattern.label}; retain only redacted artifacts under --evidence-root.`);
+  }
+
+  const diagnosticRule = confidenceDiagnosticRulesByRoute.get(row.route);
+  if (diagnosticRule && !diagnosticRule.patterns.every((pattern) => pattern.test(text))) {
+    failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} must contain retained route-specific diagnostic evidence for ${row.route}: ${diagnosticRule.label}.`);
+  }
+
+  if (forecastEvidenceRoutes.has(row.route) && !hasForecastBenchmarkDiagnostic(text)) {
+    failures.push(`Row ${rowNumber}: local forecast evidence artifact ${referencePath} must contain MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.`);
   }
 }
 
@@ -751,7 +761,7 @@ if (rows.length < 2) {
       }
 
       if (confidenceDelta > 0) {
-        verifyLocalEvidenceHash(row.evidence_file_reference ?? '', rowNumber);
+        verifyLocalEvidenceHash(row, rowNumber);
       }
     }
 

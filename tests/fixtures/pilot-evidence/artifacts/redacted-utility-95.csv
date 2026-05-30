@@ -1,2 +1,2 @@
 artifact_type,summary
-utility_forecast,redacted buyer utility forecast evidence for 95 gate fixture
+utility_forecast,"redacted buyer utility forecast evidence with MAE MAPE RMSE persistence seasonal-naive rolling-origin split record interval coverage and champion/challenger diagnostics"

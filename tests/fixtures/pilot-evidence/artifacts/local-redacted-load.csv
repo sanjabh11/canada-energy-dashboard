@@ -1,3 +1,9 @@
-timestamp_utc,load_mw
-2026-05-30T00:00:00Z,123.4
-2026-05-30T01:00:00Z,121.8
+metric,value
+mae,12.1
+mape,3.2
+rmse,16.4
+persistence,14.8
+seasonal-naive,15.6
+rolling-origin,3 splits
+interval coverage,89
+champion/challenger,transparent trend seasonal vs persistence
