@@ -4,7 +4,11 @@ import { describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 
-function runValidator(fixtureName: string, extraArgs: string[] = []) {
+function runValidator(
+  fixtureName: string,
+  extraArgs: string[] = [],
+  envOverrides: NodeJS.ProcessEnv = {},
+) {
   return spawnSync(process.execPath, [
     scriptPath,
     path.join('tests/fixtures/pilot-evidence', fixtureName),
@@ -12,6 +16,10 @@ function runValidator(fixtureName: string, extraArgs: string[] = []) {
   ], {
     cwd: process.cwd(),
     encoding: 'utf8',
+    env: {
+      ...process.env,
+      ...envOverrides,
+    },
   });
 }
 
@@ -33,11 +41,25 @@ describe('pilot evidence register validator', () => {
   });
 
   it('accepts a filled register that satisfies the 95% strategy confidence gate', () => {
-    const result = runValidator('valid-95-evidence-register.csv', ['--require-95', '--allow-fixture-95']);
+    const result = runValidator(
+      'valid-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95'],
+      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+    );
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Pilot evidence register validation passed');
     expect(result.stderr).toBe('');
+  });
+
+  it('rejects the fixture 95% override unless the test-only environment gate is explicit', () => {
+    const result = runValidator('valid-95-evidence-register.csv', ['--require-95', '--allow-fixture-95'], {
+      CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '',
+    });
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('--allow-fixture-95 is test-only and requires CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1');
   });
 
   it('rejects fixture registers as 95% market-confidence proof unless test override is explicit', () => {
@@ -131,5 +153,27 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>');
+  });
+
+  it('accepts confidence-moving local evidence when the referenced artifact hash matches', () => {
+    const result = runValidator('valid-local-hash-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Pilot evidence register validation passed');
+    expect(result.stderr).toBe('');
+  });
+
+  it('rejects confidence-moving local evidence when the referenced artifact hash does not match', () => {
+    const result = runValidator('invalid-local-hash-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('evidence_file_reference sha256 does not match local artifact local-redacted-load.csv');
   });
 });

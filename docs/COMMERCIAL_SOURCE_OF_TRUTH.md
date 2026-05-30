@@ -113,6 +113,7 @@ Before sending outreach or publishing copy:
 ```bash
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
+pnpm run check:pilot-evidence-95-fixture-gate
 pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 ```
@@ -121,6 +122,12 @@ Before any copy says CEIP has reached 95% strategy confidence, validate the fill
 
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+```
+
+If redacted buyer artifacts are retained locally, add hash verification:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.

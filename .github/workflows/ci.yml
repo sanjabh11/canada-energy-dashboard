@@ -62,6 +62,9 @@ jobs:
       - name: Pilot evidence register sample validation
         run: pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 
+      - name: Pilot evidence 95 fixture gate
+        run: pnpm run check:pilot-evidence-95-fixture-gate
+
       - name: Unit tests
         run: pnpm exec vitest run
 

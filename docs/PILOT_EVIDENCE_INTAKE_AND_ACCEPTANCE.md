@@ -28,7 +28,8 @@
 | Forecast confidence movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A utility forecast or forecast-benchmarking row could move confidence with vague benchmark text. | Confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics. |
 | Route-specific confidence diagnostic guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | TIER, credit, billing, asset, security, regulatory, large-load, and API rows could move confidence with shallow route-agnostic wording. | Confidence-moving evidence must include the diagnostic terms required for that route; `/pilot-readiness` and `/pilot-evidence` cannot move confidence directly. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point at an arbitrary file label with no stable evidence handle. | Confidence-moving `evidence_file_reference` values must include `sha256=<64 hex chars>` or `sha256:<64 hex chars>`. |
-| Fixture-proof 95% gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A fixture, template, or sample register could be mistaken for buyer evidence. | The 95% gate rejects non-production register paths unless the test-only `--allow-fixture-95` flag is explicit. |
+| Optional local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A stable SHA-256 handle could still point at a file nobody rechecked locally. | If redacted artifacts are available, the validator recomputes each confidence-moving artifact hash. |
+| Fixture-proof 95% gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A fixture, template, or sample register could be mistaken for buyer evidence. | The 95% gate rejects non-production register paths; the fixture override is gated by `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1` for tests only. |
 | Proof-pack metadata gate | `pnpm exec vitest run tests/unit/proofPackGates.test.ts` | A forecast, filing, TIER, asset, billing, or security export could omit source manifest, verification status, or do-not-claim metadata without a focused test failing. | Metadata proves claim boundaries, not buyer acceptance. |
 | Pilot readiness route | Open `/pilot-readiness` or `/pilot-evidence` | There was no buyer-facing evidence gate showing exactly what inputs are needed before stronger claims. | The route is a checklist until buyer evidence is attached. |
 | Pilot outcome scorecard | On `/pilot-readiness`, record `time-to-artifact`, `buyer-data-coverage`, `benchmark-lift-or-diagnostic`, and `reviewer-acceptance` | The 14-day pilot could end with an artifact but no measurable confidence movement. | Scores move only with buyer files, reviewer notes, or paid pilot evidence. |
@@ -199,7 +200,7 @@ Validate a filled register before changing any feature rating:
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 ```
 
-The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`; requires immutable `sha256=<64 hex chars>` or `sha256:<64 hex chars>` evidence references for confidence-moving rows; and requires MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics before utility forecast or forecast-benchmarking evidence can move confidence.
+The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`; requires immutable `sha256=<64 hex chars>` or `sha256:<64 hex chars>` evidence references for confidence-moving rows; and requires MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics before utility forecast or forecast-benchmarking evidence can move confidence. If redacted local artifacts are available, add `--evidence-root path/to/redacted-artifacts` so the validator recomputes and compares the referenced SHA-256 values.
 
 Confidence-moving rows must also carry route-specific diagnostic evidence:
 
@@ -222,7 +223,13 @@ Validate the stronger 95% strategy-confidence gate only after a real pilot regis
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
 ```
 
-The `--require-95` gate refuses a 95% claim unless the register includes accepted buyer-supplied utility forecast evidence with MAE/MAPE/RMSE, persistence, and seasonal-naive diagnostics; accepted TIER or credit-banking evidence; accepted shadow-billing or utility-security evidence; at least three distinct proof-pack rows with `day_14_decision=proceed`; total accepted `confidence_delta >= 0.9`; at least 70% buyer-data coverage on confidence-moving rows; and a production buyer-evidence register path, not a fixture, template, or sample register. The `--allow-fixture-95` flag exists only for unit tests.
+The `--require-95` gate refuses a 95% claim unless the register includes accepted buyer-supplied utility forecast evidence with MAE/MAPE/RMSE, persistence, and seasonal-naive diagnostics; accepted TIER or credit-banking evidence; accepted shadow-billing or utility-security evidence; at least three distinct proof-pack rows with `day_14_decision=proceed`; total accepted `confidence_delta >= 0.9`; at least 70% buyer-data coverage on confidence-moving rows; and a production buyer-evidence register path, not a fixture, template, or sample register. The `--allow-fixture-95` flag exists only for unit tests and requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1`.
+
+When local redacted artifacts can be retained, run the same gate with hash verification:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
+```
 
 ## Stop Conditions
 
@@ -241,6 +248,7 @@ Use these commands before any pilot artifact is shared externally:
 ```bash
 pnpm run check:claim-boundaries
 pnpm audit --audit-level moderate
+pnpm run check:pilot-evidence-95-fixture-gate
 pnpm exec vitest run tests/unit/proofPackGates.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/tierProofPack.test.ts tests/unit/shadowBillingProofPack.test.ts tests/unit/utilitySecurityProofPack.test.ts
 ```
 

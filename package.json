@@ -14,6 +14,7 @@
     "build:prod": "rm -rf node_modules/.vite-temp && tsc -b && BUILD_MODE=prod vite build",
     "check:claim-boundaries": "node scripts/check-claim-boundaries.mjs",
     "check:commercial-source": "node scripts/check-commercial-source-docs.mjs",
+    "check:pilot-evidence-95-fixture-gate": "node scripts/check-pilot-evidence-95-fixture-gate.mjs",
     "check:pilot-evidence-template": "node scripts/check-pilot-evidence-template.mjs",
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",

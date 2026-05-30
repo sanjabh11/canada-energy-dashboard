@@ -49,7 +49,8 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | Forecast evidence movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A utility forecast row could move confidence with vague benchmark text. | Confidence-moving forecast rows require MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics. |
 | Route diagnostic movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Non-forecast proof packs could move confidence with generic acceptance text. | TIER, credit, billing, asset, security, regulatory, large-load, and API rows require route-specific diagnostic evidence. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point to an arbitrary file label. | Confidence-moving evidence references require a SHA-256 handle. |
-| Fixture-proof 95% gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A synthetic fixture or sample register could be mistaken for buyer evidence. | The 95% gate rejects fixture, template, and sample registers unless the test-only `--allow-fixture-95` flag is explicit. |
+| Optional local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | SHA-256 references were syntactic unless a human checked the redacted evidence file. | When a redacted local evidence root is supplied, each confidence-moving artifact hash is recomputed and compared. |
+| Fixture-proof 95% gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A synthetic fixture or sample register could be mistaken for buyer evidence. | The 95% gate rejects fixture, template, and sample registers; the fixture override requires `CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1` and is test-only. |
 | 95% pilot evidence gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A pilot evidence register could pass basic validation without proving enough buyer evidence for a 95% confidence claim. | Requires accepted buyer-supplied evidence across utility forecast, TIER/credit, and billing/security lanes. |
 | Public-source utility forecast manifest | `parseIesoPublicDemandCsv(csvText)` then `buildUtilityForecastPackage(rows, { sourceKind: 'public_system_sample' })` | Public-system data could not be converted into a source-labeled planning pack with stable provenance. | Public-system workflow proof only, not customer LDC history. |
 | Forecast evidence appendix | `exportUtilityForecastCsv(forecastPackage)` | Forecast exports did not carry benchmark, rolling-origin, interval, hierarchy, and source evidence together. | Buyer-specific accuracy still needs buyer backtests. |
@@ -69,6 +70,7 @@ Install dependencies and run the focused guardrails:
 pnpm install
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
+pnpm run check:pilot-evidence-95-fixture-gate
 pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 pnpm run build
@@ -84,6 +86,12 @@ For a filled buyer register:
 
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+```
+
+When redacted buyer artifacts can be stored locally for audit, verify the hashes too:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
 ## Development

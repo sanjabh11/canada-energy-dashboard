@@ -1,18 +1,68 @@
 #!/usr/bin/env node
 
 import { existsSync, readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
-const allowTemplate = args.includes('--allow-template');
-const allowFixture95 = args.includes('--allow-fixture-95');
-const require95 = args.includes('--require-95');
-const fileArg = args.find((arg) => !arg.startsWith('--'));
+const argFailures = [];
+let allowTemplate = false;
+let allowFixture95 = false;
+let require95 = false;
+let evidenceRootArg = null;
+let fileArg = null;
+
+for (let index = 0; index < args.length; index += 1) {
+  const arg = args[index];
+  if (arg === '--') {
+    continue;
+  }
+  if (arg === '--allow-template') {
+    allowTemplate = true;
+    continue;
+  }
+  if (arg === '--allow-fixture-95') {
+    allowFixture95 = true;
+    continue;
+  }
+  if (arg === '--require-95') {
+    require95 = true;
+    continue;
+  }
+  if (arg === '--evidence-root') {
+    evidenceRootArg = args[index + 1] ?? null;
+    index += 1;
+    if (!evidenceRootArg || evidenceRootArg.startsWith('--')) {
+      argFailures.push('--evidence-root requires a directory path.');
+    }
+    continue;
+  }
+  if (arg.startsWith('--evidence-root=')) {
+    evidenceRootArg = arg.slice('--evidence-root='.length);
+    if (!evidenceRootArg) argFailures.push('--evidence-root requires a directory path.');
+    continue;
+  }
+  if (arg.startsWith('--')) {
+    argFailures.push(`Unknown option: ${arg}`);
+    continue;
+  }
+  if (fileArg) {
+    argFailures.push(`Unexpected extra positional argument: ${arg}`);
+    continue;
+  }
+  fileArg = arg;
+}
+
 const registerPath = fileArg
   ? path.resolve(repoRoot, fileArg)
   : path.join(repoRoot, 'docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv');
 const relativeRegisterPath = path.relative(repoRoot, registerPath).split(path.sep).join('/');
+const evidenceRoot = evidenceRootArg ? path.resolve(repoRoot, evidenceRootArg) : null;
+const relativeEvidenceRoot = evidenceRoot
+  ? path.relative(repoRoot, evidenceRoot).split(path.sep).join('/')
+  : null;
+const fixture95OverrideEnabled = allowFixture95 && process.env.CEIP_ALLOW_FIXTURE_95_FOR_TESTS === '1';
 
 const requiredColumns = [
   'record_date',
@@ -153,7 +203,7 @@ const allowedSourceLabels = new Set([
   ...nonBuyerEvidenceLabels,
 ]);
 
-const failures = [];
+const failures = [...argFailures];
 const evidenceRows = [];
 
 function parseCsv(text) {
@@ -257,6 +307,56 @@ function hasImmutableEvidenceReference(value) {
   return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
 }
 
+function parseEvidenceReference(value) {
+  const text = value ?? '';
+  const hashMatch = text.match(/sha256[=:]([a-f0-9]{64})/i);
+  const referencePath = text
+    .replace(/[#?&|;\s]*sha256[=:][a-f0-9]{64}/ig, '')
+    .trim();
+  return {
+    referencePath,
+    sha256: hashMatch?.[1]?.toLowerCase() ?? null,
+  };
+}
+
+function isInsideDirectory(candidatePath, rootPath) {
+  const relativePath = path.relative(rootPath, candidatePath);
+  return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
+}
+
+function verifyLocalEvidenceHash(referenceValue, rowNumber) {
+  if (!evidenceRoot) return;
+
+  const { referencePath, sha256 } = parseEvidenceReference(referenceValue);
+  if (!sha256) return;
+
+  if (!existsSync(evidenceRoot)) {
+    failures.push(`--evidence-root does not exist: ${relativeEvidenceRoot}`);
+    return;
+  }
+
+  if (!referencePath) {
+    failures.push(`Row ${rowNumber}: evidence_file_reference must include a relative file path before the sha256 hash when --evidence-root is used.`);
+    return;
+  }
+
+  const evidencePath = path.resolve(evidenceRoot, referencePath);
+  if (!isInsideDirectory(evidencePath, evidenceRoot)) {
+    failures.push(`Row ${rowNumber}: evidence_file_reference must stay inside --evidence-root.`);
+    return;
+  }
+
+  if (!existsSync(evidencePath)) {
+    failures.push(`Row ${rowNumber}: evidence artifact not found under --evidence-root: ${referencePath}`);
+    return;
+  }
+
+  const actualHash = createHash('sha256').update(readFileSync(evidencePath)).digest('hex');
+  if (actualHash !== sha256) {
+    failures.push(`Row ${rowNumber}: evidence_file_reference sha256 does not match local artifact ${referencePath}.`);
+  }
+}
+
 function isNonProduction95Register(filePath) {
   const normalizedPath = filePath.toLowerCase();
   const basename = path.basename(normalizedPath);
@@ -269,6 +369,10 @@ function isNonProduction95Register(filePath) {
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${relativeRegisterPath}`);
   process.exit(1);
+}
+
+if (allowFixture95 && !fixture95OverrideEnabled) {
+  failures.push('--allow-fixture-95 is test-only and requires CEIP_ALLOW_FIXTURE_95_FOR_TESTS=1.');
 }
 
 const csvText = readFileSync(registerPath, 'utf8');
@@ -376,6 +480,10 @@ if (rows.length < 2) {
       if (confidenceDelta > 0 && !hasImmutableEvidenceReference(row.evidence_file_reference ?? '')) {
         failures.push(`Row ${rowNumber}: confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>.`);
       }
+
+      if (confidenceDelta > 0) {
+        verifyLocalEvidenceHash(row.evidence_file_reference ?? '', rowNumber);
+      }
     }
 
     if (nonBuyerEvidenceLabels.has(row.source_label) && confidenceDelta !== null && confidenceDelta > 0) {
@@ -416,7 +524,7 @@ if (rows.length < 2) {
 }
 
 if (require95 && failures.length === 0) {
-  if (!allowFixture95 && isNonProduction95Register(relativeRegisterPath)) {
+  if (!fixture95OverrideEnabled && isNonProduction95Register(relativeRegisterPath)) {
     failures.push('95% confidence gate cannot be satisfied by fixture, template, or sample registers; use a buyer-evidence register path and reserve --allow-fixture-95 for tests only.');
   }
 
