@@ -17,6 +17,7 @@ Use these files for current CEIP positioning:
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
 | [growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md](./growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md) | Current outreach copy library. | Lead with proof packs, not broad dashboards or generic AI. |
 | [growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md](./growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md) | Email/LinkedIn and pilot templates. | Must name route, input data, artifact, caveat, and decision criteria. |
+| [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, and `reviewer_acceptance` before confidence changes. |
 
 ## Approved Lead Positioning
 
@@ -87,6 +88,7 @@ Before sending outreach or publishing copy:
 ```bash
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
+pnpm run check:pilot-evidence-template
 ```
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.

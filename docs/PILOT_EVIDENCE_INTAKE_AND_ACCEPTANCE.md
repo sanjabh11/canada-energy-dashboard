@@ -137,9 +137,18 @@ Acceptance:
 
 ## Evidence Register Template
 
+Use the machine-readable register template at [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv). The template is intentionally buyer-evidence oriented and excludes direct identifiers such as account numbers, meter identifiers, customer names, addresses, secrets, tokens, and passwords.
+
 | Date | Buyer lane | Route | Evidence file | Artifact generated | Reviewer feedback | Claim boundary | Decision |
 |---|---|---|---|---|---|---|---|
 | YYYY-MM-DD | Utility / Industrial / Municipal | `/utility-demand-forecast` | anonymized_load.csv | planning memo + benchmark appendix | pending | public/buyer supplied label attached | proceed / park / reject |
+
+Required scorecard columns in the CSV:
+
+- `time_to_artifact_hours`
+- `buyer_data_coverage_pct`
+- `benchmark_lift_or_diagnostic`
+- `reviewer_acceptance`
 
 ## Stop Conditions
 
