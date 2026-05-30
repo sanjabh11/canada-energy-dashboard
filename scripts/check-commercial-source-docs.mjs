@@ -130,6 +130,8 @@ const currentSellabilityRatingsByDoc = [
 
 const overconfidentOutreachRatings = ['4.7/5', '4.8/5', '4.9/5'];
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
+const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
+const pilotEvidenceValidatorPath = path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs');
 const currentCommercialWedgeScores = [
   ['utility-demand-forecast', 4.5],
   ['forecast-benchmarking', 4.6],
@@ -142,6 +144,27 @@ const currentCommercialWedgeScores = [
   ['large-load-readiness', 3.2],
   ['consultant-api-data-pack', 3.1],
 ];
+const currentCommercialWedgeRoutes = [
+  ['utility-demand-forecast', '/utility-demand-forecast', '/forecast-benchmarking'],
+  ['forecast-benchmarking', '/forecast-benchmarking', '/utility-demand-forecast'],
+  ['regulatory-filing', '/regulatory-filing', '/utility-demand-forecast'],
+  ['tier-compliance', '/roi-calculator', '/credit-banking'],
+  ['tier-credit-banking', '/credit-banking', '/roi-calculator'],
+  ['asset-health', '/asset-health', '/regulatory-filing'],
+  ['utility-security', '/utility-security', '/utility-demand-forecast'],
+  ['shadow-billing', '/shadow-billing', '/roi-calculator'],
+  ['large-load-readiness', '/ai-datacentres', '/utility-demand-forecast'],
+  ['consultant-api-data-pack', '/api-docs', '/dashboard'],
+];
+const routeAliasesThatMustRemainLive = ['/solutions', '/pilot-readiness', '/pilot-evidence'];
+
+function extractAppRoutes(appSource) {
+  return new Set(
+    [...appSource.matchAll(/path:\s*'([^']+)'/g)]
+      .map((match) => match[1])
+      .filter((routePath) => !routePath.includes(':') && !routePath.includes('*')),
+  );
+}
 
 if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
@@ -215,11 +238,50 @@ if (!existsSync(sourceDocPath)) {
     failures.push('src/lib/commercialPositioning.ts is missing.');
   } else {
     const commercialPositioningSource = readFileSync(commercialPositioningPath, 'utf8');
+    const appRouteSource = existsSync(appRoutesPath) ? readFileSync(appRoutesPath, 'utf8') : '';
+    const pilotEvidenceValidatorSource = existsSync(pilotEvidenceValidatorPath)
+      ? readFileSync(pilotEvidenceValidatorPath, 'utf8')
+      : '';
+    const appRoutes = extractAppRoutes(appRouteSource);
+
+    if (!existsSync(appRoutesPath)) {
+      failures.push('src/App.tsx is missing; cannot verify top-10 proof-pack routes.');
+    }
+
+    if (!existsSync(pilotEvidenceValidatorPath)) {
+      failures.push('scripts/validate-pilot-evidence-register.mjs is missing; cannot verify pilot-evidence route allowlist.');
+    }
 
     for (const [id, expectedScore] of currentCommercialWedgeScores) {
       const wedgePattern = new RegExp(`id:\\s*'${id}'[\\s\\S]*?score:\\s*${expectedScore}(?:\\.0)?\\b`);
       if (!wedgePattern.test(commercialPositioningSource)) {
         failures.push(`src/lib/commercialPositioning.ts has stale score for ${id}; expected ${expectedScore}/5.`);
+      }
+    }
+
+    for (const [id, href, proofHref] of currentCommercialWedgeRoutes) {
+      const hrefPattern = new RegExp(`id:\\s*'${id}'[\\s\\S]*?href:\\s*'${href}'[\\s\\S]*?proofHref:\\s*'${proofHref}'`);
+      if (!hrefPattern.test(commercialPositioningSource)) {
+        failures.push(`src/lib/commercialPositioning.ts has stale route mapping for ${id}; expected href ${href} and proofHref ${proofHref}.`);
+      }
+
+      for (const routePath of [href, proofHref]) {
+        if (!appRoutes.has(routePath)) {
+          failures.push(`Commercial route ${routePath} for ${id} is not registered in src/App.tsx.`);
+        }
+      }
+
+      if (!pilotEvidenceValidatorSource.includes(`'${href}'`)) {
+        failures.push(`Pilot evidence validator does not allow top-10 route ${href} for ${id}.`);
+      }
+    }
+
+    for (const routePath of routeAliasesThatMustRemainLive) {
+      if (!appRoutes.has(routePath)) {
+        failures.push(`Required commercial support route ${routePath} is not registered in src/App.tsx.`);
+      }
+      if (routePath.startsWith('/pilot-') && !pilotEvidenceValidatorSource.includes(`'${routePath}'`)) {
+        failures.push(`Pilot evidence validator does not allow support route ${routePath}.`);
       }
     }
 

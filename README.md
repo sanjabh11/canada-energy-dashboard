@@ -43,6 +43,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | New capability | Usage syntax | What was not possible before | Proof boundary |
 |---|---|---|---|
 | Commercial source-of-truth guard | `pnpm run check:commercial-source` | Active outreach, public positioning, root README, and stale historical docs could drift from the current proof-pack strategy. | Guardrail only; human review still required for new claims. |
+| Top-10 route consistency guard | `pnpm run check:commercial-source` | A sellable proof pack could keep the right score while pointing to a stale or missing app route. | Proves route registration and allowlist consistency, not buyer adoption. |
 | Claim-boundary guard | `pnpm run check:claim-boundaries` | Unsafe phrases in active source/docs could remain unnoticed. | Known-pattern check, not a legal or compliance review. |
 | 95% pilot evidence gate | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95` | A pilot evidence register could pass basic validation without proving enough buyer evidence for a 95% confidence claim. | Requires accepted buyer-supplied evidence across utility forecast, TIER/credit, and billing/security lanes. |
 | Public-source utility forecast manifest | `parseIesoPublicDemandCsv(csvText)` then `buildUtilityForecastPackage(rows, { sourceKind: 'public_system_sample' })` | Public-system data could not be converted into a source-labeled planning pack with stable provenance. | Public-system workflow proof only, not customer LDC history. |
