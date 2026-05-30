@@ -68,7 +68,9 @@ describe('pilotEvidence', () => {
       'billing-or-security',
       'three-proof-packs',
       'coverage-and-delta',
+      'fast-pilot-artifact',
       'redacted-artifact-hashes',
+      'commercial-commitment',
     ]));
 
     for (const gate of pilotNinetyFiveGates) {

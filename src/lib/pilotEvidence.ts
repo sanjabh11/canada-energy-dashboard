@@ -257,7 +257,12 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   {
     id: 'coverage-and-delta',
     label: 'Coverage and confidence movement',
-    evidence: 'Total accepted confidence_delta is at least 0.9 and every confidence-moving row has at least 70% buyer-data coverage.',
+    evidence: 'Total accepted confidence_delta is at least 0.9, every confidence-moving row has at least 70% buyer-data coverage, and time-to-artifact is recorded.',
+  },
+  {
+    id: 'fast-pilot-artifact',
+    label: 'Fast pilot artifact loop',
+    evidence: 'At least one accepted buyer proof pack is delivered in 48 hours or less, and every accepted confidence-moving row is delivered within 120 hours.',
   },
   {
     id: 'redacted-artifact-hashes',

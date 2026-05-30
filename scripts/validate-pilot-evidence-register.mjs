@@ -239,6 +239,8 @@ const confidenceBoundaryPatterns = [
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
+const fastArtifactTargetHours = 48;
+const maxAcceptedArtifactHours95 = 120;
 const allowedPiiScreenResults = new Set([
   'no personal data',
   'no personal data or meter identifiers found',
@@ -269,6 +271,12 @@ const allowedBuyerLanes = new Set([
   'consultant/api',
 ]);
 const buyerEvidenceLabels = new Set(['buyer_supplied_anonymized', 'buyer_supplied_confidential']);
+const buyerEvidencePiiScreenResults = new Set([
+  'no personal data',
+  'no personal data or meter identifiers found',
+  'redacted',
+  'screened',
+]);
 const nonBuyerEvidenceLabels = new Set([
   'public_system_sample',
   'fallback_starter',
@@ -621,6 +629,16 @@ if (rows.length < 2) {
         failures.push(`Row ${rowNumber}: buyer_data_coverage_pct is required for confidence-moving evidence.`);
       }
 
+      if (confidenceDelta > 0 && timeToArtifact === null) {
+        failures.push(`Row ${rowNumber}: time_to_artifact_hours is required for confidence-moving evidence.`);
+      }
+
+      if (confidenceDelta > 0
+        && buyerEvidenceLabels.has(row.source_label)
+        && !buyerEvidencePiiScreenResults.has(normalizeText(row.pii_screen_result ?? ''))) {
+        failures.push(`Row ${rowNumber}: buyer-supplied confidence-moving evidence must have pii_screen_result of no personal data, no personal data or meter identifiers found, redacted, or screened.`);
+      }
+
       if (confidenceDelta > 0 && !hasImmutableEvidenceReference(row.evidence_file_reference ?? '')) {
         failures.push(`Row ${rowNumber}: confidence-moving evidence_file_reference must include sha256=<64 hex chars> or sha256:<64 hex chars>.`);
       }
@@ -672,6 +690,7 @@ if (rows.length < 2) {
       row,
       confidenceDelta: confidenceDelta ?? 0,
       coverage,
+      timeToArtifact,
     });
   });
 }
@@ -708,6 +727,12 @@ if (require95 && failures.length === 0) {
     row.route === '/shadow-billing' || row.route === '/utility-security'
   ));
   const lowCoverageRows = acceptedBuyerRows.filter(({ coverage }) => coverage === null || coverage < 70);
+  const slowArtifactRows = acceptedBuyerRows.filter(({ timeToArtifact }) => (
+    timeToArtifact === null || timeToArtifact > maxAcceptedArtifactHours95
+  ));
+  const hasFastArtifact = acceptedBuyerRows.some(({ timeToArtifact }) => (
+    timeToArtifact !== null && timeToArtifact <= fastArtifactTargetHours
+  ));
   const hasCommercialCommitment = acceptedBuyerRows.some(({ row }) => (
     strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
   ));
@@ -738,6 +763,14 @@ if (require95 && failures.length === 0) {
 
   if (lowCoverageRows.length > 0) {
     failures.push(`95% confidence gate requires buyer_data_coverage_pct >= 70 for accepted confidence-moving rows; low rows: ${lowCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (slowArtifactRows.length > 0) {
+    failures.push(`95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= ${maxAcceptedArtifactHours95}; slow or missing rows: ${slowArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (!hasFastArtifact) {
+    failures.push(`95% confidence gate requires at least one accepted buyer proof pack delivered in ${fastArtifactTargetHours} hours or less to prove the fast solo-developer pilot wedge.`);
   }
 
   if (!hasCommercialCommitment) {

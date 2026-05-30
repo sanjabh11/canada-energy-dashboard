@@ -116,6 +116,19 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status');
   });
 
+  it('rejects 95% confidence when accepted artifacts do not prove fast pilot turnaround', () => {
+    const result = runValidator(
+      'invalid-slow-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      { CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1' },
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= 120');
+    expect(output).toContain('95% confidence gate requires at least one accepted buyer proof pack delivered in 48 hours or less');
+  });
+
   it('rejects public sample evidence that tries to increase market confidence', () => {
     const result = runValidator('invalid-public-confidence-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
@@ -173,6 +186,14 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('pii_screen_result must exactly be no personal data');
+  });
+
+  it('rejects confidence-moving buyer evidence with not applicable privacy screening', () => {
+    const result = runValidator('invalid-buyer-pii-not-applicable-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('buyer-supplied confidence-moving evidence must have pii_screen_result');
   });
 
   it('rejects ambiguous source labels even when they do not move confidence', () => {
