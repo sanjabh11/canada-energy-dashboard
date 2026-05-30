@@ -34,6 +34,12 @@ export interface PilotOutcomeMetric {
   route: string;
 }
 
+export interface PilotNinetyFiveGate {
+  id: string;
+  label: string;
+  evidence: string;
+}
+
 export const pilotEvidenceRequirements: PilotEvidenceRequirement[] = [
   {
     id: 'buyer-load-history',
@@ -225,6 +231,36 @@ export const pilotConfidenceRules: PilotConfidenceRule[] = [
   },
 ];
 
+export const pilotNinetyFiveGateCommand = 'pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95';
+
+export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
+  {
+    id: 'utility-forecast-benchmark',
+    label: 'Accepted utility forecast evidence',
+    evidence: 'Buyer-supplied utility forecast row with MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.',
+  },
+  {
+    id: 'tier-or-credit',
+    label: 'Accepted TIER or credit evidence',
+    evidence: 'Buyer-supplied TIER CFO memo or credit-banking row with accepted reviewer feedback.',
+  },
+  {
+    id: 'billing-or-security',
+    label: 'Accepted billing or security evidence',
+    evidence: 'Buyer-supplied shadow-billing or utility-security row with accepted reviewer feedback.',
+  },
+  {
+    id: 'three-proof-packs',
+    label: 'Three proceeding proof packs',
+    evidence: 'At least three distinct proof_pack_id values with buyer evidence and day_14_decision=proceed.',
+  },
+  {
+    id: 'coverage-and-delta',
+    label: 'Coverage and confidence movement',
+    evidence: 'Total accepted confidence_delta is at least 0.9 and every confidence-moving row has at least 70% buyer-data coverage.',
+  },
+];
+
 export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
   {
     id: 'time-to-artifact',
@@ -274,6 +310,7 @@ export function getPilotEvidenceCoverageSummary() {
     requirementCount: pilotEvidenceRequirements.length,
     laneCount: uniqueLanes.size,
     confidenceRuleCount: pilotConfidenceRules.length,
+    ninetyFiveGateCount: pilotNinetyFiveGates.length,
     outcomeMetricCount: pilotOutcomeMetrics.length,
     stopConditionCount: pilotStopConditions.length,
   };

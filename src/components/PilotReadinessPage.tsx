@@ -6,6 +6,8 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotNinetyFiveGateCommand,
+  pilotNinetyFiveGates,
   pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
@@ -75,6 +77,7 @@ export function PilotReadinessPage() {
                 <Metric value={`${summary.requirementCount}`} label="Evidence items" />
                 <Metric value={`${summary.laneCount}`} label="Buyer lanes" />
                 <Metric value={`${summary.confidenceRuleCount}`} label="Confidence rules" />
+                <Metric value={`${summary.ninetyFiveGateCount}`} label="95% gates" />
                 <Metric value={`${summary.outcomeMetricCount}`} label="Outcome metrics" />
                 <Metric value={`${summary.stopConditionCount}`} label="Stop conditions" />
               </div>
@@ -188,6 +191,35 @@ export function PilotReadinessPage() {
                   </dl>
                 </article>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/10 bg-slate-950">
+          <div className="mx-auto max-w-7xl px-6 py-16">
+            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+              <div>
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">95% strategy gate</div>
+                <h2 className="mt-4 text-3xl font-semibold text-white">
+                  CEIP cannot claim 95% until the filled buyer-evidence register passes this gate.
+                </h2>
+                <p className="mt-4 text-base leading-7 text-slate-300">
+                  This command is the hard stop before moving from strategic readiness to stronger market-confidence language.
+                  Public samples, constructed cases, and single-route pilot wins are not enough.
+                </p>
+                <div className="mt-6 overflow-x-auto rounded-2xl border border-cyan-200/15 bg-black/30 p-4">
+                  <code className="whitespace-nowrap text-sm text-cyan-100">{pilotNinetyFiveGateCommand}</code>
+                </div>
+              </div>
+
+              <div className="grid gap-3">
+                {pilotNinetyFiveGates.map((gate) => (
+                  <div key={gate.id} className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5">
+                    <div className="text-sm font-semibold text-white">{gate.label}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-300">{gate.evidence}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </section>
