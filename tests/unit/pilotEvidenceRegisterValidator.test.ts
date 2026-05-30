@@ -130,6 +130,19 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status');
   });
 
+  it('rejects 95% confidence when the retained artifact does not support a strong commercial commitment', () => {
+    const result = runValidator(
+      'invalid-unsupported-commercial-commitment-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support each strong commercial_commitment_status');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
   it('rejects 95% confidence when accepted artifacts do not prove fast pilot turnaround', () => {
     const result = runValidator(
       'invalid-slow-95-evidence-register.csv',

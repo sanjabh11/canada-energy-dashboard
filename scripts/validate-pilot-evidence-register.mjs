@@ -334,6 +334,24 @@ const strongCommercialCommitmentStatuses = new Set([
   'purchase_order',
   'letter_of_intent',
 ]);
+const commercialCommitmentEvidenceRules = new Map([
+  ['design_partner_signed', {
+    label: 'design partner signed agreement evidence',
+    pattern: /design[-_ ]?partner.*(?:signed|agreement|letter)|(?:signed|agreement|letter).*design[-_ ]?partner/i,
+  }],
+  ['paid_pilot', {
+    label: 'paid pilot evidence',
+    pattern: /paid[-_ ]?pilot|pilot payment|paid invoice|invoice paid/i,
+  }],
+  ['purchase_order', {
+    label: 'purchase order evidence',
+    pattern: /purchase[-_ ]?order|\bpo[-_ ]?(?:number|reference|issued)?\b/i,
+  }],
+  ['letter_of_intent', {
+    label: 'letter of intent evidence',
+    pattern: /letter[-_ ]?of[-_ ]?intent|\bloi\b/i,
+  }],
+]);
 const allowedBuyerLanes = new Set([
   'utility',
   'industrial',
@@ -364,6 +382,7 @@ const allowedSourceLabels = new Set([
 
 const failures = [...argFailures];
 const evidenceRows = [];
+const localEvidenceTextByRowNumber = new Map();
 
 function parseCsv(text) {
   const rows = [];
@@ -578,6 +597,7 @@ function scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber) 
   }
 
   const text = readFileSync(evidencePath, 'utf8');
+  localEvidenceTextByRowNumber.set(rowNumber, text);
   scanPositiveOverclaimText(text, `local evidence artifact ${referencePath}`, rowNumber);
 
   const highRiskPatterns = [
@@ -629,6 +649,14 @@ function isNonProduction95Register(filePath) {
     || normalizedPath.startsWith('docs/growth/templates/')
     || normalizedPath.includes('/fixtures/')
     || /(^|[-_])(fixture|template|sample)([-_.]|$)/i.test(basename);
+}
+
+function hasRetainedCommercialCommitmentEvidence(rowNumber, row) {
+  const status = normalizeText(row.commercial_commitment_status ?? '');
+  const rule = commercialCommitmentEvidenceRules.get(status);
+  if (!rule) return true;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  return rule.pattern.test(text);
 }
 
 if (!existsSync(registerPath)) {
@@ -869,6 +897,10 @@ if (require95 && failures.length === 0) {
   const hasCommercialCommitment = acceptedBuyerRows.some(({ row }) => (
     strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
   ));
+  const unsupportedCommercialCommitmentRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
+    && !hasRetainedCommercialCommitmentEvidence(rowNumber, row)
+  ));
 
   if (!hasAcceptedUtilityForecast) {
     failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.');
@@ -912,6 +944,10 @@ if (require95 && failures.length === 0) {
 
   if (!hasCommercialCommitment) {
     failures.push('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status of design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
+  }
+
+  if (unsupportedCommercialCommitmentRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support each strong commercial_commitment_status; unsupported rows: ${unsupportedCommercialCommitmentRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 }
 
