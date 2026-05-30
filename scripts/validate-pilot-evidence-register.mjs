@@ -671,6 +671,23 @@ function hasRetainedCoverageEvidence(rowNumber, coverage) {
   return coveragePattern.test(text);
 }
 
+function hasRetainedTimeToArtifactEvidence(rowNumber, timeToArtifact) {
+  if (timeToArtifact === null || !Number.isFinite(timeToArtifact)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const timeText = escapeRegExp(String(timeToArtifact).replace(/\.0+$/, ''));
+  const timePattern = new RegExp(`(?:time[-_ ]?to[-_ ]?artifact(?:[-_ ]?hours)?|artifact[-_ ]?turnaround|turnaround[-_ ]?hours)[\\s\\S]{0,40}\\b${timeText}(?:\\.0+)?\\s*(?:h|hr|hrs|hour|hours)?\\b`, 'i');
+  return timePattern.test(text);
+}
+
+function hasRetainedReviewerAcceptanceEvidence(rowNumber, row) {
+  const acceptance = normalizeText(row.reviewer_acceptance ?? '');
+  if (!isAcceptedEvidence(acceptance)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const acceptanceText = escapeRegExp(acceptance);
+  const acceptancePattern = new RegExp(`(?:reviewer[-_ ]?acceptance|buyer[-_ ]?acceptance|reviewer[-_ ]?status|acceptance)[\\s\\S]{0,40}\\b${acceptanceText}\\b`, 'i');
+  return acceptancePattern.test(text);
+}
+
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${relativeRegisterPath}`);
   process.exit(1);
@@ -903,8 +920,14 @@ if (require95 && failures.length === 0) {
   const slowArtifactRows = acceptedBuyerRows.filter(({ timeToArtifact }) => (
     timeToArtifact === null || timeToArtifact > maxAcceptedArtifactHours95
   ));
+  const unsupportedTimeToArtifactRows = acceptedBuyerRows.filter(({ rowNumber, timeToArtifact }) => (
+    timeToArtifact !== null && !hasRetainedTimeToArtifactEvidence(rowNumber, timeToArtifact)
+  ));
   const staleEvidenceRows = acceptedBuyerRows.filter(({ row }) => (
     daysSinceIsoDate(row.record_date ?? '') > maxAcceptedEvidenceAgeDays95
+  ));
+  const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
   ));
   const hasFastArtifact = acceptedBuyerRows.some(({ timeToArtifact }) => (
     timeToArtifact !== null && timeToArtifact <= fastArtifactTargetHours
@@ -953,8 +976,16 @@ if (require95 && failures.length === 0) {
     failures.push(`95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= ${maxAcceptedArtifactHours95}; slow or missing rows: ${slowArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
+  if (unsupportedTimeToArtifactRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support time_to_artifact_hours for accepted confidence-moving rows; unsupported rows: ${unsupportedTimeToArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
   if (staleEvidenceRows.length > 0) {
     failures.push(`95% confidence gate requires accepted confidence-moving buyer evidence to be no older than ${maxAcceptedEvidenceAgeDays95} days; stale rows: ${staleEvidenceRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedReviewerAcceptanceRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support reviewer_acceptance for accepted confidence-moving rows; unsupported rows: ${unsupportedReviewerAcceptanceRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (!hasFastArtifact) {
