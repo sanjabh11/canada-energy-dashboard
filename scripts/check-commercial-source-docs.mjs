@@ -106,6 +106,19 @@ const currentSellabilityRatingsByDoc = [
 ];
 
 const overconfidentOutreachRatings = ['4.7/5', '4.8/5', '4.9/5'];
+const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
+const currentCommercialWedgeScores = [
+  ['utility-demand-forecast', 4.5],
+  ['forecast-benchmarking', 4.6],
+  ['regulatory-filing', 4.3],
+  ['tier-compliance', 4.0],
+  ['tier-credit-banking', 3.9],
+  ['asset-health', 4.1],
+  ['utility-security', 4.0],
+  ['shadow-billing', 3.8],
+  ['large-load-readiness', 3.2],
+  ['consultant-api-data-pack', 3.1],
+];
 
 if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
@@ -172,6 +185,24 @@ if (!existsSync(sourceDocPath)) {
           failures.push(`${expectation.docPath} contains pre-pilot target rating ${rating}; keep active outreach ratings conservative until the 95% gate passes.`);
         }
       }
+    }
+  }
+
+  if (!existsSync(commercialPositioningPath)) {
+    failures.push('src/lib/commercialPositioning.ts is missing.');
+  } else {
+    const commercialPositioningSource = readFileSync(commercialPositioningPath, 'utf8');
+
+    for (const [id, expectedScore] of currentCommercialWedgeScores) {
+      const wedgePattern = new RegExp(`id:\\s*'${id}'[\\s\\S]*?score:\\s*${expectedScore}(?:\\.0)?\\b`);
+      if (!wedgePattern.test(commercialPositioningSource)) {
+        failures.push(`src/lib/commercialPositioning.ts has stale score for ${id}; expected ${expectedScore}/5.`);
+      }
+    }
+
+    const highScorePattern = /score:\s*(?:4\.[7-9]|5)(?:\.0)?\b/;
+    if (highScorePattern.test(commercialPositioningSource)) {
+      failures.push('src/lib/commercialPositioning.ts contains a pre-pilot score above 4.6/5; keep public website ratings aligned to the active confidence audit.');
     }
   }
 }

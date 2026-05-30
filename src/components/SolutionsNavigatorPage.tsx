@@ -139,7 +139,7 @@ export function SolutionsNavigatorPage() {
                     <div>
                       <div className="flex flex-wrap items-center gap-3">
                         <div className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-3 py-1 text-xs uppercase tracking-[0.22em] text-cyan-100">
-                          Rank {wedge.rank} • Demand {wedge.score.toFixed(1)}/5
+                          Rank {wedge.rank} • Sellability {wedge.score.toFixed(1)}/5
                         </div>
                         <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.22em] text-slate-300">
                           {wedge.buyerSegment}

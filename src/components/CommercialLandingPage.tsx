@@ -131,7 +131,7 @@ export function CommercialLandingPage() {
                     <div className="flex items-start justify-between gap-4">
                       <div>
                         <div className="text-xs uppercase tracking-[0.24em] text-cyan-200/70">
-                          Rank {wedge.rank} • Demand {wedge.score.toFixed(1)}/5
+                          Rank {wedge.rank} • Sellability {wedge.score.toFixed(1)}/5
                         </div>
                         <h2 className="mt-2 text-xl font-semibold text-white">{wedge.title}</h2>
                         <p className="mt-2 text-sm leading-6 text-slate-300">{wedge.pain}</p>

@@ -8,6 +8,10 @@ export interface CommercialWedge {
   id: string;
   rank: number;
   title: string;
+  /**
+   * Current sellability-confidence rating from the active strategy audit.
+   * Keep this conservative until buyer evidence passes the 95% pilot gate.
+   */
   score: number;
   href: string;
   proofHref: string;
@@ -48,7 +52,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'utility-demand-forecast',
     rank: 1,
     title: 'Utility Demand Forecasting Lane',
-    score: 5,
+    score: 4.5,
     href: '/utility-demand-forecast',
     proofHref: '/forecast-benchmarking',
     proofLabel: 'Benchmark and provenance appendix for every planning pack',
@@ -65,7 +69,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'regulatory-filing',
     rank: 3,
     title: 'OEB/AUC Regulatory Filing Packs',
-    score: 5,
+    score: 4.3,
     href: '/regulatory-filing',
     proofHref: '/utility-demand-forecast',
     proofLabel: 'Forecast rows, asset rows, reliability notes, and assumptions feeding filing review',
@@ -82,7 +86,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'forecast-benchmarking',
     rank: 2,
     title: 'Forecast Benchmarking and Provenance Layer',
-    score: 5,
+    score: 4.6,
     href: '/forecast-benchmarking',
     proofHref: '/utility-demand-forecast',
     proofLabel: 'MAE, MAPE, RMSE, persistence, seasonal-naive, source, and fallback labels',
@@ -99,7 +103,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'asset-health',
     rank: 6,
     title: 'Asset Health Executive Capex Pack',
-    score: 4,
+    score: 4.1,
     href: '/asset-health',
     proofHref: '/regulatory-filing',
     proofLabel: 'Asset evidence can feed filing and capex justification workflows',
@@ -133,7 +137,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'tier-credit-banking',
     rank: 5,
     title: 'TIER Credit Banking Audit Pack',
-    score: 4,
+    score: 3.9,
     href: '/credit-banking',
     proofHref: '/roi-calculator',
     proofLabel: 'Ledger allocation, expiry-risk register, pricing provenance, and no-broker guardrails',
@@ -167,7 +171,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'shadow-billing',
     rank: 8,
     title: 'Shadow Billing Invoice Proof Pack',
-    score: 4,
+    score: 3.8,
     href: '/shadow-billing',
     proofHref: '/roi-calculator',
     proofLabel: 'Savings memo, field map, rider exclusions, and audit trail for bill comparison',
@@ -184,7 +188,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'consultant-api-data-pack',
     rank: 10,
     title: 'Consultant/API Canadian Energy Data Pack',
-    score: 3,
+    score: 3.1,
     href: '/api-docs',
     proofHref: '/dashboard',
     proofLabel: 'Freshness matrix, endpoints, and CSV/notebook-ready data surfaces',
@@ -201,7 +205,7 @@ const activeCommercialWedges: CommercialWedge[] = [
     id: 'large-load-readiness',
     rank: 9,
     title: 'Large-Load/Data-Centre Readiness Overlay',
-    score: 3,
+    score: 3.2,
     href: '/ai-datacentres',
     proofHref: '/utility-demand-forecast',
     proofLabel: 'Planning overlay tied to forecast scenario assumptions and grid constraints',

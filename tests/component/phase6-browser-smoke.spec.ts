@@ -7,6 +7,7 @@ type RouteCheck = {
 
 const ROUTE_CHECKS: RouteCheck[] = [
   { path: '/', marker: 'Prediction inside budget-owned energy workflows' },
+  { path: '/solutions', marker: 'Top 10 proof packs' },
   { path: '/utility-demand-forecast', marker: 'Utility Demand Forecasting Lane' },
   { path: '/pilot-readiness', marker: 'Evidence gates before stronger market claims' },
   { path: '/forecast-benchmarking', marker: 'Forecast Benchmarking' },
@@ -64,6 +65,11 @@ async function expectStableRoute(page: Page, routeCheck: RouteCheck) {
 
     await page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => undefined);
     await expect(page.getByText(routeCheck.marker, { exact: true }).first()).toBeVisible({ timeout: 15000 });
+
+    if (routeCheck.path === '/' || routeCheck.path === '/solutions') {
+      await expect(page.getByText(/Sellability \d\.\d\/5/).first()).toBeVisible();
+      await expect(page.getByText(/Demand \d\.\d\/5/)).toHaveCount(0);
+    }
 
     const routeErrorHeading = page.getByRole('heading', { name: ROUTE_ERROR_PATTERN });
     await expect(routeErrorHeading).toHaveCount(0);
