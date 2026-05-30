@@ -1,3 +1,5 @@
+> **Historical / reconcile-first note (May 30, 2026):** This document is not current commercial source of truth. Before reusing any score, readiness claim, monetization claim, or production-ready language, reconcile it against [../COMMERCIAL_SOURCE_OF_TRUTH.md](../COMMERCIAL_SOURCE_OF_TRUTH.md), [../Top20.md](../Top20.md), and [../PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](../PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md). Current CEIP positioning is proof-pack-first; 95% market confidence requires buyer-supplied pilot evidence.
+
 # CEIP Comprehensive Gap Analysis & Implementation Plan
 
 **Version:** 1.1  
@@ -445,4 +447,3 @@ After thorough codebase analysis comparing `improve_ideas.md` gaps against actua
 
 **Estimated time to complete HIGH priority gaps: 3 weeks**  
 **Estimated time to Whop launch: 6 weeks**
-

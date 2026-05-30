@@ -35,8 +35,14 @@ const historicalDocsToGovern = [
   'docs/FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md',
   'docs/monetization.md',
   'docs/Final_gaps.md',
+  'docs/IMIPLEMENTATION_VERIFICATION.md',
   'docs/UI_allpages.md',
   'docs/Linkedin_artical.md',
+  'docs/delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md',
+  'docs/delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md',
+  'docs/delivery/IMPLEMENTATION_PLAN_HYBRID.md',
+  'docs/delivery/MONETIZATION_GAP_ANALYSIS.md',
+  'docs/delivery/STRATEGY_COMPARISON_FINAL.md',
 ];
 
 const failures = [];

@@ -76,8 +76,14 @@ The following docs may contain useful research, but they are **not** current com
 | [FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md](./FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md) | Production use-case analysis beyond current sales lane. |
 | [monetization.md](./monetization.md) | Older enterprise/compliance sales assumptions. |
 | [Final_gaps.md](./Final_gaps.md) | Broad future-state claims. |
+| [IMIPLEMENTATION_VERIFICATION.md](./IMIPLEMENTATION_VERIFICATION.md) | Older implementation score and production-ready claims. |
 | [UI_allpages.md](./UI_allpages.md) | UI inventory with broad real-time/AI wording. |
 | [Linkedin_artical.md](./Linkedin_artical.md) | Article draft with older automation and world-class framing. |
+| [delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md](./delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md) | Older high platform-score and target-score claims. |
+| [delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md](./delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md) | Older implementation-plan ratings and production-readiness language. |
+| [delivery/IMPLEMENTATION_PLAN_HYBRID.md](./delivery/IMPLEMENTATION_PLAN_HYBRID.md) | Older monetization strategy before proof-pack realignment. |
+| [delivery/MONETIZATION_GAP_ANALYSIS.md](./delivery/MONETIZATION_GAP_ANALYSIS.md) | Older monetization analysis before proof-pack realignment. |
+| [delivery/STRATEGY_COMPARISON_FINAL.md](./delivery/STRATEGY_COMPARISON_FINAL.md) | Older strategy comparison before proof-pack realignment. |
 
 ## Claim Translation Table
 
