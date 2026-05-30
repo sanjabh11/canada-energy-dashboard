@@ -69,6 +69,7 @@ const allowedRoutes = new Set([
   '/pilot-readiness',
   '/pilot-evidence',
 ]);
+const forecastEvidenceRoutes = new Set(['/utility-demand-forecast', '/forecast-benchmarking']);
 const allowedProofPackIdsByRoute = new Map([
   ['/utility-demand-forecast', new Set(['utility_forecast_planning_pack'])],
   ['/forecast-benchmarking', new Set(['forecast_benchmark_provenance'])],
@@ -319,6 +320,12 @@ if (rows.length < 2) {
     if ((row.route === '/forecast-benchmarking' || row.route === '/utility-demand-forecast' || (confidenceDelta ?? 0) > 0)
       && isBlank(row.benchmark_lift_or_diagnostic ?? '')) {
       failures.push(`Row ${rowNumber}: benchmark_lift_or_diagnostic is required for forecast or confidence-moving evidence.`);
+    }
+
+    if (forecastEvidenceRoutes.has(row.route)
+      && (confidenceDelta ?? 0) > 0
+      && !hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')) {
+      failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.`);
     }
 
     if (row.route === '/api-docs'

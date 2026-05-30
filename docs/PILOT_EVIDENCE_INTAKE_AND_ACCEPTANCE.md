@@ -25,6 +25,7 @@
 |---|---|---|---|
 | Public-source utility forecast import and manifest | `parseIesoPublicDemandCsv(csvText)` then `buildUtilityForecastPackage(rows, { sourceKind: 'public_system_sample' })` | IESO/APO-style files could not be converted into a source-labeled utility planning pack with a stable manifest. | Public-system workflow proof only; not customer LDC history. |
 | Forecast evidence appendix | `exportUtilityForecastCsv(forecastPackage)` | Exports did not carry rolling-origin splits, conformal interval coverage, hierarchy reconciliation, and benchmark evidence together. | Forecast confidence still needs buyer backtests before stronger market claims. |
+| Forecast confidence movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A utility forecast or forecast-benchmarking row could move confidence with vague benchmark text. | Confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics. |
 | Proof-pack metadata gate | `pnpm exec vitest run tests/unit/proofPackGates.test.ts` | A forecast, filing, TIER, asset, billing, or security export could omit source manifest, verification status, or do-not-claim metadata without a focused test failing. | Metadata proves claim boundaries, not buyer acceptance. |
 | Pilot readiness route | Open `/pilot-readiness` or `/pilot-evidence` | There was no buyer-facing evidence gate showing exactly what inputs are needed before stronger claims. | The route is a checklist until buyer evidence is attached. |
 | Pilot outcome scorecard | On `/pilot-readiness`, record `time-to-artifact`, `buyer-data-coverage`, `benchmark-lift-or-diagnostic`, and `reviewer-acceptance` | The 14-day pilot could end with an artifact but no measurable confidence movement. | Scores move only with buyer files, reviewer notes, or paid pilot evidence. |
@@ -195,7 +196,7 @@ Validate a filled register before changing any feature rating:
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 ```
 
-The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; and requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`.
+The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`; and requires MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics before utility forecast or forecast-benchmarking evidence can move confidence.
 
 Validate the stronger 95% strategy-confidence gate only after a real pilot register has buyer evidence across the required lanes:
 

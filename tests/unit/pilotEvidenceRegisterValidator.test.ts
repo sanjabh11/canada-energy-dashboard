@@ -91,4 +91,12 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('proof_pack_id arbitrary-proof-pack is not valid for route /utility-demand-forecast');
     expect(output).toContain('utility_forecast_planning_pack');
   });
+
+  it('rejects confidence-moving forecast rows without full benchmark diagnostics', () => {
+    const result = runValidator('invalid-weak-forecast-diagnostic-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics');
+  });
 });
