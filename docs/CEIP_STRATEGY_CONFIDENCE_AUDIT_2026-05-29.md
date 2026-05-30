@@ -4,6 +4,7 @@
 > Scope: Canada Energy Intelligence Platform utility, regulatory, and Alberta TIER proof-pack strategy
 > Verdict: 90-92% confidence in strategy fit; not 95% confidence in market outcome until buyer-supplied proof exists.
 > Evidence intake: use [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) before increasing confidence beyond this audit.
+> 95% gate: a filled buyer-evidence register must pass `pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95`.
 
 ## Bottom Line
 

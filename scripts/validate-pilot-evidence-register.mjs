@@ -6,6 +6,7 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
 const allowTemplate = args.includes('--allow-template');
+const require95 = args.includes('--require-95');
 const fileArg = args.find((arg) => !arg.startsWith('--'));
 const registerPath = fileArg
   ? path.resolve(repoRoot, fileArg)
@@ -70,6 +71,15 @@ const allowedRoutes = new Set([
 ]);
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
+const allowedBuyerLanes = new Set([
+  'utility',
+  'industrial',
+  'municipal/public sector',
+  'municipal',
+  'security',
+  'large load',
+  'consultant/api',
+]);
 const buyerEvidenceLabels = new Set(['buyer_supplied_anonymized', 'buyer_supplied_confidential']);
 const nonBuyerEvidenceLabels = new Set([
   'public_system_sample',
@@ -84,6 +94,7 @@ const allowedSourceLabels = new Set([
 ]);
 
 const failures = [];
+const evidenceRows = [];
 
 function parseCsv(text) {
   const rows = [];
@@ -154,6 +165,27 @@ function parseNumber(value, label, rowNumber, required = true) {
   return numeric;
 }
 
+function normalizeText(value) {
+  return value.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function isAcceptedEvidence(value) {
+  return /accepted|approved|signed/i.test(value ?? '');
+}
+
+function isCompleteFeedback(value) {
+  return /complete|accepted|approved|signed/i.test(value ?? '');
+}
+
+function hasForecastBenchmarkDiagnostic(value) {
+  const text = value ?? '';
+  return /mae/i.test(text)
+    && /mape/i.test(text)
+    && /rmse/i.test(text)
+    && /persistence/i.test(text)
+    && /seasonal[- ]?naive/i.test(text);
+}
+
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${path.relative(repoRoot, registerPath)}`);
   process.exit(1);
@@ -193,6 +225,10 @@ if (rows.length < 2) {
 
     if (!allowedRoutes.has(row.route)) {
       failures.push(`Row ${rowNumber}: route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+    }
+
+    if (!allowedBuyerLanes.has(normalizeText(row.buyer_lane ?? ''))) {
+      failures.push(`Row ${rowNumber}: buyer_lane must be one of ${Array.from(allowedBuyerLanes).join(', ')}.`);
     }
 
     if (!allowedSourceLabels.has(row.source_label)) {
@@ -243,6 +279,14 @@ if (rows.length < 2) {
       if (confidenceDelta > 0.2 && !/accepted|approved|signed/i.test(row.reviewer_acceptance ?? '')) {
         failures.push(`Row ${rowNumber}: confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance.`);
       }
+
+      if (confidenceDelta > 0 && !isCompleteFeedback(row.reviewer_feedback_status ?? '')) {
+        failures.push(`Row ${rowNumber}: confidence_delta above 0 requires complete/accepted/approved/signed reviewer_feedback_status.`);
+      }
+
+      if (confidenceDelta > 0 && coverage === null) {
+        failures.push(`Row ${rowNumber}: buyer_data_coverage_pct is required for confidence-moving evidence.`);
+      }
     }
 
     if (nonBuyerEvidenceLabels.has(row.source_label) && confidenceDelta !== null && confidenceDelta > 0) {
@@ -257,7 +301,67 @@ if (rows.length < 2) {
       && isBlank(row.benchmark_lift_or_diagnostic ?? '')) {
       failures.push(`Row ${rowNumber}: benchmark_lift_or_diagnostic is required for forecast or confidence-moving evidence.`);
     }
+
+    if (row.route === '/api-docs'
+      && (confidenceDelta ?? 0) > 0
+      && !/endpoint|freshness|openapi/i.test(row.benchmark_lift_or_diagnostic ?? '')) {
+      failures.push(`Row ${rowNumber}: /api-docs confidence-moving evidence must mention endpoint, freshness, or OpenAPI diagnostic evidence.`);
+    }
+
+    evidenceRows.push({
+      rowNumber,
+      row,
+      confidenceDelta: confidenceDelta ?? 0,
+      coverage,
+    });
   });
+}
+
+if (require95 && failures.length === 0) {
+  const acceptedBuyerRows = evidenceRows.filter(({ row, confidenceDelta }) => (
+    confidenceDelta > 0
+    && buyerEvidenceLabels.has(row.source_label)
+    && isAcceptedEvidence(row.reviewer_acceptance ?? '')
+    && isCompleteFeedback(row.reviewer_feedback_status ?? '')
+    && normalizeText(row.day_14_decision ?? '') === 'proceed'
+  ));
+  const acceptedProofPackIds = new Set(acceptedBuyerRows.map(({ row }) => row.proof_pack_id));
+  const totalConfidenceDelta = acceptedBuyerRows.reduce((sum, item) => sum + item.confidenceDelta, 0);
+  const hasAcceptedUtilityForecast = acceptedBuyerRows.some(({ row }) => (
+    row.route === '/utility-demand-forecast'
+    && hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')
+  ));
+  const hasAcceptedTierEvidence = acceptedBuyerRows.some(({ row }) => (
+    row.route === '/roi-calculator' || row.route === '/credit-banking'
+  ));
+  const hasAcceptedBillingOrSecurityEvidence = acceptedBuyerRows.some(({ row }) => (
+    row.route === '/shadow-billing' || row.route === '/utility-security'
+  ));
+  const lowCoverageRows = acceptedBuyerRows.filter(({ coverage }) => coverage === null || coverage < 70);
+
+  if (!hasAcceptedUtilityForecast) {
+    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.');
+  }
+
+  if (!hasAcceptedTierEvidence) {
+    failures.push('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence.');
+  }
+
+  if (!hasAcceptedBillingOrSecurityEvidence) {
+    failures.push('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence.');
+  }
+
+  if (acceptedProofPackIds.size < 3) {
+    failures.push('95% confidence gate requires at least three distinct accepted buyer-supplied proof_pack_id values with day_14_decision=proceed.');
+  }
+
+  if (totalConfidenceDelta < 0.899999) {
+    failures.push('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9 across the strategy evidence rows.');
+  }
+
+  if (lowCoverageRows.length > 0) {
+    failures.push(`95% confidence gate requires buyer_data_coverage_pct >= 70 for accepted confidence-moving rows; low rows: ${lowCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
 }
 
 if (failures.length > 0) {

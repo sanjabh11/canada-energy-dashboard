@@ -181,6 +181,14 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 
 The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; and requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`.
 
+Validate the stronger 95% strategy-confidence gate only after a real pilot register has buyer evidence across the required lanes:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+```
+
+The `--require-95` gate refuses a 95% claim unless the register includes accepted buyer-supplied utility forecast evidence with MAE/MAPE/RMSE, persistence, and seasonal-naive diagnostics; accepted TIER or credit-banking evidence; accepted shadow-billing or utility-security evidence; at least three distinct proof-pack rows with `day_14_decision=proceed`; total accepted `confidence_delta >= 0.9`; and at least 70% buyer-data coverage on confidence-moving rows.
+
 ## Stop Conditions
 
 Stop or park the pilot if:

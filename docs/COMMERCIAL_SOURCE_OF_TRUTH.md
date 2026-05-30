@@ -92,6 +92,12 @@ pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 ```
 
+Before any copy says CEIP has reached 95% strategy confidence, validate the filled buyer-evidence register with:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+```
+
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.
 
 ## Completion Boundary

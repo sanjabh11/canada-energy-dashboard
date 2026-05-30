@@ -73,7 +73,11 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 | Security evidence | SBOM, security headers, hosting/contact/subprocessor notes, retention boundary, and dependency audit. | Reduces procurement friction without implying certification. |
 | Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
 
-Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist.
+Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist. Do not claim 95% strategy confidence unless a filled register passes:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95
+```
 
 ## Critical next implementation checkpoints
 
