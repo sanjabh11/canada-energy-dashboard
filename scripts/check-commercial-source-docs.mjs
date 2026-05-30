@@ -14,6 +14,7 @@ const requiredActiveDocs = [
   'docs/HERMES_OUTREACH_OPERATING_PLAN.md',
   'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md',
   'docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md',
+  'docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv',
 ];
 
 const historicalDocsToGovern = [
