@@ -196,6 +196,17 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('buyer-supplied confidence-moving evidence must have pii_screen_result');
   });
 
+  it('rejects positive overclaims inside pilot evidence rows', () => {
+    const result = runValidator('invalid-positive-overclaim-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('notes contains a positive cross-repo avalanche prediction claim');
+    expect(output).toContain('notes contains a positive world-class or best-of-class claim');
+    expect(output).toContain('notes contains a positive certification or sovereignty claim');
+    expect(output).toContain('notes contains a positive TIER price, trading, or savings claim');
+  });
+
   it('rejects ambiguous source labels even when they do not move confidence', () => {
     const result = runValidator('invalid-unknown-source-label-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;

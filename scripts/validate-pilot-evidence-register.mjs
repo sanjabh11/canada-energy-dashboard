@@ -235,6 +235,48 @@ const confidenceBoundaryPatterns = [
   /source[- ]?labeled/i,
   /buyer workflow/i,
 ];
+const positiveOverclaimRules = [
+  {
+    label: 'cross-repo avalanche prediction claim',
+    pattern: /\b(accurate avalanche prediction|accurate avalanche predictions|avalanche prediction product|avalanche forecasting)\b/i,
+  },
+  {
+    label: 'world-class or best-of-class claim',
+    pattern: /\b(world[- ]class|best[- ]of[- ]class|best[- ]in[- ]class)\b/i,
+  },
+  {
+    label: 'production utility or telemetry claim',
+    pattern: /\b(production utility onboarding|production utility bridge|production utility telemetry|native [`'"]?15-minute[`'"]? telemetry|customer LDC history)\b/i,
+  },
+  {
+    label: 'certification or sovereignty claim',
+    pattern: /\b(SOC[- ]?2(?: Type II)? (?:certified|compliant)|NERC CIP compliance|Green Button Alliance certification|hardened Indigenous sovereignty|OCAP(?:®)?[- ]compliant|OCAP(?:®)?[- ]ready)\b/i,
+  },
+  {
+    label: 'TIER price, trading, or savings claim',
+    pattern: /\b(live TIER market pricing|real-time credit price|live market price|live market pricing|broker quote|trade execution|guaranteed savings)\b/i,
+  },
+  {
+    label: 'AI/GPU superiority claim',
+    pattern: /\b(AI beats|GPU forecasting|Enterprise AI\/GPU superiority|AI\/GPU superiority)\b/i,
+  },
+  {
+    label: 'engineering or regulator approval claim',
+    pattern: /\b(engineering approval|regulator submission automation|filing counsel approval|legal compliance opinion)\b/i,
+  },
+];
+const positiveOverclaimFields = [
+  'buyer_segment',
+  'input_data_type',
+  'artifact_generated',
+  'benchmark_lift_or_diagnostic',
+  'reviewer_role',
+  'reviewer_feedback_status',
+  'reviewer_acceptance',
+  'day_14_decision',
+  'follow_up_action',
+  'notes',
+];
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
@@ -405,6 +447,19 @@ function hasImmutableEvidenceReference(value) {
   return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
 }
 
+function scanPositiveOverclaims(row, rowNumber) {
+  for (const field of positiveOverclaimFields) {
+    const value = row[field] ?? '';
+    if (isBlank(value)) continue;
+
+    for (const rule of positiveOverclaimRules) {
+      if (rule.pattern.test(value)) {
+        failures.push(`Row ${rowNumber}: ${field} contains a positive ${rule.label}; remove it or place it only in do_not_claim/boundary language.`);
+      }
+    }
+  }
+}
+
 function isValidIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
   const date = new Date(`${value}T00:00:00Z`);
@@ -543,6 +598,8 @@ if (rows.length < 2) {
 
     if (isTemplateRow && allowTemplate) return;
     if (isTemplateRow) failures.push(`Row ${rowNumber}: template placeholder row must be replaced before validation.`);
+
+    scanPositiveOverclaims(row, rowNumber);
 
     if (!isValidIsoDate(row.record_date ?? '')) {
       failures.push(`Row ${rowNumber}: record_date must use a valid YYYY-MM-DD calendar date.`);
