@@ -162,6 +162,22 @@ Acceptance:
 
 Use the machine-readable register template at [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv). The template is intentionally buyer-evidence oriented and excludes direct identifiers such as account numbers, meter identifiers, customer names, addresses, secrets, tokens, and passwords.
 
+Use only these canonical `proof_pack_id` values. The validator rejects confidence-moving rows where the `proof_pack_id` does not match the route.
+
+| `proof_pack_id` | Route |
+|---|---|
+| `utility_forecast_planning_pack` | `/utility-demand-forecast` |
+| `forecast_benchmark_provenance` | `/forecast-benchmarking` |
+| `regulatory_filing_pack` | `/regulatory-filing` |
+| `tier_cfo_savings_pack` | `/roi-calculator` |
+| `tier_credit_banking_audit_pack` | `/credit-banking` |
+| `asset_health_capex_pack` | `/asset-health` |
+| `utility_security_procurement_pack` | `/utility-security` |
+| `shadow_billing_invoice_pack` | `/shadow-billing` |
+| `large_load_readiness_overlay` | `/ai-datacentres` |
+| `consultant_api_data_pack` | `/api-docs` |
+| `pilot_readiness_gate` | `/pilot-readiness`, `/pilot-evidence` |
+
 | Date | Buyer lane | Route | Evidence file | Artifact generated | Reviewer feedback | Claim boundary | Decision |
 |---|---|---|---|---|---|---|---|
 | YYYY-MM-DD | Utility / Industrial / Municipal | `/utility-demand-forecast` | anonymized_load.csv | planning memo + benchmark appendix | pending | public/buyer supplied label attached | proceed / park / reject |

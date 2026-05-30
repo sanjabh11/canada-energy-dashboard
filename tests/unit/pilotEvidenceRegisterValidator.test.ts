@@ -82,4 +82,13 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(1);
     expect(output).toContain('source_label must be one of');
   });
+
+  it('rejects arbitrary proof pack IDs even when the route is valid', () => {
+    const result = runValidator('invalid-proof-pack-id-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('proof_pack_id arbitrary-proof-pack is not valid for route /utility-demand-forecast');
+    expect(output).toContain('utility_forecast_planning_pack');
+  });
 });

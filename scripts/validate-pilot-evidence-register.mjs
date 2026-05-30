@@ -69,6 +69,20 @@ const allowedRoutes = new Set([
   '/pilot-readiness',
   '/pilot-evidence',
 ]);
+const allowedProofPackIdsByRoute = new Map([
+  ['/utility-demand-forecast', new Set(['utility_forecast_planning_pack'])],
+  ['/forecast-benchmarking', new Set(['forecast_benchmark_provenance'])],
+  ['/regulatory-filing', new Set(['regulatory_filing_pack'])],
+  ['/roi-calculator', new Set(['tier_cfo_savings_pack'])],
+  ['/credit-banking', new Set(['tier_credit_banking_audit_pack'])],
+  ['/shadow-billing', new Set(['shadow_billing_invoice_pack'])],
+  ['/asset-health', new Set(['asset_health_capex_pack'])],
+  ['/utility-security', new Set(['utility_security_procurement_pack'])],
+  ['/ai-datacentres', new Set(['large_load_readiness_overlay'])],
+  ['/api-docs', new Set(['consultant_api_data_pack'])],
+  ['/pilot-readiness', new Set(['pilot_readiness_gate'])],
+  ['/pilot-evidence', new Set(['pilot_readiness_gate'])],
+]);
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const allowedBuyerLanes = new Set([
@@ -225,6 +239,11 @@ if (rows.length < 2) {
 
     if (!allowedRoutes.has(row.route)) {
       failures.push(`Row ${rowNumber}: route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+    }
+
+    const allowedProofPackIds = allowedProofPackIdsByRoute.get(row.route);
+    if (allowedProofPackIds && !allowedProofPackIds.has(row.proof_pack_id)) {
+      failures.push(`Row ${rowNumber}: proof_pack_id ${row.proof_pack_id} is not valid for route ${row.route}; expected one of ${Array.from(allowedProofPackIds).join(', ')}.`);
     }
 
     if (!allowedBuyerLanes.has(normalizeText(row.buyer_lane ?? ''))) {
