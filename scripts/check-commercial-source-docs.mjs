@@ -39,6 +39,7 @@ const historicalDocsToGovern = [
 ];
 
 const failures = [];
+const staleBannerPhrase = 'Historical / reconcile-first note';
 
 if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
@@ -55,8 +56,15 @@ if (!existsSync(sourceDocPath)) {
   }
 
   for (const docPath of historicalDocsToGovern) {
-    if (existsSync(path.join(repoRoot, docPath)) && !sourceDoc.includes(docPath.replace(/^docs\//, ''))) {
+    const historicalPath = path.join(repoRoot, docPath);
+    if (existsSync(historicalPath) && !sourceDoc.includes(docPath.replace(/^docs\//, ''))) {
       failures.push(`Historical doc exists but is not governed as stale/reconcile-first: ${docPath}`);
+    }
+    if (existsSync(historicalPath)) {
+      const historicalDoc = readFileSync(historicalPath, 'utf8');
+      if (!historicalDoc.slice(0, 1200).includes(staleBannerPhrase)) {
+        failures.push(`Historical doc is missing stale/reconcile-first banner: ${docPath}`);
+      }
     }
   }
 
