@@ -89,6 +89,7 @@ Before sending outreach or publishing copy:
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
 pnpm run check:pilot-evidence-template
+pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 ```
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.

@@ -150,6 +150,14 @@ Required scorecard columns in the CSV:
 - `benchmark_lift_or_diagnostic`
 - `reviewer_acceptance`
 
+Validate a filled register before changing any feature rating:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
+```
+
+The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; and requires accepted/approved/signed reviewer acceptance for `confidence_delta` above `0.2`.
+
 ## Stop Conditions
 
 Stop or park the pilot if:

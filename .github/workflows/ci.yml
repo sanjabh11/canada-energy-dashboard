@@ -59,6 +59,9 @@ jobs:
       - name: Pilot evidence register guardrails
         run: pnpm run check:pilot-evidence-template
 
+      - name: Pilot evidence register sample validation
+        run: pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
+
       - name: Unit tests
         run: pnpm exec vitest run
 
