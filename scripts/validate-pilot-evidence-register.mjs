@@ -39,11 +39,16 @@ const requiredColumns = [
 
 const forbiddenColumns = new Set([
   'customer_name',
+  'customer_email',
+  'email',
+  'phone',
+  'phone_number',
   'account_number',
   'meter_identifier',
   'meter_id',
   'service_address',
   'address',
+  'postal_code',
   'secret',
   'token',
   'password',
@@ -71,6 +76,10 @@ const nonBuyerEvidenceLabels = new Set([
   'constructed_commercial_scenario',
   'public_sample',
   'owner_supplied_workflow',
+]);
+const allowedSourceLabels = new Set([
+  ...buyerEvidenceLabels,
+  ...nonBuyerEvidenceLabels,
 ]);
 
 const failures = [];
@@ -123,6 +132,14 @@ function isBlank(value) {
   return value.trim().length === 0;
 }
 
+function normalizeColumnName(value) {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
 function parseNumber(value, label, rowNumber, required = true) {
   if (isBlank(value)) {
     if (required) failures.push(`Row ${rowNumber}: ${label} is required.`);
@@ -155,7 +172,8 @@ if (rows.length < 2) {
   }
 
   for (const column of headers) {
-    if (forbiddenColumns.has(column)) {
+    const normalizedColumn = normalizeColumnName(column);
+    if (forbiddenColumns.has(normalizedColumn)) {
       failures.push(`Forbidden direct-identifier column present: ${column}`);
     }
   }
@@ -174,6 +192,10 @@ if (rows.length < 2) {
 
     if (!allowedRoutes.has(row.route)) {
       failures.push(`Row ${rowNumber}: route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+    }
+
+    if (!allowedSourceLabels.has(row.source_label)) {
+      failures.push(`Row ${rowNumber}: source_label must be one of ${Array.from(allowedSourceLabels).join(', ')}.`);
     }
 
     for (const column of [

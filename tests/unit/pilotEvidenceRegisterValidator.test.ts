@@ -39,4 +39,21 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(1);
     expect(output).toContain('confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance');
   });
+
+  it('rejects direct identifier columns even when the header uses display casing', () => {
+    const result = runValidator('invalid-direct-identifier-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('Forbidden direct-identifier column present: Customer Name');
+    expect(output).toContain('Forbidden direct-identifier column present: Phone Number');
+  });
+
+  it('rejects ambiguous source labels even when they do not move confidence', () => {
+    const result = runValidator('invalid-unknown-source-label-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('source_label must be one of');
+  });
 });
