@@ -171,6 +171,15 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('reviewer_role is required for confidence-moving evidence');
   });
 
+  it('rejects confidence movement when the reviewer role is internal or self-reviewed', () => {
+    const result = runValidator('invalid-internal-reviewer-role-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('reviewer_role must identify an independent buyer or reviewer function');
+    expect(output).toContain('cannot repeat evidence_owner');
+  });
+
   it('rejects direct identifier columns even when the header uses display casing', () => {
     const result = runValidator('invalid-direct-identifier-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
@@ -296,5 +305,17 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('local evidence artifact local-pii-load.csv appears to contain a');
+  });
+
+  it('rejects opaque retained artifacts that cannot be scanned as redacted text evidence', () => {
+    const result = runValidator('invalid-opaque-artifact-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('local evidence artifact opaque-retained-invoice.pdf has unsupported retained-artifact extension ".pdf"');
+    expect(output).toContain('hash a redacted .txt or .md evidence extract under --evidence-root');
   });
 });

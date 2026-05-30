@@ -277,6 +277,26 @@ const positiveOverclaimFields = [
   'follow_up_action',
   'notes',
 ];
+const inspectableEvidenceExtensions = new Set([
+  '.csv',
+  '.tsv',
+  '.json',
+  '.jsonl',
+  '.md',
+  '.txt',
+  '.html',
+  '.htm',
+  '.yaml',
+  '.yml',
+]);
+const internalReviewerRolePatterns = [
+  /\bceip\b/i,
+  /\binternal\b/i,
+  /\bself(?:[- ]review)?\b/i,
+  /\bfounder\b/i,
+  /\bdemo\b/i,
+  /\bpilot owner\b/i,
+];
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
@@ -460,6 +480,14 @@ function scanPositiveOverclaims(row, rowNumber) {
   }
 }
 
+function hasIndependentReviewerRole(row) {
+  const reviewerRole = normalizeText(row.reviewer_role ?? '');
+  const evidenceOwner = normalizeText(row.evidence_owner ?? '');
+  if (!reviewerRole) return true;
+  if (evidenceOwner && reviewerRole === evidenceOwner) return false;
+  return !internalReviewerRolePatterns.some((pattern) => pattern.test(row.reviewer_role ?? ''));
+}
+
 function isValidIsoDate(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value ?? '')) return false;
   const date = new Date(`${value}T00:00:00Z`);
@@ -519,6 +547,12 @@ function verifyLocalEvidenceHash(referenceValue, rowNumber) {
 }
 
 function scanLocalEvidenceArtifact(evidencePath, referencePath, rowNumber) {
+  const extension = path.extname(evidencePath).toLowerCase();
+  if (!inspectableEvidenceExtensions.has(extension)) {
+    failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} has unsupported retained-artifact extension "${extension || '(none)'}"; reference a redacted text, CSV, JSON, Markdown, HTML, YAML, or TSV artifact instead. For PDFs or scans, hash a redacted .txt or .md evidence extract under --evidence-root.`);
+    return;
+  }
+
   const text = readFileSync(evidencePath, 'utf8');
   const highRiskPatterns = [
     {
@@ -680,6 +714,10 @@ if (rows.length < 2) {
 
       if (confidenceDelta > 0 && isBlank(row.reviewer_role ?? '')) {
         failures.push(`Row ${rowNumber}: reviewer_role is required for confidence-moving evidence.`);
+      }
+
+      if (confidenceDelta > 0 && !hasIndependentReviewerRole(row)) {
+        failures.push(`Row ${rowNumber}: reviewer_role must identify an independent buyer or reviewer function; it cannot repeat evidence_owner or use CEIP, internal, self-review, founder, demo, or pilot-owner wording.`);
       }
 
       if (confidenceDelta > 0 && coverage === null) {
