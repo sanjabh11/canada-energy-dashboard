@@ -1,6 +1,6 @@
 # CEIP Top 20 Sellable Features for Energy and Utilities
 
-> **Last Audited:** May 29, 2026
+> **Last Audited:** May 30, 2026
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
 > **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
 > **Commercial source of truth:** [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md).

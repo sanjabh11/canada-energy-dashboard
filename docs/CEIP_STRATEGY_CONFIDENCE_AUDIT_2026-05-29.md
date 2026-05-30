@@ -1,6 +1,6 @@
 # CEIP Strategy Confidence Audit
 
-> Date: May 29, 2026
+> Date: May 30, 2026
 > Scope: Canada Energy Intelligence Platform utility, regulatory, and Alberta TIER proof-pack strategy
 > Verdict: 90-92% confidence in strategy fit; not 95% confidence in market outcome until buyer-supplied proof exists.
 > Evidence intake: use [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) before increasing confidence beyond this audit.
@@ -13,6 +13,21 @@ CEIP should continue to lead with this narrow USP:
 **Canadian utility and Alberta TIER proof packs that turn forecasts, filing evidence, benchmark transparency, compliance scenarios, credit ledgers, asset triage, security review, billing checks, and large-load assumptions into buyer-ready artifacts.**
 
 This is the right solo-developer wedge because CEIP can be specific, transparent, source-labeled, and fast to pilot. It should not compete head-on with enterprise operational AI forecasting, power-flow engines, production utility data exchanges, or certified sovereignty infrastructure.
+
+## May 30, 2026 Recheck
+
+Verdict after rechecking the current repo and current external market evidence: **not yet 95% market confidence**. The strategy remains the right target, but the confidence ceiling stays below 95% until accepted buyer evidence exists. The repo-controlled loophole found in this pass was the root `README.md` and retired `COMMIT_MESSAGE.txt`, which still carried older broad-platform, production-readiness, award-readiness, and high-score language. They have been realigned or marked reconcile-first, and `pnpm run check:commercial-source` now governs the root README and retired commit-message artifact.
+
+| Rechecked area | Current evidence | Strategy implication |
+|---|---|---|
+| Enterprise forecasting incumbents | [Amperon demand forecasts](https://www.amperon.co/products/demand-forecasts) still position around AI forecasting, weather depth, APIs, hourly/sub-hourly updates, and security posture. | CEIP should not lead with generic AI or GPU forecasting; the sellable wedge is transparent Canadian planning evidence and exports. |
+| Deep grid planning incumbents | [Itron/Snowflake grid planning](https://na.itron.com/w/itron-and-snowflake-collaborate-to-advance-grid-planning-with-ai-powered-data-cloud) positions around validated data, advanced forecasting, and 8,760-hour bus-level power-flow analysis. | CEIP should keep large-load and asset workflows as planning overlays, not engineering approval or power-flow substitutes. |
+| Distribution filing evidence | [OEB Chapter 5](https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications) and [AUC Rule 005](https://www.auc.ab.ca/rules/rule005/) remain schedule, evidence, reconciliation, and documentation heavy. | OEB/AUC filing packs are still commercially sensible as reviewer artifacts for consultants and smaller utilities. |
+| Ontario demand planning data | [IESO Annual Planning Outlook](https://www.ieso.ca/Sector-Participants/Planning-and-Forecasting/Annual-Planning-Outlook) continues to publish planning outlook data and demand methodology. | Public-source sample workflows are useful, but buyer LDC/REA history remains required before stronger forecast claims. |
+| Alberta industrial carbon policy | [Alberta TIER](https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation.aspx) remains assumption-sensitive, especially around direct investment and compliance pathways. | TIER outputs must stay source-dated CFO planning memos with no trading, tax, legal, or guaranteed-savings framing. |
+| Utility data exchange bar | [UtilityAPI UDX](https://utilityapi.com/products/utility-data-exchange) and [authorization revocation docs](https://utilityapi.com/docs/api/authorizations) show OAuth-style consent, revocation, audit, and deployment expectations. | CEIP's UtilityAPI/Green Button work must remain sandbox/support-only until real approval and audit evidence exists. |
+| Bill-audit workflow bar | [EnergyCAP bill auditing](https://www.energycap.com/product-features/utility-bill-auditing-software/) emphasizes audit rules, flagged bills, actions, notes, audit logs, and cost recovery. | Shadow billing should be sold only when field mapping, audit trail, approval notes, and savings boundaries are visible. |
+| Forecast uncertainty practice | [Nixtla conformal prediction docs](https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/ConformalPrediction) support conformal interval use for uncertainty quantification. | CEIP's CPU/statistical forecast-evidence layer is directionally sound; buyer backtests still decide whether it is market-valid. |
 
 ## Confidence Ledger
 
@@ -33,7 +48,7 @@ This is the right solo-developer wedge because CEIP can be specific, transparent
 | Forecast metrics can overstate accuracy if validation is too narrow. | MAE/MAPE/RMSE are not enough unless splits and data lineage are clear. | Utility package includes benchmark/provenance, rolling evidence, conformal intervals, and hierarchy checks. | Add champion/challenger history across at least three buyer or public-source datasets. |
 | TIER savings can become financial advice. | Compliance, credit purchases, and direct investment need legal/compliance review. | TIER and credit-banking artifacts include no-broker, no-legal-advice, freshness, and source labels. | Add pricing freshness SOP and buyer-specific validation checklist. |
 | Security copy can imply certification. | Utility procurement reviewers will reject unsupported SOC/security claims. | Security proof pack splits repo-backed design, deployed evidence, and owner-supplied boundaries. | Attach SBOM, headers, incident contact, hosting, and subprocessor evidence per pilot. |
-| Historical docs can leak old claims. | Older research docs contain aggressive OCAP, real-time, or world-class language. | Active source/docs now have CI claim-boundary guardrails. | Archive or add stale-doc banners to older strategy docs before broad reuse. |
+| Historical docs and root artifacts can leak old claims. | Older research docs, root README content, or draft commit-message files can carry aggressive OCAP, real-time, high-score, or world-class language into sales copy. | Active source/docs, root README, and governed historical artifacts now have CI/source-of-truth guardrails. | Keep adding reconcile-first banners or rewrites whenever a stale claim-bearing file is reused. |
 | "World-class" can be misunderstood as enterprise parity. | CEIP cannot match Amperon, Itron, UtilityAPI, or EnergyCAP enterprise depth. | Current strategy defines world-class as a focused proof-pack workflow, not enterprise platform parity; `/pilot-readiness` now includes a pilot outcome scorecard for time-to-artifact, buyer data coverage, benchmark lift/diagnostic value, and reviewer acceptance. | Populate the outcome scorecard with actual pilot evidence before increasing market-confidence claims. |
 
 ## Current Top 10 Readiness After Gap Closers
@@ -78,4 +93,4 @@ This is the right solo-developer wedge because CEIP can be specific, transparent
 
 ## Completion Boundary
 
-This audit does **not** prove 95% market confidence. It proves the current strategy is evidence-backed enough to keep building and selling carefully at about 90-92% strategic confidence. The remaining confidence gap is buyer proof, not more generic feature breadth.
+This audit does **not** prove 95% market confidence. It proves the current strategy is evidence-backed enough to keep building and selling carefully at about 90-92% strategic confidence. The remaining confidence gap is buyer proof, not more generic feature breadth or another broad platform pivot.

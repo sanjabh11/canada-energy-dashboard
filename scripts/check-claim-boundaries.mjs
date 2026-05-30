@@ -6,6 +6,7 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 
 const ACTIVE_PATHS = [
+  'README.md',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'docs/Top20.md',

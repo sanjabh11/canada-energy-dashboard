@@ -7,6 +7,7 @@ const repoRoot = process.cwd();
 const sourceDocPath = path.join(repoRoot, 'docs/COMMERCIAL_SOURCE_OF_TRUTH.md');
 
 const requiredActiveDocs = [
+  'README.md',
   'docs/Top20.md',
   'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
   'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',
@@ -43,12 +44,28 @@ const historicalDocsToGovern = [
   'docs/delivery/IMPLEMENTATION_PLAN_HYBRID.md',
   'docs/delivery/MONETIZATION_GAP_ANALYSIS.md',
   'docs/delivery/STRATEGY_COMPARISON_FINAL.md',
+  'COMMIT_MESSAGE.txt',
 ];
 
 const failures = [];
 const staleBannerPhrase = 'Historical / reconcile-first note';
 
 const currentSellabilityRatingsByDoc = [
+  {
+    docPath: 'README.md',
+    rows: [
+      ['Utility demand forecast planning pack', '4.5/5'],
+      ['Forecast benchmarking and provenance layer', '4.6/5'],
+      ['OEB/AUC regulatory filing packs', '4.3/5'],
+      ['TIER compliance savings pack', '4.0/5'],
+      ['TIER credit banking audit pack', '3.9/5'],
+      ['Asset health executive capex pack', '4.1/5'],
+      ['Utility security procurement pack', '4.0/5'],
+      ['Shadow billing invoice proof pack', '3.8/5'],
+      ['Large-load/data-centre readiness overlay', '3.2/5'],
+      ['Consultant/API Canadian energy data pack', '3.1/5'],
+    ],
+  },
   {
     docPath: 'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
     rows: [

@@ -1,6 +1,6 @@
 # CEIP Commercial Source Of Truth
 
-> Date: May 29, 2026
+> Date: May 30, 2026
 > Purpose: define which docs can be used for current sales, outreach, pilot scoping, and public positioning.
 > Rule: when this file conflicts with older research, outreach, PRD, or monetization notes, this file and the active docs below win.
 
@@ -10,6 +10,7 @@ Use these files for current CEIP positioning:
 
 | File | Role | Required boundary |
 |---|---|---|
+| [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Strategy confidence is 90-92%; 95% needs buyer-supplied pilot evidence. |
 | [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Adversarial confidence audit. | Do not convert confidence estimates into market-outcome claims. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
@@ -84,6 +85,7 @@ The following docs may contain useful research, but they are **not** current com
 | [delivery/IMPLEMENTATION_PLAN_HYBRID.md](./delivery/IMPLEMENTATION_PLAN_HYBRID.md) | Older monetization strategy before proof-pack realignment. |
 | [delivery/MONETIZATION_GAP_ANALYSIS.md](./delivery/MONETIZATION_GAP_ANALYSIS.md) | Older monetization analysis before proof-pack realignment. |
 | [delivery/STRATEGY_COMPARISON_FINAL.md](./delivery/STRATEGY_COMPARISON_FINAL.md) | Older strategy comparison before proof-pack realignment. |
+| [../COMMIT_MESSAGE.txt](../COMMIT_MESSAGE.txt) | Retired draft commit message with older implementation-score wording. |
 
 ## Claim Translation Table
 
