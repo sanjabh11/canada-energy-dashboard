@@ -238,7 +238,7 @@ describe('pilot evidence register validator', () => {
     const output = `${result.stderr}\n${result.stdout}`;
 
     expect(result.status).toBe(1);
-    expect(output).toContain('confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics');
+    expect(output).toContain('confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics');
   });
 
   it('rejects confidence-moving TIER rows without route-specific diagnostic evidence', () => {

@@ -141,12 +141,12 @@ const allowedProofPackIdsByRoute = new Map([
 const evidenceGateOnlyRoutes = new Set(['/pilot-readiness', '/pilot-evidence']);
 const confidenceDiagnosticRulesByRoute = new Map([
   ['/utility-demand-forecast', {
-    label: 'MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics',
-    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i],
+    label: 'MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics',
+    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i, /rolling[- ]?(?:origin|split)|rolling split/i, /interval coverage|conformal/i, /champion|challenger/i],
   }],
   ['/forecast-benchmarking', {
-    label: 'MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics',
-    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i],
+    label: 'MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics',
+    patterns: [/mae/i, /mape/i, /rmse/i, /persistence/i, /seasonal[- ]?naive/i, /rolling[- ]?(?:origin|split)|rolling split/i, /interval coverage|conformal/i, /champion|challenger/i],
   }],
   ['/regulatory-filing', {
     label: 'OEB or AUC mapping plus reviewer checklist or schedule evidence',
@@ -441,7 +441,10 @@ function hasForecastBenchmarkDiagnostic(value) {
     && /mape/i.test(text)
     && /rmse/i.test(text)
     && /persistence/i.test(text)
-    && /seasonal[- ]?naive/i.test(text);
+    && /seasonal[- ]?naive/i.test(text)
+    && /rolling[- ]?(?:origin|split)|rolling split/i.test(text)
+    && /interval coverage|conformal/i.test(text)
+    && /champion|challenger/i.test(text);
 }
 
 function hasRequiredConfidenceDiagnostic(route, value) {
@@ -768,7 +771,7 @@ if (rows.length < 2) {
     if (forecastEvidenceRoutes.has(row.route)
       && (confidenceDelta ?? 0) > 0
       && !hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')) {
-      failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.`);
+      failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.`);
     }
 
     if ((confidenceDelta ?? 0) > 0 && evidenceGateOnlyRoutes.has(row.route)) {
@@ -833,7 +836,7 @@ if (require95 && failures.length === 0) {
   ));
 
   if (!hasAcceptedUtilityForecast) {
-    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.');
+    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.');
   }
 
   if (!hasAcceptedTierEvidence) {

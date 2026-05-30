@@ -19,7 +19,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 
 1. Utility planning packs combine forecast scenarios, benchmark proof, assumptions, warnings, and exportable schedules.
 2. Regulatory filing packs translate planning evidence into OEB/AUC-oriented reviewer artifacts.
-3. Forecast benchmarking is visible through MAE, MAPE, RMSE, persistence, seasonal-naive, source, and fallback labels.
+3. Forecast benchmarking is visible through MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, champion/challenger, source, and fallback labels.
 4. TIER CFO and credit-banking packs make Alberta industrial compliance decisions source-dated and audit-ready without implying trading advice.
 5. Asset, billing, security, and large-load packs create meeting-ready evidence without requiring SCADA, ADMS, power-flow, or enterprise integrations.
 
@@ -28,7 +28,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 | Rank | Feature | Primary buyer | Current implementation status | Exact gap to keep closing | Priority score |
 |---:|---|---|---|---|---:|
 | 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | Implemented route and proof pack; now includes source manifest, rolling-origin evidence, conformal interval coverage, hierarchy reconciliation, benchmark appendix, planning export, and security attachment path. | Replace public sample with buyer-supplied LDC history during pilots; keep every export board/regulator-readable. | 5 |
-| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | Implemented route and utility export appendix with MAE, MAPE, RMSE, persistence, seasonal-naive, source manifest, fallback, warnings, rolling splits, and assumptions. | Keep benchmark/provenance mandatory in new forecast exports. | 5 |
+| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | Implemented route and utility export appendix with MAE, MAPE, RMSE, persistence, seasonal-naive, source manifest, fallback, warnings, rolling splits, interval coverage, champion/challenger decision, and assumptions. | Keep benchmark/provenance mandatory in new forecast exports. | 5 |
 | 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | Implemented route, template helpers, reviewer checklists, official source mapping, and jurisdiction schedule exports. | Add more annotated sample packs from real reviewer workflows. | 5 |
 | 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | Implemented CFO memo, appendix, pricing freshness gate, direct-investment sensitivity, and credit-banking workflow link. | Validate current pricing source and facility-specific assumptions before outbound use. | 4 |
 | 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs, compliance leads | Implemented allocation schedule and expiry-risk outputs with no-broker guardrails. | Add buyer-approved registry ledger examples and live pricing validation during pilots. | 4 |
