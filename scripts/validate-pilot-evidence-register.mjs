@@ -453,6 +453,10 @@ function parseNumber(value, label, rowNumber, required = true) {
   return numeric;
 }
 
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function normalizeText(value) {
   return value.trim().toLowerCase().replace(/\s+/g, ' ');
 }
@@ -657,6 +661,14 @@ function hasRetainedCommercialCommitmentEvidence(rowNumber, row) {
   if (!rule) return true;
   const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
   return rule.pattern.test(text);
+}
+
+function hasRetainedCoverageEvidence(rowNumber, coverage) {
+  if (coverage === null || !Number.isFinite(coverage)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const coverageText = escapeRegExp(String(coverage).replace(/\.0+$/, ''));
+  const coveragePattern = new RegExp(`(?:buyer[-_ ]?data[-_ ]?coverage|coverage[-_ ]?(?:pct|percent|percentage)?)[\\s\\S]{0,40}\\b${coverageText}(?:\\.0+)?\\s*%?\\b`, 'i');
+  return coveragePattern.test(text);
 }
 
 if (!existsSync(registerPath)) {
@@ -885,6 +897,9 @@ if (require95 && failures.length === 0) {
     row.route === '/shadow-billing' || row.route === '/utility-security'
   ));
   const lowCoverageRows = acceptedBuyerRows.filter(({ coverage }) => coverage === null || coverage < 70);
+  const unsupportedCoverageRows = acceptedBuyerRows.filter(({ rowNumber, coverage }) => (
+    coverage !== null && !hasRetainedCoverageEvidence(rowNumber, coverage)
+  ));
   const slowArtifactRows = acceptedBuyerRows.filter(({ timeToArtifact }) => (
     timeToArtifact === null || timeToArtifact > maxAcceptedArtifactHours95
   ));
@@ -928,6 +943,10 @@ if (require95 && failures.length === 0) {
 
   if (lowCoverageRows.length > 0) {
     failures.push(`95% confidence gate requires buyer_data_coverage_pct >= 70 for accepted confidence-moving rows; low rows: ${lowCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedCoverageRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support buyer_data_coverage_pct for accepted confidence-moving rows; unsupported rows: ${unsupportedCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (slowArtifactRows.length > 0) {
