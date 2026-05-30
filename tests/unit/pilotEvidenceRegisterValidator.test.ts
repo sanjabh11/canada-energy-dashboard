@@ -208,6 +208,32 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('unsupported rows: 2');
   });
 
+  it('rejects 95% confidence when retained artifacts do not support reviewer feedback status', () => {
+    const result = runValidator(
+      'invalid-unsupported-feedback-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support reviewer_feedback_status');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
+  it('rejects 95% confidence when retained artifacts do not support the day-14 proceed decision', () => {
+    const result = runValidator(
+      'invalid-unsupported-day14-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support day_14_decision=proceed');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
   it('rejects public sample evidence that tries to increase market confidence', () => {
     const result = runValidator('invalid-public-confidence-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;

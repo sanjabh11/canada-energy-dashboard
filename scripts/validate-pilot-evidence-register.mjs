@@ -688,6 +688,23 @@ function hasRetainedReviewerAcceptanceEvidence(rowNumber, row) {
   return acceptancePattern.test(text);
 }
 
+function hasRetainedReviewerFeedbackEvidence(rowNumber, row) {
+  const feedbackStatus = normalizeText(row.reviewer_feedback_status ?? '');
+  if (!isCompleteFeedback(feedbackStatus)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const feedbackText = escapeRegExp(feedbackStatus);
+  const feedbackPattern = new RegExp(`(?:reviewer[-_ ]?feedback(?:[-_ ]?status)?|feedback[-_ ]?status|review[-_ ]?loop|correction[-_ ]?log)[\\s\\S]{0,40}\\b${feedbackText}\\b`, 'i');
+  return feedbackPattern.test(text);
+}
+
+function hasRetainedDay14DecisionEvidence(rowNumber, row) {
+  const decision = normalizeText(row.day_14_decision ?? '');
+  if (decision !== 'proceed') return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const decisionPattern = /(?:day[-_ ]?14[-_ ]?decision|pilot[-_ ]?decision|decision[-_ ]?memo|proceed[-_ ]?decision)[\s\S]{0,40}\bproceed\b/i;
+  return decisionPattern.test(text);
+}
+
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${relativeRegisterPath}`);
   process.exit(1);
@@ -929,6 +946,12 @@ if (require95 && failures.length === 0) {
   const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
   ));
+  const unsupportedReviewerFeedbackRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedReviewerFeedbackEvidence(rowNumber, row)
+  ));
+  const unsupportedDay14DecisionRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedDay14DecisionEvidence(rowNumber, row)
+  ));
   const hasFastArtifact = acceptedBuyerRows.some(({ timeToArtifact }) => (
     timeToArtifact !== null && timeToArtifact <= fastArtifactTargetHours
   ));
@@ -986,6 +1009,14 @@ if (require95 && failures.length === 0) {
 
   if (unsupportedReviewerAcceptanceRows.length > 0) {
     failures.push(`95% confidence gate requires retained local evidence artifacts to support reviewer_acceptance for accepted confidence-moving rows; unsupported rows: ${unsupportedReviewerAcceptanceRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedReviewerFeedbackRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support reviewer_feedback_status for accepted confidence-moving rows; unsupported rows: ${unsupportedReviewerFeedbackRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedDay14DecisionRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support day_14_decision=proceed for accepted confidence-moving rows; unsupported rows: ${unsupportedDay14DecisionRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (!hasFastArtifact) {

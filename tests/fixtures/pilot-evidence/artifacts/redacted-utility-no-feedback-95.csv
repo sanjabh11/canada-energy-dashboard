@@ -1,7 +1,7 @@
 artifact_type,summary
 utility_forecast,"redacted buyer utility forecast evidence with MAE MAPE RMSE persistence seasonal-naive rolling-origin split record interval coverage and champion/challenger diagnostics"
 commercial_commitment,"paid pilot evidence retained in redacted commercial appendix"
+buyer_data_coverage_pct,90
 time_to_artifact_hours,36
 reviewer_acceptance,accepted
-reviewer_feedback_status,complete
 day_14_decision,proceed
