@@ -470,16 +470,19 @@ function hasImmutableEvidenceReference(value) {
   return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
 }
 
+function scanPositiveOverclaimText(value, label, rowNumber) {
+  if (isBlank(value)) return;
+
+  for (const rule of positiveOverclaimRules) {
+    if (rule.pattern.test(value)) {
+      failures.push(`Row ${rowNumber}: ${label} contains a positive ${rule.label}; remove it or place it only in do_not_claim/boundary language.`);
+    }
+  }
+}
+
 function scanPositiveOverclaims(row, rowNumber) {
   for (const field of positiveOverclaimFields) {
-    const value = row[field] ?? '';
-    if (isBlank(value)) continue;
-
-    for (const rule of positiveOverclaimRules) {
-      if (rule.pattern.test(value)) {
-        failures.push(`Row ${rowNumber}: ${field} contains a positive ${rule.label}; remove it or place it only in do_not_claim/boundary language.`);
-      }
-    }
+    scanPositiveOverclaimText(row[field] ?? '', field, rowNumber);
   }
 }
 
@@ -558,6 +561,8 @@ function scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber) 
   }
 
   const text = readFileSync(evidencePath, 'utf8');
+  scanPositiveOverclaimText(text, `local evidence artifact ${referencePath}`, rowNumber);
+
   const highRiskPatterns = [
     {
       label: 'email address',

@@ -319,6 +319,17 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('local forecast evidence artifact thin-redacted-utility.csv must contain MAE, MAPE, RMSE');
   });
 
+  it('rejects retained local evidence artifacts that contain positive overclaims', () => {
+    const result = runValidator('invalid-artifact-overclaim-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('local evidence artifact overclaim-redacted-utility.csv contains a positive production utility or telemetry claim');
+  });
+
   it('rejects opaque retained artifacts that cannot be scanned as redacted text evidence', () => {
     const result = runValidator('invalid-opaque-artifact-evidence-register.csv', [
       '--evidence-root',
