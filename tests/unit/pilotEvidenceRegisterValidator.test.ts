@@ -169,6 +169,19 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('stale rows: 2, 3, 4');
   });
 
+  it('rejects 95% confidence when retained artifacts do not support the record date', () => {
+    const result = runValidator(
+      'invalid-unsupported-record-date-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support record_date');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
   it('rejects 95% confidence when retained artifacts do not support buyer data coverage', () => {
     const result = runValidator(
       'invalid-unsupported-coverage-95-evidence-register.csv',

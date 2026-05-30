@@ -705,6 +705,15 @@ function hasRetainedDay14DecisionEvidence(rowNumber, row) {
   return decisionPattern.test(text);
 }
 
+function hasRetainedRecordDateEvidence(rowNumber, row) {
+  const recordDate = row.record_date ?? '';
+  if (!isValidIsoDate(recordDate)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const recordDateText = escapeRegExp(recordDate);
+  const datePattern = new RegExp(`(?:record[-_ ]?date|pilot[-_ ]?date|evidence[-_ ]?date|artifact[-_ ]?date|review[-_ ]?date)[\\s\\S]{0,40}\\b${recordDateText}\\b`, 'i');
+  return datePattern.test(text);
+}
+
 if (!existsSync(registerPath)) {
   console.error(`Pilot evidence register not found: ${relativeRegisterPath}`);
   process.exit(1);
@@ -943,6 +952,9 @@ if (require95 && failures.length === 0) {
   const staleEvidenceRows = acceptedBuyerRows.filter(({ row }) => (
     daysSinceIsoDate(row.record_date ?? '') > maxAcceptedEvidenceAgeDays95
   ));
+  const unsupportedRecordDateRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedRecordDateEvidence(rowNumber, row)
+  ));
   const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
   ));
@@ -1005,6 +1017,10 @@ if (require95 && failures.length === 0) {
 
   if (staleEvidenceRows.length > 0) {
     failures.push(`95% confidence gate requires accepted confidence-moving buyer evidence to be no older than ${maxAcceptedEvidenceAgeDays95} days; stale rows: ${staleEvidenceRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedRecordDateRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support record_date for accepted confidence-moving rows; unsupported rows: ${unsupportedRecordDateRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (unsupportedReviewerAcceptanceRows.length > 0) {

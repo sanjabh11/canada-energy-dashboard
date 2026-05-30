@@ -1,4 +1,5 @@
 artifact_type,summary
+record_date,2026-05-30
 utility_forecast,"redacted buyer utility forecast evidence with MAE MAPE RMSE persistence seasonal-naive rolling-origin split record interval coverage and champion/challenger diagnostics"
 buyer_data_coverage_pct,90
 time_to_artifact_hours,36
