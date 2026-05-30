@@ -33,11 +33,20 @@ describe('pilot evidence register validator', () => {
   });
 
   it('accepts a filled register that satisfies the 95% strategy confidence gate', () => {
-    const result = runValidator('valid-95-evidence-register.csv', ['--require-95']);
+    const result = runValidator('valid-95-evidence-register.csv', ['--require-95', '--allow-fixture-95']);
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Pilot evidence register validation passed');
     expect(result.stderr).toBe('');
+  });
+
+  it('rejects fixture registers as 95% market-confidence proof unless test override is explicit', () => {
+    const result = runValidator('valid-95-evidence-register.csv', ['--require-95']);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate cannot be satisfied by fixture, template, or sample registers');
+    expect(output).toContain('--allow-fixture-95');
   });
 
   it('rejects 95% confidence when accepted evidence is too narrow', () => {

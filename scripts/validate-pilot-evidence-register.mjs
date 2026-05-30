@@ -6,11 +6,13 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
 const allowTemplate = args.includes('--allow-template');
+const allowFixture95 = args.includes('--allow-fixture-95');
 const require95 = args.includes('--require-95');
 const fileArg = args.find((arg) => !arg.startsWith('--'));
 const registerPath = fileArg
   ? path.resolve(repoRoot, fileArg)
   : path.join(repoRoot, 'docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv');
+const relativeRegisterPath = path.relative(repoRoot, registerPath).split(path.sep).join('/');
 
 const requiredColumns = [
   'record_date',
@@ -255,8 +257,17 @@ function hasImmutableEvidenceReference(value) {
   return /sha256[=:][a-f0-9]{64}/i.test(value ?? '');
 }
 
+function isNonProduction95Register(filePath) {
+  const normalizedPath = filePath.toLowerCase();
+  const basename = path.basename(normalizedPath);
+  return normalizedPath.startsWith('tests/fixtures/')
+    || normalizedPath.startsWith('docs/growth/templates/')
+    || normalizedPath.includes('/fixtures/')
+    || /(^|[-_])(fixture|template|sample)([-_.]|$)/i.test(basename);
+}
+
 if (!existsSync(registerPath)) {
-  console.error(`Pilot evidence register not found: ${path.relative(repoRoot, registerPath)}`);
+  console.error(`Pilot evidence register not found: ${relativeRegisterPath}`);
   process.exit(1);
 }
 
@@ -405,6 +416,10 @@ if (rows.length < 2) {
 }
 
 if (require95 && failures.length === 0) {
+  if (!allowFixture95 && isNonProduction95Register(relativeRegisterPath)) {
+    failures.push('95% confidence gate cannot be satisfied by fixture, template, or sample registers; use a buyer-evidence register path and reserve --allow-fixture-95 for tests only.');
+  }
+
   const acceptedBuyerRows = evidenceRows.filter(({ row, confidenceDelta }) => (
     confidenceDelta > 0
     && buyerEvidenceLabels.has(row.source_label)
@@ -457,4 +472,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Pilot evidence register validation passed for ${Math.max(0, rows.length - 1)} row(s): ${path.relative(repoRoot, registerPath)}`);
+console.log(`Pilot evidence register validation passed for ${Math.max(0, rows.length - 1)} row(s): ${relativeRegisterPath}`);
