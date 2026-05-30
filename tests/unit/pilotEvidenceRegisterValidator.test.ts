@@ -106,7 +106,16 @@ describe('pilot evidence register validator', () => {
     const output = `${result.stderr}\n${result.stdout}`;
 
     expect(result.status).toBe(1);
-    expect(output).toContain('confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance');
+    expect(output).toContain('confidence_delta above 0.2 requires reviewer_acceptance to be accepted, approved, or signed');
+  });
+
+  it('rejects negated reviewer status phrases that contain accepted or complete words', () => {
+    const result = runValidator('invalid-negated-reviewer-status-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('reviewer_acceptance to be accepted, approved, or signed');
+    expect(output).toContain('reviewer_feedback_status to be complete, accepted, approved, or signed');
   });
 
   it('rejects future-dated evidence rows', () => {

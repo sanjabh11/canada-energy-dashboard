@@ -130,7 +130,7 @@ If redacted buyer artifacts are retained locally, add hash verification:
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
-The 95% gate requires current or historical, not future-dated, evidence rows; reviewer roles on confidence-moving rows; and distinct SHA-256 evidence artifacts across accepted buyer proof-pack rows.
+The 95% gate requires current or historical, not future-dated, evidence rows; reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; and distinct SHA-256 evidence artifacts across accepted buyer proof-pack rows.
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.
 

@@ -182,6 +182,8 @@ const confidenceDiagnosticRulesByRoute = new Map([
 ]);
 
 const allowedDecisions = new Set(['pending', 'proceed', 'park', 'pivot', 'reject']);
+const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
+const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
 const allowedBuyerLanes = new Set([
   'utility',
   'industrial',
@@ -281,11 +283,11 @@ function normalizeText(value) {
 }
 
 function isAcceptedEvidence(value) {
-  return /accepted|approved|signed/i.test(value ?? '');
+  return acceptedReviewerStatuses.has(normalizeText(value ?? ''));
 }
 
 function isCompleteFeedback(value) {
-  return /complete|accepted|approved|signed/i.test(value ?? '');
+  return completeFeedbackStatuses.has(normalizeText(value ?? ''));
 }
 
 function hasForecastBenchmarkDiagnostic(value) {
@@ -474,12 +476,12 @@ if (rows.length < 2) {
         failures.push(`Row ${rowNumber}: confidence_delta above 0 requires buyer_supplied_anonymized or buyer_supplied_confidential source_label.`);
       }
 
-      if (confidenceDelta > 0.2 && !/accepted|approved|signed/i.test(row.reviewer_acceptance ?? '')) {
-        failures.push(`Row ${rowNumber}: confidence_delta above 0.2 requires accepted/approved/signed reviewer_acceptance.`);
+      if (confidenceDelta > 0.2 && !isAcceptedEvidence(row.reviewer_acceptance ?? '')) {
+        failures.push(`Row ${rowNumber}: confidence_delta above 0.2 requires reviewer_acceptance to be accepted, approved, or signed.`);
       }
 
       if (confidenceDelta > 0 && !isCompleteFeedback(row.reviewer_feedback_status ?? '')) {
-        failures.push(`Row ${rowNumber}: confidence_delta above 0 requires complete/accepted/approved/signed reviewer_feedback_status.`);
+        failures.push(`Row ${rowNumber}: confidence_delta above 0 requires reviewer_feedback_status to be complete, accepted, approved, or signed.`);
       }
 
       if (confidenceDelta > 0 && isBlank(row.reviewer_role ?? '')) {
