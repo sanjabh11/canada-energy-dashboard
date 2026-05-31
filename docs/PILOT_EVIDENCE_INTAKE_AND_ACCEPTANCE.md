@@ -37,6 +37,7 @@
 | Retained buyer-coverage evidence guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95 --evidence-root path/to/redacted-artifacts` | A row could record `buyer_data_coverage_pct` while the retained artifact never proves that coverage level. | Accepted confidence-moving rows must have retained artifact text supporting the exact buyer-data coverage percentage. |
 | Retained pilot-outcome evidence guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95 --evidence-root path/to/redacted-artifacts` | A row could claim fast artifact delivery, reviewer acceptance, completed feedback, or day-14 proceed while the retained artifact never proves those outcome markers. | Accepted confidence-moving rows must have retained artifact text supporting `time_to_artifact_hours`, `reviewer_acceptance`, `reviewer_feedback_status`, and `day_14_decision=proceed`. |
 | Inspectable retained-artifact guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | Hash-verified PDFs, scans, or opaque binaries could bypass the retained-artifact redaction scan. | Retained evidence must be text-inspectable: CSV, TSV, JSON, JSONL, Markdown, text, HTML, YAML, or a hashed redacted text/Markdown extract for PDF source material. |
+| Retained-artifact preparation helper | `pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-utility.md ...` | Operators could hand-write evidence extracts that omit exact validator support fields or accidentally include direct identifiers. | The helper writes a redacted text extract, rejects direct identifiers and thin route diagnostics, computes SHA-256, and prints the register-ready `evidence_file_reference`. |
 | 95% readiness report | `pnpm run report:pilot-evidence-95 -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | The hard gate could fail without giving an operator-grade view of which buyer-evidence lanes are still missing. | The report prints pass/fail checks, evidence counts, and next actions while preserving the same nonzero failure behavior as the 95% gate. |
 | Pilot date and reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Future-dated or reviewer-anonymous evidence could move confidence. | Confidence-moving rows require a valid non-future `record_date` and a reviewer role. |
 | Independent reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could be self-reviewed by the evidence owner or an internal CEIP/demo role. | `reviewer_role` must name an independent buyer or reviewer function and cannot repeat `evidence_owner` or use internal/self-review wording. |
@@ -214,6 +215,29 @@ Validate a filled register before changing any feature rating:
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 ```
+
+Prepare a retained redacted artifact before filling `evidence_file_reference`. Use only already-redacted, buyer-approved summary text; keep source PDFs, raw bills, account-level exports, and sensitive originals outside this repo:
+
+```bash
+pnpm run prepare:pilot-evidence-artifact -- \
+  --evidence-root path/to/redacted-artifacts \
+  --artifact-file redacted-utility-forecast.md \
+  --route /utility-demand-forecast \
+  --proof-pack-id utility_forecast_planning_pack \
+  --record-date 2026-05-31 \
+  --buyer-data-coverage-pct 90 \
+  --time-to-artifact-hours 36 \
+  --reviewer-role "utility planning reviewer" \
+  --reviewer-acceptance accepted \
+  --reviewer-feedback-status complete \
+  --day-14-decision proceed \
+  --commercial-commitment-status paid_pilot \
+  --claim-boundary "Buyer-supplied redacted planning support only and no production onboarding claim." \
+  --do-not-claim "Do not claim utility approval or live telemetry." \
+  --diagnostic "MAE, MAPE, RMSE recorded; persistence and seasonal-naive compared; rolling-origin split record, interval coverage, and champion/challenger note attached."
+```
+
+Paste the printed `evidence_file_reference` value into the filled register row. The helper is not buyer evidence by itself; it only creates a text-inspectable retained extract that the validator can hash and scan.
 
 The validator blocks confidence increases from public-system, starter, or constructed rows; caps one-row feature movement at `0.4`; requires buyer-supplied source labels for any positive `confidence_delta`; requires an exact privacy screen status; requires a controlled `commercial_commitment_status`; requires a valid non-future `record_date`; requires reviewer role plus exact `reviewer_acceptance` of `accepted`, `approved`, or `signed` for confidence-moving rows; requires `reviewer_role` to be independent from `evidence_owner`; requires exact `reviewer_feedback_status` of `complete`, `accepted`, `approved`, or `signed`; requires buyer/source boundary wording in `claim_boundary`; requires route-specific `do_not_claim` terms; rejects positive overclaims in evidence-row text such as world-class, accurate avalanche prediction, production utility onboarding, SOC2 certified, live TIER price, guaranteed savings, AI/GPU superiority, engineering approval, or regulator submission automation; requires immutable `sha256=<64 hex chars>` or `sha256:<64 hex chars>` evidence references for confidence-moving rows; and requires MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics before utility forecast or forecast-benchmarking evidence can move confidence. If redacted local artifacts are available, add `--evidence-root path/to/redacted-artifacts` so the validator recomputes and compares the referenced SHA-256 values, requires text-inspectable retained artifact formats, scans retained artifacts for the same route-specific diagnostic evidence, scans retained artifacts for positive overclaims, scans retained artifacts for exact record-date support, strong commercial-commitment evidence, exact buyer-data coverage support, exact time-to-artifact support, reviewer-acceptance support, reviewer-feedback support, and day-14 proceed support when `--require-95` is used, and scans the retained artifacts for direct-identifier or credential patterns. For PDF invoices, scans, or buyer memos, retain and hash a redacted `.txt` or `.md` evidence extract rather than the opaque source file.
 
