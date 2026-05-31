@@ -3,7 +3,7 @@
 > Date: 2026-05-31
 > Scope: Canada Energy Intelligence Platform utility, regulatory, Alberta TIER, and proof-pack strategy.
 > Mode: Implementation of the approved audit deliverable. This file reconciles the stale untracked audit with current repo checks, current source anchors, and live-site parity evidence.
-> Verdict: 92 / 100 strategy-direction confidence after local proof-boundary hardening and owner-controlled wedge closure. Not 95% until buyer evidence passes the pilot evidence gate.
+> Verdict: 93 / 100 strategy-direction confidence after local proof-boundary hardening and owner-controlled wedge closure. Not 95% until buyer evidence passes the pilot evidence gate.
 
 ## 1. Verdict
 
@@ -20,11 +20,11 @@ The strategy direction is strong, but it is not yet a 95% market-confidence clai
 | Feature-set completeness | 95 | Yes | Current top 10 covers planning, forecast trust, filing, TIER, credit, asset, security, billing, large-load, API packs, route-level prototypes for GA/ICI and BYO-CSV proof, pilot-evidence route validation for both new wedges, hashable retained extracts for GA/ICI and BYO-CSV, IESO Peak Tracker snapshot ingestion, and browser-local BYO file handling. | Buyer data and reviewer acceptance remain outside desk research. |
 | Uniqueness and defensibility | 80 | No | Differentiation is packaging, Canadian specificity, proof boundaries, and fast pilot artifacts. | Incumbents are stronger in operational forecasting and enterprise integrations. |
 | Prediction credibility | 89 | No | Forecast exports include baseline, rolling-origin, interval, champion/challenger, baseline-win failure notes, multi-dataset public/sample benchmarks, and bounded GA/ICI historical watchlist backtest reporting. | No buyer backtest or accepted buyer reviewer evidence. |
-| Marketability and sellability | 72 | No | Buyer pains are plausible and route-aligned. | No accepted buyer row, LOI, design partner, or paid pilot. |
-| Feasibility | 88 | No | Most owner-controlled fixes are small and solo-dev feasible. | Buyer data and reviewer acceptance are external dependencies. |
-| Gap closeability | 86 | No | Technical gaps are scoped; Peak Tracker ingestion and GA/ICI historical backtest reporting are now owner-controllable. | Production deploy and buyer-evidence collection remain open. |
+| Marketability and sellability | 74 | No | Buyer pains are plausible, route-aligned, and the utility-security pilot attachment manifest now reduces procurement-prep ambiguity. | No accepted buyer row, LOI, design partner, or paid pilot. |
+| Feasibility | 90 | No | Most owner-controlled fixes are small and solo-dev feasible, including forecast, GA/ICI, BYO-CSV, and security-procurement packaging. | Buyer data and reviewer acceptance are external dependencies. |
+| Gap closeability | 88 | No | Technical gaps are scoped; Peak Tracker ingestion, GA/ICI historical backtest reporting, and utility-security attachment manifesting are now owner-controllable. | Production deploy and buyer-evidence collection remain open. |
 
-Overall confidence: **92 / 100**. The score can rise further after live metadata is clean on Netlify and browser smoke passes. It should not be raised to 95 until buyer evidence passes `pnpm run validate:pilot-evidence -- --require-95 --evidence-root ...`.
+Overall confidence: **93 / 100**. The score can rise further after live metadata is clean on Netlify and browser smoke passes. It should not be raised to 95 until buyer evidence passes `pnpm run validate:pilot-evidence -- --require-95 --evidence-root ...`.
 
 ## 2. Current Evidence Ledger
 
@@ -37,6 +37,7 @@ Overall confidence: **92 / 100**. The score can rise further after live metadata
 | Regulatory/TIER currency | TIER proof packs now carry the 2026 headline-price schedule, future price-floor caveat, direct-investment dependency, and June 30 reporting boundary; regulatory packs now carry AUC Rule 005 and OEB 2027 Chapter 5 source-date notes. | Strong local proof | Source-dated local proof only. Buyer-specific compliance, filing, legal, tax, and trading review remain external gates. |
 | Forecast hardening | Forecast evidence now emits buyer-visible failure notes when persistence or seasonal-naive baselines beat the transparent trend-seasonal model; CSV, benchmark appendix, descriptor, warning surfaces, and a reusable multi-dataset benchmark pack carry the trust boundary. | Strong local proof | `pnpm exec vitest run tests/unit/utilityForecastBenchmarkPack.test.ts tests/unit/utilityForecasting.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/forecastBaselines.test.ts` passed 21 tests; `pnpm exec tsc -b` passed; `pnpm run report:utility-forecast-benchmark -- --out-dir /tmp/ceip-utility-forecast-benchmark` produced JSON/Markdown/CSV for 2 datasets with no buyer-specific accuracy claim. |
 | New wedge prototypes | GA/ICI 5CP decision-support logic and BYO-CSV privacy proof generator now exist as bounded libraries, route-level prototypes, pilot-evidence validator routes, retained-extract hash tooling for both wedges, IESO Peak Tracker snapshot ingestion, GA/ICI historical backtest reporting, and browser-local BYO CSV selection/download. | Strong local proof | `pnpm exec vitest run tests/unit/gaIciPeakPredictor.test.ts tests/unit/pilotEvidenceArtifactPrep.test.ts --testTimeout=15000` passed 11 tests; route smoke is covered by `tests/component/wedge-prototype-routes.spec.ts`; buyer validation remains open. |
+| Utility security procurement pack | Control matrix, questionnaire template, evidence mapping, owner checklist, and pilot attachment manifest now separate repo-backed controls from deployed header/SBOM evidence and owner-supplied contact/subprocessor approvals. | Strong local proof | `pnpm exec vitest run tests/unit/utilitySecurityProofPack.test.ts tests/unit/proofPackGates.test.ts --testTimeout=15000` passed 2 tests; component smoke covers `/utility-security`. Buyer-specific legal/privacy approval remains external. |
 | Hosted root HTML | `https://canada-energy.netlify.app/` still returns stale meta. | Strong live proof | Hosted root still contains old broad-platform/social meta copy. |
 | Hosted manifest / JSON-LD | `https://canada-energy.netlify.app/manifest.json` and `/schema-webapp.jsonld` still return old broad-platform descriptions. | Strong live proof | Production static assets are stale relative to clean local `public/manifest.json` and `public/schema-webapp.jsonld`. |
 | Buyer evidence | No real filled buyer register found. | Critical gap | Fixtures and templates do not count as buyer proof. |
@@ -68,7 +69,7 @@ Overall confidence: **92 / 100**. The score can rise further after live metadata
 | 6 | TIER CFO policy what-if and memo | Deepen | Alberta TIER is a recurring compliance cash decision. | `/roi-calculator`, `tierPricing.ts`, `tierProofPack.ts`. | Source-dated CFO planning memo, not trading advice. | Medium-high | Medium | Medium | 84 |
 | 7 | TIER credit banking audit | Keep | Credit expiry/liability decisions need audit trails. | `/credit-banking`, credit proof-pack code and tests. | Paired with TIER memo and no-broker guardrails. | Medium | Low-medium | Medium | 80 |
 | 8 | Asset health capex pack | Keep | Small utilities need replace/defer narratives without SCADA. | `/asset-health`, CBRM-lite scoring, proof pack tests. | No-SCADA board memo and filing support. | Medium | Low | High | 78 |
-| 9 | Utility security procurement pack | Keep | Security review can block pilot data sharing. | `/utility-security`, security proof-pack code and tests. | Evidence split between repo-backed, deployed, and owner-supplied items. | Medium | Low | High | 76 |
+| 9 | Utility security procurement pack | Keep | Security review can block pilot data sharing. | `/utility-security`, security proof-pack code, tests, and pilot attachment manifest for headers, SBOM/dependency audit, hosting/subprocessor disclosure, and incident/privacy contacts. | Evidence split between repo-backed, deployed, and owner-supplied items. | Medium-high | Low | High | 79 |
 | 10 | Shadow billing invoice proof pack | Keep | Municipal/public buyers need bill field maps and audit trails. | `/shadow-billing`, billing proof-pack tests. | Narrow invoice proof with field exclusions and no guaranteed-savings language. | Medium | Low | High | 72 |
 
 Reserve/support surfaces: large-load/data-centre overlay and consultant/API pack remain useful add-ons, but should not displace the first 10 until buyer evidence changes the ranking.
@@ -85,7 +86,7 @@ Reserve/support surfaces: large-load/data-centre overlay and consultant/API pack
 | TIER CFO memo | TIER proof pack and source-dated pricing/freshness concepts. | Current amendment/direct-investment language and current source timestamp in exports. | Owner-controllable | 2-5 days |
 | Credit banking | Allocation/expiry-risk support route. | Buyer ledger example, liability input, registry caveats. | Buyer-supplied | External |
 | Asset health | CBRM-lite scoring and proof pack. | Buyer fleet subset and replace/defer board memo. | Buyer-supplied | External |
-| Utility security | Control/evidence pack. | SBOM, headers, hosting/contact/subprocessor bundle attached per pilot. | Owner-controllable | 2-5 days |
+| Utility security | Control/evidence pack plus pilot attachment manifest for security headers, SBOM/dependency audit, hosting/subprocessor disclosure, incident/privacy/legal contacts, route boundary, and buyer approvals. | Actual deployed header capture, dependency audit output, named contacts, and buyer-specific approvals attached for each real pilot. | Owner-controllable plus buyer approval | 1-2 days plus buyer |
 | Shadow billing | Uploaded bill proof route, field map, monthly deltas, audit notes. | One buyer-approved invoice comparison artifact. | Buyer-supplied | External |
 
 ## 6. Prediction-Accuracy Uplift Track

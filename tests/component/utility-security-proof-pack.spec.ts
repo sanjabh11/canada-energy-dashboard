@@ -15,5 +15,7 @@ test.describe('Utility security proof pack', () => {
     await expect(page.getByTestId('proof-artifact-utility-security-review-pack')).toBeVisible();
     await expect(page.getByTestId('proof-artifact-utility-security-questionnaire-template')).toBeVisible();
     await expect(page.getByTestId('proof-artifact-utility-security-evidence-mapping')).toBeVisible();
+    await expect(page.getByTestId('proof-artifact-utility-security-pilot-attachment-manifest')).toBeVisible();
+    await expect(page.getByText('Pilot attachment manifest')).toBeVisible();
   });
 });

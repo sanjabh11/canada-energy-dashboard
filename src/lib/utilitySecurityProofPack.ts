@@ -13,6 +13,15 @@ export interface UtilitySecurityControl {
   evidence: string;
 }
 
+export interface UtilitySecurityPilotAttachment {
+  id: string;
+  attachment: string;
+  evidenceType: UtilitySecurityControl['status'];
+  requiredBeforeProcurement: boolean;
+  owner: string;
+  notes: string;
+}
+
 export const UTILITY_SECURITY_CONTROLS: UtilitySecurityControl[] = [
   {
     id: 'token-custody',
@@ -110,6 +119,57 @@ export const UTILITY_SECURITY_OWNER_RESPONSE_CHECKLIST: string[] = [
   'Add incident notification contacts and any utility/regulator reporting obligations.',
   'Mark any response that depends on buyer counsel, privacy officer, or utility legal review.',
   'Attach the forecast planning memo and keep the trust boundary language intact.',
+];
+
+export const UTILITY_SECURITY_PILOT_ATTACHMENTS: UtilitySecurityPilotAttachment[] = [
+  {
+    id: 'route-security-header-capture',
+    attachment: 'Security header capture for production proof routes',
+    evidenceType: 'deployed_evidence_required',
+    requiredBeforeProcurement: true,
+    owner: 'CEIP operator',
+    notes: 'Capture current headers for the reviewed public app routes and bridge endpoints; do not infer production security posture from local build output.',
+  },
+  {
+    id: 'sbom-package-inventory',
+    attachment: 'SBOM or package inventory plus dependency audit notes',
+    evidenceType: 'deployed_evidence_required',
+    requiredBeforeProcurement: true,
+    owner: 'CEIP operator',
+    notes: 'Attach package inventory, npm audit output, and remediation/acceptance notes for the reviewed build.',
+  },
+  {
+    id: 'hosting-region-and-subprocessors',
+    attachment: 'Hosting, region, analytics, support, and connector subprocessor disclosure',
+    evidenceType: 'owner_supplied',
+    requiredBeforeProcurement: true,
+    owner: 'CEIP operator with buyer approval',
+    notes: 'Must reflect the actual deployment and customer-approved data path for the pilot, not a generic product assumption.',
+  },
+  {
+    id: 'incident-privacy-legal-contacts',
+    attachment: 'Incident notification, privacy, legal, and regulator-reporting contacts',
+    evidenceType: 'owner_supplied',
+    requiredBeforeProcurement: true,
+    owner: 'CEIP operator and buyer reviewer',
+    notes: 'Complete contacts and reporting obligations before procurement submission; placeholder emails are not acceptance evidence.',
+  },
+  {
+    id: 'route-boundary-and-retention-note',
+    attachment: 'Route boundary, data-category, retention, and revocation note',
+    evidenceType: 'repo_backed_design',
+    requiredBeforeProcurement: true,
+    owner: 'CEIP product owner',
+    notes: 'Maps to repo-backed route labels, retention boundary, and revocation controls but still needs buyer-specific review.',
+  },
+  {
+    id: 'buyer-questionnaire-and-approvals',
+    attachment: 'Buyer questionnaire, privacy form, and signatory approvals',
+    evidenceType: 'owner_supplied',
+    requiredBeforeProcurement: true,
+    owner: 'Buyer reviewer and CEIP operator',
+    notes: 'External approval gate. This pack can organize responses but cannot prove legal, privacy, or procurement approval by itself.',
+  },
 ];
 
 function buildArtifact(
@@ -210,6 +270,13 @@ export function buildUtilitySecurityProofBundle(): ProofPackBundle {
         `utility_security_evidence_mapping_${new Date().toISOString().slice(0, 10)}.csv`,
         'Maps likely questionnaire answers back to repo-backed or owner-supplied evidence.',
       ),
+      buildArtifact(
+        'utility-security-pilot-attachment-manifest',
+        'Pilot attachment manifest',
+        'md',
+        `utility_security_pilot_attachment_manifest_${new Date().toISOString().slice(0, 10)}.md`,
+        'One-page pilot checklist for security headers, SBOM/dependency audit, hosting/subprocessor disclosure, and incident/privacy contacts.',
+      ),
     ],
   };
 }
@@ -250,6 +317,7 @@ export function buildUtilitySecurityDescriptor(): ProofDocumentDescriptor {
         kind: 'bullet_list',
         body: [
           'Attach the utility privacy questionnaire template to the forecast planning memo.',
+          'Attach the pilot security manifest so SBOM, deployed header evidence, hosting/subprocessor disclosure, and incident/privacy contacts are tracked before procurement submission.',
           'Keep owner-supplied legal, privacy, signatory responses, deployed header evidence, SBOM, and dependency audit notes separate from repo-backed design controls.',
           'Use the evidence mapping sheet to show which answers can be defended from the implemented product surface.',
         ],
@@ -284,6 +352,14 @@ export function buildUtilitySecurityEvidenceIndex(): Record<string, unknown> {
       status: control.status,
       evidence: control.evidence,
       detail: control.detail,
+    })),
+    pilot_attachments: UTILITY_SECURITY_PILOT_ATTACHMENTS.map((attachment) => ({
+      id: attachment.id,
+      attachment: attachment.attachment,
+      evidence_type: attachment.evidenceType,
+      required_before_procurement: attachment.requiredBeforeProcurement,
+      owner: attachment.owner,
+      notes: attachment.notes,
     })),
   };
 }
@@ -321,5 +397,31 @@ export function buildUtilitySecurityEvidenceMappingCsv(): string {
     '"Incident response contacts and reporting obligations","owner_supplied","Must be supplied for the specific buyer and procurement review."',
     '"Subprocessors and hosting disclosure","owner_supplied","Must reflect the actual deployment and approved customer data path."',
     '"Signatory, privacy officer, and legal approver","owner_supplied","Must be completed by the buyer or CEIP operator."',
+  ].join('\n');
+}
+
+export function buildUtilitySecurityPilotAttachmentManifestMarkdown(): string {
+  return [
+    '# Utility security pilot attachment manifest',
+    '',
+    'This manifest organizes the evidence that must accompany a utility forecast pilot security review.',
+    'It is not a SOC 2 report, Green Button certification, NERC CIP attestation, legal opinion, or production utility approval.',
+    '',
+    '| Attachment | Evidence type | Required before procurement | Owner | Notes |',
+    '|---|---|:---:|---|---|',
+    ...UTILITY_SECURITY_PILOT_ATTACHMENTS.map((attachment) => [
+      attachment.attachment,
+      attachment.evidenceType.replace(/_/g, ' '),
+      attachment.requiredBeforeProcurement ? 'yes' : 'no',
+      attachment.owner,
+      attachment.notes,
+    ].map((cell) => String(cell).replace(/\|/g, '/')).join(' | ')).map((row) => `| ${row} |`),
+    '',
+    '## Do Not Claim',
+    '- SOC 2 certification from this manifest alone.',
+    '- Green Button Alliance certification from this manifest alone.',
+    '- NERC CIP compliance from this manifest alone.',
+    '- Production utility approval without buyer-signed procurement evidence.',
+    '- Complete privacy/legal approval before buyer-specific questionnaire acceptance.',
   ].join('\n');
 }

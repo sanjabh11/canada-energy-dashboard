@@ -15,6 +15,7 @@ import {
   buildUtilitySecurityEvidenceIndex,
   buildUtilitySecurityEvidenceMappingCsv,
   buildUtilitySecurityOwnerChecklistMarkdown,
+  buildUtilitySecurityPilotAttachmentManifestMarkdown,
   buildUtilitySecurityProofBundle,
   buildUtilitySecurityQuestionnaireTemplateMarkdown,
   UTILITY_SECURITY_CHECKLIST,
@@ -87,6 +88,16 @@ export function UtilitySecurityStatement() {
             artifact,
             buildUtilitySecurityEvidenceMappingCsv(),
             'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-pilot-attachment-manifest') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityPilotAttachmentManifestMarkdown(),
+            'text/markdown;charset=utf-8;',
           ),
         };
       }
