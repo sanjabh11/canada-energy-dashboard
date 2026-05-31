@@ -43,6 +43,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | New capability | Usage syntax | What was not possible before | Proof boundary |
 |---|---|---|---|
 | Commercial source-of-truth guard | `pnpm run check:commercial-source` | Active outreach, public positioning, root README, and stale historical docs could drift from the current proof-pack strategy. | Guardrail only; human review still required for new claims. |
+| Strategy roadmap structure guard | `pnpm run check:strategy-roadmap-doc` | The 95% roadmap could lose required sections, source anchors, top-10 rows, loophole questions, or production/buyer gates. | Structural proof only; it does not create buyer evidence or approve deployment. |
 | Top-10 route consistency guard | `pnpm run check:commercial-source` | A sellable proof pack could keep the right score while pointing to a stale or missing app route. | Proves route registration and allowlist consistency, not buyer adoption. |
 | Claim-boundary guard | `pnpm run check:claim-boundaries` | Unsafe phrases in active source/docs could remain unnoticed, including world-class, avalanche, production, certification, live-price, and AI/GPU overclaims. | Known-pattern check, not a legal or compliance review. |
 | Proof-pack identity guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A buyer evidence row could use a valid route but arbitrary `proof_pack_id`. | Canonical proof-pack identity is required before confidence can move. |
@@ -78,6 +79,7 @@ Install dependencies and run the focused guardrails:
 pnpm install
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
+pnpm run check:strategy-roadmap-doc
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```
