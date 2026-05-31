@@ -111,7 +111,7 @@ Do not claim accurate predictions as a general product property. The near-term g
 
 | Phase | Objective | Tasks | Acceptance criteria | Verification | Confidence effect |
 |---|---|---|---|---|---|
-| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Deploy current local source after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `curl` live root, manifest, JSON-LD, plus browser smoke. | Removes live proof-boundary cap. |
+| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Deploy current local source after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `pnpm run check:public-metadata`, `pnpm run check:public-metadata -- --base-url https://canada-energy.netlify.app`, plus browser smoke. | Removes live proof-boundary cap. |
 | B. Strategy doc and source alignment | Keep strategy direction current and single-source. | Land this roadmap; optionally link it from commercial source docs after review. | Roadmap reflects current checks and source anchors. | Markdown review and guard checks. | Improves handoff quality. |
 | C. Regulatory/TIER currency | Refresh policy-sensitive exports. | Update OEB 2027 Chapter 5 and Alberta TIER amendment/direct-investment notes in roadmap/code docs where surfaced. | Outputs carry current source dates and boundaries. | Regulatory/TIER unit tests and source review. | Improves domain credibility. |
 | D. Forecast hardening | Raise technical credibility before buyer pilots. | Multi-dataset benchmark pack; mandatory failure notes; export evidence review. | Forecast artifacts compare against baselines and explain failures. | Focused forecast tests and sample export review. | Raises prediction credibility, not market confidence. |
@@ -140,6 +140,7 @@ Do not claim accurate predictions as a general product property. The near-term g
 
 ```text
 Implement CEIP live-parity release verification. Confirm local proof-pack metadata and claim-boundary guard still pass, deploy current source only after explicit production approval, then verify https://canada-energy.netlify.app/ root HTML, /manifest.json, and /schema-webapp.jsonld no longer contain stale broad-platform, compliance, or savings claims. Run focused route smoke for /utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, and /pilot-readiness. Do not change buyer-confidence ratings.
+Use `pnpm run check:public-metadata` before deploy and `pnpm run check:public-metadata -- --base-url https://canada-energy.netlify.app` after deploy.
 ```
 
 ### Phase C prompt

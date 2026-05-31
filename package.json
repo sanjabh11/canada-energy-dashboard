@@ -16,6 +16,7 @@
     "check:commercial-source": "node scripts/check-commercial-source-docs.mjs",
     "check:pilot-evidence-95-fixture-gate": "node scripts/check-pilot-evidence-95-fixture-gate.mjs",
     "check:pilot-evidence-template": "node scripts/check-pilot-evidence-template.mjs",
+    "check:public-metadata": "node scripts/check-public-metadata.mjs",
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
