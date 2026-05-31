@@ -216,19 +216,25 @@ const liveStaticParity = steps.find((step) => step.label === 'Live static dist p
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
 const sourceDeployable = sourceProvenance?.status === 'pass';
 const localPreflightClean = localReadiness?.status === 'pass';
-const liveGatesGreen =
-  liveMetadata?.status === 'pass' && liveStaticParity?.status === 'pass' && hostedSmoke?.status === 'pass';
-const approvalReady = sourceDeployable && localPreflightClean && liveGatesGreen;
+const liveMetadataGreen = liveMetadata?.status === 'pass';
+const liveStaticParityGreen = liveStaticParity?.status === 'pass';
+const hostedSmokeGreen = hostedSmoke?.status === 'pass';
+const deploymentRequestReady = sourceDeployable && localPreflightClean;
+const liveParityAchieved = deploymentRequestReady && liveMetadataGreen && liveStaticParityGreen && hostedSmokeGreen;
+const approvalReady = liveParityAchieved;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
 const blockedByStaticParity = liveStaticParity?.status === 'fail';
 const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
-const blockers = [
+const preDeployBlockers = [
   !sourceDeployable ? 'source deploy provenance is not deploy-script-ready' : null,
   !localPreflightClean ? 'local release readiness is not passing' : null,
+].filter(Boolean);
+const liveParityBlockers = [
   blockedByLiveMetadata ? 'live metadata parity is failing' : null,
   blockedByStaticParity ? 'live static dist parity is failing' : null,
   hostedSmokeNotRun ? 'hosted proof-pack route smoke was skipped' : null,
 ].filter(Boolean);
+const blockers = [...preDeployBlockers, ...liveParityBlockers];
 
 const summaryRows = steps
   .map((step) => `| ${step.label} | ${step.status} | ${step.exitCode ?? 'n/a'} | \`${step.command}\` |`)
@@ -247,6 +253,8 @@ const markdown = [
   `- Live metadata parity: ${liveMetadata?.status}.`,
   `- Live static dist parity: ${liveStaticParity?.status}.`,
   `- Hosted proof-pack smoke: ${hostedSmoke?.status}.`,
+  `- Deployment request readiness: ${deploymentRequestReady ? 'ready for explicit owner approval' : 'blocked'}.`,
+  `- Live parity achieved: ${liveParityAchieved ? 'yes' : 'no'}.`,
   '- Production deployment: not performed by this report.',
   '- Production approval: still requires an explicit owner approval before any deploy command.',
   '- Buyer-confidence boundary: this report does not raise buyer-proven 95% market confidence; that still requires `validate:pilot-evidence --require-95 --evidence-root ...` against redacted buyer artifacts.',
@@ -259,16 +267,14 @@ const markdown = [
   '',
   '## Approval Recommendation',
   '',
-  blockers.length > 0
-    ? `Do not declare live parity or ask for production approval. Blocking gates: ${blockers.join('; ')}.`
-    : !localPreflightClean
-    ? 'Do not ask for production approval until local release readiness is passing.'
+  preDeployBlockers.length > 0
+    ? `Do not request production deploy approval. Blocking pre-deploy gates: ${preDeployBlockers.join('; ')}.`
     : approvalReady
     ? 'Local and live gates are green. Live parity can be considered achieved, but this script itself is not production approval.'
     : blockedByLiveMetadata
-      ? 'Do not declare live parity. Production is still serving stale metadata; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
+      ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production is still serving stale metadata; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
       : blockedByStaticParity
-        ? 'Do not declare live parity. Production static files do not match built `dist`; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
+        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production static files do not match built `dist`; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
       : hostedSmokeNotRun
         ? 'Metadata is green, but hosted proof-pack smoke was not run. Use `--include-hosted-smoke` or `pnpm run check:post-deploy-live` before declaring live parity.'
       : 'Do not approve production release until failed or skipped required gates are resolved.',

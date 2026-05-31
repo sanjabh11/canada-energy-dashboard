@@ -28,10 +28,20 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '#!/bin/sh',
       'case "$*" in',
       '  *scripts/check-public-metadata.mjs*)',
+      '    if [ "$CEIP_FAKE_LIVE_METADATA_FAIL" = "1" ]; then',
+      '      echo "Public metadata check failed:"',
+      '      echo "- stale metadata phrase found"',
+      '      exit 1',
+      '    fi',
       '    echo "Public metadata check passed."',
       '    exit 0',
       '    ;;',
       '  *scripts/check-live-static-parity.mjs*)',
+      '    if [ "$CEIP_FAKE_LIVE_STATIC_FAIL" = "1" ]; then',
+      '      echo "Live static parity check failed:"',
+      '      echo "- /: remote static content does not match dist/index.html"',
+      '      exit 1',
+      '    fi',
       '    echo "Live static parity check passed for https://example.test"',
       '    echo "- / matches dist/index.html"',
       '    exit 0',
@@ -120,7 +130,9 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Live metadata parity: pass.');
     expect(result.stdout).toContain('- Live static dist parity: pass.');
     expect(result.stdout).toContain('- Hosted proof-pack smoke: pass.');
-    expect(result.stdout).toContain('Blocking gates: local release readiness is not passing.');
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('- Live parity achieved: no.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
     expect(result.stdout).not.toContain('Local and live gates are green.');
   });
 
@@ -128,7 +140,7 @@ describe('production approval packet', () => {
     const result = await runPacket(['--skip-release-readiness', '--include-hosted-smoke', '--fail-on-blocker']);
 
     expect(result.status).toBe(1);
-    expect(result.stdout).toContain('Blocking gates: local release readiness is not passing.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
   });
 
   it('blocks production approval when source provenance is not deploy-script-ready', async () => {
@@ -139,8 +151,26 @@ describe('production approval packet', () => {
 
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: fail.');
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocker: deploy script requires branch main; current branch is codex/ceip-proof-pack-hardening.');
     expect(result.stdout).toContain('Blocker: deploy script requires a clean worktree; 1 dirty path(s) detected.');
-    expect(result.stdout).toContain('Blocking gates: source deploy provenance is not deploy-script-ready.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: source deploy provenance is not deploy-script-ready.');
+  });
+
+  it('separates deploy request readiness from stale live parity', async () => {
+    const result = await runPacket(['--include-hosted-smoke'], {
+      CEIP_FAKE_LIVE_METADATA_FAIL: '1',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Source deploy provenance: pass.');
+    expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
+    expect(result.stdout).toContain('- Live metadata parity: fail.');
+    expect(result.stdout).toContain('- Deployment request readiness: ready for explicit owner approval.');
+    expect(result.stdout).toContain('- Live parity achieved: no.');
+    expect(result.stdout).toContain('Local source is ready to request explicit production remediation approval, but live parity is not achieved.');
+    expect(result.stdout).toContain('deploy current source only after explicit owner approval');
+    expect(result.stdout).not.toContain('Do not request production deploy approval.');
   });
 });
