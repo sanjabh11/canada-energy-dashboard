@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, FileText, LockKeyhole, ShieldCheck, TableProperties, Upload } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ArrowRight, Download, FileText, LockKeyhole, ShieldCheck, TableProperties, Upload } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
 import {
@@ -21,14 +21,26 @@ const IDENTIFIER_RISK_SAMPLE = [
   '2026-01-01T01:00:00.000Z,account id: ABCD-1234,ops@example.com,13.1',
 ].join('\n');
 
+const MAX_LOCAL_CSV_BYTES = 1024 * 1024;
+
 function formatBoolean(value: boolean): string {
   return value ? 'Yes' : 'No';
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  const kilobytes = value / 1024;
+  if (kilobytes < 1024) return `${kilobytes.toFixed(1)} KB`;
+  return `${(kilobytes / 1024).toFixed(2)} MB`;
 }
 
 export function ByoCsvProofPage() {
   const [csvText, setCsvText] = useState(CLEAN_SAMPLE);
   const [sourceLabel, setSourceLabel] = useState('buyer-redacted-load.csv');
-  const [route, setRoute] = useState('/utility-demand-forecast');
+  const [route, setRoute] = useState('/byo-csv-proof');
+  const [fileStatus, setFileStatus] = useState('Demo redacted sample loaded');
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const report = useMemo(() => buildByoCsvProofReport({
     csvText,
@@ -38,6 +50,46 @@ export function ByoCsvProofPage() {
   }), [csvText, route, sourceLabel]);
 
   const markdown = useMemo(() => byoCsvProofReportToMarkdown(report), [report]);
+
+  async function handleLocalFileSelected(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setFileError(null);
+    if (file.size > MAX_LOCAL_CSV_BYTES) {
+      setFileError(`Local CSV is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_LOCAL_CSV_BYTES)} for browser-only review.`);
+      setFileStatus('File rejected before parsing');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      setCsvText(text);
+      setSourceLabel(file.name);
+      setRoute('/byo-csv-proof');
+      setFileStatus(`${file.name} loaded locally (${formatBytes(file.size)})`);
+    } catch {
+      setFileError('Unable to read the selected local file.');
+      setFileStatus('File read failed');
+    }
+  }
+
+  function resetFileInput() {
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  }
+
+  function downloadMarkdownReport() {
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'byo-csv-proof-report.md';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <div
@@ -93,9 +145,9 @@ export function ByoCsvProofPage() {
                   BYO-CSV Privacy Proof Generator
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
-                  Paste a redacted CSV sample to generate a reviewable report covering headers, row count,
-                  completeness, inferred column type, and direct-identifier findings. The report does not retain
-                  raw values and does not certify privacy status.
+                  Select or paste a redacted CSV sample to generate a reviewable report covering headers, row count,
+                  completeness, inferred column type, and direct-identifier findings. Browser-selected files stay in
+                  this page session; the generated report does not retain raw values or certify privacy status.
                 </p>
               </div>
 
@@ -118,6 +170,29 @@ export function ByoCsvProofPage() {
                 <span className="text-sm uppercase tracking-[0.24em]">CSV sample</span>
               </div>
               <div className="mt-5 grid gap-4">
+                <div className="rounded-lg border border-emerald-300/20 bg-emerald-300/10 p-4">
+                  <label className="grid gap-2 text-sm text-emerald-50">
+                    Local CSV file
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept=".csv,text/csv,.txt,text/plain"
+                      onChange={(event) => void handleLocalFileSelected(event)}
+                      className="block w-full rounded-lg border border-white/10 bg-slate-950 px-4 py-3 text-sm text-slate-100 file:mr-4 file:rounded-md file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950 hover:file:bg-emerald-200"
+                      data-testid="byo-csv-local-file-input"
+                    />
+                  </label>
+                  <div className="mt-3 grid gap-1 text-sm text-slate-200" data-testid="byo-csv-local-file-status">
+                    <span>Local file status: {fileStatus}</span>
+                    <span>Local-only boundary: no upload request is made by this route.</span>
+                    <span>Max file size: {formatBytes(MAX_LOCAL_CSV_BYTES)}</span>
+                  </div>
+                  {fileError ? (
+                    <div className="mt-3 rounded-md border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-sm text-amber-100" role="alert">
+                      {fileError}
+                    </div>
+                  ) : null}
+                </div>
                 <label className="grid gap-2 text-sm text-slate-300">
                   Source label
                   <input
@@ -134,6 +209,7 @@ export function ByoCsvProofPage() {
                     className="rounded-lg border border-white/10 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-emerald-300/50"
                   >
                     <option value="/utility-demand-forecast">/utility-demand-forecast</option>
+                    <option value="/byo-csv-proof">/byo-csv-proof</option>
                     <option value="/ga-ici-5cp">/ga-ici-5cp</option>
                     <option value="/forecast-benchmarking">/forecast-benchmarking</option>
                     <option value="/pilot-readiness">/pilot-readiness</option>
@@ -149,7 +225,11 @@ export function ByoCsvProofPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      resetFileInput();
+                      setFileError(null);
+                      setFileStatus('Demo redacted sample loaded');
                       setSourceLabel('buyer-redacted-load.csv');
+                      setRoute('/byo-csv-proof');
                       setCsvText(CLEAN_SAMPLE);
                     }}
                     className="inline-flex items-center gap-2 rounded-lg border border-emerald-300/30 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200"
@@ -160,7 +240,11 @@ export function ByoCsvProofPage() {
                   <button
                     type="button"
                     onClick={() => {
+                      resetFileInput();
+                      setFileError(null);
+                      setFileStatus('Demo identifier-risk sample loaded');
                       setSourceLabel('raw-customer-load.csv');
+                      setRoute('/byo-csv-proof');
                       setCsvText(IDENTIFIER_RISK_SAMPLE);
                     }}
                     className="inline-flex items-center gap-2 rounded-lg border border-amber-300/30 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200"
@@ -215,11 +299,24 @@ export function ByoCsvProofPage() {
 
         <section className="bg-slate-900/45">
           <div className="mx-auto max-w-7xl px-6 py-14">
-            <div className="flex items-center gap-3 text-emerald-100">
-              <FileText className="h-5 w-5" />
-              <span className="text-sm uppercase tracking-[0.24em]">Markdown proof artifact</span>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-3 text-emerald-100">
+                <FileText className="h-5 w-5" />
+                <span className="text-sm uppercase tracking-[0.24em]">Markdown proof artifact</span>
+              </div>
+              <button
+                type="button"
+                onClick={downloadMarkdownReport}
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-emerald-300/30 px-4 py-2 text-sm font-semibold text-emerald-100 transition hover:border-emerald-200"
+              >
+                <Download className="h-4 w-4" />
+                Download report
+              </button>
             </div>
-            <pre className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-black/35 p-5 text-xs leading-6 text-slate-200">
+            <pre
+              className="mt-4 max-h-[34rem] overflow-auto rounded-lg border border-white/10 bg-black/35 p-5 text-xs leading-6 text-slate-200"
+              data-testid="byo-csv-markdown"
+            >
               {markdown}
             </pre>
           </div>

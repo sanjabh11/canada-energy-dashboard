@@ -26,4 +26,28 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Confidence gate ready\s*No/);
     await expect(page.getByText('Do-not-claim boundary: PII-free certification')).toBeVisible();
   });
+
+  test('loads a BYO-CSV local file without raw values in the generated artifact', async ({ page }) => {
+    await page.goto('/byo-csv-proof', { waitUntil: 'domcontentloaded' });
+
+    await page.getByTestId('byo-csv-local-file-input').setInputFiles({
+      name: 'buyer-redacted-local.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from([
+        'timestamp,feeder_id,demand_mw,temperature_c',
+        '2026-01-01T00:00:00.000Z,FDR-9,18.5,-11',
+        '2026-01-01T01:00:00.000Z,FDR-9,19.1,-12',
+      ].join('\n')),
+    });
+
+    await expect(page.getByTestId('byo-csv-local-file-status')).toContainText('buyer-redacted-local.csv loaded locally');
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Rows\s*2/);
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Columns\s*4/);
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Confidence gate ready\s*Yes/);
+    await expect(page.getByTestId('byo-csv-markdown')).toContainText('- Source label: buyer-redacted-local.csv');
+    await expect(page.getByTestId('byo-csv-markdown')).toContainText('- Route: /byo-csv-proof');
+    await expect(page.getByTestId('byo-csv-markdown')).not.toContainText('18.5');
+    await expect(page.getByTestId('byo-csv-markdown')).not.toContainText('FDR-9');
+    await expect(page.getByRole('button', { name: 'Download report' })).toBeVisible();
+  });
 });
