@@ -20,6 +20,7 @@
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
+    "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
     "prepare:pilot-evidence-artifact": "node scripts/prepare-pilot-evidence-artifact.mjs",
     "lint": "eslint .",
     "test": "vitest run",
