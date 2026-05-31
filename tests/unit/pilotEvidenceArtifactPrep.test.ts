@@ -246,6 +246,8 @@ describe('pilot evidence artifact preparation CLI', () => {
     const sha256 = createHash('sha256').update(artifactText).digest('hex');
     expect(prepResult.stdout).toContain(`byo-csv-retained.md#sha256=${sha256}`);
     expect(artifactText).toContain('schema column_count: 4');
+    expect(artifactText).toContain('spreadsheet formula findings: 0');
+    expect(artifactText).toContain('quasi-identifier warnings: 2');
     expect(artifactText).toContain('retained raw values: no');
     expect(artifactText).not.toContain('12.5');
 
@@ -267,7 +269,7 @@ describe('pilot evidence artifact preparation CLI', () => {
         'BYO CSV retained evidence extract',
         '12',
         '88',
-        '"Schema column_count 4; completeness row_count 2; direct-identifier screen 0 findings; retained raw values no; confidence gate ready yes"',
+        '"Schema column_count 4; completeness row_count 2; direct-identifier screen 0 findings; spreadsheet formula screen 0 findings; retained raw values no; quasi-identifier linkage warnings 2; confidence gate ready yes"',
         'utility privacy reviewer',
         'complete',
         'accepted',
@@ -290,6 +292,34 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
+  });
+
+  it('rejects BYO-CSV retained extract preparation when spreadsheet formula risk is present', async () => {
+    const evidenceRoot = makeTempRoot();
+    const csvPath = path.join(evidenceRoot, 'formula-risk-byo.csv');
+    writeFileSync(csvPath, [
+      'timestamp,feeder_id,review_note,demand_mw',
+      '2026-01-01T00:00:00.000Z,FDR-1,=SUM(1+1),12.5',
+    ].join('\n'), 'utf8');
+
+    const prepResult = await runTsxScript(byoCsvPrepScriptPath, [
+      '--csv-file', csvPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'byo-csv-retained.md',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '88',
+      '--time-to-artifact-hours', '12',
+      '--reviewer-role', 'utility privacy reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+    ]);
+
+    expect(prepResult.status).toBe(1);
+    expect(prepResult.stderr).toContain('Spreadsheet formula risk was detected');
+    expect(prepResult.stderr).toContain('review_note');
+    expect(() => readFileSync(path.join(evidenceRoot, 'byo-csv-retained.md'), 'utf8')).toThrow();
   });
 
   it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {

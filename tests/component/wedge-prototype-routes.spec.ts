@@ -18,6 +18,8 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByRole('heading', { name: 'BYO-CSV Privacy Proof Generator' })).toBeVisible();
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Retained raw values\s*No/);
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Direct identifier findings\s*0/);
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Formula risk findings\s*0/);
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Linkage warnings\s*2/);
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Confidence gate ready\s*Yes/);
 
     await page.getByRole('button', { name: 'Use identifier-risk sample' }).click();
@@ -25,6 +27,12 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Direct identifier findings\s*2/);
     await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Confidence gate ready\s*No/);
     await expect(page.getByText('Do-not-claim boundary: PII-free certification')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Use formula-risk sample' }).click();
+
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Formula risk findings\s*1/);
+    await expect(page.getByTestId('byo-csv-proof-report')).toContainText(/Confidence gate ready\s*No/);
+    await expect(page.getByTestId('byo-csv-markdown')).toContainText('Spreadsheet Formula Findings');
   });
 
   test('loads a BYO-CSV local file without raw values in the generated artifact', async ({ page }) => {

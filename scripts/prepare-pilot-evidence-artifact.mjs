@@ -156,8 +156,16 @@ const routeDiagnosticRules = new Map([
     patterns: [/top[- ]?five|5cp|coincident peak/i, /peak[- ]?demand[- ]?factor|pdf/i, /ieso|peak tracker/i, /decision[- ]?support|settlement boundary/i],
   }],
   ['/byo-csv-proof', {
-    label: 'schema, completeness, direct-identifier screen, retained raw values, and confidence-gate readiness evidence',
-    patterns: [/schema|column/i, /completeness|row_count|row count/i, /direct[- ]?identifier|privacy[- ]?screen/i, /retained raw values/i, /confidence[- ]?gate/i],
+    label: 'schema, completeness, direct-identifier screen, spreadsheet formula screen, retained raw values, quasi-identifier linkage warning, and confidence-gate readiness evidence',
+    patterns: [
+      /schema|column/i,
+      /completeness|row_count|row count/i,
+      /direct[- ]?identifier|privacy[- ]?screen/i,
+      /formula|spreadsheet|csv[- ]?injection/i,
+      /retained raw values/i,
+      /quasi[- ]?identifier|linkage|re-identification/i,
+      /confidence[- ]?gate/i,
+    ],
   }],
 ]);
 

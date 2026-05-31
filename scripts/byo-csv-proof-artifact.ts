@@ -145,6 +145,15 @@ if (report.direct_identifier_findings.length > 0) {
   process.exit(1);
 }
 
+if (report.spreadsheet_formula_findings.length > 0) {
+  console.error('BYO-CSV proof artifact preparation failed:\n');
+  console.error('- Spreadsheet formula risk was detected. Neutralize or remove formula-like cells first; this helper only writes confidence-ready retained extracts when formula-risk findings are zero.');
+  for (const finding of report.spreadsheet_formula_findings) {
+    console.error(`- ${finding.column}: ${finding.labels.join(', ')}`);
+  }
+  process.exit(1);
+}
+
 const extractParams: ByoCsvRetainedEvidenceExtractParams = {
   recordDate,
   buyerDataCoveragePct: coverage as number,

@@ -26,9 +26,13 @@ describe('byoCsvProofGenerator', () => {
     expect(report.column_count).toBe(4);
     expect(report.retained_raw_values).toBe(false);
     expect(report.direct_identifier_findings).toEqual([]);
+    expect(report.spreadsheet_formula_findings).toEqual([]);
+    expect(report.quasi_identifier_findings.map((finding) => finding.column)).toEqual(['timestamp', 'feeder_id']);
     expect(report.confidence_gate_ready).toBe(true);
     expect(report.column_profiles.find((profile) => profile.column === 'demand_mw')?.inferred_type).toBe('numeric');
     expect(markdown).toContain('Retained raw values: no');
+    expect(markdown).toContain('Spreadsheet formula findings: 0');
+    expect(markdown).toContain('Quasi-identifier warnings: 2');
     expect(markdown).toContain('BYO-CSV proof records schema');
   });
 
@@ -47,6 +51,30 @@ describe('byoCsvProofGenerator', () => {
     expect(report.confidence_gate_ready).toBe(false);
     expect(report.direct_identifier_findings.map((finding) => finding.column)).toEqual(['account_id', 'email']);
     expect(report.do_not_claim).toContain('PII-free certification');
+    expect(report.do_not_claim).toContain('No re-identification risk');
+  });
+
+  it('flags spreadsheet formula injection risk without treating signed numeric values as formulas', () => {
+    const csv = [
+      'timestamp,feeder_id,review_note,temperature_c',
+      '2026-01-01T00:00:00.000Z,FDR-1,=SUM(1+1),-6',
+      '2026-01-01T01:00:00.000Z,FDR-1,@SUM(1+1),-7',
+    ].join('\n');
+
+    const report = buildByoCsvProofReport({
+      csvText: csv,
+      sourceLabel: 'formula-risk-load.csv',
+      route: '/byo-csv-proof',
+    });
+
+    expect(report.confidence_gate_ready).toBe(false);
+    expect(report.spreadsheet_formula_findings).toEqual([{
+      column: 'review_note',
+      labels: ['at-sign formula prefix', 'equals formula prefix'],
+      sample_count: 2,
+    }]);
+    expect(report.column_profiles.find((profile) => profile.column === 'temperature_c')?.spreadsheet_formula_risk).toBe(false);
+    expect(byoCsvProofReportToMarkdown(report)).not.toContain('=SUM(1+1)');
   });
 
   it('builds a hashable retained extract without raw CSV values', () => {
@@ -77,8 +105,11 @@ describe('byoCsvProofGenerator', () => {
     expect(extract).toContain('schema column_count: 4');
     expect(extract).toContain('completeness row_count: 2');
     expect(extract).toContain('direct identifier findings: 0');
+    expect(extract).toContain('spreadsheet formula findings: 0');
+    expect(extract).toContain('quasi-identifier warnings: 2');
     expect(extract).toContain('retained raw values: no');
     expect(extract).toContain('confidence gate ready: yes');
+    expect(extract).toContain('linkage risk still requires buyer privacy review');
     expect(extract).not.toContain('12.5');
     expect(extract).not.toContain('FDR-1');
   });

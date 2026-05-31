@@ -459,7 +459,7 @@ describe('pilot evidence register validator', () => {
     const output = `${result.stderr}\n${result.stdout}`;
 
     expect(result.status).toBe(1);
-    expect(output).toContain('confidence-moving evidence for /byo-csv-proof must include schema, completeness, direct-identifier screen, retained raw values, and confidence-gate readiness evidence');
+    expect(output).toContain('confidence-moving evidence for /byo-csv-proof must include schema, completeness, direct-identifier screen, spreadsheet formula screen, retained raw values, quasi-identifier linkage warning, and confidence-gate readiness evidence');
   });
 
   it('rejects confidence movement from pilot readiness gate rows', async () => {

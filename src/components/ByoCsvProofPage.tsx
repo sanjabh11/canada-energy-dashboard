@@ -21,6 +21,12 @@ const IDENTIFIER_RISK_SAMPLE = [
   '2026-01-01T01:00:00.000Z,account id: ABCD-1234,ops@example.com,13.1',
 ].join('\n');
 
+const FORMULA_RISK_SAMPLE = [
+  'timestamp,feeder_id,review_note,demand_mw',
+  '2026-01-01T00:00:00.000Z,FDR-1,=SUM(1+1),12.5',
+  '2026-01-01T01:00:00.000Z,FDR-1,@SUM(1+1),13.1',
+].join('\n');
+
 const MAX_LOCAL_CSV_BYTES = 1024 * 1024;
 
 function formatBoolean(value: boolean): string {
@@ -97,9 +103,9 @@ export function ByoCsvProofPage() {
       style={{ fontFamily: '"Space Grotesk", "Avenir Next", "Segoe UI", sans-serif' }}
       data-testid="byo-csv-proof-page"
     >
-      <SEOHead
-        title="BYO-CSV Proof Generator | CEIP"
-        description="A bounded BYO-CSV proof-pack route for schema, completeness, and direct-identifier screening without retaining raw values in the generated report."
+        <SEOHead
+          title="BYO-CSV Proof Generator | CEIP"
+        description="A bounded BYO-CSV proof-pack route for schema, completeness, direct-identifier screening, spreadsheet formula checks, and linkage warnings without retaining raw values in the generated report."
         path="/byo-csv-proof"
         keywords={[
           'BYO CSV proof pack',
@@ -146,7 +152,7 @@ export function ByoCsvProofPage() {
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
                   Select or paste a redacted CSV sample to generate a reviewable report covering headers, row count,
-                  completeness, inferred column type, and direct-identifier findings. Browser-selected files stay in
+                  completeness, inferred column type, direct-identifier findings, spreadsheet formula risks, and linkage warnings. Browser-selected files stay in
                   this page session; the generated report does not retain raw values or certify privacy status.
                 </p>
               </div>
@@ -156,6 +162,8 @@ export function ByoCsvProofPage() {
                 <SummaryMetric label="Columns" value={String(report.column_count)} />
                 <SummaryMetric label="Retained raw values" value={formatBoolean(report.retained_raw_values)} />
                 <SummaryMetric label="Direct identifier findings" value={String(report.direct_identifier_findings.length)} />
+                <SummaryMetric label="Formula risk findings" value={String(report.spreadsheet_formula_findings.length)} />
+                <SummaryMetric label="Linkage warnings" value={String(report.quasi_identifier_findings.length)} />
                 <SummaryMetric label="Confidence gate ready" value={formatBoolean(report.confidence_gate_ready)} />
               </div>
             </div>
@@ -252,6 +260,21 @@ export function ByoCsvProofPage() {
                     <AlertTriangle className="h-4 w-4" />
                     Use identifier-risk sample
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      resetFileInput();
+                      setFileError(null);
+                      setFileStatus('Demo formula-risk sample loaded');
+                      setSourceLabel('formula-risk-load.csv');
+                      setRoute('/byo-csv-proof');
+                      setCsvText(FORMULA_RISK_SAMPLE);
+                    }}
+                    className="inline-flex items-center gap-2 rounded-lg border border-amber-300/30 px-4 py-2 text-sm font-semibold text-amber-100 transition hover:border-amber-200"
+                  >
+                    <AlertTriangle className="h-4 w-4" />
+                    Use formula-risk sample
+                  </button>
                 </div>
               </div>
             </div>
@@ -270,6 +293,8 @@ export function ByoCsvProofPage() {
                       <th className="px-4 py-3">Non-empty</th>
                       <th className="px-4 py-3">Empty</th>
                       <th className="px-4 py-3">Identifier risk</th>
+                      <th className="px-4 py-3">Formula risk</th>
+                      <th className="px-4 py-3">Linkage warning</th>
                       <th className="px-4 py-3">Labels</th>
                     </tr>
                   </thead>
@@ -343,7 +368,11 @@ function ColumnProfileRow({ profile }: { profile: ByoCsvColumnProfile }) {
       <td className="px-4 py-3">{profile.non_empty_count}</td>
       <td className="px-4 py-3">{profile.empty_count}</td>
       <td className="px-4 py-3">{formatBoolean(profile.direct_identifier_risk)}</td>
-      <td className="px-4 py-3">{profile.risk_labels.join(', ') || 'none'}</td>
+      <td className="px-4 py-3">{formatBoolean(profile.spreadsheet_formula_risk)}</td>
+      <td className="px-4 py-3">{formatBoolean(profile.quasi_identifier_risk)}</td>
+      <td className="px-4 py-3">
+        {[...profile.risk_labels, ...profile.spreadsheet_formula_labels, ...profile.quasi_identifier_labels].join(', ') || 'none'}
+      </td>
     </tr>
   );
 }
