@@ -158,6 +158,12 @@ const strategyRoadmapWhitespacePhrases = [
   'Rural Electrification Associations',
   'not a broad SaaS TAM',
   'low-latency curtailment remains out of scope',
+  'Completion Audit And Production Approval Packet',
+  'Release-readiness preflight',
+  'Local release readiness',
+  'Live metadata parity',
+  'Do not deploy without explicit production approval',
+  'buyer-proven 95% market confidence',
 ];
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
 const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
