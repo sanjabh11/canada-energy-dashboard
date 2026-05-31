@@ -56,6 +56,9 @@ jobs:
       - name: Commercial source-of-truth guardrails
         run: pnpm run check:commercial-source
 
+      - name: Public metadata guardrails
+        run: pnpm run check:public-metadata
+
       - name: Pilot evidence register guardrails
         run: pnpm run check:pilot-evidence-template
 
