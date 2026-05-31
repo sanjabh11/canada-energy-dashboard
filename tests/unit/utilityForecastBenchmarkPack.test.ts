@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildBenchmarkScenario,
   buildUtilityMultiDatasetBenchmarkPack,
+  buildUtilityForecastTrustRetainedEvidenceExtract,
   householdDemandRecordsToUtilityRows,
   ontarioDemandRecordsToUtilityRows,
   utilityMultiDatasetBenchmarkPackToCsv,
@@ -83,6 +84,52 @@ describe('utilityForecastBenchmarkPack', () => {
       customer_count: 1,
       feeder_id: 'HH_001',
     });
+  });
+
+  it('builds a validator-ready forecast trust retained extract from buyer benchmark diagnostics', () => {
+    const pack = buildUtilityMultiDatasetBenchmarkPack([
+      {
+        dataset_id: 'buyer-redacted-load-history',
+        label: 'Buyer redacted load history',
+        jurisdiction: 'Ontario',
+        source_scope: 'buyer_supplied_anonymized',
+        source_kind: 'uploaded_historical',
+        rows: generateOntarioPublicUtilitySampleRows(),
+        scenario: buildBenchmarkScenario('Ontario'),
+      },
+    ], '2026-05-31T00:00:00.000Z');
+
+    const extract = buildUtilityForecastTrustRetainedEvidenceExtract(pack, {
+      recordDate: '2026-05-31',
+      route: '/forecast-benchmarking',
+      buyerDataCoveragePct: 90,
+      timeToArtifactHours: 24,
+      reviewerRole: 'utility planning reviewer',
+      reviewerAcceptance: 'accepted',
+      reviewerFeedbackStatus: 'complete',
+      day14Decision: 'proceed',
+      commercialCommitmentStatus: 'paid_pilot',
+    });
+
+    expect(extract).toContain('proof_pack_id: forecast_benchmark_provenance');
+    expect(extract).toContain('source_scope: buyer_supplied_anonymized');
+    expect(extract).toContain('pii_screen_result: redacted');
+    expect(extract).toContain('buyer_data_coverage_pct: 90');
+    expect(extract).toContain('time_to_artifact_hours: 24');
+    expect(extract).toContain('reviewer_acceptance: accepted');
+    expect(extract).toContain('reviewer_feedback_status: complete');
+    expect(extract).toContain('day_14_decision: proceed');
+    expect(extract).toContain('commercial_commitment_status: paid_pilot');
+    expect(extract).toMatch(/MAE \d+(?:\.\d+)? MW/);
+    expect(extract).toMatch(/MAPE \d+(?:\.\d+)?%/);
+    expect(extract).toMatch(/RMSE \d+(?:\.\d+)? MW/);
+    expect(extract).toMatch(/persistence MAE \d+(?:\.\d+)? MW/);
+    expect(extract).toMatch(/seasonal-naive MAE \d+(?:\.\d+)? MW/);
+    expect(extract).toMatch(/rolling-origin split count \d+/);
+    expect(extract).toMatch(/interval coverage \d+(?:\.\d+)?%/);
+    expect(extract).toContain('champion/challenger decision');
+    expect(extract).toContain('buyer-specific accuracy claim: no');
+    expect(extract).toContain('Do not claim guaranteed accuracy');
   });
 });
 

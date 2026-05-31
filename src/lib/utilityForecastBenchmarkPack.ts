@@ -119,6 +119,24 @@ export interface UtilityMultiDatasetBenchmarkPack {
   };
 }
 
+export interface UtilityForecastTrustRetainedEvidenceExtractParams {
+  recordDate: string;
+  route?: '/utility-demand-forecast' | '/forecast-benchmarking';
+  proofPackId?: string;
+  artifactTitle?: string;
+  piiScreenResult?: 'no personal data' | 'no personal data or meter identifiers found' | 'redacted' | 'screened';
+  buyerDataCoveragePct: number;
+  timeToArtifactHours: number;
+  reviewerRole: string;
+  reviewerAcceptance: 'accepted' | 'approved' | 'signed';
+  reviewerFeedbackStatus: 'complete' | 'accepted' | 'approved' | 'signed';
+  day14Decision: 'proceed' | 'park' | 'pivot' | 'reject' | 'pending';
+  commercialCommitmentStatus: 'none' | 'design_partner_signed' | 'paid_pilot' | 'purchase_order' | 'letter_of_intent';
+  datasetId?: string;
+  claimBoundary?: string;
+  doNotClaim?: string;
+}
+
 function round(value: number, digits = 2): number {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -497,5 +515,114 @@ export function utilityMultiDatasetBenchmarkPackToMarkdown(pack: UtilityMultiDat
     '- It must not be used as buyer-specific forecast accuracy evidence.',
     '- Scale-free and interval diagnostics are adversarial review aids; they do not replace retained buyer backtests or reviewer acceptance.',
     '- The 95% buyer-confidence gate still requires accepted buyer-supplied evidence and reviewer notes.',
+  ].join('\n');
+}
+
+function selectTrustDataset(
+  pack: UtilityMultiDatasetBenchmarkPack,
+  datasetId?: string,
+): UtilityBenchmarkDatasetResult {
+  if (datasetId) {
+    const selected = pack.datasets.find((dataset) => dataset.dataset_id === datasetId);
+    if (!selected) throw new Error(`Dataset not found in benchmark pack: ${datasetId}`);
+    return selected;
+  }
+  const selected = pack.datasets.find((dataset) => dataset.source_scope === 'buyer_supplied_anonymized')
+    ?? pack.datasets[0];
+  if (!selected) throw new Error('Benchmark pack does not contain datasets.');
+  return selected;
+}
+
+function buildForecastDiagnosticSentence(dataset: UtilityBenchmarkDatasetResult): string {
+  return [
+    `MAE ${dataset.metrics.mae} MW`,
+    `MAPE ${dataset.metrics.mape}%`,
+    `RMSE ${dataset.metrics.rmse} MW`,
+    `persistence MAE ${dataset.metrics.persistence_mae} MW`,
+    `seasonal-naive MAE ${dataset.metrics.seasonal_naive_mae} MW`,
+    `rolling-origin split count ${dataset.rolling_origin_split_count}`,
+    `interval coverage ${dataset.conformal_interval_coverage_pct}%`,
+    `CEIP champion ${dataset.champion_challenger.champion} vs ${dataset.champion_challenger.challenger} challenger`,
+  ].join('; ');
+}
+
+export function buildUtilityForecastTrustRetainedEvidenceExtract(
+  pack: UtilityMultiDatasetBenchmarkPack,
+  params: UtilityForecastTrustRetainedEvidenceExtractParams,
+): string {
+  const dataset = selectTrustDataset(pack, params.datasetId);
+  const route = params.route ?? '/forecast-benchmarking';
+  const proofPackId = params.proofPackId
+    ?? (route === '/utility-demand-forecast' ? 'utility_forecast_planning_pack' : 'forecast_benchmark_provenance');
+  const piiScreenResult = params.piiScreenResult ?? 'redacted';
+  const claimBoundary = params.claimBoundary
+    ?? 'Buyer supplied redacted forecast benchmarking workflow only; no production onboarding, live telemetry, or buyer-specific accuracy claim without accepted reviewer evidence.';
+  const doNotClaim = params.doNotClaim
+    ?? 'Do not claim guaranteed accuracy, forecast superiority, production utility approval, live telemetry, or control-room readiness.';
+  const diagnostic = buildForecastDiagnosticSentence(dataset);
+  const sourceBoundary = dataset.source_scope === 'buyer_supplied_anonymized'
+    ? 'buyer-supplied anonymized benchmark dataset'
+    : `${dataset.source_scope} benchmark dataset; does not move buyer confidence by itself`;
+
+  return [
+    `# ${params.artifactTitle ?? 'CEIP forecast trust retained evidence extract'}`,
+    '',
+    'This retained artifact is a text-inspectable trust report extract. Sensitive originals stay outside the repository.',
+    'It converts benchmark metrics into the exact diagnostic evidence required by the pilot evidence validator.',
+    '',
+    `record_date: ${params.recordDate}`,
+    `route: ${route}`,
+    `proof_pack_id: ${proofPackId}`,
+    `source_label: ${dataset.label}`,
+    `source_scope: ${dataset.source_scope}`,
+    `source_boundary: ${sourceBoundary}`,
+    `pii_screen_result: ${piiScreenResult}`,
+    `buyer_data_coverage_pct: ${params.buyerDataCoveragePct}`,
+    `time_to_artifact_hours: ${params.timeToArtifactHours}`,
+    `reviewer_role: ${params.reviewerRole}`,
+    `reviewer_acceptance: ${params.reviewerAcceptance}`,
+    `reviewer_feedback_status: ${params.reviewerFeedbackStatus}`,
+    `day_14_decision: ${params.day14Decision}`,
+    `commercial_commitment_status: ${params.commercialCommitmentStatus}`,
+    `commercial_commitment_evidence: ${params.commercialCommitmentStatus}`,
+    `claim_boundary: ${claimBoundary}`,
+    `do_not_claim: ${doNotClaim}`,
+    '',
+    '## Forecast Trust Diagnostic',
+    diagnostic,
+    '',
+    '## Numeric Forecast Evidence',
+    `- MAE ${dataset.metrics.mae} MW`,
+    `- MAPE ${dataset.metrics.mape}%`,
+    `- RMSE ${dataset.metrics.rmse} MW`,
+    `- persistence MAE ${dataset.metrics.persistence_mae} MW`,
+    `- seasonal-naive MAE ${dataset.metrics.seasonal_naive_mae} MW`,
+    `- rolling-origin split count ${dataset.rolling_origin_split_count}`,
+    `- interval coverage ${dataset.conformal_interval_coverage_pct}%`,
+    `- champion model: ${dataset.champion_challenger.champion}`,
+    `- challenger model: ${dataset.champion_challenger.challenger}`,
+    `- champion/challenger decision: ${dataset.champion_challenger.decision_reason}`,
+    '',
+    '## Scientific Diagnostics',
+    `- seasonal MASE: ${dataset.scientific_diagnostics.seasonal_mase}`,
+    `- best-naive scaled MAE: ${dataset.scientific_diagnostics.best_naive_scaled_mae}`,
+    `- scale-free skill score pct: ${dataset.scientific_diagnostics.scale_free_skill_score_pct}`,
+    `- interval calibration gap pct: ${dataset.scientific_diagnostics.interval_calibration_gap_pct}`,
+    `- interval width to MAE ratio: ${dataset.scientific_diagnostics.interval_width_to_mae_ratio}`,
+    `- adjudication: ${dataset.scientific_diagnostics.adjudication}`,
+    '',
+    '## Benchmark Failure Notes',
+    ...(dataset.benchmark_failure_notes.length > 0
+      ? dataset.benchmark_failure_notes.map((note) => `- ${note}`)
+      : ['- none']),
+    '',
+    '## Trust Report Boundaries',
+    `- buyer-specific accuracy claim: ${dataset.buyer_specific_accuracy_claim ? 'yes' : 'no'}`,
+    `- pack confidence boundary: ${pack.confidence_boundary}`,
+    '- Reviewer acceptance and buyer source approval remain required before this artifact can move strategy confidence.',
+    '',
+    '## Methodology References',
+    ...pack.methodology_references.map((reference) => `- ${reference.label}: ${reference.url}`),
+    '',
   ].join('\n');
 }

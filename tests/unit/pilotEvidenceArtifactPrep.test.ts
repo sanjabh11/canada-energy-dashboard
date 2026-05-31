@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const prepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
 const byoCsvPrepScriptPath = path.join(process.cwd(), 'scripts/byo-csv-proof-artifact.ts');
+const forecastTrustPrepScriptPath = path.join(process.cwd(), 'scripts/forecast-trust-report-artifact.ts');
 const gaIciPrepScriptPath = path.join(process.cwd(), 'scripts/ga-ici-5cp-artifact.ts');
 const tsxBinPath = path.join(process.cwd(), 'node_modules/.bin/tsx');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
@@ -320,6 +321,149 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(prepResult.stderr).toContain('Spreadsheet formula risk was detected');
     expect(prepResult.stderr).toContain('review_note');
     expect(() => readFileSync(path.join(evidenceRoot, 'byo-csv-retained.md'), 'utf8')).toThrow();
+  });
+
+  it('prepares a forecast trust retained extract from benchmark pack JSON and stays validator-compatible', async () => {
+    const evidenceRoot = makeTempRoot();
+    const packPath = path.join(evidenceRoot, 'forecast-benchmark-pack.json');
+    writeFileSync(packPath, JSON.stringify({
+      version: 'utility-multi-dataset-benchmark-v2',
+      generated_at: '2026-05-30T00:00:00.000Z',
+      dataset_count: 1,
+      buyer_specific_accuracy_claim: false,
+      confidence_boundary: 'Buyer-specific accuracy remains blocked until accepted buyer data and reviewer evidence are attached.',
+      methodology_references: [
+        { label: 'Hyndman and Koehler forecast accuracy measures', url: 'https://robjhyndman.com/publications/another-look-at-measures-of-forecast-accuracy/', use: 'scale-free diagnostics' },
+      ],
+      datasets: [{
+        dataset_id: 'buyer-redacted-load-history',
+        label: 'Buyer redacted load history',
+        jurisdiction: 'Ontario',
+        source_scope: 'buyer_supplied_anonymized',
+        source_kind: 'uploaded_historical',
+        manifest_id: 'buyer-redacted-load-manifest',
+        manifest_hash: 'abc123',
+        sample_size: 96,
+        metrics: {
+          mae: 12.4,
+          mape: 3.8,
+          rmse: 18.6,
+          persistence_mae: 21.3,
+          seasonal_naive_mae: 19.9,
+          skill_score_vs_persistence: 41.8,
+          skill_score_vs_seasonal: 37.7,
+          sample_size: 96,
+        },
+        rolling_origin_split_count: 4,
+        conformal_interval_coverage_pct: 91.2,
+        conformal_interval_width_mw: 44.8,
+        scientific_diagnostics: {
+          seasonal_mase: 0.74,
+          best_naive_scaled_mae: 0.62,
+          scale_free_skill_score_pct: 37.7,
+          interval_nominal_coverage_pct: 90,
+          interval_calibration_gap_pct: 1.2,
+          interval_width_to_mae_ratio: 3.61,
+          adjudication: 'beats_best_naive',
+          notes: ['Buyer benchmark passes the strongest naive challenger on this retained split.'],
+        },
+        champion_challenger: {
+          champion: 'transparent_trend_seasonal',
+          challenger: 'seasonal_naive',
+          decision_reason: 'Transparent trend-seasonal model is the current champion because its holdout MAE is no worse than the strongest naive challenger.',
+        },
+        benchmark_failure_notes: [],
+        warnings: ['Buyer-specific outbound claims still require reviewer acceptance.'],
+        buyer_specific_accuracy_claim: false,
+      }],
+      aggregate: {
+        mean_model_mae: 12.4,
+        mean_persistence_mae: 21.3,
+        mean_seasonal_naive_mae: 19.9,
+        mean_seasonal_mase: 0.74,
+        mean_best_naive_scaled_mae: 0.62,
+        datasets_beating_best_naive: 1,
+        baseline_win_count: 0,
+        datasets_with_three_splits: 1,
+        minimum_interval_coverage_pct: 91.2,
+        maximum_interval_calibration_gap_pct: 1.2,
+      },
+    }, null, 2), 'utf8');
+
+    const prepResult = await runTsxScript(forecastTrustPrepScriptPath, [
+      '--benchmark-pack-file', packPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'forecast-trust-retained.md',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '90',
+      '--time-to-artifact-hours', '24',
+      '--reviewer-role', 'utility planning reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'paid_pilot',
+    ]);
+
+    expect(prepResult.status).toBe(0);
+    expect(prepResult.stderr).toBe('');
+    expect(prepResult.stdout).toContain('Forecast trust report artifact prepared.');
+    expect(prepResult.stdout).toContain('evidence_file_reference: forecast-trust-retained.md#sha256=');
+
+    const artifactPath = path.join(evidenceRoot, 'forecast-trust-retained.md');
+    const artifactText = readFileSync(artifactPath, 'utf8');
+    const sha256 = createHash('sha256').update(artifactText).digest('hex');
+    expect(prepResult.stdout).toContain(`forecast-trust-retained.md#sha256=${sha256}`);
+    expect(artifactText).toContain('MAE 12.4 MW');
+    expect(artifactText).toContain('MAPE 3.8%');
+    expect(artifactText).toContain('RMSE 18.6 MW');
+    expect(artifactText).toContain('persistence MAE 21.3 MW');
+    expect(artifactText).toContain('seasonal-naive MAE 19.9 MW');
+    expect(artifactText).toContain('rolling-origin split count 4');
+    expect(artifactText).toContain('interval coverage 91.2%');
+    expect(artifactText).toContain('champion/challenger decision');
+    expect(artifactText).toContain('commercial_commitment_status: paid_pilot');
+
+    const registerPath = path.join(evidenceRoot, 'register.csv');
+    writeFileSync(registerPath, [
+      registerHeader,
+      [
+        '2026-05-30',
+        'utility',
+        'LDC consultant',
+        'forecast_benchmark_provenance',
+        '/forecast-benchmarking',
+        'CEIP pilot owner',
+        'anonymized hourly load',
+        'buyer_supplied_anonymized',
+        `forecast-trust-retained.md#sha256=${sha256}`,
+        'redacted',
+        'paid_pilot',
+        'forecast trust retained evidence extract',
+        '24',
+        '90',
+        '"MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger"',
+        'utility planning reviewer',
+        'complete',
+        'accepted',
+        'Buyer supplied redacted forecast benchmarking workflow only; no production onboarding or buyer-specific accuracy claim',
+        '"Do not claim guaranteed accuracy, forecast superiority, production utility approval, live telemetry, or control-room readiness"',
+        'proceed',
+        '0.3',
+        'Schedule paid utility pilot review',
+        'Accepted forecast trust report evidence',
+      ].join(','),
+      '',
+    ].join('\n'), 'utf8');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [
+      registerPath,
+      '--evidence-root',
+      evidenceRoot,
+    ]);
+
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
+    expect(validationResult.stderr).toBe('');
   });
 
   it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {

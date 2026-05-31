@@ -24,6 +24,7 @@
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
     "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
     "prepare:byo-csv-proof-artifact": "tsx scripts/byo-csv-proof-artifact.ts",
+    "prepare:forecast-trust-report-artifact": "tsx scripts/forecast-trust-report-artifact.ts",
     "prepare:ga-ici-5cp-artifact": "tsx scripts/ga-ici-5cp-artifact.ts",
     "prepare:pilot-evidence-artifact": "node scripts/prepare-pilot-evidence-artifact.mjs",
     "lint": "eslint .",
