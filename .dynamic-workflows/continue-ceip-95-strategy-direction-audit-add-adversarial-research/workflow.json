@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "name": "continue-ceip-95-strategy-direction-audit-add-adversarial-research",
+  "goal": "Continue CEIP 95% strategy-direction audit; add adversarial research loop proof and niche-size source anchors",
+  "sourceTask": "Continue CEIP 95% strategy-direction audit; add adversarial research loop proof and niche-size source anchors",
+  "repoRoot": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "mode": "backlog",
+  "classification": {
+    "launch": true,
+    "mode": "backlog",
+    "tier": 2,
+    "score": 4,
+    "primarySkill": "dynamic-workflow-backlog",
+    "reasons": [
+      "multi-phase or long-running execution",
+      "adversarial verification or convergence is requested"
+    ],
+    "cautions": [],
+    "maxConcurrency": 4,
+    "maxAgents": 64,
+    "recommendedTasks": [
+      "map|mapper|Map task surface|Identify files, systems, risks, and proof requirements",
+      "execute|implementer|Execute one workstream|Handle one independent slice with narrow ownership",
+      "verify|adversary|Challenge workstream evidence|Try to refute claims and find missing proof",
+      "synthesize|reporter|Converge final answer|Merge evidence, unresolved risks, and next actions"
+    ]
+  },
+  "automode": {
+    "action": "create-backlog",
+    "createBacklog": true,
+    "requiresApproval": false,
+    "reason": "Predefined automode conditions indicate durable dynamic backlog is worthwhile.",
+    "classification": {
+      "launch": true,
+      "mode": "backlog",
+      "tier": 2,
+      "score": 4,
+      "primarySkill": "dynamic-workflow-backlog",
+      "reasons": [
+        "multi-phase or long-running execution",
+        "adversarial verification or convergence is requested"
+      ],
+      "cautions": [],
+      "maxConcurrency": 4,
+      "maxAgents": 64,
+      "recommendedTasks": [
+        "map|mapper|Map task surface|Identify files, systems, risks, and proof requirements",
+        "execute|implementer|Execute one workstream|Handle one independent slice with narrow ownership",
+        "verify|adversary|Challenge workstream evidence|Try to refute claims and find missing proof",
+        "synthesize|reporter|Converge final answer|Merge evidence, unresolved risks, and next actions"
+      ]
+    },
+    "safeguards": [
+      "never spawn workers automatically",
+      "create durable backlog first",
+      "export worker plans only after dry-run review",
+      "require synthesize ready=true before final answer"
+    ]
+  },
+  "maxConcurrency": 4,
+  "maxAgents": 64,
+  "tokenWarning": {
+    "risk": "low",
+    "estimatedAgentRuns": 4,
+    "estimatedReviewRuns": 2,
+    "estimatedTotalRuns": 6,
+    "warning": "Scoped run; still verify before exporting worker plans."
+  },
+  "createdAt": "2026-05-31T20:09:49.974Z",
+  "updatedAt": "2026-05-31T20:18:48.452Z"
+}

@@ -152,6 +152,12 @@ const strategyRoadmapWhitespacePhrases = [
   'UtilityAPI',
   'Itron',
   'Amperon',
+  'Adversarial Research Loop Ledger',
+  'Is the niche big enough?',
+  'OEB Energy at a Glance',
+  'Rural Electrification Associations',
+  'not a broad SaaS TAM',
+  'low-latency curtailment remains out of scope',
 ];
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
 const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
