@@ -6,7 +6,10 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 
 const ACTIVE_PATHS = [
+  'index.html',
   'README.md',
+  'public/manifest.json',
+  'public/schema-webapp.jsonld',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'docs/Top20.md',
@@ -31,7 +34,7 @@ const SKIP_SEGMENTS = new Set([
   'test-results',
 ]);
 
-const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx']);
+const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld']);
 
 const REFERENCE_ONLY_FILES = new Set([
   'src/lib/helpContent.ts',

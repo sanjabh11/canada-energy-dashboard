@@ -203,10 +203,10 @@ export function EnergyCopilot() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <SEOHead 
-        title="Energy Copilot | AI-Powered Energy Intelligence"
-        description="Ask complex energy questions across multiple data sources. Compare provinces, find arbitrage opportunities, analyze trends with AI."
+        title="Energy Copilot | Energy Intelligence"
+        description="Ask complex energy questions across multiple data sources. Compare provinces, review opportunity scenarios, and analyze trends with model-assisted summaries."
         path="/copilot"
-        keywords={['energy copilot', 'AI assistant', 'energy analytics', 'multi-source data', 'Alberta', 'Ontario', 'emissions', 'forecasts']}
+        keywords={['energy copilot', 'analysis assistant', 'energy analytics', 'multi-source data', 'Alberta', 'Ontario', 'emissions', 'forecasts']}
       />
 
       {/* Header */}

@@ -6,6 +6,8 @@
  * 
  * Data Sources:
  * - Alberta TIER Regulation: https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation
+ * - Canada-Alberta Implementation Agreement, May 15 2026:
+ *   https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding
  * - S&P Global Commodity Insights (market credit prices)
  * - ICAP Carbon Action (market data)
  */
@@ -55,19 +57,20 @@ export interface TIERPricingProvenance {
 /**
  * Default TIER pricing configuration
  * 
- * Fund price uses the 2026 Alberta planning basis published in the February 2025
- * compliance workshop slides. Market credits remain a CEIP fallback planning
- * snapshot until the buyer replaces them with a live quote or registry-backed view.
+ * Fund price uses the 2026 TIER headline-price basis published in the
+ * Canada-Alberta implementation agreement on May 15, 2026. Market credits remain
+ * a CEIP fallback planning snapshot until the buyer replaces them with a live
+ * quote, registry-backed view, or buyer-approved source.
  */
 export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
-  fundPrice: 110,
+  fundPrice: 95,
   marketCreditPrice: 25,
   effectiveDate: '2026-01-01',
-  source: 'Government of Alberta 2024 TIER Compliance Workshop slides',
-  sourceUrl: 'https://www.alberta.ca/system/files/epa-tier-compliance-workshop-2024.pdf',
-  lastVerifiedAt: '2026-04-29',
-  isFrozen: false,
-  periodLabel: 'Planning snapshot reviewed Apr 2026',
+  source: 'Canada-Alberta Implementation Agreement TIER headline price',
+  sourceUrl: 'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
+  lastVerifiedAt: '2026-05-31',
+  isFrozen: true,
+  periodLabel: '2026 headline price reviewed May 2026',
   marketPriceSource: 'CEIP fallback secondary-market planning snapshot',
   marketPriceDisclosure: 'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
 };
@@ -94,7 +97,8 @@ export function calculateSavingsPercentage(config: TIERPricingConfig = DEFAULT_T
 export function formatPricingWithProvenance(
   config: TIERPricingConfig = DEFAULT_TIER_PRICING
 ): string {
-  return `Fund: $${config.fundPrice}/t (${config.source}) | Market: $${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
+  const frozenLabel = config.isFrozen ? ' frozen' : '';
+  return `Fund: $${config.fundPrice}/t${frozenLabel} (${config.source}) | Market: $${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
 }
 
 /**
@@ -134,9 +138,8 @@ export function useTIERPricing(): TIERPricingConfig {
 /**
  * Check if pricing data is stale (>90 days since verification)
  */
-export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING): boolean {
+export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING, now: Date = new Date()): boolean {
   const verifiedAt = new Date(config.lastVerifiedAt);
-  const now = new Date();
   const daysSinceVerification = (now.getTime() - verifiedAt.getTime()) / (1000 * 60 * 60 * 24);
   return daysSinceVerification > 90;
 }

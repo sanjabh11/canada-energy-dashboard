@@ -238,14 +238,14 @@ export const en: Translations = {
   },
   dashboard: {
     title: 'Canada Energy Intelligence Platform',
-    subtitle: 'Real-time energy data analytics and insights',
+    subtitle: 'Energy data analytics and source-backed insights',
     demand: 'Demand',
     price: 'Price',
     generation: 'Generation',
     emissions: 'Emissions',
     renewable: 'Renewable',
     storage: 'Storage',
-    realTime: 'Real-time',
+    realTime: 'Current',
     historical: 'Historical'
   },
   indigenous: {
@@ -277,7 +277,7 @@ export const en: Translations = {
   },
   tabs: {
     home: 'Home',
-    realTime: 'Real-Time',
+    realTime: 'Current Data',
     analytics: 'Analytics & Trends',
     indigenous: 'Indigenous Energy',
     climatePolicy: 'Climate Policy',
@@ -308,7 +308,7 @@ export const en: Translations = {
   },
   home: {
     heroTitle: 'Advanced Energy Intelligence for Alberta Professionals',
-    heroSubtitle: 'Real-time grid analytics, AESO integration, and AI-powered insights. Built by a developer relocating to Calgary.',
+    heroSubtitle: 'Grid analytics, AESO-sourced views, and model-assisted insights. Built by a developer relocating to Calgary.',
     ctaExploreDashboard: 'Explore Dashboard',
     ctaViewAnalytics: 'View Analytics'
   },
@@ -358,9 +358,9 @@ export const en: Translations = {
     linkBackToDashboard: 'Back to Dashboard →'
   },
   realTime: {
-    title: 'Real-Time Energy Dashboard',
-    subtitle: 'Live monitoring of Canada\'s electrical grid',
-    liveMonitoring: 'Live monitoring',
+    title: 'Current Energy Dashboard',
+    subtitle: 'Live-when-available monitoring of Canada\'s electrical grid',
+    liveMonitoring: 'Live-when-available monitoring',
     activeDataSources: 'Active Data Sources',
     provincesCovered: 'Provinces Covered',
     updateFrequency: 'Update Frequency',

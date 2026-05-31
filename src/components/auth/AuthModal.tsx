@@ -111,7 +111,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             Canada Energy Academy
           </h2>
           <p className="text-slate-400 text-sm">
-            AI-powered energy education for your community
+            Guided energy education for your community
           </p>
         </div>
 
@@ -206,7 +206,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-green-500">✓</span>
-                  Real-time grid data visualization
+                  Current grid data visualization
                 </li>
                 <li className="flex items-center gap-2">
                   <span className="text-cyan-500">⬆</span>

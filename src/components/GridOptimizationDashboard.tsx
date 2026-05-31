@@ -460,7 +460,7 @@ const GridOptimizationDashboard: React.FC = () => {
               {isUsingRealData ? 'IESO' : isFallbackData ? 'FALLBACK' : 'OFFLINE'}
             </p>
             <p className="text-sm text-secondary mt-1">
-              {connectionStatus === 'connected' ? 'Real-time streaming' : connectionStatus === 'fallback' || isFallbackData ? 'Fallback telemetry' : 'Cached data'}
+              {connectionStatus === 'connected' ? 'Live streaming' : connectionStatus === 'fallback' || isFallbackData ? 'Fallback telemetry' : 'Cached data'}
             </p>
           </div>
         </div>
@@ -574,7 +574,7 @@ const GridOptimizationDashboard: React.FC = () => {
               wsConnected ? 'bg-secondary0' : 'bg-secondary0'
             }`}></span>
             <span className="text-secondary">
-              {wsConnected ? 'Real-time WebSocket Connected' : 'WebSocket Offline'}
+              {wsConnected ? 'Live WebSocket Connected' : 'WebSocket Offline'}
             </span>
           </div>
           <div className="flex items-center space-x-2 text-sm">

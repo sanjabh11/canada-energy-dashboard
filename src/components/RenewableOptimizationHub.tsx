@@ -470,7 +470,7 @@ const RenewableOptimizationHub: React.FC = () => {
                 Renewable Energy Optimization Hub
               </h1>
               <p className="text-secondary">
-                AI-Powered Solar/Wind Forecasting, Curtailment Reduction & Storage Dispatch
+                Solar/Wind Forecasting, Curtailment Reduction & Storage Dispatch
               </p>
             </div>
             

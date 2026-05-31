@@ -253,7 +253,7 @@ export const AssetHealthDashboard: React.FC = () => {
                   </div>
                   <p className="text-xs text-slate-500 mt-3">
                     Compatible with OEB Appendix 2-AB Condition-Based Risk Management methodology.
-                    No SCADA, sensors, or real-time data feeds required.
+                    No SCADA, sensors, or live data feeds required.
                   </p>
                 </div>
               </div>

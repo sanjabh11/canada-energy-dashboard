@@ -861,7 +861,7 @@ const UtilityApiDemoPage: React.FC = () => {
 
               {!SUPABASE_AUTH_CONFIGURED ? (
                 <div className="mt-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-100">
-                  Supabase Auth is not configured in this environment, so public Fixture Replay remains the only supported mode until `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set.
+                  Supabase Auth is not configured in this environment, so public Fixture Replay remains the supported mode until `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` are set.
                 </div>
               ) : null}
 

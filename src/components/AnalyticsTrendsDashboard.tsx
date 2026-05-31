@@ -474,7 +474,7 @@ export const AnalyticsTrendsDashboard: React.FC = () => {
                 <h1 id="analytics-hero-title" className="hero-title">Analytics & Trends</h1>
               </div>
               <p className="hero-subtitle">
-                Explore historical patterns, correlations, and AI-powered insights
+                Explore historical patterns, correlations, and model-assisted insights
               </p>
               {excludedLowQualityCount > 0 && (
                 <div className="mt-3 inline-flex items-center gap-2 px-3 py-1 bg-secondary border border-warning/30 rounded-lg text-sm">

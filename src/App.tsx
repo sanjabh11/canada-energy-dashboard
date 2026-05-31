@@ -204,7 +204,7 @@ const router = createBrowserRouter(
         { path: '/hedging', element: <RetailerHedgingDashboard /> },
         { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
 
-        // Industrial TIER Arbitrage (Value Prop Research Dec 2025)
+        // Industrial TIER ROI evidence (Value Prop Research Dec 2025)
         { path: '/roi-calculator', element: <TIERROICalculator /> },
         { path: '/industrial', element: <TIERROICalculator /> },
         { path: '/tier-savings', element: <TIERROICalculator /> },

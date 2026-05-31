@@ -75,7 +75,7 @@ export const InvestmentCards: React.FC = () => {
         id: 1,
         name: useRealData ? `Ontario Solar Investment (${demand.toLocaleString()} MW demand)` : 'Ontario Solar Farm',
         description: useRealData
-          ? `Real-time solar investment based on current Ontario electricity demand of ${demand.toLocaleString()} MW at ${(price * 100).toFixed(1)}¢/kWh`
+          ? `Current-feed solar investment based on Ontario electricity demand of ${demand.toLocaleString()} MW at ${(price * 100).toFixed(1)}¢/kWh`
           : 'Large-scale photovoltaic installation',
         cashFlows: [
           { amount: -(demand * baseInvestmentPerMW * 0.8), period: 0, description: 'Capital investment' },
@@ -209,7 +209,7 @@ export const InvestmentCards: React.FC = () => {
             </h1>
 
             <p className={`${TEXT_CLASSES.body} text-xl lg:text-2xl text-green-100 font-light max-w-3xl mx-auto leading-relaxed animate-fade-in-delayed`}>
-              AI-powered financial analysis with live-when-available market data and fallback-aware modeling
+              Model-assisted financial analysis with live-when-available market data and fallback-aware modeling
             </p>
             <div className="mt-4 flex justify-center">
               <DataFreshnessBadge

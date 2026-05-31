@@ -139,10 +139,10 @@ export function generatePageSchema(page: PageSchema): object {
 export const PAGE_SCHEMAS = {
   dashboard: generatePageSchema({
     type: 'WebPage',
-    name: 'Real-Time Energy Dashboard - Canada Energy Intelligence Platform',
-    description: 'Live monitoring of Canadian energy systems with real-time data from IESO, AESO, and provincial grids. Track demand, generation mix, and pricing.',
+    name: 'Energy Forecast Proof Packs - Canada Energy Intelligence Platform',
+    description: 'Canadian utility forecast proof packs with benchmark appendices, source labels, fallback labels, and freshness notes for IESO, AESO, and provincial grid data.',
     url: buildSeoUrl('/dashboard'),
-    keywords: ['Canada energy dashboard', 'IESO real-time data', 'AESO grid', 'Ontario electricity demand', 'Alberta power prices'],
+    keywords: ['Canada energy dashboard', 'IESO electricity data', 'AESO grid', 'Ontario electricity demand', 'Alberta power prices'],
     breadcrumb: [
       { name: 'Home', url: buildSeoUrl('/') },
       { name: 'Dashboard', url: buildSeoUrl('/dashboard') }
@@ -151,10 +151,10 @@ export const PAGE_SCHEMAS = {
 
   indigenous: generatePageSchema({
     type: 'WebPage',
-    name: 'Indigenous Energy Sovereignty - Canada Energy Intelligence Platform',
-    description: 'Track Indigenous energy projects, FPIC review, and UNDRIP implementation across Canada with OCAP-aligned workflow language and explicit governance fields.',
+    name: 'Indigenous Energy Project Workflows - Canada Energy Intelligence Platform',
+    description: 'Track Indigenous energy projects with FPIC review workflow language, OCAP-aligned workflow framing, owner-supplied governance markers, and explicit review fields.',
     url: buildSeoUrl('/indigenous'),
-    keywords: ['Indigenous energy', 'UNDRIP compliance', 'FPIC', 'OCAP', 'First Nations energy projects', 'Indigenous data sovereignty'],
+    keywords: ['Indigenous energy', 'FPIC review workflow', 'OCAP-aligned workflow', 'First Nations energy projects', 'governance review markers'],
     breadcrumb: [
       { name: 'Home', url: buildSeoUrl('/') },
       { name: 'Indigenous Energy', url: buildSeoUrl('/indigenous') }
@@ -204,9 +204,9 @@ export const PAGE_SCHEMAS = {
 export const DATASET_SCHEMAS = {
   ontarioDemand: generateDatasetSchema({
     name: 'Ontario Electricity Demand Dataset',
-    description: 'Real-time and historical electricity demand data for Ontario, Canada. Sourced from IESO (Independent Electricity System Operator).',
+    description: 'Live-when-available and historical electricity demand data for Ontario, Canada, with fallback and freshness labels. Sourced from IESO (Independent Electricity System Operator).',
     url: buildSeoUrl('/dashboard'),
-    keywords: ['Ontario electricity', 'IESO demand', 'power consumption', 'grid load', 'real-time energy'],
+    keywords: ['Ontario electricity', 'IESO demand', 'power consumption', 'grid load', 'freshness-labeled energy data'],
     creator: 'Canada Energy Intelligence Platform',
     temporalCoverage: '2020/2025',
     spatialCoverage: 'Ontario, Canada'
@@ -214,7 +214,7 @@ export const DATASET_SCHEMAS = {
 
   albertaGrid: generateDatasetSchema({
     name: 'Alberta Electricity Grid Dataset',
-    description: 'Real-time supply, demand, and pricing data for Alberta electricity market. Sourced from AESO (Alberta Electric System Operator).',
+    description: 'Live-when-available supply, demand, and pricing data for Alberta electricity market with fallback and freshness labels. Sourced from AESO (Alberta Electric System Operator).',
     url: buildSeoUrl('/dashboard'),
     keywords: ['Alberta electricity', 'AESO data', 'pool price', 'power generation', 'Alberta grid'],
     creator: 'Canada Energy Intelligence Platform',
@@ -236,7 +236,7 @@ export const DATASET_SCHEMAS = {
     name: 'Indigenous Energy Projects Dataset',
     description: 'Tracking Indigenous-led and Indigenous-partnered energy projects across Canada with OCAP-aligned workflow framing and explicit governance review requirements.',
     url: buildSeoUrl('/indigenous'),
-    keywords: ['Indigenous energy', 'First Nations projects', 'renewable energy Indigenous', 'energy sovereignty'],
+    keywords: ['Indigenous energy', 'First Nations projects', 'renewable energy Indigenous', 'governance review workflow'],
     creator: 'Canada Energy Intelligence Platform',
     temporalCoverage: '2015/2025',
     spatialCoverage: 'Canada',

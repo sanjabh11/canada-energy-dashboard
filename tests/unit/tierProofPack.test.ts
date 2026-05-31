@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_TIER_PRICING } from '../../src/lib/tierPricing';
+import {
+  DEFAULT_TIER_PRICING,
+  formatPricingWithProvenance,
+  isPricingStale,
+} from '../../src/lib/tierPricing';
 import {
   buildTierAppendixMarkdown,
   buildTierAssumptions,
@@ -33,6 +37,15 @@ function buildSnapshot(overrides: Partial<TierProofSnapshot> = {}): TierProofSna
 }
 
 describe('tierProofPack', () => {
+  it('uses the current 2026 frozen TIER headline-price basis with source provenance', () => {
+    expect(DEFAULT_TIER_PRICING.fundPrice).toBe(95);
+    expect(DEFAULT_TIER_PRICING.isFrozen).toBe(true);
+    expect(DEFAULT_TIER_PRICING.lastVerifiedAt).toBe('2026-05-31');
+    expect(DEFAULT_TIER_PRICING.sourceUrl).toContain('pm.gc.ca');
+    expect(formatPricingWithProvenance()).toContain('Fund: $95/t frozen');
+    expect(isPricingStale(DEFAULT_TIER_PRICING, new Date('2026-05-31T12:00:00.000Z'))).toBe(false);
+  });
+
   it('marks fallback pricing honestly when no live market source is present', () => {
     const bundle = buildTierProofBundle(buildSnapshot());
 

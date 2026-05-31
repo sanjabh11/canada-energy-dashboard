@@ -26,7 +26,15 @@ describe('regulatoryProofPack', () => {
 
     expect(descriptor.title).toContain('OEB Chapter 5 filing prep pack');
     expect(descriptor.sections[0].body).toContain('Section 5.2 — Asset Condition Assessment — Asset condition summary by asset class, including health index scores, age demographics, and replacement planning per OEB Appendix 2-AB methodology.');
-    expect(descriptor.sections.find((section) => section.heading === 'Official source and field mapping')).toBeTruthy();
+    const sourceMappingSection = descriptor.sections.find((section) => section.heading === 'Official source and field mapping');
+    expect(sourceMappingSection).toBeTruthy();
+    const sourceMappingBody = Array.isArray(sourceMappingSection?.body)
+      ? sourceMappingSection.body.join(' ')
+      : sourceMappingSection?.body ?? '';
+    expect(sourceMappingBody).toContain('Version label: OEB Chapter 5 DSP filing workflow mapping — 2027 filing requirements dated 2025-12-16');
+    expect(sourceMappingBody).toContain('multiple forecast scenarios');
+    expect(sourceMappingBody).toContain('Extreme-weather');
+    expect(descriptor.definition.assumptions.join(' ')).toContain('applications filed after April 1, 2027');
     expect(checklist).toContain('# AUC Rule 005 filing prep pack reviewer checklist');
     expect(checklist).toContain('Confirm utility-specific legal entity, year, and filing officer details before submission.');
     expect(scheduleExports).toHaveLength(4);

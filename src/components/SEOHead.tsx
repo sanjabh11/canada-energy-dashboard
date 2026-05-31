@@ -135,10 +135,10 @@ export const SEO_CONFIGS = {
     datasetSchema: DATASET_SCHEMAS.ontarioDemand
   },
   indigenous: {
-    title: 'Indigenous Energy Sovereignty',
-    description: 'Track Indigenous energy projects, FPIC compliance, and UNDRIP implementation across Canada.',
+    title: 'Indigenous Energy Project Workflows',
+    description: 'Track Indigenous energy projects with FPIC review workflow language, OCAP-aligned workflow framing, owner-supplied governance markers, and explicit review fields.',
     path: '/indigenous',
-    keywords: ['Indigenous energy', 'UNDRIP compliance', 'FPIC', 'OCAP', 'First Nations energy'],
+    keywords: ['Indigenous energy', 'FPIC review workflow', 'OCAP-aligned workflow', 'First Nations energy', 'governance review markers'],
     schema: PAGE_SCHEMAS.indigenous,
     datasetSchema: DATASET_SCHEMAS.indigenousProjects
   },
@@ -194,14 +194,14 @@ export const SEO_CONFIGS = {
     keywords: ['Indigenous energy reporting', 'Wah-ila-toos report', 'CERRC reporting', 'OCAP-aligned workflow', 'First Nations energy projects', 'funder reporting dashboard']
   },
   roiCalculator: {
-    title: 'TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage',
-    description: 'Calculate how much your Alberta facility can save on TIER carbon compliance. Compare the 2026 fund-price basis ($110/t) against the disclosed market-credit price shown in-route and the Direct Investment pathway.',
+    title: 'Alberta TIER Scenario Planning Calculator',
+    description: 'Build source-dated Alberta TIER planning estimates with buyer validation required. Compare fund-price assumptions, disclosed scenario inputs, and Direct Investment pathway notes.',
     path: '/roi-calculator',
-    keywords: ['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']
+    keywords: ['TIER calculator', 'Alberta TIER scenario planning', 'TIER credit ledger', 'EPC offset Alberta', 'Direct Investment TIER']
   },
   municipal: {
     title: 'Municipal Climate Tools | Alberta Energy Compliance for Municipalities',
-    description: 'CEIP helps Alberta municipalities implement climate action plans. Methane compliance, TIER credits, GHG tracking. All tiers priced below NWPTA $75K threshold.',
+    description: 'CEIP supports Alberta municipal climate planning with proof-pack workflows for methane program review, TIER scenario notes, GHG tracking, and procurement threshold checks.',
     path: '/municipal',
     keywords: ['municipal climate tools Alberta', 'TIER compliance municipality', 'GHG reporting municipal', 'MCCAC energy tools', 'FCM Green Municipal Fund']
   }

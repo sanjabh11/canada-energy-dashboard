@@ -286,6 +286,32 @@ const positiveOverclaimFields = [
   'follow_up_action',
   'notes',
 ];
+const directIdentifierPatterns = [
+  {
+    label: 'email address',
+    pattern: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
+  },
+  {
+    label: 'North American phone number',
+    pattern: /(?<![A-Za-z0-9])(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?![A-Za-z0-9])/,
+  },
+  {
+    label: 'Canadian postal code',
+    pattern: /\b[A-Z]\d[A-Z][ -]?\d[A-Z]\d\b/i,
+  },
+  {
+    label: 'direct identifier column or label',
+    pattern: /\b(?:customer[_ -]?name|customer[_ -]?email|account[_ -]?(?:number|no|id)|meter[_ -]?(?:id|identifier|number)|service[_ -]?address|postal[_ -]?code|phone(?:[_ -]?number)?)\b\s*[,;:=]/i,
+  },
+  {
+    label: 'secret or credential assignment',
+    pattern: /\b(?:api[_ -]?key|secret|password|token)\b\s*[:=]\s*\S+/i,
+  },
+  {
+    label: 'street address',
+    pattern: /\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Road|Rd|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres)\b/i,
+  },
+];
 const inspectableEvidenceExtensions = new Set([
   '.csv',
   '.tsv',
@@ -520,6 +546,21 @@ function scanPositiveOverclaims(row, rowNumber) {
   }
 }
 
+function withIndefiniteArticle(label) {
+  return `${/^[aeiou]/i.test(label) ? 'an' : 'a'} ${label}`;
+}
+
+function scanRegisterDirectIdentifiers(row, rowNumber) {
+  for (const [field, value] of Object.entries(row)) {
+    if (isBlank(value ?? '')) continue;
+
+    const matchedPattern = directIdentifierPatterns.find(({ pattern }) => pattern.test(value));
+    if (matchedPattern) {
+      failures.push(`Row ${rowNumber}: ${field} appears to contain ${withIndefiniteArticle(matchedPattern.label)}; keep the pilot evidence register redacted and store sensitive originals outside this repo.`);
+    }
+  }
+}
+
 function hasIndependentReviewerRole(row) {
   const reviewerRole = normalizeText(row.reviewer_role ?? '');
   const evidenceOwner = normalizeText(row.evidence_owner ?? '');
@@ -604,36 +645,9 @@ function scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber) 
   localEvidenceTextByRowNumber.set(rowNumber, text);
   scanPositiveOverclaimText(text, `local evidence artifact ${referencePath}`, rowNumber);
 
-  const highRiskPatterns = [
-    {
-      label: 'email address',
-      pattern: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i,
-    },
-    {
-      label: 'North American phone number',
-      pattern: /(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}/,
-    },
-    {
-      label: 'Canadian postal code',
-      pattern: /\b[A-Z]\d[A-Z][ -]?\d[A-Z]\d\b/i,
-    },
-    {
-      label: 'direct identifier column or label',
-      pattern: /\b(?:customer[_ -]?name|customer[_ -]?email|account[_ -]?(?:number|no|id)|meter[_ -]?(?:id|identifier|number)|service[_ -]?address|postal[_ -]?code|phone(?:[_ -]?number)?)\b\s*[,;:=]/i,
-    },
-    {
-      label: 'secret or credential assignment',
-      pattern: /\b(?:api[_ -]?key|secret|password|token)\b\s*[:=]\s*\S+/i,
-    },
-    {
-      label: 'street address',
-      pattern: /\b\d{1,6}\s+[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:Street|St|Road|Rd|Avenue|Ave|Boulevard|Blvd|Drive|Dr|Lane|Ln|Court|Ct|Way|Crescent|Cres)\b/i,
-    },
-  ];
-
-  const matchedPattern = highRiskPatterns.find(({ pattern }) => pattern.test(text));
+  const matchedPattern = directIdentifierPatterns.find(({ pattern }) => pattern.test(text));
   if (matchedPattern) {
-    failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} appears to contain a ${matchedPattern.label}; retain only redacted artifacts under --evidence-root.`);
+    failures.push(`Row ${rowNumber}: local evidence artifact ${referencePath} appears to contain ${withIndefiniteArticle(matchedPattern.label)}; retain only redacted artifacts under --evidence-root.`);
   }
 
   const diagnosticRule = confidenceDiagnosticRulesByRoute.get(row.route);
@@ -752,6 +766,7 @@ if (rows.length < 2) {
     if (isTemplateRow) failures.push(`Row ${rowNumber}: template placeholder row must be replaced before validation.`);
 
     scanPositiveOverclaims(row, rowNumber);
+    scanRegisterDirectIdentifiers(row, rowNumber);
 
     if (!isValidIsoDate(row.record_date ?? '')) {
       failures.push(`Row ${rowNumber}: record_date must use a valid YYYY-MM-DD calendar date.`);

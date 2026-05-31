@@ -1,6 +1,6 @@
 /**
  * Household Energy Advisor - Main Component
- * AI-powered personal energy advisor for Canadian households
+ * Model-assisted personal energy advisor for Canadian households
  */
 
 import React, { useState, useEffect } from 'react';

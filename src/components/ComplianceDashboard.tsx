@@ -2,7 +2,7 @@
  * Regulatory Compliance Monitoring Dashboard
  *
  * Comprehensive monitoring of regulatory compliance across projects,
- * with violation tracking, audit trails, and AI-powered remediation.
+ * with violation tracking, audit trails, and model-assisted remediation.
  */
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';

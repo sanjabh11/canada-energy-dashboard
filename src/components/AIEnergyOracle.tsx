@@ -1,7 +1,7 @@
 /**
  * AI Energy Oracle Dashboard - Predictive Intelligence
  * 
- * AI-powered energy intelligence platform that supports predictive insights
+ * Model-assisted energy intelligence surface that supports predictive insights
  * and decision support for energy monitoring.
  */
 
@@ -76,7 +76,7 @@ export const AIEnergyOracle: React.FC = () => {
       id: `insight_${Date.now()}`,
       type: insightTypes[Math.floor(Math.random() * insightTypes.length)],
       title: 'New AI-Generated Insight',
-      description: 'Real-time analysis has identified a new pattern requiring attention.',
+      description: 'Current analysis has identified a new pattern requiring attention.',
       confidence: Math.floor(Math.random() * 40) + 60,
       timeframe: Math.random() > 0.5 ? '2 hours' : '1 day',
       impact: impacts[Math.floor(Math.random() * impacts.length)],
@@ -177,7 +177,7 @@ export const AIEnergyOracle: React.FC = () => {
       
       const mockResponse: NaturalLanguageResponse = {
         answer: `Based on current data analysis, ${naturalLanguageQuery.toLowerCase()} shows interesting patterns. The AI Oracle has identified several key trends and correlations that may be relevant to your query.`,
-        data_sources: ['IESO Real-time Data', 'Weather Canada', 'Statistics Canada'],
+        data_sources: ['IESO current data', 'Weather Canada', 'Statistics Canada'],
         visualizations: [
           {
             type: 'chart',
@@ -247,7 +247,7 @@ export const AIEnergyOracle: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold">AI Energy Oracle</h1>
-              <p className="text-blue-200">Predictive Intelligence • Real-time Analysis • Autonomous Insights</p>
+              <p className="text-blue-200">Predictive Intelligence • Current Analysis • Assisted Insights</p>
             </div>
           </div>
           

@@ -179,7 +179,7 @@ export function TrainingCoordinatorsPage() {
     <div className="min-h-screen bg-slate-900">
       <SEOHead
         title="Training Coordinators | Cohort Energy Education Programs"
-        description="Affordable, AI-powered energy training for Indigenous programs, colleges, and SME associations. $120/learner vs $2,500 for traditional CEM certification."
+        description="Affordable Canada-specific energy training for Indigenous programs, colleges, and SME associations. $120/learner vs $2,500 for traditional CEM certification."
         path="/training-coordinators"
         keywords={['energy training', 'ISET energy program', 'college energy curriculum', 'workforce energy literacy', 'cohort learning']}
       />

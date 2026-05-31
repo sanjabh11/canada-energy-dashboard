@@ -2,7 +2,7 @@
  * Modular Chart Widget Component
  *
  * Reusable chart component with multiple visualization types,
- * interactive features, and AI-powered insights.
+ * interactive features, and model-assisted insights.
  */
 
 import React, { useState, useEffect, useRef } from 'react';

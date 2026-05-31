@@ -137,7 +137,7 @@ export const ContactPage: React.FC = () => {
     },
     {
       question: 'Do you support Indigenous consultation workflows?',
-      answer: 'Yes, we have dedicated features for Indigenous consultation tracking, UNDRIP compliance, and traditional ecological knowledge integration.'
+      answer: 'Yes, we have dedicated features for Indigenous consultation tracking, FPIC review workflow language, owner-supplied governance markers, and traditional ecological knowledge integration.'
     }
   ];
 

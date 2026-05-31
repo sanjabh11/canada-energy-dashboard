@@ -1119,10 +1119,10 @@ export const RealTimeDashboard: React.FC = () => {
         <div className="card flex items-center justify-between gap-md">
           <div>
             <h3 className="text-lg font-semibold text-primary mb-2">
-              Explore Historical Trends & AI Insights
+              Explore Historical Trends & Assisted Insights
             </h3>
             <p className="text-sm text-secondary">
-              View 30-day trends, weather correlations, renewable penetration heatmaps, and AI-powered analytics
+              View 30-day trends, weather correlations, renewable penetration heatmaps, and assisted analytics
             </p>
           </div>
           <button

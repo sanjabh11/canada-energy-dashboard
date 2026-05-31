@@ -237,10 +237,10 @@ export const TIERROICalculator: React.FC = () => {
     return (
         <div className="min-h-screen bg-slate-900 text-white">
           <SEOHead
-            title="TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage"
-            description={`Calculate how much your Alberta facility can save on TIER carbon compliance. Compare the 2026 fund payment basis ($${FUND_PRICE}/t) against the disclosed market-credit price shown in the route and the Direct Investment pathway.`}
+            title="Alberta TIER Scenario Planning Calculator"
+            description={`Build source-dated Alberta TIER planning estimates with buyer validation required. Compare the 2026 fund payment basis ($${FUND_PRICE}/t), disclosed scenario inputs, and Direct Investment pathway notes.`}
             path="/roi-calculator"
-            keywords={['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']}
+            keywords={['TIER calculator', 'Alberta TIER scenario planning', 'TIER credit ledger', 'EPC offset Alberta', 'Direct Investment TIER']}
           />
 
           {/* Navigation */}
@@ -268,7 +268,7 @@ export const TIERROICalculator: React.FC = () => {
                 The <strong>Technology Innovation and Emissions Reduction (TIER)</strong> regulation requires
                 Alberta facilities emitting 100,000+ tonnes CO₂e/year to reduce emissions below a benchmark.
                 Facilities exceeding their benchmark can model compliance by: paying the <strong>${FUND_PRICE}/tonne 2026 fund price basis</strong>,
-                purchasing <strong>market credits (EPCs/Offsets) at the live or fallback rate shown in the route</strong>, or using the
+                purchasing <strong>market credits (EPCs/Offsets) at the source-dated or fallback rate shown in the route</strong>, or using the
                 <strong> Direct Investment pathway</strong> where eligible under current Alberta guidance.
                 The ${ARBITRAGE_SPREAD}/tonne spread shown here is scenario-based and must be refreshed with buyer-specific pricing before approval.
               </p>

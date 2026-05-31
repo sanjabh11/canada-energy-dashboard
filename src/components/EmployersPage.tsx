@@ -51,7 +51,7 @@ const CASE_STUDIES = [
   },
   {
     id: 'indigenous-sovereignty',
-    title: 'Indigenous Data Sovereignty Dashboard',
+    title: 'Indigenous Energy Project Workflow',
     description: 'OCAP-aligned workflow for First Nations energy project tracking with FPIC workflow management, governance review fields, and TEK-aware planning support.',
     metrics: [
       { label: 'FPIC Workflows', value: '3 stages' },
@@ -125,7 +125,7 @@ export function EmployersPage() {
 
               <p className="text-xl text-slate-300 mb-6">
                 34 years architecting enterprise platforms. Expert in AESO integration,
-                Indigenous data sovereignty, and Alberta energy markets.
+                Indigenous governance workflows, and Alberta energy markets.
                 <strong className="text-white"> Family in Calgary. Ready to relocate.</strong>
               </p>
 

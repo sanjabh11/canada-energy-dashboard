@@ -2,7 +2,7 @@
   "@context": "https://schema.org",
   "@type": "WebApplication",
   "name": "Canada Energy Intelligence Platform",
-  "description": "Real-time energy data analytics platform providing comprehensive insights into Canadian energy infrastructure, renewable forecasts, grid optimization, and Indigenous consultation tracking.",
+  "description": "Canadian utility and Alberta TIER proof-pack product that turns forecasts, filing evidence, benchmark transparency, compliance scenarios, credit ledgers, asset triage, security review, billing checks, and large-load assumptions into buyer-ready artifacts.",
   "url": "https://canada-energy.netlify.app/",
   "applicationCategory": "EnergyAnalytics",
   "operatingSystem": "Web",
@@ -26,12 +26,13 @@
     ]
   },
   "featureList": [
-    "Real-time energy data streaming",
-    "Provincial energy analytics",
-    "Renewable energy forecasts",
-    "Grid optimization insights",
-    "Indigenous consultation tracking",
-    "Regulatory compliance monitoring",
-    "AI-powered recommendations"
+    "Forecast proof packs with benchmark appendices",
+    "Filing evidence and reviewer checklists",
+    "Alberta TIER scenario planning",
+    "Credit ledger review artifacts",
+    "Asset triage summaries",
+    "Security review packs",
+    "Shadow billing checks",
+    "Large-load assumption reviews"
   ]
 }

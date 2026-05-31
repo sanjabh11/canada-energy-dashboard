@@ -551,10 +551,10 @@ export const DigitalTwinDashboard: React.FC = () => {
 
       {/* Main Dashboard Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Real-time System Visualization */}
+        {/* Current system visualization */}
         <div className="lg:col-span-2 card shadow p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-primary">Real-time System State</h3>
+            <h3 className="text-lg font-semibold text-primary">Current System State</h3>
             <div className="flex items-center gap-2 text-sm text-secondary">
               <Activity size={14} />
               <span className={getStabilityColor(metrics.systemStability)}>

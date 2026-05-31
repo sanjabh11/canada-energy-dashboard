@@ -1,7 +1,7 @@
 {
   "name": "Canada Energy Intelligence Platform",
   "short_name": "CEIP",
-  "description": "Real-time Canadian energy intelligence platform providing comprehensive analytics, renewable forecasts, grid optimization, and Indigenous consultation tracking.",
+  "description": "Canadian utility and Alberta TIER proof-pack product for forecasts, filing evidence, benchmark transparency, compliance scenarios, credit ledgers, security review, billing checks, and buyer-ready artifacts.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
@@ -41,14 +41,14 @@
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "View real-time energy dashboard",
+      "description": "View utility forecast and benchmark proof packs",
       "url": "/dashboard",
       "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
     {
       "name": "Indigenous Energy",
       "short_name": "Indigenous",
-      "description": "Indigenous energy sovereignty dashboard",
+      "description": "View Indigenous energy project workflow review",
       "url": "/indigenous",
       "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
     },
