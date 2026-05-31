@@ -254,7 +254,7 @@ export const pilotConfidenceRules: PilotConfidenceRule[] = [
   {
     id: 'three-artifacts',
     evidenceState: 'Three buyer artifacts across utility, TIER, and billing/security',
-    confidenceMovement: 'Strategy confidence can move toward 95% if claim checks remain clean.',
+    confidenceMovement: 'Buyer-proven market confidence can move toward 95% if claim checks remain clean.',
   },
   {
     id: 'paid-pilot',
@@ -347,7 +347,7 @@ export const pilotStopConditions = [
   'The buyer requires production utility onboarding, engineering approval, broker execution, SOC certification, or regulator submission automation before a pilot.',
   'Source data contains personal data, meter identifiers, account numbers, unapproved customer records, or secrets.',
   'The buyer cannot name a reviewer or decision owner.',
-  'The 95% strategy claim is requested before a paid pilot, purchase order, letter of intent, or signed design-partner signal is captured.',
+  'The 95% market-confidence claim is requested before a paid pilot, purchase order, letter of intent, or signed design-partner signal is captured.',
   'Forecast metrics are weaker than baseline and the buyer cannot accept a diagnostic artifact.',
   'TIER pricing, legal, tax, or trading advice is required instead of planning support.',
 ];

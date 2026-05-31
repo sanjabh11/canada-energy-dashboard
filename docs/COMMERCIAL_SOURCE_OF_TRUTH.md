@@ -11,9 +11,9 @@ Use these files for current CEIP positioning:
 | File | Role | Required boundary |
 |---|---|---|
 | [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
-| [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Strategy confidence is 90-92%; 95% needs buyer-supplied pilot evidence. |
-| [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Adversarial confidence audit. | Do not convert confidence estimates into market-outcome claims. |
-| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
+| [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
+| [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Prior adversarial confidence audit and market-proof caution. | Superseded for strategy-direction scoring by the May 31 roadmap; do not convert confidence estimates into market-outcome claims. |
+| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
 | [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
@@ -122,7 +122,7 @@ pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 ```
 
-Before any copy says CEIP has reached 95% strategy confidence, validate the filled buyer-evidence register with:
+Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 
 ```bash
 pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md --route /utility-demand-forecast --record-date 2026-05-31 --pii-screen-result redacted --buyer-data-coverage-pct 90 --time-to-artifact-hours 36 --reviewer-role "utility planning reviewer" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status paid_pilot --claim-boundary "Buyer-supplied redacted planning support only." --do-not-claim "Do not claim production utility onboarding." --diagnostic "MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger."

@@ -64,7 +64,7 @@ export function PilotReadinessPage() {
               <div>
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-200/80">Confidence gate</div>
                 <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                  CEIP is strategically ready at 90-92%. Buyer evidence is what moves it toward 95%.
+                  CEIP has a 95/100 desk-research strategy direction. Buyer evidence is what moves market confidence.
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
                   This page shows the exact inputs needed before CEIP can honestly move from public-system,
@@ -199,7 +199,7 @@ export function PilotReadinessPage() {
           <div className="mx-auto max-w-7xl px-6 py-16">
             <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
               <div>
-                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">95% strategy gate</div>
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">95% market gate</div>
                 <h2 className="mt-4 text-3xl font-semibold text-white">
                   CEIP cannot claim 95% until the filled buyer-evidence register passes this gate.
                 </h2>

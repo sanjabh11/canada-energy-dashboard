@@ -178,7 +178,7 @@ Acceptance:
 | Public-system or constructed sample only | stay at current route readiness; do not increase market confidence |
 | One buyer file supplied but no reviewer feedback | increase only the specific feature by up to 0.2/5 |
 | One buyer file plus accepted artifact | increase the specific feature by up to 0.4/5 |
-| Three buyer artifacts across utility, TIER, and billing/security | strategy confidence can move toward 95% if claim-boundary checks remain clean |
+| Three buyer artifacts across utility, TIER, and billing/security | buyer-proven market confidence can move toward 95% if claim-boundary checks remain clean |
 | Paid pilot or signed design-partner letter | market confidence can be upgraded only with route-specific evidence attached |
 
 ## Evidence Register Template

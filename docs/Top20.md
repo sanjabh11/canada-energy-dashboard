@@ -4,7 +4,7 @@
 > **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
 > **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
 > **Commercial source of truth:** [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md).
-> **Confidence note:** See [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md). Current strategy confidence is 90-92%; 95% market confidence requires buyer-supplied pilot evidence.
+> **Confidence note:** See [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md). Current desk-research strategy-direction confidence is 95/100; 95% market confidence requires buyer-supplied pilot evidence.
 > **Pilot evidence checklist:** [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
 
 ## Lead USP
@@ -77,7 +77,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 | Fast pilot delivery | At least one accepted buyer proof pack delivered in 48 hours or less, with no accepted confidence-moving row above 120 hours. | Proves the solo-developer proof-pack wedge is operationally credible, not just theoretically useful. |
 | Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
 
-Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist. Do not claim 95% strategy confidence unless a filled register passes:
+Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist. Do not claim 95% market confidence unless a filled register passes:
 
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts

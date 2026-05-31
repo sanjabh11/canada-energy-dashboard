@@ -619,7 +619,7 @@ export function buildUtilityForecastTrustRetainedEvidenceExtract(
     '## Trust Report Boundaries',
     `- buyer-specific accuracy claim: ${dataset.buyer_specific_accuracy_claim ? 'yes' : 'no'}`,
     `- pack confidence boundary: ${pack.confidence_boundary}`,
-    '- Reviewer acceptance and buyer source approval remain required before this artifact can move strategy confidence.',
+    '- Reviewer acceptance and buyer source approval remain required before this artifact can move buyer-proven market confidence.',
     '',
     '## Methodology References',
     ...pack.methodology_references.map((reference) => `- ${reference.label}: ${reference.url}`),

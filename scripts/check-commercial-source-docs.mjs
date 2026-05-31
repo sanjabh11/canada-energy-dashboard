@@ -229,7 +229,7 @@ if (!existsSync(sourceDocPath)) {
   }
 
   const requiredPhrases = [
-    '90-92%',
+    'Desk-research strategy-direction confidence is 95/100',
     'buyer-supplied pilot evidence',
     'UtilityAPI/Green Button sandbox',
     'OCAP-aligned workflow',

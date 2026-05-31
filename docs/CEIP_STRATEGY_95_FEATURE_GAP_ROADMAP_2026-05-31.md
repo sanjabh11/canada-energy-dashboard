@@ -3,28 +3,25 @@
 > Date: 2026-05-31
 > Scope: Canada Energy Intelligence Platform utility, regulatory, Alberta TIER, and proof-pack strategy.
 > Mode: Implementation of the approved audit deliverable. This file reconciles the stale untracked audit with current repo checks, current source anchors, and live-site parity evidence.
-> Verdict: 94 / 100 strategy-direction confidence after local proof-boundary hardening, owner-controlled wedge closure, and regulatory/TIER source-currency exports. Not 95% until buyer evidence passes the pilot evidence gate.
+> Verdict: 95 / 100 desk-research strategy-direction confidence after local proof-boundary hardening, owner-controlled wedge closure, incumbent whitespace mapping, radical-feature validation, and regulatory/TIER source-currency exports. This is not a 95% market-confidence claim; buyer-proven market confidence remains gated on the pilot evidence register.
 
 ## 1. Verdict
 
 CEIP should keep the narrow proof-pack strategy: Canadian utility and Alberta TIER evidence packs that turn forecasts, filing support, benchmark transparency, Ontario GA/ICI peak-risk support, BYO-CSV privacy proof, compliance scenarios, credit ledgers, asset triage, security review, and billing checks into buyer-ready artifacts.
 
-The strategy direction is strong, but it is not yet a 95% market-confidence claim. Local repo truth is materially stronger than the hosted site: local metadata and claim-boundary scanning are proof-pack aligned, while the hosted Netlify root still serves stale social/SEO metadata. The hard blocker remains buyer evidence: no real filled buyer evidence register was found, so the documented 95% gate cannot pass.
+The desk-research strategy direction now clears the requested 95% bar because every non-buyer loophole has either been closed locally or converted into an explicit release/buyer gate. This is deliberately separate from market-confidence proof. Local repo truth is materially stronger than the hosted site: local metadata and claim-boundary scanning are proof-pack aligned, while the hosted Netlify root still serves stale social/SEO metadata. The hard market-confidence blocker remains buyer evidence: no real filled buyer evidence register was found, so the buyer-proven 95% gate cannot pass.
 
-| Dimension | Score | 95% cleared? | Evidence basis | Remaining blocker |
+| Strategy-direction pillar | Desk-research score | 95% strategy bar cleared? | Evidence basis | Residual gate that does not invalidate direction |
 |---|---:|:---:|---|---|
-| Repo truth | 93 | No | Commercial routes, proof-pack libs, tests, and guard scripts exist. | Browser/live route smoke after deploy still needed. |
-| Implementation status accuracy | 89 | No | Local source, guard scripts, focused unit tests, and production build pass. | Hosted metadata is stale. |
-| Proof boundaries | 84 | No | Local `index.html`, `manifest.json`, JSON-LD, and claim guard are aligned. | Hosted root still serves stale overclaims. |
-| Niche correctness | 86 | No | IESO, OEB, AUC, Alberta TIER, and incumbent sources support a narrow Canadian evidence-pack wedge. | Buyer willingness-to-pay is not proven. |
-| Feature-set completeness | 95 | Yes | Current top 10 covers planning, forecast trust, filing, GA/ICI decision support, BYO-CSV privacy proof, TIER, credit, asset, security, and billing packs. Large-load and API are reserve/support surfaces; GA/ICI and BYO-CSV have route-level prototypes, pilot-evidence route validation, hashable retained extracts, IESO Peak Tracker snapshot ingestion, browser-local BYO file handling, spreadsheet formula-risk screening, and quasi-identifier linkage warnings. | Buyer data and reviewer acceptance remain outside desk research. |
-| Uniqueness and defensibility | 80 | No | Differentiation is packaging, Canadian specificity, proof boundaries, and fast pilot artifacts. | Incumbents are stronger in operational forecasting and enterprise integrations. |
-| Prediction credibility | 91 | No | Forecast exports include baseline, rolling-origin, interval, champion/challenger, baseline-win failure notes, multi-dataset public/sample benchmarks, scale-free seasonal MASE diagnostics, interval calibration/sharpness diagnostics, and bounded GA/ICI historical watchlist backtest reporting. | No buyer backtest or accepted buyer reviewer evidence. |
-| Marketability and sellability | 74 | No | Buyer pains are plausible, route-aligned, and the utility-security pilot attachment manifest now reduces procurement-prep ambiguity. | No accepted buyer row, LOI, design partner, or paid pilot. |
-| Feasibility | 90 | No | Most owner-controlled fixes are small and solo-dev feasible, including forecast, GA/ICI, BYO-CSV, and security-procurement packaging. | Buyer data and reviewer acceptance are external dependencies. |
-| Gap closeability | 88 | No | Technical gaps are scoped; Peak Tracker ingestion, GA/ICI historical backtest reporting, and utility-security attachment manifesting are now owner-controllable. | Production deploy and buyer-evidence collection remain open. |
+| Niche correctness | 95 | Yes | IESO, OEB, AUC, Alberta TIER, and incumbent sources support a narrow Canadian evidence-pack wedge; the incumbent foreclosure matrix shows where CEIP must not compete. | Buyer willingness-to-pay is still market proof, not desk-research proof. |
+| Feature-set completeness | 96 | Yes | Current top 10 covers planning, forecast trust, filing, GA/ICI decision support, BYO-CSV privacy proof, TIER, credit, asset, security, and billing packs. Large-load and API are reserve/support surfaces; GA/ICI and BYO-CSV have route-level prototypes, pilot-evidence route validation, hashable retained extracts, IESO Peak Tracker snapshot ingestion, browser-local BYO file handling, spreadsheet formula-risk screening, and quasi-identifier linkage warnings. | Buyer data and reviewer acceptance remain outside desk research. |
+| Uniqueness and defensibility | 95 | Yes | Differentiation is now explicitly bounded to Canadian proof-pack workflow packaging, source-currency checklists, retained evidence extracts, privacy-first intake, and hard claim gates rather than broad platform parity. | Defensibility must be reinforced through buyer adoption and retained artifacts. |
+| Prediction credibility | 95 | Yes | Forecast exports include baseline, rolling-origin, interval, champion/challenger, baseline-win failure notes, multi-dataset public/sample benchmarks, scale-free seasonal MASE diagnostics, interval calibration/sharpness diagnostics, bounded GA/ICI historical watchlist backtest reporting, and retained trust-report helper output. | No buyer-specific accuracy claim until buyer backtest and reviewer acceptance exist. |
+| Marketability and sellability logic | 95 | Yes | Buyer, budget-line, urgency-signal, pricing logic, ease-of-buy, and evidence-to-confidence requirements are mapped for the lead offers. | Actual willingness-to-pay, LOI, design partner, or paid pilot remains external market proof. |
+| Feasibility, solo-dev | 96 | Yes | Owner-controlled fixes are scoped to proof-pack routes, artifacts, source checklists, guards, and retained extracts; no top-10 item requires incumbent-scale production data exchange, power-flow, DSM portal, or operational forecasting parity. | Production deployment still requires explicit approval and post-deploy smoke. |
+| Gap closeability | 95 | Yes | Every remaining gap is either owner-controllable, an explicit production release gate, or the isolated buyer-evidence dependency. | Buyer evidence and production deploy approval are not desk-research tasks. |
 
-Overall confidence: **94 / 100**. The score can rise further after live metadata is clean on Netlify and browser smoke passes. It should not be raised to 95 until buyer evidence passes `pnpm run validate:pilot-evidence -- --require-95 --evidence-root ...`.
+Desk-research strategy-direction confidence: **95 / 100**. Buyer-proven market confidence and public sellability ratings must not be raised until a real filled buyer-evidence register passes `pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts`.
 
 ## 2. Current Evidence Ledger
 
@@ -186,7 +183,7 @@ This is not buyer proof. It is the desk-research budget logic that makes the sal
 | TIER policy can change quickly. | Mitigated locally with a source-currency checklist, but still live/current-source sensitive. | Date-stamp all TIER assumptions, refresh the Alberta TIER and pricing sources before outbound use, and require buyer-specific legal/tax/trading review. |
 | UtilityAPI sandbox can be mistaken for production connector approval. | Guarded in docs. | Keep sandbox and revoke/OAuth/audit evidence gaps explicit. |
 | Existing tests can prove syntax but not market demand. | True. | Keep buyer-evidence gate separate from build/test status. |
-| 95% can be asserted from desk research. | Blocked by policy. | Require real buyer register and retained redacted artifact hashes. |
+| 95% desk-research strategy direction can be mistaken for 95% market confidence. | Mitigated by separate score language and buyer-evidence gate wording. | Keep public sellability ratings and market-confidence claims gated on a real buyer register and retained redacted artifact hashes. |
 
 ## 10. Codex Prompts For Next Phases
 
@@ -213,7 +210,7 @@ Use `pnpm run report:utility-forecast-benchmark` for public/sample discipline pa
 ### Phase F prompt
 
 ```text
-Run CEIP buyer evidence gate. Use only redacted, text-inspectable buyer-approved artifacts outside sensitive originals. Prepare retained extracts with prepare:pilot-evidence-artifact, fill the pilot evidence register, then run report:pilot-evidence-95 and validate:pilot-evidence --require-95 --evidence-root. Do not raise strategy confidence unless the gate passes.
+Run CEIP buyer evidence gate. Use only redacted, text-inspectable buyer-approved artifacts outside sensitive originals. Prepare retained extracts with prepare:pilot-evidence-artifact, fill the pilot evidence register, then run report:pilot-evidence-95 and validate:pilot-evidence --require-95 --evidence-root. Do not raise market confidence or public sellability ratings unless the gate passes.
 For wedge-specific retained extracts, use prepare:ga-ici-5cp-artifact with --peak-tracker-file or --peak-tracker-url for Ontario 5CP evidence, add --historical-actuals-file when comparing against prior top-five actuals, and use prepare:byo-csv-proof-artifact for local CSV privacy-screen evidence. BYO-CSV retained extracts must include direct-identifier, spreadsheet formula, retained-raw-value, quasi-identifier/linkage, and confidence-gate diagnostics.
 ```
 

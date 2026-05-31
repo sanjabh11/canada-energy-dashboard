@@ -72,7 +72,7 @@ describe('pilot evidence register validator', () => {
     expect(result.stderr).toBe('');
   });
 
-  it('accepts a filled register that satisfies the 95% strategy confidence gate', async () => {
+  it('accepts a filled register that satisfies the 95% market-confidence gate', async () => {
     const result = await runValidator(
       'valid-95-evidence-register.csv',
       ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],

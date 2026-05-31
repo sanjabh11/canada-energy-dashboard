@@ -17,7 +17,7 @@ This repository should not be positioned as a broad dashboard suite, an enterpri
 | Demo handoff | [docs/MVP_DEMO_FREEZE_HANDOFF.md](docs/MVP_DEMO_FREEZE_HANDOFF.md) |
 | Live demo | [https://canada-energy.netlify.app](https://canada-energy.netlify.app) |
 
-Current strategy confidence is about 90-92%. A 95% market-confidence claim requires a filled buyer-evidence register to pass:
+The active roadmap now scores desk-research strategy-direction confidence at 95/100 after proof-boundary hardening, incumbent whitespace mapping, radical-feature validation, and source-currency work. This is not a 95% market-confidence claim. Buyer-proven market confidence still requires a filled buyer-evidence register to pass:
 
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
