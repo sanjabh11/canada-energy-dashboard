@@ -18,6 +18,7 @@
     "check:pilot-evidence-template": "node scripts/check-pilot-evidence-template.mjs",
     "check:proof-pack-bundles": "node scripts/check-proof-pack-bundle-budgets.mjs",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
+    "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
     "lint": "eslint .",
     "test": "vitest run",
     "test:component": "playwright test",

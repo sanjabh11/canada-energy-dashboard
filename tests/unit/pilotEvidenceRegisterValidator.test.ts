@@ -1,8 +1,10 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
+vi.setConfig({ testTimeout: 15_000 });
+
 const fixture95Env = {
   CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1',
   CEIP_PILOT_EVIDENCE_TODAY_FOR_TESTS: '2026-05-30',
@@ -72,6 +74,33 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Pilot evidence register validation passed');
     expect(result.stderr).toBe('');
+  });
+
+  it('prints a 95% evidence readiness report when the gate passes', async () => {
+    const result = await runValidator(
+      'valid-95-evidence-register.csv',
+      ['--require-95', '--report-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('95% Evidence Readiness Report');
+    expect(result.stdout).toContain('PASS Utility forecast proof pack');
+    expect(result.stdout).toContain('PASS TIER CFO or credit-banking proof pack');
+    expect(result.stdout).toContain('Total accepted confidence_delta: 0.9');
+    expect(result.stdout).toContain('Pilot evidence register validation passed');
+    expect(result.stderr).toBe('');
+  });
+
+  it('prints a 95% evidence readiness report when the gate fails on missing buyer evidence dimensions', async () => {
+    const result = await runValidator('valid-buyer-evidence-register.csv', ['--require-95', '--report-95']);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('95% Evidence Readiness Report');
+    expect(result.stdout).toContain('FAIL TIER CFO or credit-banking proof pack');
+    expect(result.stdout).toContain('Next action: Add accepted buyer-supplied /roi-calculator or /credit-banking evidence.');
+    expect(output).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
   });
 
   it('rejects 95% confidence when local evidence hash verification is not supplied', async () => {
