@@ -19,6 +19,7 @@ import {
     buildTierMemoDescriptor,
     buildTierProofBundle,
     buildTierPricingFreshnessGate,
+    buildTierSourceCurrencyChecklistMarkdown,
 } from '../lib/tierProofPack';
 import {
     downloadPdfArtifact,
@@ -206,10 +207,11 @@ export const TIERROICalculator: React.FC = () => {
     const proofBundle = useMemo(() => buildTierProofBundle(proofSnapshot), [proofSnapshot]);
     const memoDescriptor = useMemo(() => buildTierMemoDescriptor(proofSnapshot), [proofSnapshot]);
     const appendixMarkdown = useMemo(() => buildTierAppendixMarkdown(proofSnapshot), [proofSnapshot]);
+    const sourceCurrencyMarkdown = useMemo(() => buildTierSourceCurrencyChecklistMarkdown(proofSnapshot), [proofSnapshot]);
     const pricingFreshnessGate = useMemo(() => buildTierPricingFreshnessGate(proofSnapshot), [proofSnapshot]);
 
     const proofActions = useMemo(() => {
-        const [pdfArtifact, htmlArtifact, appendixArtifact] = proofBundle.artifacts;
+        const [pdfArtifact, htmlArtifact, appendixArtifact, sourceCurrencyArtifact] = proofBundle.artifacts;
         return [
             {
                 ...pdfArtifact,
@@ -231,8 +233,16 @@ export const TIERROICalculator: React.FC = () => {
                     'text/markdown;charset=utf-8;',
                 ),
             },
+            {
+                ...sourceCurrencyArtifact,
+                onDownload: () => downloadTextArtifact(
+                    sourceCurrencyArtifact,
+                    sourceCurrencyMarkdown,
+                    'text/markdown;charset=utf-8;',
+                ),
+            },
         ];
-    }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts]);
+    }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts, sourceCurrencyMarkdown]);
 
     return (
         <div className="min-h-screen bg-slate-900 text-white">

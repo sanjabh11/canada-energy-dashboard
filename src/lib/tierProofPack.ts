@@ -33,6 +33,48 @@ export interface TierProofSnapshot {
   } | null;
 }
 
+interface TierSourceCurrencyItem {
+  label: string;
+  sourceUrl: string;
+  sourceDate: string;
+  reviewedAt: string;
+  currentUse: string;
+  verifyBeforeOutbound: string;
+  doNotClaim: string;
+}
+
+function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCurrencyItem[] {
+  return [
+    {
+      label: 'Government of Alberta TIER regulation overview',
+      sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
+      sourceDate: 'Fall 2025 amendments; page reviewed 2026-05-31',
+      reviewedAt: '2026-05-31',
+      currentUse: 'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, and buyer-specific eligibility caveats.',
+      verifyBeforeOutbound: 'Confirm the Alberta page still lists the December 2025 amendments, current Direct Investment standard status, June 30 annual compliance reporting requirement, and current verification-document links before sending a CFO memo.',
+      doNotClaim: 'Do not claim direct-investment eligibility, compliance approval, legal advice, tax treatment, or verified reporting completeness without buyer-specific review.',
+    },
+    {
+      label: snapshot.pricing.source,
+      sourceUrl: snapshot.pricing.sourceUrl,
+      sourceDate: snapshot.pricing.effectiveDate,
+      reviewedAt: snapshot.pricing.lastVerifiedAt,
+      currentUse: `Headline fund-price basis of CAD ${snapshot.pricing.fundPrice}/t plus future scenario schedules carried for planning context.`,
+      verifyBeforeOutbound: 'Confirm no newer Alberta or Canada-Alberta pricing guidance supersedes this implementation-agreement source before external use.',
+      doNotClaim: 'Do not claim future-year price floors, credit eligibility, or binding compliance economics as final buyer advice.',
+    },
+    {
+      label: snapshot.liveTierMarketRateSource?.sourceName ?? snapshot.pricing.marketPriceSource,
+      sourceUrl: snapshot.liveTierMarketRateSource?.sourceUrl ?? snapshot.pricing.sourceUrl,
+      sourceDate: snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
+      reviewedAt: snapshot.liveTierMarketRateSource?.observedAt ?? snapshot.pricing.lastVerifiedAt,
+      currentUse: `Market-credit scenario input of CAD ${snapshot.marketPrice}/t labeled ${snapshot.liveTierMarketRateSource?.claimLabel ?? 'fallback'} in the current route state.`,
+      verifyBeforeOutbound: 'Replace fallback pricing with a live quote, registry-backed source, or buyer-approved price source before making strong savings claims.',
+      doNotClaim: 'Do not claim real-time market pricing, executed trade pricing, or guaranteed savings from this scenario input.',
+    },
+  ];
+}
+
 export function buildTierPricingFreshnessGate(snapshot: TierProofSnapshot): {
   status: 'fresh' | 'stale';
   message: string;
@@ -137,6 +179,14 @@ export function buildTierProofBundle(snapshot: TierProofSnapshot): ProofPackBund
         'Appendix with raw pathway numbers, warnings, and simulator provenance.',
         snapshot,
       ),
+      buildArtifact(
+        'tier-source-currency-checklist',
+        'Source currency checklist',
+        'md',
+        `tier_source_currency_checklist_${new Date().toISOString().slice(0, 10)}.md`,
+        'Dated Alberta TIER and pricing-source checklist to refresh before outbound buyer use.',
+        snapshot,
+      ),
     ],
   };
 }
@@ -180,6 +230,8 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
         kind: 'bullet_list',
         body: [
           `Fund price source: ${snapshot.pricing.source} (${snapshot.pricing.effectiveDate})`,
+          `Fund price source URL: ${snapshot.pricing.sourceUrl}`,
+          'Official Alberta TIER source: https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
           snapshot.liveTierMarketRateSource
             ? `Market price source: ${snapshot.liveTierMarketRateSource.sourceName ?? 'live market source'} observed ${snapshot.liveTierMarketRateSource.observedAt ?? 'unknown date'}`
             : `Market price source: fallback pricing verified ${snapshot.pricing.lastVerifiedAt}`,
@@ -210,6 +262,31 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
     ],
     nextStep: 'Book a pilot review with finance and compliance stakeholders, then replace the starter assumptions with facility-specific numbers.',
   };
+}
+
+export function buildTierSourceCurrencyChecklistMarkdown(snapshot: TierProofSnapshot): string {
+  const items = buildTierSourceCurrencyItems(snapshot);
+  return [
+    '# TIER source currency checklist',
+    '',
+    'This checklist is the outbound-use gate for Alberta TIER CFO memo exports. It keeps policy, fund-price, market-price, and direct-investment assumptions separate from buyer-specific approval.',
+    '',
+    '## Source review register',
+    ...items.flatMap((item) => [
+      `- Source: ${item.label}`,
+      `  - URL: ${item.sourceUrl}`,
+      `  - Source date: ${item.sourceDate}`,
+      `  - Reviewed at: ${item.reviewedAt}`,
+      `  - Current CEIP use: ${item.currentUse}`,
+      `  - Verify before outbound use: ${item.verifyBeforeOutbound}`,
+      `  - Do not claim: ${item.doNotClaim}`,
+    ]),
+    '',
+    '## Buyer-use gate',
+    '- Replace fallback market pricing with a live quote, registry-backed source, or buyer-approved source before making any strong savings claim.',
+    '- Verify facility eligibility, compliance year, Direct Investment pathway details, verification costs, and reporting status with the buyer before recommending a pathway.',
+    '- Treat the memo as scenario planning only; legal, tax, trading, and final compliance decisions remain outside CEIP proof.',
+  ].join('\n');
 }
 
 export function buildTierAppendixMarkdown(snapshot: TierProofSnapshot): string {

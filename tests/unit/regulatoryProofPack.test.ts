@@ -4,6 +4,7 @@ import {
   buildRegulatoryCoverMemoDescriptor,
   buildRegulatoryProofBundle,
   buildRegulatoryScheduleExports,
+  buildRegulatorySourceCurrencyMarkdown,
 } from '../../src/lib/regulatoryProofPack';
 
 describe('regulatoryProofPack', () => {
@@ -11,18 +12,21 @@ describe('regulatoryProofPack', () => {
     const albertaBundle = buildRegulatoryProofBundle('Alberta');
     const ontarioBundle = buildRegulatoryProofBundle('Ontario');
 
-    expect(albertaBundle.artifacts).toHaveLength(5);
-    expect(ontarioBundle.artifacts).toHaveLength(6);
+    expect(albertaBundle.artifacts).toHaveLength(6);
+    expect(ontarioBundle.artifacts).toHaveLength(7);
     expect(albertaBundle.artifacts[0].label).toBe('Alberta cover memo');
     expect(albertaBundle.artifacts[0].verificationStatus).toBe('needs_buyer_data');
     expect(albertaBundle.artifacts[0].doNotClaim).toContain('Regulator submission automation');
     expect(ontarioBundle.artifacts[1].label).toBe('Ontario reviewer checklist');
+    expect(ontarioBundle.artifacts[2].label).toBe('Ontario source currency checklist');
   });
 
   it('exports jurisdiction-specific checklists and schedule payloads', () => {
     const descriptor = buildRegulatoryCoverMemoDescriptor('Ontario');
     const albertaDescriptor = buildRegulatoryCoverMemoDescriptor('Alberta');
     const checklist = buildRegulatoryChecklistMarkdown('Alberta');
+    const albertaSourceCurrency = buildRegulatorySourceCurrencyMarkdown('Alberta');
+    const ontarioSourceCurrency = buildRegulatorySourceCurrencyMarkdown('Ontario');
     const scheduleExports = buildRegulatoryScheduleExports('Ontario');
 
     expect(descriptor.title).toContain('OEB Chapter 5 filing prep pack');
@@ -49,6 +53,14 @@ describe('regulatoryProofPack', () => {
     expect(checklist).toContain('# AUC Rule 005 filing prep pack reviewer checklist');
     expect(checklist).toContain('Confirm utility-specific legal entity, year, and filing officer details before submission.');
     expect(checklist).toContain('Attach audited financial statements and reconciliation support');
+    expect(albertaSourceCurrency).toContain('# AUC Rule 005 filing prep pack source currency checklist');
+    expect(albertaSourceCurrency).toContain('Effective March 31, 2021');
+    expect(albertaSourceCurrency).toContain('Annual financial and operational reporting');
+    expect(albertaSourceCurrency).toContain('Verify before outbound use');
+    expect(ontarioSourceCurrency).toContain('# OEB Chapter 5 filing prep pack source currency checklist');
+    expect(ontarioSourceCurrency).toContain('2027 Chapter 5 materials dated December 16, 2025');
+    expect(ontarioSourceCurrency).toContain('vulnerability/system-hardening');
+    expect(ontarioSourceCurrency).toContain('buyer source-of-record data');
     expect(scheduleExports).toHaveLength(4);
     expect(scheduleExports[0].content).toContain(',');
     expect(scheduleExports[0].definition.filename).toContain('oeb_dsp_asset_condition');

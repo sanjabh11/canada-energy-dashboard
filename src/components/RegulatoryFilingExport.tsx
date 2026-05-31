@@ -19,6 +19,7 @@ import {
   buildRegulatoryCoverMemoDescriptor,
   buildRegulatoryProofBundle,
   buildRegulatoryScheduleExports,
+  buildRegulatorySourceCurrencyMarkdown,
   getRegulatoryPackConfig,
   type RegulatoryJurisdiction,
 } from '../lib/regulatoryProofPack';
@@ -85,6 +86,7 @@ export const RegulatoryFilingExport: React.FC = () => {
   const packActions = useMemo(() => {
     const coverMemoDescriptor = buildRegulatoryCoverMemoDescriptor(packJurisdiction);
     const checklistArtifact = activePackBundle.artifacts.find((artifact) => artifact.id.includes('reviewer-checklist'));
+    const sourceCurrencyArtifact = activePackBundle.artifacts.find((artifact) => artifact.id.includes('source-currency-checklist'));
     const scheduleExports = buildRegulatoryScheduleExports(packJurisdiction);
     const scheduleArtifacts = activePackBundle.artifacts.filter((artifact) => activePackConfig.templates.includes(artifact.id as TemplateType));
 
@@ -102,6 +104,14 @@ export const RegulatoryFilingExport: React.FC = () => {
         onDownload: () => downloadTextArtifact(
           checklistArtifact,
           buildRegulatoryChecklistMarkdown(packJurisdiction),
+          'text/markdown;charset=utf-8;',
+        ),
+      } : null,
+      sourceCurrencyArtifact ? {
+        ...sourceCurrencyArtifact,
+        onDownload: () => downloadTextArtifact(
+          sourceCurrencyArtifact,
+          buildRegulatorySourceCurrencyMarkdown(packJurisdiction),
           'text/markdown;charset=utf-8;',
         ),
       } : null,

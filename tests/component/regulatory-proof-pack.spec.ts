@@ -9,6 +9,7 @@ test.describe('Regulatory proof pack', () => {
     await expect(page.getByRole('heading', { name: 'Regulatory Filing Templates' })).toBeVisible({ timeout: 15000 });
     await expect(page.getByText('AUC Rule 005 filing prep pack')).toBeVisible();
     await expect(page.getByText('Alberta cover memo')).toBeVisible();
+    await expect(page.getByText('Alberta source currency checklist')).toBeVisible();
 
     const [albertaDownload] = await Promise.all([
       page.waitForEvent('download'),
@@ -19,6 +20,7 @@ test.describe('Regulatory proof pack', () => {
     await page.getByRole('button', { name: 'Ontario pack' }).click();
     await expect(page.getByText('OEB Chapter 5 filing prep pack')).toBeVisible();
     await expect(page.getByText('Ontario cover memo')).toBeVisible();
+    await expect(page.getByText('Ontario source currency checklist')).toBeVisible();
 
     const [ontarioDownload] = await Promise.all([
       page.waitForEvent('download'),

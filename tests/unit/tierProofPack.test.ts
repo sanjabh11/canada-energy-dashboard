@@ -10,6 +10,7 @@ import {
   buildTierMemoDescriptor,
   buildTierProofBundle,
   buildTierPricingFreshnessGate,
+  buildTierSourceCurrencyChecklistMarkdown,
   type TierProofSnapshot,
 } from '../../src/lib/tierProofPack';
 
@@ -60,11 +61,12 @@ describe('tierProofPack', () => {
     const bundle = buildTierProofBundle(buildSnapshot());
 
     expect(bundle.title).toBe('TIER CFO memo pack');
-    expect(bundle.artifacts).toHaveLength(3);
+    expect(bundle.artifacts).toHaveLength(4);
     expect(bundle.artifacts[0].isFallback).toBe(true);
     expect(bundle.artifacts[0].claimLabel).toBe('estimated');
     expect(bundle.artifacts[0].verificationStatus).toBe('source_stale');
     expect(bundle.artifacts[0].doNotClaim).toContain('Price-floor or future-year credit eligibility without current Alberta guidance');
+    expect(bundle.artifacts[3].label).toBe('Source currency checklist');
     expect(buildTierPricingFreshnessGate(buildSnapshot()).blocksStrongSavingsClaim).toBe(true);
   });
 
@@ -82,6 +84,7 @@ describe('tierProofPack', () => {
     const bundle = buildTierProofBundle(snapshot);
     const descriptor = buildTierMemoDescriptor(snapshot);
     const appendix = buildTierAppendixMarkdown(snapshot);
+    const sourceCurrency = buildTierSourceCurrencyChecklistMarkdown(snapshot);
     const provenanceSection = descriptor.sections.find((section) => section.heading === 'Pricing provenance');
 
     expect(bundle.artifacts[0].isFallback).toBe(false);
@@ -98,8 +101,14 @@ describe('tierProofPack', () => {
       : provenanceSection?.body ?? '';
     expect(provenanceBody).toContain('Headline price schedule: 2026 CAD 95/t');
     expect(provenanceBody).toContain('Future price-floor schedule: 2030 CAD 60/t');
+    expect(provenanceBody).toContain('Official Alberta TIER source');
     expect(descriptor.sections.find((section) => section.heading === 'Direct-investment sensitivity')).toBeTruthy();
     expect(appendix).toContain('# TIER scenario appendix');
     expect(appendix).toContain('Market credits: CAD 648,000');
+    expect(sourceCurrency).toContain('# TIER source currency checklist');
+    expect(sourceCurrency).toContain('Fall 2025 amendments');
+    expect(sourceCurrency).toContain('Direct Investment standard status');
+    expect(sourceCurrency).toContain('June 30 annual compliance reporting requirement');
+    expect(sourceCurrency).toContain('Replace fallback market pricing');
   });
 });

@@ -19,6 +19,7 @@ test.describe('TIER ROI proof pack', () => {
     await expect(page.getByText('Fund price provenance')).toBeVisible();
     await expect(page.getByText('Market price provenance')).toBeVisible();
     await expect(page.getByText('CFO memo PDF')).toBeVisible();
+    await expect(page.getByText('Source currency checklist')).toBeVisible();
     await expect(page.getByRole('link', { name: 'Book pilot review with this memo' })).toBeVisible();
   });
 });

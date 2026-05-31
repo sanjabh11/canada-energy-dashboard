@@ -20,8 +20,19 @@ interface JurisdictionPackConfig {
   officialSourceUrl: string;
   versionLabel: string;
   fieldMappingNotes: string[];
+  sourceCurrencyItems: SourceCurrencyItem[];
   assumptions: string[];
   disclaimer: string;
+}
+
+interface SourceCurrencyItem {
+  label: string;
+  sourceUrl: string;
+  sourceDate: string;
+  reviewedAt: string;
+  currentUse: string;
+  verifyBeforeOutbound: string;
+  doNotClaim: string;
 }
 
 const PACK_CONFIG: Record<RegulatoryJurisdiction, JurisdictionPackConfig> = {
@@ -43,6 +54,17 @@ const PACK_CONFIG: Record<RegulatoryJurisdiction, JurisdictionPackConfig> = {
       'Schedule 4.2 maps capital additions, retirements, depreciation, and net-book-value evidence.',
       'Schedule 10 maps income-statement rows and financial-statement reconciliation evidence.',
       'DSP data schedule maps forecast, reliability, asset, and scenario rows to planning-review attachments.',
+    ],
+    sourceCurrencyItems: [
+      {
+        label: 'AUC Rule 005',
+        sourceUrl: 'https://www.auc.ab.ca/rules/rule005/',
+        sourceDate: 'Effective March 31, 2021',
+        reviewedAt: '2026-05-31',
+        currentUse: 'Annual financial and operational reporting structure, audited-financial-statement attachment, reconciliation support, variance explanations, and Commission information-request readiness.',
+        verifyBeforeOutbound: 'Confirm the AUC Rule 005 page and linked PDF still show the March 31, 2021 effective rule and current schedules/forms before sending buyer-facing filing packs.',
+        doNotClaim: 'Do not claim AUC submission automation, counsel approval, or utility-specific filing readiness without buyer source-of-record replacement and review sign-off.',
+      },
     ],
     assumptions: [
       'Sample schedules remain illustrative until replaced with the utility’s source-of-record data.',
@@ -76,6 +98,17 @@ const PACK_CONFIG: Record<RegulatoryJurisdiction, JurisdictionPackConfig> = {
       'Future-investment cost projections should reflect reasonable cost-trend assumptions before buyer use.',
       'Extreme-weather and fuel-switching impacts should be reviewed when they affect energy infrastructure resilience or cross-system costs and benefits.',
       'Vulnerability assessment, system hardening, and economic-growth assumptions should be explicit when they affect the DSP narrative.',
+    ],
+    sourceCurrencyItems: [
+      {
+        label: 'OEB Filing Requirements for Transmission and Distribution Applications',
+        sourceUrl: 'https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications',
+        sourceDate: 'Last revised December 16, 2025; 2027 Chapter 5 materials dated December 16, 2025',
+        reviewedAt: '2026-05-31',
+        currentUse: 'Distribution System Plan evidence mapping for asset condition, load forecast, reliability, scenario, vulnerability/system-hardening, extreme-weather, and economic-growth assumptions.',
+        verifyBeforeOutbound: 'Confirm the OEB page still lists the 2027 Chapter 1, Chapter 2, and Chapter 5 filing materials dated December 16, 2025 and the current application-year applicability before external use.',
+        doNotClaim: 'Do not claim an OEB-ready DSP, filing counsel approval, or complete utility source evidence before buyer-owned data replacement and review.',
+      },
     ],
     assumptions: [
       'Scenario matrices and sample schedules are starter artifacts, not an end-to-end DSP workflow.',
@@ -147,6 +180,14 @@ export function buildRegulatoryProofBundle(jurisdiction: RegulatoryJurisdiction)
         `${jurisdiction.toLowerCase()}_reviewer_checklist.md`,
         'Internal-review checklist for a utility, REA, or consultant before using the exported schedules.',
       ),
+      buildArtifactBase(
+        jurisdiction,
+        `${jurisdiction.toLowerCase()}-source-currency-checklist`,
+        `${jurisdiction} source currency checklist`,
+        'md',
+        `${jurisdiction.toLowerCase()}_source_currency_checklist.md`,
+        'Dated source review checklist that must be refreshed before outbound buyer or filing-prep use.',
+      ),
       ...config.templates.map((templateId) => buildArtifactBase(
         jurisdiction,
         templateId,
@@ -189,6 +230,7 @@ export function buildRegulatoryCoverMemoDescriptor(jurisdiction: RegulatoryJuris
         body: [
           `Version label: ${config.versionLabel}`,
           `Official source: ${config.officialSourceUrl}`,
+          ...config.sourceCurrencyItems.map((item) => `${item.label}: ${item.sourceDate}; reviewed ${item.reviewedAt}; verify before outbound use: ${item.verifyBeforeOutbound}`),
           ...config.fieldMappingNotes,
         ],
       },
@@ -211,6 +253,32 @@ export function buildRegulatoryChecklistMarkdown(jurisdiction: RegulatoryJurisdi
     '',
     '## Included schedules',
     ...config.templates.map((templateId) => `- ${REGULATORY_TEMPLATES[templateId].name}`),
+  ].join('\n');
+}
+
+export function buildRegulatorySourceCurrencyMarkdown(jurisdiction: RegulatoryJurisdiction): string {
+  const config = PACK_CONFIG[jurisdiction];
+  return [
+    `# ${config.title} source currency checklist`,
+    '',
+    `Version label: ${config.versionLabel}`,
+    `Primary source: ${config.officialSourceUrl}`,
+    '',
+    '## Source review register',
+    ...config.sourceCurrencyItems.flatMap((item) => [
+      `- Source: ${item.label}`,
+      `  - URL: ${item.sourceUrl}`,
+      `  - Source date: ${item.sourceDate}`,
+      `  - Reviewed at: ${item.reviewedAt}`,
+      `  - Current CEIP use: ${item.currentUse}`,
+      `  - Verify before outbound use: ${item.verifyBeforeOutbound}`,
+      `  - Do not claim: ${item.doNotClaim}`,
+    ]),
+    '',
+    '## Buyer-use gate',
+    '- Replace sample rows with buyer source-of-record data before treating any schedule as customer evidence.',
+    '- Attach utility, consultant, or counsel review notes before using the pack for filing-prep decisions.',
+    '- Refresh this source register whenever the regulator updates filing requirements, forms, schedules, or application-year guidance.',
   ].join('\n');
 }
 
