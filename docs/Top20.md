@@ -73,7 +73,7 @@ CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage,
 | TIER buyer case | One facility scenario with refreshed pricing assumptions and compliance-review caveats. | Prevents CFO memo language from becoming trading, legal, or tax advice. |
 | Invoice proof | One buyer-approved invoice comparison artifact with field mapping and audit notes. | Moves shadow billing from constructed proof to customer proof. |
 | Security evidence | SBOM, security headers, hosting/contact/subprocessor notes, retention boundary, and dependency audit. | Reduces procurement friction without implying certification. |
-| Commercial commitment | At least one accepted buyer row with `commercial_commitment_status` of `design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`. | Separates useful free artifacts from sellability evidence. |
+| Commercial commitment | At least one accepted buyer row with `commercial_commitment_status` of `design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`, plus retained redacted artifact text proving the commitment beyond status-only wording. | Separates useful free artifacts from sellability evidence. |
 | Fast pilot delivery | At least one accepted buyer proof pack delivered in 48 hours or less, with no accepted confidence-moving row above 120 hours. | Proves the solo-developer proof-pack wedge is operationally credible, not just theoretically useful. |
 | Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
 

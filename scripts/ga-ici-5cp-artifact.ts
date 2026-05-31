@@ -14,6 +14,10 @@ import {
   type IciFiveCpRetainedEvidenceExtractParams,
   type IciSystemPeakHour,
 } from '../src/lib/gaIciPeakPredictor';
+import {
+  getCommercialCommitmentEvidenceFailure,
+  type CommercialCommitmentStatus,
+} from '../src/lib/commercialCommitmentEvidence';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -254,6 +258,7 @@ const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? ''
 const reviewerFeedbackStatus = normalizeText(values.get('reviewer-feedback-status') ?? '');
 const day14Decision = normalizeText(values.get('day-14-decision') ?? '');
 const commercialCommitmentStatus = normalizeText(values.get('commercial-commitment-status') ?? '');
+const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 const peakTrackerUrl = values.get('peak-tracker-url') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
@@ -268,6 +273,13 @@ if (!allowedFeedbackStatus.has(reviewerFeedbackStatus)) failures.push('--reviewe
 if (!allowedDay14Decision.has(day14Decision)) failures.push('--day-14-decision must be proceed, park, pivot, reject, or pending.');
 if (!allowedCommercialCommitmentStatus.has(commercialCommitmentStatus)) {
   failures.push('--commercial-commitment-status must be none, design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
+}
+const commercialCommitmentEvidenceFailure = getCommercialCommitmentEvidenceFailure(
+  commercialCommitmentStatus,
+  commercialCommitmentEvidence,
+);
+if (commercialCommitmentEvidenceFailure) {
+  failures.push(`--commercial-commitment-evidence ${commercialCommitmentEvidenceFailure}`);
 }
 if (!values.has('system-peaks-file') && !values.has('peak-tracker-file') && !values.has('peak-tracker-url')) {
   failures.push('Provide one of --system-peaks-file, --peak-tracker-file, or --peak-tracker-url.');
@@ -412,7 +424,8 @@ const extractParams: IciFiveCpRetainedEvidenceExtractParams = {
   reviewerAcceptance: reviewerAcceptance as IciFiveCpRetainedEvidenceExtractParams['reviewerAcceptance'],
   reviewerFeedbackStatus: reviewerFeedbackStatus as IciFiveCpRetainedEvidenceExtractParams['reviewerFeedbackStatus'],
   day14Decision: day14Decision as IciFiveCpRetainedEvidenceExtractParams['day14Decision'],
-  commercialCommitmentStatus: commercialCommitmentStatus as IciFiveCpRetainedEvidenceExtractParams['commercialCommitmentStatus'],
+  commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
+  commercialCommitmentEvidence,
   route,
   proofPackId: values.get('proof-pack-id') ?? 'ga_ici_5cp_decision_support_pack',
   piiScreenResult: (values.get('pii-screen-result') ?? 'redacted') as IciFiveCpRetainedEvidenceExtractParams['piiScreenResult'],

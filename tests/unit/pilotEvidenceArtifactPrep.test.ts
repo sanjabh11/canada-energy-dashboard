@@ -85,6 +85,7 @@ function buildValidPrepArgs(evidenceRoot: string, artifactFile = 'redacted-utili
     '--reviewer-feedback-status', 'complete',
     '--day-14-decision', 'proceed',
     '--commercial-commitment-status', 'paid_pilot',
+    '--commercial-commitment-evidence', 'paid pilot evidence retained in redacted commercial appendix',
     '--claim-boundary', 'Buyer supplied redacted planning support only and no production onboarding claim.',
     '--do-not-claim', 'Do not claim utility approval or live telemetry.',
     '--diagnostic', 'MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger.',
@@ -117,6 +118,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('pii_screen_result: redacted');
     expect(artifactText).toContain('buyer_data_coverage_pct: 90');
     expect(artifactText).toContain('reviewer_acceptance: accepted');
+    expect(artifactText).toContain('commercial_commitment_evidence: paid pilot evidence retained in redacted commercial appendix');
 
     const registerPath = path.join(evidenceRoot, 'register.csv');
     writeFileSync(registerPath, [
@@ -159,6 +161,17 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
+  });
+
+  it('rejects strong commercial commitment status without redacted evidence text', async () => {
+    const evidenceRoot = makeTempRoot();
+    const result = await runNodeScript(prepScriptPath, buildValidPrepArgs(evidenceRoot, 'missing-commercial-evidence.md').filter((arg, index, args) => (
+      arg !== '--commercial-commitment-evidence' && args[index - 1] !== '--commercial-commitment-evidence'
+    )));
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--commercial-commitment-evidence is required when --commercial-commitment-status is paid_pilot');
+    expect(() => readFileSync(path.join(evidenceRoot, 'missing-commercial-evidence.md'), 'utf8')).toThrow();
   });
 
   it('rejects direct identifiers before writing the retained artifact', async () => {
@@ -206,6 +219,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'design_partner_signed',
+      '--commercial-commitment-evidence', 'design partner signed agreement evidence retained in redacted commercial appendix',
       '--claim-boundary', 'Planning support only and no legal tax or trading advice.',
       '--do-not-claim', 'Do not claim guaranteed savings or live market price.',
       '--diagnostic', 'Buyer liked the memo.',
@@ -252,6 +266,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
     ]);
 
     expect(prepResult.status).toBe(0);
@@ -267,6 +282,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('spreadsheet formula findings: 0');
     expect(artifactText).toContain('quasi-identifier warnings: 2');
     expect(artifactText).toContain('retained raw values: no');
+    expect(artifactText).toContain('commercial_commitment_evidence: letter of intent evidence retained in redacted commercial appendix');
     expect(artifactText).not.toContain('12.5');
 
     const registerPath = path.join(evidenceRoot, 'register.csv');
@@ -332,6 +348,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
     ]);
 
     expect(prepResult.status).toBe(1);
@@ -419,6 +436,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'paid_pilot',
+      '--commercial-commitment-evidence', 'paid pilot evidence retained in redacted commercial appendix',
     ]);
 
     expect(prepResult.status).toBe(0);
@@ -439,6 +457,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('interval coverage 91.2%');
     expect(artifactText).toContain('champion/challenger decision');
     expect(artifactText).toContain('commercial_commitment_status: paid_pilot');
+    expect(artifactText).toContain('commercial_commitment_evidence: paid pilot evidence retained in redacted commercial appendix');
 
     const registerPath = path.join(evidenceRoot, 'register.csv');
     writeFileSync(registerPath, [
@@ -530,6 +549,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
     ]);
 
     expect(prepResult.status).toBe(0);
@@ -549,6 +569,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('Historical Backtest Summary');
     expect(artifactText).toContain('watchlist capture rate: 1');
     expect(artifactText).toContain('backtest claim boundary:');
+    expect(artifactText).toContain('commercial_commitment_evidence: letter of intent evidence retained in redacted commercial appendix');
     expect(artifactText).not.toMatch(/guaranteed savings/i);
 
     const registerPath = path.join(evidenceRoot, 'register.csv');
@@ -626,6 +647,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--reviewer-feedback-status', 'complete',
       '--day-14-decision', 'proceed',
       '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
     ]);
 
     expect(result.status).toBe(1);

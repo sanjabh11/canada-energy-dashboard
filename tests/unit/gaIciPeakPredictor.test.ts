@@ -152,6 +152,7 @@ describe('gaIciPeakPredictor', () => {
       reviewerFeedbackStatus: 'complete',
       day14Decision: 'proceed',
       commercialCommitmentStatus: 'letter_of_intent',
+      commercialCommitmentEvidence: 'letter of intent evidence retained in redacted commercial appendix',
       historicalBacktest,
     });
 
@@ -163,7 +164,7 @@ describe('gaIciPeakPredictor', () => {
     expect(extract).toContain('Historical Backtest Summary');
     expect(extract).toContain('watchlist capture rate: 1');
     expect(extract).toContain('backtest claim boundary:');
-    expect(extract).toContain('commercial_commitment_evidence: letter_of_intent');
+    expect(extract).toContain('commercial_commitment_evidence: letter of intent evidence retained in redacted commercial appendix');
     expect(extract).not.toMatch(/guaranteed savings/i);
   });
 });

@@ -1,3 +1,8 @@
+import {
+  resolveCommercialCommitmentEvidence,
+  type CommercialCommitmentStatus,
+} from './commercialCommitmentEvidence';
+
 export const GA_ICI_PREDICTOR_VERSION = 'ga-ici-5cp-decision-support-v1';
 export const IESO_PEAK_TRACKER_SOURCE_URL = 'https://www.ieso.ca/peaktracker';
 
@@ -76,7 +81,8 @@ export interface IciFiveCpRetainedEvidenceExtractParams {
   reviewerAcceptance: 'accepted' | 'approved' | 'signed';
   reviewerFeedbackStatus: 'complete' | 'accepted' | 'approved' | 'signed';
   day14Decision: 'proceed' | 'park' | 'pivot' | 'reject' | 'pending';
-  commercialCommitmentStatus: 'none' | 'design_partner_signed' | 'paid_pilot' | 'purchase_order' | 'letter_of_intent';
+  commercialCommitmentStatus: CommercialCommitmentStatus;
+  commercialCommitmentEvidence?: string;
   route?: string;
   proofPackId?: string;
   piiScreenResult?: 'redacted' | 'screened' | 'no personal data' | 'no personal data or meter identifiers found';
@@ -575,6 +581,10 @@ export function buildIciFiveCpRetainedEvidenceExtract(
     ?? 'Buyer supplied redacted Ontario load planning support only; GA/ICI output is decision support workflow only.';
   const doNotClaim = params.doNotClaim
     ?? 'No savings guarantee, final IESO settlement, eligibility determination, or operational curtailment instruction.';
+  const commercialCommitmentEvidence = resolveCommercialCommitmentEvidence(
+    params.commercialCommitmentStatus,
+    params.commercialCommitmentEvidence,
+  );
 
   return [
     `# ${params.artifactTitle ?? 'CEIP Ontario GA/ICI 5CP retained evidence extract'}`,
@@ -594,7 +604,7 @@ export function buildIciFiveCpRetainedEvidenceExtract(
     `reviewer_feedback_status: ${params.reviewerFeedbackStatus}`,
     `day_14_decision: ${params.day14Decision}`,
     `commercial_commitment_status: ${params.commercialCommitmentStatus}`,
-    `commercial_commitment_evidence: ${params.commercialCommitmentStatus}`,
+    `commercial_commitment_evidence: ${commercialCommitmentEvidence}`,
     `claim_boundary: ${claimBoundary}`,
     `do_not_claim: ${doNotClaim}`,
     '',

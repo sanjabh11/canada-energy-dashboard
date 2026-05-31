@@ -396,20 +396,20 @@ const strongCommercialCommitmentStatuses = new Set([
 ]);
 const commercialCommitmentEvidenceRules = new Map([
   ['design_partner_signed', {
-    label: 'design partner signed agreement evidence',
-    pattern: /design[-_ ]?partner.*(?:signed|agreement|letter)|(?:signed|agreement|letter).*design[-_ ]?partner/i,
+    label: 'redacted signed design-partner agreement or letter evidence',
+    pattern: /(?:design[-_ ]?partner[\s\S]{0,100}(?:signed|agreement|letter|executed|retained|redacted)|(?:signed|executed|agreement|letter|retained|redacted)[\s\S]{0,100}design[-_ ]?partner)/i,
   }],
   ['paid_pilot', {
-    label: 'paid pilot evidence',
-    pattern: /paid[-_ ]?pilot|pilot payment|paid invoice|invoice paid/i,
+    label: 'redacted paid-pilot invoice, payment, receipt, confirmation, or agreement evidence',
+    pattern: /(?:paid[-_ ]?pilot[\s\S]{0,100}(?:evidence|invoice|payment|receipt|confirmation|agreement|appendix|retained|redacted)|(?:pilot[-_ ]?payment|paid[-_ ]?invoice|invoice[-_ ]?paid|payment[-_ ]?confirmation|receipt)[\s\S]{0,100}(?:pilot|invoice|retained|redacted|evidence)?)/i,
   }],
   ['purchase_order', {
-    label: 'purchase order evidence',
-    pattern: /purchase[-_ ]?order|\bpo[-_ ]?(?:number|reference|issued)?\b/i,
+    label: 'redacted purchase-order reference, issued PO, or procurement evidence',
+    pattern: /(?:purchase[-_ ]?order|\bpo\b)[\s\S]{0,100}(?:reference|issued|procurement|evidence|appendix|retained|redacted|confirmation|number)/i,
   }],
   ['letter_of_intent', {
-    label: 'letter of intent evidence',
-    pattern: /letter[-_ ]?of[-_ ]?intent|\bloi\b/i,
+    label: 'redacted letter-of-intent evidence',
+    pattern: /(?:letter[-_ ]?of[-_ ]?intent|\bloi\b)[\s\S]{0,100}(?:signed|received|executed|evidence|appendix|retained|redacted|confirmation)/i,
   }],
 ]);
 const allowedBuyerLanes = new Set([

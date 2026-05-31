@@ -135,6 +135,7 @@ const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evide
 const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
+const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
 const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
@@ -171,7 +172,8 @@ const strategyRoadmapWhitespacePhrases = [
   'check:post-deploy-live',
   'test:strategy-audit-slice',
   'fixture-proof 95% gate',
-  'focused 102-test strategy-audit slice',
+  'focused 104-test strategy-audit slice',
+  'non-status-only commercial commitment evidence',
   'Do not deploy without explicit production approval',
   'buyer-proven 95% market confidence',
 ];
@@ -311,6 +313,10 @@ if (!existsSync(sourceDocPath)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
   }
 
+  if (!nonStatusCommercialCommitmentEvidencePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must require strong commercial commitment evidence beyond status-only text.');
+  }
+
   if (existsSync(strategyRoadmapPath)) {
     const strategyRoadmap = readFileSync(strategyRoadmapPath, 'utf8');
     for (const phrase of strategyRoadmapWhitespacePhrases) {
@@ -332,6 +338,9 @@ if (!existsSync(sourceDocPath)) {
     const pilotEvidenceDoc = readFileSync(pilotEvidenceDocPath, 'utf8');
     if (!forecastTrustArtifactHelperPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
+    }
+    if (!nonStatusCommercialCommitmentEvidencePhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must require strong commercial commitment evidence beyond status-only text.');
     }
   }
 

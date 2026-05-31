@@ -9,6 +9,10 @@ import {
   buildByoCsvRetainedEvidenceExtract,
   type ByoCsvRetainedEvidenceExtractParams,
 } from '../src/lib/byoCsvProofGenerator';
+import {
+  getCommercialCommitmentEvidenceFailure,
+  type CommercialCommitmentStatus,
+} from '../src/lib/commercialCommitmentEvidence';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -94,6 +98,7 @@ const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? ''
 const reviewerFeedbackStatus = normalizeText(values.get('reviewer-feedback-status') ?? '');
 const day14Decision = normalizeText(values.get('day-14-decision') ?? '');
 const commercialCommitmentStatus = normalizeText(values.get('commercial-commitment-status') ?? '');
+const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
 if (!allowedSourceLabels.has(sourceLabel)) failures.push(`--source-label must be one of ${Array.from(allowedSourceLabels).join(', ')}.`);
@@ -105,6 +110,13 @@ if (!allowedFeedbackStatus.has(reviewerFeedbackStatus)) failures.push('--reviewe
 if (!allowedDay14Decision.has(day14Decision)) failures.push('--day-14-decision must be proceed, park, pivot, reject, or pending.');
 if (!allowedCommercialCommitmentStatus.has(commercialCommitmentStatus)) {
   failures.push('--commercial-commitment-status must be none, design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
+}
+const commercialCommitmentEvidenceFailure = getCommercialCommitmentEvidenceFailure(
+  commercialCommitmentStatus,
+  commercialCommitmentEvidence,
+);
+if (commercialCommitmentEvidenceFailure) {
+  failures.push(`--commercial-commitment-evidence ${commercialCommitmentEvidenceFailure}`);
 }
 
 const csvFile = values.has('csv-file') ? path.resolve(repoRoot, values.get('csv-file') ?? '') : null;
@@ -162,7 +174,8 @@ const extractParams: ByoCsvRetainedEvidenceExtractParams = {
   reviewerAcceptance: reviewerAcceptance as ByoCsvRetainedEvidenceExtractParams['reviewerAcceptance'],
   reviewerFeedbackStatus: reviewerFeedbackStatus as ByoCsvRetainedEvidenceExtractParams['reviewerFeedbackStatus'],
   day14Decision: day14Decision as ByoCsvRetainedEvidenceExtractParams['day14Decision'],
-  commercialCommitmentStatus: commercialCommitmentStatus as ByoCsvRetainedEvidenceExtractParams['commercialCommitmentStatus'],
+  commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
+  commercialCommitmentEvidence,
   proofPackId: values.get('proof-pack-id') ?? 'byo_csv_privacy_proof_pack',
 };
 if (values.has('artifact-title')) extractParams.artifactTitle = values.get('artifact-title') as string;

@@ -104,6 +104,24 @@ const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
 const allowedDecisions = new Set(['proceed', 'park', 'pivot', 'reject', 'pending']);
 const allowedCommercialCommitmentStatuses = new Set(['none', 'design_partner_signed', 'paid_pilot', 'purchase_order', 'letter_of_intent']);
+const commercialCommitmentEvidenceRules = new Map([
+  ['design_partner_signed', {
+    label: 'redacted signed design-partner agreement or letter evidence',
+    pattern: /(?:design[-_ ]?partner[\s\S]{0,100}(?:signed|agreement|letter|executed|retained|redacted)|(?:signed|executed|agreement|letter|retained|redacted)[\s\S]{0,100}design[-_ ]?partner)/i,
+  }],
+  ['paid_pilot', {
+    label: 'redacted paid-pilot invoice, payment, receipt, confirmation, or agreement evidence',
+    pattern: /(?:paid[-_ ]?pilot[\s\S]{0,100}(?:evidence|invoice|payment|receipt|confirmation|agreement|appendix|retained|redacted)|(?:pilot[-_ ]?payment|paid[-_ ]?invoice|invoice[-_ ]?paid|payment[-_ ]?confirmation|receipt)[\s\S]{0,100}(?:pilot|invoice|retained|redacted|evidence)?)/i,
+  }],
+  ['purchase_order', {
+    label: 'redacted purchase-order reference, issued PO, or procurement evidence',
+    pattern: /(?:purchase[-_ ]?order|\bpo\b)[\s\S]{0,100}(?:reference|issued|procurement|evidence|appendix|retained|redacted|confirmation|number)/i,
+  }],
+  ['letter_of_intent', {
+    label: 'redacted letter-of-intent evidence',
+    pattern: /(?:letter[-_ ]?of[-_ ]?intent|\bloi\b)[\s\S]{0,100}(?:signed|received|executed|evidence|appendix|retained|redacted|confirmation)/i,
+  }],
+]);
 const allowedPiiScreenResults = new Set([
   'no personal data',
   'no personal data or meter identifiers found',
@@ -273,6 +291,7 @@ const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? ''
 const reviewerFeedbackStatus = normalizeText(values.get('reviewer-feedback-status') ?? '');
 const day14Decision = normalizeText(values.get('day-14-decision') ?? '');
 const commercialCommitmentStatus = normalizeText(values.get('commercial-commitment-status') ?? '');
+const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 const diagnosticText = diagnostics.join('\n');
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
@@ -287,6 +306,13 @@ if (!completeFeedbackStatuses.has(reviewerFeedbackStatus)) failures.push('--revi
 if (!allowedDecisions.has(day14Decision)) failures.push('--day-14-decision must be proceed, park, pivot, reject, or pending.');
 if (!allowedCommercialCommitmentStatuses.has(commercialCommitmentStatus)) {
   failures.push('--commercial-commitment-status must be none, design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
+}
+const commercialCommitmentRule = commercialCommitmentEvidenceRules.get(commercialCommitmentStatus);
+if (commercialCommitmentRule && !commercialCommitmentEvidence.trim()) {
+  failures.push(`--commercial-commitment-evidence is required when --commercial-commitment-status is ${commercialCommitmentStatus}.`);
+}
+if (commercialCommitmentRule && commercialCommitmentEvidence.trim() && !commercialCommitmentRule.pattern.test(commercialCommitmentEvidence)) {
+  failures.push(`--commercial-commitment-evidence must describe ${commercialCommitmentRule.label}; do not repeat only the status.`);
 }
 if (diagnostics.length === 0) failures.push('At least one --diagnostic value is required.');
 
@@ -319,9 +345,9 @@ const claimBoundary = values.get('claim-boundary');
 const doNotClaim = values.get('do-not-claim');
 const sourceLabel = values.get('source-label') ?? 'buyer_supplied_anonymized';
 const proofPackId = values.get('proof-pack-id') ?? '(fill matching proof_pack_id in register)';
-const commercialCommitmentEvidence = commercialCommitmentStatus === 'none'
+const retainedCommercialCommitmentEvidence = commercialCommitmentStatus === 'none'
   ? 'none'
-  : commercialCommitmentStatus;
+  : commercialCommitmentEvidence.trim();
 
 const artifactText = [
   `# ${artifactTitle}`,
@@ -340,7 +366,7 @@ const artifactText = [
   `reviewer_feedback_status: ${reviewerFeedbackStatus}`,
   `day_14_decision: ${day14Decision}`,
   `commercial_commitment_status: ${commercialCommitmentStatus}`,
-  `commercial_commitment_evidence: ${commercialCommitmentEvidence}`,
+  `commercial_commitment_evidence: ${retainedCommercialCommitmentEvidence}`,
   `claim_boundary: ${claimBoundary}`,
   `do_not_claim: ${doNotClaim}`,
   '',

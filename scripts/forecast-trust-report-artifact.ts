@@ -9,6 +9,10 @@ import {
   type UtilityForecastTrustRetainedEvidenceExtractParams,
   type UtilityMultiDatasetBenchmarkPack,
 } from '../src/lib/utilityForecastBenchmarkPack';
+import {
+  getCommercialCommitmentEvidenceFailure,
+  type CommercialCommitmentStatus,
+} from '../src/lib/commercialCommitmentEvidence';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -94,6 +98,7 @@ const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? ''
 const reviewerFeedbackStatus = normalizeText(values.get('reviewer-feedback-status') ?? '');
 const day14Decision = normalizeText(values.get('day-14-decision') ?? '');
 const commercialCommitmentStatus = normalizeText(values.get('commercial-commitment-status') ?? '');
+const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
 if (!allowedPiiScreenResults.has(piiScreenResult)) {
@@ -107,6 +112,13 @@ if (!allowedFeedbackStatus.has(reviewerFeedbackStatus)) failures.push('--reviewe
 if (!allowedDay14Decision.has(day14Decision)) failures.push('--day-14-decision must be proceed, park, pivot, reject, or pending.');
 if (!allowedCommercialCommitmentStatus.has(commercialCommitmentStatus)) {
   failures.push('--commercial-commitment-status must be none, design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
+}
+const commercialCommitmentEvidenceFailure = getCommercialCommitmentEvidenceFailure(
+  commercialCommitmentStatus,
+  commercialCommitmentEvidence,
+);
+if (commercialCommitmentEvidenceFailure) {
+  failures.push(`--commercial-commitment-evidence ${commercialCommitmentEvidenceFailure}`);
 }
 
 const benchmarkPackFile = values.has('benchmark-pack-file')
@@ -146,7 +158,8 @@ const extractParams: UtilityForecastTrustRetainedEvidenceExtractParams = {
   reviewerAcceptance: reviewerAcceptance as UtilityForecastTrustRetainedEvidenceExtractParams['reviewerAcceptance'],
   reviewerFeedbackStatus: reviewerFeedbackStatus as UtilityForecastTrustRetainedEvidenceExtractParams['reviewerFeedbackStatus'],
   day14Decision: day14Decision as UtilityForecastTrustRetainedEvidenceExtractParams['day14Decision'],
-  commercialCommitmentStatus: commercialCommitmentStatus as UtilityForecastTrustRetainedEvidenceExtractParams['commercialCommitmentStatus'],
+  commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
+  commercialCommitmentEvidence,
 };
 if (values.has('dataset-id')) extractParams.datasetId = values.get('dataset-id') as string;
 if (values.has('proof-pack-id')) extractParams.proofPackId = values.get('proof-pack-id') as string;

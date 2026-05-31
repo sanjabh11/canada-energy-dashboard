@@ -1,5 +1,9 @@
 import type { ForecastMetrics } from './demandForecaster';
 import {
+  resolveCommercialCommitmentEvidence,
+  type CommercialCommitmentStatus,
+} from './commercialCommitmentEvidence';
+import {
   buildUtilityForecastPackage,
   generateOntarioPublicUtilitySampleRows,
   ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST,
@@ -136,7 +140,8 @@ export interface UtilityForecastTrustRetainedEvidenceExtractParams {
   reviewerAcceptance: 'accepted' | 'approved' | 'signed';
   reviewerFeedbackStatus: 'complete' | 'accepted' | 'approved' | 'signed';
   day14Decision: 'proceed' | 'park' | 'pivot' | 'reject' | 'pending';
-  commercialCommitmentStatus: 'none' | 'design_partner_signed' | 'paid_pilot' | 'purchase_order' | 'letter_of_intent';
+  commercialCommitmentStatus: CommercialCommitmentStatus;
+  commercialCommitmentEvidence?: string;
   datasetId?: string;
   claimBoundary?: string;
   doNotClaim?: string;
@@ -597,6 +602,10 @@ export function buildUtilityForecastTrustRetainedEvidenceExtract(
   const sourceBoundary = dataset.source_scope === 'buyer_supplied_anonymized'
     ? 'buyer-supplied anonymized benchmark dataset'
     : `${dataset.source_scope} benchmark dataset; does not move buyer confidence by itself`;
+  const commercialCommitmentEvidence = resolveCommercialCommitmentEvidence(
+    params.commercialCommitmentStatus,
+    params.commercialCommitmentEvidence,
+  );
 
   return [
     `# ${params.artifactTitle ?? 'CEIP forecast trust retained evidence extract'}`,
@@ -618,7 +627,7 @@ export function buildUtilityForecastTrustRetainedEvidenceExtract(
     `reviewer_feedback_status: ${params.reviewerFeedbackStatus}`,
     `day_14_decision: ${params.day14Decision}`,
     `commercial_commitment_status: ${params.commercialCommitmentStatus}`,
-    `commercial_commitment_evidence: ${params.commercialCommitmentStatus}`,
+    `commercial_commitment_evidence: ${commercialCommitmentEvidence}`,
     `claim_boundary: ${claimBoundary}`,
     `do_not_claim: ${doNotClaim}`,
     '',

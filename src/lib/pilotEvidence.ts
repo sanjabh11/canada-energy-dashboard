@@ -304,7 +304,7 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   {
     id: 'commercial-commitment',
     label: 'Commercial commitment signal',
-    evidence: 'At least one accepted confidence-moving buyer row records a paid pilot, purchase order, letter of intent, or signed design-partner status.',
+    evidence: 'At least one accepted confidence-moving buyer row records a paid pilot, purchase order, letter of intent, or signed design-partner status with retained redacted artifact text proving the commitment beyond status-only wording.',
   },
 ];
 

@@ -1,3 +1,8 @@
+import {
+  resolveCommercialCommitmentEvidence,
+  type CommercialCommitmentStatus,
+} from './commercialCommitmentEvidence';
+
 export const BYO_CSV_PROOF_VERSION = 'byo-csv-proof-generator-v2';
 
 export interface ByoCsvColumnProfile {
@@ -54,7 +59,8 @@ export interface ByoCsvRetainedEvidenceExtractParams {
   reviewerAcceptance: 'accepted' | 'approved' | 'signed';
   reviewerFeedbackStatus: 'complete' | 'accepted' | 'approved' | 'signed';
   day14Decision: 'proceed' | 'park' | 'pivot' | 'reject' | 'pending';
-  commercialCommitmentStatus: 'none' | 'design_partner_signed' | 'paid_pilot' | 'purchase_order' | 'letter_of_intent';
+  commercialCommitmentStatus: CommercialCommitmentStatus;
+  commercialCommitmentEvidence?: string;
   proofPackId?: string;
   artifactTitle?: string;
   claimBoundary?: string;
@@ -370,6 +376,10 @@ export function buildByoCsvRetainedEvidenceExtract(
     ?? 'Buyer supplied redacted CSV privacy-screen workflow only; no raw values retained in this extract; linkage risk still requires buyer privacy review.';
   const doNotClaim = params.doNotClaim
     ?? 'Do not claim PII-free certification, no privacy risk, no re-identification risk, buyer acceptance, or production connector approval.';
+  const commercialCommitmentEvidence = resolveCommercialCommitmentEvidence(
+    params.commercialCommitmentStatus,
+    params.commercialCommitmentEvidence,
+  );
 
   return [
     `# ${params.artifactTitle ?? 'CEIP BYO-CSV retained evidence extract'}`,
@@ -389,7 +399,7 @@ export function buildByoCsvRetainedEvidenceExtract(
     `reviewer_feedback_status: ${params.reviewerFeedbackStatus}`,
     `day_14_decision: ${params.day14Decision}`,
     `commercial_commitment_status: ${params.commercialCommitmentStatus}`,
-    `commercial_commitment_evidence: ${params.commercialCommitmentStatus}`,
+    `commercial_commitment_evidence: ${commercialCommitmentEvidence}`,
     `claim_boundary: ${claimBoundary}`,
     `do_not_claim: ${doNotClaim}`,
     '',

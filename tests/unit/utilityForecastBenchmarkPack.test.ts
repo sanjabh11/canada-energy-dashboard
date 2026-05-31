@@ -118,6 +118,7 @@ describe('utilityForecastBenchmarkPack', () => {
       reviewerFeedbackStatus: 'complete',
       day14Decision: 'proceed',
       commercialCommitmentStatus: 'paid_pilot',
+      commercialCommitmentEvidence: 'paid pilot evidence retained in redacted commercial appendix',
     });
 
     expect(extract).toContain('proof_pack_id: forecast_benchmark_provenance');
@@ -129,6 +130,7 @@ describe('utilityForecastBenchmarkPack', () => {
     expect(extract).toContain('reviewer_feedback_status: complete');
     expect(extract).toContain('day_14_decision: proceed');
     expect(extract).toContain('commercial_commitment_status: paid_pilot');
+    expect(extract).toContain('commercial_commitment_evidence: paid pilot evidence retained in redacted commercial appendix');
     expect(extract).toMatch(/MAE \d+(?:\.\d+)? MW/);
     expect(extract).toMatch(/MAPE \d+(?:\.\d+)?%/);
     expect(extract).toMatch(/RMSE \d+(?:\.\d+)? MW/);

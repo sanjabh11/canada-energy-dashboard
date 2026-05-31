@@ -130,6 +130,7 @@ describe('byoCsvProofGenerator', () => {
       reviewerFeedbackStatus: 'complete',
       day14Decision: 'proceed',
       commercialCommitmentStatus: 'letter_of_intent',
+      commercialCommitmentEvidence: 'letter of intent evidence retained in redacted commercial appendix',
     });
 
     expect(extract).toContain('proof_pack_id: byo_csv_privacy_proof_pack');
@@ -140,6 +141,7 @@ describe('byoCsvProofGenerator', () => {
     expect(extract).toContain('quasi-identifier warnings: 2');
     expect(extract).toContain('retained raw values: no');
     expect(extract).toContain('confidence gate ready: yes');
+    expect(extract).toContain('commercial_commitment_evidence: letter of intent evidence retained in redacted commercial appendix');
     expect(extract).toContain('linkage risk still requires buyer privacy review');
     expect(extract).not.toContain('12.5');
     expect(extract).not.toContain('FDR-1');

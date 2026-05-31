@@ -252,6 +252,69 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('unsupported rows: 2');
   });
 
+  it('rejects status-only retained commercial commitment evidence', async () => {
+    const evidenceRoot = makeTempRoot();
+    const artifactText = [
+      'artifact_type,summary',
+      'record_date,2026-05-30',
+      'pii_screen_result,redacted',
+      'utility_forecast,"redacted buyer utility forecast evidence with MAE 12.4 MW MAPE 3.8% RMSE 18.6 MW persistence MAE 21.3 MW seasonal-naive MAE 19.9 MW rolling-origin split count 4 interval coverage 91.2% and CEIP champion vs seasonal-naive challenger diagnostics"',
+      'commercial_commitment_evidence,paid_pilot',
+      'buyer_data_coverage_pct,90',
+      'time_to_artifact_hours,36',
+      'reviewer_acceptance,accepted',
+      'reviewer_feedback_status,complete',
+      'day_14_decision,proceed',
+      '',
+    ].join('\n');
+    const artifactPath = path.join(evidenceRoot, 'status-only-commercial.csv');
+    writeFileSync(artifactPath, artifactText, 'utf8');
+    const sha256 = createHash('sha256').update(artifactText).digest('hex');
+    const registerPath = path.join(evidenceRoot, 'register.csv');
+    writeFileSync(registerPath, [
+      'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes',
+      [
+        '2026-05-30',
+        'utility',
+        'LDC consultant',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        'CEIP pilot owner',
+        'anonymized hourly load',
+        'buyer_supplied_anonymized',
+        `status-only-commercial.csv#sha256=${sha256}`,
+        'redacted',
+        'paid_pilot',
+        'forecast planning pack',
+        '36',
+        '90',
+        '"MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger"',
+        'utility planning reviewer',
+        'complete',
+        'accepted',
+        'Buyer supplied data only and no production onboarding claim',
+        'Do not claim utility approval or live telemetry',
+        'proceed',
+        '0.3',
+        'Schedule paid utility pilot review',
+        'Status-only retained commercial evidence should fail',
+      ].join(','),
+      '',
+    ].join('\n'), 'utf8');
+
+    const result = await runValidatorAtPath(registerPath, [
+      '--require-95',
+      '--allow-fixture-95',
+      '--evidence-root',
+      evidenceRoot,
+    ], fixture95Env);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support each strong commercial_commitment_status');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
   it('rejects 95% confidence when accepted artifacts do not prove fast pilot turnaround', async () => {
     const result = await runValidator(
       'invalid-slow-95-evidence-register.csv',
