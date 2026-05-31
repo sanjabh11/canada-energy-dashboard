@@ -25,6 +25,7 @@
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
     "report:production-approval-packet": "node scripts/report-production-approval-packet.mjs",
+    "report:strategy-completion-audit": "node scripts/report-strategy-completion-audit.mjs",
     "report:strategy-source-anchors": "node scripts/report-strategy-source-anchors.mjs",
     "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
     "prepare:byo-csv-proof-artifact": "tsx scripts/byo-csv-proof-artifact.ts",

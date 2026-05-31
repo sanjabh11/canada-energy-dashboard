@@ -29,6 +29,7 @@ Desk-research strategy-direction confidence: **95 / 100**. Buyer-proven market c
 |---|---|---|---|
 | Claim-boundary guard | `pnpm run check:claim-boundaries` passed for 360 files. | Strong local proof | Guard includes `index.html`, `public/manifest.json`, and `public/schema-webapp.jsonld`. |
 | Commercial source guard | `pnpm run check:commercial-source` passed for 10 active docs and 27 historical docs. | Strong local proof | Commercial doc ratings and route mappings are guarded. |
+| Completion audit report | `pnpm run report:strategy-completion-audit` maps the original plan requirements to current repo evidence and separates local completion from live deploy and buyer-evidence gates. | Strong local proof | This is not buyer proof and does not approve production deployment. |
 | Focused unit slice | `pnpm run test:strategy-audit-slice` passed: 74 tests across 7 files. | Strong local proof | Covered commercial positioning, forecast baselines, utility forecasting, forecast proof pack, regulatory proof pack, proof-pack gates, and pilot evidence validator. |
 | Production build | `pnpm run build:prod` succeeded. | Strong local proof | Build created current `dist/index.html`; deploy not performed in this phase. |
 | Release-readiness preflight | `pnpm run check:release-readiness` passed after the adversarial-loop ledger update. | Strong local proof | Covered claim boundaries, commercial-source guard, fixture-proof 95% gate, pilot template, focused strategy-audit unit slice, local source metadata, production build, built `dist/` metadata, and proof-pack bundle budgets. This is local release readiness, not live parity. |
@@ -253,6 +254,7 @@ Production approval packet:
 | Gate | Current command evidence | Decision |
 |---|---|---|
 | Local release readiness | `pnpm run check:release-readiness` passed after this roadmap update and now includes the fixture-proof 95% buyer-evidence gate plus the focused 74-test strategy-audit slice. | Source is preflight-clean for an approved deploy. |
+| Strategy completion audit | `pnpm run report:strategy-completion-audit` reports the desk-research strategy-direction deliverable as locally complete while keeping live parity and buyer evidence unresolved. | Use it for requirement-by-requirement handoff; do not treat it as deploy or market proof. |
 | Production approval packet | `pnpm run report:production-approval-packet` generates a current local-readiness/live-metadata report without deploying. | Use it before asking for approval; it is not approval and does not move buyer confidence. |
 | Live metadata parity | `pnpm run check:live-public-metadata` failed on hosted root, manifest, and JSON-LD stale claims. | Live parity is not achieved. |
 | Approval boundary | No production deploy was performed in this phase. | Do not deploy without explicit production approval, then rerun `pnpm run check:post-deploy-live`. |

@@ -44,6 +44,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 |---|---|---|---|
 | Commercial source-of-truth guard | `pnpm run check:commercial-source` | Active outreach, public positioning, root README, and stale historical docs could drift from the current proof-pack strategy. | Guardrail only; human review still required for new claims. |
 | Strategy roadmap structure guard | `pnpm run check:strategy-roadmap-doc` | The 95% roadmap could lose required sections, source anchors, top-10 rows, loophole questions, or production/buyer gates. | Structural proof only; it does not create buyer evidence or approve deployment. |
+| Strategy completion audit | `pnpm run report:strategy-completion-audit` | It was easy to confuse completed desk research with unresolved live deploy or buyer evidence gates. | Requirement-by-requirement audit only; it keeps external gates explicit. |
 | Strategy source-anchor report | `pnpm run report:strategy-source-anchors` | Current-source claims could drift if URLs move, block access, or no longer contain the expected topic language. | Network/source-health report only; human review still controls strategy claims. |
 | Production approval packet | `pnpm run report:production-approval-packet` | Local readiness and live stale-metadata blockers could be discussed from memory instead of current command evidence. | Generates an approval report only; it does not deploy or approve production. |
 | Top-10 route consistency guard | `pnpm run check:commercial-source` | A sellable proof pack could keep the right score while pointing to a stale or missing app route. | Proves route registration and allowlist consistency, not buyer adoption. |
@@ -82,6 +83,7 @@ pnpm install
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
 pnpm run check:strategy-roadmap-doc
+pnpm run report:strategy-completion-audit
 pnpm run report:strategy-source-anchors
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
