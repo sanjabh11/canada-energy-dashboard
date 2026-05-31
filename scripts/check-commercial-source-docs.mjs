@@ -135,6 +135,20 @@ const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evide
 const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
+const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
+const strategyRoadmapWhitespacePhrases = [
+  'Incumbent Foreclosure Matrix',
+  'Do not compete on enterprise bill management',
+  'EnergyCAP',
+  'GridX',
+  'Bidgely',
+  'Oracle Opower',
+  'Enverus',
+  'Innowatts',
+  'UtilityAPI',
+  'Itron',
+  'Amperon',
+];
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
 const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
 const pilotEvidenceValidatorPath = path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs');
@@ -269,6 +283,15 @@ if (!existsSync(sourceDocPath)) {
 
   if (!forecastTrustArtifactHelperPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
+  }
+
+  if (existsSync(strategyRoadmapPath)) {
+    const strategyRoadmap = readFileSync(strategyRoadmapPath, 'utf8');
+    for (const phrase of strategyRoadmapWhitespacePhrases) {
+      if (!strategyRoadmap.includes(phrase)) {
+        failures.push(`docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md is missing incumbent-whitespace phrase: ${phrase}`);
+      }
+    }
   }
 
   if (existsSync(pilotEvidenceSourcePath)) {
