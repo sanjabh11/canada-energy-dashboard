@@ -121,6 +121,7 @@ pnpm run check:pilot-evidence-95-fixture-gate
 pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 pnpm run check:strategy-roadmap-doc
+pnpm run report:strategy-source-anchors
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```

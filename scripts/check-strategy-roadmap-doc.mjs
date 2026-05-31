@@ -181,6 +181,7 @@ if (!existsSync(roadmapPath)) {
     'Do not deploy without explicit production approval',
     'pnpm run check:release-readiness',
     'pnpm run report:production-approval-packet',
+    'pnpm run report:strategy-source-anchors',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',
   ];
