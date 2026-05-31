@@ -144,6 +144,8 @@ pnpm run check:post-deploy-live
 
 `check:release-readiness` includes `check:strategy-source-anchors`, so production approval packets inherit the current-source anchor gate before any deploy request.
 
+`report:strategy-completion-audit -- --include-checks` also uses the hard source-anchor gate and changes the local-complete verdict if required local strategy/source checks fail; the expected live metadata failure remains an external production gate.
+
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 
 ```bash

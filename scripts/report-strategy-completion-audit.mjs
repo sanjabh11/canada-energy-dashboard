@@ -254,10 +254,18 @@ const checkSteps = includeChecks
   ? [
       runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
       runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
-      runStep('Strategy source anchors', 'pnpm', ['run', 'report:strategy-source-anchors']),
+      runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
     ]
   : [];
+const requiredLocalCheckLabels = new Set([
+  'Strategy roadmap structure',
+  'Commercial source guard',
+  'Strategy source anchors',
+]);
+const failedRequiredLocalChecks = checkSteps.filter(
+  (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
+);
 
 function compactOutput(step) {
   const combined = `${step.stdout}\n${step.stderr}\n${step.error}`.trim();
@@ -310,7 +318,11 @@ const checkMarkdown =
         .join('\n\n');
 
 const completionVerdict =
-  rows.every((row) => row.status === 'complete_locally' || row.status === 'complete_locally_external_gate' || row.status === 'external_gate')
+  failedRequiredLocalChecks.length > 0
+    ? `The completion audit found failing local verification gates: ${failedRequiredLocalChecks
+        .map((step) => step.label)
+        .join(', ')}.`
+    : rows.every((row) => row.status === 'complete_locally' || row.status === 'complete_locally_external_gate' || row.status === 'external_gate')
     ? 'The desk-research strategy-direction deliverable is complete locally. The full product/business goal is not complete because live production parity and buyer-proven market confidence remain external gates.'
     : 'The completion audit found missing or incomplete desk-research requirements.';
 
