@@ -37,15 +37,26 @@ describe('utilityForecastBenchmarkPack', () => {
     const markdown = utilityMultiDatasetBenchmarkPackToMarkdown(pack);
     const csv = utilityMultiDatasetBenchmarkPackToCsv(pack);
 
-    expect(pack.version).toBe('utility-multi-dataset-benchmark-v1');
+    expect(pack.version).toBe('utility-multi-dataset-benchmark-v2');
     expect(pack.dataset_count).toBe(2);
     expect(pack.buyer_specific_accuracy_claim).toBe(false);
     expect(pack.datasets.every((dataset) => dataset.sample_size > 0)).toBe(true);
     expect(pack.datasets.every((dataset) => dataset.rolling_origin_split_count >= 3)).toBe(true);
+    expect(pack.datasets.every((dataset) => dataset.scientific_diagnostics.seasonal_mase > 0)).toBe(true);
+    expect(pack.datasets.every((dataset) => dataset.scientific_diagnostics.interval_nominal_coverage_pct === 90)).toBe(true);
+    expect(pack.datasets[0].scientific_diagnostics.notes.join(' ')).toContain('in-sample');
+    expect(pack.aggregate.mean_best_naive_scaled_mae).toBeGreaterThan(0);
+    expect(pack.aggregate.maximum_interval_calibration_gap_pct).toBeGreaterThanOrEqual(0);
+    expect(pack.methodology_references.map((reference) => reference.label).join(' ')).toContain('Hyndman');
     expect(pack.datasets[0].benchmark_failure_notes[0]).toContain('Baseline win:');
     expect(markdown).toContain('Buyer-specific accuracy claim: no');
+    expect(markdown).toContain('Mean seasonal MASE');
+    expect(markdown).toContain('Methodology references');
+    expect(markdown).toContain('Scale-free and interval diagnostics are adversarial review aids');
     expect(markdown).toContain('## Boundaries');
     expect(csv).toContain('dataset_id,label,jurisdiction,source_scope');
+    expect(csv).toContain('seasonal_mase');
+    expect(csv).toContain('interval_calibration_gap_pct');
     expect(csv).toContain('buyer_specific_accuracy_claim');
   });
 
