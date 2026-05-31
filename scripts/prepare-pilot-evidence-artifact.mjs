@@ -55,6 +55,7 @@ const requiredOptions = [
   'artifact-file',
   'route',
   'record-date',
+  'pii-screen-result',
   'buyer-data-coverage-pct',
   'time-to-artifact-hours',
   'reviewer-role',
@@ -100,6 +101,12 @@ const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
 const allowedDecisions = new Set(['proceed', 'park', 'pivot', 'reject', 'pending']);
 const allowedCommercialCommitmentStatuses = new Set(['none', 'design_partner_signed', 'paid_pilot', 'purchase_order', 'letter_of_intent']);
+const allowedPiiScreenResults = new Set([
+  'no personal data',
+  'no personal data or meter identifiers found',
+  'redacted',
+  'screened',
+]);
 
 const routeDiagnosticRules = new Map([
   ['/utility-demand-forecast', {
@@ -199,6 +206,7 @@ if (evidenceRoot && artifactPath) {
 
 const route = values.get('route') ?? '';
 const recordDate = values.get('record-date') ?? '';
+const piiScreenResult = normalizeText(values.get('pii-screen-result') ?? '');
 const coverage = parseFiniteNumber('buyer-data-coverage-pct');
 const turnaroundHours = parseFiniteNumber('time-to-artifact-hours');
 const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? '');
@@ -209,6 +217,9 @@ const diagnosticText = diagnostics.join('\n');
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
 if (!isValidIsoDate(recordDate)) failures.push('--record-date must be a valid YYYY-MM-DD date.');
+if (!allowedPiiScreenResults.has(piiScreenResult)) {
+  failures.push('--pii-screen-result must be no personal data, no personal data or meter identifiers found, redacted, or screened.');
+}
 if (coverage !== null && (coverage < 0 || coverage > 100)) failures.push('--buyer-data-coverage-pct must be between 0 and 100.');
 if (turnaroundHours !== null && turnaroundHours < 0) failures.push('--time-to-artifact-hours cannot be negative.');
 if (!acceptedReviewerStatuses.has(reviewerAcceptance)) failures.push('--reviewer-acceptance must be accepted, approved, or signed.');
@@ -254,6 +265,7 @@ const artifactText = [
   `route: ${route}`,
   `proof_pack_id: ${proofPackId}`,
   `source_label: ${sourceLabel}`,
+  `pii_screen_result: ${piiScreenResult}`,
   `buyer_data_coverage_pct: ${coverage}`,
   `time_to_artifact_hours: ${turnaroundHours}`,
   `reviewer_role: ${reviewerRole}`,

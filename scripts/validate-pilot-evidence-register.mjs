@@ -734,6 +734,15 @@ function hasRetainedRecordDateEvidence(rowNumber, row) {
   return datePattern.test(text);
 }
 
+function hasRetainedPiiScreenEvidence(rowNumber, row) {
+  const piiScreenResult = normalizeText(row.pii_screen_result ?? '');
+  if (!buyerEvidencePiiScreenResults.has(piiScreenResult)) return false;
+  const text = localEvidenceTextByRowNumber.get(rowNumber) ?? '';
+  const piiScreenText = escapeRegExp(piiScreenResult);
+  const piiPattern = new RegExp(`(?:pii[-_ ]?screen(?:[-_ ]?result)?|privacy[-_ ]?screen(?:[-_ ]?result)?|redaction[-_ ]?screen|direct[-_ ]?identifier[-_ ]?screen)[\\s\\S]{0,80}\\b${piiScreenText}\\b`, 'i');
+  return piiPattern.test(text);
+}
+
 function rowList(items) {
   if (!items.length) return 'none';
   return items.map((item) => item.rowNumber).join(', ');
@@ -808,6 +817,9 @@ function buildReadiness95Evaluation() {
   ));
   const unsupportedRecordDateRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedRecordDateEvidence(rowNumber, row)
+  ));
+  const unsupportedPiiScreenRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedPiiScreenEvidence(rowNumber, row)
   ));
   const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
@@ -925,6 +937,12 @@ function buildReadiness95Evaluation() {
       'Include exact record_date support in each retained artifact.',
     ),
     buildReportCheck(
+      'Retained privacy-screen support',
+      hasAcceptedBuyerRows && unsupportedPiiScreenRows.length === 0,
+      `unsupported rows: ${rowList(unsupportedPiiScreenRows)}`,
+      'Include exact pii_screen_result support in each retained artifact.',
+    ),
+    buildReportCheck(
       'Retained reviewer acceptance support',
       hasAcceptedBuyerRows && unsupportedReviewerAcceptanceRows.length === 0,
       `unsupported rows: ${rowList(unsupportedReviewerAcceptanceRows)}`,
@@ -1012,6 +1030,10 @@ function buildReadiness95Evaluation() {
 
   if (unsupportedRecordDateRows.length > 0) {
     aggregateFailures.push(`95% confidence gate requires retained local evidence artifacts to support record_date for accepted confidence-moving rows; unsupported rows: ${rowList(unsupportedRecordDateRows)}.`);
+  }
+
+  if (unsupportedPiiScreenRows.length > 0) {
+    aggregateFailures.push(`95% confidence gate requires retained local evidence artifacts to support pii_screen_result for accepted confidence-moving rows; unsupported rows: ${rowList(unsupportedPiiScreenRows)}.`);
   }
 
   if (unsupportedReviewerAcceptanceRows.length > 0) {
@@ -1313,6 +1335,9 @@ if (require95 && failures.length === 0) {
   const unsupportedRecordDateRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedRecordDateEvidence(rowNumber, row)
   ));
+  const unsupportedPiiScreenRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
+    !hasRetainedPiiScreenEvidence(rowNumber, row)
+  ));
   const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
     !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
   ));
@@ -1379,6 +1404,10 @@ if (require95 && failures.length === 0) {
 
   if (unsupportedRecordDateRows.length > 0) {
     failures.push(`95% confidence gate requires retained local evidence artifacts to support record_date for accepted confidence-moving rows; unsupported rows: ${unsupportedRecordDateRows.map((item) => item.rowNumber).join(', ')}.`);
+  }
+
+  if (unsupportedPiiScreenRows.length > 0) {
+    failures.push(`95% confidence gate requires retained local evidence artifacts to support pii_screen_result for accepted confidence-moving rows; unsupported rows: ${unsupportedPiiScreenRows.map((item) => item.rowNumber).join(', ')}.`);
   }
 
   if (unsupportedReviewerAcceptanceRows.length > 0) {

@@ -229,6 +229,19 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('unsupported rows: 2');
   });
 
+  it('rejects 95% confidence when retained artifacts do not support the privacy screen result', async () => {
+    const result = await runValidator(
+      'invalid-unsupported-pii-screen-95-evidence-register.csv',
+      ['--require-95', '--allow-fixture-95', '--evidence-root', 'tests/fixtures/pilot-evidence/artifacts'],
+      fixture95Env,
+    );
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires retained local evidence artifacts to support pii_screen_result');
+    expect(output).toContain('unsupported rows: 2');
+  });
+
   it('rejects 95% confidence when retained artifacts do not support buyer data coverage', async () => {
     const result = await runValidator(
       'invalid-unsupported-coverage-95-evidence-register.csv',

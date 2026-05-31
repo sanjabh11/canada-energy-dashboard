@@ -48,6 +48,7 @@ function buildValidPrepArgs(evidenceRoot: string, artifactFile = 'redacted-utili
     '--route', '/utility-demand-forecast',
     '--proof-pack-id', 'utility_forecast_planning_pack',
     '--record-date', '2026-05-30',
+    '--pii-screen-result', 'redacted',
     '--buyer-data-coverage-pct', '90',
     '--time-to-artifact-hours', '36',
     '--reviewer-role', 'utility planning reviewer',
@@ -84,6 +85,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     const sha256 = createHash('sha256').update(artifactText).digest('hex');
     expect(prepResult.stdout).toContain(`redacted-utility.md#sha256=${sha256}`);
     expect(artifactText).toContain('record_date: 2026-05-30');
+    expect(artifactText).toContain('pii_screen_result: redacted');
     expect(artifactText).toContain('buyer_data_coverage_pct: 90');
     expect(artifactText).toContain('reviewer_acceptance: accepted');
 
@@ -150,6 +152,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--artifact-file', 'thin.md',
       '--route', '/roi-calculator',
       '--record-date', '2026-05-30',
+      '--pii-screen-result', 'redacted',
       '--buyer-data-coverage-pct', '82',
       '--time-to-artifact-hours', '42',
       '--reviewer-role', 'industrial compliance reviewer',
