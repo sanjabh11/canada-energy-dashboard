@@ -139,6 +139,10 @@ const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_G
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
   'Do not compete on enterprise bill management',
+  'Radical Feature Deep-Dives',
+  'Budget-Line And Ease-Of-Buy Matrix',
+  'self-serve evidence generator',
+  'price trajectory, direct investment, and credit-floor assumptions',
   'EnergyCAP',
   'GridX',
   'Bidgely',
