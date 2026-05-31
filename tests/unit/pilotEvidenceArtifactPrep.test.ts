@@ -295,6 +295,7 @@ describe('pilot evidence artifact preparation CLI', () => {
   it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {
     const evidenceRoot = makeTempRoot();
     const peakTrackerPath = path.join(evidenceRoot, 'ieso-peak-tracker.md');
+    const historicalActualsPath = path.join(evidenceRoot, 'ieso-top-five-actuals.csv');
     const customerLoadPath = path.join(evidenceRoot, 'redacted-load.csv');
     writeFileSync(peakTrackerPath, [
       'Rank  | Date  | Hour Ending (EST)  | ICI Ontario Demand* (MW)  | Coincident Adjusted AQEW (MWh)  | Status* (Initial, Prelim, Final)',
@@ -304,6 +305,14 @@ describe('pilot evidence artifact preparation CLI', () => {
       '3 | 18 May 2026 | 18 | 18,889 | 18,199 | Final',
       '4 | 25 May 2026 | 19 | 17,561 | | ',
       '5 | 05 May 2026 | 17 | 17,033 | 16,468 | Prelim',
+    ].join('\n'), 'utf8');
+    writeFileSync(historicalActualsPath, [
+      'timestamp,ontario_demand_mw,status,source',
+      '2026-05-19T17:00:00.000Z,20820,final,https://www.ieso.ca/peaktracker',
+      '2026-05-26T19:00:00.000Z,19109,final,https://www.ieso.ca/peaktracker',
+      '2026-05-18T18:00:00.000Z,18889,final,https://www.ieso.ca/peaktracker',
+      '2026-05-25T19:00:00.000Z,17561,final,https://www.ieso.ca/peaktracker',
+      '2026-05-05T17:00:00.000Z,17033,final,https://www.ieso.ca/peaktracker',
     ].join('\n'), 'utf8');
     writeFileSync(customerLoadPath, [
       'timestamp,load_mw',
@@ -316,6 +325,7 @@ describe('pilot evidence artifact preparation CLI', () => {
 
     const prepResult = await runTsxScript(gaIciPrepScriptPath, [
       '--peak-tracker-file', peakTrackerPath,
+      '--historical-actuals-file', historicalActualsPath,
       '--customer-load-file', customerLoadPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'ga-ici-retained.md',
@@ -335,6 +345,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(prepResult.stderr).toBe('');
     expect(prepResult.stdout).toContain('GA/ICI 5CP proof artifact prepared.');
     expect(prepResult.stdout).toContain('evidence_file_reference: ga-ici-retained.md#sha256=');
+    expect(prepResult.stdout).toContain('historical_backtest_watchlist_capture_rate: 1');
 
     const artifactPath = path.join(evidenceRoot, 'ga-ici-retained.md');
     const artifactText = readFileSync(artifactPath, 'utf8');
@@ -344,6 +355,9 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('peak demand factor PDF estimate:');
     expect(artifactText).toContain('IESO peak tracker source: https://www.ieso.ca/peaktracker');
     expect(artifactText).toContain('decision-support settlement boundary:');
+    expect(artifactText).toContain('Historical Backtest Summary');
+    expect(artifactText).toContain('watchlist capture rate: 1');
+    expect(artifactText).toContain('backtest claim boundary:');
     expect(artifactText).not.toMatch(/guaranteed savings/i);
 
     const registerPath = path.join(evidenceRoot, 'register.csv');

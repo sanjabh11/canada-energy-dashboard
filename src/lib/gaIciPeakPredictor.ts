@@ -40,6 +40,33 @@ export interface IciFiveCpDecisionSupportReport {
   do_not_claim: string[];
 }
 
+export interface IciBacktestPeakHour {
+  timestamp: string;
+  rank: number;
+  ontario_demand_mw: number;
+  status: IciSystemPeakHour['status'];
+  matched_candidate_rank: number | null;
+}
+
+export interface IciFiveCpHistoricalBacktestReport {
+  version: string;
+  generated_at: string;
+  base_period: {
+    start: string;
+    end: string;
+  };
+  candidate_peak_count: number;
+  actual_top_five_count: number;
+  candidate_top_five_capture_count: number;
+  candidate_top_five_capture_rate: number | null;
+  watchlist_capture_count: number;
+  watchlist_capture_rate: number | null;
+  missed_actual_peak_hours: IciBacktestPeakHour[];
+  false_positive_candidate_top_five_hours: IciBacktestPeakHour[];
+  claim_boundary: string;
+  do_not_claim: string[];
+}
+
 export interface IciFiveCpRetainedEvidenceExtractParams {
   recordDate: string;
   sourceLabel: string;
@@ -56,6 +83,7 @@ export interface IciFiveCpRetainedEvidenceExtractParams {
   artifactTitle?: string;
   claimBoundary?: string;
   doNotClaim?: string;
+  historicalBacktest?: IciFiveCpHistoricalBacktestReport;
 }
 
 export interface IesoPeakTrackerParseOptions {
@@ -353,6 +381,21 @@ function buildCustomerLoadLookup(rows: IciCustomerLoadHour[]): Map<string, numbe
   return lookup;
 }
 
+function rankSystemPeaks(rows: IciSystemPeakHour[]): Array<IciSystemPeakHour & { rank: number }> {
+  return [...rows]
+    .filter((peak) => Number.isFinite(peak.ontario_demand_mw) && peak.ontario_demand_mw > 0)
+    .map((peak) => ({
+      ...peak,
+      timestamp: normalizeTimestamp(peak.timestamp),
+      status: peak.status ?? 'candidate',
+    }))
+    .sort((left, right) => right.ontario_demand_mw - left.ontario_demand_mw)
+    .map((peak, index) => ({
+      ...peak,
+      rank: index + 1,
+    }));
+}
+
 function toRiskWindow(
   peak: IciSystemPeakHour,
   rank: number,
@@ -387,9 +430,7 @@ export function buildIciFiveCpDecisionSupportReport(params: {
   sourceUrls?: string[];
 }): IciFiveCpDecisionSupportReport {
   const customerLoadLookup = buildCustomerLoadLookup(params.customerLoad);
-  const ranked = [...params.systemPeaks]
-    .filter((peak) => Number.isFinite(peak.ontario_demand_mw) && peak.ontario_demand_mw > 0)
-    .sort((left, right) => right.ontario_demand_mw - left.ontario_demand_mw)
+  const ranked = rankSystemPeaks(params.systemPeaks)
     .map((peak, index) => toRiskWindow(peak, index + 1, customerLoadLookup));
 
   const topFive = ranked.slice(0, 5);
@@ -426,6 +467,70 @@ export function buildIciFiveCpDecisionSupportReport(params: {
       'Eligibility determination',
       'Operational curtailment instruction',
       'Customer-specific accuracy without buyer-supplied load and reviewer acceptance',
+    ],
+  };
+}
+
+export function buildIciFiveCpHistoricalBacktestReport(params: {
+  candidatePeaks: IciSystemPeakHour[];
+  actualTopFivePeaks: IciSystemPeakHour[];
+  basePeriodStart: string;
+  basePeriodEnd: string;
+  generatedAt?: string;
+}): IciFiveCpHistoricalBacktestReport {
+  const candidates = rankSystemPeaks(params.candidatePeaks);
+  const candidateTopFive = candidates.slice(0, 5);
+  const candidateWatchlist = candidates.slice(0, 10);
+  const actualTopFive = rankSystemPeaks(params.actualTopFivePeaks).slice(0, 5);
+  const candidateTopFiveRanks = new Map(candidateTopFive.map((peak) => [peak.timestamp, peak.rank]));
+  const watchlistRanks = new Map(candidateWatchlist.map((peak) => [peak.timestamp, peak.rank]));
+  const actualTopFiveSet = new Set(actualTopFive.map((peak) => peak.timestamp));
+  const toBacktestPeak = (
+    peak: IciSystemPeakHour & { rank: number },
+    candidateRank: number | null,
+  ): IciBacktestPeakHour => ({
+    timestamp: peak.timestamp,
+    rank: peak.rank,
+    ontario_demand_mw: round(peak.ontario_demand_mw, 3),
+    status: peak.status ?? 'candidate',
+    matched_candidate_rank: candidateRank,
+  });
+  const candidateTopFiveCaptureCount = actualTopFive
+    .filter((peak) => candidateTopFiveRanks.has(peak.timestamp))
+    .length;
+  const watchlistCaptureCount = actualTopFive
+    .filter((peak) => watchlistRanks.has(peak.timestamp))
+    .length;
+
+  return {
+    version: `${GA_ICI_PREDICTOR_VERSION}:historical-backtest-v1`,
+    generated_at: params.generatedAt ?? new Date().toISOString(),
+    base_period: {
+      start: params.basePeriodStart,
+      end: params.basePeriodEnd,
+    },
+    candidate_peak_count: candidates.length,
+    actual_top_five_count: actualTopFive.length,
+    candidate_top_five_capture_count: candidateTopFiveCaptureCount,
+    candidate_top_five_capture_rate: actualTopFive.length > 0
+      ? round(candidateTopFiveCaptureCount / actualTopFive.length, 4)
+      : null,
+    watchlist_capture_count: watchlistCaptureCount,
+    watchlist_capture_rate: actualTopFive.length > 0
+      ? round(watchlistCaptureCount / actualTopFive.length, 4)
+      : null,
+    missed_actual_peak_hours: actualTopFive
+      .filter((peak) => !watchlistRanks.has(peak.timestamp))
+      .map((peak) => toBacktestPeak(peak, null)),
+    false_positive_candidate_top_five_hours: candidateTopFive
+      .filter((peak) => !actualTopFiveSet.has(peak.timestamp))
+      .map((peak) => toBacktestPeak(peak, null)),
+    claim_boundary: 'Historical GA/ICI 5CP backtest compares public/candidate peak watchlists with supplied historical top-five peak records only. It is not a buyer-specific accuracy claim or settlement-quality audit.',
+    do_not_claim: [
+      'Guaranteed capture of future 5CP peaks',
+      'Buyer-specific savings or curtailment outcome',
+      'Final IESO settlement verification',
+      'Eligibility determination',
     ],
   };
 }
@@ -500,6 +605,17 @@ export function buildIciFiveCpRetainedEvidenceExtract(
     `- IESO peak tracker source: ${peakTrackerSource}`,
     `- decision-support settlement boundary: ${report.claim_boundary}`,
     `- base period: ${report.base_period.start} to ${report.base_period.end}`,
+    ...(params.historicalBacktest ? [
+      '',
+      '## Historical Backtest Summary',
+      `- candidate peak rows: ${params.historicalBacktest.candidate_peak_count}`,
+      `- actual top-five rows: ${params.historicalBacktest.actual_top_five_count}`,
+      `- candidate top-five capture rate: ${params.historicalBacktest.candidate_top_five_capture_rate ?? 'not available'}`,
+      `- watchlist capture rate: ${params.historicalBacktest.watchlist_capture_rate ?? 'not available'}`,
+      `- missed actual peak hours: ${params.historicalBacktest.missed_actual_peak_hours.length}`,
+      `- false positive candidate top-five hours: ${params.historicalBacktest.false_positive_candidate_top_five_hours.length}`,
+      `- backtest claim boundary: ${params.historicalBacktest.claim_boundary}`,
+    ] : []),
     '',
     '## Top Five Peak Windows',
     '| Rank | Timestamp | Ontario demand MW | Customer load MW | Estimated PDF | Status |',

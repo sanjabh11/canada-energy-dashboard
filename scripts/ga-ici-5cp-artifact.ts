@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
   IESO_PEAK_TRACKER_SOURCE_URL,
+  buildIciFiveCpHistoricalBacktestReport,
   buildIciFiveCpDecisionSupportReport,
   buildIciFiveCpRetainedEvidenceExtract,
   parseIesoPeakTrackerSnapshot,
@@ -188,19 +189,19 @@ function findDirectIdentifier(text: string) {
   return directIdentifierPatterns.find(({ pattern }) => pattern.test(text));
 }
 
-function parseSystemPeaks(text: string): IciSystemPeakHour[] {
+function parseSystemPeaks(text: string, label = '--system-peaks-file'): IciSystemPeakHour[] {
   const directIdentifier = findDirectIdentifier(text);
-  if (directIdentifier) failures.push(`--system-peaks-file appears to contain ${directIdentifier.label}; retain only redacted planning extracts.`);
+  if (directIdentifier) failures.push(`${label} appears to contain ${directIdentifier.label}; retain only redacted planning extracts.`);
 
-  return parseTable(text, '--system-peaks-file').map((row, index) => {
+  return parseTable(text, label).map((row, index) => {
     const timestamp = row.timestamp ?? row.hour ?? row.datetime ?? '';
     const demandText = row.ontario_demand_mw ?? row.ontario_demand ?? row.demand_mw ?? row.system_demand_mw ?? '';
     const demand = Number(demandText);
     const statusText = normalizeText(row.status ?? 'candidate');
 
-    if (!timestamp) failures.push(`--system-peaks-file row ${index + 2} is missing timestamp.`);
-    if (!Number.isFinite(demand) || demand <= 0) failures.push(`--system-peaks-file row ${index + 2} has invalid ontario_demand_mw.`);
-    if (!allowedPeakStatuses.has(statusText)) failures.push(`--system-peaks-file row ${index + 2} has invalid status.`);
+    if (!timestamp) failures.push(`${label} row ${index + 2} is missing timestamp.`);
+    if (!Number.isFinite(demand) || demand <= 0) failures.push(`${label} row ${index + 2} has invalid ontario_demand_mw.`);
+    if (!allowedPeakStatuses.has(statusText)) failures.push(`${label} row ${index + 2} has invalid status.`);
 
     return {
       timestamp,
@@ -276,6 +277,7 @@ if (peakTrackerUrl && !/^https?:\/\//i.test(peakTrackerUrl)) {
 
 const systemPeaksFile = values.has('system-peaks-file') ? path.resolve(repoRoot, values.get('system-peaks-file') ?? '') : null;
 const peakTrackerFile = values.has('peak-tracker-file') ? path.resolve(repoRoot, values.get('peak-tracker-file') ?? '') : null;
+const historicalActualsFile = values.has('historical-actuals-file') ? path.resolve(repoRoot, values.get('historical-actuals-file') ?? '') : null;
 const customerLoadFile = values.has('customer-load-file') ? path.resolve(repoRoot, values.get('customer-load-file') ?? '') : null;
 const evidenceRoot = values.has('evidence-root') ? path.resolve(repoRoot, values.get('evidence-root') ?? '') : null;
 const artifactFile = values.get('artifact-file') ?? '';
@@ -292,6 +294,12 @@ if (peakTrackerFile) {
     failures.push('--peak-tracker-file must be a .csv, .tsv, .txt, .md, .html, or .htm file.');
   }
 }
+if (historicalActualsFile) {
+  if (!existsSync(historicalActualsFile)) failures.push(`--historical-actuals-file not found: ${path.relative(repoRoot, historicalActualsFile)}`);
+  if (!allowedPeakTrackerExtensions.has(path.extname(historicalActualsFile).toLowerCase())) {
+    failures.push('--historical-actuals-file must be a .csv, .tsv, .txt, .md, .html, or .htm file.');
+  }
+}
 
 if (artifactFile.startsWith('/') || path.isAbsolute(artifactFile)) failures.push('--artifact-file must be relative to --evidence-root.');
 if (artifactPath && evidenceRoot) {
@@ -305,6 +313,7 @@ if (artifactPath && evidenceRoot) {
 }
 
 let systemPeaks: IciSystemPeakHour[] = [];
+let historicalActualPeaks: IciSystemPeakHour[] = [];
 let customerLoad: IciCustomerLoadHour[] = [];
 if (systemPeaksFile && existsSync(systemPeaksFile)) systemPeaks = parseSystemPeaks(readFileSync(systemPeaksFile, 'utf8'));
 if (peakTrackerFile && existsSync(peakTrackerFile)) {
@@ -321,6 +330,20 @@ if (peakTrackerUrl && /^https?:\/\//i.test(peakTrackerUrl)) {
     systemPeaks.push(...parseIesoPeakTrackerSnapshot(await fetchText(peakTrackerUrl), { sourceUrl: peakTrackerUrl }));
   } catch (error) {
     failures.push(`--peak-tracker-url could not be fetched or parsed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+if (historicalActualsFile && existsSync(historicalActualsFile)) {
+  const historicalActualsText = readFileSync(historicalActualsFile, 'utf8');
+  const directIdentifier = findDirectIdentifier(historicalActualsText);
+  if (directIdentifier) failures.push(`--historical-actuals-file appears to contain ${directIdentifier.label}; retain only public IESO top-five rows or redacted planning extracts.`);
+  try {
+    historicalActualPeaks = parseIesoPeakTrackerSnapshot(historicalActualsText, { sourceUrl: IESO_PEAK_TRACKER_SOURCE_URL });
+  } catch (error) {
+    const failureCountBeforeFallback = failures.length;
+    historicalActualPeaks = parseSystemPeaks(historicalActualsText, '--historical-actuals-file');
+    if (historicalActualPeaks.length === 0 && failures.length === failureCountBeforeFallback) {
+      failures.push(`--historical-actuals-file could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
+    }
   }
 }
 if (customerLoadFile && existsSync(customerLoadFile)) customerLoad = parseCustomerLoad(readFileSync(customerLoadFile, 'utf8'));
@@ -353,6 +376,15 @@ const report = buildIciFiveCpDecisionSupportReport({
   generatedAt: values.get('generated-at') ?? new Date().toISOString(),
   sourceUrls: sourceUrls.length > 0 ? sourceUrls : undefined,
 });
+const historicalBacktest = historicalActualPeaks.length > 0
+  ? buildIciFiveCpHistoricalBacktestReport({
+    candidatePeaks: systemPeaks,
+    actualTopFivePeaks: historicalActualPeaks,
+    basePeriodStart,
+    basePeriodEnd,
+    generatedAt: values.get('generated-at') ?? new Date().toISOString(),
+  })
+  : undefined;
 
 const topFiveLoadCoverage = report.top_five_peak_hours.filter((peak) => peak.customer_load_mw !== null).length;
 const reportFailures: string[] = [];
@@ -361,6 +393,9 @@ if (topFiveLoadCoverage < report.top_five_peak_hours.length) {
   reportFailures.push('Customer load must be present for every retained top-five peak window.');
 }
 if (report.estimated_peak_demand_factor === null) reportFailures.push('Estimated peak demand factor was not available.');
+if (historicalActualsFile && historicalActualPeaks.length < 5) {
+  reportFailures.push('Historical actuals backtest requires at least five valid actual top-five peak rows.');
+}
 
 if (reportFailures.length > 0) {
   console.error('GA/ICI 5CP artifact preparation failed:\n');
@@ -381,6 +416,7 @@ const extractParams: IciFiveCpRetainedEvidenceExtractParams = {
   route,
   proofPackId: values.get('proof-pack-id') ?? 'ga_ici_5cp_decision_support_pack',
   piiScreenResult: (values.get('pii-screen-result') ?? 'redacted') as IciFiveCpRetainedEvidenceExtractParams['piiScreenResult'],
+  historicalBacktest,
 };
 if (values.has('artifact-title')) extractParams.artifactTitle = values.get('artifact-title') as string;
 if (values.has('claim-boundary')) extractParams.claimBoundary = values.get('claim-boundary') as string;
@@ -400,6 +436,9 @@ console.log(`Evidence root: ${relativeEvidenceRoot && !relativeEvidenceRoot.star
 console.log(`Artifact: ${normalizedArtifactReference}`);
 console.log(`SHA-256: ${sha256}`);
 console.log(`evidence_file_reference: ${normalizedArtifactReference}#sha256=${sha256}`);
+if (historicalBacktest) {
+  console.log(`historical_backtest_watchlist_capture_rate: ${historicalBacktest.watchlist_capture_rate ?? 'not available'}`);
+}
 console.log('');
 console.log('Next validation command:');
 console.log(`pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --evidence-root ${relativeEvidenceRoot || evidenceRoot}`);
