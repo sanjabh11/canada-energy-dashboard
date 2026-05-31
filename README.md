@@ -78,6 +78,7 @@ Install dependencies and run the focused guardrails:
 pnpm install
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
+pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```
 
