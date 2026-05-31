@@ -167,7 +167,7 @@ const strategyRoadmapWhitespacePhrases = [
   'check:post-deploy-live',
   'test:strategy-audit-slice',
   'fixture-proof 95% gate',
-  'focused 74-test strategy-audit slice',
+  'focused 76-test strategy-audit slice',
   'Do not deploy without explicit production approval',
   'buyer-proven 95% market confidence',
 ];

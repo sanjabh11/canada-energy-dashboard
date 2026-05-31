@@ -36,7 +36,7 @@
     "prepare:pilot-evidence-artifact": "node scripts/prepare-pilot-evidence-artifact.mjs",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:strategy-audit-slice": "vitest run tests/unit/commercialPositioning.test.ts tests/unit/forecastBaselines.test.ts tests/unit/utilityForecasting.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/proofPackGates.test.ts tests/unit/regulatoryProofPack.test.ts tests/unit/pilotEvidenceRegisterValidator.test.ts --testTimeout=15000",
+    "test:strategy-audit-slice": "vitest run tests/unit/commercialPositioning.test.ts tests/unit/forecastBaselines.test.ts tests/unit/utilityForecasting.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/proofPackGates.test.ts tests/unit/regulatoryProofPack.test.ts tests/unit/pilotEvidenceRegisterValidator.test.ts tests/unit/productionApprovalPacket.test.ts --testTimeout=15000",
     "test:component": "playwright test",
     "test:component:headed": "playwright test --headed",
     "test:browser:phase6": "VITE_ENABLE_EDGE_FETCH=false VITE_ALLOW_LOCAL_EDGE_FETCH=false VITE_SUPABASE_EDGE_BASE= playwright test --config=playwright.config.ts tests/component/phase6-browser-smoke.spec.ts --project=chromium",

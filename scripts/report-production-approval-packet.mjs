@@ -153,8 +153,9 @@ const liveMetadata = steps.find((step) => step.label === 'Live metadata parity')
 const liveStaticParity = steps.find((step) => step.label === 'Live static dist parity');
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
 const localPreflightClean = localReadiness?.status === 'pass';
-const liveParityAchieved =
+const liveGatesGreen =
   liveMetadata?.status === 'pass' && liveStaticParity?.status === 'pass' && hostedSmoke?.status === 'pass';
+const approvalReady = localPreflightClean && liveGatesGreen;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
 const blockedByStaticParity = liveStaticParity?.status === 'fail';
 const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
@@ -187,11 +188,11 @@ const markdown = [
   '',
   '## Approval Recommendation',
   '',
-  liveParityAchieved
+  !localPreflightClean
+    ? 'Do not ask for production approval until local release readiness is passing.'
+    : approvalReady
     ? 'Local and live gates are green. Live parity can be considered achieved, but this script itself is not production approval.'
-    : !localPreflightClean
-      ? 'Do not ask for production approval until local release readiness is passing.'
-      : blockedByLiveMetadata
+    : blockedByLiveMetadata
       ? 'Do not declare live parity. Production is still serving stale metadata; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
       : blockedByStaticParity
         ? 'Do not declare live parity. Production static files do not match built `dist`; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
@@ -225,6 +226,6 @@ if (outPath) {
   console.log(markdown);
 }
 
-if (failOnBlocker && !liveParityAchieved) {
+if (failOnBlocker && !approvalReady) {
   process.exit(1);
 }
