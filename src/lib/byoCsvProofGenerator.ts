@@ -1,4 +1,4 @@
-export const BYO_CSV_PROOF_VERSION = 'byo-csv-proof-generator-v1';
+export const BYO_CSV_PROOF_VERSION = 'byo-csv-proof-generator-v2';
 
 export interface ByoCsvColumnProfile {
   column: string;
@@ -69,6 +69,16 @@ const DIRECT_IDENTIFIER_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: 'street address', pattern: /\b\d{1,6}\s+[A-Z0-9.'-]+(?:\s+[A-Z0-9.'-]+){0,4}\s+(?:street|st|road|rd|avenue|ave|drive|dr|lane|ln|boulevard|blvd|way|court|ct)\b/i },
 ];
 
+const DIRECT_IDENTIFIER_HEADER_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
+  { label: 'personal name column', pattern: /(^|[_\s-])(?:customer|client|contact|person|tenant|resident|full|first|last|given|surname)[_\s-]*name([_\s-]|$)/i },
+  { label: 'email column', pattern: /(^|[_\s-])(?:e[_\s-]*)?mail(?:[_\s-]*address)?([_\s-]|$)/i },
+  { label: 'phone column', pattern: /(^|[_\s-])(?:phone|mobile|cell|telephone)(?:[_\s-]*(?:number|no))?([_\s-]|$)/i },
+  { label: 'account or meter identifier column', pattern: /(^|[_\s-])(?:account|acct|meter|premise|service)(?:[_\s-]*(?:id|identifier|number|no))?([_\s-]|$)/i },
+  { label: 'service address column', pattern: /(^|[_\s-])(?:service[_\s-]*)?(?:street[_\s-]*)?address(?:[_\s-]*(?:line|1|2))?([_\s-]|$)/i },
+  { label: 'postal code column', pattern: /(^|[_\s-])(?:postal|zip)(?:[_\s-]*code)?([_\s-]|$)/i },
+  { label: 'credential column', pattern: /(^|[_\s-])(?:api[_\s-]*key|secret|password|token|credential)([_\s-]|$)/i },
+];
+
 const QUASI_IDENTIFIER_HEADER_PATTERNS: Array<{ label: string; pattern: RegExp }> = [
   { label: 'time or interval quasi-identifier', pattern: /\b(timestamp|date|time|interval|hour|month|year)\b/i },
   { label: 'location quasi-identifier', pattern: /(^|[_\s-])(postal|fsa|city|location|latitude|longitude|lat|lon|geocode)([_\s-]|$)/i },
@@ -130,13 +140,16 @@ function inferType(values: string[]): ByoCsvColumnProfile['inferred_type'] {
 }
 
 function findDirectIdentifierLabels(values: string[], header: string): string[] {
-  const headerLabels = DIRECT_IDENTIFIER_PATTERNS
+  const headerLabels = DIRECT_IDENTIFIER_HEADER_PATTERNS
+    .filter(({ pattern }) => pattern.test(header))
+    .map(({ label }) => label);
+  const headerValueLabels = DIRECT_IDENTIFIER_PATTERNS
     .filter(({ pattern }) => pattern.test(header))
     .map(({ label }) => label);
   const valueLabels = DIRECT_IDENTIFIER_PATTERNS
     .filter(({ pattern }) => values.some((value) => pattern.test(value)))
     .map(({ label }) => label);
-  return Array.from(new Set([...headerLabels, ...valueLabels])).sort();
+  return Array.from(new Set([...headerLabels, ...headerValueLabels, ...valueLabels])).sort();
 }
 
 function isSignedNumericLiteral(value: string): boolean {

@@ -21,7 +21,7 @@ describe('byoCsvProofGenerator', () => {
     });
     const markdown = byoCsvProofReportToMarkdown(report);
 
-    expect(report.version).toBe('byo-csv-proof-generator-v1');
+    expect(report.version).toBe('byo-csv-proof-generator-v2');
     expect(report.row_count).toBe(2);
     expect(report.column_count).toBe(4);
     expect(report.retained_raw_values).toBe(false);
@@ -52,6 +52,37 @@ describe('byoCsvProofGenerator', () => {
     expect(report.direct_identifier_findings.map((finding) => finding.column)).toEqual(['account_id', 'email']);
     expect(report.do_not_claim).toContain('PII-free certification');
     expect(report.do_not_claim).toContain('No re-identification risk');
+  });
+
+  it('flags direct-identifier column headers even when values are masked', () => {
+    const csv = [
+      'timestamp,customer_name,phone_number,postal_code,service_address,meter_id,secret_token,demand_mw',
+      '2026-01-01T00:00:00.000Z,redacted,redacted,redacted,redacted,redacted,redacted,12.5',
+    ].join('\n');
+
+    const report = buildByoCsvProofReport({
+      csvText: csv,
+      sourceLabel: 'masked-but-unsafe-headers.csv',
+      route: '/byo-csv-proof',
+    });
+
+    expect(report.confidence_gate_ready).toBe(false);
+    expect(report.direct_identifier_findings.map((finding) => finding.column)).toEqual([
+      'customer_name',
+      'phone_number',
+      'postal_code',
+      'service_address',
+      'meter_id',
+      'secret_token',
+    ]);
+    expect(report.direct_identifier_findings.flatMap((finding) => finding.labels)).toEqual(expect.arrayContaining([
+      'personal name column',
+      'phone column',
+      'postal code column',
+      'service address column',
+      'account or meter identifier column',
+      'credential column',
+    ]));
   });
 
   it('flags spreadsheet formula injection risk without treating signed numeric values as formulas', () => {
