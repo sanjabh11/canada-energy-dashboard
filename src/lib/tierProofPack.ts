@@ -78,6 +78,7 @@ function buildArtifact(
       'Trading, tax, or legal advice',
       'Guaranteed savings',
       'Direct-investment eligibility without buyer-specific validation',
+      'Price-floor or future-year credit eligibility without current Alberta guidance',
     ],
     assumptions: buildTierAssumptions(snapshot),
     claimLabel,
@@ -89,10 +90,20 @@ function buildArtifact(
 }
 
 export function buildTierAssumptions(snapshot: TierProofSnapshot): string[] {
+  const headlineSchedule = snapshot.pricing.headlinePriceSchedule
+    .map(({ year, priceCadPerTonne }) => `${year}: CAD ${priceCadPerTonne}/t`)
+    .join('; ');
+  const priceFloorSchedule = snapshot.pricing.priceFloorSchedule
+    .map(({ year, priceCadPerTonne }) => `${year}: CAD ${priceCadPerTonne}/t`)
+    .join('; ');
+
   return [
     `Fund price basis is CAD ${snapshot.pricing.fundPrice}/t effective ${snapshot.pricing.effectiveDate}.`,
     `Market credit pricing is ${snapshot.liveTierMarketRateSource ? 'source-dated' : 'fallback'} at CAD ${snapshot.marketPrice}/t; the memo does not claim real-time pricing.`,
     `Direct investment uses the route’s current credit-rate assumption and remains sensitive to Alberta TIER eligibility, timing, credit-reactivation rules, and buyer-specific verification.`,
+    `Official headline price schedule carried for scenario context: ${headlineSchedule}.`,
+    `Minimum transfer-price floor schedule begins in 2030 for future-year planning context: ${priceFloorSchedule}.`,
+    ...snapshot.pricing.policyNotes,
     `The route models one facility scenario at a time and uses CEIP fee logic shown in the route UI.`,
   ];
 }
@@ -172,6 +183,8 @@ export function buildTierMemoDescriptor(snapshot: TierProofSnapshot): ProofDocum
           snapshot.liveTierMarketRateSource
             ? `Market price source: ${snapshot.liveTierMarketRateSource.sourceName ?? 'live market source'} observed ${snapshot.liveTierMarketRateSource.observedAt ?? 'unknown date'}`
             : `Market price source: fallback pricing verified ${snapshot.pricing.lastVerifiedAt}`,
+          `Headline price schedule: ${snapshot.pricing.headlinePriceSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
+          `Future price-floor schedule: ${snapshot.pricing.priceFloorSchedule.map(({ year, priceCadPerTonne }) => `${year} CAD ${priceCadPerTonne}/t`).join('; ')}`,
           `Scenario engine: ${snapshot.simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via ${snapshot.simulatorSource}`,
           `Freshness gate: ${buildTierPricingFreshnessGate(snapshot).message}`,
         ],

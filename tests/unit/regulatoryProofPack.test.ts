@@ -21,6 +21,7 @@ describe('regulatoryProofPack', () => {
 
   it('exports jurisdiction-specific checklists and schedule payloads', () => {
     const descriptor = buildRegulatoryCoverMemoDescriptor('Ontario');
+    const albertaDescriptor = buildRegulatoryCoverMemoDescriptor('Alberta');
     const checklist = buildRegulatoryChecklistMarkdown('Alberta');
     const scheduleExports = buildRegulatoryScheduleExports('Ontario');
 
@@ -34,9 +35,20 @@ describe('regulatoryProofPack', () => {
     expect(sourceMappingBody).toContain('Version label: OEB Chapter 5 DSP filing workflow mapping — 2027 filing requirements dated 2025-12-16');
     expect(sourceMappingBody).toContain('multiple forecast scenarios');
     expect(sourceMappingBody).toContain('Extreme-weather');
+    expect(sourceMappingBody).toContain('Vulnerability assessment');
+    expect(sourceMappingBody).toContain('economic-growth assumptions');
     expect(descriptor.definition.assumptions.join(' ')).toContain('applications filed after April 1, 2027');
+    const albertaSourceMappingSection = albertaDescriptor.sections.find((section) => section.heading === 'Official source and field mapping');
+    const albertaSourceMappingBody = Array.isArray(albertaSourceMappingSection?.body)
+      ? albertaSourceMappingSection.body.join(' ')
+      : albertaSourceMappingSection?.body ?? '';
+    expect(albertaSourceMappingBody).toContain('https://www.auc.ab.ca/rules/rule005/');
+    expect(albertaSourceMappingBody).toContain('effective March 31, 2021 source reviewed 2026-05-31');
+    expect(albertaDescriptor.definition.assumptions.join(' ')).toContain('audited financial statements');
+    expect(albertaDescriptor.definition.assumptions.join(' ')).toContain('additional Commission information requests');
     expect(checklist).toContain('# AUC Rule 005 filing prep pack reviewer checklist');
     expect(checklist).toContain('Confirm utility-specific legal entity, year, and filing officer details before submission.');
+    expect(checklist).toContain('Attach audited financial statements and reconciliation support');
     expect(scheduleExports).toHaveLength(4);
     expect(scheduleExports[0].content).toContain(',');
     expect(scheduleExports[0].definition.filename).toContain('oeb_dsp_asset_condition');

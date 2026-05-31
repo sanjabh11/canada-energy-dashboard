@@ -42,6 +42,16 @@ describe('tierProofPack', () => {
     expect(DEFAULT_TIER_PRICING.isFrozen).toBe(true);
     expect(DEFAULT_TIER_PRICING.lastVerifiedAt).toBe('2026-05-31');
     expect(DEFAULT_TIER_PRICING.sourceUrl).toContain('pm.gc.ca');
+    expect(DEFAULT_TIER_PRICING.headlinePriceSchedule).toEqual(expect.arrayContaining([
+      { year: 2026, priceCadPerTonne: 95 },
+      { year: 2030, priceCadPerTonne: 115 },
+      { year: 2040, priceCadPerTonne: 140 },
+    ]));
+    expect(DEFAULT_TIER_PRICING.priceFloorSchedule).toEqual(expect.arrayContaining([
+      { year: 2030, priceCadPerTonne: 60 },
+      { year: 2040, priceCadPerTonne: 110 },
+    ]));
+    expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('June 30');
     expect(formatPricingWithProvenance()).toContain('Fund: $95/t frozen');
     expect(isPricingStale(DEFAULT_TIER_PRICING, new Date('2026-05-31T12:00:00.000Z'))).toBe(false);
   });
@@ -54,6 +64,7 @@ describe('tierProofPack', () => {
     expect(bundle.artifacts[0].isFallback).toBe(true);
     expect(bundle.artifacts[0].claimLabel).toBe('estimated');
     expect(bundle.artifacts[0].verificationStatus).toBe('source_stale');
+    expect(bundle.artifacts[0].doNotClaim).toContain('Price-floor or future-year credit eligibility without current Alberta guidance');
     expect(buildTierPricingFreshnessGate(buildSnapshot()).blocksStrongSavingsClaim).toBe(true);
   });
 
@@ -79,7 +90,14 @@ describe('tierProofPack', () => {
     expect(buildTierAssumptions(snapshot).join(' ')).toContain('source-dated');
     expect(buildTierAssumptions(snapshot).join(' ')).not.toMatch(/live[-_]observed/);
     expect(buildTierAssumptions(snapshot).join(' ')).toContain('Direct investment');
+    expect(buildTierAssumptions(snapshot).join(' ')).toContain('Minimum transfer-price floor schedule begins in 2030');
+    expect(buildTierAssumptions(snapshot).join(' ')).toContain('Verified annual compliance reports are due by June 30');
     expect(provenanceSection?.body).toContain('Market price source: ICAP Carbon Action observed 2026-04-15T00:00:00.000Z');
+    const provenanceBody = Array.isArray(provenanceSection?.body)
+      ? provenanceSection.body.join(' ')
+      : provenanceSection?.body ?? '';
+    expect(provenanceBody).toContain('Headline price schedule: 2026 CAD 95/t');
+    expect(provenanceBody).toContain('Future price-floor schedule: 2030 CAD 60/t');
     expect(descriptor.sections.find((section) => section.heading === 'Direct-investment sensitivity')).toBeTruthy();
     expect(appendix).toContain('# TIER scenario appendix');
     expect(appendix).toContain('Market credits: CAD 648,000');

@@ -45,6 +45,15 @@ export interface TIERPricingConfig {
 
   /** Plain-language disclosure for the fallback market-price basis */
   marketPriceDisclosure: string;
+
+  /** Current official headline price schedule used for long-range scenario caveats */
+  headlinePriceSchedule: Array<{ year: number; priceCadPerTonne: number }>;
+
+  /** Current official minimum transfer-price floor schedule, when applicable */
+  priceFloorSchedule: Array<{ year: number; priceCadPerTonne: number }>;
+
+  /** Current policy notes that must travel with CFO-facing proof packs */
+  policyNotes: string[];
 }
 
 export interface TIERPricingProvenance {
@@ -73,6 +82,25 @@ export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
   periodLabel: '2026 headline price reviewed May 2026',
   marketPriceSource: 'CEIP fallback secondary-market planning snapshot',
   marketPriceDisclosure: 'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
+  headlinePriceSchedule: [
+    { year: 2026, priceCadPerTonne: 95 },
+    { year: 2027, priceCadPerTonne: 100 },
+    { year: 2028, priceCadPerTonne: 100 },
+    { year: 2029, priceCadPerTonne: 100 },
+    { year: 2030, priceCadPerTonne: 115 },
+    { year: 2035, priceCadPerTonne: 130 },
+    { year: 2040, priceCadPerTonne: 140 },
+  ],
+  priceFloorSchedule: [
+    { year: 2030, priceCadPerTonne: 60 },
+    { year: 2035, priceCadPerTonne: 80 },
+    { year: 2040, priceCadPerTonne: 110 },
+  ],
+  policyNotes: [
+    'Alberta TIER direct-investment guidance is a current policy dependency; eligibility and credit treatment must be validated before buyer approval.',
+    'Verified annual compliance reports are due by June 30 of the following year under Alberta TIER reporting guidance.',
+    'The Canada-Alberta implementation agreement targets stronger TIER credit market prices over time and a minimum transfer-price floor beginning in 2030.',
+  ],
 };
 
 /**

@@ -18,8 +18,9 @@
  *   - Appendix 2-AB: Asset Condition Assessment Methodology
  * 
  * References:
- * - AUC Rule 005 (Alberta Utilities Commission, 2024 revision)
- * - OEB Filing Requirements for Electricity Distribution Rate Applications (Ch. 5)
+ * - AUC Rule 005 (effective March 31, 2021; source reviewed 2026-05-31)
+ * - OEB Filing Requirements for Electricity Distribution Rate Applications Ch. 5
+ *   (2027 filing requirements dated 2025-12-16)
  * - IEEE C57.104-2019 (Dissolved Gas Analysis for transformers)
  * - IEC 60076 (Power transformers assessment standards)
  */
@@ -188,9 +189,9 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
       { key: 'retirements_current_year_cad', label: 'Current Year Retirements ($)', type: 'number' },
     ],
     notes: [
-      'Per AUC Rule 005, Section 3.2: All capital additions must be itemized for projects exceeding $50,000.',
-      'Depreciation rates must align with AUC-approved rates per Decision 20414-D01-2016.',
-      'Net book value = Original cost − Accumulated depreciation.',
+      'Confirm the current AUC electric-utility schedule form before using any project threshold or appendix label.',
+      'Capital additions, retirements, depreciation, and net book value must reconcile to audited financial statements and utility source records.',
+      'Net book value = Original cost minus accumulated depreciation.',
     ],
   },
   rule005_schedule_10: {
@@ -209,9 +210,9 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
       { key: 'notes', label: 'Notes', type: 'string' },
     ],
     notes: [
-      'Per AUC Rule 005, Section 4.1: Income statement must separate regulated and non-regulated operations.',
+      'Income statement rows must reconcile to audited financial statements and current AUC schedule instructions.',
       'All amounts in Canadian dollars. Revenue includes distribution tariff revenue, transmission revenue, and other regulated revenue.',
-      'Variances exceeding ±5% require explanatory notes.',
+      'Material variances require explanatory notes and retained support for Commission information requests.',
     ],
   },
   rule005_schedule_17: {
@@ -231,8 +232,8 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
     ],
     notes: [
       'Mid-year rate base = (Opening balance + Closing balance) / 2.',
-      'Per AUC Rule 005, rate base determines the return on equity component of revenue requirement.',
-      'Working capital allowance calculated per AUC-approved methodology.',
+      'Rate-base rows must be reviewed against the current AUC annual reporting schedule form before filing use.',
+      'Working capital and return calculations require utility-approved methodology and reviewer sign-off.',
     ],
   },
   rule005_schedule_22: {
@@ -254,7 +255,7 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
     notes: [
       'Expenses classified per Uniform System of Accounts (USOA) for electric utilities.',
       'FTE counts represent full-time equivalent employees assigned to each expense category.',
-      'Budget variances exceeding ±10% require explanatory notes per AUC Rule 005 Section 5.3.',
+      'Budget variances require explanatory notes and retained finance-source support before filing use.',
     ],
   },
   oeb_dsp_asset_condition: {
