@@ -1,12 +1,18 @@
 #!/usr/bin/env node
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
 const baseUrlArgIndex = args.indexOf('--base-url');
 const baseUrl = baseUrlArgIndex >= 0 ? args[baseUrlArgIndex + 1] : null;
+const checkDist = args.includes('--dist');
+
+if (baseUrl && checkDist) {
+  console.error('Use either --base-url for remote metadata or --dist for built local metadata, not both.');
+  process.exit(1);
+}
 
 const stalePatterns = [
   {
@@ -54,6 +60,12 @@ const localTargets = [
   { label: 'public/schema-webapp.jsonld', path: 'public/schema-webapp.jsonld' },
 ];
 
+const distTargets = [
+  { label: 'dist/index.html', path: 'index.html' },
+  { label: 'dist/manifest.json', path: 'manifest.json' },
+  { label: 'dist/schema-webapp.jsonld', path: 'schema-webapp.jsonld' },
+];
+
 const remoteTargets = [
   { label: '/', path: '/' },
   { label: '/manifest.json', path: '/manifest.json' },
@@ -92,6 +104,23 @@ if (baseUrl) {
     const content = await readRemote(target);
     failures.push(...checkContent(`${baseUrl}${target.path}`, content));
   }
+} else if (checkDist) {
+  const distRoot = path.join(repoRoot, 'dist');
+  if (!existsSync(distRoot)) {
+    console.error('Public metadata check failed:\n\n- dist directory not found; run pnpm run build:prod first.');
+    process.exit(1);
+  }
+
+  for (const target of distTargets) {
+    const targetPath = path.join(distRoot, target.path);
+    if (!existsSync(targetPath)) {
+      failures.push(`${target.label}: built metadata file is missing`);
+      continue;
+    }
+
+    const content = readFileSync(targetPath, 'utf8');
+    failures.push(...checkContent(target.label, content));
+  }
 } else {
   for (const target of localTargets) {
     const content = readFileSync(path.join(repoRoot, target.path), 'utf8');
@@ -107,4 +136,5 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Public metadata check passed for ${baseUrl ? 'remote deployment' : 'local source'} metadata.`);
+const checkedSurface = baseUrl ? 'remote deployment' : checkDist ? 'built dist' : 'local source';
+console.log(`Public metadata check passed for ${checkedSurface} metadata.`);
