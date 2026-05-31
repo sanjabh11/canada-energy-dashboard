@@ -3,9 +3,38 @@ import {
   buildIciFiveCpDecisionSupportReport,
   buildIciFiveCpRetainedEvidenceExtract,
   iciFiveCpReportToMarkdown,
+  parseIesoPeakTrackerSnapshot,
 } from '../../src/lib/gaIciPeakPredictor';
 
 describe('gaIciPeakPredictor', () => {
+  it('parses copied IESO Peak Tracker tables into canonical 5CP rows', () => {
+    const snapshot = [
+      'Rank  | Date  | Hour Ending (EST)  | ICI Ontario Demand* (MW)  | Coincident Adjusted AQEW (MWh)  | Status* (Initial, Prelim, Final)',
+      '--- | --- | --- | --- | --- | ---',
+      '1 | 19 May 2026 | 17 | 20,820 | 20,553 | Initial',
+      '2 | 26 May 2026 | 19 | 19,109 | | ',
+      '3 | 18 May 2026 | 18 | 18,889 | 18,199 | Final',
+      '4 | 25 May 2026 | 19 | 17,561 | | ',
+      '5 | 05 May 2026 | 17 | 17,033 | 16,468 | Prelim',
+    ].join('\n');
+
+    const rows = parseIesoPeakTrackerSnapshot(snapshot);
+
+    expect(rows).toHaveLength(5);
+    expect(rows[0]).toMatchObject({
+      timestamp: '2026-05-19T17:00:00.000Z',
+      ontario_demand_mw: 20820,
+      status: 'initial',
+      source: 'https://www.ieso.ca/peaktracker',
+    });
+    expect(rows[1]).toMatchObject({
+      timestamp: '2026-05-26T19:00:00.000Z',
+      status: 'candidate',
+    });
+    expect(rows[2].status).toBe('final');
+    expect(rows[4].status).toBe('prelim');
+  });
+
   it('estimates five coincident peak exposure while preserving decision-support boundaries', () => {
     const systemPeaks = Array.from({ length: 10 }, (_, index) => ({
       timestamp: new Date(Date.UTC(2026, 6, 1 + index, 18)).toISOString(),

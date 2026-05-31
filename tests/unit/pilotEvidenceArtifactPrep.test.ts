@@ -294,27 +294,28 @@ describe('pilot evidence artifact preparation CLI', () => {
 
   it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {
     const evidenceRoot = makeTempRoot();
-    const systemPeaksPath = path.join(evidenceRoot, 'ieso-peaks.csv');
+    const peakTrackerPath = path.join(evidenceRoot, 'ieso-peak-tracker.md');
     const customerLoadPath = path.join(evidenceRoot, 'redacted-load.csv');
-    writeFileSync(systemPeaksPath, [
-      'timestamp,ontario_demand_mw,status,source',
-      '2026-07-01T18:00:00.000Z,22000,candidate,https://www.ieso.ca/peaktracker',
-      '2026-07-02T18:00:00.000Z,21750,candidate,https://www.ieso.ca/peaktracker',
-      '2026-07-03T18:00:00.000Z,21500,candidate,https://www.ieso.ca/peaktracker',
-      '2026-07-04T18:00:00.000Z,21250,forecast,https://www.ieso.ca/peaktracker',
-      '2026-07-05T18:00:00.000Z,21000,forecast,https://www.ieso.ca/peaktracker',
+    writeFileSync(peakTrackerPath, [
+      'Rank  | Date  | Hour Ending (EST)  | ICI Ontario Demand* (MW)  | Coincident Adjusted AQEW (MWh)  | Status* (Initial, Prelim, Final)',
+      '--- | --- | --- | --- | --- | ---',
+      '1 | 19 May 2026 | 17 | 20,820 | 20,553 | Initial',
+      '2 | 26 May 2026 | 19 | 19,109 | | ',
+      '3 | 18 May 2026 | 18 | 18,889 | 18,199 | Final',
+      '4 | 25 May 2026 | 19 | 17,561 | | ',
+      '5 | 05 May 2026 | 17 | 17,033 | 16,468 | Prelim',
     ].join('\n'), 'utf8');
     writeFileSync(customerLoadPath, [
       'timestamp,load_mw',
-      '2026-07-01T18:00:00.000Z,8',
-      '2026-07-02T18:00:00.000Z,7.8',
-      '2026-07-03T18:00:00.000Z,7.6',
-      '2026-07-04T18:00:00.000Z,7.4',
-      '2026-07-05T18:00:00.000Z,7.2',
+      '2026-05-19T17:00:00.000Z,8',
+      '2026-05-26T19:00:00.000Z,7.8',
+      '2026-05-18T18:00:00.000Z,7.6',
+      '2026-05-25T19:00:00.000Z,7.4',
+      '2026-05-05T17:00:00.000Z,7.2',
     ].join('\n'), 'utf8');
 
     const prepResult = await runTsxScript(gaIciPrepScriptPath, [
-      '--system-peaks-file', systemPeaksPath,
+      '--peak-tracker-file', peakTrackerPath,
       '--customer-load-file', customerLoadPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'ga-ici-retained.md',

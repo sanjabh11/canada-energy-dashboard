@@ -4,8 +4,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import {
+  IESO_PEAK_TRACKER_SOURCE_URL,
   buildIciFiveCpDecisionSupportReport,
   buildIciFiveCpRetainedEvidenceExtract,
+  parseIesoPeakTrackerSnapshot,
   type IciCustomerLoadHour,
   type IciFiveCpRetainedEvidenceExtractParams,
   type IciSystemPeakHour,
@@ -41,7 +43,6 @@ for (let index = 0; index < args.length; index += 1) {
 }
 
 const requiredOptions = [
-  'system-peaks-file',
   'customer-load-file',
   'evidence-root',
   'artifact-file',
@@ -69,6 +70,7 @@ const allowedDay14Decision = new Set(['proceed', 'park', 'pivot', 'reject', 'pen
 const allowedCommercialCommitmentStatus = new Set(['none', 'design_partner_signed', 'paid_pilot', 'purchase_order', 'letter_of_intent']);
 const allowedArtifactExtensions = new Set(['.md', '.txt']);
 const allowedInputExtensions = new Set(['.csv', '.tsv']);
+const allowedPeakTrackerExtensions = new Set(['.csv', '.tsv', '.txt', '.md', '.html', '.htm']);
 const allowedPeakStatuses = new Set(['initial', 'prelim', 'final', 'forecast', 'candidate']);
 const directIdentifierColumns = new Set([
   'customer_name',
@@ -209,6 +211,17 @@ function parseSystemPeaks(text: string): IciSystemPeakHour[] {
   });
 }
 
+async function fetchText(url: string): Promise<string> {
+  const response = await fetch(url, {
+    headers: {
+      'accept': 'text/html,text/plain,text/csv,*/*',
+      'user-agent': 'CEIP-peak-tracker-ingestion/1.0',
+    },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.text();
+}
+
 function parseCustomerLoad(text: string): IciCustomerLoadHour[] {
   const directIdentifier = findDirectIdentifier(text);
   if (directIdentifier) failures.push(`--customer-load-file appears to contain ${directIdentifier.label}; retain only redacted planning extracts.`);
@@ -239,6 +252,7 @@ const reviewerAcceptance = normalizeText(values.get('reviewer-acceptance') ?? ''
 const reviewerFeedbackStatus = normalizeText(values.get('reviewer-feedback-status') ?? '');
 const day14Decision = normalizeText(values.get('day-14-decision') ?? '');
 const commercialCommitmentStatus = normalizeText(values.get('commercial-commitment-status') ?? '');
+const peakTrackerUrl = values.get('peak-tracker-url') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
 if (!allowedSourceLabels.has(sourceLabel)) failures.push(`--source-label must be one of ${Array.from(allowedSourceLabels).join(', ')}.`);
@@ -253,8 +267,15 @@ if (!allowedDay14Decision.has(day14Decision)) failures.push('--day-14-decision m
 if (!allowedCommercialCommitmentStatus.has(commercialCommitmentStatus)) {
   failures.push('--commercial-commitment-status must be none, design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
 }
+if (!values.has('system-peaks-file') && !values.has('peak-tracker-file') && !values.has('peak-tracker-url')) {
+  failures.push('Provide one of --system-peaks-file, --peak-tracker-file, or --peak-tracker-url.');
+}
+if (peakTrackerUrl && !/^https?:\/\//i.test(peakTrackerUrl)) {
+  failures.push('--peak-tracker-url must be an http(s) URL.');
+}
 
 const systemPeaksFile = values.has('system-peaks-file') ? path.resolve(repoRoot, values.get('system-peaks-file') ?? '') : null;
+const peakTrackerFile = values.has('peak-tracker-file') ? path.resolve(repoRoot, values.get('peak-tracker-file') ?? '') : null;
 const customerLoadFile = values.has('customer-load-file') ? path.resolve(repoRoot, values.get('customer-load-file') ?? '') : null;
 const evidenceRoot = values.has('evidence-root') ? path.resolve(repoRoot, values.get('evidence-root') ?? '') : null;
 const artifactFile = values.get('artifact-file') ?? '';
@@ -264,6 +285,12 @@ for (const [label, filePath] of [['--system-peaks-file', systemPeaksFile], ['--c
   if (!filePath) continue;
   if (!existsSync(filePath)) failures.push(`${label} not found: ${path.relative(repoRoot, filePath)}`);
   if (!allowedInputExtensions.has(path.extname(filePath).toLowerCase())) failures.push(`${label} must be a .csv or .tsv file.`);
+}
+if (peakTrackerFile) {
+  if (!existsSync(peakTrackerFile)) failures.push(`--peak-tracker-file not found: ${path.relative(repoRoot, peakTrackerFile)}`);
+  if (!allowedPeakTrackerExtensions.has(path.extname(peakTrackerFile).toLowerCase())) {
+    failures.push('--peak-tracker-file must be a .csv, .tsv, .txt, .md, .html, or .htm file.');
+  }
 }
 
 if (artifactFile.startsWith('/') || path.isAbsolute(artifactFile)) failures.push('--artifact-file must be relative to --evidence-root.');
@@ -280,6 +307,22 @@ if (artifactPath && evidenceRoot) {
 let systemPeaks: IciSystemPeakHour[] = [];
 let customerLoad: IciCustomerLoadHour[] = [];
 if (systemPeaksFile && existsSync(systemPeaksFile)) systemPeaks = parseSystemPeaks(readFileSync(systemPeaksFile, 'utf8'));
+if (peakTrackerFile && existsSync(peakTrackerFile)) {
+  const directIdentifier = findDirectIdentifier(readFileSync(peakTrackerFile, 'utf8'));
+  if (directIdentifier) failures.push(`--peak-tracker-file appears to contain ${directIdentifier.label}; retain only public IESO peak rows or redacted planning extracts.`);
+  try {
+    systemPeaks.push(...parseIesoPeakTrackerSnapshot(readFileSync(peakTrackerFile, 'utf8')));
+  } catch (error) {
+    failures.push(`--peak-tracker-file could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+if (peakTrackerUrl && /^https?:\/\//i.test(peakTrackerUrl)) {
+  try {
+    systemPeaks.push(...parseIesoPeakTrackerSnapshot(await fetchText(peakTrackerUrl), { sourceUrl: peakTrackerUrl }));
+  } catch (error) {
+    failures.push(`--peak-tracker-url could not be fetched or parsed: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
 if (customerLoadFile && existsSync(customerLoadFile)) customerLoad = parseCustomerLoad(readFileSync(customerLoadFile, 'utf8'));
 
 if (failures.length > 0) {
@@ -295,7 +338,12 @@ const explicitSourceUrls = (values.get('source-urls') ?? '')
 const sourceUrlsFromRows = systemPeaks
   .map((row) => row.source)
   .filter((source): source is string => Boolean(source && /^https?:\/\//i.test(source)));
-const sourceUrls = Array.from(new Set([...explicitSourceUrls, ...sourceUrlsFromRows]));
+const sourceUrls = Array.from(new Set([
+  ...explicitSourceUrls,
+  ...sourceUrlsFromRows,
+  ...(values.has('peak-tracker-file') ? [IESO_PEAK_TRACKER_SOURCE_URL] : []),
+  ...(peakTrackerUrl ? [peakTrackerUrl] : []),
+]));
 
 const report = buildIciFiveCpDecisionSupportReport({
   systemPeaks,
