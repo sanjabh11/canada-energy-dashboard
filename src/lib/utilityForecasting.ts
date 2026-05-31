@@ -240,6 +240,7 @@ export interface ForecastEvidenceReport {
   rolling_origin_splits: ForecastEvidenceSplit[];
   conformal_interval_coverage_pct: number;
   conformal_interval_width_mw: number;
+  benchmark_failure_notes: string[];
   champion_challenger: {
     champion: 'transparent_trend_seasonal';
     challenger: 'persistence' | 'seasonal_naive';
@@ -996,7 +997,7 @@ export function buildUtilityForecastPackage(params: {
       },
     },
     assumptions,
-    warnings,
+    warnings: evidenceReport.warnings,
     oeb_rows: oebRows,
   };
 }
@@ -1078,11 +1079,21 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
     ['conformal_interval_width_mw', forecastPackage.evidence_report.conformal_interval_width_mw],
     ['champion_model', forecastPackage.evidence_report.champion_challenger.champion],
     ['challenger_model', forecastPackage.evidence_report.champion_challenger.challenger],
+    ['benchmark_failure_note_count', forecastPackage.evidence_report.benchmark_failure_notes.length],
     ['hierarchy_status', forecastPackage.evidence_report.hierarchy_reconciliation.status],
     ['hierarchy_max_error_mw', forecastPackage.evidence_report.hierarchy_reconciliation.max_reconciliation_error_mw],
   ].forEach(([metric, value]) => {
     lines.push(`${metric},${value}`);
   });
+
+  lines.push('', 'benchmark_failure_note');
+  if (forecastPackage.evidence_report.benchmark_failure_notes.length > 0) {
+    forecastPackage.evidence_report.benchmark_failure_notes.forEach((note) => {
+      lines.push(`"${note.replace(/"/g, '""')}"`);
+    });
+  } else {
+    lines.push('none');
+  }
 
   lines.push('', 'reliability_proxy_horizon,score,band,peak_utilization_pct,reserve_headroom_mw,weather_stress_pct');
   forecastPackage.reliability_proxy.horizon_scores.forEach((row) => {
@@ -2002,6 +2013,29 @@ function buildHierarchyReconciliation(rows: UtilityHistoricalLoadRow[]): Forecas
   };
 }
 
+export function buildForecastBenchmarkFailureNotes(benchmark: ForecastMetrics): string[] {
+  const baselineCandidates = [
+    { label: 'persistence baseline', mae: benchmark.persistence_mae },
+    { label: 'seasonal-naive baseline', mae: benchmark.seasonal_naive_mae },
+  ].filter((candidate) => Number.isFinite(candidate.mae) && candidate.mae > 0);
+
+  if (!Number.isFinite(benchmark.mae) || benchmark.mae <= 0 || benchmark.sample_size <= 0 || baselineCandidates.length === 0) {
+    return [];
+  }
+
+  const bestBaseline = baselineCandidates.reduce((best, candidate) => (
+    candidate.mae < best.mae ? candidate : best
+  ));
+
+  if (benchmark.mae <= bestBaseline.mae) {
+    return [];
+  }
+
+  return [
+    `Baseline win: ${bestBaseline.label} MAE ${bestBaseline.mae.toFixed(2)} MW beats transparent trend-seasonal MAE ${benchmark.mae.toFixed(2)} MW; treat accuracy uplift as unproven and review model inputs before making buyer-facing accuracy claims.`,
+  ];
+}
+
 function buildForecastEvidenceReport(params: {
   aggregated: AggregatedIntervalPoint[];
   rows: UtilityHistoricalLoadRow[];
@@ -2022,6 +2056,7 @@ function buildForecastEvidenceReport(params: {
   const challengerMae = challenger === 'persistence'
     ? params.benchmark.persistence_mae
     : params.benchmark.seasonal_naive_mae;
+  const benchmarkFailureNotes = buildForecastBenchmarkFailureNotes(params.benchmark);
   const decisionReason = params.benchmark.mae > 0 && challengerMae > 0 && params.benchmark.mae <= challengerMae
     ? 'Transparent trend-seasonal model is the current champion because its holdout MAE is no worse than the strongest naive challenger.'
     : 'Transparent trend-seasonal model remains the champion for explainability, but the challenger gap must be reviewed before making accuracy claims.';
@@ -2032,6 +2067,7 @@ function buildForecastEvidenceReport(params: {
     rolling_origin_splits: rollingSplits,
     conformal_interval_coverage_pct: round(averageCoverage, 2),
     conformal_interval_width_mw: round(conformalWidth, 2),
+    benchmark_failure_notes: benchmarkFailureNotes,
     champion_challenger: {
       champion: 'transparent_trend_seasonal',
       challenger,
@@ -2040,6 +2076,7 @@ function buildForecastEvidenceReport(params: {
     hierarchy_reconciliation: buildHierarchyReconciliation(params.rows),
     warnings: [
       ...params.warnings,
+      ...benchmarkFailureNotes,
       ...(rollingSplits.length < 3 ? ['Fewer than three rolling-origin splits are available; treat interval coverage as pilot evidence only.'] : []),
     ],
   };

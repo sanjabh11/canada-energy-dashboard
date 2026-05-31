@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildForecastBenchmarkFailureNotes,
   buildOntarioPublicUtilitySampleCsv,
   buildOntarioPublicUtilitySampleManifestMarkdown,
   buildUtilityForecastPackage,
@@ -110,6 +111,8 @@ describe('utilityForecasting', () => {
     expect(forecastPackage.evidence_report.rolling_origin_splits.length).toBeGreaterThan(0);
     expect(forecastPackage.evidence_report.validation_method).toBe('rolling_origin_cv');
     expect(forecastPackage.evidence_report.champion_challenger.champion).toBe('transparent_trend_seasonal');
+    expect(forecastPackage.evidence_report.benchmark_failure_notes[0]).toContain('Baseline win: persistence baseline');
+    expect(forecastPackage.warnings).toContain(forecastPackage.evidence_report.benchmark_failure_notes[0]);
     expect(forecastPackage.cases.expected.yearly).toHaveLength(10);
     expect(forecastPackage.scenario_matrix.base.label).toBe('expected');
     expect(forecastPackage.oeb_rows).toHaveLength(5);
@@ -158,6 +161,8 @@ describe('utilityForecasting', () => {
     expect(csv).toContain('# Source Manifest:');
     expect(csv).toContain('rolling_split,train_start,train_end');
     expect(csv).toContain('evidence_metric,value');
+    expect(csv).toContain('benchmark_failure_note_count');
+    expect(csv).toContain('benchmark_failure_note');
     expect(csv).toContain('mae,');
     expect(csv).toContain('persistence_mae,');
     expect(csv).toContain('seasonal_naive_mae,');
@@ -198,6 +203,29 @@ describe('utilityForecasting', () => {
 
     expect(forecastPackage.benchmark.sample_size).toBeGreaterThan(0);
     expect(forecastPackage.warnings).toContain('Benchmark backtest fallback applied: Insufficient data for backtesting.');
+  });
+
+  it('emits a buyer-visible failure note when a naive baseline wins', () => {
+    const notes = buildForecastBenchmarkFailureNotes({
+      mae: 12,
+      mape: 4,
+      rmse: 15,
+      persistence_mae: 7,
+      persistence_mape: 2,
+      persistence_rmse: 9,
+      seasonal_naive_mae: 8,
+      seasonal_naive_mape: 3,
+      seasonal_naive_rmse: 10,
+      skill_score_vs_persistence: -71.43,
+      skill_score_vs_seasonal: -50,
+      r_squared: 0.2,
+      sample_size: 72,
+    });
+
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toContain('Baseline win: persistence baseline MAE 7.00 MW');
+    expect(notes[0]).toContain('accuracy uplift as unproven');
+    expect(notes[0]).toContain('buyer-facing accuracy claims');
   });
 
   it('applies gross-load reconstitution when the input provides gross demand above net demand', () => {

@@ -164,6 +164,7 @@ export function buildUtilityPlanningDescriptor(
           `Hierarchy reconciliation error: ${forecastPackage.evidence_report.hierarchy_reconciliation.max_reconciliation_error_mw.toFixed(3)} MW`,
           `Benchmark skill vs persistence: ${forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`,
           `Benchmark skill vs seasonal-naive: ${forecastPackage.benchmark.skill_score_vs_seasonal.toFixed(1)}%`,
+          `Benchmark failure notes: ${forecastPackage.evidence_report.benchmark_failure_notes.length}`,
           `Weather case: ${forecastPackage.scenario.weather_case}`,
         ],
       },
@@ -222,7 +223,15 @@ export function buildUtilityBenchmarkAppendixMarkdown(
     `- Rolling-origin splits: ${forecastPackage.evidence_report.rolling_origin_splits.length}`,
     `- Conformal interval coverage: ${forecastPackage.evidence_report.conformal_interval_coverage_pct.toFixed(1)}%`,
     `- Champion model: ${forecastPackage.evidence_report.champion_challenger.champion}`,
+    `- Challenger model: ${forecastPackage.evidence_report.champion_challenger.challenger}`,
+    `- Champion decision: ${forecastPackage.evidence_report.champion_challenger.decision_reason}`,
+    `- Benchmark failure notes: ${forecastPackage.evidence_report.benchmark_failure_notes.length}`,
     `- Hierarchy reconciliation status: ${forecastPackage.evidence_report.hierarchy_reconciliation.status}`,
+    '',
+    '## Benchmark failure notes',
+    ...(forecastPackage.evidence_report.benchmark_failure_notes.length > 0
+      ? forecastPackage.evidence_report.benchmark_failure_notes.map((note) => `- ${note}`)
+      : ['- No baseline-win failure note was emitted for this package.']),
     '',
     '## Source and fallback labels',
     ...forecastPackage.input_provenance_summary.live_surfaces.map((surface) => [

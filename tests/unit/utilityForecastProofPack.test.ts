@@ -67,6 +67,8 @@ describe('utilityForecastProofPack', () => {
     expect(appendix).toContain('- Source manifest:');
     expect(appendix).toContain('- Rolling-origin splits:');
     expect(appendix).toContain('- Champion model: transparent_trend_seasonal');
+    expect(appendix).toContain('## Benchmark failure notes');
+    expect(appendix).toContain('Baseline win: persistence baseline');
     expect(appendix).toContain('- MAE:');
     expect(appendix).toContain('- MAPE:');
     expect(appendix).toContain('- RMSE:');
@@ -115,5 +117,38 @@ describe('utilityForecastProofPack', () => {
     expect(bundle.artifacts[0].claimLabel).toBe('constructed-scenario');
     expect(bundle.artifacts[0].commercialProofState).toBe('constructed_commercial_scenario');
     expect(appendix).toContain('constructed commercial scenario');
+  });
+
+  it('exports baseline-win failure notes in forecast proof artifacts', () => {
+    const forecastPackage = buildUtilityForecastPackage({
+      rows: generateUtilityLoadSampleRows('Ontario', 'hourly'),
+      scenario: buildScenario('Ontario'),
+      sourceLabel: 'Ontario CMD interval history',
+      isSampleData: false,
+      sourceKind: 'green_button_cmd',
+      liveSurfaces: [],
+    });
+    const failureNote = 'Baseline win: seasonal-naive baseline MAE 5.00 MW beats transparent trend-seasonal MAE 9.00 MW; treat accuracy uplift as unproven and review model inputs before making buyer-facing accuracy claims.';
+    const packageWithFailure = {
+      ...forecastPackage,
+      evidence_report: {
+        ...forecastPackage.evidence_report,
+        benchmark_failure_notes: [failureNote],
+        warnings: [...forecastPackage.evidence_report.warnings, failureNote],
+      },
+      warnings: [...forecastPackage.warnings, failureNote],
+    };
+
+    const descriptor = buildUtilityPlanningDescriptor(packageWithFailure);
+    const appendix = buildUtilityBenchmarkAppendixMarkdown(packageWithFailure);
+    const csv = buildUtilityGenericCsv(packageWithFailure);
+
+    expect(descriptor.sections[0].body).toContain('Benchmark failure notes: 1');
+    expect(descriptor.sections[2].body).toContain(failureNote);
+    expect(appendix).toContain('## Benchmark failure notes');
+    expect(appendix).toContain(failureNote);
+    expect(csv).toContain('benchmark_failure_note_count,1');
+    expect(csv).toContain('benchmark_failure_note');
+    expect(csv).toContain(failureNote);
   });
 });
