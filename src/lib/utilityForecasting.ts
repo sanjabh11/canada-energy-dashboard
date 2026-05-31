@@ -232,6 +232,7 @@ export interface ForecastEvidenceSplit {
   persistence_mae: number;
   seasonal_naive_mae: number;
   interval_coverage_pct: number;
+  mean_interval_score_mw: number;
 }
 
 export interface ForecastEvidenceReport {
@@ -1054,7 +1055,7 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
     lines.push(`${metric},${value}`);
   });
 
-  lines.push('', 'rolling_split,train_start,train_end,test_start,test_end,mae,mape,rmse,persistence_mae,seasonal_naive_mae,interval_coverage_pct');
+  lines.push('', 'rolling_split,train_start,train_end,test_start,test_end,mae,mape,rmse,persistence_mae,seasonal_naive_mae,interval_coverage_pct,mean_interval_score_mw');
   forecastPackage.evidence_report.rolling_origin_splits.forEach((split) => {
     lines.push([
       split.split_id,
@@ -1068,6 +1069,7 @@ export function utilityForecastPackageToCsv(forecastPackage: UtilityForecastPack
       split.persistence_mae,
       split.seasonal_naive_mae,
       split.interval_coverage_pct,
+      split.mean_interval_score_mw,
     ].join(','));
   });
 
@@ -1904,6 +1906,15 @@ function quantile(values: number[], percentile: number): number {
   return sorted[index];
 }
 
+function intervalScore(actual: number, forecast: number, halfWidth: number, alpha = 0.1): number {
+  const lower = forecast - halfWidth;
+  const upper = forecast + halfWidth;
+  const width = upper - lower;
+  const lowerMissPenalty = actual < lower ? (2 / alpha) * (lower - actual) : 0;
+  const upperMissPenalty = actual > upper ? (2 / alpha) * (actual - upper) : 0;
+  return width + lowerMissPenalty + upperMissPenalty;
+}
+
 function buildRollingEvidenceSplit(
   splitId: string,
   train: AggregatedIntervalPoint[],
@@ -1932,6 +1943,11 @@ function buildRollingEvidenceSplit(
   const covered = conformalWidth > 0
     ? actuals.filter((actual, index) => Math.abs(actual - predictions[index]) <= conformalWidth).length
     : actuals.length;
+  const meanIntervalScore = actuals.length > 0
+    ? actuals.reduce((sum, actual, index) => (
+        sum + intervalScore(actual, predictions[index], conformalWidth)
+      ), 0) / actuals.length
+    : 0;
 
   return {
     split_id: splitId,
@@ -1947,6 +1963,7 @@ function buildRollingEvidenceSplit(
     persistence_mae: metrics.persistence_mae,
     seasonal_naive_mae: metrics.seasonal_naive_mae,
     interval_coverage_pct: actuals.length > 0 ? round((covered / actuals.length) * 100, 2) : 0,
+    mean_interval_score_mw: round(meanIntervalScore, 2),
   };
 }
 

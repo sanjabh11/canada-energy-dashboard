@@ -78,6 +78,11 @@ const sourceAnchors = [
     terms: ['Conformal', 'StatsForecast'],
   },
   {
+    label: 'Gneiting and Raftery proper scoring rules',
+    url: 'https://stat.uw.edu/research/tech-reports/strictly-proper-scoring-rules-prediction-and-estimation-revised',
+    terms: ['Strictly Proper Scoring Rules', 'interval score', 'width as well as coverage'],
+  },
+  {
     label: 'NIST AI RMF',
     url: 'https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10',
     terms: ['Artificial Intelligence Risk Management Framework', 'AI RMF'],

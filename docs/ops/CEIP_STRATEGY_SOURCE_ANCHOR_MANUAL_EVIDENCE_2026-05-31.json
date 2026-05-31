@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-05-31T21:10:00.000Z",
-  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but unreachable from local Node/curl fetch in this workspace.",
+  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but not fully verifiable through the local automated Node fetch in this workspace.",
   "limitations": "This file records term-level source verification only. It does not replace live source review, buyer evidence, legal review, or production approval.",
   "anchors": [
     {
@@ -35,6 +35,14 @@
       "verifiedAt": "2026-05-31T21:10:00.000Z",
       "matchedTerms": ["filing requirements", "distribution"],
       "evidenceNote": "Official OEB filing-requirements page content was fetched through Exa after local curl and Node fetch timed out."
+    },
+    {
+      "label": "Gneiting and Raftery proper scoring rules",
+      "url": "https://stat.uw.edu/research/tech-reports/strictly-proper-scoring-rules-prediction-and-estimation-revised",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T22:49:00.000Z",
+      "matchedTerms": ["Strictly Proper Scoring Rules", "interval score", "width as well as coverage"],
+      "evidenceNote": "Official University of Washington page content was fetched through Exa after local Node fetch failed certificate-chain validation; curl HEAD returned HTTP 200."
     }
   ]
 }

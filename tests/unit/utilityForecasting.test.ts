@@ -160,6 +160,7 @@ describe('utilityForecasting', () => {
     expect(csv).toContain('benchmark_metric,value');
     expect(csv).toContain('# Source Manifest:');
     expect(csv).toContain('rolling_split,train_start,train_end');
+    expect(csv).toContain('mean_interval_score_mw');
     expect(csv).toContain('evidence_metric,value');
     expect(csv).toContain('benchmark_failure_note_count');
     expect(csv).toContain('benchmark_failure_note');

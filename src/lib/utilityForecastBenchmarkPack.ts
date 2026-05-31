@@ -10,7 +10,7 @@ import {
   type UtilityPlanningScenario,
 } from './utilityForecasting';
 
-export const UTILITY_MULTI_DATASET_BENCHMARK_VERSION = 'utility-multi-dataset-benchmark-v2';
+export const UTILITY_MULTI_DATASET_BENCHMARK_VERSION = 'utility-multi-dataset-benchmark-v3';
 const NOMINAL_INTERVAL_COVERAGE_PCT = 90;
 
 export type UtilityBenchmarkSourceScope =
@@ -61,6 +61,8 @@ export interface UtilityBenchmarkScientificDiagnostics {
   interval_nominal_coverage_pct: number;
   interval_calibration_gap_pct: number;
   interval_width_to_mae_ratio: number;
+  mean_interval_score_mw: number;
+  interval_score_to_mae_ratio: number;
   adjudication: 'beats_best_naive' | 'baseline_win_review' | 'insufficient_holdout';
   notes: string[];
 }
@@ -116,6 +118,9 @@ export interface UtilityMultiDatasetBenchmarkPack {
     datasets_with_three_splits: number;
     minimum_interval_coverage_pct: number;
     maximum_interval_calibration_gap_pct: number;
+    mean_interval_score_mw: number;
+    mean_interval_score_to_mae_ratio: number;
+    maximum_interval_score_to_mae_ratio: number;
   };
 }
 
@@ -163,7 +168,7 @@ const methodologyReferences: UtilityBenchmarkMethodologyReference[] = [
   {
     label: 'Gneiting and Raftery proper scoring rules',
     url: 'https://stat.uw.edu/research/tech-reports/strictly-proper-scoring-rules-prediction-and-estimation-revised',
-    use: 'Keeps interval quality visible through calibration gap and sharpness diagnostics, while avoiding a full proper interval-score claim until split-level buyer backtests are retained.',
+    use: 'Adds a central 90% interval score from rolling-origin splits so interval evidence penalizes both width and misses; this remains technical evidence, not buyer-specific accuracy proof.',
   },
   {
     label: 'Nixtla conformal prediction for time series',
@@ -282,10 +287,11 @@ function meanAbsoluteSeasonalDifference(
 function buildScientificDiagnostics(
   input: UtilityBenchmarkDatasetInput,
   metrics: UtilityBenchmarkDatasetResult['metrics'],
-  rollingOriginSplitCount: number,
+  rollingOriginSplits: ForecastEvidenceReport['rolling_origin_splits'],
   conformalIntervalCoveragePct: number,
   conformalIntervalWidthMw: number,
 ): UtilityBenchmarkScientificDiagnostics {
+  const rollingOriginSplitCount = rollingOriginSplits.length;
   const series = buildAggregatedSeries(input.rows);
   const holdoutSize = Math.min(series.length, Math.max(0, metrics.sample_size));
   const inSampleSeries = holdoutSize > 0 && series.length > holdoutSize
@@ -301,6 +307,13 @@ function buildScientificDiagnostics(
   const seasonalMase = seasonalScale > 0 ? metrics.mae / seasonalScale : 0;
   const intervalCalibrationGap = Math.abs(conformalIntervalCoveragePct - NOMINAL_INTERVAL_COVERAGE_PCT);
   const intervalWidthToMaeRatio = metrics.mae > 0 ? conformalIntervalWidthMw / metrics.mae : 0;
+  const intervalScores = rollingOriginSplits
+    .map((split) => split.mean_interval_score_mw)
+    .filter((value) => Number.isFinite(value) && value >= 0);
+  const meanIntervalScoreMw = intervalScores.length > 0
+    ? intervalScores.reduce((sum, value) => sum + value, 0) / intervalScores.length
+    : 0;
+  const intervalScoreToMaeRatio = metrics.mae > 0 ? meanIntervalScoreMw / metrics.mae : 0;
   const adjudication = metrics.sample_size <= 0 || bestNaiveMae <= 0
     ? 'insufficient_holdout'
     : bestNaiveScaledMae <= 1
@@ -314,11 +327,14 @@ function buildScientificDiagnostics(
     interval_nominal_coverage_pct: NOMINAL_INTERVAL_COVERAGE_PCT,
     interval_calibration_gap_pct: round(intervalCalibrationGap, 2),
     interval_width_to_mae_ratio: round(intervalWidthToMaeRatio, 3),
+    mean_interval_score_mw: round(meanIntervalScoreMw, 2),
+    interval_score_to_mae_ratio: round(intervalScoreToMaeRatio, 3),
     adjudication,
     notes: [
       `Seasonal MASE uses an in-sample ${seasonalPeriod}-interval seasonal naive scale from the public/sample source series.`,
       'Best-naive scaled MAE below 1.0 means the transparent model beats the strongest naive challenger on the holdout diagnostic.',
       'Interval calibration gap compares rolling-origin coverage with nominal 90% coverage; width/MAE ratio is a sharpness diagnostic, not a buyer-specific uncertainty guarantee.',
+      'Mean interval score is the central 90% interval score averaged over rolling-origin splits; lower is better, and it penalizes both wide intervals and misses.',
       ...(rollingOriginSplitCount < 3 ? ['Fewer than three rolling-origin splits: treat interval diagnostics as pilot-readiness evidence only.'] : []),
       ...(adjudication === 'baseline_win_review' ? ['Best naive baseline wins: attach failure note before any buyer-facing forecast accuracy discussion.'] : []),
     ],
@@ -349,7 +365,8 @@ export function buildUtilityMultiDatasetBenchmarkPack(
       skill_score_vs_seasonal: forecastPackage.benchmark.skill_score_vs_seasonal,
       sample_size: forecastPackage.benchmark.sample_size,
     };
-    const rollingOriginSplitCount = forecastPackage.evidence_report.rolling_origin_splits.length;
+    const rollingOriginSplits = forecastPackage.evidence_report.rolling_origin_splits;
+    const rollingOriginSplitCount = rollingOriginSplits.length;
     const conformalIntervalCoveragePct = forecastPackage.evidence_report.conformal_interval_coverage_pct;
     const conformalIntervalWidthMw = forecastPackage.evidence_report.conformal_interval_width_mw;
 
@@ -371,7 +388,7 @@ export function buildUtilityMultiDatasetBenchmarkPack(
       scientific_diagnostics: buildScientificDiagnostics(
         input,
         metrics,
-        rollingOriginSplitCount,
+        rollingOriginSplits,
         conformalIntervalCoveragePct,
         conformalIntervalWidthMw,
       ),
@@ -406,6 +423,15 @@ export function buildUtilityMultiDatasetBenchmarkPack(
       maximum_interval_calibration_gap_pct: datasets.length > 0
         ? Math.max(...datasets.map((dataset) => dataset.scientific_diagnostics.interval_calibration_gap_pct))
         : 0,
+      mean_interval_score_mw: round(datasets.reduce((sum, dataset) => (
+        sum + dataset.scientific_diagnostics.mean_interval_score_mw
+      ), 0) / datasetCount),
+      mean_interval_score_to_mae_ratio: round(datasets.reduce((sum, dataset) => (
+        sum + dataset.scientific_diagnostics.interval_score_to_mae_ratio
+      ), 0) / datasetCount, 3),
+      maximum_interval_score_to_mae_ratio: datasets.length > 0
+        ? round(Math.max(...datasets.map((dataset) => dataset.scientific_diagnostics.interval_score_to_mae_ratio)), 3)
+        : 0,
     },
   };
 }
@@ -438,6 +464,8 @@ export function utilityMultiDatasetBenchmarkPackToCsv(pack: UtilityMultiDatasetB
     'interval_coverage_pct',
     'interval_calibration_gap_pct',
     'interval_width_to_mae_ratio',
+    'mean_interval_score_mw',
+    'interval_score_to_mae_ratio',
     'adjudication',
     'challenger_model',
     'benchmark_failure_notes',
@@ -467,6 +495,8 @@ export function utilityMultiDatasetBenchmarkPackToCsv(pack: UtilityMultiDatasetB
       dataset.conformal_interval_coverage_pct,
       dataset.scientific_diagnostics.interval_calibration_gap_pct,
       dataset.scientific_diagnostics.interval_width_to_mae_ratio,
+      dataset.scientific_diagnostics.mean_interval_score_mw,
+      dataset.scientific_diagnostics.interval_score_to_mae_ratio,
       dataset.scientific_diagnostics.adjudication,
       dataset.champion_challenger.challenger,
       dataset.benchmark_failure_notes.join(' | ') || 'none',
@@ -489,10 +519,12 @@ export function utilityMultiDatasetBenchmarkPackToMarkdown(pack: UtilityMultiDat
     `- Mean seasonal MASE: ${pack.aggregate.mean_seasonal_mase.toFixed(3)}`,
     `- Mean best-naive scaled MAE: ${pack.aggregate.mean_best_naive_scaled_mae.toFixed(3)}`,
     `- Max interval calibration gap: ${pack.aggregate.maximum_interval_calibration_gap_pct.toFixed(1)}%`,
+    `- Mean 90% interval score: ${pack.aggregate.mean_interval_score_mw.toFixed(2)} MW`,
+    `- Mean interval-score/MAE ratio: ${pack.aggregate.mean_interval_score_to_mae_ratio.toFixed(3)}`,
     `- Datasets with >=3 rolling-origin splits: ${pack.aggregate.datasets_with_three_splits}`,
     '',
-    '| Dataset | Scope | MAE | Seasonal MASE | Best-naive scaled MAE | Interval gap | Width/MAE | Rolling splits | Challenger | Adjudication | Failure notes |',
-    '|---|---|---:|---:|---:|---:|---:|---:|---|---|---|',
+    '| Dataset | Scope | MAE | Seasonal MASE | Best-naive scaled MAE | Interval gap | Width/MAE | Interval score | Score/MAE | Rolling splits | Challenger | Adjudication | Failure notes |',
+    '|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|',
     ...pack.datasets.map((dataset) => [
       dataset.label,
       dataset.source_scope,
@@ -501,6 +533,8 @@ export function utilityMultiDatasetBenchmarkPackToMarkdown(pack: UtilityMultiDat
       dataset.scientific_diagnostics.best_naive_scaled_mae.toFixed(3),
       `${dataset.scientific_diagnostics.interval_calibration_gap_pct.toFixed(1)}%`,
       dataset.scientific_diagnostics.interval_width_to_mae_ratio.toFixed(3),
+      dataset.scientific_diagnostics.mean_interval_score_mw.toFixed(2),
+      dataset.scientific_diagnostics.interval_score_to_mae_ratio.toFixed(3),
       dataset.rolling_origin_split_count,
       dataset.champion_challenger.challenger,
       dataset.scientific_diagnostics.adjudication,
@@ -609,6 +643,8 @@ export function buildUtilityForecastTrustRetainedEvidenceExtract(
     `- scale-free skill score pct: ${dataset.scientific_diagnostics.scale_free_skill_score_pct}`,
     `- interval calibration gap pct: ${dataset.scientific_diagnostics.interval_calibration_gap_pct}`,
     `- interval width to MAE ratio: ${dataset.scientific_diagnostics.interval_width_to_mae_ratio}`,
+    `- mean 90pct interval score MW: ${dataset.scientific_diagnostics.mean_interval_score_mw}`,
+    `- interval score to MAE ratio: ${dataset.scientific_diagnostics.interval_score_to_mae_ratio}`,
     `- adjudication: ${dataset.scientific_diagnostics.adjudication}`,
     '',
     '## Benchmark Failure Notes',
