@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-05-31T21:10:00.000Z",
+  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but unreachable from local Node/curl fetch in this workspace.",
+  "limitations": "This file records term-level source verification only. It does not replace live source review, buyer evidence, legal review, or production approval.",
+  "anchors": [
+    {
+      "label": "IESO Global Adjustment",
+      "url": "https://www.ieso.ca/en/Learn/Electricity-Pricing-Explained/Global-Adjustment",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Global Adjustment", "Class A", "top five peak demand hours"],
+      "evidenceNote": "Official IESO page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "IESO Class A eligibility",
+      "url": "https://www.ieso.ca/en/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Global Adjustment Class A Eligibility", "peak demand factor", "top five peak hours"],
+      "evidenceNote": "Official IESO page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "IESO Peak Tracker",
+      "url": "https://www.ieso.ca/peaktracker",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Peak Tracker", "Ontario demand"],
+      "evidenceNote": "Official IESO Peak Tracker page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "OEB filing requirements",
+      "url": "https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["filing requirements", "distribution"],
+      "evidenceNote": "Official OEB filing-requirements page content was fetched through Exa after local curl and Node fetch timed out."
+    }
+  ]
+}

@@ -123,6 +123,7 @@ pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTE
 pnpm run check:strategy-roadmap-doc
 pnpm run report:strategy-completion-audit
 pnpm run report:strategy-source-anchors
+pnpm run check:strategy-source-anchors
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```

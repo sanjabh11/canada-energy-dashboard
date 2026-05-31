@@ -193,9 +193,13 @@ const rows = [
   requirementRow(
     'R8',
     'Current external source anchors are represented and source-health reporting exists.',
-    hasAll(roadmap, sourceAnchors) && packageJson.includes('report:strategy-source-anchors') ? 'complete_locally' : 'incomplete',
-    '`pnpm run report:strategy-source-anchors` plus Section 3 source table.',
-    'Manual review remains required for fetch-failed, changed, or policy-sensitive sources.',
+    hasAll(roadmap, sourceAnchors) &&
+      packageJson.includes('report:strategy-source-anchors') &&
+      packageJson.includes('check:strategy-source-anchors')
+      ? 'complete_locally'
+      : 'incomplete',
+    '`pnpm run report:strategy-source-anchors`, `pnpm run check:strategy-source-anchors`, and Section 3 source table.',
+    'Manual review remains required for changed, expired, unreachable, or policy-sensitive sources.',
   ),
   requirementRow(
     'R9',
@@ -257,7 +261,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Fetch-failed anchors|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
         line,
       ),
     )

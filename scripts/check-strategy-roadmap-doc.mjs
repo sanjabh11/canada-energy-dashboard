@@ -183,6 +183,7 @@ if (!existsSync(roadmapPath)) {
     'pnpm run report:strategy-completion-audit',
     'pnpm run report:production-approval-packet',
     'pnpm run report:strategy-source-anchors',
+    'pnpm run check:strategy-source-anchors',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',
   ];
