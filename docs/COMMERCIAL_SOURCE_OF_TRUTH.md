@@ -120,6 +120,13 @@ pnpm run check:public-metadata -- --dist
 pnpm run check:pilot-evidence-95-fixture-gate
 pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
+pnpm run check:release-readiness
+```
+
+After an explicitly approved production deploy, run:
+
+```bash
+pnpm run check:post-deploy-live
 ```
 
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:

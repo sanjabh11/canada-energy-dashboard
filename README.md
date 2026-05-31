@@ -78,16 +78,19 @@ Install dependencies and run the focused guardrails:
 pnpm install
 pnpm run check:commercial-source
 pnpm run check:claim-boundaries
-pnpm run check:pilot-evidence-95-fixture-gate
-pnpm run check:pilot-evidence-template
-pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
-pnpm run build
+pnpm run check:release-readiness
 ```
 
 For the proof-pack browser smoke:
 
 ```bash
 pnpm run test:browser:phase6
+```
+
+After an explicitly approved production deploy, run the live parity gate:
+
+```bash
+pnpm run check:post-deploy-live
 ```
 
 For a filled buyer register:
