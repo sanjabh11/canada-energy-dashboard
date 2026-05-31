@@ -428,6 +428,16 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics');
   });
 
+  it('rejects confidence-moving forecast rows without numeric benchmark evidence', async () => {
+    const result = await runValidator('invalid-nonnumeric-forecast-diagnostic-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving forecast evidence must include numeric forecast evidence');
+    expect(output).toContain('numeric MAE value');
+    expect(output).toContain('numeric interval coverage percentage');
+  });
+
   it('rejects confidence-moving TIER rows without route-specific diagnostic evidence', async () => {
     const result = await runValidator('invalid-weak-tier-diagnostic-register.csv');
     const output = `${result.stderr}\n${result.stdout}`;
@@ -504,6 +514,19 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(1);
     expect(output).toContain('local evidence artifact thin-redacted-utility.csv must contain retained route-specific diagnostic evidence');
     expect(output).toContain('local forecast evidence artifact thin-redacted-utility.csv must contain MAE, MAPE, RMSE');
+  });
+
+  it('rejects retained forecast artifacts that contain only nonnumeric metric labels', async () => {
+    const result = await runValidator('invalid-nonnumeric-artifact-forecast-evidence-register.csv', [
+      '--evidence-root',
+      'tests/fixtures/pilot-evidence/artifacts',
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('local forecast evidence artifact nonnumeric-redacted-utility.csv must contain numeric forecast evidence');
+    expect(output).toContain('numeric persistence baseline value');
+    expect(output).toContain('numeric rolling split count');
   });
 
   it('rejects retained local evidence artifacts that contain positive overclaims', async () => {

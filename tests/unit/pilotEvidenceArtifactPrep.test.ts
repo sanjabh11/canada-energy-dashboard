@@ -58,7 +58,7 @@ function buildValidPrepArgs(evidenceRoot: string, artifactFile = 'redacted-utili
     '--commercial-commitment-status', 'paid_pilot',
     '--claim-boundary', 'Buyer supplied redacted planning support only and no production onboarding claim.',
     '--do-not-claim', 'Do not claim utility approval or live telemetry.',
-    '--diagnostic', 'MAE, MAPE, RMSE recorded; persistence and seasonal-naive compared; rolling-origin split record, interval coverage, and champion/challenger note attached.',
+    '--diagnostic', 'MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger.',
   ];
 }
 
@@ -107,7 +107,7 @@ describe('pilot evidence artifact preparation CLI', () => {
         'forecast planning pack',
         '36',
         '90',
-        '"MAE/MAPE/RMSE recorded; persistence and seasonal-naive compared; rolling-origin split record, interval coverage, and champion/challenger note attached"',
+        '"MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger"',
         'utility planning reviewer',
         'complete',
         'accepted',
@@ -167,5 +167,21 @@ describe('pilot evidence artifact preparation CLI', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('must include pricing source, direct-investment sensitivity, and compliance diagnostic evidence');
+  });
+
+  it('rejects forecast diagnostics that name metrics without numeric evidence', async () => {
+    const evidenceRoot = makeTempRoot();
+    const result = await runNodeScript(prepScriptPath, [
+      ...buildValidPrepArgs(evidenceRoot, 'nonnumeric.md').filter((arg, index, args) => (
+        arg !== '--diagnostic' && args[index - 1] !== '--diagnostic'
+      )),
+      '--diagnostic',
+      'MAE, MAPE, RMSE recorded; persistence and seasonal-naive compared; rolling-origin split record, interval coverage, and champion/challenger note attached.',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('must include numeric forecast evidence');
+    expect(result.stderr).toContain('numeric MAE value');
+    expect(() => readFileSync(path.join(evidenceRoot, 'nonnumeric.md'), 'utf8')).toThrow();
   });
 });

@@ -151,6 +151,49 @@ const routeDiagnosticRules = new Map([
   }],
 ]);
 
+const forecastEvidenceRoutes = new Set(['/utility-demand-forecast', '/forecast-benchmarking']);
+const numericForecastEvidenceRules = [
+  {
+    label: 'numeric MAE value',
+    pattern: /\bmae\b[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric MAPE value',
+    pattern: /\bmape\b[\s:=,|-]*\d+(?:\.\d+)?\s*%?/i,
+  },
+  {
+    label: 'numeric RMSE value',
+    pattern: /\brmse\b[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric persistence baseline value',
+    pattern: /\bpersistence\b(?:[-_ ]?(?:baseline|mae|mape|rmse))?[\s:=,|-]*(?:mae|mape|rmse|baseline)?[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric seasonal-naive baseline value',
+    pattern: /\bseasonal[-_ ]?naive\b(?:[-_ ]?(?:baseline|mae|mape|rmse))?[\s:=,|-]*(?:mae|mape|rmse|baseline)?[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric rolling split count',
+    pattern: /\brolling[-_ ]?(?:origin[-_ ]?)?(?:(?:split|splits|window|windows)(?:[-_ ]?(?:count|n))?)?\b[\s:=,|-]*(?:count)?[\s:=,|-]*\d+\b/i,
+  },
+  {
+    label: 'numeric interval coverage percentage',
+    pattern: /\b(?:interval[-_ ]?coverage|conformal[-_ ]?(?:interval[-_ ]?)?coverage)\b[\s:=,|-]*\d+(?:\.\d+)?\s*%?/i,
+  },
+  {
+    label: 'champion/challenger status',
+    pattern: /\bchampion\b[\s\S]{0,80}\bchallenger\b|\bchallenger\b[\s\S]{0,80}\bchampion\b/i,
+  },
+];
+
+function missingNumericForecastEvidence(value) {
+  const text = value ?? '';
+  return numericForecastEvidenceRules
+    .filter(({ pattern }) => !pattern.test(text))
+    .map(({ label }) => label);
+}
+
 const directIdentifierPatterns = [
   { label: 'email address', pattern: /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i },
   { label: 'North American phone number', pattern: /(?<![A-Za-z0-9])(?:\+?1[-.\s]?)?(?:\(\d{3}\)|\d{3})[-.\s]?\d{3}[-.\s]?\d{4}(?![A-Za-z0-9])/ },
@@ -233,6 +276,13 @@ if (diagnostics.length === 0) failures.push('At least one --diagnostic value is 
 const diagnosticRule = routeDiagnosticRules.get(route);
 if (diagnosticRule && !diagnosticRule.patterns.every((pattern) => pattern.test(diagnosticText))) {
   failures.push(`--diagnostic text for ${route} must include ${diagnosticRule.label}.`);
+}
+
+if (forecastEvidenceRoutes.has(route)) {
+  const missingForecastEvidence = missingNumericForecastEvidence(diagnosticText);
+  if (missingForecastEvidence.length > 0) {
+    failures.push(`--diagnostic text for ${route} must include numeric forecast evidence: ${missingForecastEvidence.join(', ')}.`);
+  }
 }
 
 for (const [key, value] of values.entries()) {

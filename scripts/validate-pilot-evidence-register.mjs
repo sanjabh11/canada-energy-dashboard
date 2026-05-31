@@ -513,6 +513,56 @@ function hasForecastBenchmarkDiagnostic(value) {
     && /champion|challenger/i.test(text);
 }
 
+const numericForecastEvidenceRules = [
+  {
+    label: 'numeric MAE value',
+    pattern: /\bmae\b[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric MAPE value',
+    pattern: /\bmape\b[\s:=,|-]*\d+(?:\.\d+)?\s*%?/i,
+  },
+  {
+    label: 'numeric RMSE value',
+    pattern: /\brmse\b[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric persistence baseline value',
+    pattern: /\bpersistence\b(?:[-_ ]?(?:baseline|mae|mape|rmse))?[\s:=,|-]*(?:mae|mape|rmse|baseline)?[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric seasonal-naive baseline value',
+    pattern: /\bseasonal[-_ ]?naive\b(?:[-_ ]?(?:baseline|mae|mape|rmse))?[\s:=,|-]*(?:mae|mape|rmse|baseline)?[\s:=,|-]*\d+(?:\.\d+)?\s*(?:mw|%)?/i,
+  },
+  {
+    label: 'numeric rolling split count',
+    pattern: /\brolling[-_ ]?(?:origin[-_ ]?)?(?:(?:split|splits|window|windows)(?:[-_ ]?(?:count|n))?)?\b[\s:=,|-]*(?:count)?[\s:=,|-]*\d+\b/i,
+  },
+  {
+    label: 'numeric interval coverage percentage',
+    pattern: /\b(?:interval[-_ ]?coverage|conformal[-_ ]?(?:interval[-_ ]?)?coverage)\b[\s:=,|-]*\d+(?:\.\d+)?\s*%?/i,
+  },
+  {
+    label: 'champion/challenger status',
+    pattern: /\bchampion\b[\s\S]{0,80}\bchallenger\b|\bchallenger\b[\s\S]{0,80}\bchampion\b/i,
+  },
+];
+
+function missingNumericForecastEvidence(value) {
+  const text = value ?? '';
+  return numericForecastEvidenceRules
+    .filter(({ pattern }) => !pattern.test(text))
+    .map(({ label }) => label);
+}
+
+function hasNumericForecastEvidence(value) {
+  return missingNumericForecastEvidence(value).length === 0;
+}
+
+function formatMissingNumericForecastEvidence(value) {
+  return missingNumericForecastEvidence(value).join(', ');
+}
+
 function hasRequiredConfidenceDiagnostic(route, value) {
   const rule = confidenceDiagnosticRulesByRoute.get(route);
   if (!rule) return true;
@@ -664,6 +714,10 @@ function scanLocalEvidenceArtifact(evidencePath, referencePath, row, rowNumber) 
   if (forecastEvidenceRoutes.has(row.route) && !hasForecastBenchmarkDiagnostic(text)) {
     failures.push(`Row ${rowNumber}: local forecast evidence artifact ${referencePath} must contain MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.`);
   }
+
+  if (forecastEvidenceRoutes.has(row.route) && !hasNumericForecastEvidence(text)) {
+    failures.push(`Row ${rowNumber}: local forecast evidence artifact ${referencePath} must contain numeric forecast evidence: ${formatMissingNumericForecastEvidence(text)}.`);
+  }
 }
 
 function isNonProduction95Register(filePath) {
@@ -795,6 +849,7 @@ function buildReadiness95Evaluation() {
   const hasAcceptedUtilityForecast = acceptedBuyerRows.some(({ row }) => (
     row.route === '/utility-demand-forecast'
     && hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')
+    && hasNumericForecastEvidence(row.benchmark_lift_or_diagnostic ?? '')
   ));
   const hasAcceptedTierEvidence = acceptedBuyerRows.some(({ row }) => (
     row.route === '/roi-calculator' || row.route === '/credit-banking'
@@ -867,8 +922,8 @@ function buildReadiness95Evaluation() {
     buildReportCheck(
       'Utility forecast proof pack',
       hasAcceptedUtilityForecast,
-      hasAcceptedUtilityForecast ? 'forecast diagnostics present' : 'missing accepted utility forecast row',
-      'Add accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.',
+      hasAcceptedUtilityForecast ? 'numeric forecast diagnostics present' : 'missing accepted utility forecast row with numeric diagnostics',
+      'Add accepted buyer-supplied utility demand forecast evidence with numeric MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage, and champion/challenger diagnostics.',
     ),
     buildReportCheck(
       'TIER CFO or credit-banking proof pack',
@@ -985,7 +1040,7 @@ function buildReadiness95Evaluation() {
   }
 
   if (!hasAcceptedUtilityForecast) {
-    aggregateFailures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.');
+    aggregateFailures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with numeric MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage, and champion/challenger diagnostics.');
   }
 
   if (!hasAcceptedTierEvidence) {
@@ -1267,6 +1322,12 @@ if (rows.length < 2) {
       failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.`);
     }
 
+    if (forecastEvidenceRoutes.has(row.route)
+      && (confidenceDelta ?? 0) > 0
+      && !hasNumericForecastEvidence(row.benchmark_lift_or_diagnostic ?? '')) {
+      failures.push(`Row ${rowNumber}: confidence-moving forecast evidence must include numeric forecast evidence: ${formatMissingNumericForecastEvidence(row.benchmark_lift_or_diagnostic ?? '')}.`);
+    }
+
     if ((confidenceDelta ?? 0) > 0 && evidenceGateOnlyRoutes.has(row.route)) {
       failures.push(`Row ${rowNumber}: ${row.route} is an evidence gate only and cannot increase market confidence directly.`);
     }
@@ -1312,6 +1373,7 @@ if (require95 && failures.length === 0) {
   const hasAcceptedUtilityForecast = acceptedBuyerRows.some(({ row }) => (
     row.route === '/utility-demand-forecast'
     && hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')
+    && hasNumericForecastEvidence(row.benchmark_lift_or_diagnostic ?? '')
   ));
   const hasAcceptedTierEvidence = acceptedBuyerRows.some(({ row }) => (
     row.route === '/roi-calculator' || row.route === '/credit-banking'
@@ -1359,7 +1421,7 @@ if (require95 && failures.length === 0) {
   ));
 
   if (!hasAcceptedUtilityForecast) {
-    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics.');
+    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with numeric MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage, and champion/challenger diagnostics.');
   }
 
   if (!hasAcceptedTierEvidence) {

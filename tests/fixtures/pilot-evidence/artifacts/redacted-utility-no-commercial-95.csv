@@ -1,7 +1,7 @@
 artifact_type,summary
 record_date,2026-05-30
 pii_screen_result,redacted
-utility_forecast,"redacted buyer utility forecast evidence with MAE MAPE RMSE persistence seasonal-naive rolling-origin split record interval coverage and champion/challenger diagnostics"
+utility_forecast,"redacted buyer utility forecast evidence with MAE 12.4 MW MAPE 3.8% RMSE 18.6 MW persistence MAE 21.3 MW seasonal-naive MAE 19.9 MW rolling-origin split count 4 interval coverage 91.2% and CEIP champion vs seasonal-naive challenger diagnostics"
 buyer_data_coverage_pct,90
 time_to_artifact_hours,36
 reviewer_acceptance,accepted

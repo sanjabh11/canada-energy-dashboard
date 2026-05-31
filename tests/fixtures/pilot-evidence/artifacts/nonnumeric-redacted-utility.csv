@@ -1,0 +1,9 @@
+metric,value
+mae,recorded
+mape,recorded
+rmse,recorded
+persistence,compared
+seasonal-naive,compared
+rolling-origin,split record
+interval coverage,reported
+champion/challenger,noted
