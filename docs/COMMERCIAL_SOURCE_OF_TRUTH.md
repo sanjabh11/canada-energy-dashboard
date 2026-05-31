@@ -125,6 +125,12 @@ pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```
 
+Before asking for explicit production approval, generate the current approval packet:
+
+```bash
+pnpm run report:production-approval-packet
+```
+
 After an explicitly approved production deploy, run:
 
 ```bash

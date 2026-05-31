@@ -24,6 +24,7 @@
     "check:release-readiness": "pnpm run check:claim-boundaries && pnpm run check:commercial-source && pnpm run check:pilot-evidence-95-fixture-gate && pnpm run check:pilot-evidence-template && pnpm run test:strategy-audit-slice && pnpm run check:public-metadata && pnpm run build:prod && pnpm run check:public-metadata -- --dist && pnpm run check:proof-pack-bundles",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
+    "report:production-approval-packet": "node scripts/report-production-approval-packet.mjs",
     "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
     "prepare:byo-csv-proof-artifact": "tsx scripts/byo-csv-proof-artifact.ts",
     "prepare:forecast-trust-report-artifact": "tsx scripts/forecast-trust-report-artifact.ts",

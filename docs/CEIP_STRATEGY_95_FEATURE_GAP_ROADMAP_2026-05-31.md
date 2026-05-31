@@ -178,7 +178,7 @@ This is not buyer proof. It is the desk-research budget logic that makes the sal
 
 | Phase | Objective | Tasks | Acceptance criteria | Verification | Confidence effect |
 |---|---|---|---|---|---|
-| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Build current local source; verify source and `dist/` metadata; deploy only after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Source, built `dist/`, hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `pnpm run check:release-readiness` before deploy, then `pnpm run check:post-deploy-live` after deploy. | Removes live proof-boundary cap. |
+| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Build current local source; verify source and `dist/` metadata; generate the production approval packet; deploy only after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Source, built `dist/`, hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `pnpm run check:release-readiness` and `pnpm run report:production-approval-packet` before deploy, then `pnpm run check:post-deploy-live` after deploy. | Removes live proof-boundary cap. |
 | B. Strategy doc and source alignment | Keep strategy direction current and single-source. | Land this roadmap; optionally link it from commercial source docs after review. | Roadmap reflects current checks and source anchors. | Markdown review and guard checks. | Improves handoff quality. |
 | C. Regulatory/TIER currency | Refresh policy-sensitive exports. | Add explicit source-currency checklist downloads for OEB/AUC filing packs and Alberta TIER CFO memo packs. | Outputs carry current source dates, outbound-use refresh gates, and do-not-claim boundaries. | Regulatory/TIER unit tests and source review. | Improves domain credibility; done locally, pending live deploy. |
 | D. Forecast hardening | Raise technical credibility before buyer pilots. | Mandatory failure notes, export evidence review, multi-dataset benchmark pack, and forecast trust retained-extract helper are implemented for public/sample and buyer-supplied evidence paths. | Forecast artifacts compare against baselines, explain baseline-win failures, emit validator-ready numeric trust diagnostics, and keep buyer-specific accuracy claims false until reviewer acceptance exists. | `pnpm run test:strategy-audit-slice`, TypeScript build, benchmark report generation, and retained-extract CLI validation. | Raises prediction credibility, not market confidence. |
@@ -191,7 +191,7 @@ This is not buyer proof. It is the desk-research budget logic that makes the sal
 |---|---|---|
 | Hosted copy can imply market leadership or compliance. | Still true on live Netlify root. | Deploy clean local metadata and verify live root. |
 | Hosted manifest and JSON-LD can leak old broad-platform claims. | Confirmed on current production static assets. | Verify `/manifest.json` and `/schema-webapp.jsonld` in every release check. |
-| A clean local repo can still leave stale production assets live. | Confirmed. | Run `check:release-readiness` before deploy and `check:post-deploy-live` after deploy. |
+| A clean local repo can still leave stale production assets live. | Confirmed. | Run `check:release-readiness` and `report:production-approval-packet` before deploy and `check:post-deploy-live` after deploy. |
 | Hosted proof-pack routes can pass document load but fail on stale CSP or Edge paths. | Confirmed by hosted browser smoke. | Keep current Netlify CSP and Edge function path normalization deployed before declaring live parity. |
 | Public samples can look like buyer history. | Guarded in docs and proof packs. | Keep public/buyer labels visible in all exports. |
 | Forecast metrics can overstate accuracy. | Mitigated for local/public evidence by baselines, mandatory baseline-win failure notes, multi-dataset benchmark packaging, scale-free seasonal MASE, interval calibration/sharpness diagnostics, and pilot validator. | Do not make stronger prediction claims until buyer evidence gate passes. |
@@ -209,7 +209,7 @@ This is not buyer proof. It is the desk-research budget logic that makes the sal
 
 ```text
 Implement CEIP live-parity release verification. Confirm local proof-pack metadata and claim-boundary guard still pass, deploy current source only after explicit production approval, then verify https://canada-energy.netlify.app/ root HTML, /manifest.json, and /schema-webapp.jsonld no longer contain stale broad-platform, compliance, or savings claims. Run focused route smoke for /utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, and /pilot-readiness. Do not change buyer-confidence ratings.
-Use `pnpm run check:release-readiness` before deploy, then `pnpm run check:post-deploy-live` after deploy.
+Use `pnpm run check:release-readiness` and `pnpm run report:production-approval-packet` before deploy, then `pnpm run check:post-deploy-live` after deploy.
 ```
 
 ### Phase C prompt
@@ -253,6 +253,7 @@ Production approval packet:
 | Gate | Current command evidence | Decision |
 |---|---|---|
 | Local release readiness | `pnpm run check:release-readiness` passed after this roadmap update and now includes the fixture-proof 95% buyer-evidence gate plus the focused 74-test strategy-audit slice. | Source is preflight-clean for an approved deploy. |
+| Production approval packet | `pnpm run report:production-approval-packet` generates a current local-readiness/live-metadata report without deploying. | Use it before asking for approval; it is not approval and does not move buyer confidence. |
 | Live metadata parity | `pnpm run check:live-public-metadata` failed on hosted root, manifest, and JSON-LD stale claims. | Live parity is not achieved. |
 | Approval boundary | No production deploy was performed in this phase. | Do not deploy without explicit production approval, then rerun `pnpm run check:post-deploy-live`. |
 | Buyer-confidence boundary | No real filled buyer register was found or validated. | Do not raise buyer-proven 95% market confidence until `validate:pilot-evidence --require-95 --evidence-root ...` passes against redacted buyer artifacts. |

@@ -44,6 +44,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 |---|---|---|---|
 | Commercial source-of-truth guard | `pnpm run check:commercial-source` | Active outreach, public positioning, root README, and stale historical docs could drift from the current proof-pack strategy. | Guardrail only; human review still required for new claims. |
 | Strategy roadmap structure guard | `pnpm run check:strategy-roadmap-doc` | The 95% roadmap could lose required sections, source anchors, top-10 rows, loophole questions, or production/buyer gates. | Structural proof only; it does not create buyer evidence or approve deployment. |
+| Production approval packet | `pnpm run report:production-approval-packet` | Local readiness and live stale-metadata blockers could be discussed from memory instead of current command evidence. | Generates an approval report only; it does not deploy or approve production. |
 | Top-10 route consistency guard | `pnpm run check:commercial-source` | A sellable proof pack could keep the right score while pointing to a stale or missing app route. | Proves route registration and allowlist consistency, not buyer adoption. |
 | Claim-boundary guard | `pnpm run check:claim-boundaries` | Unsafe phrases in active source/docs could remain unnoticed, including world-class, avalanche, production, certification, live-price, and AI/GPU overclaims. | Known-pattern check, not a legal or compliance review. |
 | Proof-pack identity guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A buyer evidence row could use a valid route but arbitrary `proof_pack_id`. | Canonical proof-pack identity is required before confidence can move. |
@@ -88,6 +89,12 @@ For the proof-pack browser smoke:
 
 ```bash
 pnpm run test:browser:phase6
+```
+
+Before asking for explicit production approval, generate the current approval packet:
+
+```bash
+pnpm run report:production-approval-packet
 ```
 
 After an explicitly approved production deploy, run the live parity gate:
