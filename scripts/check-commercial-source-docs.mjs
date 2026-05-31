@@ -20,6 +20,7 @@ const requiredActiveDocs = [
 ];
 
 const historicalDocsToGovern = [
+  'docs/CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md',
   'docs/DEEP_RESEARCH_GTM_STRATEGY_2026.md',
   'docs/DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md',
   'docs/Ph8_PRD.md',

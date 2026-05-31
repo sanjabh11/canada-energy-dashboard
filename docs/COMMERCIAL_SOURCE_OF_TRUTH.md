@@ -61,6 +61,7 @@ The following docs may contain useful research, but they are **not** current com
 
 | Historical file | Risk to watch |
 |---|---|
+| [CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md](./CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md) | Superseded May 31 audit with stale 70/100 cap, not-run verification status, old metadata/guard gaps, and old API/large-load top-10 placement. |
 | [DEEP_RESEARCH_GTM_STRATEGY_2026.md](./DEEP_RESEARCH_GTM_STRATEGY_2026.md) | Broad AI, real-time, and OCAP-compliant claims. |
 | [DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md](./DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md) | Enterprise compliance and SOC2 expectations. |
 | [Ph8_PRD.md](./Ph8_PRD.md) | AI-powered platform framing and broad PRD claims. |
