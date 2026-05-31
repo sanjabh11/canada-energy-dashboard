@@ -1,6 +1,7 @@
 export type BuyerSegment =
   | 'Utility'
   | 'Industrial'
+  | 'Security'
   | 'Indigenous/Community'
   | 'Municipal/Public Sector';
 
@@ -43,6 +44,7 @@ export interface SegmentNarrative {
 export const buyerSegments: BuyerSegment[] = [
   'Utility',
   'Industrial',
+  'Security',
   'Indigenous/Community',
   'Municipal/Public Sector',
 ];
@@ -100,8 +102,42 @@ const activeCommercialWedges: CommercialWedge[] = [
     currentState: 'Implemented metrics and route; now enforced in utility planning exports.',
   },
   {
+    id: 'ga-ici-5cp',
+    rank: 4,
+    title: 'Ontario GA/ICI 5CP Decision-Support Pack',
+    score: 4.2,
+    href: '/ga-ici-5cp',
+    proofHref: '/forecast-benchmarking',
+    proofLabel: 'IESO Peak Tracker source notes, top-five watchlist, historical backtest, and settlement-boundary caveats',
+    primaryBuyer: 'Ontario Class A industrials, energy managers, and peak-response advisors',
+    buyerSegment: 'Utility',
+    pain: 'ICI participants need to understand candidate coincident-peak exposure without treating a dashboard as an operational curtailment instruction.',
+    outcome: 'Turns Ontario-specific peak risk into a decision-support artifact with IESO source boundaries and no savings guarantee.',
+    whyNow: 'Global Adjustment exposure is high-stakes and Ontario-specific, while broad utility tools rarely package 5CP evidence for smaller buyers.',
+    timelineToValue: '1 to 2 weeks with redacted interval load and IESO peak-source notes.',
+    pilotScope: 'One base-period load extract, one candidate top-five watchlist, one peak-demand-factor estimate, and one reviewer boundary memo.',
+    currentState: 'Implemented route, IESO Peak Tracker ingestion, historical watchlist backtest, retained-extract helper, and no-savings/no-settlement guardrails.',
+  },
+  {
+    id: 'byo-csv-proof',
+    rank: 5,
+    title: 'Privacy-Preserving BYO-CSV Proof Generator',
+    score: 4.1,
+    href: '/byo-csv-proof',
+    proofHref: '/pilot-readiness',
+    proofLabel: 'Local CSV schema/completeness screen, direct-identifier guard, formula-risk screen, linkage warnings, and hashable retained extract',
+    primaryBuyer: 'Utility privacy, security, procurement, and planning reviewers',
+    buyerSegment: 'Security',
+    pain: 'Prospects hesitate to share utility files before they can prove what the artifact will retain and what stays outside the repo.',
+    outcome: 'Creates a local-first redacted evidence extract that can move a pilot forward without retaining raw cell values.',
+    whyNow: 'Data-sharing scrutiny is the main adoption blocker for utility proof packs; local-only redacted extracts reduce the first-pilot friction.',
+    timelineToValue: 'Same day for a redacted sample or local reviewer-approved CSV.',
+    pilotScope: 'One CSV schema/completeness proof, direct-identifier and formula-risk report, linkage-warning note, and SHA-256 evidence handle.',
+    currentState: 'Implemented route, browser-local CSV handling, retained-extract helper, direct-identifier blocking, spreadsheet formula-risk blocking, and quasi-identifier warnings.',
+  },
+  {
     id: 'asset-health',
-    rank: 6,
+    rank: 8,
     title: 'Asset Health Executive Capex Pack',
     score: 4.1,
     href: '/asset-health',
@@ -118,7 +154,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'tier-compliance',
-    rank: 4,
+    rank: 6,
     title: 'TIER Compliance Savings Pack',
     score: 4,
     href: '/roi-calculator',
@@ -135,7 +171,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'tier-credit-banking',
-    rank: 5,
+    rank: 7,
     title: 'TIER Credit Banking Audit Pack',
     score: 3.9,
     href: '/credit-banking',
@@ -152,7 +188,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'utility-security',
-    rank: 7,
+    rank: 9,
     title: 'Utility Security Procurement Pack',
     score: 4,
     href: '/utility-security',
@@ -169,7 +205,7 @@ const activeCommercialWedges: CommercialWedge[] = [
   },
   {
     id: 'shadow-billing',
-    rank: 8,
+    rank: 10,
     title: 'Shadow Billing Invoice Proof Pack',
     score: 3.8,
     href: '/shadow-billing',
@@ -184,26 +220,16 @@ const activeCommercialWedges: CommercialWedge[] = [
     pilotScope: 'One site portfolio, monthly delta CSV, field map, audit notes, and savings caveats.',
     currentState: 'Implemented proof route with uploaded-bill mode, monthly delta CSV, audit notes, field map, and energy-supply-only boundary.',
   },
-  {
-    id: 'consultant-api-data-pack',
-    rank: 10,
-    title: 'Consultant/API Canadian Energy Data Pack',
-    score: 3.1,
-    href: '/api-docs',
-    proofHref: '/dashboard',
-    proofLabel: 'Freshness matrix, endpoints, and CSV/notebook-ready data surfaces',
-    primaryBuyer: 'Energy consultants, analysts, integrators, enterprise IT reviewers',
-    buyerSegment: 'Utility',
-    pain: 'Consultants need reliable Canadian energy data extracts without rebuilding every dashboard or scrape from scratch.',
-    outcome: 'Packages API and CSV access as a practical analyst workflow instead of a broad developer platform claim.',
-    whyNow: 'Canadian utility, carbon, and market research work still depends on repeatable source freshness and exportable datasets.',
-    timelineToValue: '1 to 3 weeks with a scoped endpoint and export bundle.',
-    pilotScope: 'Five to ten endpoints, freshness matrix, sample CSV export, and notebook starter.',
-    currentState: 'Open API route exists; now has a curated endpoint freshness matrix and notebook starter around proof-pack workflows.',
-  },
+];
+
+export const topCommercialWedges: CommercialWedge[] = [...activeCommercialWedges].sort(
+  (left, right) => left.rank - right.rank,
+);
+
+export const reserveWedges: CommercialWedge[] = [
   {
     id: 'large-load-readiness',
-    rank: 9,
+    rank: 11,
     title: 'Large-Load/Data-Centre Readiness Overlay',
     score: 3.2,
     href: '/ai-datacentres',
@@ -218,16 +244,26 @@ const activeCommercialWedges: CommercialWedge[] = [
     pilotScope: 'One proposed load, one service territory, one assumptions and constraint summary.',
     currentState: 'Incubation proof exists with BYOP/storage sensitivity and no-approval guardrails; keep it as a planning overlay, not a lead product.',
   },
-];
-
-export const topCommercialWedges: CommercialWedge[] = [...activeCommercialWedges].sort(
-  (left, right) => left.rank - right.rank,
-);
-
-export const reserveWedges: CommercialWedge[] = [
+  {
+    id: 'consultant-api-data-pack',
+    rank: 12,
+    title: 'Consultant/API Canadian Energy Data Pack',
+    score: 3.1,
+    href: '/api-docs',
+    proofHref: '/dashboard',
+    proofLabel: 'Freshness matrix, endpoints, and CSV/notebook-ready data surfaces',
+    primaryBuyer: 'Energy consultants, analysts, integrators, enterprise IT reviewers',
+    buyerSegment: 'Utility',
+    pain: 'Consultants need reliable Canadian energy data extracts without rebuilding every dashboard or scrape from scratch.',
+    outcome: 'Packages API and CSV access as a practical analyst workflow instead of a broad developer platform claim.',
+    whyNow: 'Canadian utility, carbon, and market research work still depends on repeatable source freshness and exportable datasets.',
+    timelineToValue: '1 to 3 weeks with a scoped endpoint and export bundle.',
+    pilotScope: 'Five to ten endpoints, freshness matrix, sample CSV export, and notebook starter.',
+    currentState: 'Open API route exists; keep it as a technical follow-on until a buyer workflow demands endpoint freshness work.',
+  },
   {
     id: 'indigenous-reporting',
-    rank: 11,
+    rank: 13,
     title: 'Indigenous Funder and AICEI Reporting Pack',
     score: 3,
     href: '/funder-reporting',
@@ -244,7 +280,7 @@ export const reserveWedges: CommercialWedge[] = [
   },
   {
     id: 'utilityapi-sandbox',
-    rank: 12,
+    rank: 14,
     title: 'UtilityAPI / Green Button Sandbox',
     score: 2,
     href: '/utilityapi-demo',
@@ -261,7 +297,7 @@ export const reserveWedges: CommercialWedge[] = [
   },
   {
     id: 'retailer-hedging',
-    rank: 13,
+    rank: 15,
     title: 'Retailer Hedging and Rate Watchdog Tools',
     score: 2,
     href: '/hedging',
@@ -278,7 +314,7 @@ export const reserveWedges: CommercialWedge[] = [
   },
   {
     id: 'broad-dashboard',
-    rank: 14,
+    rank: 16,
     title: 'Broad Grid and Market Dashboard',
     score: 2,
     href: '/dashboard',
@@ -309,6 +345,18 @@ export const supportSurfaces: SupportSurface[] = [
     role: 'Trust layer for procurement and utility reviews',
   },
   {
+    id: 'ga-ici-5cp',
+    title: 'Ontario GA/ICI 5CP',
+    href: '/ga-ici-5cp',
+    role: 'Ontario-specific peak-risk decision-support wedge',
+  },
+  {
+    id: 'byo-csv-proof',
+    title: 'BYO-CSV Proof',
+    href: '/byo-csv-proof',
+    role: 'Local-first privacy proof before buyer data sharing',
+  },
+  {
     id: 'utilityapi-sandbox',
     title: 'UtilityAPI / Green Button Sandbox',
     href: '/utilityapi-demo',
@@ -337,6 +385,16 @@ export const segmentNarratives: SegmentNarrative[] = [
       'TIER CFO memo and savings pack',
       'Source-dated credit assumptions',
       'Direct-investment uncertainty review',
+    ],
+  },
+  {
+    id: 'Security',
+    headline: 'Data sharing needs proof before access.',
+    summary: 'Security and privacy reviewers need redacted, inspectable artifacts that separate local proof from production connector or certification claims.',
+    priorities: [
+      'BYO-CSV privacy proof',
+      'Utility security procurement pack',
+      'Hash-verified retained evidence extracts',
     ],
   },
   {

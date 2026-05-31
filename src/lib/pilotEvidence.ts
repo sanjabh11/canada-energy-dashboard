@@ -269,7 +269,7 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   {
     id: 'utility-forecast-benchmark',
     label: 'Accepted utility forecast evidence',
-    evidence: 'Buyer-supplied utility forecast row with MAE, MAPE, RMSE, persistence, and seasonal-naive diagnostics.',
+    evidence: 'Buyer-supplied utility forecast or forecast-trust row with numeric MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage percentage, and champion/challenger diagnostics.',
   },
   {
     id: 'tier-or-credit',
@@ -328,8 +328,8 @@ export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
   {
     id: 'benchmark-lift-or-diagnostic',
     label: 'Benchmark lift or diagnostic value',
-    requiredEvidence: 'Benchmark appendix with persistence, seasonal-naive, buyer baseline when supplied, and failure notes.',
-    howToMeasure: 'Record MAE, MAPE, RMSE, interval coverage, and whether CEIP beats or explains the baseline.',
+    requiredEvidence: 'Benchmark appendix or forecast trust retained extract with numeric persistence, seasonal-naive, buyer baseline when supplied, rolling-origin splits, interval coverage, champion/challenger decision, and failure notes.',
+    howToMeasure: 'Record MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage percentage, and whether CEIP beats or explains the baseline.',
     confidenceUse: 'Moves forecasting confidence only when the result is reviewable, even if a baseline wins.',
     route: '/forecast-benchmarking',
   },

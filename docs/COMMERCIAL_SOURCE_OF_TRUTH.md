@@ -30,19 +30,19 @@ The active outreach docs must use the current sellability-confidence ratings fro
 | 1 | Utility demand forecast planning pack | 4.5/5 |
 | 2 | Forecast benchmarking and provenance layer | 4.6/5 |
 | 3 | OEB/AUC regulatory filing packs | 4.3/5 |
-| 4 | TIER compliance savings pack | 4.0/5 |
-| 5 | TIER credit banking audit pack | 3.9/5 |
-| 6 | Asset health executive capex pack | 4.1/5 |
-| 7 | Utility security procurement pack | 4.0/5 |
-| 8 | Shadow billing invoice proof pack | 3.8/5 |
-| 9 | Large-load/data-centre readiness overlay | 3.2/5 |
-| 10 | Consultant/API Canadian energy data pack | 3.1/5 |
+| 4 | Ontario GA/ICI 5CP decision-support pack | 4.2/5 |
+| 5 | Privacy-preserving BYO-CSV proof generator | 4.1/5 |
+| 6 | TIER compliance savings pack | 4.0/5 |
+| 7 | TIER credit banking audit pack | 3.9/5 |
+| 8 | Asset health executive capex pack | 4.1/5 |
+| 9 | Utility security procurement pack | 4.0/5 |
+| 10 | Shadow billing invoice proof pack | 3.8/5 |
 
 ## Approved Lead Positioning
 
 Use this wording:
 
-> CEIP is a Canadian utility and Alberta TIER proof-pack product that turns forecasts, filing evidence, benchmark transparency, compliance scenarios, credit ledgers, asset triage, security review, billing checks, and large-load assumptions into buyer-ready artifacts.
+> CEIP is a Canadian utility and Alberta TIER proof-pack product that turns forecasts, filing evidence, benchmark transparency, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance scenarios, credit ledgers, asset triage, security review, and billing checks into buyer-ready artifacts.
 
 Do not replace this with:
 
@@ -124,14 +124,14 @@ pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTE
 Before any copy says CEIP has reached 95% strategy confidence, validate the filled buyer-evidence register with:
 
 ```bash
-pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md --route /utility-demand-forecast --record-date 2026-05-31 --pii-screen-result redacted --buyer-data-coverage-pct 90 --time-to-artifact-hours 36 --reviewer-role "utility planning reviewer" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status paid_pilot --claim-boundary "Buyer-supplied redacted planning support only." --do-not-claim "Do not claim production utility onboarding." --diagnostic "MAE, MAPE, RMSE recorded; persistence and seasonal-naive compared; rolling-origin split record, interval coverage, and champion/challenger note attached."
+pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md --route /utility-demand-forecast --record-date 2026-05-31 --pii-screen-result redacted --buyer-data-coverage-pct 90 --time-to-artifact-hours 36 --reviewer-role "utility planning reviewer" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status paid_pilot --claim-boundary "Buyer-supplied redacted planning support only." --do-not-claim "Do not claim production utility onboarding." --diagnostic "MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger."
 pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root path/to/redacted-artifacts
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```
 
-The evidence root must contain retained redacted artifacts only. Use `prepare:pilot-evidence-artifact` to create a text-inspectable extract and print the register-ready SHA-256 reference after direct-identifier and route-diagnostic checks. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing, changed, not text-inspectable, lacks the route-specific diagnostic evidence terms, contains positive overclaims, lacks retained support for the row record date, privacy-screen result, a strong commercial commitment status, buyer-data coverage percentage, time-to-artifact value, reviewer acceptance, reviewer feedback completion, or day-14 proceed decision, or if either the register row values or retained artifact text appear to contain direct identifiers such as emails, phone numbers, account/meter labels, postal codes, addresses, or credential assignments. Retain CSV, TSV, JSON, JSONL, Markdown, text, HTML, or YAML artifacts; for PDFs or scans, hash a redacted `.txt` or `.md` evidence extract instead of the opaque source file.
+The evidence root must contain retained redacted artifacts only. Use `prepare:pilot-evidence-artifact` to create a text-inspectable extract and print the register-ready SHA-256 reference after direct-identifier and route-diagnostic checks. For forecast trust reports generated from benchmark-pack JSON, prefer `prepare:forecast-trust-report-artifact` so the retained extract is generated from numeric benchmark metrics rather than hand-written keyword prose. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing, changed, not text-inspectable, lacks the route-specific diagnostic evidence terms, lacks numeric forecast evidence for forecast routes, contains positive overclaims, lacks retained support for the row record date, privacy-screen result, a strong commercial commitment status, buyer-data coverage percentage, time-to-artifact value, reviewer acceptance, reviewer feedback completion, or day-14 proceed decision, or if either the register row values or retained artifact text appear to contain direct identifiers such as emails, phone numbers, account/meter labels, postal codes, addresses, or credential assignments. Retain CSV, TSV, JSON, JSONL, Markdown, text, HTML, or YAML artifacts; for PDFs or scans, hash a redacted `.txt` or `.md` evidence extract instead of the opaque source file.
 
-The 95% gate requires accepted confidence-moving buyer evidence to be dated within the last 365 days; retained local artifact text supporting each accepted row's `record_date`; exact privacy-screen statuses with retained local artifact text supporting each `pii_screen_result`; independent reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; buyer/source claim-boundary wording; route-specific do-not-claim terms; no positive overclaims or direct identifiers in register evidence text; at least one accepted commercial commitment signal (`design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`) that is supported by retained local artifact text; retained local artifact text supporting each accepted row's `buyer_data_coverage_pct`, `time_to_artifact_hours`, `reviewer_acceptance`, `reviewer_feedback_status`, and `day_14_decision=proceed`; at least one accepted buyer proof pack delivered in 48 hours or less with no accepted confidence-moving row above 120 hours; and distinct locally verified SHA-256 evidence artifacts across accepted buyer proof-pack rows.
+The 95% gate requires accepted confidence-moving buyer evidence to be dated within the last 365 days; retained local artifact text supporting each accepted row's `record_date`; exact privacy-screen statuses with retained local artifact text supporting each `pii_screen_result`; independent reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; buyer/source claim-boundary wording; route-specific do-not-claim terms; numeric forecast evidence for forecast rows; no positive overclaims or direct identifiers in register evidence text; at least one accepted commercial commitment signal (`design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`) that is supported by retained local artifact text; retained local artifact text supporting each accepted row's `buyer_data_coverage_pct`, `time_to_artifact_hours`, `reviewer_acceptance`, `reviewer_feedback_status`, and `day_14_decision=proceed`; at least one accepted buyer proof pack delivered in 48 hours or less with no accepted confidence-moving row above 120 hours; and distinct locally verified SHA-256 evidence artifacts across accepted buyer proof-pack rows.
 
 5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.
 

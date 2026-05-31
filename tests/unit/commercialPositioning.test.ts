@@ -11,30 +11,32 @@ describe('commercial positioning realignment', () => {
       'utility-demand-forecast',
       'forecast-benchmarking',
       'regulatory-filing',
+      'ga-ici-5cp',
+      'byo-csv-proof',
       'tier-compliance',
       'tier-credit-banking',
       'asset-health',
       'utility-security',
       'shadow-billing',
-      'large-load-readiness',
-      'consultant-api-data-pack',
     ]);
     expect(topCommercialWedges.map((wedge) => [wedge.id, wedge.score])).toEqual([
       ['utility-demand-forecast', 4.5],
       ['forecast-benchmarking', 4.6],
       ['regulatory-filing', 4.3],
+      ['ga-ici-5cp', 4.2],
+      ['byo-csv-proof', 4.1],
       ['tier-compliance', 4.0],
       ['tier-credit-banking', 3.9],
       ['asset-health', 4.1],
       ['utility-security', 4.0],
       ['shadow-billing', 3.8],
-      ['large-load-readiness', 3.2],
-      ['consultant-api-data-pack', 3.1],
     ]);
     expect(Math.max(...topCommercialWedges.map((wedge) => wedge.score))).toBeLessThanOrEqual(4.6);
     expect(topCommercialWedges[0].currentState).toContain('public-sample manifest');
     expect(topCommercialWedges[1].proofLabel).toContain('MAE');
     expect(reserveWedges.map((wedge) => wedge.id)).toContain('indigenous-reporting');
+    expect(reserveWedges.map((wedge) => wedge.id)).toContain('large-load-readiness');
+    expect(reserveWedges.map((wedge) => wedge.id)).toContain('consultant-api-data-pack');
   });
 
   it('keeps UtilityAPI and broad dashboards behind the proof-pack USP', () => {

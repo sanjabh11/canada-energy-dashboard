@@ -2,7 +2,7 @@
 
 ## Proof-Pack Positioning
 
-CEIP should be described as Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, compliance savings, credit ledgers, asset decisions, security review, billing checks, and large-load assumptions into buyer-ready artifacts.
+CEIP should be described as Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance savings, credit ledgers, asset decisions, security review, and billing checks into buyer-ready artifacts.
 
 Use these templates only when the named proof pack can be shown on the current route. Do not imply utility production onboarding, deployed customer history, real-time TIER price feeds, certified Indigenous data-sovereignty infrastructure, AI superiority, GPU superiority, or regulator approval.
 
@@ -17,13 +17,13 @@ These are current sellability-confidence ratings from the active strategy audit,
 | 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 | Lead when the buyer owns load forecast, DSP, growth, DER, or large-load planning pain. |
 | 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 | Use as trust proof attached to every forecast conversation. |
 | 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead when the pain is preparing or reviewing filing evidence. |
-| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Lead when the buyer owns Alberta compliance cost decisions. |
-| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 | Pair with the TIER CFO memo when credits, expiries, or liability coverage are in scope. |
-| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
-| 7 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.0/5 | Attach when sharing load data or connector review is discussed. |
-| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead for invoice comparison and audit-trail pilots. |
-| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 | Use as planning overlay only, not engineering approval. |
-| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 | Use as technical follow-on after a workflow problem is clear. |
+| 4 | Ontario GA/ICI 5CP decision-support pack | Ontario Class A industrials, energy managers, advisors | `/ga-ici-5cp` | 4.2/5 | Lead when the buyer owns Ontario peak-risk or ICI exposure questions. |
+| 5 | Privacy-preserving BYO-CSV proof generator | Utility privacy, security, procurement, planning reviewers | `/byo-csv-proof` | 4.1/5 | Attach before asking for sensitive files or connector approval. |
+| 6 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 | Lead when the buyer owns Alberta compliance cost decisions. |
+| 7 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 | Pair with the TIER CFO memo when credits, expiries, or liability coverage are in scope. |
+| 8 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead for CSV-first replace/defer and capex prioritization discussions. |
+| 9 | Utility security procurement pack | Security/procurement reviewers | `/utility-security` | 4.0/5 | Attach when sharing load data or connector review is discussed. |
+| 10 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead for invoice comparison and audit-trail pilots. |
 
 ## Utility Forecast Outreach
 
@@ -80,6 +80,38 @@ CEIP includes a CSV-first asset health pack for utilities and municipal operator
 The output is an executive capex summary and prioritized replacement CSV.
 
 Would a 20-minute walkthrough of `/asset-health` be useful for one asset class or feeder-area example?
+
+- Sanjay
+
+## Ontario GA/ICI 5CP Outreach
+
+Subject: Ontario 5CP decision-support note, not a savings guarantee
+
+Hi {FirstName},
+
+CEIP now has a bounded GA/ICI 5CP route for Ontario Class A peak-risk review.
+
+The useful artifact is a decision-support note with IESO source notes, candidate top-five windows, a peak-demand-factor estimate, and explicit no-savings/no-settlement boundaries.
+
+For {Organization}, I think the fit is {one-sentence ICI or peak-response planning question}.
+
+Would a short walkthrough of `/ga-ici-5cp` be useful?
+
+- Sanjay
+
+## BYO-CSV Privacy Proof Outreach
+
+Subject: Local CSV proof before sharing sensitive utility files
+
+Hi {FirstName},
+
+CEIP has a local BYO-CSV proof route for privacy and security reviewers who want to understand what an artifact retains before sharing sensitive files.
+
+The route produces a redacted schema/completeness report, direct-identifier screen, spreadsheet formula-risk screen, linkage-warning note, and hashable retained extract without retaining raw cell values in the report.
+
+For {Organization}, I think the fit is {one-sentence data-sharing blocker or reviewer concern}.
+
+Would a short walkthrough of `/byo-csv-proof` be useful before any data request?
 
 - Sanjay
 
@@ -224,5 +256,5 @@ Would a short walkthrough of `/ai-datacentres` and `/utility-demand-forecast` he
 - Buyer can name a decision owner and a 14-day review path.
 - A visible CEIP route can demonstrate the proof pack today.
 - The pilot can use public-system sample, starter data, anonymized upload, or buyer-supplied data with explicit source disclosure.
-- The artifact is one of: planning memo, benchmark appendix, filing pack, security questionnaire, capex CSV, CFO memo, credit allocation schedule, expiry-risk memo, invoice delta report, reporting export, endpoint/freshness pack, readiness summary.
+- The artifact is one of: planning memo, benchmark appendix, filing pack, GA/ICI decision-support note, BYO-CSV privacy proof, security questionnaire, capex CSV, CFO memo, credit allocation schedule, expiry-risk memo, invoice delta report, reporting export, endpoint/freshness pack, readiness summary.
 - Reject or park the lead if the buyer needs production connector approval, engineering sign-off, real-time credit trading, certified sovereignty infrastructure, or AI/GPU superiority proof.

@@ -58,13 +58,13 @@ const currentSellabilityRatingsByDoc = [
       ['Utility demand forecast planning pack', '4.5/5'],
       ['Forecast benchmarking and provenance layer', '4.6/5'],
       ['OEB/AUC regulatory filing packs', '4.3/5'],
+      ['Ontario GA/ICI 5CP decision-support pack', '4.2/5'],
+      ['Privacy-preserving BYO-CSV proof generator', '4.1/5'],
       ['TIER compliance savings pack', '4.0/5'],
       ['TIER credit banking audit pack', '3.9/5'],
       ['Asset health executive capex pack', '4.1/5'],
       ['Utility security procurement pack', '4.0/5'],
       ['Shadow billing invoice proof pack', '3.8/5'],
-      ['Large-load/data-centre readiness overlay', '3.2/5'],
-      ['Consultant/API Canadian energy data pack', '3.1/5'],
     ],
   },
   {
@@ -73,13 +73,13 @@ const currentSellabilityRatingsByDoc = [
       ['Utility demand forecast planning pack', '4.5/5'],
       ['Forecast benchmarking and provenance layer', '4.6/5'],
       ['OEB/AUC regulatory filing packs', '4.3/5'],
+      ['Ontario GA/ICI 5CP decision-support pack', '4.2/5'],
+      ['Privacy-preserving BYO-CSV proof generator', '4.1/5'],
       ['TIER compliance savings pack', '4.0/5'],
       ['TIER credit banking audit pack', '3.9/5'],
       ['Asset health executive capex pack', '4.1/5'],
       ['Utility security procurement pack', '4.0/5'],
       ['Shadow billing invoice proof pack', '3.8/5'],
-      ['Large-load/data-centre readiness overlay', '3.2/5'],
-      ['Consultant/API Canadian energy data pack', '3.1/5'],
     ],
   },
   {
@@ -88,13 +88,13 @@ const currentSellabilityRatingsByDoc = [
       ['`utility_forecast_planning_pack`', '4.5/5'],
       ['`forecast_benchmark_provenance`', '4.6/5'],
       ['`regulatory_filing_pack`', '4.3/5'],
+      ['`ga_ici_5cp_decision_support_pack`', '4.2/5'],
+      ['`byo_csv_privacy_proof_pack`', '4.1/5'],
       ['`tier_cfo_savings_pack`', '4.0/5'],
       ['`tier_credit_banking_audit_pack`', '3.9/5'],
       ['`asset_health_capex_pack`', '4.1/5'],
       ['`utility_security_procurement_pack`', '4.0/5'],
       ['`shadow_billing_invoice_pack`', '3.8/5'],
-      ['`large_load_readiness_overlay`', '3.2/5'],
-      ['`consultant_api_data_pack`', '3.1/5'],
     ],
   },
   {
@@ -103,13 +103,13 @@ const currentSellabilityRatingsByDoc = [
       ['Utility demand forecast planning pack', '4.5/5'],
       ['Forecast benchmarking and provenance layer', '4.6/5'],
       ['OEB/AUC regulatory filing packs', '4.3/5'],
+      ['Ontario GA/ICI 5CP decision-support pack', '4.2/5'],
+      ['Privacy-preserving BYO-CSV proof generator', '4.1/5'],
       ['TIER compliance savings pack', '4.0/5'],
       ['TIER credit banking audit pack', '3.9/5'],
       ['Asset health executive capex pack', '4.1/5'],
       ['Utility security procurement pack', '4.0/5'],
       ['Shadow billing invoice proof pack', '3.8/5'],
-      ['Large-load/data-centre readiness overlay', '3.2/5'],
-      ['Consultant/API Canadian energy data pack', '3.1/5'],
     ],
   },
   {
@@ -118,19 +118,22 @@ const currentSellabilityRatingsByDoc = [
       ['Utility demand forecast planning pack', '4.5/5'],
       ['Forecast benchmarking and provenance layer', '4.6/5'],
       ['OEB/AUC regulatory filing packs', '4.3/5'],
+      ['Ontario GA/ICI 5CP decision-support pack', '4.2/5'],
+      ['Privacy-preserving BYO-CSV proof generator', '4.1/5'],
       ['TIER compliance savings pack', '4.0/5'],
       ['TIER credit banking audit pack', '3.9/5'],
       ['Asset health executive capex pack', '4.1/5'],
       ['Utility security procurement pack', '4.0/5'],
       ['Shadow billing invoice proof pack', '3.8/5'],
-      ['Large-load/data-centre readiness overlay', '3.2/5'],
-      ['Consultant/API Canadian energy data pack', '3.1/5'],
     ],
   },
 ];
 
 const overconfidentOutreachRatings = ['4.7/5', '4.8/5', '4.9/5'];
 const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evidence-register\.csv --require-95(?! --evidence-root)/;
+const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
+const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
+const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');
 const appRoutesPath = path.join(repoRoot, 'src/App.tsx');
 const pilotEvidenceValidatorPath = path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs');
@@ -139,25 +142,25 @@ const currentCommercialWedgeScores = [
   ['utility-demand-forecast', 4.5],
   ['forecast-benchmarking', 4.6],
   ['regulatory-filing', 4.3],
+  ['ga-ici-5cp', 4.2],
+  ['byo-csv-proof', 4.1],
   ['tier-compliance', 4.0],
   ['tier-credit-banking', 3.9],
   ['asset-health', 4.1],
   ['utility-security', 4.0],
   ['shadow-billing', 3.8],
-  ['large-load-readiness', 3.2],
-  ['consultant-api-data-pack', 3.1],
 ];
 const currentCommercialWedgeRoutes = [
   ['utility-demand-forecast', '/utility-demand-forecast', '/forecast-benchmarking'],
   ['forecast-benchmarking', '/forecast-benchmarking', '/utility-demand-forecast'],
   ['regulatory-filing', '/regulatory-filing', '/utility-demand-forecast'],
+  ['ga-ici-5cp', '/ga-ici-5cp', '/forecast-benchmarking'],
+  ['byo-csv-proof', '/byo-csv-proof', '/pilot-readiness'],
   ['tier-compliance', '/roi-calculator', '/credit-banking'],
   ['tier-credit-banking', '/credit-banking', '/roi-calculator'],
   ['asset-health', '/asset-health', '/regulatory-filing'],
   ['utility-security', '/utility-security', '/utility-demand-forecast'],
   ['shadow-billing', '/shadow-billing', '/roi-calculator'],
-  ['large-load-readiness', '/ai-datacentres', '/utility-demand-forecast'],
-  ['consultant-api-data-pack', '/api-docs', '/dashboard'],
 ];
 const routeAliasesThatMustRemainLive = ['/solutions', '/pilot-readiness', '/pilot-evidence'];
 
@@ -186,6 +189,9 @@ if (!existsSync(sourceDocPath)) {
       const activeDoc = readFileSync(absoluteActiveDocPath, 'utf8');
       if (filledNinetyFiveCommandWithoutEvidenceRoot.test(activeDoc)) {
         failures.push(`${docPath} has a 95% filled-register command without --evidence-root; 95% claims must recompute retained redacted artifact hashes.`);
+      }
+      if (staleForecastDiagnosticPhrase.test(activeDoc)) {
+        failures.push(`${docPath} contains the stale keyword-only forecast diagnostic example; use numeric MAE, MAPE, RMSE, baseline, rolling-split, and interval-coverage evidence.`);
       }
     }
   }
@@ -252,10 +258,30 @@ if (!existsSync(sourceDocPath)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md has a 95% filled-register command without --evidence-root.');
   }
 
+  if (staleForecastDiagnosticPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md contains the stale keyword-only forecast diagnostic example; use numeric forecast evidence.');
+  }
+
+  if (!numericForecastEvidencePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention numeric forecast evidence for the 95% pilot-evidence workflow.');
+  }
+
+  if (!forecastTrustArtifactHelperPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
+  }
+
   if (existsSync(pilotEvidenceSourcePath)) {
     const pilotEvidenceSource = readFileSync(pilotEvidenceSourcePath, 'utf8');
     if (filledNinetyFiveCommandWithoutEvidenceRoot.test(pilotEvidenceSource)) {
       failures.push('src/lib/pilotEvidence.ts has a 95% filled-register command without --evidence-root.');
+    }
+  }
+
+  const pilotEvidenceDocPath = path.join(repoRoot, 'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md');
+  if (existsSync(pilotEvidenceDocPath)) {
+    const pilotEvidenceDoc = readFileSync(pilotEvidenceDocPath, 'utf8');
+    if (!forecastTrustArtifactHelperPhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
     }
   }
 

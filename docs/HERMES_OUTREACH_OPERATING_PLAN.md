@@ -38,13 +38,15 @@ Ratings are current sellability-confidence ratings from the strategy confidence 
 | 1 | `utility_forecast_planning_pack` | Utility planners, LDCs, REAs, consultants | `/utility-demand-forecast` | 4.5/5 | Lead |
 | 2 | `forecast_benchmark_provenance` | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 | Attach to every forecast claim |
 | 3 | `regulatory_filing_pack` | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 | Lead |
-| 4 | `tier_cfo_savings_pack` | Alberta emitters, EPCs, compliance advisors | `/roi-calculator` | 4.0/5 | Lead for industrial compliance |
-| 5 | `tier_credit_banking_audit_pack` | Alberta emitters, CFOs, compliance leads | `/credit-banking` | 3.9/5 | Pair with TIER CFO memo |
-| 6 | `asset_health_capex_pack` | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead when capex/replace/defer pain is explicit |
-| 7 | `utility_security_procurement_pack` | Security, privacy, procurement reviewers | `/utility-security` | 4.0/5 | Attach when data sharing or procurement appears |
-| 8 | `shadow_billing_invoice_pack` | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead when invoice audit pain is explicit |
-| 9 | `large_load_readiness_overlay` | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 | Overlay only |
-| 10 | `consultant_api_data_pack` | Consultants, analysts, integrators | `/api-docs` | 3.1/5 | Follow-on after workflow fit |
+| 4 | `ga_ici_5cp_decision_support_pack` | Ontario Class A industrials, energy managers, advisors | `/ga-ici-5cp` | 4.2/5 | Lead when Ontario peak-risk pain is explicit |
+| 5 | `byo_csv_privacy_proof_pack` | Utility privacy, security, procurement, planning reviewers | `/byo-csv-proof` | 4.1/5 | Attach before data-sharing asks |
+| 6 | `tier_cfo_savings_pack` | Alberta emitters, EPCs, compliance advisors | `/roi-calculator` | 4.0/5 | Lead for industrial compliance |
+| 7 | `tier_credit_banking_audit_pack` | Alberta emitters, CFOs, compliance leads | `/credit-banking` | 3.9/5 | Pair with TIER CFO memo |
+| 8 | `asset_health_capex_pack` | Asset managers, municipal utilities | `/asset-health` | 4.1/5 | Lead when capex/replace/defer pain is explicit |
+| 9 | `utility_security_procurement_pack` | Security, privacy, procurement reviewers | `/utility-security` | 4.0/5 | Attach when data sharing or procurement appears |
+| 10 | `shadow_billing_invoice_pack` | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 | Lead when invoice audit pain is explicit |
+| Reserve | `large_load_readiness_overlay` | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 | Overlay only |
+| Reserve | `consultant_api_data_pack` | Consultants, analysts, integrators | `/api-docs` | 3.1/5 | Follow-on after workflow fit |
 | Reserve | `indigenous_funder_aicei_pack` | Indigenous energy/project teams | `/funder-reporting`, `/aicei` | 3.2/5 | Park until partner-backed review |
 
 ## Variant IDs
@@ -56,6 +58,8 @@ Ratings are current sellability-confidence ratings from the strategy confidence 
 - `asset_capex`: asset replace/defer capex pack.
 - `tier_cfo`: TIER source-dated CFO memo.
 - `tier_credit_banking`: TIER credit allocation and expiry-risk audit pack.
+- `ga_ici_5cp`: Ontario GA/ICI 5CP decision-support pack.
+- `byo_csv_privacy`: BYO-CSV privacy proof pack.
 - `security_procurement`: utility security questionnaire pack.
 - `shadow_billing`: invoice comparison proof pack.
 - `indigenous_reporting`: funder/AICEI reporting pack.

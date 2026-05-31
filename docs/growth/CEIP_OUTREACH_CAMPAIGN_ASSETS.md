@@ -2,9 +2,9 @@
 
 ## Campaign Thesis
 
-CEIP should be sold as Canadian utility and TIER proof packs, not as a broad dashboard collection. The lead promise is a buyer-ready artifact: forecast planning memo, benchmark appendix, filing pack, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, invoice comparison report, large-load readiness summary, or endpoint freshness matrix.
+CEIP should be sold as Canadian utility and TIER proof packs, not as a broad dashboard collection. The lead promise is a buyer-ready artifact: forecast planning memo, benchmark appendix, filing pack, Ontario GA/ICI peak-risk decision-support note, local BYO-CSV privacy proof, CFO compliance memo, credit banking audit pack, capex recommendation, security questionnaire, or invoice comparison report.
 
-Lead with utility planning, benchmark/provenance, OEB/AUC filing, TIER CFO, TIER credit banking, asset capex, utility security, and shadow billing. Use large-load and API/data-pack work when the workflow clearly matches. Keep Indigenous/AICEI reporting as a reserve/support lane until partner-backed review exists.
+Lead with utility planning, benchmark/provenance, OEB/AUC filing, Ontario GA/ICI, BYO-CSV privacy proof, TIER CFO, TIER credit banking, asset capex, utility security, and shadow billing. Use large-load and API/data-pack work as reserve/support when the workflow clearly matches. Keep Indigenous/AICEI reporting as a reserve/support lane until partner-backed review exists.
 
 ## Commercial Targeting Rank
 
@@ -14,12 +14,14 @@ Lead with utility planning, benchmark/provenance, OEB/AUC filing, TIER CFO, TIER
 | 2 | LDCs and REAs with load growth, DER, DSP, or large-load planning pressure | `/utility-demand-forecast` | Planning memo with benchmark/provenance attachment | Clear utility pain and strong fit with CEIP's Canadian planning wedge. |
 | 3 | Regulatory consultants and utility filing teams | `/regulatory-filing` | OEB/AUC filing evidence pack | Structured reviewer artifacts are easier to sell than another analytics page. |
 | 4 | Forecast reviewers and planning leads | `/forecast-benchmarking` | Benchmark and provenance appendix | Trust layer strengthens every forecast conversation. |
-| 5 | Alberta emitters, CFOs, and compliance leads with credit inventory | `/credit-banking` | TIER credit banking audit pack | Ledger allocation, expiry risk, and liability coverage are concrete diligence artifacts. |
-| 6 | Municipal utilities and asset managers | `/asset-health` | Asset health executive capex pack | Replace/defer recommendations are board-ready when data is available. |
-| 7 | Utility security, privacy, and procurement reviewers | `/utility-security` | Security procurement questionnaire | Useful attachment for any data-sharing conversation. |
-| 8 | Municipal and public-sector energy managers | `/shadow-billing` | Invoice comparison proof pack | Billing deltas and audit notes are easy to review in a pilot. |
-| 9 | Utilities and data-centre advisors | `/ai-datacentres` | Large-load readiness overlay | Keep as assumptions-only planning support, not technical approval. |
-| 10 | Energy analysts and integrators | `/api-docs` | Canadian energy data pack | Useful follow-on after a specific endpoint/freshness need is identified. |
+| 5 | Ontario Class A industrials and peak-response advisors | `/ga-ici-5cp` | GA/ICI 5CP decision-support pack | Ontario-specific peak-risk evidence is narrow, high-stakes, and defensible when kept bounded. |
+| 6 | Utility privacy, security, and procurement reviewers | `/byo-csv-proof` | BYO-CSV privacy proof pack | Local redacted proof reduces the data-sharing blocker before asking for sensitive files. |
+| 7 | Alberta emitters, CFOs, and compliance leads with credit inventory | `/credit-banking` | TIER credit banking audit pack | Ledger allocation, expiry risk, and liability coverage are concrete diligence artifacts. |
+| 8 | Municipal utilities and asset managers | `/asset-health` | Asset health executive capex pack | Replace/defer recommendations are board-ready when data is available. |
+| 9 | Utility security, privacy, and procurement reviewers | `/utility-security` | Security procurement questionnaire | Useful attachment for any data-sharing conversation. |
+| 10 | Municipal and public-sector energy managers | `/shadow-billing` | Invoice comparison proof pack | Billing deltas and audit notes are easy to review in a pilot. |
+| Reserve | Utilities and data-centre advisors | `/ai-datacentres` | Large-load readiness overlay | Keep as assumptions-only planning support, not technical approval. |
+| Reserve | Energy analysts and integrators | `/api-docs` | Canadian energy data pack | Useful follow-on after a specific endpoint/freshness need is identified. |
 | Reserve | Indigenous energy and project reporting teams | `/funder-reporting`, `/aicei` | Funder/AICEI reporting pack | Valuable but trust-sensitive; use bounded partner-review language until partner-backed review exists. |
 
 ## Route And Rating Matrix
@@ -31,13 +33,15 @@ These are current sellability-confidence ratings, not target ratings. They must 
 | 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | `/utility-demand-forecast` | 4.5/5 |
 | 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | `/forecast-benchmarking` | 4.6/5 |
 | 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | `/regulatory-filing` | 4.3/5 |
-| 4 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
-| 5 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 |
-| 6 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 |
-| 7 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.0/5 |
-| 8 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 |
-| 9 | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 |
-| 10 | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 |
+| 4 | Ontario GA/ICI 5CP decision-support pack | Ontario Class A industrials, energy managers | `/ga-ici-5cp` | 4.2/5 |
+| 5 | Privacy-preserving BYO-CSV proof generator | Utility privacy, security, procurement reviewers | `/byo-csv-proof` | 4.1/5 |
+| 6 | TIER compliance savings pack | Alberta industrial emitters, EPCs | `/roi-calculator` | 4.0/5 |
+| 7 | TIER credit banking audit pack | Alberta industrial emitters, CFOs | `/credit-banking` | 3.9/5 |
+| 8 | Asset health executive capex pack | Asset managers, municipal utilities | `/asset-health` | 4.1/5 |
+| 9 | Utility security procurement pack | Utility security/procurement reviewers | `/utility-security` | 4.0/5 |
+| 10 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | `/shadow-billing` | 3.8/5 |
+| Reserve | Large-load/data-centre readiness overlay | Utilities, data-centre advisors | `/ai-datacentres` | 3.2/5 |
+| Reserve | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 |
 | Reserve | Indigenous funder and AICEI reporting pack | Indigenous project teams | `/funder-reporting`, `/aicei` | 3.2/5 |
 
 ## Lead Lists By Lane
@@ -48,6 +52,8 @@ These are current sellability-confidence ratings, not target ratings. They must 
 | LDCs and REAs | Ontario LDC planning teams, Alberta REAs, municipal utilities, distribution planners | `/utility-demand-forecast` | Forecast planning memo with benchmark and source labels. |
 | Regulatory filing support | Utility regulatory affairs teams, rate-case consultants, filing reviewers | `/regulatory-filing` | OEB/AUC-ready evidence pack and reviewer checklist. |
 | Forecast QA | Planning directors, load forecast managers, energy model reviewers | `/forecast-benchmarking` | Baseline comparison and provenance appendix before trusting forecast claims. |
+| Ontario GA/ICI peak-risk | Class A participants, energy managers, peak-response advisors | `/ga-ici-5cp` | Decision-support pack with IESO source notes, top-five watchlist, and no-savings boundary. |
+| BYO-CSV privacy proof | Utility privacy, security, procurement, planning reviewers | `/byo-csv-proof` | Local redacted CSV proof before sensitive data-sharing discussions. |
 | Industrial TIER | Alberta industrial emitters, EPCs, carbon/compliance advisors | `/roi-calculator`, `/credit-banking` | CFO memo plus credit allocation and expiry-risk audit pack. |
 | Municipal billing and assets | Municipal energy managers, public housing energy teams, city facility teams | `/shadow-billing`, `/asset-health` | Invoice delta report or asset replace/defer summary. |
 | Utility security/procurement | Security reviewers, privacy officers, procurement teams | `/utility-security` | Questionnaire and evidence matrix before data-sharing discussions. |
@@ -60,6 +66,8 @@ These are current sellability-confidence ratings, not target ratings. They must 
 - **Forecast proof pack:** "Can your planner or client reviewer see scenarios, assumptions, benchmarks, warnings, and source labels in one artifact?"
 - **Filing proof pack:** "Can the forecast, asset, reliability, and assumption evidence be handed to a reviewer without rebuilding the story manually?"
 - **Benchmark proof pack:** "Does the forecast beat simple baselines, and can the reviewer see that without trusting marketing copy?"
+- **GA/ICI proof pack:** "Can an Ontario Class A buyer inspect candidate 5CP exposure with IESO source notes and no savings guarantee?"
+- **BYO-CSV proof pack:** "Can a privacy reviewer see schema, completeness, identifier, formula-risk, and linkage diagnostics before sharing sensitive files?"
 - **Asset proof pack:** "Can a municipal utility explain replace/defer decisions from CSV data without implying SCADA or predictive maintenance?"
 - **TIER proof pack:** "Can a CFO compare fund payment, credit assumptions, and direct-investment assumptions without treating the tool as a live market feed?"
 - **TIER credit banking proof pack:** "Can a compliance lead see allocation, expiry risk, and remaining liability coverage without treating CEIP as a broker or registry system?"
@@ -231,6 +239,8 @@ Acceptable wording:
 - Utility forecast proof pack: `/utility-demand-forecast`
 - Regulatory filing pack: `/regulatory-filing`
 - Benchmark/provenance appendix: `/forecast-benchmarking`
+- Ontario GA/ICI 5CP decision-support pack: `/ga-ici-5cp`
+- BYO-CSV privacy proof pack: `/byo-csv-proof`
 - Security procurement questionnaire: `/utility-security`
 - Asset capex pack: `/asset-health`
 - TIER CFO memo: `/roi-calculator`
