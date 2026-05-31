@@ -31,15 +31,16 @@ export function CommercialLandingPage() {
     >
       <SEOHead
         title="CEIP | Alberta-First Energy Workflows for Utilities, Industrials, and Indigenous Projects"
-        description="Commercial landing page for CEIP's top ten sellable Canadian utility and energy proof packs: forecasts, filings, benchmarks, asset decisions, security review, billing, TIER, reporting, APIs, and large-load readiness."
+        description="Commercial landing page for CEIP's top ten sellable Canadian utility and energy proof packs: forecasts, benchmark trust reports, filings, Ontario GA/ICI 5CP decision support, BYO-CSV privacy proof, TIER, credit banking, asset triage, security review, and billing checks."
         path="/"
         keywords={[
           'Alberta energy software',
           'utility demand forecasting',
+          'Ontario GA ICI 5CP',
+          'BYO CSV privacy proof',
           'TIER compliance',
           'regulatory filing templates',
-          'asset health index',
-          'Indigenous energy reporting',
+          'forecast trust report',
         ]}
       />
 
@@ -93,8 +94,9 @@ export function CommercialLandingPage() {
                 </h1>
                 <p className="mt-6 max-w-3xl text-lg leading-8 text-slate-300">
                   CEIP now leads with ten proof packs that buyers can understand in under ninety seconds:
-                  utility planning, regulatory filing, benchmark proof, asset-health justification, and procurement-ready trust.
-                  Prediction stays central, but only where it changes a filing, savings estimate, capital plan, security review, or funder report.
+                  utility planning, forecast trust reports, regulatory filing, Ontario GA/ICI peak-risk support,
+                  BYO-CSV privacy proof, TIER decisions, credit banking, asset triage, security review, and billing checks.
+                  Prediction stays central, but only where it changes a filing, decision-support memo, capital plan, security review, or invoice proof.
                 </p>
 
                 <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -239,7 +241,7 @@ export function CommercialLandingPage() {
               The new primary journey points buyers to proof pages, not to generic surface area.
             </h2>
             <p className="mt-4 max-w-3xl text-base leading-7 text-slate-300">
-              Forecast benchmarking, utility-security disclosure, and program-specific reporting proof stay visible.
+              Forecast benchmarking, utility-security disclosure, and pilot-readiness proof stay visible.
               The broad dashboard, sandbox connector demo, and illustrative API-doc surface are intentionally secondary.
             </p>
 
@@ -281,7 +283,7 @@ export function CommercialLandingPage() {
                   <TrustCell
                     icon={<Zap className="h-4 w-4 text-amber-200" />}
                     title="Prediction is still central"
-                    body="It is now framed as the decision engine inside filings, savings cases, maintenance prioritization, and grant reporting."
+                    body="It is now framed as the decision engine inside filings, GA/ICI support, TIER cases, maintenance prioritization, and billing checks."
                   />
                   <TrustCell
                     icon={<Shield className="h-4 w-4 text-cyan-200" />}

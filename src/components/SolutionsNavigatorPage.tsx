@@ -37,8 +37,9 @@ export function SolutionsNavigatorPage() {
         keywords={[
           'energy software use cases',
           'utility pilots Alberta',
+          'Ontario GA ICI 5CP',
+          'BYO CSV privacy proof',
           'industrial compliance software',
-          'Indigenous energy reporting',
           'utility asset health',
         ]}
       />
@@ -79,7 +80,7 @@ export function SolutionsNavigatorPage() {
                 </h1>
                 <p className="mt-6 text-lg leading-8 text-slate-300">
                   This page is the commercial navigator. It is designed to get a utility planner, industrial compliance lead,
-                  Indigenous project team, or municipal operator to the right wedge with one click and one credible proof path.
+                  privacy reviewer, Ontario peak-response advisor, or municipal operator to the right wedge with one click and one credible proof path.
                 </p>
               </div>
 

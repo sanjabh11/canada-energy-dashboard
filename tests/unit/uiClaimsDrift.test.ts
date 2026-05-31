@@ -13,8 +13,10 @@ const publicClaimSurfaceFiles = [
   'src/lib/seo.ts',
   'src/components/SEOHead.tsx',
   'src/components/AboutPage.tsx',
+  'src/components/CommercialLandingPage.tsx',
   'src/components/ContactPage.tsx',
   'src/components/EmployersPage.tsx',
+  'src/components/SolutionsNavigatorPage.tsx',
   'src/components/TIERROICalculator.tsx',
   'src/components/TrainingCoordinatorsPage.tsx',
 ];
@@ -105,6 +107,21 @@ describe('UI claims drift regressions', () => {
         expect(source, `${file} contains ${bannedClaim.label}`).not.toMatch(bannedClaim.pattern);
       }
     }
+  });
+
+  it('keeps commercial entry-page metadata aligned to the active top ten', () => {
+    const landingSource = readFileSync(path.join(process.cwd(), 'src/components/CommercialLandingPage.tsx'), 'utf8');
+    const solutionsSource = readFileSync(path.join(process.cwd(), 'src/components/SolutionsNavigatorPage.tsx'), 'utf8');
+    const roadmapSource = readFileSync(path.join(process.cwd(), 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md'), 'utf8');
+
+    expect(landingSource).toContain('Ontario GA/ICI 5CP decision support');
+    expect(landingSource).toContain('BYO-CSV privacy proof');
+    expect(solutionsSource).toContain('Ontario GA ICI 5CP');
+    expect(solutionsSource).toContain('BYO CSV privacy proof');
+    expect(roadmapSource).toContain('Large-load and API are reserve/support surfaces');
+
+    expect(landingSource).not.toContain('APIs, and large-load readiness');
+    expect(roadmapSource).not.toContain('billing, large-load, API packs');
   });
 
   it('keeps active runtime copy free of unbounded commercial claims', () => {
