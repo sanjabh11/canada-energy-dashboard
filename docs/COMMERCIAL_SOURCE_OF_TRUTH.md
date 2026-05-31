@@ -13,6 +13,7 @@ Use these files for current CEIP positioning:
 | [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Strategy confidence is 90-92%; 95% needs buyer-supplied pilot evidence. |
 | [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Adversarial confidence audit. | Do not convert confidence estimates into market-outcome claims. |
+| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
 | [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
