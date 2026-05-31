@@ -15,6 +15,8 @@ const routeBudgets = [
   { label: 'UtilityDemandForecastPage', pattern: /^UtilityDemandForecastPage-.*\.js$/, rawKiB: 380, gzipKiB: 50 },
   { label: 'ForecastBenchmarkingPage', pattern: /^ForecastBenchmarkingPage-.*\.js$/, rawKiB: 110, gzipKiB: 15 },
   { label: 'RegulatoryFilingExport', pattern: /^RegulatoryFilingExport-.*\.js$/, rawKiB: 90, gzipKiB: 15 },
+  { label: 'GaIciPeakPredictorPage', pattern: /^GaIciPeakPredictorPage-.*\.js$/, rawKiB: 60, gzipKiB: 12 },
+  { label: 'ByoCsvProofPage', pattern: /^ByoCsvProofPage-.*\.js$/, rawKiB: 80, gzipKiB: 18 },
   { label: 'TIERROICalculator', pattern: /^TIERROICalculator-.*\.js$/, rawKiB: 110, gzipKiB: 20 },
   { label: 'CreditBankingDashboard', pattern: /^CreditBankingDashboard-.*\.js$/, rawKiB: 70, gzipKiB: 15 },
   { label: 'AssetHealthDashboard', pattern: /^AssetHealthDashboard-.*\.js$/, rawKiB: 140, gzipKiB: 22 },
