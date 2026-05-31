@@ -3,6 +3,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
+import { validateExistingEvidencePathInsideRoot } from './lib/evidence-path-safety.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -677,11 +678,6 @@ function parseEvidenceReference(value) {
   };
 }
 
-function isInsideDirectory(candidatePath, rootPath) {
-  const relativePath = path.relative(rootPath, candidatePath);
-  return relativePath === '' || (!relativePath.startsWith('..') && !path.isAbsolute(relativePath));
-}
-
 function verifyLocalEvidenceHash(row, rowNumber) {
   if (!evidenceRoot) return;
 
@@ -700,13 +696,13 @@ function verifyLocalEvidenceHash(row, rowNumber) {
   }
 
   const evidencePath = path.resolve(evidenceRoot, referencePath);
-  if (!isInsideDirectory(evidencePath, evidenceRoot)) {
-    failures.push(`Row ${rowNumber}: evidence_file_reference must stay inside --evidence-root.`);
-    return;
-  }
-
   if (!existsSync(evidencePath)) {
     failures.push(`Row ${rowNumber}: evidence artifact not found under --evidence-root: ${referencePath}`);
+    return;
+  }
+  const pathSafetyFailure = validateExistingEvidencePathInsideRoot({ evidenceRoot, evidencePath });
+  if (pathSafetyFailure) {
+    failures.push(`Row ${rowNumber}: ${pathSafetyFailure}`);
     return;
   }
 

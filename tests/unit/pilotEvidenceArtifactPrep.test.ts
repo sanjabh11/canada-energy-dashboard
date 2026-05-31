@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -172,6 +172,23 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('appears to contain email address');
     expect(() => readFileSync(path.join(evidenceRoot, 'identifier-leak.md'), 'utf8')).toThrow();
+  });
+
+  it('rejects artifact writes that would follow a symlink outside the evidence root', async () => {
+    const evidenceRoot = makeTempRoot();
+    const outsideRoot = makeTempRoot();
+    const outsideArtifactPath = path.join(outsideRoot, 'outside-artifact.md');
+    writeFileSync(outsideArtifactPath, 'original outside artifact', 'utf8');
+    symlinkSync(outsideArtifactPath, path.join(evidenceRoot, 'escape.md'));
+
+    const result = await runNodeScript(prepScriptPath, [
+      ...buildValidPrepArgs(evidenceRoot, 'escape.md'),
+      '--force',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--artifact-file resolves outside --evidence-root; symlink escapes are not allowed');
+    expect(readFileSync(outsideArtifactPath, 'utf8')).toBe('original outside artifact');
   });
 
   it('rejects route diagnostics that would be too thin for retained evidence validation', async () => {

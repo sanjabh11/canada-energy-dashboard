@@ -1,9 +1,13 @@
+import { createHash } from 'node:crypto';
 import { spawn } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 vi.setConfig({ testTimeout: 15_000 });
+const tempRoots: string[] = [];
 
 const fixture95Env = {
   CEIP_ALLOW_FIXTURE_95_FOR_TESTS: '1',
@@ -46,6 +50,56 @@ async function runValidator(
     });
   });
 }
+
+async function runValidatorAtPath(
+  registerPath: string,
+  extraArgs: string[] = [],
+  envOverrides: NodeJS.ProcessEnv = {},
+) {
+  return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(process.execPath, [
+      scriptPath,
+      registerPath,
+      ...extraArgs,
+    ], {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        ...envOverrides,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (status) => {
+      resolve({ status, stdout, stderr });
+    });
+  });
+}
+
+function makeTempRoot() {
+  const root = mkdtempSync(path.join(tmpdir(), 'ceip-pilot-validator-'));
+  tempRoots.push(root);
+  return root;
+}
+
+afterEach(() => {
+  while (tempRoots.length > 0) {
+    const root = tempRoots.pop();
+    if (root) rmSync(root, { recursive: true, force: true });
+  }
+});
 
 describe('pilot evidence register validator', () => {
   it('accepts buyer-supplied evidence with accepted reviewer feedback', async () => {
@@ -496,6 +550,57 @@ describe('pilot evidence register validator', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('Pilot evidence register validation passed');
     expect(result.stderr).toBe('');
+  });
+
+  it('rejects evidence references that resolve outside the evidence root through a symlink', async () => {
+    const evidenceRoot = makeTempRoot();
+    const outsideRoot = makeTempRoot();
+    const outsideArtifactPath = path.join(outsideRoot, 'outside-redacted-load.csv');
+    const linkedArtifactPath = path.join(evidenceRoot, 'linked-redacted-load.csv');
+    const artifactText = readFileSync(
+      path.join(process.cwd(), 'tests/fixtures/pilot-evidence/artifacts/local-redacted-load.csv'),
+      'utf8',
+    );
+    writeFileSync(outsideArtifactPath, artifactText, 'utf8');
+    symlinkSync(outsideArtifactPath, linkedArtifactPath);
+    const sha256 = createHash('sha256').update(artifactText).digest('hex');
+    const registerPath = path.join(evidenceRoot, 'register.csv');
+    writeFileSync(registerPath, [
+      'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes',
+      [
+        '2026-05-30',
+        'utility',
+        'LDC consultant',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        'CEIP pilot owner',
+        'anonymized hourly load',
+        'buyer_supplied_anonymized',
+        `linked-redacted-load.csv#sha256=${sha256}`,
+        'redacted',
+        'none',
+        'forecast planning pack',
+        '2.5',
+        '82',
+        'MAE 12.4 MW MAPE 3.8% RMSE 18.6 MW persistence MAE 21.3 MW seasonal-naive MAE 19.9 MW rolling-origin split count 4 interval coverage 91.2% CEIP champion vs seasonal-naive challenger',
+        'planning reviewer',
+        'complete',
+        'accepted',
+        'Buyer supplied data only and no production onboarding claim',
+        'Do not claim utility approval or live telemetry',
+        'proceed',
+        '0.3',
+        'Schedule paid pilot review',
+        'Accepted anonymized buyer evidence with symlink hash reference',
+      ].join(','),
+      '',
+    ].join('\n'), 'utf8');
+
+    const result = await runValidatorAtPath(registerPath, ['--evidence-root', evidenceRoot]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('evidence_file_reference resolves outside --evidence-root; symlink escapes are not allowed');
   });
 
   it('rejects confidence-moving local evidence when the referenced artifact hash does not match', async () => {

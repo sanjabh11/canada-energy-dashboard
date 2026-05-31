@@ -3,6 +3,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
 import {
   buildByoCsvProofReport,
   buildByoCsvRetainedEvidenceExtract,
@@ -115,9 +116,8 @@ if (csvFile && !existsSync(csvFile)) failures.push(`--csv-file not found: ${path
 if (artifactFile.startsWith('/') || path.isAbsolute(artifactFile)) failures.push('--artifact-file must be relative to --evidence-root.');
 if (artifactPath && evidenceRoot) {
   const relativeArtifactPath = path.relative(evidenceRoot, artifactPath);
-  if (relativeArtifactPath.startsWith('..') || path.isAbsolute(relativeArtifactPath)) {
-    failures.push('--artifact-file must stay inside --evidence-root.');
-  }
+  const pathSafetyFailure = validateWritableArtifactPathInsideRoot({ evidenceRoot, artifactPath });
+  if (pathSafetyFailure) failures.push(pathSafetyFailure);
   const extension = path.extname(artifactPath).toLowerCase();
   if (!allowedExtensions.has(extension)) failures.push('--artifact-file must be a .md or .txt retained extract.');
   if (existsSync(artifactPath) && !force) failures.push(`Artifact already exists: ${relativeArtifactPath} (rerun with --force to overwrite).`);

@@ -3,6 +3,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -252,10 +253,8 @@ if (evidenceRoot && artifactPath) {
   if (!artifactFile || artifactFile.startsWith('/') || path.isAbsolute(artifactFile)) {
     failures.push('--artifact-file must be a relative file path inside --evidence-root.');
   }
-  const relativePath = path.relative(evidenceRoot, artifactPath);
-  if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-    failures.push('--artifact-file must stay inside --evidence-root.');
-  }
+  const pathSafetyFailure = validateWritableArtifactPathInsideRoot({ evidenceRoot, artifactPath });
+  if (pathSafetyFailure) failures.push(pathSafetyFailure);
   const extension = path.extname(artifactPath).toLowerCase();
   if (!allowedExtensions.has(extension)) {
     failures.push(`--artifact-file must use a text-inspectable extension: ${Array.from(allowedExtensions).join(', ')}.`);
