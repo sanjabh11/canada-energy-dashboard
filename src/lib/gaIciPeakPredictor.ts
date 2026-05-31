@@ -39,6 +39,24 @@ export interface IciFiveCpDecisionSupportReport {
   do_not_claim: string[];
 }
 
+export interface IciFiveCpRetainedEvidenceExtractParams {
+  recordDate: string;
+  sourceLabel: string;
+  buyerDataCoveragePct: number;
+  timeToArtifactHours: number;
+  reviewerRole: string;
+  reviewerAcceptance: 'accepted' | 'approved' | 'signed';
+  reviewerFeedbackStatus: 'complete' | 'accepted' | 'approved' | 'signed';
+  day14Decision: 'proceed' | 'park' | 'pivot' | 'reject' | 'pending';
+  commercialCommitmentStatus: 'none' | 'design_partner_signed' | 'paid_pilot' | 'purchase_order' | 'letter_of_intent';
+  route?: string;
+  proofPackId?: string;
+  piiScreenResult?: 'redacted' | 'screened' | 'no personal data' | 'no personal data or meter identifiers found';
+  artifactTitle?: string;
+  claimBoundary?: string;
+  doNotClaim?: string;
+}
+
 function round(value: number, digits = 6): number {
   const factor = 10 ** digits;
   return Math.round(value * factor) / factor;
@@ -162,5 +180,64 @@ export function iciFiveCpReportToMarkdown(report: IciFiveCpDecisionSupportReport
     '',
     '## Sources',
     ...report.source_urls.map((url) => `- ${url}`),
+  ].join('\n');
+}
+
+export function buildIciFiveCpRetainedEvidenceExtract(
+  report: IciFiveCpDecisionSupportReport,
+  params: IciFiveCpRetainedEvidenceExtractParams,
+): string {
+  const topFiveWithLoadCount = report.top_five_peak_hours.filter((peak) => peak.customer_load_mw !== null).length;
+  const peakTrackerSource = report.source_urls.find((url) => /peaktracker/i.test(url)) ?? report.source_urls[0] ?? 'IESO source not supplied';
+  const claimBoundary = params.claimBoundary
+    ?? 'Buyer supplied redacted Ontario load planning support only; GA/ICI output is decision support workflow only.';
+  const doNotClaim = params.doNotClaim
+    ?? 'No savings guarantee, final IESO settlement, eligibility determination, or operational curtailment instruction.';
+
+  return [
+    `# ${params.artifactTitle ?? 'CEIP Ontario GA/ICI 5CP retained evidence extract'}`,
+    '',
+    'This retained artifact is a redacted text-inspectable extract for the pilot evidence gate.',
+    'Sensitive originals, facility names, account numbers, and meter identifiers stay outside the repository.',
+    '',
+    `record_date: ${params.recordDate}`,
+    `route: ${params.route ?? '/ga-ici-5cp'}`,
+    `proof_pack_id: ${params.proofPackId ?? 'ga_ici_5cp_decision_support_pack'}`,
+    `source_label: ${params.sourceLabel}`,
+    `pii_screen_result: ${params.piiScreenResult ?? 'redacted'}`,
+    `buyer_data_coverage_pct: ${params.buyerDataCoveragePct}`,
+    `time_to_artifact_hours: ${params.timeToArtifactHours}`,
+    `reviewer_role: ${params.reviewerRole}`,
+    `reviewer_acceptance: ${params.reviewerAcceptance}`,
+    `reviewer_feedback_status: ${params.reviewerFeedbackStatus}`,
+    `day_14_decision: ${params.day14Decision}`,
+    `commercial_commitment_status: ${params.commercialCommitmentStatus}`,
+    `commercial_commitment_evidence: ${params.commercialCommitmentStatus}`,
+    `claim_boundary: ${claimBoundary}`,
+    `do_not_claim: ${doNotClaim}`,
+    '',
+    '## GA/ICI Diagnostic Summary',
+    `- top five 5CP coincident peak windows: ${report.top_five_peak_hours.length}`,
+    `- top-five customer load coverage: ${topFiveWithLoadCount} of ${report.top_five_peak_hours.length}`,
+    `- peak demand factor PDF estimate: ${report.estimated_peak_demand_factor ?? 'not available'}`,
+    `- IESO peak tracker source: ${peakTrackerSource}`,
+    `- decision-support settlement boundary: ${report.claim_boundary}`,
+    `- base period: ${report.base_period.start} to ${report.base_period.end}`,
+    '',
+    '## Top Five Peak Windows',
+    '| Rank | Timestamp | Ontario demand MW | Customer load MW | Estimated PDF | Status |',
+    '|---:|---|---:|---:|---:|---|',
+    ...report.top_five_peak_hours.map((peak) => [
+      peak.rank,
+      peak.timestamp,
+      peak.ontario_demand_mw.toFixed(2),
+      peak.customer_load_mw?.toFixed(3) ?? 'missing',
+      peak.estimated_peak_demand_factor?.toFixed(6) ?? 'missing',
+      peak.status ?? 'candidate',
+    ].join(' | ')).map((row) => `| ${row} |`),
+    '',
+    '## Source URLs',
+    ...report.source_urls.map((url) => `- ${url}`),
+    '',
   ].join('\n');
 }

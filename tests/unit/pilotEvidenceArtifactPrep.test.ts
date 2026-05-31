@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const prepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
 const byoCsvPrepScriptPath = path.join(process.cwd(), 'scripts/byo-csv-proof-artifact.ts');
+const gaIciPrepScriptPath = path.join(process.cwd(), 'scripts/ga-ici-5cp-artifact.ts');
 const tsxBinPath = path.join(process.cwd(), 'node_modules/.bin/tsx');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const registerHeader = 'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes';
@@ -289,5 +290,140 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
+  });
+
+  it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {
+    const evidenceRoot = makeTempRoot();
+    const systemPeaksPath = path.join(evidenceRoot, 'ieso-peaks.csv');
+    const customerLoadPath = path.join(evidenceRoot, 'redacted-load.csv');
+    writeFileSync(systemPeaksPath, [
+      'timestamp,ontario_demand_mw,status,source',
+      '2026-07-01T18:00:00.000Z,22000,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-02T18:00:00.000Z,21750,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-03T18:00:00.000Z,21500,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-04T18:00:00.000Z,21250,forecast,https://www.ieso.ca/peaktracker',
+      '2026-07-05T18:00:00.000Z,21000,forecast,https://www.ieso.ca/peaktracker',
+    ].join('\n'), 'utf8');
+    writeFileSync(customerLoadPath, [
+      'timestamp,load_mw',
+      '2026-07-01T18:00:00.000Z,8',
+      '2026-07-02T18:00:00.000Z,7.8',
+      '2026-07-03T18:00:00.000Z,7.6',
+      '2026-07-04T18:00:00.000Z,7.4',
+      '2026-07-05T18:00:00.000Z,7.2',
+    ].join('\n'), 'utf8');
+
+    const prepResult = await runTsxScript(gaIciPrepScriptPath, [
+      '--system-peaks-file', systemPeaksPath,
+      '--customer-load-file', customerLoadPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'ga-ici-retained.md',
+      '--base-period-start', '2026-05-01',
+      '--base-period-end', '2027-04-30',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '84',
+      '--time-to-artifact-hours', '18',
+      '--reviewer-role', 'utility planning reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+    ]);
+
+    expect(prepResult.status).toBe(0);
+    expect(prepResult.stderr).toBe('');
+    expect(prepResult.stdout).toContain('GA/ICI 5CP proof artifact prepared.');
+    expect(prepResult.stdout).toContain('evidence_file_reference: ga-ici-retained.md#sha256=');
+
+    const artifactPath = path.join(evidenceRoot, 'ga-ici-retained.md');
+    const artifactText = readFileSync(artifactPath, 'utf8');
+    const sha256 = createHash('sha256').update(artifactText).digest('hex');
+    expect(prepResult.stdout).toContain(`ga-ici-retained.md#sha256=${sha256}`);
+    expect(artifactText).toContain('top five 5CP coincident peak windows: 5');
+    expect(artifactText).toContain('peak demand factor PDF estimate:');
+    expect(artifactText).toContain('IESO peak tracker source: https://www.ieso.ca/peaktracker');
+    expect(artifactText).toContain('decision-support settlement boundary:');
+    expect(artifactText).not.toMatch(/guaranteed savings/i);
+
+    const registerPath = path.join(evidenceRoot, 'register.csv');
+    writeFileSync(registerPath, [
+      registerHeader,
+      [
+        '2026-05-30',
+        'utility',
+        'Ontario Class A advisor',
+        'ga_ici_5cp_decision_support_pack',
+        '/ga-ici-5cp',
+        'CEIP pilot owner',
+        'redacted Ontario interval load',
+        'buyer_supplied_anonymized',
+        `ga-ici-retained.md#sha256=${sha256}`,
+        'redacted',
+        'letter_of_intent',
+        '5CP decision-support retained extract',
+        '18',
+        '84',
+        '"Top five 5CP coincident peak windows mapped; peak demand factor PDF estimate 0.000352; IESO peak tracker source attached; decision-support settlement boundary accepted"',
+        'utility planning reviewer',
+        'complete',
+        'accepted',
+        'Buyer supplied redacted planning support only and decision support workflow only',
+        '"Do not claim guaranteed savings, final IESO settlement result, eligibility determination, or operational curtailment instruction"',
+        'proceed',
+        '0.2',
+        'Schedule peak-window review',
+        'Accepted bounded GA ICI decision-support evidence',
+      ].join(','),
+      '',
+    ].join('\n'), 'utf8');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [
+      registerPath,
+      '--evidence-root',
+      evidenceRoot,
+    ]);
+
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
+    expect(validationResult.stderr).toBe('');
+  });
+
+  it('rejects GA/ICI direct identifier columns before writing retained artifacts', async () => {
+    const evidenceRoot = makeTempRoot();
+    const systemPeaksPath = path.join(evidenceRoot, 'ieso-peaks.csv');
+    const customerLoadPath = path.join(evidenceRoot, 'identified-load.csv');
+    writeFileSync(systemPeaksPath, [
+      'timestamp,ontario_demand_mw,status,source',
+      '2026-07-01T18:00:00.000Z,22000,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-02T18:00:00.000Z,21750,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-03T18:00:00.000Z,21500,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-04T18:00:00.000Z,21250,forecast,https://www.ieso.ca/peaktracker',
+      '2026-07-05T18:00:00.000Z,21000,forecast,https://www.ieso.ca/peaktracker',
+    ].join('\n'), 'utf8');
+    writeFileSync(customerLoadPath, [
+      'timestamp,load_mw,meter_id',
+      '2026-07-01T18:00:00.000Z,8,MTR-001',
+    ].join('\n'), 'utf8');
+
+    const result = await runTsxScript(gaIciPrepScriptPath, [
+      '--system-peaks-file', systemPeaksPath,
+      '--customer-load-file', customerLoadPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'identified-ga-ici.md',
+      '--base-period-start', '2026-05-01',
+      '--base-period-end', '2027-04-30',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '84',
+      '--time-to-artifact-hours', '18',
+      '--reviewer-role', 'utility planning reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('direct identifier column "meter_id"');
+    expect(() => readFileSync(path.join(evidenceRoot, 'identified-ga-ici.md'), 'utf8')).toThrow();
   });
 });
