@@ -16,7 +16,8 @@ function readArg(name, fallback = null) {
 const planRelativePath = readArg('--plan', '/Users/sanjayb/.windsurf/plans/ceip-95-strategy-feature-gap-76d135.md');
 const roadmapRelativePath = readArg('--roadmap', 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
 const outPath = readArg('--out');
-const includeChecks = args.includes('--include-checks');
+const failOnLocalChecks = args.includes('--fail-on-local-checks');
+const includeChecks = args.includes('--include-checks') || failOnLocalChecks;
 const generatedAt = new Date().toISOString();
 
 const planPath = path.resolve(repoRoot, planRelativePath);
@@ -238,6 +239,7 @@ const rows = [
     hasAll(packageJson, [
       'check:release-readiness',
       'check:commercial-source',
+      'check:strategy-completion-audit',
       'check:strategy-roadmap-doc',
       'check:strategy-source-anchors',
       'test:strategy-audit-slice',
@@ -288,6 +290,7 @@ const summary = rows.reduce(
   },
   {},
 );
+const hasIncompleteRows = rows.some((row) => row.status === 'missing' || row.status === 'incomplete');
 
 const rowMarkdown = rows
   .map(
@@ -367,4 +370,8 @@ if (outPath) {
   console.log(`Strategy completion audit written to ${resolvedOutPath}`);
 } else {
   console.log(markdown);
+}
+
+if (failOnLocalChecks && (failedRequiredLocalChecks.length > 0 || hasIncompleteRows)) {
+  process.exit(1);
 }

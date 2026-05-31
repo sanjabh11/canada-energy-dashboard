@@ -1,0 +1,107 @@
+import { spawn } from 'node:child_process';
+import { chmodSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+
+const scriptPath = path.join(process.cwd(), 'scripts/report-strategy-completion-audit.mjs');
+vi.setConfig({ testTimeout: 20_000 });
+
+function shellSingleQuote(value: string) {
+  return `'${value.replace(/'/g, "'\\''")}'`;
+}
+
+function writeExecutable(filePath: string, content: string) {
+  writeFileSync(filePath, content);
+  chmodSync(filePath, 0o755);
+}
+
+async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
+  const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-completion-audit-'));
+  const fakePnpmPath = path.join(tempDir, 'pnpm');
+
+  writeExecutable(
+    fakePnpmPath,
+    [
+      '#!/bin/sh',
+      'case "$*" in',
+      '  *check:strategy-roadmap-doc*)',
+      '    echo "Strategy roadmap document check passed."',
+      '    exit 0',
+      '    ;;',
+      '  *check:commercial-source*)',
+      '    echo "Commercial source-of-truth check passed."',
+      '    exit 0',
+      '    ;;',
+      '  *check:strategy-source-anchors*)',
+      '    if [ "$CEIP_FAKE_SOURCE_ANCHOR_STATUS" = "fail" ]; then',
+      '      echo "Fetch-failed anchors: 1"',
+      '      exit 1',
+      '    fi',
+      '    echo "Live-verified anchors: 9"',
+      '    echo "Manual-verified anchors: 4"',
+      '    exit 0',
+      '    ;;',
+      '  *check:live-public-metadata*)',
+      '    echo "Public metadata check failed:"',
+      '    echo "- stale metadata phrase found"',
+      '    exit 1',
+      '    ;;',
+      'esac',
+      `exec ${shellSingleQuote(process.execPath)} "$@"`,
+      '',
+    ].join('\n'),
+  );
+
+  try {
+    return await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+      const child = spawn(process.execPath, [scriptPath, '--include-checks', '--fail-on-local-checks'], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          CEIP_FAKE_SOURCE_ANCHOR_STATUS: sourceAnchorStatus,
+          PATH: `${tempDir}:${process.env.PATH ?? ''}`,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.setEncoding('utf8');
+      child.stderr.setEncoding('utf8');
+      child.stdout.on('data', (chunk) => {
+        stdout += chunk;
+      });
+      child.stderr.on('data', (chunk) => {
+        stderr += chunk;
+      });
+      child.on('error', reject);
+      child.on('close', (status) => {
+        resolve({ status, stdout, stderr });
+      });
+    });
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
+describe('strategy completion audit', () => {
+  it('exits nonzero when a required local source gate fails', async () => {
+    const result = await runCompletionAudit('fail');
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('The completion audit found failing local verification gates: Strategy source anchors.');
+    expect(result.stdout).toContain('- Command: `pnpm run check:strategy-source-anchors`');
+    expect(result.stdout).toContain('Fetch-failed anchors: 1');
+  });
+
+  it('keeps live metadata failure as an external gate when local checks pass', async () => {
+    const result = await runCompletionAudit('pass');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
+    expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
+    expect(result.stdout).toContain('Public metadata check failed:');
+  });
+});

@@ -122,6 +122,7 @@ pnpm run check:pilot-evidence-template
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 pnpm run check:strategy-roadmap-doc
 pnpm run report:strategy-completion-audit
+pnpm run check:strategy-completion-audit
 pnpm run report:strategy-source-anchors
 pnpm run check:strategy-source-anchors
 pnpm run test:strategy-audit-slice
@@ -144,7 +145,7 @@ pnpm run check:post-deploy-live
 
 `check:release-readiness` includes `check:strategy-source-anchors`, so production approval packets inherit the current-source anchor gate before any deploy request.
 
-`report:strategy-completion-audit -- --include-checks` also uses the hard source-anchor gate and changes the local-complete verdict if required local strategy/source checks fail; the expected live metadata failure remains an external production gate.
+`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; the expected live metadata failure remains an external production gate.
 
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 
