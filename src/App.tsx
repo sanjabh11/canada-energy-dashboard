@@ -75,6 +75,8 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
 const UtilityApiDemoPage = React.lazy(() => import('./components/UtilityApiDemoPage'));
+const GaIciPeakPredictorPage = React.lazy(() => import('./components/GaIciPeakPredictorPage'));
+const ByoCsvProofPage = React.lazy(() => import('./components/ByoCsvProofPage'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Trust & Transparency Dashboards
@@ -234,6 +236,10 @@ const router = createBrowserRouter(
         { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
         { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
         { path: '/utilityapi-demo', element: <UtilityApiDemoPage /> },
+        { path: '/ga-ici-5cp', element: <GaIciPeakPredictorPage /> },
+        { path: '/ici-peak', element: <GaIciPeakPredictorPage /> },
+        { path: '/byo-csv-proof', element: <ByoCsvProofPage /> },
+        { path: '/csv-proof', element: <ByoCsvProofPage /> },
 
         // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
         { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
