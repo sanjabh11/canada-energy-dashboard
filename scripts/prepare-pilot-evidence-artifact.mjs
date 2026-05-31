@@ -95,6 +95,8 @@ const allowedRoutes = new Set([
   '/utility-security',
   '/ai-datacentres',
   '/api-docs',
+  '/ga-ici-5cp',
+  '/byo-csv-proof',
 ]);
 const allowedExtensions = new Set(['.csv', '.tsv', '.json', '.jsonl', '.md', '.txt', '.html', '.htm', '.yaml', '.yml']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
@@ -148,6 +150,14 @@ const routeDiagnosticRules = new Map([
   ['/api-docs', {
     label: 'endpoint, freshness, and OpenAPI diagnostic evidence',
     patterns: [/endpoint/i, /freshness/i, /openapi/i],
+  }],
+  ['/ga-ici-5cp', {
+    label: 'top five peak hours, peak demand factor, IESO source, and decision-support boundary evidence',
+    patterns: [/top[- ]?five|5cp|coincident peak/i, /peak[- ]?demand[- ]?factor|pdf/i, /ieso|peak tracker/i, /decision[- ]?support|settlement boundary/i],
+  }],
+  ['/byo-csv-proof', {
+    label: 'schema, completeness, direct-identifier screen, retained raw values, and confidence-gate readiness evidence',
+    patterns: [/schema|column/i, /completeness|row_count|row count/i, /direct[- ]?identifier|privacy[- ]?screen/i, /retained raw values/i, /confidence[- ]?gate/i],
   }],
 ]);
 

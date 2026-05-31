@@ -64,6 +64,14 @@ describe('pilot evidence register validator', () => {
     expect(result.stderr).toBe('');
   });
 
+  it('accepts bounded GA/ICI and BYO-CSV evidence rows against their routes', async () => {
+    const result = await runValidator('valid-ga-ici-byo-evidence-register.csv');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Pilot evidence register validation passed');
+    expect(result.stderr).toBe('');
+  });
+
   it('accepts a filled register that satisfies the 95% strategy confidence gate', async () => {
     const result = await runValidator(
       'valid-95-evidence-register.csv',
@@ -444,6 +452,14 @@ describe('pilot evidence register validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('confidence-moving evidence for /roi-calculator must include pricing source, direct-investment sensitivity, and compliance diagnostic evidence');
+  });
+
+  it('rejects confidence-moving BYO-CSV rows without route-specific diagnostic evidence', async () => {
+    const result = await runValidator('invalid-weak-byo-csv-diagnostic-register.csv');
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('confidence-moving evidence for /byo-csv-proof must include schema, completeness, direct-identifier screen, retained raw values, and confidence-gate readiness evidence');
   });
 
   it('rejects confidence movement from pilot readiness gate rows', async () => {

@@ -6,6 +6,8 @@ import { spawn } from 'node:child_process';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const prepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
+const byoCsvPrepScriptPath = path.join(process.cwd(), 'scripts/byo-csv-proof-artifact.ts');
+const tsxBinPath = path.join(process.cwd(), 'node_modules/.bin/tsx');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const registerHeader = 'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes';
 const tempRoots: string[] = [];
@@ -19,6 +21,31 @@ function makeTempRoot() {
 function runNodeScript(scriptPath: string, args: string[]) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(process.execPath, [scriptPath, ...args], {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (status) => {
+      resolve({ status, stdout, stderr });
+    });
+  });
+}
+
+function runTsxScript(scriptPath: string, args: string[]) {
+  return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(tsxBinPath, [scriptPath, ...args], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -183,5 +210,84 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(result.stderr).toContain('must include numeric forecast evidence');
     expect(result.stderr).toContain('numeric MAE value');
     expect(() => readFileSync(path.join(evidenceRoot, 'nonnumeric.md'), 'utf8')).toThrow();
+  });
+
+  it('prepares a BYO-CSV retained extract, hash reference, and validator-compatible row', async () => {
+    const evidenceRoot = makeTempRoot();
+    const csvPath = path.join(evidenceRoot, 'redacted-byo.csv');
+    writeFileSync(csvPath, [
+      'timestamp,feeder_id,demand_mw,temperature_c',
+      '2026-01-01T00:00:00.000Z,FDR-1,12.5,-6',
+      '2026-01-01T01:00:00.000Z,FDR-1,13.1,-7',
+    ].join('\n'), 'utf8');
+
+    const prepResult = await runTsxScript(byoCsvPrepScriptPath, [
+      '--csv-file', csvPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'byo-csv-retained.md',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '88',
+      '--time-to-artifact-hours', '12',
+      '--reviewer-role', 'utility privacy reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+    ]);
+
+    expect(prepResult.status).toBe(0);
+    expect(prepResult.stderr).toBe('');
+    expect(prepResult.stdout).toContain('BYO-CSV proof artifact prepared.');
+    expect(prepResult.stdout).toContain('evidence_file_reference: byo-csv-retained.md#sha256=');
+
+    const artifactPath = path.join(evidenceRoot, 'byo-csv-retained.md');
+    const artifactText = readFileSync(artifactPath, 'utf8');
+    const sha256 = createHash('sha256').update(artifactText).digest('hex');
+    expect(prepResult.stdout).toContain(`byo-csv-retained.md#sha256=${sha256}`);
+    expect(artifactText).toContain('schema column_count: 4');
+    expect(artifactText).toContain('retained raw values: no');
+    expect(artifactText).not.toContain('12.5');
+
+    const registerPath = path.join(evidenceRoot, 'register.csv');
+    writeFileSync(registerPath, [
+      registerHeader,
+      [
+        '2026-05-30',
+        'security',
+        'utility privacy reviewer',
+        'byo_csv_privacy_proof_pack',
+        '/byo-csv-proof',
+        'CEIP pilot owner',
+        'redacted CSV schema extract',
+        'buyer_supplied_anonymized',
+        `byo-csv-retained.md#sha256=${sha256}`,
+        'no personal data or meter identifiers found',
+        'letter_of_intent',
+        'BYO CSV retained evidence extract',
+        '12',
+        '88',
+        '"Schema column_count 4; completeness row_count 2; direct-identifier screen 0 findings; retained raw values no; confidence gate ready yes"',
+        'utility privacy reviewer',
+        'complete',
+        'accepted',
+        'Buyer supplied redacted CSV workflow only and no raw values retained',
+        '"Do not claim PII-free certification, no privacy risk, buyer acceptance, or production connector approval"',
+        'proceed',
+        '0.2',
+        'Schedule privacy intake review',
+        'Accepted bounded BYO CSV proof evidence',
+      ].join(','),
+      '',
+    ].join('\n'), 'utf8');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [
+      registerPath,
+      '--evidence-root',
+      evidenceRoot,
+    ]);
+
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
+    expect(validationResult.stderr).toBe('');
   });
 });

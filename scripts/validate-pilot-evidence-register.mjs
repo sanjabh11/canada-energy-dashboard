@@ -136,6 +136,8 @@ const allowedRoutes = new Set([
   '/api-docs',
   '/pilot-readiness',
   '/pilot-evidence',
+  '/ga-ici-5cp',
+  '/byo-csv-proof',
 ]);
 const forecastEvidenceRoutes = new Set(['/utility-demand-forecast', '/forecast-benchmarking']);
 const allowedProofPackIdsByRoute = new Map([
@@ -151,6 +153,8 @@ const allowedProofPackIdsByRoute = new Map([
   ['/api-docs', new Set(['consultant_api_data_pack'])],
   ['/pilot-readiness', new Set(['pilot_readiness_gate'])],
   ['/pilot-evidence', new Set(['pilot_readiness_gate'])],
+  ['/ga-ici-5cp', new Set(['ga_ici_5cp_decision_support_pack'])],
+  ['/byo-csv-proof', new Set(['byo_csv_privacy_proof_pack'])],
 ]);
 const evidenceGateOnlyRoutes = new Set(['/pilot-readiness', '/pilot-evidence']);
 const confidenceDiagnosticRulesByRoute = new Map([
@@ -194,6 +198,14 @@ const confidenceDiagnosticRulesByRoute = new Map([
     label: 'endpoint, freshness, and OpenAPI diagnostic evidence',
     patterns: [/endpoint/i, /freshness/i, /openapi/i],
   }],
+  ['/ga-ici-5cp', {
+    label: 'top five peak hours, peak demand factor, IESO source, and decision-support boundary evidence',
+    patterns: [/top[- ]?five|5cp|coincident peak/i, /peak[- ]?demand[- ]?factor|pdf/i, /ieso|peak tracker/i, /decision[- ]?support|settlement boundary/i],
+  }],
+  ['/byo-csv-proof', {
+    label: 'schema, completeness, direct-identifier screen, retained raw values, and confidence-gate readiness evidence',
+    patterns: [/schema|column/i, /completeness|row_count|row count/i, /direct[- ]?identifier|privacy[- ]?screen/i, /retained raw values/i, /confidence[- ]?gate/i],
+  }],
 ]);
 const confidenceClaimBoundaryRulesByRoute = new Map([
   ['/utility-demand-forecast', {
@@ -235,6 +247,14 @@ const confidenceClaimBoundaryRulesByRoute = new Map([
   ['/api-docs', {
     label: 'consultant workflow boundary plus no production integration, live-data SLA, or full OpenAPI parity claim',
     doNotClaimPatterns: [/production integration|production api/i, /live[- ]?data sla|sla/i, /full openapi parity/i],
+  }],
+  ['/ga-ici-5cp', {
+    label: 'decision-support boundary plus no guaranteed savings, final IESO settlement, eligibility, or operational instruction claim',
+    doNotClaimPatterns: [/guaranteed savings/i, /final ieso|settlement/i, /eligibility/i, /operational|curtailment instruction/i],
+  }],
+  ['/byo-csv-proof', {
+    label: 'privacy-screen boundary plus no PII-free certification, no privacy risk, buyer acceptance, or connector approval claim',
+    doNotClaimPatterns: [/pii[- ]?free|privacy/i, /certification|certified/i, /buyer acceptance/i, /connector approval|production connector/i],
   }],
 ]);
 const confidenceBoundaryPatterns = [

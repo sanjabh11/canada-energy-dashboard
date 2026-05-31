@@ -20,6 +20,8 @@ describe('pilotEvidence', () => {
     expect(summary.stopConditionCount).toBeGreaterThanOrEqual(5);
     expect(pilotEvidenceRequirements.map((item) => item.id)).toEqual(expect.arrayContaining([
       'buyer-load-history',
+      'ga-ici-5cp-load-window',
+      'byo-csv-privacy-proof',
       'tier-facility-assumptions',
       'tier-credit-ledger',
       'invoice-comparison-sample',
