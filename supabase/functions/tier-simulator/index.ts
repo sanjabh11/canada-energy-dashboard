@@ -12,6 +12,14 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+function resolveFunctionPath(req: Request): string {
+  const pathname = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
+  const stripped = pathname
+    .replace(/^\/functions\/v1\/tier-simulator\b/, "")
+    .replace(/^\/tier-simulator\b/, "");
+  return stripped || "/";
+}
+
 async function resolveTierInput(body: any) {
   const resolved = { ...body };
   if (!supabase) return resolved;
@@ -46,7 +54,7 @@ serve(async (req) => {
   const rl = applyRateLimit(req, "tier-simulator");
   if (rl.response) return rl.response;
   const cors = createCorsHeaders(req);
-  const path = new URL(req.url).pathname.replace(/\/functions\/v1\/tier-simulator\b/, "") || "/";
+  const path = resolveFunctionPath(req);
 
   if (req.method !== "POST" || !["/evaluate", "/"].includes(path)) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...cors, ...jsonHeaders, ...rl.headers } });

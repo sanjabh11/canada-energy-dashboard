@@ -29,6 +29,14 @@ describe('ML Edge function contracts', () => {
     }
   });
 
+  it('normalizes direct functions-domain paths for hosted browser Edge calls', () => {
+    for (const functionName of ['ml-forecast', 'tier-simulator']) {
+      const source = readFileSync(join(root, 'supabase/functions', functionName, 'index.ts'), 'utf8');
+      expect(source).toContain(String.raw`.replace(/^\/functions\/v1\/${functionName}\b/, "")`);
+      expect(source).toContain(String.raw`.replace(/^\/${functionName}\b/, "")`);
+    }
+  });
+
   it('uses the shared response metadata fields in ML endpoint implementations', () => {
     const shared = readFileSync(join(root, 'supabase/functions/_shared/mlForecasting.ts'), 'utf8');
     for (const field of [

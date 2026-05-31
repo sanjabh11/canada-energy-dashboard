@@ -40,6 +40,7 @@ Overall confidence: **94 / 100**. The score can rise further after live metadata
 | Utility security procurement pack | Control matrix, questionnaire template, evidence mapping, owner checklist, and pilot attachment manifest now separate repo-backed controls from deployed header/SBOM evidence and owner-supplied contact/subprocessor approvals. | Strong local proof | `pnpm exec vitest run tests/unit/utilitySecurityProofPack.test.ts tests/unit/proofPackGates.test.ts --testTimeout=15000` passed 2 tests; component smoke covers `/utility-security`. Buyer-specific legal/privacy approval remains external. |
 | Hosted root HTML | `https://canada-energy.netlify.app/` still returns stale meta. | Strong live proof | Hosted root still contains old broad-platform/social meta copy. |
 | Hosted manifest / JSON-LD | `https://canada-energy.netlify.app/manifest.json` and `/schema-webapp.jsonld` still return old broad-platform descriptions. | Strong live proof | Production static assets are stale relative to clean local `public/manifest.json` and `public/schema-webapp.jsonld`. |
+| Hosted proof-pack route smoke | `pnpm run test:browser:hosted:proof-packs` is now the focused post-deploy route gate and currently fails against stale production. | Strong live proof | Current live failures include stale route content, stale CSP missing `api.weather.gc.ca`, and deployed Edge function path/CORS failures for `ml-forecast` and `tier-simulator`; local source/config fixes still require approved Netlify and Edge deploys. |
 | Buyer evidence | No real filled buyer register found. | Critical gap | Fixtures and templates do not count as buyer proof. |
 
 ## 3. Market And Source Anchors
@@ -117,7 +118,7 @@ Do not claim accurate predictions as a general product property. The near-term g
 
 | Phase | Objective | Tasks | Acceptance criteria | Verification | Confidence effect |
 |---|---|---|---|---|---|
-| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Build current local source; verify source and `dist/` metadata; deploy only after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Source, built `dist/`, hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `pnpm run check:public-metadata`, `pnpm run check:public-metadata -- --dist`, `pnpm run check:public-metadata -- --base-url https://canada-energy.netlify.app`, plus browser smoke. | Removes live proof-boundary cap. |
+| A. Live parity | Clear hosted stale metadata and stale static SEO assets. | Build current local source; verify source and `dist/` metadata; deploy only after explicit approval; re-fetch live root, manifest, JSON-LD; smoke key routes. | Source, built `dist/`, hosted root, manifest, and JSON-LD no longer contain stale broad-platform, compliance, savings, or unsupported AI copy. | `pnpm run check:release-readiness` before deploy, then `pnpm run check:live-public-metadata` and `pnpm run test:browser:hosted:proof-packs` after deploy. | Removes live proof-boundary cap. |
 | B. Strategy doc and source alignment | Keep strategy direction current and single-source. | Land this roadmap; optionally link it from commercial source docs after review. | Roadmap reflects current checks and source anchors. | Markdown review and guard checks. | Improves handoff quality. |
 | C. Regulatory/TIER currency | Refresh policy-sensitive exports. | Add explicit source-currency checklist downloads for OEB/AUC filing packs and Alberta TIER CFO memo packs. | Outputs carry current source dates, outbound-use refresh gates, and do-not-claim boundaries. | Regulatory/TIER unit tests and source review. | Improves domain credibility; done locally, pending live deploy. |
 | D. Forecast hardening | Raise technical credibility before buyer pilots. | Mandatory failure notes, export evidence review, and multi-dataset benchmark pack are implemented for public/sample evidence. | Forecast artifacts compare against baselines, explain baseline-win failures, and keep buyer-specific accuracy claims false. | Focused forecast tests, TypeScript build, and benchmark report generation. | Raises prediction credibility, not market confidence. |
@@ -130,7 +131,8 @@ Do not claim accurate predictions as a general product property. The near-term g
 |---|---|---|
 | Hosted copy can imply market leadership or compliance. | Still true on live Netlify root. | Deploy clean local metadata and verify live root. |
 | Hosted manifest and JSON-LD can leak old broad-platform claims. | Confirmed on current production static assets. | Verify `/manifest.json` and `/schema-webapp.jsonld` in every release check. |
-| A clean local repo can still leave stale production assets live. | Confirmed. | Add live-root, manifest, and JSON-LD fetches to release checklist. |
+| A clean local repo can still leave stale production assets live. | Confirmed. | Run `check:release-readiness` before deploy and `check:live-public-metadata` plus `test:browser:hosted:proof-packs` after deploy. |
+| Hosted proof-pack routes can pass document load but fail on stale CSP or Edge paths. | Confirmed by hosted browser smoke. | Keep current Netlify CSP and Edge function path normalization deployed before declaring live parity. |
 | Public samples can look like buyer history. | Guarded in docs and proof packs. | Keep public/buyer labels visible in all exports. |
 | Forecast metrics can overstate accuracy. | Mitigated for local/public evidence by baselines, mandatory baseline-win failure notes, multi-dataset benchmark packaging, scale-free seasonal MASE, interval calibration/sharpness diagnostics, and pilot validator. | Do not make stronger prediction claims until buyer evidence gate passes. |
 | GA/ICI predictor could imply savings guarantee. | Library, `/ga-ici-5cp` route, retained-extract helper, IESO Peak Tracker ingestion, historical backtest reporting, and `prepare:ga-ici-5cp-artifact` carry decision-support and do-not-claim boundaries. | Keep the same boundaries in buyer pilots and require accepted buyer evidence before stronger claims. |
@@ -146,7 +148,7 @@ Do not claim accurate predictions as a general product property. The near-term g
 
 ```text
 Implement CEIP live-parity release verification. Confirm local proof-pack metadata and claim-boundary guard still pass, deploy current source only after explicit production approval, then verify https://canada-energy.netlify.app/ root HTML, /manifest.json, and /schema-webapp.jsonld no longer contain stale broad-platform, compliance, or savings claims. Run focused route smoke for /utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, and /pilot-readiness. Do not change buyer-confidence ratings.
-Use `pnpm run check:public-metadata` and `pnpm run check:public-metadata -- --dist` before deploy, then `pnpm run check:public-metadata -- --base-url https://canada-energy.netlify.app` after deploy.
+Use `pnpm run check:release-readiness` before deploy, then `pnpm run check:live-public-metadata` and `pnpm run test:browser:hosted:proof-packs` after deploy.
 ```
 
 ### Phase C prompt
