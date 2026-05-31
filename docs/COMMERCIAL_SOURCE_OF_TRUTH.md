@@ -145,6 +145,8 @@ pnpm run check:post-deploy-live
 
 `check:release-readiness` includes `check:strategy-source-anchors`, so production approval packets inherit the current-source anchor gate before any deploy request.
 
+`report:production-approval-packet` also reports source deploy provenance against the production deploy script's preconditions: branch `main` and a clean worktree. It must not be used as production approval when source provenance, local release readiness, live metadata, static parity, or hosted proof-pack smoke are failing or skipped.
+
 `check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; the expected live metadata failure remains an external production gate.
 
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:

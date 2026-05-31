@@ -67,6 +67,61 @@ function skippedStep(label, reason) {
   };
 }
 
+function runGit(commandArgs) {
+  return spawnSync('git', commandArgs, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0' },
+    maxBuffer: 1024 * 1024,
+  });
+}
+
+function gitOutput(result) {
+  return `${result.stdout ?? ''}\n${result.stderr ?? ''}\n${result.error ? String(result.error.message ?? result.error) : ''}`.trim();
+}
+
+function sourceProvenanceStep() {
+  const branch = runGit(['branch', '--show-current']);
+  const commit = runGit(['rev-parse', '--short', 'HEAD']);
+  const status = runGit(['status', '--short']);
+  const failures = [];
+
+  if (branch.status !== 0) failures.push(`git branch --show-current failed: ${gitOutput(branch) || 'no output'}`);
+  if (commit.status !== 0) failures.push(`git rev-parse --short HEAD failed: ${gitOutput(commit) || 'no output'}`);
+  if (status.status !== 0) failures.push(`git status --short failed: ${gitOutput(status) || 'no output'}`);
+
+  const branchName = (branch.stdout ?? '').trim() || '(detached or unknown)';
+  const commitSha = (commit.stdout ?? '').trim() || '(unknown)';
+  const statusLines = (status.stdout ?? '')
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .filter(Boolean);
+
+  if (branch.status === 0 && branchName !== 'main') {
+    failures.push(`deploy script requires branch main; current branch is ${branchName}.`);
+  }
+  if (status.status === 0 && statusLines.length > 0) {
+    failures.push(`deploy script requires a clean worktree; ${statusLines.length} dirty path(s) detected.`);
+  }
+
+  return {
+    label: 'Source deploy provenance',
+    command: 'git branch --show-current && git rev-parse --short HEAD && git status --short',
+    exitCode: failures.length === 0 ? 0 : 1,
+    status: failures.length === 0 ? 'pass' : 'fail',
+    durationMs: 0,
+    stdout: [
+      `Branch: ${branchName}`,
+      `Commit: ${commitSha}`,
+      `Worktree: ${statusLines.length === 0 ? 'clean' : 'dirty'}`,
+      ...statusLines.slice(0, 40).map((line) => `Dirty: ${line}`),
+      ...failures.map((failure) => `Blocker: ${failure}`),
+    ].join('\n'),
+    stderr: '',
+    error: '',
+  };
+}
+
 function relevantLines(step) {
   const combined = `${step.stdout}\n${step.stderr}\n${step.error}`.trim();
   if (!combined) return ['No output captured.'];
@@ -82,6 +137,10 @@ function relevantLines(step) {
 
   if (step.label === 'Live static dist parity') {
     return lines.filter((line) => /^-|Live static parity check/.test(line)).slice(0, 80);
+  }
+
+  if (step.label === 'Source deploy provenance') {
+    return lines.filter((line) => /^(Branch|Commit|Worktree|Dirty|Blocker):/.test(line)).slice(0, 80);
   }
 
   const important = lines.filter((line) =>
@@ -111,6 +170,8 @@ function markdownForStep(step) {
 }
 
 const steps = [];
+
+steps.push(sourceProvenanceStep());
 
 if (skipReleaseReadiness) {
   steps.push(skippedStep('Local release readiness', 'Skipped by --skip-release-readiness.'));
@@ -149,16 +210,25 @@ if (includeHostedSmoke) {
 }
 
 const localReadiness = steps.find((step) => step.label === 'Local release readiness');
+const sourceProvenance = steps.find((step) => step.label === 'Source deploy provenance');
 const liveMetadata = steps.find((step) => step.label === 'Live metadata parity');
 const liveStaticParity = steps.find((step) => step.label === 'Live static dist parity');
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
+const sourceDeployable = sourceProvenance?.status === 'pass';
 const localPreflightClean = localReadiness?.status === 'pass';
 const liveGatesGreen =
   liveMetadata?.status === 'pass' && liveStaticParity?.status === 'pass' && hostedSmoke?.status === 'pass';
-const approvalReady = localPreflightClean && liveGatesGreen;
+const approvalReady = sourceDeployable && localPreflightClean && liveGatesGreen;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
 const blockedByStaticParity = liveStaticParity?.status === 'fail';
 const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
+const blockers = [
+  !sourceDeployable ? 'source deploy provenance is not deploy-script-ready' : null,
+  !localPreflightClean ? 'local release readiness is not passing' : null,
+  blockedByLiveMetadata ? 'live metadata parity is failing' : null,
+  blockedByStaticParity ? 'live static dist parity is failing' : null,
+  hostedSmokeNotRun ? 'hosted proof-pack route smoke was skipped' : null,
+].filter(Boolean);
 
 const summaryRows = steps
   .map((step) => `| ${step.label} | ${step.status} | ${step.exitCode ?? 'n/a'} | \`${step.command}\` |`)
@@ -172,6 +242,7 @@ const markdown = [
   '',
   '## Decision Boundary',
   '',
+  `- Source deploy provenance: ${sourceProvenance?.status}.`,
   `- Local source approval state: ${localReadiness?.status === 'pass' ? 'preflight-clean' : localReadiness?.status}.`,
   `- Live metadata parity: ${liveMetadata?.status}.`,
   `- Live static dist parity: ${liveStaticParity?.status}.`,
@@ -188,7 +259,9 @@ const markdown = [
   '',
   '## Approval Recommendation',
   '',
-  !localPreflightClean
+  blockers.length > 0
+    ? `Do not declare live parity or ask for production approval. Blocking gates: ${blockers.join('; ')}.`
+    : !localPreflightClean
     ? 'Do not ask for production approval until local release readiness is passing.'
     : approvalReady
     ? 'Local and live gates are green. Live parity can be considered achieved, but this script itself is not production approval.'
@@ -202,11 +275,12 @@ const markdown = [
   '',
   '## Operator Checklist',
   '',
-  '1. Review this packet and confirm local release readiness is passing.',
-  '2. Confirm the owner explicitly approves production deployment.',
-  '3. Deploy current source using the approved release path only after approval.',
-  '4. Run `pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
-  '5. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
+  '1. Review this packet and confirm source deploy provenance is on `main` with a clean worktree.',
+  '2. Confirm local release readiness is passing.',
+  '3. Confirm the owner explicitly approves production deployment.',
+  '4. Deploy current source using the approved release path only after approval.',
+  '5. Run `pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
+  '6. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',
   '## Evidence',
   '',

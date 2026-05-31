@@ -16,10 +16,11 @@ function writeExecutable(filePath: string, content: string) {
   chmodSync(filePath, 0o755);
 }
 
-async function runPacket(extraArgs: string[]) {
+async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-approval-packet-'));
   const fakeNodePath = path.join(tempDir, 'node');
   const fakePnpmPath = path.join(tempDir, 'pnpm');
+  const fakeGitPath = path.join(tempDir, 'git');
 
   writeExecutable(
     fakeNodePath,
@@ -51,12 +52,38 @@ async function runPacket(extraArgs: string[]) {
     ].join('\n'),
   );
 
+  writeExecutable(
+    fakeGitPath,
+    [
+      '#!/bin/sh',
+      'case "$*" in',
+      '  *branch\\ --show-current*)',
+      '    echo "${CEIP_FAKE_GIT_BRANCH:-main}"',
+      '    exit 0',
+      '    ;;',
+      '  *rev-parse\\ --short\\ HEAD*)',
+      '    echo "abc1234"',
+      '    exit 0',
+      '    ;;',
+      '  *status\\ --short*)',
+      '    if [ "$CEIP_FAKE_GIT_DIRTY" = "1" ]; then',
+      '      echo " M src/App.tsx"',
+      '    fi',
+      '    exit 0',
+      '    ;;',
+      'esac',
+      `exec git "$@"`,
+      '',
+    ].join('\n'),
+  );
+
   try {
     return await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
       const child = spawn(process.execPath, [scriptPath, '--base-url', 'https://example.test', ...extraArgs], {
         cwd: process.cwd(),
         env: {
           ...process.env,
+          ...envOverrides,
           PATH: `${tempDir}:${process.env.PATH ?? ''}`,
         },
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -88,11 +115,12 @@ describe('production approval packet', () => {
     const result = await runPacket(['--skip-release-readiness', '--include-hosted-smoke']);
 
     expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Local source approval state: skipped.');
     expect(result.stdout).toContain('- Live metadata parity: pass.');
     expect(result.stdout).toContain('- Live static dist parity: pass.');
     expect(result.stdout).toContain('- Hosted proof-pack smoke: pass.');
-    expect(result.stdout).toContain('Do not ask for production approval until local release readiness is passing.');
+    expect(result.stdout).toContain('Blocking gates: local release readiness is not passing.');
     expect(result.stdout).not.toContain('Local and live gates are green.');
   });
 
@@ -100,6 +128,19 @@ describe('production approval packet', () => {
     const result = await runPacket(['--skip-release-readiness', '--include-hosted-smoke', '--fail-on-blocker']);
 
     expect(result.status).toBe(1);
-    expect(result.stdout).toContain('Do not ask for production approval until local release readiness is passing.');
+    expect(result.stdout).toContain('Blocking gates: local release readiness is not passing.');
+  });
+
+  it('blocks production approval when source provenance is not deploy-script-ready', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-blocker'], {
+      CEIP_FAKE_GIT_BRANCH: 'codex/ceip-proof-pack-hardening',
+      CEIP_FAKE_GIT_DIRTY: '1',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Source deploy provenance: fail.');
+    expect(result.stdout).toContain('Blocker: deploy script requires branch main; current branch is codex/ceip-proof-pack-hardening.');
+    expect(result.stdout).toContain('Blocker: deploy script requires a clean worktree; 1 dirty path(s) detected.');
+    expect(result.stdout).toContain('Blocking gates: source deploy provenance is not deploy-script-ready.');
   });
 });
