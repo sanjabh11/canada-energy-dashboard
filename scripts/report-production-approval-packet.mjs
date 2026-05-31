@@ -18,6 +18,7 @@ const outPath = readArg('--out');
 const skipReleaseReadiness = args.includes('--skip-release-readiness');
 const includeHostedSmoke = args.includes('--include-hosted-smoke');
 const failOnBlocker = args.includes('--fail-on-blocker');
+const failOnPreDeployBlocker = args.includes('--fail-on-predeploy-blocker');
 const generatedAt = new Date().toISOString();
 
 function shellQuote(value) {
@@ -307,5 +308,9 @@ if (outPath) {
 }
 
 if (failOnBlocker && !approvalReady) {
+  process.exit(1);
+}
+
+if (failOnPreDeployBlocker && !deploymentRequestReady) {
   process.exit(1);
 }

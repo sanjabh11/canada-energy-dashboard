@@ -143,6 +143,18 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
   });
 
+  it('treats skipped local readiness as a blocker for pre-deploy request gates', async () => {
+    const result = await runPacket([
+      '--skip-release-readiness',
+      '--include-hosted-smoke',
+      '--fail-on-predeploy-blocker',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
+  });
+
   it('blocks production approval when source provenance is not deploy-script-ready', async () => {
     const result = await runPacket(['--include-hosted-smoke', '--fail-on-blocker'], {
       CEIP_FAKE_GIT_BRANCH: 'codex/ceip-proof-pack-hardening',
@@ -172,5 +184,25 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('Local source is ready to request explicit production remediation approval, but live parity is not achieved.');
     expect(result.stdout).toContain('deploy current source only after explicit owner approval');
     expect(result.stdout).not.toContain('Do not request production deploy approval.');
+  });
+
+  it('allows pre-deploy request gates to pass when only live parity is stale', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-predeploy-blocker'], {
+      CEIP_FAKE_LIVE_METADATA_FAIL: '1',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Deployment request readiness: ready for explicit owner approval.');
+    expect(result.stdout).toContain('- Live parity achieved: no.');
+  });
+
+  it('keeps full blocker gates failing when live parity is stale', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-blocker'], {
+      CEIP_FAKE_LIVE_METADATA_FAIL: '1',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Deployment request readiness: ready for explicit owner approval.');
+    expect(result.stdout).toContain('- Live parity achieved: no.');
   });
 });
