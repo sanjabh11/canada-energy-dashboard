@@ -186,6 +186,8 @@ if (!existsSync(roadmapPath)) {
     'pnpm run check:strategy-source-anchors',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',
+    'Live static parity',
+    'pnpm run check:live-static-parity',
   ];
 
   for (const needle of liveParityNeedles) {

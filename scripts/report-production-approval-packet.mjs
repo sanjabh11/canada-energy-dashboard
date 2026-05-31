@@ -80,6 +80,10 @@ function relevantLines(step) {
     return lines.filter((line) => /^-|Public metadata check/.test(line)).slice(0, 80);
   }
 
+  if (step.label === 'Live static dist parity') {
+    return lines.filter((line) => /^-|Live static parity check/.test(line)).slice(0, 80);
+  }
+
   const important = lines.filter((line) =>
     /passed|failed|PASS|FAIL|Test Files|Tests|Public metadata check|Claim-boundary|Commercial source|Pilot evidence|bundle budgets|built in/i.test(
       line,
@@ -115,6 +119,7 @@ if (skipReleaseReadiness) {
 }
 
 steps.push(runStep('Live metadata parity', 'node', ['scripts/check-public-metadata.mjs', '--base-url', baseUrl]));
+steps.push(runStep('Live static dist parity', 'node', ['scripts/check-live-static-parity.mjs', '--base-url', baseUrl]));
 
 if (includeHostedSmoke) {
   steps.push(
@@ -145,10 +150,13 @@ if (includeHostedSmoke) {
 
 const localReadiness = steps.find((step) => step.label === 'Local release readiness');
 const liveMetadata = steps.find((step) => step.label === 'Live metadata parity');
+const liveStaticParity = steps.find((step) => step.label === 'Live static dist parity');
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
 const localPreflightClean = localReadiness?.status === 'pass';
-const liveParityAchieved = liveMetadata?.status === 'pass' && hostedSmoke?.status === 'pass';
+const liveParityAchieved =
+  liveMetadata?.status === 'pass' && liveStaticParity?.status === 'pass' && hostedSmoke?.status === 'pass';
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
+const blockedByStaticParity = liveStaticParity?.status === 'fail';
 const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
 
 const summaryRows = steps
@@ -165,6 +173,7 @@ const markdown = [
   '',
   `- Local source approval state: ${localReadiness?.status === 'pass' ? 'preflight-clean' : localReadiness?.status}.`,
   `- Live metadata parity: ${liveMetadata?.status}.`,
+  `- Live static dist parity: ${liveStaticParity?.status}.`,
   `- Hosted proof-pack smoke: ${hostedSmoke?.status}.`,
   '- Production deployment: not performed by this report.',
   '- Production approval: still requires an explicit owner approval before any deploy command.',
@@ -184,6 +193,8 @@ const markdown = [
       ? 'Do not ask for production approval until local release readiness is passing.'
       : blockedByLiveMetadata
       ? 'Do not declare live parity. Production is still serving stale metadata; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
+      : blockedByStaticParity
+        ? 'Do not declare live parity. Production static files do not match built `dist`; deploy current source only after explicit approval, then rerun `pnpm run check:post-deploy-live`.'
       : hostedSmokeNotRun
         ? 'Metadata is green, but hosted proof-pack smoke was not run. Use `--include-hosted-smoke` or `pnpm run check:post-deploy-live` before declaring live parity.'
       : 'Do not approve production release until failed or skipped required gates are resolved.',
@@ -193,7 +204,7 @@ const markdown = [
   '1. Review this packet and confirm local release readiness is passing.',
   '2. Confirm the owner explicitly approves production deployment.',
   '3. Deploy current source using the approved release path only after approval.',
-  '4. Run `pnpm run check:post-deploy-live` after deploy.',
+  '4. Run `pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
   '5. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',
   '## Evidence',

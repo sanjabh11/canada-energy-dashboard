@@ -162,6 +162,8 @@ const strategyRoadmapWhitespacePhrases = [
   'Release-readiness preflight',
   'Local release readiness',
   'Live metadata parity',
+  'Live static parity',
+  'check:live-static-parity',
   'check:post-deploy-live',
   'test:strategy-audit-slice',
   'fixture-proof 95% gate',

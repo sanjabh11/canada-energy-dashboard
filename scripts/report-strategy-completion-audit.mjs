@@ -221,13 +221,15 @@ const rows = [
     hasAll(roadmap, [
       'Hosted root HTML',
       'Live metadata parity',
+      'Live static parity',
+      'check:live-static-parity',
       'Do not deploy without explicit production approval',
       'pnpm run report:production-approval-packet',
       'pnpm run check:post-deploy-live',
     ])
       ? 'external_gate'
       : 'incomplete',
-    'Roadmap evidence ledger and production approval packet command.',
+    'Roadmap evidence ledger, production approval packet command, and static parity gate.',
     'Explicit owner approval, deploy, then post-deploy live checks.',
   ),
   requirementRow(
@@ -261,7 +263,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|static parity|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
         line,
       ),
     )

@@ -140,6 +140,8 @@ After an explicitly approved production deploy, run:
 pnpm run check:post-deploy-live
 ```
 
+`check:post-deploy-live` rebuilds current `dist`, then runs live metadata checks, exact static parity against the built `dist` files, and hosted proof-pack route smoke.
+
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 
 ```bash
