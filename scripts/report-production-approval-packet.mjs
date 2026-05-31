@@ -20,6 +20,7 @@ const includeHostedSmoke = args.includes('--include-hosted-smoke');
 const failOnBlocker = args.includes('--fail-on-blocker');
 const failOnPreDeployBlocker = args.includes('--fail-on-predeploy-blocker');
 const generatedAt = new Date().toISOString();
+const hostedProofPackRouteGrep = 'route /(utility-demand-forecast|forecast-benchmarking|regulatory-filing|pilot-readiness|ga-ici-5cp|byo-csv-proof)';
 
 function shellQuote(value) {
   if (/^[A-Za-z0-9_./:=@-]+$/.test(value)) return value;
@@ -196,7 +197,7 @@ if (includeHostedSmoke) {
         'tests/component/phase6-browser-smoke.spec.ts',
         '--project=chromium',
         '--grep',
-        'route /(utility-demand-forecast|forecast-benchmarking|regulatory-filing|pilot-readiness)',
+        hostedProofPackRouteGrep,
       ],
       {
         env: {

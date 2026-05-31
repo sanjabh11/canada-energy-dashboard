@@ -133,6 +133,9 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
+    expect(result.stdout).toContain(
+      'route /(utility-demand-forecast|forecast-benchmarking|regulatory-filing|pilot-readiness|ga-ici-5cp|byo-csv-proof)',
+    );
     expect(result.stdout).not.toContain('Local and live gates are green.');
   });
 

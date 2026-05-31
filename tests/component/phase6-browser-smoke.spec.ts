@@ -12,6 +12,8 @@ const ROUTE_CHECKS: RouteCheck[] = [
   { path: '/pilot-readiness', marker: 'Evidence gates before stronger market claims' },
   { path: '/forecast-benchmarking', marker: 'Forecast Benchmarking' },
   { path: '/regulatory-filing', marker: 'Regulatory Filing Templates' },
+  { path: '/ga-ici-5cp', marker: 'Ontario GA/ICI 5CP Decision Support' },
+  { path: '/byo-csv-proof', marker: 'BYO-CSV Privacy Proof Generator' },
   { path: '/roi-calculator', marker: 'What is TIER? Alberta\'s Carbon Compliance System' },
   { path: '/credit-banking', marker: 'Credit Banking Dashboard' },
   { path: '/asset-health', marker: 'Asset Health Index' },

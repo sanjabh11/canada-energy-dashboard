@@ -141,7 +141,7 @@ After an explicitly approved production deploy, run:
 pnpm run check:post-deploy-live
 ```
 
-`check:post-deploy-live` rebuilds current `dist`, then runs live metadata checks, exact static parity against the built `dist` files, and hosted proof-pack route smoke.
+`check:post-deploy-live` rebuilds current `dist`, then runs live metadata checks, exact static parity against the built `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`.
 
 `check:release-readiness` includes `check:strategy-source-anchors`, so production approval packets inherit the current-source anchor gate before any deploy request.
 
