@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
+import { proofPackIdsByRoute } from './lib/proof-pack-routes.mjs';
 import {
   buildByoCsvProofReport,
   buildByoCsvRetainedEvidenceExtract,
@@ -55,6 +56,7 @@ const requiredOptions = [
   'reviewer-feedback-status',
   'day-14-decision',
   'commercial-commitment-status',
+  'proof-pack-id',
 ];
 
 for (const option of requiredOptions) {
@@ -90,6 +92,7 @@ function isValidIsoDate(value: string): boolean {
 }
 
 const route = values.get('route') ?? '/byo-csv-proof';
+const proofPackId = values.get('proof-pack-id') ?? '';
 const sourceLabel = values.get('source-label') ?? 'buyer_supplied_anonymized';
 const recordDate = values.get('record-date') ?? '';
 const coverage = parseNumber('buyer-data-coverage-pct');
@@ -101,6 +104,10 @@ const commercialCommitmentStatus = normalizeText(values.get('commercial-commitme
 const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+const allowedProofPackIds = proofPackIdsByRoute.get(route);
+if (proofPackId && allowedProofPackIds && !allowedProofPackIds.has(proofPackId)) {
+  failures.push(`--proof-pack-id ${proofPackId} is not valid for --route ${route}; expected one of ${Array.from(allowedProofPackIds).join(', ')}.`);
+}
 if (!allowedSourceLabels.has(sourceLabel)) failures.push(`--source-label must be one of ${Array.from(allowedSourceLabels).join(', ')}.`);
 if (!isValidIsoDate(recordDate)) failures.push('--record-date must be a valid YYYY-MM-DD date.');
 if (coverage !== null && (coverage < 0 || coverage > 100)) failures.push('--buyer-data-coverage-pct must be between 0 and 100.');
@@ -176,7 +183,7 @@ const extractParams: ByoCsvRetainedEvidenceExtractParams = {
   day14Decision: day14Decision as ByoCsvRetainedEvidenceExtractParams['day14Decision'],
   commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
   commercialCommitmentEvidence,
-  proofPackId: values.get('proof-pack-id') ?? 'byo_csv_privacy_proof_pack',
+  proofPackId,
 };
 if (values.has('artifact-title')) extractParams.artifactTitle = values.get('artifact-title') as string;
 if (values.has('claim-boundary')) extractParams.claimBoundary = values.get('claim-boundary') as string;

@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
+import { proofPackIdsByRoute } from './lib/proof-pack-routes.mjs';
 import {
   IESO_PEAK_TRACKER_SOURCE_URL,
   buildIciFiveCpHistoricalBacktestReport,
@@ -62,6 +63,7 @@ const requiredOptions = [
   'reviewer-feedback-status',
   'day-14-decision',
   'commercial-commitment-status',
+  'proof-pack-id',
 ];
 
 for (const option of requiredOptions) {
@@ -288,6 +290,7 @@ function parseCustomerLoad(text: string): IciCustomerLoadHour[] {
 }
 
 const route = values.get('route') ?? '/ga-ici-5cp';
+const proofPackId = values.get('proof-pack-id') ?? '';
 const sourceLabel = values.get('source-label') ?? 'buyer_supplied_anonymized';
 const recordDate = values.get('record-date') ?? '';
 const basePeriodStart = values.get('base-period-start') ?? '';
@@ -302,6 +305,10 @@ const commercialCommitmentEvidence = values.get('commercial-commitment-evidence'
 const peakTrackerUrl = values.get('peak-tracker-url') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+const allowedProofPackIds = proofPackIdsByRoute.get(route);
+if (proofPackId && allowedProofPackIds && !allowedProofPackIds.has(proofPackId)) {
+  failures.push(`--proof-pack-id ${proofPackId} is not valid for --route ${route}; expected one of ${Array.from(allowedProofPackIds).join(', ')}.`);
+}
 if (!allowedSourceLabels.has(sourceLabel)) failures.push(`--source-label must be one of ${Array.from(allowedSourceLabels).join(', ')}.`);
 if (!isValidIsoDate(recordDate)) failures.push('--record-date must be a valid YYYY-MM-DD date.');
 if (!isValidIsoDate(basePeriodStart)) failures.push('--base-period-start must be a valid YYYY-MM-DD date.');
@@ -469,7 +476,7 @@ const extractParams: IciFiveCpRetainedEvidenceExtractParams = {
   commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
   commercialCommitmentEvidence,
   route,
-  proofPackId: values.get('proof-pack-id') ?? 'ga_ici_5cp_decision_support_pack',
+  proofPackId,
   piiScreenResult: (values.get('pii-screen-result') ?? 'redacted') as IciFiveCpRetainedEvidenceExtractParams['piiScreenResult'],
   historicalBacktest,
 };

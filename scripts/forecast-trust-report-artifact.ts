@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
+import { proofPackIdsByRoute } from './lib/proof-pack-routes.mjs';
 import {
   buildUtilityForecastTrustRetainedEvidenceExtract,
   type UtilityForecastTrustRetainedEvidenceExtractParams,
@@ -55,6 +56,7 @@ const requiredOptions = [
   'reviewer-feedback-status',
   'day-14-decision',
   'commercial-commitment-status',
+  'proof-pack-id',
 ];
 
 for (const option of requiredOptions) {
@@ -90,6 +92,7 @@ function isValidIsoDate(value: string): boolean {
 }
 
 const route = values.get('route') ?? '/forecast-benchmarking';
+const proofPackId = values.get('proof-pack-id') ?? '';
 const recordDate = values.get('record-date') ?? '';
 const coverage = parseNumber('buyer-data-coverage-pct');
 const turnaroundHours = parseNumber('time-to-artifact-hours');
@@ -101,6 +104,10 @@ const commercialCommitmentStatus = normalizeText(values.get('commercial-commitme
 const commercialCommitmentEvidence = values.get('commercial-commitment-evidence') ?? '';
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+const allowedProofPackIds = proofPackIdsByRoute.get(route);
+if (proofPackId && allowedProofPackIds && !allowedProofPackIds.has(proofPackId)) {
+  failures.push(`--proof-pack-id ${proofPackId} is not valid for --route ${route}; expected one of ${Array.from(allowedProofPackIds).join(', ')}.`);
+}
 if (!allowedPiiScreenResults.has(piiScreenResult)) {
   failures.push('--pii-screen-result must be no personal data, no personal data or meter identifiers found, redacted, or screened.');
 }
@@ -160,9 +167,9 @@ const extractParams: UtilityForecastTrustRetainedEvidenceExtractParams = {
   day14Decision: day14Decision as UtilityForecastTrustRetainedEvidenceExtractParams['day14Decision'],
   commercialCommitmentStatus: commercialCommitmentStatus as CommercialCommitmentStatus,
   commercialCommitmentEvidence,
+  proofPackId,
 };
 if (values.has('dataset-id')) extractParams.datasetId = values.get('dataset-id') as string;
-if (values.has('proof-pack-id')) extractParams.proofPackId = values.get('proof-pack-id') as string;
 if (values.has('artifact-title')) extractParams.artifactTitle = values.get('artifact-title') as string;
 if (values.has('claim-boundary')) extractParams.claimBoundary = values.get('claim-boundary') as string;
 if (values.has('do-not-claim')) extractParams.doNotClaim = values.get('do-not-claim') as string;

@@ -286,6 +286,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--csv-file', csvPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'byo-csv-retained.md',
+      '--proof-pack-id', 'byo_csv_privacy_proof_pack',
       '--record-date', '2026-05-30',
       '--buyer-data-coverage-pct', '88',
       '--time-to-artifact-hours', '12',
@@ -368,6 +369,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--csv-file', csvPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'byo-csv-retained.md',
+      '--proof-pack-id', 'byo_csv_privacy_proof_pack',
       '--record-date', '2026-05-30',
       '--buyer-data-coverage-pct', '88',
       '--time-to-artifact-hours', '12',
@@ -383,6 +385,34 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(prepResult.stderr).toContain('Spreadsheet formula risk was detected');
     expect(prepResult.stderr).toContain('review_note');
     expect(() => readFileSync(path.join(evidenceRoot, 'byo-csv-retained.md'), 'utf8')).toThrow();
+  });
+
+  it('requires explicit BYO-CSV proof-pack metadata before writing retained artifacts', async () => {
+    const evidenceRoot = makeTempRoot();
+    const csvPath = path.join(evidenceRoot, 'redacted-byo.csv');
+    writeFileSync(csvPath, [
+      'timestamp,feeder_id,demand_mw,temperature_c',
+      '2026-01-01T00:00:00.000Z,FDR-1,12.5,-6',
+    ].join('\n'), 'utf8');
+
+    const result = await runTsxScript(byoCsvPrepScriptPath, [
+      '--csv-file', csvPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'missing-byo-proof-pack.md',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '88',
+      '--time-to-artifact-hours', '12',
+      '--reviewer-role', 'utility privacy reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Missing required option: --proof-pack-id');
+    expect(() => readFileSync(path.join(evidenceRoot, 'missing-byo-proof-pack.md'), 'utf8')).toThrow();
   });
 
   it('prepares a forecast trust retained extract from benchmark pack JSON and stays validator-compatible', async () => {
@@ -456,6 +486,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--benchmark-pack-file', packPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'forecast-trust-retained.md',
+      '--proof-pack-id', 'forecast_benchmark_provenance',
       '--record-date', '2026-05-30',
       '--buyer-data-coverage-pct', '90',
       '--time-to-artifact-hours', '24',
@@ -530,6 +561,33 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.stderr).toBe('');
   });
 
+  it('rejects forecast trust proof-pack metadata that does not match the route registry', async () => {
+    const evidenceRoot = makeTempRoot();
+    const packPath = path.join(evidenceRoot, 'forecast-benchmark-pack.json');
+    writeFileSync(packPath, '{}', 'utf8');
+
+    const result = await runTsxScript(forecastTrustPrepScriptPath, [
+      '--benchmark-pack-file', packPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'forecast-mismatched-proof-pack.md',
+      '--proof-pack-id', 'tier_cfo_savings_pack',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '90',
+      '--time-to-artifact-hours', '24',
+      '--reviewer-role', 'utility planning reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'paid_pilot',
+      '--commercial-commitment-evidence', 'paid pilot evidence retained in redacted commercial appendix',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--proof-pack-id tier_cfo_savings_pack is not valid for --route /forecast-benchmarking');
+    expect(result.stderr).toContain('forecast_benchmark_provenance');
+    expect(() => readFileSync(path.join(evidenceRoot, 'forecast-mismatched-proof-pack.md'), 'utf8')).toThrow();
+  });
+
   it('prepares a GA/ICI retained extract, hash reference, and validator-compatible row', async () => {
     const evidenceRoot = makeTempRoot();
     const peakTrackerPath = path.join(evidenceRoot, 'ieso-peak-tracker.md');
@@ -577,6 +635,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--customer-load-file', customerLoadPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'ga-ici-retained.md',
+      '--proof-pack-id', 'ga_ici_5cp_decision_support_pack',
       '--base-period-start', '2026-05-01',
       '--base-period-end', '2027-04-30',
       '--record-date', '2026-05-30',
@@ -678,6 +737,7 @@ describe('pilot evidence artifact preparation CLI', () => {
       '--customer-load-file', customerLoadPath,
       '--evidence-root', evidenceRoot,
       '--artifact-file', 'identified-ga-ici.md',
+      '--proof-pack-id', 'ga_ici_5cp_decision_support_pack',
       '--base-period-start', '2026-05-01',
       '--base-period-end', '2027-04-30',
       '--record-date', '2026-05-30',
@@ -694,5 +754,51 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('direct identifier column "meter_id"');
     expect(() => readFileSync(path.join(evidenceRoot, 'identified-ga-ici.md'), 'utf8')).toThrow();
+  });
+
+  it('rejects GA/ICI proof-pack metadata that does not match the route registry', async () => {
+    const evidenceRoot = makeTempRoot();
+    const systemPeaksPath = path.join(evidenceRoot, 'ieso-peaks.csv');
+    const customerLoadPath = path.join(evidenceRoot, 'redacted-load.csv');
+    writeFileSync(systemPeaksPath, [
+      'timestamp,ontario_demand_mw,status,source',
+      '2026-07-01T18:00:00.000Z,22000,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-02T18:00:00.000Z,21750,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-03T18:00:00.000Z,21500,candidate,https://www.ieso.ca/peaktracker',
+      '2026-07-04T18:00:00.000Z,21250,forecast,https://www.ieso.ca/peaktracker',
+      '2026-07-05T18:00:00.000Z,21000,forecast,https://www.ieso.ca/peaktracker',
+    ].join('\n'), 'utf8');
+    writeFileSync(customerLoadPath, [
+      'timestamp,load_mw',
+      '2026-07-01T18:00:00.000Z,8',
+      '2026-07-02T18:00:00.000Z,7.8',
+      '2026-07-03T18:00:00.000Z,7.6',
+      '2026-07-04T18:00:00.000Z,7.4',
+      '2026-07-05T18:00:00.000Z,7.2',
+    ].join('\n'), 'utf8');
+
+    const result = await runTsxScript(gaIciPrepScriptPath, [
+      '--system-peaks-file', systemPeaksPath,
+      '--customer-load-file', customerLoadPath,
+      '--evidence-root', evidenceRoot,
+      '--artifact-file', 'ga-ici-mismatched-proof-pack.md',
+      '--proof-pack-id', 'tier_cfo_savings_pack',
+      '--base-period-start', '2026-05-01',
+      '--base-period-end', '2027-04-30',
+      '--record-date', '2026-05-30',
+      '--buyer-data-coverage-pct', '84',
+      '--time-to-artifact-hours', '18',
+      '--reviewer-role', 'utility planning reviewer',
+      '--reviewer-acceptance', 'accepted',
+      '--reviewer-feedback-status', 'complete',
+      '--day-14-decision', 'proceed',
+      '--commercial-commitment-status', 'letter_of_intent',
+      '--commercial-commitment-evidence', 'letter of intent evidence retained in redacted commercial appendix',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--proof-pack-id tier_cfo_savings_pack is not valid for --route /ga-ici-5cp');
+    expect(result.stderr).toContain('ga_ici_5cp_decision_support_pack');
+    expect(() => readFileSync(path.join(evidenceRoot, 'ga-ici-mismatched-proof-pack.md'), 'utf8')).toThrow();
   });
 });
