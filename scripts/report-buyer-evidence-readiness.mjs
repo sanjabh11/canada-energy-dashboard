@@ -407,6 +407,10 @@ if (!hasProductionEvidenceInputs) {
   console.log('- Fill a non-template anonymized outreach response log when real buyer activity exists, then run `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
   console.log(`- Generate the minimum Phase F starter bundle with \`${phaseFMinimumBundleCommand()}\`.`);
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
+} else if (outreachLogs.length > 0 && totalActionableOutreachRows === 0 && pilotRegisters.length === 0) {
+  console.log('- Record real buyer replies in the existing anonymized outreach response log; header-only, drafted, sent-no-reply, not-now, not-fit, and unsubscribe rows do not create evidence actions.');
+  console.log('- When a row becomes interested, requested_info, data_offered, or meeting_booked with a valid pilot_evidence_register_action, rerun `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
+  console.log('- Keep Phase F blocked until an actionable row creates intake or retained-artifact work and a production pilot evidence register exists.');
 } else if (totalActionableOutreachRows > 0 && pilotRegisters.length === 0) {
   console.log('- Use the outreach action plan excerpt above to create intake packets or retained artifacts.');
 } else if (pilotRegisters.length > 0 && totalConfidenceRows === 0) {

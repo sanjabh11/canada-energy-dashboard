@@ -30,6 +30,7 @@
 | Route-specific claim-boundary guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A row could move confidence while `claim_boundary` or `do_not_claim` stayed generic, contradictory, or empty-style. | Confidence-moving rows must include buyer/source boundary wording plus route-specific do-not-claim language. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point at an arbitrary file label with no stable evidence handle. | Confidence-moving `evidence_file_reference` values must include `sha256=<64 hex chars>` or `sha256:<64 hex chars>`. |
 | Local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A stable SHA-256 handle could still point at a file nobody rechecked locally. | Required for the 95% gate; the validator recomputes each confidence-moving artifact hash. |
+| Outreach response log starter | `pnpm run create:outreach-response-log -- --output-dir /tmp/ceip-outreach-response-log` | Operators had to hand-copy the response-log template before starting a clean anonymized collection workspace. | Creates a header-only zero-evidence log plus README instructions; it can validate with zero rows but cannot create buyer evidence or move confidence. |
 | Outreach response log validator | `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv` / `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv` | Manual outreach replies could stay in unstructured notes with no proof-pack route, caveat, artifact promise, reply status, completed-activity date, or evidence follow-up field. | Anonymized response queue and intake action plan only; it can trigger intake/register actions but does not create buyer evidence or move confidence. |
 | Outreach intake action-plan template gate | `pnpm run check:outreach-intake-plan-template` | The non-confidence-moving action-plan path could drift out of release readiness while the base response-log template still passed. | Template smoke only; it proves command wiring, not buyer evidence. |
 | Buyer evidence readiness report | `pnpm run report:buyer-evidence-readiness -- --root path/to/anonymized-outreach-or-registers --evidence-root path/to/redacted-artifacts` | Operators had to use ad hoc file searches to tell whether Phase F had real non-template buyer-evidence inputs. | Non-mutating readiness scan only; it ignores templates/fixtures/generated paths, validates candidate logs/registers, and reports whether the retained-artifact 95% gate can run. |
@@ -223,6 +224,7 @@ Required scorecard columns in the CSV:
 Validate a filled register before changing any feature rating:
 
 ```bash
+pnpm run create:outreach-response-log -- --output-dir /tmp/ceip-outreach-response-log
 pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
 pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv

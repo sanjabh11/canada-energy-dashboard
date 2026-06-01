@@ -559,8 +559,8 @@ const csvText = readFileSync(logPath, 'utf8');
 const rows = parseCsv(csvText);
 const responseRows = [];
 
-if (rows.length < 2) {
-  failures.push('Outreach response log must include a header and at least one response row.');
+if (rows.length < 1) {
+  failures.push('Outreach response log must include a header row.');
 } else {
   const headers = rows[0].map((header) => header.trim());
   const headerSet = new Set(headers);
