@@ -121,6 +121,7 @@ pnpm run check:public-metadata -- --dist
 pnpm run check:pilot-evidence-95-fixture-gate
 pnpm run check:pilot-evidence-template
 pnpm run check:outreach-response-log-template
+pnpm run check:outreach-intake-plan-template
 pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 pnpm run validate:outreach-response-log -- docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv --allow-template
