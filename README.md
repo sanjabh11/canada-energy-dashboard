@@ -68,7 +68,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | Route claim-boundary movement guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could carry a generic or contradictory `do_not_claim` field. | Confidence-moving rows require buyer/source boundary wording and route-specific do-not-claim terms. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point to an arbitrary file label. | Confidence-moving evidence references require a SHA-256 handle. |
 | Local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | SHA-256 references were syntactic unless a human checked the redacted evidence file. | Required for the 95% gate; each confidence-moving artifact hash is recomputed and compared. |
-| Outreach response log validator | `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv` | Manual replies could sit in external notes without proof-pack route, caveat, artifact promise, reply status, or evidence follow-up fields. | Anonymized outreach evidence queue only; it does not create buyer evidence or move confidence. |
+| Outreach response log validator | `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv` / `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv` | Manual replies could sit in external notes without proof-pack route, caveat, artifact promise, reply status, chronology checks, or evidence follow-up fields. | Anonymized outreach evidence queue and intake action plan only; it does not create buyer evidence or move confidence. |
 | Pilot evidence intake packet generator | `pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake` | Operators had to hand-assemble route-specific starter registers, redaction notes, and artifact folders before a buyer pilot. | Generates a non-confidence-moving starter packet only; real buyer evidence, reviewer acceptance, and retained artifact hashes are still required. |
 | Forecast trust retained extract helper | `pnpm run prepare:forecast-trust-report-artifact -- --benchmark-pack-file path/to/pack.json ...` | Forecast trust report rows could be hand-written from keyword prose instead of generated from benchmark-pack metrics. | Produces hashable retained extracts with numeric forecast diagnostics and buyer-evidence outcome fields; still not buyer evidence by itself. |
 | Pilot date and reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Future-dated or reviewer-anonymous rows could move confidence. | Confidence-moving rows require a non-future valid date and reviewer role. |
@@ -128,6 +128,7 @@ For a filled buyer register:
 
 ```bash
 pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
+pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv
 pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
 ```

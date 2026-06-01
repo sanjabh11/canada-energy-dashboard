@@ -138,6 +138,7 @@ const checkSteps = includeChecks
       runStep('Production deploy script guard', 'pnpm', ['run', 'check:production-deploy-script']),
       runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
       runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
+      runStep('Outreach response log template', 'pnpm', ['run', 'check:outreach-response-log-template']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
       runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
     ]
@@ -150,6 +151,7 @@ const requiredLocalCheckLabels = new Set([
   'Production deploy script guard',
   'Pilot evidence fixture gate',
   'Pilot evidence template',
+  'Outreach response log template',
 ]);
 const failedRequiredLocalChecks = checkSteps.filter(
   (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',

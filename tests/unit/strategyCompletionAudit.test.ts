@@ -61,6 +61,10 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParit
       '    echo "Pilot evidence register template check passed for 25 required columns."',
       '    exit 0',
       '    ;;',
+      '  *check:outreach-response-log-template*)',
+      '    echo "Outreach response log validation passed for 0 row(s): docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv"',
+      '    exit 0',
+      '    ;;',
       '  *check:live-public-metadata*)',
       '    if [ "$CEIP_FAKE_LIVE_PARITY_STATUS" = "pass" ]; then',
       '      echo "Public metadata check passed for remote deployment metadata."',
@@ -145,6 +149,8 @@ describe('strategy completion audit', () => {
     expect(result.stdout).toContain('Pilot evidence fixture 95% gate check passed.');
     expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-template`');
     expect(result.stdout).toContain('Pilot evidence register template check passed');
+    expect(result.stdout).toContain('- Command: `pnpm run check:outreach-response-log-template`');
+    expect(result.stdout).toContain('Outreach response log validation passed');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
     expect(result.stdout).toContain('Public metadata check failed:');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');

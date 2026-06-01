@@ -100,6 +100,7 @@ const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evide
 const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:outreach-response-log/;
+const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
@@ -350,6 +351,10 @@ if (!existsSync(sourceDocPath)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the outreach response log template and validator.');
   }
 
+  if (!outreachIntakePlanPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
+  }
+
   if (!pilotEvidenceIntakePacketPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention create:pilot-evidence-intake-packet for buyer-evidence intake scaffolding.');
   }
@@ -398,6 +403,9 @@ if (!existsSync(sourceDocPath)) {
     if (!outreachResponseLogPhrase.test(outreachTemplatesDoc)) {
       failures.push('docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md must mention the outreach response log template and validator.');
     }
+    if (!outreachIntakePlanPhrase.test(outreachTemplatesDoc)) {
+      failures.push('docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
+    }
   }
 
   const outreachCampaignPath = path.join(repoRoot, 'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md');
@@ -405,6 +413,9 @@ if (!existsSync(sourceDocPath)) {
     const outreachCampaignDoc = readFileSync(outreachCampaignPath, 'utf8');
     if (!outreachResponseLogPhrase.test(outreachCampaignDoc)) {
       failures.push('docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md must mention the outreach response log template and validator.');
+    }
+    if (!outreachIntakePlanPhrase.test(outreachCampaignDoc)) {
+      failures.push('docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
     }
   }
 
