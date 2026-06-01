@@ -444,6 +444,7 @@ const failures = [...argFailures];
 const evidenceRows = [];
 const localEvidenceTextByRowNumber = new Map();
 let readiness95Report = null;
+let readiness95Evaluation = null;
 
 function parseCsv(text) {
   const rows = [];
@@ -1153,6 +1154,13 @@ function buildReadiness95Evaluation() {
   };
 }
 
+function getReadiness95Evaluation() {
+  if (!readiness95Evaluation) {
+    readiness95Evaluation = buildReadiness95Evaluation();
+  }
+  return readiness95Evaluation;
+}
+
 function printReadiness95Report(report) {
   console.log('\n95% Evidence Readiness Report');
   console.log(`Register: ${report.summary.registerPath}`);
@@ -1374,157 +1382,13 @@ if (rows.length < 2) {
 const pre95FailureCount = failures.length;
 
 if (require95 && failures.length === 0) {
-  if (!evidenceRoot) {
-    failures.push('95% confidence gate requires --evidence-root with retained redacted artifacts so every confidence-moving SHA-256 reference is recomputed, not just syntactically present.');
-  }
-
-  if (!fixture95OverrideEnabled && isNonProduction95Register(relativeRegisterPath)) {
-    failures.push('95% confidence gate cannot be satisfied by fixture, template, or sample registers; use a buyer-evidence register path and reserve --allow-fixture-95 for tests only.');
-  }
-
-  const acceptedBuyerRows = evidenceRows.filter(({ row, confidenceDelta }) => (
-    confidenceDelta > 0
-    && buyerEvidenceLabels.has(row.source_label)
-    && isAcceptedEvidence(row.reviewer_acceptance ?? '')
-    && isCompleteFeedback(row.reviewer_feedback_status ?? '')
-    && normalizeText(row.day_14_decision ?? '') === 'proceed'
-  ));
-  const acceptedProofPackIds = new Set(acceptedBuyerRows.map(({ row }) => row.proof_pack_id));
-  const acceptedEvidenceHashes = new Set(acceptedBuyerRows
-    .map(({ row }) => parseEvidenceReference(row.evidence_file_reference ?? '').sha256)
-    .filter(Boolean));
-  const totalConfidenceDelta = acceptedBuyerRows.reduce((sum, item) => sum + item.confidenceDelta, 0);
-  const hasAcceptedUtilityForecast = acceptedBuyerRows.some(({ row }) => (
-    row.route === '/utility-demand-forecast'
-    && hasForecastBenchmarkDiagnostic(row.benchmark_lift_or_diagnostic ?? '')
-    && hasNumericForecastEvidence(row.benchmark_lift_or_diagnostic ?? '')
-  ));
-  const hasAcceptedTierEvidence = acceptedBuyerRows.some(({ row }) => (
-    row.route === '/roi-calculator' || row.route === '/credit-banking'
-  ));
-  const hasAcceptedBillingOrSecurityEvidence = acceptedBuyerRows.some(({ row }) => (
-    row.route === '/shadow-billing' || row.route === '/utility-security'
-  ));
-  const lowCoverageRows = acceptedBuyerRows.filter(({ coverage }) => coverage === null || coverage < 70);
-  const unsupportedCoverageRows = acceptedBuyerRows.filter(({ rowNumber, coverage }) => (
-    coverage !== null && !hasRetainedCoverageEvidence(rowNumber, coverage)
-  ));
-  const slowArtifactRows = acceptedBuyerRows.filter(({ timeToArtifact }) => (
-    timeToArtifact === null || timeToArtifact > maxAcceptedArtifactHours95
-  ));
-  const unsupportedTimeToArtifactRows = acceptedBuyerRows.filter(({ rowNumber, timeToArtifact }) => (
-    timeToArtifact !== null && !hasRetainedTimeToArtifactEvidence(rowNumber, timeToArtifact)
-  ));
-  const staleEvidenceRows = acceptedBuyerRows.filter(({ row }) => (
-    daysSinceIsoDate(row.record_date ?? '') > maxAcceptedEvidenceAgeDays95
-  ));
-  const unsupportedRecordDateRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    !hasRetainedRecordDateEvidence(rowNumber, row)
-  ));
-  const unsupportedPiiScreenRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    !hasRetainedPiiScreenEvidence(rowNumber, row)
-  ));
-  const unsupportedReviewerAcceptanceRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    !hasRetainedReviewerAcceptanceEvidence(rowNumber, row)
-  ));
-  const unsupportedReviewerFeedbackRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    !hasRetainedReviewerFeedbackEvidence(rowNumber, row)
-  ));
-  const unsupportedDay14DecisionRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    !hasRetainedDay14DecisionEvidence(rowNumber, row)
-  ));
-  const hasFastArtifact = acceptedBuyerRows.some(({ timeToArtifact }) => (
-    timeToArtifact !== null && timeToArtifact <= fastArtifactTargetHours
-  ));
-  const hasCommercialCommitment = acceptedBuyerRows.some(({ row }) => (
-    strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
-  ));
-  const unsupportedCommercialCommitmentRows = acceptedBuyerRows.filter(({ row, rowNumber }) => (
-    strongCommercialCommitmentStatuses.has(normalizeText(row.commercial_commitment_status ?? ''))
-    && !hasRetainedCommercialCommitmentEvidence(rowNumber, row)
-  ));
-
-  if (!hasAcceptedUtilityForecast) {
-    failures.push('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence with numeric MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage, and champion/challenger diagnostics.');
-  }
-
-  if (!hasAcceptedTierEvidence) {
-    failures.push('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence.');
-  }
-
-  if (!hasAcceptedBillingOrSecurityEvidence) {
-    failures.push('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence.');
-  }
-
-  if (acceptedProofPackIds.size < 3) {
-    failures.push('95% confidence gate requires at least three distinct accepted buyer-supplied proof_pack_id values with day_14_decision=proceed.');
-  }
-
-  if (acceptedEvidenceHashes.size < acceptedBuyerRows.length) {
-    failures.push('95% confidence gate requires each accepted confidence-moving row to reference a distinct SHA-256 evidence artifact.');
-  }
-
-  if (totalConfidenceDelta < 0.899999) {
-    failures.push('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9 across the strategy evidence rows.');
-  }
-
-  if (lowCoverageRows.length > 0) {
-    failures.push(`95% confidence gate requires buyer_data_coverage_pct >= 70 for accepted confidence-moving rows; low rows: ${lowCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedCoverageRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support buyer_data_coverage_pct for accepted confidence-moving rows; unsupported rows: ${unsupportedCoverageRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (slowArtifactRows.length > 0) {
-    failures.push(`95% confidence gate requires every accepted confidence-moving row to record time_to_artifact_hours <= ${maxAcceptedArtifactHours95}; slow or missing rows: ${slowArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedTimeToArtifactRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support time_to_artifact_hours for accepted confidence-moving rows; unsupported rows: ${unsupportedTimeToArtifactRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (staleEvidenceRows.length > 0) {
-    failures.push(`95% confidence gate requires accepted confidence-moving buyer evidence to be no older than ${maxAcceptedEvidenceAgeDays95} days; stale rows: ${staleEvidenceRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedRecordDateRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support record_date for accepted confidence-moving rows; unsupported rows: ${unsupportedRecordDateRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedPiiScreenRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support pii_screen_result for accepted confidence-moving rows; unsupported rows: ${unsupportedPiiScreenRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedReviewerAcceptanceRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support reviewer_acceptance for accepted confidence-moving rows; unsupported rows: ${unsupportedReviewerAcceptanceRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedReviewerFeedbackRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support reviewer_feedback_status for accepted confidence-moving rows; unsupported rows: ${unsupportedReviewerFeedbackRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (unsupportedDay14DecisionRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support day_14_decision=proceed for accepted confidence-moving rows; unsupported rows: ${unsupportedDay14DecisionRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
-
-  if (!hasFastArtifact) {
-    failures.push(`95% confidence gate requires at least one accepted buyer proof pack delivered in ${fastArtifactTargetHours} hours or less to prove the fast solo-developer pilot wedge.`);
-  }
-
-  if (!hasCommercialCommitment) {
-    failures.push('95% confidence gate requires at least one accepted buyer-supplied row with commercial_commitment_status of design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.');
-  }
-
-  if (unsupportedCommercialCommitmentRows.length > 0) {
-    failures.push(`95% confidence gate requires retained local evidence artifacts to support each strong commercial_commitment_status; unsupported rows: ${unsupportedCommercialCommitmentRows.map((item) => item.rowNumber).join(', ')}.`);
-  }
+  failures.push(...getReadiness95Evaluation().failures);
 }
 
 if (report95) {
   readiness95Report = pre95FailureCount > 0
     ? buildBlockedReadiness95Report(failures.length)
-    : buildReadiness95Evaluation();
+    : getReadiness95Evaluation();
   printReadiness95Report(readiness95Report);
 }
 
