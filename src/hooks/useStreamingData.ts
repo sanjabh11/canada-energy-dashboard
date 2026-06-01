@@ -2,9 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { streamingService, StreamingDataPoint, StreamingConnection } from '../lib/data/streamingService';
 
 /**
- * React Hook for real-time streaming data
+ * React Hook for connector-backed data updates
  *
- * Provides easy access to streaming data with built-in fallback handling
+ * Provides easy access to data updates with built-in fallback handling
  */
 export function useStreamingData(dataset: string) {
   const [data, setData] = useState<StreamingDataPoint[]>([]);
