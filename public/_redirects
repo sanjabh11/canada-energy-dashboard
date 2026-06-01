@@ -1,4 +1,8 @@
-# Serve static API files directly (before SPA fallback)
+# Route function-backed API calls before static API file passthrough.
+/api/auth/*  /.netlify/functions/auth-session/:splat  200
+/api/leads/*  /.netlify/functions/leads  200
+
+# Serve static API files directly (before SPA fallback).
 /api/*  /api/:splat  200
 
 # SPA fallback - all other routes go to index.html

@@ -8,12 +8,17 @@
   Cross-Origin-Opener-Policy: same-origin-allow-popups
   Cross-Origin-Resource-Policy: cross-origin
 
-/api/*
+/api/*.yaml
   Content-Type: application/yaml; charset=utf-8
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600
 
 /api/openapi.yaml
+  Content-Type: application/yaml; charset=utf-8
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=3600
+
+/*.yaml
   Content-Type: application/yaml; charset=utf-8
   Access-Control-Allow-Origin: *
   Cache-Control: public, max-age=3600
