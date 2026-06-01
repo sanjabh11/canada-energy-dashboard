@@ -219,6 +219,21 @@ function docReference(docPath) {
   return docPath.replace(/^docs\//, '');
 }
 
+function hasPreparePilotEvidenceCommandWithoutProofPackId(doc) {
+  const command = 'pnpm run prepare:pilot-evidence-artifact';
+  let searchStart = 0;
+  while (searchStart < doc.length) {
+    const commandStart = doc.indexOf(command, searchStart);
+    if (commandStart === -1) return false;
+    const commandWindow = doc.slice(commandStart, commandStart + 2500);
+    const commandEndMatch = commandWindow.search(/\n\s*\n|```/);
+    const commandText = commandEndMatch === -1 ? commandWindow : commandWindow.slice(0, commandEndMatch);
+    if (!commandText.includes('--proof-pack-id')) return true;
+    searchStart = commandStart + command.length;
+  }
+  return false;
+}
+
 if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
 } else {
@@ -266,6 +281,9 @@ if (!existsSync(sourceDocPath)) {
       const activeDoc = readFileSync(absoluteActiveDocPath, 'utf8');
       if (filledNinetyFiveCommandWithoutEvidenceRoot.test(activeDoc)) {
         failures.push(`${docPath} has a 95% filled-register command without --evidence-root; 95% claims must recompute retained redacted artifact hashes.`);
+      }
+      if (hasPreparePilotEvidenceCommandWithoutProofPackId(activeDoc)) {
+        failures.push(`${docPath} has a prepare:pilot-evidence-artifact command without --proof-pack-id; retained artifacts must be route/proof-pack matched.`);
       }
       if (staleForecastDiagnosticPhrase.test(activeDoc)) {
         failures.push(`${docPath} contains the stale keyword-only forecast diagnostic example; use numeric MAE, MAPE, RMSE, baseline, rolling-split, and interval-coverage evidence.`);
@@ -352,6 +370,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (filledNinetyFiveCommandWithoutEvidenceRoot.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md has a 95% filled-register command without --evidence-root.');
+  }
+
+  if (hasPreparePilotEvidenceCommandWithoutProofPackId(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md has a prepare:pilot-evidence-artifact command without --proof-pack-id.');
   }
 
   if (staleForecastDiagnosticPhrase.test(sourceDoc)) {
