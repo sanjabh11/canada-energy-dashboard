@@ -144,6 +144,22 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
   });
 
+  it('keeps a header-only production outreach log in collection mode, not evidence-ready mode', async () => {
+    const root = makeTempRoot();
+    const logPath = path.join(root, 'outreach-response-log.csv');
+    writeFileSync(logPath, `${outreachHeader}\n`, 'utf8');
+
+    const result = await runNodeScript(readinessScriptPath, ['--root', root]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Production outreach response logs: 1');
+    expect(result.stdout).toContain('Actionable outreach rows: 0');
+    expect(result.stdout).toContain('Record real buyer replies in the existing anonymized outreach response log');
+    expect(result.stdout).toContain('Keep Phase F blocked until an actionable row creates intake or retained-artifact work');
+    expect(result.stdout).not.toContain('A retained-evidence register passed the hard gate');
+  });
+
   it('runs the retained-artifact 95% gate when an evidence root is supplied', async () => {
     const root = makeTempRoot();
     const packetDir = path.join(root, 'pilot-intake');

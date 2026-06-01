@@ -1,10 +1,11 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-outreach-response-log.mjs');
+const generatorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
 const templatePath = path.join(process.cwd(), 'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv');
 const tempRoots: string[] = [];
 
@@ -16,9 +17,9 @@ function makeTempRoot() {
   return root;
 }
 
-function runValidator(args: string[]) {
+function runScript(targetScriptPath: string, args: string[]) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(process.execPath, [scriptPath, ...args], {
+    const child = spawn(process.execPath, [targetScriptPath, ...args], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -41,6 +42,10 @@ function runValidator(args: string[]) {
   });
 }
 
+function runValidator(args: string[]) {
+  return runScript(scriptPath, args);
+}
+
 function writeLog(rows: string[]) {
   const root = makeTempRoot();
   const filePath = path.join(root, 'outreach-response-log.csv');
@@ -56,6 +61,36 @@ afterEach(() => {
 });
 
 describe('outreach response log validator', () => {
+  it('creates a header-only anonymized response log workspace that validates with zero rows', async () => {
+    const root = makeTempRoot();
+    const outputDir = path.join(root, 'outreach-workspace');
+    const result = await runScript(generatorScriptPath, ['--output-dir', outputDir]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Outreach response log starter created.');
+
+    const logPath = path.join(outputDir, 'outreach-response-log.csv');
+    const readmePath = path.join(outputDir, 'README.md');
+    expect(existsSync(logPath)).toBe(true);
+    expect(existsSync(readmePath)).toBe(true);
+    expect(readFileSync(logPath, 'utf8')).toBe(`${header}\n`);
+    expect(readFileSync(readmePath, 'utf8')).toContain('header-only log must keep confidence movement at zero');
+
+    const report = await runValidator([logPath, '--report']);
+    expect(report.status).toBe(0);
+    expect(report.stderr).toBe('');
+    expect(report.stdout).toContain('Rows: 0');
+    expect(report.stdout).toContain('Rows requiring evidence action: 0');
+    expect(report.stdout).toContain('Confidence movement: none');
+
+    const actionPlan = await runValidator([logPath, '--action-plan']);
+    expect(actionPlan.status).toBe(0);
+    expect(actionPlan.stderr).toBe('');
+    expect(actionPlan.stdout).toContain('Rows requiring evidence action: 0');
+    expect(actionPlan.stdout).toContain('Confidence movement: none');
+  });
+
   it('accepts the checked-in anonymized template with the template flag', async () => {
     const result = await runValidator([templatePath, '--allow-template', '--report']);
 

@@ -238,6 +238,14 @@ Would a short walkthrough of `/ai-datacentres` and `/utility-demand-forecast` he
 
 Use [OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./OUTREACH_RESPONSE_LOG_TEMPLATE.csv) when a manual send or reply changes pilot follow-up. Keep direct contact details in the external outreach system only; repo-retained rows use `target_label` and proof-pack evidence fields.
 
+To start a clean non-template log workspace, run:
+
+```bash
+pnpm run create:outreach-response-log -- --output-dir /tmp/ceip-outreach-response-log
+```
+
+The generated header-only log is zero-evidence scaffolding. Add rows only after completed outreach activity exists.
+
 Validate before treating a reply as pilot follow-up:
 
 ```bash

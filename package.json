@@ -43,6 +43,7 @@
     "report:strategy-source-anchors": "node scripts/report-strategy-source-anchors.mjs",
     "check:strategy-source-anchors": "node scripts/report-strategy-source-anchors.mjs --fail-on-unverified",
     "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
+    "create:outreach-response-log": "node scripts/create-outreach-response-log.mjs",
     "create:pilot-evidence-intake-packet": "node scripts/create-pilot-evidence-intake-packet.mjs",
     "create:phase-f-minimum-intake-bundle": "node scripts/create-phase-f-minimum-intake-bundle.mjs",
     "prepare:byo-csv-proof-artifact": "tsx scripts/byo-csv-proof-artifact.ts",
