@@ -171,6 +171,16 @@ function shouldIgnore(filePath) {
   return normalized.split('/').some((segment) => ignoredPathSegments.has(segment));
 }
 
+function validateDirectoryInput(label, dirPath) {
+  if (!existsSync(dirPath)) {
+    failures.push(`${label} directory not found: ${displayPath(dirPath)}`);
+    return;
+  }
+  if (!statSync(dirPath).isDirectory()) {
+    failures.push(`${label} must be a directory: ${displayPath(dirPath)}`);
+  }
+}
+
 function scanCsvFiles(root) {
   const files = [];
   let ignored = 0;
@@ -260,6 +270,15 @@ function summarizeOutreachLog(filePath, rows) {
     actionPlan,
   };
 }
+
+if (failures.length > 0) {
+  console.error('Buyer evidence readiness report failed:\n');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exit(1);
+}
+
+for (const root of roots) validateDirectoryInput('Root', root);
+if (evidenceRoot) validateDirectoryInput('Evidence root', evidenceRoot);
 
 if (failures.length > 0) {
   console.error('Buyer evidence readiness report failed:\n');
