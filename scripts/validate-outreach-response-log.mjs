@@ -427,6 +427,12 @@ function printActionPlan(rows) {
     }
 
     if (row.pilot_evidence_register_action === 'prepare_retained_artifact') {
+      const commercialCommitmentArgs = normalizeText(row.commercial_commitment_status) === 'none'
+        ? []
+        : [
+          '--commercial-commitment-evidence',
+          `<replace with retained ${row.commercial_commitment_status} evidence text>`,
+        ];
       console.log(`  1. ${[
         'pnpm',
         'run',
@@ -438,16 +444,36 @@ function printActionPlan(rows) {
         artifactFile,
         '--route',
         row.route,
+        '--proof-pack-id',
+        row.proof_pack_id,
         '--record-date',
         row.activity_date,
+        '--pii-screen-result',
+        '<replace with redacted/no personal data status>',
+        '--buyer-data-coverage-pct',
+        '<replace with 0-100 buyer data coverage percent>',
+        '--time-to-artifact-hours',
+        '<replace with hours from buyer input to retained artifact>',
         '--reviewer-role',
         row.reviewer_role,
+        '--reviewer-acceptance',
+        '<accepted|approved|signed after independent reviewer confirms>',
+        '--reviewer-feedback-status',
+        '<complete|accepted|approved|signed>',
+        '--day-14-decision',
+        '<proceed|park|pivot|reject|pending>',
         '--commercial-commitment-status',
         row.commercial_commitment_status,
+        ...commercialCommitmentArgs,
+        '--claim-boundary',
+        '<replace with buyer-approved bounded claim boundary>',
+        '--do-not-claim',
+        row.caveat_used,
         '--diagnostic',
         '<replace with route-specific buyer diagnostic evidence>',
       ].map(shellQuote).join(' ')}`);
-      console.log('  2. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+      console.log('  2. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
+      console.log('  3. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
       continue;
     }
 
