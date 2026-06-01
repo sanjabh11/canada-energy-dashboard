@@ -6,8 +6,12 @@ import path from 'node:path';
 const repoRoot = process.cwd();
 const deployScriptRelativePath = 'scripts/deploy-production.sh';
 const packageRelativePath = 'package.json';
+const publicRedirectsRelativePath = 'public/_redirects';
+const publicHeadersRelativePath = 'public/_headers';
 const deployScriptPath = path.join(repoRoot, deployScriptRelativePath);
 const packagePath = path.join(repoRoot, packageRelativePath);
+const publicRedirectsPath = path.join(repoRoot, publicRedirectsRelativePath);
+const publicHeadersPath = path.join(repoRoot, publicHeadersRelativePath);
 const failures = [];
 
 function requireFile(filePath, relativePath) {
@@ -30,8 +34,18 @@ function rejectText(text, label, needle, reason) {
   if (text.includes(needle)) failures.push(`${label} must not include \`${needle}\`; ${reason}.`);
 }
 
+function requireBefore(text, label, firstNeedle, secondNeedle, reason) {
+  const firstIndex = text.indexOf(firstNeedle);
+  const secondIndex = text.indexOf(secondNeedle);
+  if (firstIndex === -1 || secondIndex === -1 || firstIndex > secondIndex) {
+    failures.push(`${label} must place \`${firstNeedle}\` before \`${secondNeedle}\`; ${reason}.`);
+  }
+}
+
 const deployScript = requireFile(deployScriptPath, deployScriptRelativePath);
 const packageJson = requireFile(packagePath, packageRelativePath);
+const publicRedirects = requireFile(publicRedirectsPath, publicRedirectsRelativePath);
+const publicHeaders = requireFile(publicHeadersPath, publicHeadersRelativePath);
 
 if (deployScript) {
   const requiredFragments = [
@@ -96,6 +110,41 @@ if (packageJson) {
       `send ${scriptName} Playwright HTML and JSON output outside the repo before deploy gates run`,
     );
   }
+}
+
+if (publicRedirects) {
+  const authFunctionRoute = '/api/auth/*  /.netlify/functions/auth-session/:splat  200';
+  const leadsFunctionRoute = '/api/leads/*  /.netlify/functions/leads  200';
+  const staticApiRoute = '/api/*  /api/:splat  200';
+
+  requireText(publicRedirects, publicRedirectsRelativePath, authFunctionRoute);
+  requireText(publicRedirects, publicRedirectsRelativePath, leadsFunctionRoute);
+  requireText(publicRedirects, publicRedirectsRelativePath, staticApiRoute);
+  requireBefore(
+    publicRedirects,
+    publicRedirectsRelativePath,
+    authFunctionRoute,
+    staticApiRoute,
+    'function-backed auth endpoints must not be swallowed by the static API passthrough in no-build deploy artifacts',
+  );
+  requireBefore(
+    publicRedirects,
+    publicRedirectsRelativePath,
+    leadsFunctionRoute,
+    staticApiRoute,
+    'function-backed lead endpoints must not be swallowed by the static API passthrough in no-build deploy artifacts',
+  );
+}
+
+if (publicHeaders) {
+  requireText(publicHeaders, publicHeadersRelativePath, '/api/*.yaml');
+  requireText(publicHeaders, publicHeadersRelativePath, '/*.yaml');
+  rejectText(
+    publicHeaders,
+    publicHeadersRelativePath,
+    '\n/api/*\n',
+    'function-backed JSON endpoints must not inherit YAML content headers',
+  );
 }
 
 if (failures.length > 0) {
