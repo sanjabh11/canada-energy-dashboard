@@ -166,4 +166,37 @@ describe('strategy source anchor report', () => {
       rmSync(tempDir, { recursive: true, force: true });
     }
   });
+
+  it('matches source anchor terms that appear after the first 500k characters', async () => {
+    activeServer = createServer((_req, res) => {
+      res.writeHead(200, { 'content-type': 'text/html' });
+      res.end(`<html><title>Late term fixture</title><body>${'x'.repeat(620_000)} Retry Fixture Term</body></html>`);
+    });
+
+    const { port } = await listen(activeServer);
+    const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-source-anchors-'));
+    const { roadmapPath, anchorsPath } = writeFixtureFiles(tempDir, `http://127.0.0.1:${port}/fixture`);
+
+    try {
+      const result = await runSourceAnchorReport([
+        '--roadmap',
+        roadmapPath,
+        '--anchors-file',
+        anchorsPath,
+        '--manual-evidence',
+        'none',
+        '--fetch-retries',
+        '0',
+        '--fail-on-unverified',
+      ]);
+
+      expect(result.status).toBe(0);
+      expect(result.stderr).toBe('');
+      expect(result.stdout).toContain('- Live-verified anchors: 1');
+      expect(result.stdout).toContain('- Source text search limit: 1000000 characters');
+      expect(result.stdout).toContain('matched: Retry Fixture Term');
+    } finally {
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
 });
