@@ -65,6 +65,12 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParit
       '    echo "Outreach response log validation passed for 0 row(s): docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv"',
       '    exit 0',
       '    ;;',
+      '  *check:outreach-intake-plan-template*)',
+      '    echo "CEIP Outreach Intake Action Plan"',
+      '    echo "Rows requiring evidence action: 0"',
+      '    echo "Outreach response log validation passed for 0 row(s): docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv"',
+      '    exit 0',
+      '    ;;',
       '  *check:live-public-metadata*)',
       '    if [ "$CEIP_FAKE_LIVE_PARITY_STATUS" = "pass" ]; then',
       '      echo "Public metadata check passed for remote deployment metadata."',
@@ -151,6 +157,8 @@ describe('strategy completion audit', () => {
     expect(result.stdout).toContain('Pilot evidence register template check passed');
     expect(result.stdout).toContain('- Command: `pnpm run check:outreach-response-log-template`');
     expect(result.stdout).toContain('Outreach response log validation passed');
+    expect(result.stdout).toContain('- Command: `pnpm run check:outreach-intake-plan-template`');
+    expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
     expect(result.stdout).toContain('Public metadata check failed:');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');

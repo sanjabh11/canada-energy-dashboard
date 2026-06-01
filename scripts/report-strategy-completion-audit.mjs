@@ -139,6 +139,7 @@ const checkSteps = includeChecks
       runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
       runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
       runStep('Outreach response log template', 'pnpm', ['run', 'check:outreach-response-log-template']),
+      runStep('Outreach intake action plan template', 'pnpm', ['run', 'check:outreach-intake-plan-template']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
       runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
     ]
@@ -152,6 +153,7 @@ const requiredLocalCheckLabels = new Set([
   'Pilot evidence fixture gate',
   'Pilot evidence template',
   'Outreach response log template',
+  'Outreach intake action plan template',
 ]);
 const failedRequiredLocalChecks = checkSteps.filter(
   (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
@@ -297,10 +299,11 @@ const rows = [
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-source-anchors/) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:ga-ici-public-actuals/) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:production-deploy-script/) &&
-      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-completion-audit/)
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-completion-audit/) &&
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:outreach-intake-plan-template/)
       ? 'complete_locally'
       : 'incomplete',
-    'package.json scripts and roadmap evidence ledger, including source-anchor currency, deploy-script drift, and completion-audit coverage in release readiness.',
+    'package.json scripts and roadmap evidence ledger, including source-anchor currency, deploy-script drift, completion-audit coverage, and outreach intake action-plan coverage in release readiness.',
     'Run before any approval or release request.',
   ),
 ];
@@ -311,7 +314,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|Fetch retries|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|Fetch retries|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata|Outreach Intake Action Plan|Rows requiring evidence action|Confidence movement/i.test(
         line,
       ),
     )

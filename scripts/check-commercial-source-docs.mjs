@@ -10,6 +10,7 @@ import {
 
 const repoRoot = process.cwd();
 const sourceDocPath = path.join(repoRoot, 'docs/COMMERCIAL_SOURCE_OF_TRUTH.md');
+const packageJsonPath = path.join(repoRoot, 'package.json');
 
 const requiredActiveDocs = requiredActiveCommercialDocs;
 const historicalDocsToGovern = historicalCommercialDocsToGovern;
@@ -189,6 +190,15 @@ const currentCommercialWedgeRoutes = [
 ];
 const routeAliasesThatMustRemainLive = ['/solutions', '/pilot-readiness', '/pilot-evidence'];
 
+function readJson(filePath) {
+  try {
+    return JSON.parse(readFileSync(filePath, 'utf8'));
+  } catch (error) {
+    failures.push(`Could not parse JSON file ${path.relative(repoRoot, filePath)}: ${error.message}`);
+    return {};
+  }
+}
+
 function extractAppRoutes(appSource) {
   return new Set(
     [...appSource.matchAll(/path:\s*'([^']+)'/g)]
@@ -213,6 +223,11 @@ if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
 } else {
   const sourceDoc = readFileSync(sourceDocPath, 'utf8');
+  const packageJson = existsSync(packageJsonPath) ? readJson(packageJsonPath) : {};
+  const packageScripts = packageJson.scripts ?? {};
+  if (!existsSync(packageJsonPath)) {
+    failures.push('package.json is missing; cannot verify release-readiness scripts.');
+  }
   const activeCommercialSection = sectionBetween(
     sourceDoc,
     /^## Active Commercial Sources/m,
@@ -353,6 +368,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!outreachIntakePlanPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
+  }
+
+  if (packageScripts['plan:outreach-intake'] !== 'node scripts/validate-outreach-response-log.mjs --action-plan') {
+    failures.push('package.json must keep plan:outreach-intake wired to the outreach response-log action-plan validator.');
+  }
+
+  if (packageScripts['check:outreach-intake-plan-template'] !== 'node scripts/validate-outreach-response-log.mjs --allow-template --action-plan') {
+    failures.push('package.json must keep check:outreach-intake-plan-template wired to the outreach response-log action-plan template gate.');
+  }
+
+  if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:outreach-intake-plan-template')) {
+    failures.push('check:release-readiness must include check:outreach-intake-plan-template so the action-plan path cannot drift.');
   }
 
   if (!pilotEvidenceIntakePacketPhrase.test(sourceDoc)) {
