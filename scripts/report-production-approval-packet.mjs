@@ -82,6 +82,54 @@ function gitOutput(result) {
   return `${result.stdout ?? ''}\n${result.stderr ?? ''}\n${result.error ? String(result.error.message ?? result.error) : ''}`.trim();
 }
 
+function parsePorcelainStatusLine(line) {
+  const statusCode = line.slice(0, 2);
+  const rawPath = line.slice(3).trim();
+  const filePath = rawPath.includes(' -> ') ? rawPath.split(' -> ').pop().trim() : rawPath;
+  return { statusCode, filePath };
+}
+
+function gitPathCheck(commandArgs) {
+  const result = runGit(commandArgs);
+  return result.status === 0;
+}
+
+function statusLabel(statusCode) {
+  if (statusCode === '??') return 'untracked';
+  if (statusCode === '!!') return 'ignored';
+  if (statusCode.includes('D')) return 'deleted';
+  if (statusCode.includes('R')) return 'renamed';
+  if (statusCode.includes('A')) return 'added';
+  if (statusCode.includes('M')) return 'modified';
+  return statusCode.trim() || 'changed';
+}
+
+function dirtyPathAction({ tracked, ignoredByRule }) {
+  if (tracked && ignoredByRule) {
+    return 'tracked generated-or-local artifact; restore or intentionally remove from index before deploy';
+  }
+  if (!tracked && ignoredByRule) {
+    return 'ignored local artifact; remove local copy before deploy if it appears in status';
+  }
+  if (!tracked) {
+    return 'untracked non-ignored path; move outside repo, add an intentional ignore rule, or commit only if source evidence';
+  }
+  return 'tracked source change; commit, stash, or revert before deploy';
+}
+
+function classifyDirtyPath(statusLine) {
+  const { statusCode, filePath } = parsePorcelainStatusLine(statusLine);
+  const tracked = gitPathCheck(['ls-files', '--error-unmatch', '--', filePath]);
+  const ignoredByRule = gitPathCheck(['check-ignore', '--no-index', '-q', '--', filePath]);
+  return {
+    filePath,
+    status: statusLabel(statusCode),
+    tracked,
+    ignoredByRule,
+    action: dirtyPathAction({ tracked, ignoredByRule }),
+  };
+}
+
 function sourceProvenanceStep() {
   const branch = runGit(['branch', '--show-current']);
   const commit = runGit(['rev-parse', '--short', 'HEAD']);
@@ -98,6 +146,7 @@ function sourceProvenanceStep() {
     .split(/\r?\n/)
     .map((line) => line.trimEnd())
     .filter(Boolean);
+  const dirtyDetails = status.status === 0 ? statusLines.slice(0, 40).map(classifyDirtyPath) : [];
 
   if (branch.status === 0 && branchName !== 'main') {
     failures.push(`deploy script requires branch main; current branch is ${branchName}.`);
@@ -117,6 +166,9 @@ function sourceProvenanceStep() {
       `Commit: ${commitSha}`,
       `Worktree: ${statusLines.length === 0 ? 'clean' : 'dirty'}`,
       ...statusLines.slice(0, 40).map((line) => `Dirty: ${line}`),
+      ...dirtyDetails.map((detail) =>
+        `Dirty detail: ${detail.filePath} | status=${detail.status} | tracked=${detail.tracked ? 'yes' : 'no'} | ignored_by_rule=${detail.ignoredByRule ? 'yes' : 'no'} | action=${detail.action}`,
+      ),
       ...failures.map((failure) => `Blocker: ${failure}`),
     ].join('\n'),
     stderr: '',
@@ -142,7 +194,7 @@ function relevantLines(step) {
   }
 
   if (step.label === 'Source deploy provenance') {
-    return lines.filter((line) => /^(Branch|Commit|Worktree|Dirty|Blocker):/.test(line)).slice(0, 80);
+    return lines.filter((line) => /^(Branch|Commit|Worktree|Dirty|Dirty detail|Blocker):/.test(line)).slice(0, 100);
   }
 
   const important = lines.filter((line) =>

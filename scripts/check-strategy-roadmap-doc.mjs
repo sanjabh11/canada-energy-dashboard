@@ -207,6 +207,7 @@ if (!existsSync(roadmapPath)) {
     'original-plan completion audit coverage',
     'Release readiness could pass while the original 95% strategy-plan requirement map silently drifts.',
     'The production deploy script could drift from the approval packet and skip the CEIP-specific readiness or post-deploy parity gates.',
+    'dirty worktree blocker classification',
     'Completion audit could claim the buyer-evidence boundary is enforced without running the fixture-proof and template gates.',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',

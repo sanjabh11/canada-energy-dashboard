@@ -81,6 +81,13 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    fi',
       '    exit 0',
       '    ;;',
+      '  *ls-files*src/App.tsx*)',
+      '    echo "src/App.tsx"',
+      '    exit 0',
+      '    ;;',
+      '  *check-ignore*src/App.tsx*)',
+      '    exit 1',
+      '    ;;',
       'esac',
       `exec git "$@"`,
       '',
@@ -170,6 +177,7 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocker: deploy script requires branch main; current branch is codex/ceip-proof-pack-hardening.');
     expect(result.stdout).toContain('Blocker: deploy script requires a clean worktree; 1 dirty path(s) detected.');
+    expect(result.stdout).toContain('Dirty detail: src/App.tsx | status=modified | tracked=yes | ignored_by_rule=no | action=tracked source change; commit, stash, or revert before deploy');
     expect(result.stdout).toContain('Blocking pre-deploy gates: source deploy provenance is not deploy-script-ready.');
   });
 
