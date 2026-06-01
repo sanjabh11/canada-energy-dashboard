@@ -415,7 +415,7 @@ export function buildOntarioSubmissionSprintBundle(params: {
       status: hasCanonicalAppUrl && hasBridgeBaseUrl && !canonicalLooksStaging && !bridgeLooksStaging ? 'ready' : 'misconfigured',
       evidence: hasCanonicalAppUrl && hasBridgeBaseUrl
         ? `${canonicalAppUrl || '<unset>'} | ${bridgeBaseUrl || '<unset>'}`
-        : 'Set both VITE_PUBLIC_APP_URL and VITE_UTILITY_CONNECTOR_BASE_URL before checking whether this deployment is staging-only or production-grade.',
+        : 'Set both VITE_PUBLIC_APP_URL and VITE_UTILITY_CONNECTOR_BASE_URL before checking whether this deployment is staging-only or configured for production submission review.',
       blocking: !(hasCanonicalAppUrl && hasBridgeBaseUrl && !canonicalLooksStaging && !bridgeLooksStaging),
     },
     {

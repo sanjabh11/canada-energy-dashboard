@@ -309,7 +309,7 @@ export function EmployersPage() {
               {
                 icon: Code,
                 title: 'Already Built Your Solution',
-                desc: "This dashboard proves I understand AESO, grid operations, Indigenous sovereignty. Not theoretical expertise."
+                desc: "This dashboard shows practical AESO, grid-operations, and Indigenous energy data-governance context. Not theoretical expertise."
               }
             ].map((item, i) => {
               const Icon = item.icon;
