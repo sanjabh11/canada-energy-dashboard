@@ -101,6 +101,11 @@ const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persisten
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
+const stalePostP1LiveParityPhrases = [
+  'live deploy and buyer evidence remain blockers',
+  'live metadata remains an external gate',
+  'expected live metadata and static-parity failures remain external production gates',
+];
 const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
@@ -247,6 +252,11 @@ if (!existsSync(sourceDocPath)) {
       if (staleForecastDiagnosticPhrase.test(activeDoc)) {
         failures.push(`${docPath} contains the stale keyword-only forecast diagnostic example; use numeric MAE, MAPE, RMSE, baseline, rolling-split, and interval-coverage evidence.`);
       }
+      for (const stalePhrase of stalePostP1LiveParityPhrases) {
+        if (activeDoc.includes(stalePhrase)) {
+          failures.push(`${docPath} contains stale pre-P1 live-parity wording: ${stalePhrase}`);
+        }
+      }
     }
   }
 
@@ -281,6 +291,7 @@ if (!existsSync(sourceDocPath)) {
     'UtilityAPI/Green Button sandbox',
     'OCAP-aligned workflow',
     'accurate avalanche prediction',
+    'current P1 live parity is achieved',
   ];
 
   for (const phrase of requiredPhrases) {

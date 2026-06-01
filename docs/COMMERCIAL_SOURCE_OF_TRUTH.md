@@ -1,6 +1,6 @@
 # CEIP Commercial Source Of Truth
 
-> Date: May 30, 2026
+> Date: June 1, 2026
 > Purpose: define which docs can be used for current sales, outreach, pilot scoping, and public positioning.
 > Rule: when this file conflicts with older research, outreach, PRD, or monetization notes, this file and the active docs below win.
 
@@ -12,7 +12,7 @@ Use these files for current CEIP positioning:
 |---|---|---|
 | [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
-| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
+| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; current P1 live parity is achieved, future deploys require approval, and buyer evidence remains the confidence blocker. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
 | [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
@@ -148,7 +148,7 @@ pnpm run check:post-deploy-live
 
 `report:production-approval-packet` also reports source deploy provenance against the production deploy script's preconditions: branch `main` and a clean worktree. When the worktree is dirty, it classifies each blocker as tracked/untracked and ignored-by-rule/not ignored, then gives a non-destructive cleanup action so generated artifacts are not confused with source changes. The deploy script is guarded to run `check:release-readiness`, require the typed approval phrase `DEPLOY CEIP PRODUCTION`, build with the production build path, deploy the already-built `dist` artifact with `netlify deploy --prod --no-build --dir=dist`, and run `check:post-deploy-live` after Netlify deploy. The approval packet separates deployment request readiness from live parity achieved: stale live metadata or static parity can support an explicit remediation deploy request only when source provenance and local release readiness are clean, but it must not be reported as live parity until post-deploy live checks pass. Passing local release-readiness evidence is summarized separately from the dedicated live metadata, live static parity, and hosted smoke gates, so nested completion-audit live failures do not make a green local preflight look internally failed. CEIP browser-smoke scripts that participate in release, hosted, or approval checks write Playwright HTML/JSON reports under `/tmp/ceip-*` so generated reports do not create worktree dirt that then blocks source deploy provenance. If `--skip-release-readiness` is used, exact static parity is skipped because local `dist/` has not been freshly rebuilt by the packet. Use `pnpm run check:production-deploy-request` when you need a machine exit gate for requesting explicit owner approval; use `--fail-on-blocker` only when all live-parity gates are expected to pass. It must not be used as production approval when source provenance or local release readiness is failing or skipped.
 
-`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; expected live metadata and static-parity failures remain external production gates.
+`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail. It marks current live parity complete only when live metadata and static parity checks pass; if those checks fail on a future production state, the failure remains a release gate, not buyer proof.
 
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 
