@@ -202,6 +202,8 @@ if (!existsSync(roadmapPath)) {
     'pnpm run check:strategy-source-anchors',
     'GA/ICI public historical actuals guard',
     'fixture-proof 95% buyer-evidence gate',
+    '110 tests across 14 files',
+    'source-anchor transient retry behavior',
     'check:pilot-evidence-95-fixture-gate',
     'check:pilot-evidence-template',
     'original-plan completion audit coverage',
