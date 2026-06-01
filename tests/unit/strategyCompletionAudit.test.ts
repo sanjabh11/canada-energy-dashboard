@@ -42,6 +42,14 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
       '    echo "Manual-verified anchors: 4"',
       '    exit 0',
       '    ;;',
+      '  *check:pilot-evidence-95-fixture-gate*)',
+      '    echo "Pilot evidence fixture 95% gate check passed."',
+      '    exit 0',
+      '    ;;',
+      '  *check:pilot-evidence-template*)',
+      '    echo "Pilot evidence register template check passed for 25 required columns."',
+      '    exit 0',
+      '    ;;',
       '  *check:live-public-metadata*)',
       '    echo "Public metadata check failed:"',
       '    echo "- stale metadata phrase found"',
@@ -106,6 +114,10 @@ describe('strategy completion audit', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
+    expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-95-fixture-gate`');
+    expect(result.stdout).toContain('Pilot evidence fixture 95% gate check passed.');
+    expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-template`');
+    expect(result.stdout).toContain('Pilot evidence register template check passed');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
     expect(result.stdout).toContain('Public metadata check failed:');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');

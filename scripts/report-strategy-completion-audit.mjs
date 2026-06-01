@@ -251,6 +251,8 @@ const checkSteps = includeChecks
       runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
       runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
       runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
+      runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
+      runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
       runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
     ]
@@ -259,6 +261,8 @@ const requiredLocalCheckLabels = new Set([
   'Strategy roadmap structure',
   'Commercial source guard',
   'Strategy source anchors',
+  'Pilot evidence fixture gate',
+  'Pilot evidence template',
 ]);
 const failedRequiredLocalChecks = checkSteps.filter(
   (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
