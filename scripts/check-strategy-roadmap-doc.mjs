@@ -166,7 +166,9 @@ if (!existsSync(roadmapPath)) {
 
   const activeGuardNeedles = [
     'shared active commercial-doc registry',
+    'docs/ops/CEIP_STRATEGY_SOURCE_ANCHOR_MANUAL_EVIDENCE_2026-05-31.json',
     'this roadmap and `docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv`',
+    'Manual source-anchor evidence could become an active proof artifact without claim-boundary scanning.',
     'scripts/lib/commercial-docs.mjs',
     'check:commercial-source` and `check:claim-boundaries` now consume the same active-doc registry',
     '`.csv` evidence templates are scan-eligible',

@@ -16,6 +16,7 @@ const BASE_ACTIVE_PATHS = [
   'docs/LINKEDIN_PROOF_BUNDLES.md',
   'docs/OPENCLAW_CONSOLE_KICKSTART_STRATEGY.md',
   'docs/Openclaw_outreach.md',
+  'docs/ops/CEIP_STRATEGY_SOURCE_ANCHOR_MANUAL_EVIDENCE_2026-05-31.json',
   'docs/growth',
 ];
 

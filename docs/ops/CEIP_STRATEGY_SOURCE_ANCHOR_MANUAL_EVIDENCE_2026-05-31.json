@@ -97,6 +97,14 @@
       "evidenceNote": "Official Enverus page content was fetched through Exa after local Node fetch hit anti-bot or HTTP service behavior."
     },
     {
+      "label": "Nixtla conformal prediction",
+      "url": "https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T04:03:00.000Z",
+      "matchedTerms": ["Conformal", "StatsForecast"],
+      "evidenceNote": "Official Nixtla StatsForecast conformal-prediction page content was fetched through Exa after local Node fetch intermittently timed out."
+    },
+    {
       "label": "NIST SP 800-226 differential privacy",
       "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-226.pdf",
       "retrievalTool": "mcp__exa.web_fetch_exa",
