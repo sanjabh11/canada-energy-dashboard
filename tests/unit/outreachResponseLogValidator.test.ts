@@ -135,6 +135,57 @@ describe('outreach response log validator', () => {
     expect(result.stdout).toContain('starter rows keep confidence_delta=0');
   });
 
+  it('prints a complete retained-artifact preparation command template', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'email',
+        'forecast_reviewer_002',
+        'utility',
+        'forecast_benchmark_provenance',
+        '/forecast-benchmarking',
+        '4.6',
+        'forecast_trust',
+        '"No guaranteed accuracy, AI superiority, or production utility onboarding is claimed."',
+        'forecast trust report',
+        'meeting_booked',
+        'Buyer booked a review of a redacted forecast benchmark pack.',
+        'Forecast benchmark review',
+        'buyer forecast baseline',
+        'forecast reviewer',
+        'letter_of_intent',
+        'prepare retained artifact',
+        'prepare_retained_artifact',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath, '--action-plan']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('pnpm run prepare:pilot-evidence-artifact');
+    expect(result.stdout).toContain('--route /forecast-benchmarking');
+    expect(result.stdout).toContain('--proof-pack-id forecast_benchmark_provenance');
+    for (const requiredFlag of [
+      '--pii-screen-result',
+      '--buyer-data-coverage-pct',
+      '--time-to-artifact-hours',
+      '--reviewer-acceptance',
+      '--reviewer-feedback-status',
+      '--day-14-decision',
+      '--commercial-commitment-evidence',
+      '--claim-boundary',
+      '--do-not-claim',
+      '--diagnostic',
+    ]) {
+      expect(result.stdout).toContain(requiredFlag);
+    }
+    expect(result.stdout).toContain('<replace with retained letter_of_intent evidence text>');
+    expect(result.stdout).toContain('Replace every <...> placeholder');
+    expect(result.stdout).toContain('Copy the printed SHA-256 evidence reference');
+  });
+
   it('rejects route/proof-pack mismatches', async () => {
     const filePath = writeLog([
       [
