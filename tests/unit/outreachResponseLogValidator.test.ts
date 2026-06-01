@@ -164,7 +164,10 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('pnpm run prepare:pilot-evidence-artifact');
+    expect(result.stdout).toContain('pnpm run prepare:forecast-trust-report-artifact');
+    expect(result.stdout).toContain('--benchmark-pack-file');
+    expect(result.stdout).toContain('redacted utility forecast benchmark-pack JSON');
+    expect(result.stdout).toContain('Fallback generic text-extract helper: pnpm run prepare:pilot-evidence-artifact');
     expect(result.stdout).toContain('--route /forecast-benchmarking');
     expect(result.stdout).toContain('--proof-pack-id forecast_benchmark_provenance');
     for (const requiredFlag of [
@@ -182,8 +185,69 @@ describe('outreach response log validator', () => {
       expect(result.stdout).toContain(requiredFlag);
     }
     expect(result.stdout).toContain('<replace with retained letter_of_intent evidence text>');
+    expect(result.stdout).toContain('Prefer the specialized helper above');
     expect(result.stdout).toContain('Replace every <...> placeholder');
     expect(result.stdout).toContain('Copy the printed SHA-256 evidence reference');
+  });
+
+  it('prints route-specific retained-artifact helpers for GA/ICI and BYO-CSV rows', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'linkedin',
+        'ontario_peak_advisor_001',
+        'utility',
+        'ga_ici_5cp_decision_support_pack',
+        '/ga-ici-5cp',
+        '4.2',
+        'ga_ici_5cp',
+        '"No guaranteed savings, final IESO settlement, eligibility decision, or curtailment instruction is claimed."',
+        'GA/ICI 5CP decision-support note',
+        'data_offered',
+        'Buyer offered a redacted interval-load sample for peak-window review.',
+        'Ontario peak-risk planning question',
+        'redacted interval load for candidate peak windows',
+        'energy manager reviewer',
+        'none',
+        'prepare retained artifact',
+        'prepare_retained_artifact',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+      [
+        '2026-06-01',
+        'email',
+        'privacy_reviewer_001',
+        'security',
+        'byo_csv_privacy_proof_pack',
+        '/byo-csv-proof',
+        '4.1',
+        'byo_csv_privacy',
+        '"No PII-free certification, no privacy risk, buyer acceptance, or production connector approval is claimed."',
+        'BYO-CSV privacy proof',
+        'data_offered',
+        'Buyer offered a redacted CSV sample for local privacy-screen review.',
+        'Privacy review before data sharing',
+        'redacted CSV sample',
+        'privacy reviewer',
+        'none',
+        'prepare retained artifact',
+        'prepare_retained_artifact',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath, '--action-plan']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('pnpm run prepare:ga-ici-5cp-artifact');
+    expect(result.stdout).toContain('--historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv');
+    expect(result.stdout).toContain('--customer-load-file');
+    expect(result.stdout).toContain('redacted Ontario interval load CSV');
+    expect(result.stdout).toContain('pnpm run prepare:byo-csv-proof-artifact');
+    expect(result.stdout).toContain('--csv-file');
+    expect(result.stdout).toContain('redacted local CSV path');
+    expect(result.stdout).toContain('Fallback generic text-extract helper: pnpm run prepare:pilot-evidence-artifact');
   });
 
   it('rejects route/proof-pack mismatches', async () => {

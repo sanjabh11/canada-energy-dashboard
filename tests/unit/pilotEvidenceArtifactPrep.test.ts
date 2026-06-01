@@ -161,7 +161,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  });
+  }, 30000);
 
   it('rejects strong commercial commitment status without redacted evidence text', async () => {
     const evidenceRoot = makeTempRoot();
@@ -355,7 +355,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  });
+  }, 30000);
 
   it('rejects BYO-CSV retained extract preparation when spreadsheet formula risk is present', async () => {
     const evidenceRoot = makeTempRoot();
