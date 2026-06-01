@@ -49,6 +49,35 @@ afterEach(() => {
 });
 
 describe('buyer evidence readiness report', () => {
+  it('fails when an explicit evidence scan root does not exist', async () => {
+    const root = makeTempRoot();
+    const missingRoot = path.join(root, 'missing-registers');
+    const result = await runNodeScript(readinessScriptPath, ['--root', missingRoot]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('Buyer evidence readiness report failed:');
+    expect(result.stderr).toContain('Root directory not found:');
+    expect(result.stderr).toContain('missing-registers');
+  });
+
+  it('fails when an explicit evidence artifact root does not exist', async () => {
+    const root = makeTempRoot();
+    const missingEvidenceRoot = path.join(root, 'missing-artifacts');
+    const result = await runNodeScript(readinessScriptPath, [
+      '--root',
+      root,
+      '--evidence-root',
+      missingEvidenceRoot,
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('Buyer evidence readiness report failed:');
+    expect(result.stderr).toContain('Evidence root directory not found:');
+    expect(result.stderr).toContain('missing-artifacts');
+  });
+
   it('reports no Phase F readiness when no production evidence inputs exist', async () => {
     const root = makeTempRoot();
     const result = await runNodeScript(readinessScriptPath, ['--root', root]);
