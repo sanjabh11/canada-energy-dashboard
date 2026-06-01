@@ -59,6 +59,11 @@ jobs:
       - name: Repository hygiene guardrails
         run: pnpm run check:repo-hygiene
 
+      - name: GitHub repository metadata guardrails
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: pnpm run check:github-repo-metadata
+
       - name: Public source metadata guardrails
         run: pnpm run check:public-metadata
 
