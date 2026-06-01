@@ -436,7 +436,7 @@ const markdown = [
   `- Manual evidence file: ${manualEvidence.path}${manualEvidence.loaded ? '' : ' (not loaded)'}`,
   `- Manual evidence max age: ${manualEvidenceMaxAgeDays} days`,
   manualEvidence.error ? `- Manual evidence error: ${manualEvidence.error}` : '',
-  '- This report checks source reachability, expected anchor terms, and date-stamped manual web evidence when official sites are unreachable from local fetch. It does not replace human source review, buyer evidence, legal review, or production approval.',
+  '- This report checks source reachability, expected anchor terms, and date-stamped manual web evidence when official sites are unreachable, blocked, or not reliably text-matchable through local fetch. It does not replace human source review, buyer evidence, legal review, or production approval.',
   '',
   '## Anchors',
   '',

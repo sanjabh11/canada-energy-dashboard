@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "generatedAt": "2026-06-01T00:14:00.000Z",
-  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but not fully verifiable through the local automated Node fetch in this workspace.",
+  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but unreachable, blocked, or not reliably text-matchable through the local automated Node fetch in this workspace.",
   "limitations": "This file records term-level source verification only. It does not replace live source review, buyer evidence, legal review, or production approval.",
   "anchors": [
     {
