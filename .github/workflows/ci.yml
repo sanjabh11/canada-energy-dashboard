@@ -16,21 +16,24 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 20
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Security audit
+        run: pnpm audit --audit-level moderate
 
       - name: Verify Supabase migrations
         run: node scripts/verify-supabase-migrations.mjs
@@ -44,6 +47,30 @@ jobs:
       - name: Build
         run: pnpm exec vite build
 
+      - name: Proof-pack bundle budgets
+        run: pnpm run check:proof-pack-bundles
+
+      - name: Claim-boundary guardrails
+        run: pnpm run check:claim-boundaries
+
+      - name: Commercial source-of-truth guardrails
+        run: pnpm run check:commercial-source
+
+      - name: Public source metadata guardrails
+        run: pnpm run check:public-metadata
+
+      - name: Public build metadata guardrails
+        run: pnpm run check:public-metadata -- --dist
+
+      - name: Pilot evidence register guardrails
+        run: pnpm run check:pilot-evidence-template
+
+      - name: Pilot evidence register sample validation
+        run: pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
+
+      - name: Pilot evidence 95 fixture gate
+        run: pnpm run check:pilot-evidence-95-fixture-gate
+
       - name: Unit tests
         run: pnpm exec vitest run
 
@@ -52,3 +79,11 @@ jobs:
 
       - name: Phase 0 smoke tests
         run: pnpm exec playwright test tests/component/foundation-phase0.spec.ts --project=chromium
+
+      - name: Phase 6 proof-pack browser smoke tests
+        env:
+          PLAYWRIGHT_PHASE6_PORT: 4199
+          TEST_BASE_URL: http://127.0.0.1:4199
+          PLAYWRIGHT_HTML_OUTPUT_DIR: playwright-report-phase6
+          PLAYWRIGHT_JSON_OUTPUT_FILE: playwright-results-phase6.json
+        run: pnpm run test:browser:phase6

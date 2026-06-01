@@ -26,13 +26,14 @@ if [ "$CURRENT_BRANCH" != "main" ]; then
 fi
 echo -e "${GREEN}✅ On main branch${NC}"
 
-# Check for uncommitted changes
-if ! git diff-index --quiet HEAD --; then
-  echo -e "${YELLOW}⚠️  Uncommitted changes detected${NC}"
-  echo "   Commit changes before deploying"
+# Check for uncommitted or untracked changes
+if [ -n "$(git status --short)" ]; then
+  echo -e "${YELLOW}⚠️  Uncommitted or untracked changes detected${NC}"
+  git status --short
+  echo "   Commit, stash, or intentionally remove local changes before deploying"
   exit 1
 fi
-echo -e "${GREEN}✅ No uncommitted changes${NC}"
+echo -e "${GREEN}✅ Clean worktree${NC}"
 
 # Check Node version
 NODE_VERSION=$(node -v | cut -d'v' -f2 | cut -d'.' -f1)
@@ -42,23 +43,28 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 echo -e "${GREEN}✅ Node.js version: $(node -v)${NC}"
 
-# Step 2: Security audit
+# Step 2: CEIP release-readiness gate
 echo ""
-echo "🔒 Step 2: Running security audit..."
+echo "🧪 Step 2: Running CEIP release-readiness gate..."
+pnpm run check:release-readiness || {
+  echo -e "${RED}❌ CEIP release-readiness gate failed${NC}"
+  exit 1
+}
+echo -e "${GREEN}✅ CEIP release-readiness gate passed${NC}"
+
+# Step 3: Security audit
+echo ""
+echo "🔒 Step 3: Running security audit..."
 pnpm audit --audit-level=high || {
   echo -e "${YELLOW}⚠️  Security vulnerabilities found${NC}"
   echo "   Run: pnpm audit fix"
-  read -p "Continue anyway? (y/N) " -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    exit 1
-  fi
+  exit 1
 }
 echo -e "${GREEN}✅ Security audit passed${NC}"
 
-# Step 3: Type checking
+# Step 4: Type checking
 echo ""
-echo "📝 Step 3: Running TypeScript type check..."
+echo "📝 Step 4: Running TypeScript type check..."
 TYPE_CHECK_RAN=false
 if pnpm run --if-present type-check; then
   TYPE_CHECK_RAN=true
@@ -72,23 +78,19 @@ else
   echo -e "${GREEN}✅ Type check passed${NC}"
 fi
 
-# Step 4: Linting
+# Step 5: Linting
 echo ""
-echo "🔍 Step 4: Running ESLint..."
+echo "🔍 Step 5: Running ESLint..."
 pnpm run lint || npm run lint || {
   echo -e "${YELLOW}⚠️  Linting issues found${NC}"
-  read -p "Continue anyway? (y/N) " -n 1 -r
-  echo
-  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    exit 1
-  fi
+  exit 1
 }
 echo -e "${GREEN}✅ Linting passed${NC}"
 
-# Step 5: Build production bundle
+# Step 6: Build production bundle
 echo ""
-echo "🏗️  Step 5: Building production bundle..."
-pnpm run build || npm run build || {
+echo "🏗️  Step 6: Building production bundle..."
+pnpm run build:prod || {
   echo -e "${RED}❌ Build failed${NC}"
   exit 1
 }
@@ -98,9 +100,9 @@ echo -e "${GREEN}✅ Build successful${NC}"
 BUILD_SIZE=$(du -sh dist | cut -f1)
 echo "   Build size: $BUILD_SIZE"
 
-# Step 6: Database migration check
+# Step 7: Database migration check
 echo ""
-echo "💾 Step 6: Checking database migrations..."
+echo "💾 Step 7: Checking database migrations..."
 if [ -d "supabase/migrations" ]; then
   MIGRATION_COUNT=$(ls -1 supabase/migrations/*.sql 2>/dev/null | wc -l)
   echo "   Found $MIGRATION_COUNT migration files"
@@ -120,9 +122,9 @@ if [ -d "supabase/migrations" ]; then
   fi
 fi
 
-# Step 7: Run backfill scripts
+# Step 8: Run backfill scripts
 echo ""
-echo "📊 Step 7: Checking data backfill..."
+echo "📊 Step 8: Checking data backfill..."
 read -p "Run provincial generation backfill? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -134,9 +136,9 @@ else
   echo -e "${YELLOW}⚠️  Skipped backfill${NC}"
 fi
 
-# Step 8: Environment variables check
+# Step 9: Environment variables check
 echo ""
-echo "🔐 Step 8: Checking environment variables..."
+echo "🔐 Step 9: Checking environment variables..."
 if [ ! -f ".env.local" ]; then
   echo -e "${RED}❌ .env.local not found${NC}"
   exit 1
@@ -156,12 +158,13 @@ for var in "${REQUIRED_VARS[@]}"; do
 done
 echo -e "${GREEN}✅ Environment variables configured${NC}"
 
-# Step 9: Deploy to Netlify
+# Step 10: Deploy to Netlify
 echo ""
-echo "🌐 Step 9: Deploying to Netlify..."
-read -p "Deploy to production? (y/N) " -n 1 -r
+echo "🌐 Step 10: Deploying to Netlify..."
+echo "This deploy requires explicit owner approval outside this script."
+read -p "Type DEPLOY CEIP PRODUCTION to deploy to production: " DEPLOY_CONFIRMATION
 echo
-if [[ $REPLY =~ ^[Yy]$ ]]; then
+if [ "$DEPLOY_CONFIRMATION" = "DEPLOY CEIP PRODUCTION" ]; then
   netlify deploy --prod || {
     echo -e "${RED}❌ Deployment failed${NC}"
     exit 1
@@ -172,17 +175,20 @@ else
   exit 0
 fi
 
-# Step 10: Post-deployment verification
+# Step 11: Post-deployment verification
 echo ""
-echo "✅ Step 10: Post-deployment verification..."
+echo "✅ Step 11: Post-deployment verification..."
+pnpm run check:post-deploy-live || {
+  echo -e "${RED}❌ Post-deploy live parity check failed${NC}"
+  exit 1
+}
+echo -e "${GREEN}✅ Post-deploy live parity check passed${NC}"
 echo ""
 echo "Please verify the following:"
-echo "  1. Visit your production URL"
-echo "  2. Check Ops Health panel shows green"
-echo "  3. Verify wind/solar accuracy panels render"
-echo "  4. Test storage dispatch status"
-echo "  5. Check analytics completeness filtering"
-echo "  6. Test award evidence export"
+echo "  1. Review Netlify deploy logs for unexpected warnings"
+echo "  2. Confirm root, manifest.json, and schema-webapp.jsonld now carry proof-pack metadata"
+echo "  3. Confirm proof-pack routes are reachable for utility forecast, forecast benchmarking, regulatory filing, pilot readiness, GA/ICI, and BYO-CSV"
+echo "  4. Keep buyer-proven 95% market confidence unchanged until validate:pilot-evidence --require-95 passes"
 echo ""
 
 # Get deployment URL

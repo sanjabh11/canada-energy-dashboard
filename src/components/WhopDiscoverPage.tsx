@@ -40,7 +40,7 @@ export function WhopDiscoverPage() {
         },
         {
             icon: <Zap className="w-6 h-6" />,
-            title: 'AI-Powered Learning',
+            title: 'Model-Assisted Learning',
             description: 'Get personalized insights and answers from our energy-focused AI tutor'
         },
         {
@@ -106,7 +106,7 @@ export function WhopDiscoverPage() {
                     </h1>
                     <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
                         The complete platform for teaching Canadian energy systems.
-                        Operator-sourced datasets, labeled demos, professional certificates, and AI-powered learning.
+                        Operator-sourced datasets, labeled demos, professional certificates, and model-assisted learning.
                     </p>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <a

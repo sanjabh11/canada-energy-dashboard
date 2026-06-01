@@ -1,4 +1,5 @@
 import { fetchEdgePostJson, type EdgeFetchOptions } from './edge';
+import { isMlEdgeFetchEnabled } from './config';
 import { logFallbackEvent } from './jobExecutionLog';
 import {
   buildLocalMlForecastRun,
@@ -23,6 +24,14 @@ async function postWithFallback<T>(
     metadata?: Record<string, unknown>;
   },
 ): Promise<{ data: T; source: 'edge' | 'local_fallback'; error?: string }> {
+  if (!isMlEdgeFetchEnabled()) {
+    return {
+      data: fallback('edge_disabled'),
+      source: 'local_fallback',
+      error: 'ML Edge fetch disabled via configuration (VITE_ENABLE_ML_EDGE_FETCH=false).',
+    };
+  }
+
   try {
     const { json } = await fetchEdgePostJson(pathCandidates, body, options);
     return { data: json as T, source: 'edge' };

@@ -1,0 +1,18 @@
+{"type":"evidence","taskId":"T001","evidence":"git status, roadmap/script reads, web/Exa official-source fetches","createdAt":"2026-05-31T20:15:12.690Z"}
+{"type":"evidence","taskId":"T002","evidence":"docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md, scripts/check-commercial-source-docs.mjs, .dynamic-workflows/.../workflow.js","createdAt":"2026-05-31T20:15:12.690Z"}
+{"type":"evidence","taskId":"T003","evidence":"check:commercial-source passed; check:claim-boundaries passed; check:pilot-evidence-template passed; eslint passed; git diff --check passed; 7 Vitest files/74 tests passed; build:prod passed","createdAt":"2026-05-31T20:17:19.618Z"}
+{"type":"evidence","taskId":"T004","evidence":"Roadmap section 3.2 plus guarded phrases in scripts/check-commercial-source-docs.mjs; no production deploy performed","createdAt":"2026-05-31T20:17:19.856Z"}
+{"type":"synthesis-check","ready":false,"blockers":["1 task(s) still pending or running","no passed adversarial review tasks","2 completed non-review task(s) lack passed adversarial review"],"createdAt":"2026-05-31T20:17:25.392Z"}
+{"type":"evidence","taskId":"T001","evidence":"git status, roadmap/script reads, web/Exa official-source fetches","createdAt":"2026-05-31T20:17:42.697Z"}
+{"type":"bulk-review-tasks-added","taskIds":["T005","T006"],"createdAt":"2026-05-31T20:17:48.065Z"}
+{"type":"evidence","taskId":"T006","evidence":"check:commercial-source passed; check:claim-boundaries passed; 74 focused tests passed; build:prod passed","createdAt":"2026-05-31T20:17:58.702Z"}
+{"type":"evidence","taskId":"T005","evidence":"OEB 2025 Energy at a Glance PDF, OEB 2027 rate applications, IESO GA/PDF page, UCA/AFREA REA pages, AUC finance/operations page, Alberta TIER page","createdAt":"2026-05-31T20:17:58.703Z"}
+{"type":"synthesis-check","ready":false,"blockers":["1 task(s) still pending or running","2 completed non-review task(s) lack passed adversarial review"],"createdAt":"2026-05-31T20:18:03.130Z"}
+{"type":"evidence","taskId":"T006","evidence":"check:commercial-source passed; check:claim-boundaries passed; 74 focused tests passed; build:prod passed","createdAt":"2026-05-31T20:18:11.945Z"}
+{"type":"synthesis-check","ready":false,"blockers":["1 completed non-review task(s) lack passed adversarial review"],"createdAt":"2026-05-31T20:18:16.310Z"}
+{"type":"review-task-added","taskId":"T007","reviewOf":"T004","createdAt":"2026-05-31T20:18:22.337Z"}
+{"type":"evidence","taskId":"T007","evidence":"Roadmap verdict separates 95/100 desk-research strategy confidence from buyer-proven market confidence; final phase notes no deploy performed","createdAt":"2026-05-31T20:18:28.370Z"}
+{"type":"synthesis-check","ready":false,"blockers":["1 completed non-review task(s) lack passed adversarial review"],"createdAt":"2026-05-31T20:18:32.403Z"}
+{"type":"review-task-added","taskId":"T008","reviewOf":"T003","createdAt":"2026-05-31T20:18:38.845Z"}
+{"type":"evidence","taskId":"T008","evidence":"Initial check:commercial-source failed on phrase-case mismatch; patch applied; rerun passed alongside claim-boundary, pilot template, ESLint, diff check, Vitest, and build","createdAt":"2026-05-31T20:18:48.452Z"}
+{"type":"synthesis-check","ready":true,"blockers":[],"createdAt":"2026-05-31T20:19:05.372Z"}

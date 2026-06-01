@@ -187,7 +187,7 @@ export function ProvincesTab({ connectionStatuses, onNavigate }: ProvincesTabPro
           <div className="text-center py-8">
             <div className="inline-flex items-center space-x-2 bg-secondary px-6 py-3 rounded-full">
               <Radio className="h-5 w-5 text-electric animate-pulse" />
-              <span className="font-medium text-primary">Real-time data streaming from {connectionStatuses.filter(s => s.status === 'connected').length} active sources</span>
+              <span className="font-medium text-primary">Live data streaming from {connectionStatuses.filter(s => s.status === 'connected').length} active sources</span>
             </div>
             <p className="mt-4 text-secondary">Switch to Dashboard tab to interact with live streaming data visualizations</p>
             <button

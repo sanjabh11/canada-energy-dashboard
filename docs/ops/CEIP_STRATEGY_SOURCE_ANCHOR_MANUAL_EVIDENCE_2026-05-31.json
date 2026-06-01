@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-06-01T00:14:00.000Z",
+  "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but unreachable, blocked, or not reliably text-matchable through the local automated Node fetch in this workspace.",
+  "limitations": "This file records term-level source verification only. It does not replace live source review, buyer evidence, legal review, or production approval.",
+  "anchors": [
+    {
+      "label": "IESO Global Adjustment",
+      "url": "https://www.ieso.ca/en/Learn/Electricity-Pricing-Explained/Global-Adjustment",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Global Adjustment", "Class A", "top five peak demand hours"],
+      "evidenceNote": "Official IESO page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "IESO Class A eligibility",
+      "url": "https://www.ieso.ca/en/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Global Adjustment Class A Eligibility", "peak demand factor", "top five peak hours"],
+      "evidenceNote": "Official IESO page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "IESO Peak Tracker",
+      "url": "https://www.ieso.ca/peaktracker",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["Peak Tracker", "Ontario demand"],
+      "evidenceNote": "Official IESO Peak Tracker page content was fetched through Exa after local DNS failed for ieso.ca."
+    },
+    {
+      "label": "OEB filing requirements",
+      "url": "https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T21:10:00.000Z",
+      "matchedTerms": ["filing requirements", "distribution"],
+      "evidenceNote": "Official OEB filing-requirements page content was fetched through Exa after local curl and Node fetch timed out."
+    },
+    {
+      "label": "OEB Energy at a Glance",
+      "url": "https://www.oeb.ca/ontarios-energy-sector/overview-energy-sector/energy-at-a-glance-by-the-numbers",
+      "retrievalTool": "web.search_query",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["Energy at a glance", "Energy Utility Consumers", "59 licensed electricity distributors"],
+      "evidenceNote": "Official OEB page content was verified through web search after a prior Exa snapshot surfaced older 2023-2024 page text."
+    },
+    {
+      "label": "OEB licensed companies",
+      "url": "https://www.oeb.ca/ontarios-energy-sector/list-licensed-companies",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["List of licensed companies", "Electricity Distributor", "licensed by the OEB"],
+      "evidenceNote": "Official OEB licensed-company page content was fetched through Exa after local Node fetch timed out."
+    },
+    {
+      "label": "OEB electricity distribution rates",
+      "url": "https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["Electricity Distributors apply", "Distribution Rate Applications"],
+      "evidenceNote": "Official OEB distribution-rates page content was fetched through Exa after local Node fetch timed out."
+    },
+    {
+      "label": "OEB 2027 electricity distribution rates",
+      "url": "https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates/2027-electricity-distribution-rate",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": [
+        "2027 electricity distribution rate applications",
+        "rate regulated electricity distributors",
+        "cost of service applications"
+      ],
+      "evidenceNote": "Official OEB 2027 distribution-rate page content was fetched through Exa after local Node fetch timed out."
+    },
+    {
+      "label": "AUC Rule 005 annual reporting",
+      "url": "https://www.auc.ab.ca/rules/rule005/",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["Annual Reporting Requirements", "audited financial statements", "reconciliation"],
+      "evidenceNote": "Official AUC Rule 005 page content was fetched through Exa after local Node fetch returned an HTTP service page."
+    },
+    {
+      "label": "Gneiting and Raftery proper scoring rules",
+      "url": "https://stat.uw.edu/research/tech-reports/strictly-proper-scoring-rules-prediction-and-estimation-revised",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-05-31T22:49:00.000Z",
+      "matchedTerms": ["Strictly Proper Scoring Rules", "interval score", "width as well as coverage"],
+      "evidenceNote": "Official University of Washington page content was fetched through Exa after local Node fetch failed certificate-chain validation; curl HEAD returned HTTP 200."
+    },
+    {
+      "label": "Enverus power and renewables",
+      "url": "https://www.enverus.com/segments/power-and-renewables/",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["Power and Renewables", "Enverus", "load forecasts"],
+      "evidenceNote": "Official Enverus page content was fetched through Exa after local Node fetch hit anti-bot or HTTP service behavior."
+    },
+    {
+      "label": "Nixtla conformal prediction",
+      "url": "https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T04:03:00.000Z",
+      "matchedTerms": ["Conformal", "StatsForecast"],
+      "evidenceNote": "Official Nixtla StatsForecast conformal-prediction page content was fetched through Exa after local Node fetch intermittently timed out."
+    },
+    {
+      "label": "NIST SP 800-226 differential privacy",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-226.pdf",
+      "retrievalTool": "mcp__exa.web_fetch_exa",
+      "verifiedAt": "2026-06-01T00:14:00.000Z",
+      "matchedTerms": ["NIST SP 800-226", "differential privacy", "de-identification"],
+      "evidenceNote": "Official NIST PDF content was fetched through Exa; local text matching against the PDF is not reliable."
+    }
+  ]
+}

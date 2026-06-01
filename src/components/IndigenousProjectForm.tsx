@@ -29,7 +29,7 @@ export interface EnhancedIndigenousProject {
   actual_cost?: number;
   funding_sources: { source: string; amount: number }[];
   
-  // UNDRIP Compliance
+  // UNDRIP alignment support
   fpic_status: 'obtained' | 'in_progress' | 'not_applicable' | 'required';
   fpic_date?: string;
   undrip_compliant: boolean;
@@ -48,7 +48,7 @@ export interface EnhancedIndigenousProject {
   consultants: { name: string; role: string }[];
   utility_interconnection?: string;
   
-  // Data Sovereignty (OCAP®)
+  // Data governance (OCAP®)
   visibility: 'public' | 'ice_network' | 'private';
   data_owner_name: string;
   data_owner_email: string;
@@ -98,7 +98,7 @@ const FORM_STEPS = [
   { id: 'financial', title: 'Financial', icon: DollarSign },
   { id: 'compliance', title: 'UNDRIP/FPIC', icon: Shield },
   { id: 'impact', title: 'Impact Metrics', icon: Users },
-  { id: 'visibility', title: 'Data Sovereignty', icon: Eye }
+  { id: 'visibility', title: 'Data Governance', icon: Eye }
 ];
 
 export function IndigenousProjectForm({
@@ -165,7 +165,7 @@ export function IndigenousProjectForm({
           newErrors.fpic_date = 'FPIC date is required when consent is obtained';
         }
         break;
-      case 5: // Data Sovereignty
+      case 5: // Data governance
         if (!formData.data_owner_name.trim()) newErrors.data_owner_name = 'Data owner name is required';
         if (!formData.data_owner_email.trim()) newErrors.data_owner_email = 'Data owner email is required';
         break;
@@ -534,14 +534,14 @@ export function IndigenousProjectForm({
           </div>
         );
 
-      case 3: // UNDRIP/FPIC Compliance
+      case 3: // UNDRIP/FPIC alignment support
         return (
           <div className="space-y-6">
             <div className="bg-amber-900/30 border border-amber-700 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-amber-300">UNDRIP Compliance Notice</h4>
+                  <h4 className="font-medium text-amber-300">UNDRIP Alignment Notice</h4>
                   <p className="text-sm text-amber-200/80 mt-1">
                     Free, Prior and Informed Consent (FPIC) is a fundamental right of Indigenous peoples.
                     Ensure all consent documentation is properly obtained and stored.
@@ -634,7 +634,7 @@ export function IndigenousProjectForm({
                 className="w-5 h-5 rounded bg-slate-700 border-slate-600 text-emerald-500 focus:ring-emerald-500"
               />
               <label htmlFor="undrip_compliant" className="text-slate-300">
-                This project is UNDRIP compliant
+                This project has completed UNDRIP alignment review
               </label>
             </div>
           </div>
@@ -722,14 +722,14 @@ export function IndigenousProjectForm({
           </div>
         );
 
-      case 5: // Data Sovereignty (OCAP®)
+      case 5: // Data governance (OCAP®)
         return (
           <div className="space-y-6">
             <div className="bg-purple-900/30 border border-purple-700 rounded-lg p-4">
               <div className="flex items-start gap-3">
                 <Shield className="h-5 w-5 text-purple-400 mt-0.5" />
                 <div>
-                  <h4 className="font-medium text-purple-300">OCAP® Data Sovereignty</h4>
+                  <h4 className="font-medium text-purple-300">OCAP® Governance Review</h4>
                   <p className="text-sm text-purple-200/80 mt-1">
                     <strong>O</strong>wnership, <strong>C</strong>ontrol, <strong>A</strong>ccess, <strong>P</strong>ossession - 
                     Communities control who sees their data and can export or delete it at any time.

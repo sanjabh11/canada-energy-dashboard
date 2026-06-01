@@ -16,6 +16,9 @@ import './styles/layout.css';
 // LAZY-LOADED ROUTE COMPONENTS (code-split into separate chunks)
 // ============================================================================
 const EnergyDataDashboard = React.lazy(() => import('./components/EnergyDataDashboard').then(m => ({ default: m.EnergyDataDashboard })));
+const CommercialLandingPage = React.lazy(() => import('./components/CommercialLandingPage').then(m => ({ default: m.CommercialLandingPage })));
+const SolutionsNavigatorPage = React.lazy(() => import('./components/SolutionsNavigatorPage').then(m => ({ default: m.SolutionsNavigatorPage })));
+const PilotReadinessPage = React.lazy(() => import('./components/PilotReadinessPage').then(m => ({ default: m.PilotReadinessPage })));
 const AnalyticsTrendsDashboard = React.lazy(() => import('./components/AnalyticsTrendsDashboard'));
 const AboutPage = React.lazy(() => import('./components/AboutPage').then(m => ({ default: m.AboutPage })));
 const ContactPage = React.lazy(() => import('./components/ContactPage').then(m => ({ default: m.ContactPage })));
@@ -72,6 +75,8 @@ const ForecastBenchmarkingPage = React.lazy(() => import('./components/ForecastB
 const DemandForecastDashboard = React.lazy(() => import('./components/DemandForecastDashboard'));
 const UtilityDemandForecastPage = React.lazy(() => import('./components/UtilityDemandForecastPage'));
 const UtilityApiDemoPage = React.lazy(() => import('./components/UtilityApiDemoPage'));
+const GaIciPeakPredictorPage = React.lazy(() => import('./components/GaIciPeakPredictorPage'));
+const ByoCsvProofPage = React.lazy(() => import('./components/ByoCsvProofPage'));
 const RegulatoryFilingExport = React.lazy(() => import('./components/RegulatoryFilingExport'));
 const AssetHealthDashboard = React.lazy(() => import('./components/AssetHealthDashboard'));
 // Trust & Transparency Dashboards
@@ -115,7 +120,11 @@ const router = createBrowserRouter(
     {
       errorElement: <RouteErrorFallback />,
       children: [
-        { path: '/', element: <EnergyDataDashboard /> },
+        { path: '/', element: <CommercialLandingPage /> },
+        { path: '/solutions', element: <SolutionsNavigatorPage /> },
+        { path: '/use-cases', element: <SolutionsNavigatorPage /> },
+        { path: '/pilot-readiness', element: <PilotReadinessPage /> },
+        { path: '/pilot-evidence', element: <PilotReadinessPage /> },
         { path: '/dashboard', element: <EnergyDataDashboard /> },
 
         // Analytics & Trends - Standalone Route
@@ -197,7 +206,7 @@ const router = createBrowserRouter(
         { path: '/hedging', element: <RetailerHedgingDashboard /> },
         { path: '/retailer-tools', element: <RetailerHedgingDashboard /> },
 
-        // Industrial TIER Arbitrage (Value Prop Research Dec 2025)
+        // Industrial TIER ROI evidence (Value Prop Research Dec 2025)
         { path: '/roi-calculator', element: <TIERROICalculator /> },
         { path: '/industrial', element: <TIERROICalculator /> },
         { path: '/tier-savings', element: <TIERROICalculator /> },
@@ -227,6 +236,10 @@ const router = createBrowserRouter(
         { path: '/utility-demand-forecast', element: <UtilityDemandForecastPage /> },
         { path: '/utility-forecast', element: <UtilityDemandForecastPage /> },
         { path: '/utilityapi-demo', element: <UtilityApiDemoPage /> },
+        { path: '/ga-ici-5cp', element: <GaIciPeakPredictorPage /> },
+        { path: '/ici-peak', element: <GaIciPeakPredictorPage /> },
+        { path: '/byo-csv-proof', element: <ByoCsvProofPage /> },
+        { path: '/csv-proof', element: <ByoCsvProofPage /> },
 
         // P3: Regulatory Filing Templates (AUC Rule 005 / OEB Chapter 5)
         { path: '/regulatory-filing', element: <RegulatoryFilingExport /> },
@@ -298,8 +311,8 @@ const router = createBrowserRouter(
         // /status page (Phase 0 Foundation - Uptime Monitoring)
         { path: '/status', element: <StatusPage /> },
 
-        // /features opens as an overlay on the dashboard, not a standalone route
-        { path: '/features', element: <Navigate to="/" replace /> },
+        // /features now redirects to the commercial use-case navigator
+        { path: '/features', element: <Navigate to="/solutions" replace /> },
 
         // 404 catch-all
         { path: '*', element: <RouteErrorFallback /> },

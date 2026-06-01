@@ -1,410 +1,396 @@
-/**
- * Credit Banking Dashboard (L4)
- * Based on Value Proposition Research Dec 2025
- * 
- * Purpose: Buy TIER credits now at $25, bank for future compliance
- * - "Buy low, use later" strategy
- * - Credit portfolio management
- * - Compliance year allocation
- */
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-    Wallet,
-    TrendingUp,
-    TrendingDown,
-    Calendar,
-    DollarSign,
-    PiggyBank,
-    ArrowUpRight,
-    ArrowDownRight,
-    PlusCircle,
-    Clock,
-    Shield,
-    AlertTriangle,
-    ExternalLink
+  AlertTriangle,
+  Calendar,
+  Download,
+  FileSpreadsheet,
+  PiggyBank,
+  Shield,
+  TrendingUp,
+  Upload,
+  Wallet,
 } from 'lucide-react';
-import { useTIERPricing, calculateSavingsPercentage, getPricingDataQualityWarning, getTIERPricingProvenance } from '../lib/tierPricing';
-import DataTrustNotice from './DataTrustNotice';
+import { Link } from 'react-router-dom';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
-
-interface CreditHolding {
-    id: string;
-    type: 'EPC' | 'Offset';
-    vintage: number;
-    quantity: number;
-    purchasePrice: number;
-    purchaseDate: string;
-    expiryYear: number;
-    status: 'active' | 'allocated' | 'expired';
-}
-
-interface ComplianceYear {
-    year: number;
-    liability: number;
-    allocated: number;
-    remaining: number;
-}
-
-const SAMPLE_HOLDINGS: CreditHolding[] = [
-    { id: '1', type: 'EPC', vintage: 2024, quantity: 5000, purchasePrice: 22.50, purchaseDate: '2025-03-15', expiryYear: 2029, status: 'active' },
-    { id: '2', type: 'EPC', vintage: 2025, quantity: 8000, purchasePrice: 24.00, purchaseDate: '2025-06-20', expiryYear: 2030, status: 'active' },
-    { id: '3', type: 'Offset', vintage: 2024, quantity: 3000, purchasePrice: 26.00, purchaseDate: '2025-01-10', expiryYear: 2029, status: 'allocated' },
-    { id: '4', type: 'EPC', vintage: 2023, quantity: 2000, purchasePrice: 35.00, purchaseDate: '2024-08-05', expiryYear: 2028, status: 'active' },
-];
-
-const COMPLIANCE_YEARS: ComplianceYear[] = [
-    { year: 2025, liability: 15000, allocated: 3000, remaining: 12000 },
-    { year: 2026, liability: 16000, allocated: 0, remaining: 16000 },
-    { year: 2027, liability: 17000, allocated: 0, remaining: 17000 },
-];
+import DataTrustNotice from './DataTrustNotice';
+import ProofPackPanel from './ProofPackPanel';
+import ConstructedScenarioPanel from './ConstructedScenarioPanel';
+import { CREDIT_BANKING_CONSTRUCTED_SCENARIO } from '../lib/commercialScenarioBundles';
+import {
+  calculateSavingsPercentage,
+  getPricingDataQualityWarning,
+  getTIERPricingProvenance,
+  useTIERPricing,
+} from '../lib/tierPricing';
+import {
+  allocateCreditsToLiabilities,
+  buildCreditAllocationCsv,
+  buildExpiryRiskCsv,
+  buildStarterComplianceYears,
+  buildStarterCreditHoldings,
+  parseComplianceLiabilityCsv,
+  parseCreditHoldingsCsv,
+  summarizeCreditPortfolio,
+  type ComplianceYear,
+  type CreditHolding,
+} from '../lib/creditBankingSupport';
+import {
+  buildCreditBankingProofBundle,
+  buildCreditPositionDescriptor,
+  type CreditBankingSourceMode,
+} from '../lib/creditBankingProofPack';
+import {
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 export const CreditBankingDashboard: React.FC = () => {
-    const [holdings] = useState<CreditHolding[]>(SAMPLE_HOLDINGS);
-    const [showBuyModal, setShowBuyModal] = useState(false);
-    const [buyQuantity, setBuyQuantity] = useState<number>(1000);
-    const tierPricing = useTIERPricing();
-    const CURRENT_MARKET_PRICE = tierPricing.marketCreditPrice;
-    const TIER_FUND_PRICE = tierPricing.fundPrice;
-    const SAVINGS_PERCENTAGE = calculateSavingsPercentage(tierPricing);
-    const pricingWarning = getPricingDataQualityWarning(tierPricing);
-    const pricingProvenance = getTIERPricingProvenance(tierPricing);
+  const tierPricing = useTIERPricing();
+  const pricingWarning = getPricingDataQualityWarning(tierPricing);
+  const pricingProvenance = getTIERPricingProvenance(tierPricing);
+  const [holdings, setHoldings] = useState<CreditHolding[]>(() => buildStarterCreditHoldings());
+  const [liabilities, setLiabilities] = useState<ComplianceYear[]>(() => buildStarterComplianceYears());
+  const [sourceMode, setSourceMode] = useState<CreditBankingSourceMode>('starter_ledger');
+  const [holdingsError, setHoldingsError] = useState<string | null>(null);
+  const [liabilityError, setLiabilityError] = useState<string | null>(null);
 
-    // Portfolio calculations
-    const portfolio = useMemo(() => {
-        const totalCredits = holdings.filter(h => h.status === 'active').reduce((sum, h) => sum + h.quantity, 0);
-        const totalInvested = holdings.reduce((sum, h) => sum + (h.quantity * h.purchasePrice), 0);
-        const currentValue = holdings.filter(h => h.status !== 'expired').reduce((sum, h) => sum + (h.quantity * CURRENT_MARKET_PRICE), 0);
-        const avgCost = totalInvested / holdings.reduce((sum, h) => sum + h.quantity, 0);
-        const fundValueSaved = holdings.reduce((sum, h) => sum + (h.quantity * (TIER_FUND_PRICE - h.purchasePrice)), 0);
-        const unrealizedGain = currentValue - totalInvested;
+  const allocations = useMemo(() => allocateCreditsToLiabilities(holdings, liabilities), [holdings, liabilities]);
+  const portfolio = useMemo(
+    () => summarizeCreditPortfolio(holdings, liabilities, tierPricing.marketCreditPrice, tierPricing.fundPrice),
+    [holdings, liabilities, tierPricing.fundPrice, tierPricing.marketCreditPrice],
+  );
+  const proofBundle = useMemo(() => buildCreditBankingProofBundle(sourceMode, tierPricing), [sourceMode, tierPricing]);
+  const proofActions = useMemo(() => {
+    const descriptor = buildCreditPositionDescriptor({
+      sourceMode,
+      pricing: tierPricing,
+      summary: portfolio,
+      allocations,
+      holdings,
+    });
 
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'credit-position-memo') {
         return {
-            totalCredits,
-            totalInvested,
-            currentValue,
-            avgCost,
-            fundValueSaved,
-            unrealizedGain,
-            unrealizedGainPercent: (unrealizedGain / totalInvested) * 100
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
         };
-    }, [holdings]);
+      }
+      if (artifact.id === 'credit-allocation-schedule') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildCreditAllocationCsv(allocations, tierPricing.marketCreditPrice),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => downloadTextArtifact(
+          artifact,
+          buildExpiryRiskCsv(holdings),
+          'text/csv;charset=utf-8;',
+        ),
+      };
+    });
+  }, [allocations, holdings, portfolio, proofBundle.artifacts, sourceMode, tierPricing]);
 
-    // Future compliance needs
-    const totalFutureLiability = COMPLIANCE_YEARS.reduce((sum, y) => sum + y.remaining, 0);
-    const coverageRatio = (portfolio.totalCredits / totalFutureLiability) * 100;
+  async function handleHoldingsImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setHoldings(parseCreditHoldingsCsv(text));
+      setSourceMode('uploaded_ledger');
+      setHoldingsError(null);
+    } catch (error) {
+      setHoldingsError(error instanceof Error ? error.message : 'Unable to parse the holdings ledger.');
+    } finally {
+      event.target.value = '';
+    }
+  }
 
-    const formatCurrency = (value: number): string => {
-        return new Intl.NumberFormat('en-CA', {
-            style: 'currency',
-            currency: 'CAD',
-            minimumFractionDigits: 0
-        }).format(value);
-    };
+  async function handleLiabilityImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      setLiabilities(parseComplianceLiabilityCsv(text));
+      setSourceMode('uploaded_ledger');
+      setLiabilityError(null);
+    } catch (error) {
+      setLiabilityError(error instanceof Error ? error.message : 'Unable to parse the compliance liability file.');
+    } finally {
+      event.target.value = '';
+    }
+  }
 
-    const simulatePurchase = () => {
-        const cost = buyQuantity * CURRENT_MARKET_PRICE;
-        const fundCostAvoided = buyQuantity * TIER_FUND_PRICE;
-        const savings = fundCostAvoided - cost;
+  function formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-CA', {
+      style: 'currency',
+      currency: 'CAD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
 
-        alert(`Order Simulated!\n\nQuantity: ${buyQuantity.toLocaleString()} credits\nCost: ${formatCurrency(cost)}\nFund Cost Avoided: ${formatCurrency(fundCostAvoided)}\nSavings: ${formatCurrency(savings)}\n\n(In production, this would connect to a credit broker)`);
-        setShowBuyModal(false);
-    };
+  function resetStarters() {
+    setHoldings(buildStarterCreditHoldings());
+    setLiabilities(buildStarterComplianceYears());
+    setSourceMode('starter_ledger');
+    setHoldingsError(null);
+    setLiabilityError(null);
+  }
 
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
-            <div className="max-w-6xl mx-auto">
-                <div className="mb-6 flex flex-wrap items-center gap-3">
-                    <DataFreshnessBadge
-                        timestamp={pricingProvenance.lastUpdated}
-                        status={pricingProvenance.isFallback ? 'demo' : 'stale'}
-                        source={tierPricing.source}
-                    />
-                </div>
-                {pricingWarning && (
-                    <DataTrustNotice
-                        mode="fallback"
-                        title="TIER pricing snapshot disclosure"
-                        message={`${pricingWarning} Market-credit examples on this page should be treated as snapshot-era planning values, not a live quote.`}
-                        className="mb-6"
-                    />
-                )}
-                {/* Header */}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-4">
-                        <div className="p-4 bg-cyan-600/20 rounded-2xl">
-                            <PiggyBank className="h-10 w-10 text-cyan-400" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">Credit Banking</h1>
-                            <p className="text-slate-400 text-lg">
-                                Buy low now, use for future compliance years
-                            </p>
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setShowBuyModal(true)}
-                        className="px-6 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-semibold text-white transition-all flex items-center gap-2"
-                    >
-                        <PlusCircle className="h-5 w-5" />
-                        Buy Credits
-                    </button>
-                </div>
+  function loadConstructedScenario() {
+    const holdingsFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find((file) => file.id === 'credit-holdings-csv');
+    const liabilitiesFile = CREDIT_BANKING_CONSTRUCTED_SCENARIO.downloads.find((file) => file.id === 'credit-liabilities-csv');
+    if (!holdingsFile || !liabilitiesFile) return;
 
-                {/* Market Alert */}
-                <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-4 mb-8 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <TrendingDown className="h-6 w-6 text-emerald-400" />
-                        <div>
-                            <span className="text-emerald-400 font-semibold">Snapshot market view</span>
-                            <span className="text-slate-400 ml-2">
-                                Illustrative credits at ${CURRENT_MARKET_PRICE}/t — {SAVINGS_PERCENTAGE.toFixed(0)}% below the ${TIER_FUND_PRICE} TIER fund price
-                            </span>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <div className="text-2xl font-bold text-emerald-400">${CURRENT_MARKET_PRICE}</div>
-                        <div className="text-xs text-slate-400">Illustrative EPC Snapshot</div>
-                    </div>
-                </div>
+    setHoldings(parseCreditHoldingsCsv(holdingsFile.content));
+    setLiabilities(parseComplianceLiabilityCsv(liabilitiesFile.content));
+    setSourceMode('constructed_commercial_scenario');
+    setHoldingsError(null);
+    setLiabilityError(null);
+  }
 
-                {/* Portfolio Summary */}
-                <div className="grid md:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Wallet className="h-5 w-5 text-slate-400" />
-                            <span className="text-sm text-slate-400">Credit Balance</span>
-                        </div>
-                        <div className="text-3xl font-bold text-white">
-                            {portfolio.totalCredits.toLocaleString()}
-                        </div>
-                        <div className="text-sm text-slate-400 mt-1">tonnes banked</div>
-                    </div>
-
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-5">
-                        <div className="flex items-center gap-2 mb-2">
-                            <DollarSign className="h-5 w-5 text-slate-400" />
-                            <span className="text-sm text-slate-400">Portfolio Value</span>
-                        </div>
-                        <div className="text-3xl font-bold text-white">
-                            {formatCurrency(portfolio.currentValue)}
-                        </div>
-                        <div className={`text-sm mt-1 flex items-center gap-1 ${portfolio.unrealizedGain >= 0 ? 'text-emerald-400' : 'text-red-400'
-                            }`}>
-                            {portfolio.unrealizedGain >= 0 ? (
-                                <ArrowUpRight className="h-4 w-4" />
-                            ) : (
-                                <ArrowDownRight className="h-4 w-4" />
-                            )}
-                            {formatCurrency(Math.abs(portfolio.unrealizedGain))} ({portfolio.unrealizedGainPercent.toFixed(1)}%)
-                        </div>
-                    </div>
-
-                    <div className="bg-emerald-900/20 border border-emerald-500/30 rounded-2xl p-5">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Shield className="h-5 w-5 text-emerald-400" />
-                            <span className="text-sm text-emerald-400">Fund Cost Avoided</span>
-                        </div>
-                        <div className="text-3xl font-bold text-emerald-400">
-                            {formatCurrency(portfolio.fundValueSaved)}
-                        </div>
-                        <div className="text-sm text-emerald-400/70 mt-1">vs. paying ${TIER_FUND_PRICE}/t</div>
-                    </div>
-
-                    <div className={`rounded-2xl p-5 border ${coverageRatio >= 80
-                            ? 'bg-emerald-900/20 border-emerald-500/30'
-                            : coverageRatio >= 50
-                                ? 'bg-amber-900/20 border-amber-500/30'
-                                : 'bg-red-900/20 border-red-500/30'
-                        }`}>
-                        <div className="flex items-center gap-2 mb-2">
-                            <Calendar className="h-5 w-5 text-slate-400" />
-                            <span className="text-sm text-slate-400">Future Coverage</span>
-                        </div>
-                        <div className={`text-3xl font-bold ${coverageRatio >= 80 ? 'text-emerald-400' : coverageRatio >= 50 ? 'text-amber-400' : 'text-red-400'
-                            }`}>
-                            {coverageRatio.toFixed(0)}%
-                        </div>
-                        <div className="text-sm text-slate-400 mt-1">2025-2027 liability covered</div>
-                    </div>
-                </div>
-
-                <div className="grid lg:grid-cols-2 gap-8">
-                    {/* Holdings Table */}
-                    <div className="bg-slate-800/50 border border-slate-700 rounded-2xl overflow-hidden">
-                        <div className="p-6 border-b border-slate-700">
-                            <h2 className="text-lg font-semibold text-white">Credit Holdings</h2>
-                        </div>
-                        <div className="divide-y divide-slate-700">
-                            {holdings.map(holding => (
-                                <div key={holding.id} className="p-4 flex items-center justify-between hover:bg-slate-700/30">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`p-2 rounded-lg ${holding.type === 'EPC' ? 'bg-cyan-600/20' : 'bg-purple-600/20'
-                                            }`}>
-                                            <Wallet className={`h-5 w-5 ${holding.type === 'EPC' ? 'text-cyan-400' : 'text-purple-400'
-                                                }`} />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-white font-medium">{holding.type}</span>
-                                                <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">
-                                                    V{holding.vintage}
-                                                </span>
-                                                {holding.status === 'allocated' && (
-                                                    <span className="text-xs bg-emerald-600/20 text-emerald-400 px-2 py-0.5 rounded">
-                                                        Allocated
-                                                    </span>
-                                                )}
-                                            </div>
-                                            <div className="text-sm text-slate-400">
-                                                {holding.quantity.toLocaleString()} t @ ${holding.purchasePrice.toFixed(2)}
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="text-white font-medium">
-                                            {formatCurrency(holding.quantity * CURRENT_MARKET_PRICE)}
-                                        </div>
-                                        <div className={`text-sm ${CURRENT_MARKET_PRICE > holding.purchasePrice ? 'text-emerald-400' : 'text-red-400'
-                                            }`}>
-                                            {CURRENT_MARKET_PRICE > holding.purchasePrice ? '+' : ''}
-                                            {((CURRENT_MARKET_PRICE - holding.purchasePrice) / holding.purchasePrice * 100).toFixed(1)}%
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Compliance Planning */}
-                    <div className="space-y-6">
-                        <div className="bg-slate-800/50 border border-slate-700 rounded-2xl p-6">
-                            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                                <Calendar className="h-5 w-5 text-slate-400" />
-                                Compliance Year Allocation
-                            </h2>
-                            <div className="space-y-4">
-                                {COMPLIANCE_YEARS.map(year => (
-                                    <div key={year.year} className="p-4 bg-slate-700/30 rounded-xl">
-                                        <div className="flex justify-between items-center mb-2">
-                                            <span className="text-white font-medium">{year.year}</span>
-                                            <span className="text-sm text-slate-400">
-                                                {year.allocated.toLocaleString()} / {year.liability.toLocaleString()} t
-                                            </span>
-                                        </div>
-                                        <div className="w-full bg-slate-600 rounded-full h-2">
-                                            <div
-                                                className={`h-2 rounded-full ${year.allocated / year.liability >= 0.8 ? 'bg-emerald-500' :
-                                                        year.allocated / year.liability >= 0.5 ? 'bg-amber-500' : 'bg-red-500'
-                                                    }`}
-                                                style={{ width: `${(year.allocated / year.liability) * 100}%` }}
-                                            />
-                                        </div>
-                                        <div className="mt-2 flex justify-between text-xs text-slate-400">
-                                            <span>Remaining: {year.remaining.toLocaleString()} t</span>
-                                            <span>Est. Cost: {formatCurrency(year.remaining * CURRENT_MARKET_PRICE)}</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Strategy Insight */}
-                        <div className="bg-cyan-900/20 border border-cyan-500/30 rounded-2xl p-6">
-                            <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                                <TrendingUp className="h-5 w-5 text-cyan-400" />
-                                Banking Strategy
-                            </h3>
-                            <p className="text-slate-300 text-sm mb-4">
-                                With credits at ${CURRENT_MARKET_PRICE}/t ({SAVINGS_PERCENTAGE.toFixed(0)}% below fund price),
-                                now is an optimal time to bank for future compliance years before
-                                tightening stringency increases demand.
-                            </p>
-                            <div className="grid grid-cols-2 gap-3 text-sm">
-                                <div className="p-3 bg-slate-800/50 rounded-lg">
-                                    <div className="text-slate-400">Fund Price</div>
-                                    <div className="text-lg font-bold text-red-400">${TIER_FUND_PRICE}/t</div>
-                                </div>
-                                <div className="p-3 bg-slate-800/50 rounded-lg">
-                                    <div className="text-slate-400">Market Price</div>
-                                    <div className="text-lg font-bold text-emerald-400">${CURRENT_MARKET_PRICE}/t</div>
-                                </div>
-                            </div>
-                            <div className="mt-3 pt-3 border-t border-slate-700/50 text-xs text-slate-500 flex items-center gap-1">
-                                <ExternalLink className="h-3 w-3" />
-                                <span>Prices from {tierPricing.source}, {tierPricing.effectiveDate}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Buy Modal */}
-                {showBuyModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                        <div className="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full">
-                            <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                                <PlusCircle className="h-6 w-6 text-cyan-400" />
-                                Buy TIER Credits
-                            </h2>
-
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm text-slate-400 mb-2">Quantity (tonnes)</label>
-                                    <input
-                                        type="number"
-                                        value={buyQuantity}
-                                        onChange={(e) => setBuyQuantity(Number(e.target.value))}
-                                        step="100"
-                                        min="100"
-                                        className="w-full px-4 py-3 bg-slate-900 border border-slate-600 rounded-lg text-white text-xl font-semibold"
-                                    />
-                                </div>
-
-                                <div className="bg-slate-700/30 rounded-lg p-4 space-y-2">
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400">Market Price</span>
-                                        <span className="text-white">${CURRENT_MARKET_PRICE}/t</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-slate-400">Total Cost</span>
-                                        <span className="text-white font-semibold">{formatCurrency(buyQuantity * CURRENT_MARKET_PRICE)}</span>
-                                    </div>
-                                    <div className="flex justify-between pt-2 border-t border-slate-600">
-                                        <span className="text-emerald-400">Fund Cost Avoided</span>
-                                        <span className="text-emerald-400 font-semibold">
-                                            {formatCurrency(buyQuantity * (TIER_FUND_PRICE - CURRENT_MARKET_PRICE))}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="bg-amber-900/20 border border-amber-500/30 rounded-lg p-3 flex gap-2">
-                                    <AlertTriangle className="h-5 w-5 text-amber-400 flex-shrink-0" />
-                                    <p className="text-sm text-amber-400">
-                                        This is a simulation. Production version would connect to NGX or OTC brokers.
-                                    </p>
-                                </div>
-                            </div>
-
-                            <div className="flex gap-4 mt-6">
-                                <button
-                                    onClick={() => setShowBuyModal(false)}
-                                    className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg font-medium text-white"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={simulatePurchase}
-                                    className="flex-1 px-4 py-3 bg-cyan-600 hover:bg-cyan-500 rounded-lg font-semibold text-white"
-                                >
-                                    Simulate Purchase
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-            </div>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-6">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-6 flex flex-wrap items-center gap-3">
+          <DataFreshnessBadge
+            timestamp={pricingProvenance.lastUpdated}
+            status={pricingProvenance.isFallback ? 'demo' : 'stale'}
+            source={tierPricing.source}
+          />
         </div>
-    );
+        {pricingWarning && (
+          <DataTrustNotice
+            mode="fallback"
+            title="TIER pricing snapshot disclosure"
+            message={`${pricingWarning} Credit banking remains a planning workflow until the buyer refreshes pricing before approval.`}
+            className="mb-6"
+          />
+        )}
+
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="rounded-2xl bg-cyan-600/20 p-4">
+              <PiggyBank className="h-10 w-10 text-cyan-400" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">TIER follow-on workflow</div>
+              <h1 className="mt-2 text-3xl font-bold text-white">Credit Banking Dashboard</h1>
+              <p className="mt-2 max-w-3xl text-lg text-slate-300">
+                Import holdings and compliance liabilities, allocate credits by compliance year, and export an audit-ready banking pack tied to the current TIER price disclosure.
+              </p>
+            </div>
+          </div>
+
+          <Link
+            to="/roi-calculator"
+            className="inline-flex items-center gap-2 rounded-xl bg-cyan-500 px-5 py-3 text-sm font-semibold text-slate-950 transition-colors hover:bg-cyan-400"
+          >
+            <TrendingUp className="h-4 w-4" />
+            Open TIER savings calculator
+          </Link>
+        </div>
+
+        <DataTrustNotice
+          mode={sourceMode === 'starter_ledger' ? 'mock' : 'fallback'}
+          title={
+            sourceMode === 'starter_ledger'
+              ? 'Starter credit ledger active'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'Constructed commercial scenario active'
+                : 'Uploaded ledger and liabilities active'
+          }
+          message={
+            sourceMode === 'starter_ledger'
+              ? 'This route is using starter credit lots and compliance liabilities. Upload the buyer ledger and liability files before using the allocation exports commercially.'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'The current route is using a constructed Alberta industrial ledger and liability stack. It is realistic enough for pilot packaging, but still not a registry extract or verified buyer ledger.'
+                : 'The allocation schedule now reflects uploaded holdings and liabilities. Pricing still remains a disclosed planning snapshot until the buyer validates a live quote.'
+          }
+          className="mb-6"
+        />
+
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">1. Import ledger and liabilities</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Replace the starter lots with the buyer&apos;s registry holdings and compliance-year liability files.
+                  </p>
+                </div>
+                <Upload className="h-5 w-5 text-cyan-300" />
+              </div>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <UploadCard
+                  title="Import holdings ledger CSV"
+                  description="Required: id, type, vintage, quantity, purchase_price, purchase_date, expiry_year, status."
+                  onChange={handleHoldingsImport}
+                />
+                <UploadCard
+                  title="Import compliance liability CSV"
+                  description="Required: year, liability or liability_tonnes, and optional allocated."
+                  onChange={handleLiabilityImport}
+                />
+              </div>
+
+              {(holdingsError || liabilityError) && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-100">
+                  {holdingsError ?? liabilityError}
+                </div>
+              )}
+
+              <div className="mt-4">
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={loadConstructedScenario}
+                    className="rounded-xl border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-sm text-cyan-50 transition-colors hover:border-cyan-400"
+                  >
+                    Load constructed industrial case
+                  </button>
+                  <button
+                    onClick={resetStarters}
+                    className="rounded-xl border border-slate-600 bg-slate-900 px-4 py-3 text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                  >
+                    Reload starter ledger
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <ConstructedScenarioPanel
+              scenario={CREDIT_BANKING_CONSTRUCTED_SCENARIO}
+              onLoad={loadConstructedScenario}
+              testId="credit-banking-constructed-scenario"
+            />
+
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+          </section>
+
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300" data-testid="credit-banking-source-mode">
+                <Shield className="h-4 w-4" />
+                {sourceMode === 'starter_ledger'
+                  ? 'Starter ledger active'
+                  : sourceMode === 'constructed_commercial_scenario'
+                    ? 'Constructed industrial ledger active'
+                    : 'Uploaded ledger active'}
+              </div>
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <MetricCard icon={<Wallet className="h-5 w-5 text-slate-400" />} label="Active credits" value={`${portfolio.totalCredits.toLocaleString()} t`} sub="Available for banking" />
+                <MetricCard icon={<Calendar className="h-5 w-5 text-slate-400" />} label="Coverage ratio" value={`${portfolio.coverageRatio.toFixed(0)}%`} sub="2025-2027 liabilities covered" />
+                <MetricCard icon={<TrendingUp className="h-5 w-5 text-emerald-400" />} label="Current value" value={formatCurrency(portfolio.currentValue)} sub={`${calculateSavingsPercentage(tierPricing).toFixed(0)}% below fund price`} tone="emerald" />
+                <MetricCard icon={<AlertTriangle className="h-5 w-5 text-amber-300" />} label="Expiring soon" value={`${portfolio.expiringSoonCredits.toLocaleString()} t`} sub="Within four years" tone="amber" />
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <h2 className="text-lg font-semibold text-white">2. Compliance-year allocation</h2>
+              <div className="mt-4 space-y-3">
+                {allocations.map((row) => (
+                  <div key={row.year} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="font-medium text-white">{row.year}</div>
+                      <div className="text-sm text-slate-400">{row.allocated.toLocaleString()} / {row.liability.toLocaleString()} t</div>
+                    </div>
+                    <div className="mt-3 h-2 rounded-full bg-slate-700">
+                      <div
+                        className={`h-2 rounded-full ${row.remaining === 0 ? 'bg-emerald-500' : row.allocated > 0 ? 'bg-amber-500' : 'bg-red-500'}`}
+                        style={{ width: `${row.liability > 0 ? (row.allocated / row.liability) * 100 : 0}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 text-xs text-slate-400">
+                      Remaining: {row.remaining.toLocaleString()} t • Estimated market cost: {formatCurrency(row.remaining * tierPricing.marketCreditPrice)}
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      Lots used: {row.allocatedLots.length > 0 ? row.allocatedLots.map((lot) => `${lot.quantity}t ${lot.type} v${lot.vintage}`).join(' • ') : 'none allocated'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <div className="mt-8 rounded-2xl border border-amber-500/30 bg-amber-900/20 p-5">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 text-amber-300" />
+            <div>
+              <div className="font-medium text-white">Pricing and procurement boundary</div>
+              <p className="mt-2 text-sm text-amber-100">
+                This workflow creates an audit-ready allocation story, not a broker execution surface. Keep it positioned as a TIER follow-on proof asset until the buyer validates a live market quote and registry process.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
+
+function UploadCard({
+  title,
+  description,
+  onChange,
+}: {
+  title: string;
+  description: string;
+  onChange: (event: React.ChangeEvent<HTMLInputElement>) => void | Promise<void>;
+}) {
+  return (
+    <label className="block cursor-pointer rounded-xl border-2 border-dashed border-slate-600 bg-slate-900/50 p-5 text-center">
+      <FileSpreadsheet className="mx-auto h-8 w-8 text-cyan-300" />
+      <div className="mt-3 font-medium text-white">{title}</div>
+      <div className="mt-1 text-xs text-slate-400">{description}</div>
+      <input type="file" accept=".csv,text/csv" className="hidden" onChange={onChange} />
+      <span className="mt-4 inline-flex rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white">Select CSV</span>
+    </label>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  sub,
+  tone = 'default',
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+  tone?: 'default' | 'emerald' | 'amber';
+}) {
+  const toneClasses = tone === 'emerald'
+    ? 'border-emerald-500/30 bg-emerald-900/20'
+    : tone === 'amber'
+      ? 'border-amber-500/30 bg-amber-900/20'
+      : 'border-slate-700 bg-slate-900/70';
+
+  return (
+    <div className={`rounded-2xl border p-4 ${toneClasses}`}>
+      <div className="flex items-center gap-2 text-sm text-slate-400">{icon}{label}</div>
+      <div className="mt-2 text-2xl font-bold text-white">{value}</div>
+      <div className="mt-1 text-xs text-slate-500">{sub}</div>
+    </div>
+  );
+}
 
 export default CreditBankingDashboard;

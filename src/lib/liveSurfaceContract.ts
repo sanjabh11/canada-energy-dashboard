@@ -3,6 +3,7 @@ import { getFreshnessStatus, type FreshnessStatus } from './foundation';
 export type LiveSurfaceSourceKind =
   | 'fallback_starter'
   | 'uploaded_historical'
+  | 'public_system_sample'
   | 'utility_system_batch'
   | 'public_enrichment'
   | 'green_button_cmd'

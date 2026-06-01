@@ -1,341 +1,96 @@
-# Canada Energy Intelligence Platform (CEIP) – Top Features & Forecasting Intelligence
-
-> **Last Updated:** April 24, 2026
-> **Live Demo:** [canada-energy.netlify.app](https://canada-energy.netlify.app/)
-
-> **For current LinkedIn outreach, lead with these proof pages first:**
-> - `Consultant Data Pack` → `/api-docs`
-> - `Industrial TIER Arbitrage` → `/roi-calculator`
-> - Forecast trust layer → `/forecast-benchmarking`
-> - Regulatory templates → `/regulatory-filing`
-> - Asset condition / REA-LDC angle → `/asset-health`
-
----
-
-## Part A — 15 Energy Forecasting Challenges & Algorithmic Solutions
-
-The table below is the definitive mapping of the top 15 energy forecasting challenges to algorithmic solutions — each paired with the actual component that implements it in this codebase.
-
-| # | Challenge | Algorithm | Priority | CEIP Component / Route |
-|---|-----------|-----------|----------|------------------------|
-| 1 | Unstructured Intelligence Voids | LLM Groundsource Mining | IMMEDIATE | `AgentRunner` → `/agent` · `EnergyCopilot` → `/copilot` |
-| 2 | TIER 2025 Carbon Arbitrage | Deterministic Simulators | IMMEDIATE | `TIERROICalculator` → `/roi-calculator` |
-| 3 | High-Dimensional Sensor Bloat | SVM-Recursive Feature Elimination | IMMEDIATE | `DemandForecastDashboard` (Load + SVM-RFE domain) → `/demand-forecast` |
-| 4 | RoLR Consumer Arbitrage | Automated Logic Engine | IMMEDIATE | `RROAlertSystem` → `/rate-watchdog` |
-| 5 | Rare-Event Grid Failures | KMeans-SMOTE | HIGH | `DemandForecastDashboard` (SMOTE backtest panel) → `/demand-forecast` |
-| 6 | Climate Volatility & Load Drift | Wasserstein Drift Detection | HIGH | `DemandForecastDashboard` (drift assessment widget) → `/demand-forecast` |
-| 7 | Wholesale Market Volatility | Random Forest Ensemble Bagging | HIGH | `DemandForecastDashboard` (AB Price Spike domain) → `/demand-forecast` |
-| 8 | AESO Sub-Hourly Constraints | Physics-Informed Neural Networks | HIGH | `DemandForecastDashboard` (Weak Grid / SCED domain) → `/demand-forecast` |
-| 9 | Bi-Directional PV Faults | Graph Neural Networks (GNNs) | HIGH | `DemandForecastDashboard` (PV Fault Graph domain) → `/demand-forecast` |
-| 10 | Data Center "BYOP" Load | Multi-Agent Systems (MAS) | MEDIUM | `DemandForecastDashboard` (BYOP MAS domain) · `AIDataCentreDashboard` → `/ai-datacentres` |
-| 11 | Cascading Transmission Risks | Ideal Point Analysis (IPA) | MEDIUM | `ResilienceMap` (non-compensatory fusion, substation masking guard) → `/resilience` |
-| 12 | Low Short-Circuit Levels | AESO SCED Integration | MEDIUM | `DemandForecastDashboard` (Weak Grid / SCED domain) + `GridOptimizationDashboard` |
-| 13 | Natural Gas Basis Divergence | SVM-RFE + Deep Learning | MEDIUM | `DemandForecastDashboard` (AECO vs Henry Hub domain) → `/demand-forecast` |
-| 14 | Indigenous Data Sovereignty | Decentralized Digital Twins | MEDIUM | `SovereignDataVault` → `/sovereign-vault` · `AICEIReportingModule` → `/aicei` |
-| 15 | Capacity Expansion Policy | Pathways Risk Overlay | LONG-TERM | `DemandForecastDashboard` (Policy Overlay domain, stranded-asset risk score) |
-
----
-
-## Part B — Top 20 Platform Capabilities
-
----
-
-### 1. Multi-Domain ML Forecast Engine (`DemandForecastDashboard`)
-
-The forecasting backbone of CEIP. A single dashboard exposes **9 selectable ML domains**, each targeting a distinct forecasting challenge:
-
-| Domain Selector | Algorithm / Technique | Challenge Addressed |
-|-----------------|----------------------|---------------------|
-| `Load + SVM-RFE` | Support Vector Machine – Recursive Feature Elimination | Prunes redundant SCADA/weather feeds |
-| `AB Price Spike` | Random Forest Ensemble Bagging | Alberta $1,000/MWh spot-price volatility |
-| `Solar` / `Wind` | Wasserstein Drift Detection | Seasonal baseline shift & climate volatility |
-| `AECO vs Henry Hub` | SVM-RFE + Deep Learning | Natural gas basis spread divergence |
-| `BYOP MAS` | Multi-Agent Systems | Data-centre "Bring Your Own Power" aggregate load |
-| `PV Fault Graph` | Graph Neural Networks | Bi-directional inverter fault localization |
-| `Policy Overlay` | Pathways Risk Overlay | Stranded-asset risk score from federal policy |
-| `Weak Grid / SCED` | Physics-Informed Neural Networks + AESO SCED | Sub-hourly AC constraint enforcement |
-
-**KMeans-SMOTE** backtest panel generates synthetic minority-event slices (blackouts, price spikes) for training, ensuring anomaly detection isn't blind to rare events.
-
-**Wasserstein Drift Detection** monitor flags demand regime shifts in real time, downgrading forecast confidence when recent data diverges from the trained distribution.
-
-**Route:** `/demand-forecast` | `/load-forecast` | `/ontario-forecast`
-
----
-
-### 2. TIER 2025 Carbon Arbitrage Calculator (`TIERROICalculator`)
-
-B2B deterministic simulator for Alberta's Technology Innovation and Emissions Reduction regulation at the 2025 CAD 95/tonne freeze:
-
-- Fund payment vs. EPC market credit vs. Direct Investment (DIP) three-way comparison
-- CapEx → TIER credit translation with payback period
-- Shadow billing: computes compliance cost under each pathway
-- Export-ready PDF/CSV for bank financing (`BankReadyExport`)
-- DIP audit trail generator (`DIPAuditTrailGenerator`) for CER filings
-
-**Routes:** `/roi-calculator` · `/tier-savings` · `/industrial` · `/dip-audit` · `/bank-export`
-
----
-
-### 3. LLM Agent Framework (`AgentRunner` + `EnergyCopilot`)
-
-Addresses the **Unstructured Intelligence Void** — regional news, utility logs, and outage data that live outside structured APIs:
-
-- **AgentRunner** (`/agent`): Pre-built automated energy analysis workflows (Morning Briefing, Opportunity Detection, Compliance Reports). Calls `llm/agent/<workflow-id>` Supabase Edge Function with structured output schema.
-- **EnergyCopilot** (`/copilot`): Multi-source AI assistant with tool calling — queries live AESO pool prices, IESO demand, ECCC weather, and synthesizes into actionable responses.
-- **AskDataPage** (`/ask-data`): Natural-language-to-SQL (NL2SQL) interface over the energy data warehouse.
-- **EnergyAdvisorChat**: Gemini-backed Q&A with energy-specific prompt templates and response caching.
-
----
-
-### 4. Alberta Consumer Rate Watchdog (`RROAlertSystem`)
-
-Automated logic engine targeting **RoLR (Rate of Last Resort) consumer arbitrage**:
-
-- Live AESO pool-price polling → estimated RRO computation (`pool/10 + T&D + admin`)
-- Month-over-month RRO trend chart (12-month lookback, AESO-calibrated data)
-- **Switch recommendation trigger** when current RRO > 14 ¢/kWh or forecast RRO > 16 ¢/kWh
-- Retailer comparison with guaranteed savings output
-- Integrated with `ShadowBillingModule` for side-by-side bill simulation
-
-**Routes:** `/watchdog` · `/rate-watchdog` · `/rro`
-
----
-
-### 5. Forecast Benchmarking Trust Layer (`ForecastBenchmarkingPage`)
-
-Evaluate energy forecasts against industry baselines across 1h–48h horizons:
-
-- **Metrics:** MAE, MAPE, RMSE vs. persistence and seasonal-naïve benchmarks
-- **DataFreshnessBadge** and **ProvenanceBadge** for source traceability
-- Designed for consulting firms, grid operators, municipal planners, and regulatory conversations
-
-**Route:** `/forecast-benchmarking`
-
----
-
-### 6. Indigenous Data Sovereignty Platform (`SovereignDataVault` + `AICEIReportingModule`)
-
-OCAP®-aligned architecture implementing **Decentralized Digital Twin** principles for First Nations microgrid data:
-
-- **OCAP® Score** (0–4) dashboard: Ownership, Control, Access, Possession compliance status
-- Data residency controls — community data never leaves designated jurisdiction
-- **AICEIReportingModule**: Grant compliance reporting for AICEI-funded Indigenous communities
-- **FunderReportingDashboard**: Templated reports for Wah-ila-toos, CERRC, Northern REACHE
-- **NativeLandTerritorySelector**: Territory mapping with FPIC consultation status
-- **IndigenousProjectForm**: UNDRIP-aware multi-step project intake
-
-**Routes:** `/sovereign-vault` · `/aicei` · `/indigenous` · `/funder-reporting`
-
----
-
-### 7. Cascading Transmission Risk Dashboard (`ResilienceMap`)
-
-Implements **Ideal Point Analysis (IPA)** — non-compensatory mathematics that prevent regional abundance from masking local failure:
-
-- Grid topology node visualization with substation-level failure alerts
-- **Non-compensatory fusion logic**: "An abundance of regional power does not mask a fatal local substation failure"
-- Crisis scenario simulator (wildfire, heatwave, cyberattack) with resilience scoring
-- Integrated with `CrisisScenarioSimulator` for what-if modeling
-
-**Route:** `/resilience`
-
----
-
-### 8. AI Data Centre & BYOP Load Tracker (`AIDataCentreDashboard`)
-
-Multi-Agent Systems model tracking the ~30% of data-centre capacity migrating to self-supplied "Bring Your Own Power":
-
-- Project pipeline across Canadian provinces (MW capacity, fuel type, status)
-- Aggregate BYOP load forecasting linked to `DemandForecastDashboard` BYOP MAS domain
-- Interconnection queue tracking for data-centre grid tie-ins
-- `AIDemandScenarioSlider`: interactive MW demand scenario modeling
-
-**Routes:** `/ai-datacentres` · `/ai-data-centre`
-
----
-
-### 9. Production-Grade Dashboard Suite (35+ Modules)
-
-A comprehensive suite of React dashboards covering every aspect of Canadian energy:
-
-| Category | Dashboards |
-|----------|------------|
-| **Grid Operations** | RealTime, GridOptimization, GridInterconnectionQueue, CapacityMarket |
-| **Renewables** | RenewableOptimization, CurtailmentAnalytics, StorageDispatch |
-| **Future Energy** | AIDataCentre, HydrogenEconomy, SMRDeployment, EVCharging, HeatPumps |
-| **Decarbonization** | CarbonEmissions, CCUSProjects, IndustrialDecarb, ClimatePolicy |
-| **Finance** | ESGFinance, Investment, Analytics, Trends |
-| **Specialized** | Indigenous, CriticalMinerals, VPPAggregation, DigitalTwin, Arctic |
-
----
-
-### 10. Regulatory Filing Templates (High-Value B2B Proof)
-
-Export-ready filing templates for regulated utilities:
-
-- **AUC Rule 005** schedules for Alberta utilities and REAs
-- **OEB Chapter 5 DSP** sections for Ontario utility planning workflows
-- Sample preview + CSV/JSON export for stakeholder walkthroughs
-- CER compliance dashboard with regulatory intelligence module
-
-**Routes:** `/regulatory-filing` · `/rule-005` · `/oeb-filing`
-
----
-
-### 11. Asset Health Index — CBRM-Lite (`AssetHealthDashboard`)
-
-CSV-based utility asset scoring for REAs, small LDCs, and consultant workflows:
-
-- CSV upload → health index scoring (0–100) per asset
-- Condition and risk visualization (Recharts)
-- Export-ready results for asset-condition conversations
-- Feeds `BankReadyExport` for green-loan financing packages
-
-**Routes:** `/asset-health` · `/cbrm` · `/asset-scoring`
-
----
-
-### 12. Real-Time Grid & Market Data Integration
-
-Live and historical integrations with Canadian energy operators:
-
-- **AESO** (Alberta): Pool prices, carbon intensity, storage dispatch, RRO estimation
-- **IESO** (Ontario): Demand, prices, generation mix
-- **ECCC**: Weather data, climate projections
-- **NPRI/CER**: Emissions, regulatory compliance
-- `DataFreshnessBadge` + `ProvenanceBadge` + `DataQualityBadge` for full data lineage
-
----
-
-### 13. Retailer Hedging & Shadow Billing (`RetailerHedgingDashboard` + `ShadowBillingModule`)
-
-Trading-focused analytics for Alberta's deregulated power pool:
-
-- Forward curve vs. RRO comparison for retailer risk management
-- Shadow billing: simulate electricity bill under competing retail contracts
-- Linked to `CreditBankingDashboard` for TIER credit position management
-
-**Routes:** `/hedging` · `/shadow-billing` · `/credit-banking`
-
----
-
-### 14. API-First Architecture & Developer Platform
-
-Secure API and data-access surfaces for integrations and consultant workflows:
-
-| Endpoint | Data |
-|----------|------|
-| `/api/v2/ai-datacentres` | AI infrastructure projects |
-| `/api/v2/hydrogen` | Hydrogen economy data |
-| `/api/v2/minerals` | Critical minerals supply chain |
-| `/api/v2/regulatory` | Compliance data |
-| `/api/v2/esg` | ESG scores and metrics |
-
-**Features:** API key authentication, telemetry logging, RLS policies, per-IP rate limiting, usage-based billing foundation
-
-**Routes:** `/api-docs` · `/api-keys` · `/developers`
-
----
-
-### 15. ESG & Sustainable Finance Analytics (`ESGFinanceDashboard`)
-
-Track green finance across Canada:
-
-- Green bonds and sustainability-linked loans
-- ESG scores (MSCI, Sustainalytics integration)
-- Carbon pricing exposure analysis (OBPS compliance)
-- Industrial efficiency project pipeline
-- `BankReadyExport`: bank-ready green-loan application package
-
----
-
-### 16. OWASP-Aligned Security Posture
-
-Enterprise security practices:
-
-- Input validation helpers
-- Strict CORS allowlists (environment-based)
-- No hardcoded secrets (environment variables throughout)
-- Safe error handling — no stack traces to clients (`ErrorBoundary`, `RouteErrorFallback`)
-- Row-Level Security on all Supabase tables
-- `SecurityDashboard` for posture visibility
-
----
-
-### 17. EdTech: Cohort & Certificate System
-
-Credentialed learning platform for energy education:
-
-- Cohort creation, email invitations, completion tracking
-- Badge-based achievements + certificate tracks
-- Module player with progression gating
-- Training Coordinators landing page for B2B cohort sales
-
-**Routes:** `/admin/cohorts` · `/certificates` · `/badges` · `/training-coordinators`
-
----
-
-### 18. Digital Twin & Scenario Modeling (`DigitalTwinDashboard`)
-
-Interactive energy system simulation:
-
-- Grid topology visualization
-- What-if scenario builder
-- Crisis simulation (wildfire, heatwave, cyberattack)
-- Resilience scoring linked to `ResilienceMap`
-
-**Route:** `/digital-twin`
-
----
-
-### 19. Modern Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18, Vite, TypeScript |
-| Styling | Tailwind CSS utility classes |
-| Charts | Recharts, Mapbox |
-| Backend | Supabase (Postgres + Edge Functions) |
-| Auth | Supabase Auth, Whop SDK |
-| Hosting | Netlify (CDN, CI/CD, preview branches) |
-| AI | Gemini API (LLM Q&A, agent workflows) |
-| Payments | Paddle (Whop marketplace integration) |
-
----
-
-### 20. Production Deployment Story
-
-Ready for commercial deployment:
-
-- ✅ Netlify CI/CD pipeline with preview/staging branches
-- ✅ Supabase production environment with SQL migration scripts
-- ✅ Environment-based CORS and RLS
-- ✅ Whop SDK + Paddle integration
-- ✅ 50+ routes with lazy-loading code splitting
-- ✅ OCAP®-aligned data residency architecture
-- ✅ OpenAPI documentation (`/api-docs`)
-
----
-
-## Quick Route Reference
-
-| Category | Routes |
-|----------|--------|
-| **Main** | `/`, `/dashboard`, `/about`, `/contact` |
-| **ML Forecast** | `/demand-forecast`, `/forecast-benchmarking`, `/load-forecast` |
-| **TIER / Carbon** | `/roi-calculator`, `/tier-savings`, `/dip-audit`, `/bank-export`, `/credit-banking` |
-| **Consumer Tools** | `/watchdog`, `/rate-watchdog`, `/solar-wizard`, `/shadow-billing` |
-| **AI / Agent** | `/agent`, `/copilot`, `/ask-data`, `/my-energy-ai` |
-| **Analytics** | `/analytics`, `/trends`, `/investment` |
-| **Grid Ops** | `/resilience`, `/digital-twin`, `/renewable-optimization`, `/curtailment-reduction` |
-| **Future Energy** | `/ai-datacentres`, `/hydrogen`, `/smr-deployment` |
-| **Indigenous** | `/indigenous`, `/aicei`, `/sovereign-vault`, `/funder-reporting` |
-| **B2B** | `/hire-me`, `/for-employers`, `/enterprise`, `/municipal`, `/hedging` |
-| **Regulatory** | `/regulatory-filing`, `/rule-005`, `/oeb-filing`, `/compliance` |
-| **API** | `/api-docs`, `/api-keys`, `/developers` |
-| **Learning** | `/certificates`, `/badges`, `/admin/cohorts`, `/training-coordinators` |
-
----
-
-*Built by Sanjay Bhargava | [LinkedIn](https://linkedin.com/in/bhargavasanjay) | [Portfolio](https://canada-energy.netlify.app/)*
+# CEIP Top 20 Sellable Features for Energy and Utilities
+
+> **Last Audited:** May 30, 2026
+> **Base Demo Host:** [https://canada-energy.netlify.app](https://canada-energy.netlify.app)
+> **Purpose of this file:** keep CEIP focused on sellable Canadian energy and utility proof packs, not a loose collection of dashboards.
+> **Commercial source of truth:** [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md).
+> **Confidence note:** See [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md). Current desk-research strategy-direction confidence is 95/100; 95% market confidence requires buyer-supplied pilot evidence.
+> **Pilot evidence checklist:** [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md).
+
+## Lead USP
+
+CEIP's defensible USP is:
+
+**Canadian utility and TIER proof packs that turn forecasts, filings, benchmarks, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance savings, credit ledgers, asset decisions, security review, and billing checks into buyer-ready artifacts.**
+
+CEIP should not lead with generic AI, GPU forecasting, broad dashboard coverage, or production connector claims. Best-in-class vendors already own operational AI/weather/API forecasting and deep grid-planning engines. CEIP should win by being narrower, Canadian, evidence-driven, exportable, and faster to pilot.
+
+## Key selling points
+
+1. Utility planning packs combine forecast scenarios, benchmark proof, assumptions, warnings, and exportable schedules.
+2. Regulatory filing packs translate planning evidence into OEB/AUC-oriented reviewer artifacts.
+3. Forecast benchmarking is visible through MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, champion/challenger, source, and fallback labels.
+4. TIER CFO and credit-banking packs make Alberta industrial compliance decisions source-dated and audit-ready without implying trading advice.
+5. GA/ICI and BYO-CSV packs add narrow, defensible proof wedges without requiring SCADA, ADMS, production utility connectors, or enterprise integrations.
+
+## Top 10 sellable features
+
+| Rank | Feature | Primary buyer | Current implementation status | Exact gap to keep closing | Priority score |
+|---:|---|---|---|---|---:|
+| 1 | Utility demand forecast planning pack | LDCs, REAs, utility consultants | Implemented route and proof pack; now includes source manifest, rolling-origin evidence, conformal interval coverage, hierarchy reconciliation, benchmark appendix, planning export, and security attachment path. | Replace public sample with buyer-supplied LDC history during pilots; keep every export board/regulator-readable. | 5 |
+| 2 | Forecast benchmarking and provenance layer | Forecast reviewers, consultants | Implemented route and utility export appendix with MAE, MAPE, RMSE, persistence, seasonal-naive, source manifest, fallback, warnings, rolling splits, interval coverage, champion/challenger decision, and assumptions. | Keep benchmark/provenance mandatory in new forecast exports. | 5 |
+| 3 | OEB/AUC regulatory filing packs | Regulatory teams, consultants | Implemented route, template helpers, reviewer checklists, official source mapping, and jurisdiction schedule exports. | Add more annotated sample packs from real reviewer workflows. | 5 |
+| 4 | Ontario GA/ICI 5CP decision-support pack | Ontario Class A industrials, energy managers, advisors | Implemented route, IESO Peak Tracker ingestion, `public/data/ga_ici_5cp_public_historical_actuals.csv`, historical watchlist backtest with base-period filtering, retained-extract helper, and no-savings/no-settlement guardrails. | Add buyer interval-load validation and current IESO source refresh before outbound use. | 4 |
+| 5 | Privacy-preserving BYO-CSV proof generator | Utility privacy, security, procurement, and planning reviewers | Implemented route, browser-local CSV handling, retained-extract helper, direct-identifier blocking, formula-risk blocking, and quasi-identifier warnings. | Add buyer reviewer acceptance and retained extract hashes for each pilot. | 4 |
+| 6 | TIER compliance savings pack | Alberta industrial emitters, EPCs | Implemented CFO memo, appendix, pricing freshness gate, direct-investment sensitivity, and credit-banking workflow link. | Validate current pricing source and facility-specific assumptions before outbound use. | 4 |
+| 7 | TIER credit banking audit pack | Alberta industrial emitters, CFOs, compliance leads | Implemented allocation schedule and expiry-risk outputs with no-broker guardrails. | Add buyer-approved registry ledger examples and live pricing validation during pilots. | 4 |
+| 8 | Asset health executive capex pack | Asset managers, municipal utilities | Implemented CBRM-lite proof pack with executive export, prioritized replacement CSV, and cost-sensitivity checklist; no SCADA or predictive-maintenance claim. | Add buyer-specific replacement/deferment examples and board memo polish. | 4 |
+| 9 | Utility security procurement pack | Utility security and procurement reviewers | Implemented control matrix, questionnaire, evidence index, deployed-evidence split, owner-supplied checklist, incident-response ownership, subprocessor disclosure, and data-handling boundaries. | Attach buyer-specific legal, privacy, hosting, SBOM, header, audit, and incident contacts per pilot. | 4 |
+| 10 | Shadow billing invoice proof pack | Municipal/public-sector energy managers | Implemented proof route with uploaded-bill mode, monthly delta CSV, bill field map, audit notes, savings caveats, and energy-supply-only boundary. | Add one buyer-approved invoice comparison artifact. | 4 |
+
+## Supporting and de-emphasized surfaces
+
+| Rank | Surface | Current role | Why it should not lead |
+|---:|---|---|---|
+| 11 | UtilityAPI / Green Button sandbox | Sandbox parser and connector-readiness support for the utility planning pack. | Not a production bridge or approval proof until OAuth approval, audit logs, revocation, and deployment evidence exist. |
+| 12 | Large-load/data-centre readiness overlay | Planning overlay for utilities and data-centre advisors. | Keep as assumptions and constraint narrative until engineering-grade validation exists. |
+| 13 | Consultant/API Canadian energy data pack | Endpoint freshness matrix and analyst data surfaces. | Use as a technical follow-on after a specific buyer workflow is clear. |
+| 14 | Retailer hedging and rate watchdog tools | Useful follow-up for Alberta price conversations. | Off-USP for the utility forecast proof-pack story. |
+| 15 | Broad grid and market dashboard | Useful proof library and orientation surface. | Broad dashboards are harder to sell than a specific planning, filing, or savings artifact. |
+| 16 | Renewable optimization and curtailment surfaces | Analyst follow-up proof for congestion and lost-value conversations. | Weaker direct budget path than utility planning or compliance packs. |
+| 17 | Indigenous funder and AICEI reporting | Trust-sensitive support surface with owner-supplied governance markers. | Reserve for this ICP until live partner dataset and community review exists. |
+| 18 | Resilience and crisis simulator | Support surface for asset and planning conversations. | Not a standalone commercial front door yet. |
+| 19 | Open education, certificates, and Whop surfaces | Training/community material. | Not part of the utility and forecast USP. |
+| 20 | Full operational AI/GPU forecasting | Deferred roadmap idea only. | Incumbents are far deeper in hourly weather, API, SOC/security, and operational forecasting; CEIP should not chase this before proof-pack traction. |
+
+## Required copy guardrails
+
+- Say "public-system sample" or "starter dataset" unless a buyer has supplied real LDC history.
+- Say "sandbox" for UtilityAPI/Green Button until approval, OAuth, revocation, audit, and deployment evidence exist.
+- Say "source-dated pricing assumption" for TIER market inputs unless a validated live source is actively attached.
+- Say "OCAP-aligned workflow language" or "owner-supplied governance markers" unless a partner-backed governance review exists.
+- Say "decision support" for GA/ICI 5CP until buyer and settlement review exists.
+- Say "local redacted CSV proof" for BYO-CSV until buyer privacy review accepts the retained extract.
+- Say "planning overlay" for large-load/data-centre readiness until engineering-grade validation exists.
+- Do not say CEIP outperforms enterprise AI forecasting vendors without a published benchmark and comparable data contract.
+
+## Confidence Gates Before 95%
+
+| Gate | Required evidence | Why it matters |
+|---|---|---|
+| Buyer load history | One anonymized LDC, REA, or consultant-supplied load file with benchmark appendix. | Proves the utility pack is useful beyond public or constructed samples. |
+| Forecast champion/challenger | Rolling split record across persistence, seasonal-naive, CEIP forecast, and any buyer baseline. | Prevents overclaiming forecast effectiveness. |
+| TIER buyer case | One facility scenario with refreshed pricing assumptions and compliance-review caveats. | Prevents CFO memo language from becoming trading, legal, or tax advice. |
+| Invoice proof | One buyer-approved invoice comparison artifact with field mapping and audit notes. | Moves shadow billing from constructed proof to customer proof. |
+| Security evidence | SBOM, security headers, hosting/contact/subprocessor notes, retention boundary, and dependency audit. | Reduces procurement friction without implying certification. |
+| Commercial commitment | At least one accepted buyer row with `commercial_commitment_status` of `design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`, plus retained redacted artifact text proving the commitment beyond status-only wording. | Separates useful free artifacts from sellability evidence. |
+| Fast pilot delivery | At least one accepted buyer proof pack delivered in 48 hours or less, with no accepted confidence-moving row above 120 hours. | Proves the solo-developer proof-pack wedge is operationally credible, not just theoretically useful. |
+| Stale-doc control | Active docs and outreach pass claim-boundary checks; old docs are archived or clearly marked stale. | Prevents historical broad-platform claims from leaking into sales copy. |
+
+Do not increase any feature rating above the current table unless the matching evidence item is logged in the pilot evidence checklist. Do not claim 95% market confidence unless a filled register passes:
+
+```bash
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
+```
+
+## Critical next implementation checkpoints
+
+1. Keep `/utility-demand-forecast` as the front-door product.
+2. Keep public sample CSV and manifest visible, but never present it as customer history.
+3. Keep benchmark/provenance mandatory in utility exports.
+4. Keep OEB Chapter 5 and AUC reviewer artifacts visible as first-class proof.
+5. Keep GA/ICI, BYO-CSV, TIER, credit-banking, asset, security, and billing packs exportable and caveated.
+
+## Current strategy
+
+Lead with utility planning/benchmark/regulatory plus GA/ICI, BYO-CSV, and TIER CFO/credit-banking for the current ICP. Use asset, security, and billing packs when the buyer workflow fits. Keep large-load/API, Indigenous reporting, sandbox connectors, dashboards, education, generic AI, and GPU forecasting behind the main product story until customer proof justifies promoting them.

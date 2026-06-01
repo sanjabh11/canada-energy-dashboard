@@ -1,3 +1,5 @@
+> **Historical / reconcile-first note (May 30, 2026):** This document is not current commercial source of truth. Before reusing any claim, reconcile it against [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md), [Top20.md](./Top20.md), and [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md). Do not copy claims about production utility onboarding, SOC 2 certification, live TIER pricing, OCAP-compliant infrastructure, AI/GPU superiority, or accurate avalanche prediction from this file.
+
 Top 10 Highlights of CEIP & GTM StrategyThese stand out as strongest validated advantages for 2025-2026 revenue.Indigenous Blue Ocean — Zero competitors in OCAP-compliant platforms; aligns perfectly with $10B+ active loan guarantees and mandatory equity (e.g., BC Hydro 25-51%).
 AI-Powered Canadian Analysis — Only platform with LLM (Gemini) insights tailored to Canadian grid/policy; Orennia has general AI but not Canada-specific.
 TIER Arbitrage Engine — Models real $60-77/tonne spread + new Direct Investment audits; timely amid 2026 review uncertainty.

@@ -1,7 +1,7 @@
 /**
  * AI Analytics Widget Component
  *
- * Interactive AI-powered analytics widget with scenario modeling,
+ * Interactive model-assisted analytics widget with scenario modeling,
  * predictive insights, and recommendation engine.
  */
 
@@ -333,7 +333,7 @@ export const AIAnalyticsWidget: React.FC<AIAnalyticsProps> = ({
           <span className="text-sm font-medium text-slate-800">AI Insights</span>
         </div>
         <p className="text-sm text-slate-700 leading-relaxed">
-          {insights || 'Click "Analyze" to generate AI-powered insights based on current data patterns and trends.'}
+          {insights || 'Click "Analyze" to generate model-assisted insights based on current data patterns and trends.'}
         </p>
       </div>
 

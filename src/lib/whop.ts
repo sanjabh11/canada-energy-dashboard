@@ -6,7 +6,7 @@
  * 
  * KEY CHANGES FOR WHOP COMPLIANCE:
  * - Uses Whop JWT authentication (no custom login)
- * - Integrates with @whop-sdk/core for real SDK ops
+ * - Uses browser-safe Whop API calls plus server/edge verification paths
  * - Supports standalone mode for non-Whop deployments
  * 
  * Access Tiers:
@@ -427,7 +427,7 @@ export async function checkWhopAccess(userId: string, experienceId?: string): Pr
     };
   }
 
-  // TODO: Implement checkAccess via @whop-sdk/core when running in iframe
+  // TODO: Replace this fallback with authoritative iframe entitlement verification.
   // For now, use the current user's cached data
   const user = whopClient.getCurrentUser();
   return {
@@ -448,6 +448,10 @@ class WhopClient {
    * Initialize Whop SDK
    */
   async initialize(): Promise<void> {
+    if (this.initialized) {
+      return;
+    }
+
     const config = getWhopConfigStatus();
     console.info(`[Whop] Initializing in ${config.mode} mode: ${config.message}`);
 
@@ -742,9 +746,4 @@ export interface TierGateProps {
   requiredTier: WhopTier;
   children: React.ReactNode;
   fallback?: React.ReactNode;
-}
-
-// Initialize on module load
-if (typeof window !== 'undefined') {
-  whopClient.initialize();
 }

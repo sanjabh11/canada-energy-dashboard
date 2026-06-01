@@ -12,6 +12,14 @@ const supabase = SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY
 
 const jsonHeaders = { "Content-Type": "application/json" };
 
+function resolveFunctionPath(req: Request): string {
+  const pathname = new URL(req.url).pathname.replace(/\/+$/, "") || "/";
+  const stripped = pathname
+    .replace(/^\/functions\/v1\/ml-forecast\b/, "")
+    .replace(/^\/ml-forecast\b/, "");
+  return stripped || "/";
+}
+
 function clamp(value: number, min = 0, max = 1): number {
   if (!Number.isFinite(value)) return min;
   return Math.max(min, Math.min(max, value));
@@ -531,7 +539,7 @@ serve(async (req) => {
   const rl = applyRateLimit(req, "ml-forecast");
   if (rl.response) return rl.response;
   const cors = createCorsHeaders(req);
-  const path = new URL(req.url).pathname.replace(/\/functions\/v1\/ml-forecast\b/, "") || "/";
+  const path = resolveFunctionPath(req);
 
   if (req.method !== "POST" || !["/run", "/"].includes(path)) {
     return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: { ...cors, ...jsonHeaders, ...rl.headers } });

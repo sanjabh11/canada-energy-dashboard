@@ -18,8 +18,9 @@
  *   - Appendix 2-AB: Asset Condition Assessment Methodology
  * 
  * References:
- * - AUC Rule 005 (Alberta Utilities Commission, 2024 revision)
- * - OEB Filing Requirements for Electricity Distribution Rate Applications (Ch. 5)
+ * - AUC Rule 005 (effective March 31, 2021; source reviewed 2026-05-31)
+ * - OEB Filing Requirements for Electricity Distribution Rate Applications Ch. 5
+ *   (2027 filing requirements dated 2025-12-16)
  * - IEEE C57.104-2019 (Dissolved Gas Analysis for transformers)
  * - IEC 60076 (Power transformers assessment standards)
  */
@@ -188,9 +189,9 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
       { key: 'retirements_current_year_cad', label: 'Current Year Retirements ($)', type: 'number' },
     ],
     notes: [
-      'Per AUC Rule 005, Section 3.2: All capital additions must be itemized for projects exceeding $50,000.',
-      'Depreciation rates must align with AUC-approved rates per Decision 20414-D01-2016.',
-      'Net book value = Original cost − Accumulated depreciation.',
+      'Confirm the current AUC electric-utility schedule form before using any project threshold or appendix label.',
+      'Capital additions, retirements, depreciation, and net book value must reconcile to audited financial statements and utility source records.',
+      'Net book value = Original cost minus accumulated depreciation.',
     ],
   },
   rule005_schedule_10: {
@@ -209,9 +210,9 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
       { key: 'notes', label: 'Notes', type: 'string' },
     ],
     notes: [
-      'Per AUC Rule 005, Section 4.1: Income statement must separate regulated and non-regulated operations.',
+      'Income statement rows must reconcile to audited financial statements and current AUC schedule instructions.',
       'All amounts in Canadian dollars. Revenue includes distribution tariff revenue, transmission revenue, and other regulated revenue.',
-      'Variances exceeding ±5% require explanatory notes.',
+      'Material variances require explanatory notes and retained support for Commission information requests.',
     ],
   },
   rule005_schedule_17: {
@@ -231,8 +232,8 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
     ],
     notes: [
       'Mid-year rate base = (Opening balance + Closing balance) / 2.',
-      'Per AUC Rule 005, rate base determines the return on equity component of revenue requirement.',
-      'Working capital allowance calculated per AUC-approved methodology.',
+      'Rate-base rows must be reviewed against the current AUC annual reporting schedule form before filing use.',
+      'Working capital and return calculations require utility-approved methodology and reviewer sign-off.',
     ],
   },
   rule005_schedule_22: {
@@ -254,7 +255,7 @@ export const REGULATORY_TEMPLATES: Record<TemplateType, TemplateDefinition> = {
     notes: [
       'Expenses classified per Uniform System of Accounts (USOA) for electric utilities.',
       'FTE counts represent full-time equivalent employees assigned to each expense category.',
-      'Budget variances exceeding ±10% require explanatory notes per AUC Rule 005 Section 5.3.',
+      'Budget variances require explanatory notes and retained finance-source support before filing use.',
     ],
   },
   oeb_dsp_asset_condition: {
@@ -528,4 +529,46 @@ export function generateAllTemplatesZip(): { filename: string; content: string }
     { filename: 'OEB_DSP_Section_5_4_Reliability.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_reliability, generateSampleOEB_Reliability() as unknown as Record<string, unknown>[]) },
     { filename: 'OEB_DSP_Scenario_Matrix.csv', content: templateToCSV(REGULATORY_TEMPLATES.oeb_dsp_scenario_matrix, generateSampleOEB_ScenarioMatrix() as unknown as Record<string, unknown>[]) },
   ];
+}
+
+export function generateRegulatorySampleData(templateId: TemplateType): Record<string, unknown>[] {
+  switch (templateId) {
+    case 'rule005_schedule_4_2':
+      return generateSampleRule005_4_2() as unknown as Record<string, unknown>[];
+    case 'rule005_schedule_10':
+      return generateSampleRule005_10() as unknown as Record<string, unknown>[];
+    case 'rule005_schedule_17':
+      return generateSampleRule005_4_2().map((row) => ({
+        rate_base_component: row.asset_category,
+        opening_balance_cad: row.net_book_value_cad,
+        additions_cad: row.additions_current_year_cad,
+        retirements_cad: row.retirements_current_year_cad,
+        depreciation_cad: row.original_cost_cad * (row.depreciation_rate_pct / 100),
+        closing_balance_cad: row.net_book_value_cad + row.additions_current_year_cad - row.retirements_current_year_cad - (row.original_cost_cad * (row.depreciation_rate_pct / 100)),
+        mid_year_value_cad: (row.net_book_value_cad + row.net_book_value_cad + row.additions_current_year_cad - row.retirements_current_year_cad - (row.original_cost_cad * (row.depreciation_rate_pct / 100))) / 2,
+      })) as unknown as Record<string, unknown>[];
+    case 'rule005_schedule_22':
+      return [
+        { expense_category: 'Vegetation Management', account_number: '571', current_year_cad: 680000, prior_year_cad: 620000, budget_cad: 650000, variance_to_budget_cad: 30000, fte_count: 3, notes: 'Enhanced program' },
+        { expense_category: 'Line Maintenance', account_number: '572', current_year_cad: 520000, prior_year_cad: 490000, budget_cad: 510000, variance_to_budget_cad: 10000, fte_count: 5, notes: '' },
+        { expense_category: 'Station Maintenance', account_number: '573', current_year_cad: 380000, prior_year_cad: 350000, budget_cad: 370000, variance_to_budget_cad: 10000, fte_count: 2, notes: '' },
+        { expense_category: 'Meter Reading & Services', account_number: '586', current_year_cad: 210000, prior_year_cad: 200000, budget_cad: 215000, variance_to_budget_cad: -5000, fte_count: 2, notes: '' },
+        { expense_category: 'Customer Service', account_number: '901', current_year_cad: 420000, prior_year_cad: 395000, budget_cad: 410000, variance_to_budget_cad: 10000, fte_count: 4, notes: '' },
+        { expense_category: 'Administrative & General', account_number: '920', current_year_cad: 890000, prior_year_cad: 850000, budget_cad: 875000, variance_to_budget_cad: 15000, fte_count: 6, notes: '' },
+        { expense_category: 'Fleet & Vehicles', account_number: '935', current_year_cad: 180000, prior_year_cad: 165000, budget_cad: 175000, variance_to_budget_cad: 5000, fte_count: 1, notes: '' },
+        { expense_category: 'IT & Telecommunications', account_number: '940', current_year_cad: 320000, prior_year_cad: 290000, budget_cad: 310000, variance_to_budget_cad: 10000, fte_count: 2, notes: 'Cybersecurity upgrade' },
+      ] as unknown as Record<string, unknown>[];
+    case 'oeb_dsp_asset_condition':
+      return generateSampleOEB_AssetCondition() as unknown as Record<string, unknown>[];
+    case 'oeb_dsp_load_forecast':
+      return generateSampleOEB_LoadForecast() as unknown as Record<string, unknown>[];
+    case 'oeb_dsp_reliability':
+      return generateSampleOEB_Reliability() as unknown as Record<string, unknown>[];
+    case 'oeb_dsp_scenario_matrix':
+      return generateSampleOEB_ScenarioMatrix() as unknown as Record<string, unknown>[];
+    case 'auc_dsp_data_schedule':
+      return generateSampleAucDspDataSchedule() as unknown as Record<string, unknown>[];
+    default:
+      return [];
+  }
 }

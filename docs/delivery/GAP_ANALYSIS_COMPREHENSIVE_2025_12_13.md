@@ -1,3 +1,5 @@
+> **Historical / reconcile-first note (May 30, 2026):** This document is not current commercial source of truth. Before reusing any score, readiness claim, monetization claim, or production-ready language, reconcile it against [../COMMERCIAL_SOURCE_OF_TRUTH.md](../COMMERCIAL_SOURCE_OF_TRUTH.md), [../Top20.md](../Top20.md), and [../PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](../PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md). Current CEIP positioning is proof-pack-first; 95% market confidence requires buyer-supplied pilot evidence.
+
 # Comprehensive Gap Analysis & Implementation Status
 ## Canada Energy Intelligence Platform (CEIP)
 ## Date: December 13, 2025

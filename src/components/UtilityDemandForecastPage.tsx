@@ -34,20 +34,23 @@ import { SEOHead } from './SEOHead';
 import { DataFreshnessBadge } from './DataFreshnessBadge';
 import { ProvenanceBadge } from './ProvenanceBadge';
 import { DataTrustNotice } from './DataTrustNotice';
+import ProofPackPanel from './ProofPackPanel';
+import ConstructedScenarioPanel from './ConstructedScenarioPanel';
 import {
+  buildOntarioPublicUtilitySampleCsv,
+  buildOntarioPublicUtilitySampleManifestMarkdown,
   buildUtilityForecastPackage,
   buildUtilityStarterCsv,
+  generateOntarioPublicUtilitySampleRows,
   generateUtilityLoadSampleRows,
+  ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST,
   parseUtilityHistoricalLoadCsv,
-  utilityForecastPackageToAlbertaCsv,
-  utilityForecastPackageToCsv,
   type UtilityForecastPackage,
   type UtilityInputSourceKind,
   type UtilityInputGranularity,
   type UtilityJurisdiction,
   type UtilityPlanningScenario,
 } from '../lib/utilityForecasting';
-import { REGULATORY_TEMPLATES, templateToCSV } from '../lib/regulatoryTemplates';
 import { getPublicAppUrl, getUtilityConnectorBaseUrl } from '../lib/config';
 import {
   buildConnectionHealthCards,
@@ -67,6 +70,24 @@ import {
   renderSubmissionPacketMarkdown,
   type UtilitySubmissionPacket,
 } from '../lib/utilitySubmissionReadiness';
+import {
+  buildUtilityBenchmarkAppendixMarkdown,
+  buildUtilityForecastProofBundle,
+  buildUtilityGenericCsv,
+  buildUtilityJurisdictionCsv,
+  buildUtilityPlanningDescriptor,
+} from '../lib/utilityForecastProofPack';
+import {
+  downloadPdfArtifact,
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
+import type { CommercialProofState } from '../lib/proofPack';
+import { UTILITY_CONSTRUCTED_SCENARIOS, type UtilityConstructedScenarioBundle } from '../lib/commercialScenarioBundles';
+import {
+  buildUtilitySecurityDescriptor,
+  buildUtilitySecurityProofBundle,
+} from '../lib/utilitySecurityProofPack';
 
 function createDefaultScenario(jurisdiction: UtilityJurisdiction): UtilityPlanningScenario {
   const defaultGeographyId = jurisdiction === 'Ontario' ? 'ON-FEEDER-1' : 'AB-FEEDER-1';
@@ -117,6 +138,7 @@ const UtilityDemandForecastPage: React.FC = () => {
   const [sourceObservedAt, setSourceObservedAt] = useState<string | null>(() => generateUtilityLoadSampleRows('Ontario', 'hourly').at(-1)?.timestamp ?? null);
   const [isPersistedSource, setIsPersistedSource] = useState(false);
   const [parseErrors, setParseErrors] = useState<string[]>([]);
+  const [commercialProofState, setCommercialProofState] = useState<CommercialProofState>('standard');
   const [draftScenario, setDraftScenario] = useState<UtilityPlanningScenario>(() => createDefaultScenario('Ontario'));
   const [activeScenario, setActiveScenario] = useState<UtilityPlanningScenario>(() => createDefaultScenario('Ontario'));
   const [selectedHorizon, setSelectedHorizon] = useState(5);
@@ -169,6 +191,64 @@ const UtilityDemandForecastPage: React.FC = () => {
       };
     }
   }, [activeScenario, isSampleData, publicContext?.live_surfaces, rows, sourceKind, sourceLabel]);
+
+  const proofBundle = useMemo(
+    () => (forecastState.forecastPackage ? buildUtilityForecastProofBundle(forecastState.forecastPackage, commercialProofState) : null),
+    [commercialProofState, forecastState.forecastPackage],
+  );
+
+  const proofActions = useMemo(() => {
+    if (!forecastState.forecastPackage || !proofBundle) return [];
+    const descriptor = buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState);
+    const benchmarkAppendix = buildUtilityBenchmarkAppendixMarkdown(forecastState.forecastPackage, commercialProofState);
+
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'utility-planning-pack-pdf') {
+        return {
+          ...artifact,
+          onDownload: () => downloadPdfArtifact({ ...descriptor, definition: artifact }),
+        };
+      }
+      if (artifact.id === 'utility-planning-pack') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-benchmark-appendix') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            benchmarkAppendix,
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-forecast-csv') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilityGenericCsv(forecastState.forecastPackage!),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => downloadTextArtifact(
+          artifact,
+          buildUtilityJurisdictionCsv(forecastState.forecastPackage!),
+          'text/csv;charset=utf-8;',
+        ),
+      };
+    });
+  }, [commercialProofState, forecastState.forecastPackage, proofBundle]);
 
   const chartData = useMemo(() => {
     if (!forecastState.forecastPackage) return [];
@@ -370,6 +450,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setIsPersistedSource(false);
     setParseErrors([]);
     setConnectorAccounts([]);
+    setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
     setDraftScenario(defaults);
     setActiveScenario(defaults);
@@ -388,7 +469,26 @@ const UtilityDemandForecastPage: React.FC = () => {
     setIsPersistedSource(false);
     setParseErrors([]);
     setConnectorAccounts([]);
+    setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
+    setDraftScenario(defaults);
+    setActiveScenario(defaults);
+    setSelectedHorizon(5);
+  }
+
+  function loadOntarioPublicSystemSample() {
+    const nextRows = generateOntarioPublicUtilitySampleRows();
+    setJurisdiction('Ontario');
+    setRows(nextRows);
+    setSourceLabel(ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label);
+    setIsSampleData(false);
+    setSourceKind('public_system_sample');
+    setSourceObservedAt(nextRows.at(-1)?.timestamp ?? null);
+    setIsPersistedSource(false);
+    setParseErrors([ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.disclaimer]);
+    setConnectorAccounts([]);
+    setCommercialProofState('standard');
+    const defaults = createDefaultScenario('Ontario');
     setDraftScenario(defaults);
     setActiveScenario(defaults);
     setSelectedHorizon(5);
@@ -420,6 +520,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setIsPersistedSource(false);
     setParseErrors([]);
     setConnectorAccounts([]);
+    setCommercialProofState('standard');
     const defaults = createDefaultScenario(nextJurisdiction);
     setDraftScenario(defaults);
     setActiveScenario(defaults);
@@ -448,6 +549,7 @@ const UtilityDemandForecastPage: React.FC = () => {
     setIsPersistedSource(false);
     setParseErrors(parsed.warnings);
     setConnectorAccounts([buildMockGreenButtonAccount('London Hydro')]);
+    setCommercialProofState('standard');
     const defaults = createDefaultScenario('Ontario');
     setDraftScenario(defaults);
     setActiveScenario(defaults);
@@ -455,7 +557,7 @@ const UtilityDemandForecastPage: React.FC = () => {
   }
 
   function handleJurisdictionChange(nextJurisdiction: UtilityJurisdiction) {
-    if (isSampleData) {
+    if (isSampleData || sourceKind === 'public_system_sample') {
       loadStarterDataset(nextJurisdiction, activeGranularity);
       return;
     }
@@ -487,8 +589,35 @@ const UtilityDemandForecastPage: React.FC = () => {
       setSourceKind('uploaded_historical');
       setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
       setIsPersistedSource(false);
+      setCommercialProofState('standard');
     };
     reader.readAsText(file);
+  }
+
+  function loadConstructedUtilityScenario(bundle: UtilityConstructedScenarioBundle) {
+    const csvFile = bundle.downloads[0];
+    const parsed = parseUtilityHistoricalLoadCsv(csvFile.content);
+    setParseErrors(parsed.errors);
+    if (parsed.rows.length === 0) return;
+
+    const defaults = {
+      ...createDefaultScenario(bundle.jurisdiction as UtilityJurisdiction),
+      ...bundle.scenarioOverrides,
+      jurisdiction: bundle.jurisdiction as UtilityJurisdiction,
+    };
+
+    setJurisdiction(bundle.jurisdiction as UtilityJurisdiction);
+    setRows(parsed.rows);
+    setSourceLabel(bundle.sourceLabel);
+    setIsSampleData(false);
+    setSourceKind('uploaded_historical');
+    setSourceObservedAt(parsed.rows.at(-1)?.timestamp ?? null);
+    setIsPersistedSource(false);
+    setConnectorAccounts([]);
+    setCommercialProofState('constructed_commercial_scenario');
+    setDraftScenario(defaults);
+    setActiveScenario(defaults);
+    setSelectedHorizon(5);
   }
 
   function refreshPublicContext() {
@@ -513,26 +642,54 @@ const UtilityDemandForecastPage: React.FC = () => {
     if (!forecastState.forecastPackage) return;
     downloadTextFile(
       `${jurisdiction.toLowerCase()}_utility_forecast_pack.csv`,
-      utilityForecastPackageToCsv(forecastState.forecastPackage),
+      buildUtilityGenericCsv(forecastState.forecastPackage),
     );
   };
 
   const exportJurisdictionPack = () => {
     if (!forecastState.forecastPackage) return;
-    if (jurisdiction === 'Ontario') {
-      downloadTextFile(
-        'oeb_chapter5_scenario_matrix.csv',
-        templateToCSV(
-          REGULATORY_TEMPLATES.oeb_dsp_scenario_matrix,
-          forecastState.forecastPackage.regulatory_exports.ontario.scenario_matrix_rows as unknown as Record<string, unknown>[],
-        ),
-      );
-      return;
-    }
-
     downloadTextFile(
-      'auc_dsp_data_schedule.csv',
-      utilityForecastPackageToAlbertaCsv(forecastState.forecastPackage),
+      jurisdiction === 'Ontario' ? 'oeb_chapter5_scenario_matrix.csv' : 'auc_dsp_data_schedule.csv',
+      buildUtilityJurisdictionCsv(forecastState.forecastPackage),
+    );
+  };
+
+  const exportPlanningPack = () => {
+    if (!forecastState.forecastPackage || !proofBundle) return;
+    const planningArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'utility-planning-pack');
+    if (!planningArtifact) return;
+    downloadTextArtifact(
+      planningArtifact,
+      renderHtmlProofDocument({
+        ...buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState),
+        definition: planningArtifact,
+      }),
+      'text/html;charset=utf-8;',
+    );
+  };
+
+  const exportBenchmarkAppendix = () => {
+    if (!forecastState.forecastPackage || !proofBundle) return;
+    const benchmarkArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'utility-benchmark-appendix');
+    if (!benchmarkArtifact) return;
+    downloadTextArtifact(
+      benchmarkArtifact,
+      buildUtilityBenchmarkAppendixMarkdown(forecastState.forecastPackage, commercialProofState),
+      'text/markdown;charset=utf-8;',
+    );
+  };
+
+  const exportSecurityReviewPack = () => {
+    const proofPack = buildUtilitySecurityProofBundle();
+    const artifact = proofPack.artifacts.find((entry) => entry.id === 'utility-security-review-pack');
+    if (!artifact) return;
+    downloadTextArtifact(
+      artifact,
+      renderHtmlProofDocument({
+        ...buildUtilitySecurityDescriptor(),
+        definition: artifact,
+      }),
+      'text/html;charset=utf-8;',
     );
   };
 
@@ -540,6 +697,21 @@ const UtilityDemandForecastPage: React.FC = () => {
     downloadTextFile(
       `${jurisdiction.toLowerCase()}_${granularity}_starter_template.csv`,
       buildUtilityStarterCsv(jurisdiction, granularity),
+    );
+  };
+
+  const exportOntarioPublicSample = () => {
+    downloadTextFile(
+      'ontario_ieso_apo_public_system_sample.csv',
+      buildOntarioPublicUtilitySampleCsv(),
+    );
+  };
+
+  const exportOntarioPublicSampleManifest = () => {
+    downloadTextFile(
+      'ontario_ieso_apo_public_system_sample_manifest.md',
+      buildOntarioPublicUtilitySampleManifestMarkdown(),
+      'text/markdown',
     );
   };
 
@@ -640,11 +812,11 @@ const UtilityDemandForecastPage: React.FC = () => {
                   source={sourceLabel}
                 />
                 <button
-                  onClick={exportGenericPack}
+                  onClick={exportPlanningPack}
                   className="flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/30"
                 >
                   <Download className="h-4 w-4" />
-                  Export Forecast Pack
+                  Export Planning Pack
                 </button>
               </div>
             )}
@@ -653,14 +825,28 @@ const UtilityDemandForecastPage: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {isSampleData && (
+        {commercialProofState === 'constructed_commercial_scenario' ? (
+          <DataTrustNotice
+            mode="fallback"
+            title="Constructed commercial scenario active"
+            message="This route is using a constructed utility-planning case built from realistic Alberta or Ontario operating assumptions. It is pilot-ready proof, but not a customer history file, production approval artifact, or audited utility record."
+            className="mb-6"
+          />
+        ) : sourceKind === 'public_system_sample' ? (
+          <DataTrustNotice
+            mode="fallback"
+            title="Ontario public-system sample active"
+            message={`${ONTARIO_PUBLIC_UTILITY_SAMPLE_MANIFEST.label} is public-derived workflow proof. It is not customer LDC history, production utility telemetry, or a regulator-submitted record.`}
+            className="mb-6"
+          />
+        ) : isSampleData ? (
           <DataTrustNotice
             mode="mock"
             title="Starter utility dataset loaded"
             message="This route defaults to a local utility starter dataset so new buyers can validate the workflow without touching advanced operator or AI surfaces."
             className="mb-6"
           />
-        )}
+        ) : null}
 
         {forecastState.error && (
           <div className="mb-6 flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-900/20 p-5">
@@ -671,6 +857,55 @@ const UtilityDemandForecastPage: React.FC = () => {
             </div>
           </div>
         )}
+
+        {proofBundle && forecastState.forecastPackage && (
+          <div className="mb-6">
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+          </div>
+        )}
+
+        <div className="mb-6 rounded-2xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-pilot-pack-flow">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-semibold text-white">Guided utility pilot pack</h2>
+              <p className="mt-1 text-sm text-slate-400">
+                Buyers should be able to finish the planning path without touching secondary onboarding surfaces.
+              </p>
+              <p className="mt-2 text-xs text-cyan-200">
+                Send us two years of load history, and we return a board-ready planning pack.
+              </p>
+            </div>
+            <FileText className="h-5 w-5 text-emerald-300" />
+          </div>
+          <div className="mt-4 grid gap-3 md:grid-cols-5">
+            {[
+              '1. Choose jurisdiction',
+              '2. Load starter or upload history',
+              '3. Edit planning scenario',
+              '4. Review benchmark and trust labels',
+              '5. Export planning pack plus security attachment',
+            ].map((step) => (
+              <div key={step} className="rounded-xl border border-slate-700 bg-slate-900/60 p-3 text-sm text-slate-200">
+                {step}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mb-6 grid gap-4 xl:grid-cols-2">
+          {UTILITY_CONSTRUCTED_SCENARIOS.map((scenario) => (
+            <ConstructedScenarioPanel
+              key={scenario.id}
+              scenario={scenario}
+              onLoad={() => loadConstructedUtilityScenario(scenario)}
+              testId={`constructed-scenario-${scenario.id}`}
+            />
+          ))}
+        </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.05fr_1.45fr]">
           <section className="space-y-6">
@@ -718,6 +953,12 @@ const UtilityDemandForecastPage: React.FC = () => {
                   Load utility-system batch starter
                 </button>
                 <button
+                  onClick={loadOntarioPublicSystemSample}
+                  className="rounded-lg bg-blue-500/15 px-4 py-2 text-sm font-medium text-blue-200 transition-colors hover:bg-blue-500/25"
+                >
+                  Load Ontario public sample
+                </button>
+                <button
                   onClick={() => loadStarterDataset(jurisdiction, 'monthly')}
                   className="rounded-lg bg-slate-700 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:bg-slate-600"
                 >
@@ -726,11 +967,20 @@ const UtilityDemandForecastPage: React.FC = () => {
               </div>
             </div>
 
+            <details className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
+              <summary className="cursor-pointer list-none text-sm font-semibold text-cyan-200">
+                Secondary connector, onboarding, and submission readiness
+              </summary>
+              <p className="mt-2 text-xs text-slate-500">
+                Use the planning flow first. Expand this section only when you need connector truth, Ontario onboarding, or submission-readiness detail.
+              </p>
+
+              <div className="mt-4 space-y-6">
             {jurisdiction === 'Ontario' && (
-              <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-onboarding-panel">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5" data-testid="utility-onboarding-panel">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-white">2b. Ontario onboarding readiness</h2>
+                    <h2 className="text-lg font-semibold text-white">Secondary Ontario onboarding readiness</h2>
                     <p className="mt-1 text-sm text-slate-400">
                       Utility-specific registration metadata and demo steps for the first real CMD submissions.
                     </p>
@@ -855,10 +1105,10 @@ const UtilityDemandForecastPage: React.FC = () => {
             )}
 
             {jurisdiction === 'Ontario' && (
-              <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-submission-panel">
+              <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5" data-testid="utility-submission-panel">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 className="text-lg font-semibold text-white">2c. London Hydro-first submission sprint</h2>
+                    <h2 className="text-lg font-semibold text-white">Secondary London Hydro-first submission sprint</h2>
                     <p className="mt-1 text-sm text-slate-400">
                       Keep London Hydro production submission blocked while moving staging infrastructure onto burner internet hosts, then keep every claim bounded to repo-backed behavior.
                     </p>
@@ -1048,10 +1298,10 @@ const UtilityDemandForecastPage: React.FC = () => {
               </div>
             )}
 
-            <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
+            <div className="rounded-xl border border-slate-700 bg-slate-900/60 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">3. Data connections</h2>
+                  <h2 className="text-lg font-semibold text-white">Secondary data connections</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     Expose which data path is active now and which connector paths are staged for live utility integration.
                   </p>
@@ -1176,11 +1426,13 @@ const UtilityDemandForecastPage: React.FC = () => {
                 </button>
               </div>
             </div>
+              </div>
+            </details>
 
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">4. Import utility load history</h2>
+                  <h2 className="text-lg font-semibold text-white">2. Import utility load history</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     Local-first CSV import for feeder, substation, or system load history.
                   </p>
@@ -1228,13 +1480,27 @@ const UtilityDemandForecastPage: React.FC = () => {
                   <div className="font-medium">Download monthly starter CSV</div>
                   <div className="mt-1 text-xs text-slate-500">For planning-timescale utility history</div>
                 </button>
+                <button
+                  onClick={exportOntarioPublicSample}
+                  className="rounded-lg border border-blue-500/40 bg-blue-950/30 px-4 py-3 text-left text-sm text-blue-100 transition-colors hover:border-blue-300/70"
+                >
+                  <div className="font-medium">Download Ontario public sample CSV</div>
+                  <div className="mt-1 text-xs text-blue-200/70">IESO/APO-style system workflow proof, not customer LDC history</div>
+                </button>
+                <button
+                  onClick={exportOntarioPublicSampleManifest}
+                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-200 transition-colors hover:border-blue-500/50"
+                >
+                  <div className="font-medium">Download public sample manifest</div>
+                  <div className="mt-1 text-xs text-slate-500">Source URL, generated date, scope, and disclaimer</div>
+                </button>
               </div>
             </div>
 
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">4. Live public context</h2>
+                  <h2 className="text-lg font-semibold text-white">3. Live public context</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     Promote this route beyond upload-only planning with weather and market context plus explicit freshness and fallback labels.
                   </p>
@@ -1316,7 +1582,7 @@ const UtilityDemandForecastPage: React.FC = () => {
             <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-lg font-semibold text-white">5. Set future expectations</h2>
+                  <h2 className="text-lg font-semibold text-white">4. Set future expectations</h2>
                   <p className="mt-1 text-sm text-slate-400">
                     Build low, base, and high planning cases using committed load, electrification, DER, demand response, BYOP, and stress overlays.
                   </p>
@@ -1433,7 +1699,7 @@ const UtilityDemandForecastPage: React.FC = () => {
                   <MetricCard label="Intervals" value={forecastState.forecastPackage.summary.interval_count.toLocaleString()} sub={`${activeGranularity} history`} icon={<Calendar className="h-5 w-5 text-cyan-300" />} />
                   <MetricCard label="Peak baseline" value={`${forecastState.forecastPackage.summary.baseline_peak_mw.toFixed(1)} MW`} sub={`${forecastState.forecastPackage.summary.geography_count} geographies`} icon={<Zap className="h-5 w-5 text-amber-300" />} />
                   <MetricCard label="Annual energy" value={`${forecastState.forecastPackage.summary.baseline_energy_gwh.toFixed(1)} GWh`} sub={`${forecastState.forecastPackage.summary.customer_classes.length} customer classes`} icon={<BarChart3 className="h-5 w-5 text-emerald-300" />} />
-                  <MetricCard label="Model skill" value={`${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`} sub="vs persistence" icon={<TrendingUp className="h-5 w-5 text-sky-300" />} />
+                  <MetricCard label="Benchmark skill" value={`${forecastState.forecastPackage.benchmark.skill_score_vs_persistence.toFixed(1)}%`} sub="vs persistence" icon={<TrendingUp className="h-5 w-5 text-sky-300" />} />
                   <MetricCard label="Reliability proxy" value={`${forecastState.forecastPackage.reliability_proxy.current_score.toFixed(1)}`} sub={`quality flags: ${forecastState.forecastPackage.input_provenance_summary.total_quality_flags}`} icon={<Shield className="h-5 w-5 text-violet-300" />} />
                 </div>
 
@@ -1460,6 +1726,9 @@ const UtilityDemandForecastPage: React.FC = () => {
                     <BenchmarkStat label="vs persistence" value={forecastState.forecastPackage.benchmark.skill_score_vs_persistence} baseline={0} suffix="%" />
                     <BenchmarkStat label="vs seasonal naive" value={forecastState.forecastPackage.benchmark.skill_score_vs_seasonal} baseline={0} suffix="%" />
                     <BenchmarkStat label="Sample size" value={forecastState.forecastPackage.benchmark.sample_size} baseline={0} baselineLabel="holdout rows" integer />
+                    <BenchmarkStat label="Rolling splits" value={forecastState.forecastPackage.evidence_report.rolling_origin_splits.length} baseline={3} baselineLabel="target splits" integer />
+                    <BenchmarkStat label="Interval coverage" value={forecastState.forecastPackage.evidence_report.conformal_interval_coverage_pct} baseline={90} suffix="%" baselineLabel="coverage target" />
+                    <BenchmarkStat label="Hierarchy error" value={forecastState.forecastPackage.evidence_report.hierarchy_reconciliation.max_reconciliation_error_mw} baseline={0} baselineLabel="MW" />
                   </div>
 
                   <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
@@ -1495,6 +1764,9 @@ const UtilityDemandForecastPage: React.FC = () => {
                             <div className="mt-1 text-xs text-slate-400">
                               observed_at: {surface.observed_at ?? 'none'}
                             </div>
+                            <div className="mt-1 text-xs text-slate-400">
+                              Fallback: {surface.is_fallback ? 'yes' : 'no'}
+                            </div>
                             {surface.quality_flags.length > 0 && (
                               <div className="mt-2 text-xs text-amber-200">{surface.quality_flags.join(' • ')}</div>
                             )}
@@ -1519,6 +1791,18 @@ const UtilityDemandForecastPage: React.FC = () => {
                         <div className="flex items-center justify-between">
                           <span>Total quality flags</span>
                           <span className="text-cyan-300">{forecastState.forecastPackage.input_provenance_summary.total_quality_flags}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Source manifest</span>
+                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.source_manifest.id}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Source hash</span>
+                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.source_manifest.hash}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-4">
+                          <span>Champion model</span>
+                          <span className="text-right text-cyan-300">{forecastState.forecastPackage.evidence_report.champion_challenger.champion.replace(/_/g, ' ')}</span>
                         </div>
                       </div>
                       <div className="mt-3 space-y-2 text-xs text-slate-400">
@@ -1747,16 +2031,50 @@ const UtilityDemandForecastPage: React.FC = () => {
 
                   <div className="rounded-xl border border-slate-700 bg-slate-800/70 p-5" data-testid="utility-forecast-export-card">
                     <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h2 className="text-lg font-semibold text-white">Utility export pack</h2>
+                  <div>
+                        <h2 className="text-lg font-semibold text-white">5. Export planning pack</h2>
                         <p className="mt-1 text-sm text-slate-400">
-                          Feed planning outputs directly into the existing regulatory and utility workflows.
+                          Lead with the board-ready planning narrative, then attach the benchmark and schedule exports buyers need for review.
                         </p>
                       </div>
                       <FileText className="h-5 w-5 text-emerald-300" />
                     </div>
 
                     <div className="mt-4 space-y-3">
+                      <button
+                        onClick={() => {
+                          const artifact = proofBundle?.artifacts.find((entry) => entry.id === 'utility-planning-pack-pdf');
+                          if (!artifact || !forecastState.forecastPackage) return;
+                          void downloadPdfArtifact({
+                            ...buildUtilityPlanningDescriptor(forecastState.forecastPackage, commercialProofState),
+                            definition: artifact,
+                          });
+                        }}
+                        className="w-full rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-left text-sm text-emerald-50 transition-colors hover:border-emerald-400"
+                      >
+                        <div className="font-medium">Export planning memo PDF</div>
+                        <div className="mt-1 text-xs text-emerald-100/80">
+                          Single-file planning memo for board, consultant, or utility reviewer distribution.
+                        </div>
+                      </button>
+                      <button
+                        onClick={exportPlanningPack}
+                        className="w-full rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-4 py-3 text-left text-sm text-cyan-50 transition-colors hover:border-cyan-400"
+                      >
+                        <div className="font-medium">Export board/regulator planning pack</div>
+                        <div className="mt-1 text-xs text-cyan-100/80">
+                          Primary HTML planning narrative with scenarios, provenance, benchmark proof, and bounded claims.
+                        </div>
+                      </button>
+                      <button
+                        onClick={exportBenchmarkAppendix}
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                      >
+                        <div className="font-medium">Export benchmark appendix</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Attach benchmark skill, source labeling, and scenario assumptions to the main planning pack.
+                        </div>
+                      </button>
                       <button
                         onClick={exportGenericPack}
                         className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
@@ -1777,11 +2095,26 @@ const UtilityDemandForecastPage: React.FC = () => {
                             : 'Exact Alberta data-schedule style rows for utility and REA DSP workflows'}
                         </div>
                       </button>
+                      <button
+                        onClick={exportSecurityReviewPack}
+                        className="w-full rounded-lg border border-slate-600 bg-slate-900 px-4 py-3 text-left text-sm text-slate-100 transition-colors hover:border-cyan-500/50"
+                      >
+                        <div className="font-medium">Download utility security review pack</div>
+                        <div className="mt-1 text-xs text-slate-500">
+                          Forecast-pilot attachment for privacy, procurement, and review responses with repo-backed versus owner-supplied boundaries.
+                        </div>
+                      </button>
                     </div>
 
                     <div className="mt-4 rounded-lg border border-slate-700 bg-slate-900/60 p-4 text-sm text-slate-300">
                       <div className="font-medium text-white">Current source and warnings</div>
                       <div className="mt-2 text-xs text-slate-400">{forecastState.forecastPackage.source_label}</div>
+                      <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                        <span>Claim label: {proofBundle?.artifacts[0]?.claimLabel ?? 'estimated'}</span>
+                        <Link to="/utility-security" className="text-cyan-300 transition-colors hover:text-cyan-200">
+                          Attach utility security review pack
+                        </Link>
+                      </div>
                       {forecastState.forecastPackage.warnings.length > 0 && (
                         <ul className="mt-3 space-y-2 text-xs text-amber-200">
                           {forecastState.forecastPackage.warnings.map((warning) => (

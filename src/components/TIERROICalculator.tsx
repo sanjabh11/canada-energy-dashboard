@@ -13,6 +13,19 @@ import { useTIERPricing, calculateArbitrageSpread } from '../lib/tierPricing';
 import { evaluateTierScenario } from '../lib/mlForecastingClient';
 import type { TierScenarioResult } from '../lib/mlForecasting';
 import { fetchLatestTierMarketRate } from '../lib/ratesSource';
+import ProofPackPanel from './ProofPackPanel';
+import {
+    buildTierAppendixMarkdown,
+    buildTierMemoDescriptor,
+    buildTierProofBundle,
+    buildTierPricingFreshnessGate,
+    buildTierSourceCurrencyChecklistMarkdown,
+} from '../lib/tierProofPack';
+import {
+    downloadPdfArtifact,
+    downloadTextArtifact,
+    renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 interface ROIResults {
     fundPayment: number;
@@ -25,6 +38,12 @@ interface ROIResults {
 }
 
 export const TIERROICalculator: React.FC = () => {
+    const sampleFacilityPreset = {
+        annualEmissions: 162000,
+        benchmarkExceedance: 24000,
+        directInvestCapex: 650000,
+    };
+
     // User inputs
     const [annualEmissions, setAnnualEmissions] = useState<number>(150000);
     const [benchmarkExceedance, setBenchmarkExceedance] = useState<number>(20000);
@@ -163,13 +182,75 @@ export const TIERROICalculator: React.FC = () => {
         }).format(value);
     };
 
+    const proofSnapshot = useMemo(() => ({
+        annualEmissions,
+        benchmarkExceedance,
+        directInvestCapex,
+        pricing: tierPricing,
+        marketPrice: MARKET_PRICE,
+        results,
+        simulatorResult,
+        simulatorSource,
+        liveTierMarketRateSource,
+    }), [
+        MARKET_PRICE,
+        annualEmissions,
+        benchmarkExceedance,
+        directInvestCapex,
+        liveTierMarketRateSource,
+        results,
+        simulatorResult,
+        simulatorSource,
+        tierPricing,
+    ]);
+
+    const proofBundle = useMemo(() => buildTierProofBundle(proofSnapshot), [proofSnapshot]);
+    const memoDescriptor = useMemo(() => buildTierMemoDescriptor(proofSnapshot), [proofSnapshot]);
+    const appendixMarkdown = useMemo(() => buildTierAppendixMarkdown(proofSnapshot), [proofSnapshot]);
+    const sourceCurrencyMarkdown = useMemo(() => buildTierSourceCurrencyChecklistMarkdown(proofSnapshot), [proofSnapshot]);
+    const pricingFreshnessGate = useMemo(() => buildTierPricingFreshnessGate(proofSnapshot), [proofSnapshot]);
+
+    const proofActions = useMemo(() => {
+        const [pdfArtifact, htmlArtifact, appendixArtifact, sourceCurrencyArtifact] = proofBundle.artifacts;
+        return [
+            {
+                ...pdfArtifact,
+                onDownload: () => downloadPdfArtifact(memoDescriptor),
+            },
+            {
+                ...htmlArtifact,
+                onDownload: () => downloadTextArtifact(
+                    htmlArtifact,
+                    renderHtmlProofDocument({ ...memoDescriptor, definition: htmlArtifact }),
+                    'text/html;charset=utf-8;',
+                ),
+            },
+            {
+                ...appendixArtifact,
+                onDownload: () => downloadTextArtifact(
+                    appendixArtifact,
+                    appendixMarkdown,
+                    'text/markdown;charset=utf-8;',
+                ),
+            },
+            {
+                ...sourceCurrencyArtifact,
+                onDownload: () => downloadTextArtifact(
+                    sourceCurrencyArtifact,
+                    sourceCurrencyMarkdown,
+                    'text/markdown;charset=utf-8;',
+                ),
+            },
+        ];
+    }, [appendixMarkdown, memoDescriptor, proofBundle.artifacts, sourceCurrencyMarkdown]);
+
     return (
         <div className="min-h-screen bg-slate-900 text-white">
           <SEOHead
-            title="TIER Compliance Savings Calculator | Alberta Carbon Credit Arbitrage"
-            description={`Calculate how much your Alberta facility can save on TIER carbon compliance. Compare fund payment ($${FUND_PRICE}/t) vs market credits ($${MARKET_PRICE}/t) vs Direct Investment. Free calculator.`}
+            title="Alberta TIER Scenario Planning Calculator"
+            description={`Build source-dated Alberta TIER planning estimates with buyer validation required. Compare the 2026 fund payment basis ($${FUND_PRICE}/t), disclosed scenario inputs, and Direct Investment pathway notes.`}
             path="/roi-calculator"
-            keywords={['TIER calculator', 'Alberta carbon compliance', 'TIER credit price', 'EPC offset Alberta', 'carbon arbitrage calculator', 'Direct Investment TIER']}
+            keywords={['TIER calculator', 'Alberta TIER scenario planning', 'TIER credit ledger', 'EPC offset Alberta', 'Direct Investment TIER']}
           />
 
           {/* Navigation */}
@@ -196,10 +277,10 @@ export const TIERROICalculator: React.FC = () => {
               <p className="text-slate-300 text-sm leading-relaxed">
                 The <strong>Technology Innovation and Emissions Reduction (TIER)</strong> regulation requires
                 Alberta facilities emitting 100,000+ tonnes CO₂e/year to reduce emissions below a benchmark.
-                Facilities exceeding their benchmark must comply by: paying the <strong>${FUND_PRICE}/tonne fund price</strong>,
-                purchasing <strong>market credits (EPCs/Offsets) at ~${MARKET_PRICE}/tonne</strong>, or using the new
-                <strong> Direct Investment pathway</strong> (Dec 2025 amendments) to invest in on-site efficiency.
-                The ${ARBITRAGE_SPREAD}/tonne spread between fund price and market credits represents a massive savings opportunity.
+                Facilities exceeding their benchmark can model compliance by: paying the <strong>${FUND_PRICE}/tonne 2026 fund price basis</strong>,
+                purchasing <strong>market credits (EPCs/Offsets) at the source-dated or fallback rate shown in the route</strong>, or using the
+                <strong> Direct Investment pathway</strong> where eligible under current Alberta guidance.
+                The ${ARBITRAGE_SPREAD}/tonne spread shown here is scenario-based and must be refreshed with buyer-specific pricing before approval.
               </p>
               <div className="flex gap-4 mt-3 text-xs text-slate-500">
                 <a href="https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:text-emerald-400 transition-colors">
@@ -210,6 +291,21 @@ export const TIERROICalculator: React.FC = () => {
                 </a>
               </div>
             </div>
+          </section>
+
+          <section className="max-w-5xl mx-auto px-6 pb-6">
+            <div className={`mb-4 rounded-xl border p-4 text-sm ${pricingFreshnessGate.blocksStrongSavingsClaim ? 'border-amber-500/40 bg-amber-950/30 text-amber-100' : 'border-emerald-500/40 bg-emerald-950/30 text-emerald-100'}`}>
+              <div className="font-semibold">TIER pricing freshness gate: {pricingFreshnessGate.status}</div>
+              <p className="mt-1">{pricingFreshnessGate.message}</p>
+              <Link to="/credit-banking" className="mt-3 inline-flex items-center gap-2 text-cyan-300 hover:text-cyan-200">
+                Pair this memo with the credit banking audit pack <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
           </section>
 
           <section className="max-w-5xl mx-auto px-6 pb-12">
@@ -234,6 +330,27 @@ export const TIERROICalculator: React.FC = () => {
                     </h3>
 
                     <div className="space-y-4">
+                        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
+                                    <div className="text-sm font-medium text-emerald-300">Sample Alberta facility preset</div>
+                                    <div className="mt-1 text-xs text-slate-400">
+                                        Preload one realistic industrial scenario to generate a CFO memo without manual setup.
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => {
+                                        setAnnualEmissions(sampleFacilityPreset.annualEmissions);
+                                        setBenchmarkExceedance(sampleFacilityPreset.benchmarkExceedance);
+                                        setDirectInvestCapex(sampleFacilityPreset.directInvestCapex);
+                                    }}
+                                    className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-emerald-500"
+                                >
+                                    Load preset
+                                </button>
+                            </div>
+                        </div>
+
                         <div>
                             <label className="block text-sm text-slate-400 mb-2">
                                 Annual Emissions (tonnes CO₂e)
@@ -279,7 +396,7 @@ export const TIERROICalculator: React.FC = () => {
 
                     <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4">
                         <div className="flex items-center justify-between mb-3">
-                            <h4 className="text-sm font-medium text-slate-400">2025-2026 Market Prices</h4>
+                            <h4 className="text-sm font-medium text-slate-400">Current planning price basis</h4>
                             <div className={`text-xs px-2 py-1 rounded-full border ${
                                 liveTierMarketRateSource
                                     ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
@@ -287,7 +404,7 @@ export const TIERROICalculator: React.FC = () => {
                             }`}>
                                 {liveTierMarketRateSource
                                     ? `Live source: ${liveTierMarketRateSource.sourceName ?? 'tier_market_rates'}`
-                                    : 'Fallback pricing in use'}
+                                    : 'Fallback planning snapshot in use'}
                             </div>
                         </div>
                         <div className="flex justify-between items-center">
@@ -302,14 +419,32 @@ export const TIERROICalculator: React.FC = () => {
                                 <div className="text-xs text-slate-500 mt-1">
                                     {liveTierMarketRateSource
                                         ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} · ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
-                                        : `Fallback sourced from ${tierPricing.lastVerifiedAt}`}
+                                        : `${tierPricing.marketPriceSource} · reviewed ${tierPricing.lastVerifiedAt}`}
                                 </div>
                             </div>
                         </div>
                         <div className="mt-3 text-center">
                             <span className="text-sm bg-yellow-500/20 text-yellow-400 px-3 py-1 rounded-full">
-                                ${ARBITRAGE_SPREAD}/tonne arbitrage opportunity
+                                ${ARBITRAGE_SPREAD}/tonne illustrative spread under current inputs
                             </span>
+                        </div>
+                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                                <div className="text-xs uppercase tracking-wide text-slate-500">Fund price provenance</div>
+                                <div className="mt-2 text-sm text-white">{tierPricing.source}</div>
+                                <div className="mt-1 text-xs text-slate-400">Effective {tierPricing.effectiveDate} • verified {tierPricing.lastVerifiedAt}</div>
+                            </div>
+                            <div className="rounded-lg border border-slate-700 bg-slate-900/60 p-3">
+                                <div className="text-xs uppercase tracking-wide text-slate-500">Market price provenance</div>
+                                <div className="mt-2 text-sm text-white">
+                                    {liveTierMarketRateSource?.sourceName ?? tierPricing.marketPriceSource}
+                                </div>
+                                <div className="mt-1 text-xs text-slate-400">
+                                    {liveTierMarketRateSource
+                                        ? `Observed ${new Date(liveTierMarketRateSource.observedAt ?? '').toLocaleDateString()} • ${liveTierMarketRateSource.claimLabel ?? 'estimated'}`
+                                        : `${tierPricing.marketPriceDisclosure} Reviewed ${tierPricing.lastVerifiedAt}.`}
+                                </div>
+                            </div>
                         </div>
                         <div className="mt-3 text-xs text-slate-500">
                             Simulator: {simulatorResult?.meta.model_version ?? 'tier-deterministic-v1'} via {simulatorSource === 'edge' ? 'Supabase Edge' : 'local fallback'}.
@@ -428,13 +563,13 @@ export const TIERROICalculator: React.FC = () => {
                     </div>
 
                     {/* CTA */}
-                    <button
-                        onClick={() => window.location.href = '/enterprise?tier=industrial'}
+                    <Link
+                        to={`/enterprise?tier=industrial&artifact=tier-cfo-memo&netSavings=${Math.round(results.netSavings)}`}
                         className="w-full py-4 bg-emerald-600 hover:bg-emerald-500 rounded-xl font-semibold text-white transition-all flex items-center justify-center gap-2"
                     >
-                        Estimate {formatCurrency(results.netSavings)} in Scenario Savings
+                        Book pilot review with this memo
                         <ArrowRight className="h-5 w-5" />
-                    </button>
+                    </Link>
                 </div>
             </div>
 
@@ -442,7 +577,7 @@ export const TIERROICalculator: React.FC = () => {
             <div className="mt-8 pt-6 border-t border-slate-700 grid grid-cols-3 gap-4 text-center">
                 <div className="flex flex-col items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
-                    <span className="text-sm text-slate-400">Q4 2025 Market Data (S&P/ICAP)</span>
+                    <span className="text-sm text-slate-400">Official 2026 fund basis + disclosed market snapshot</span>
                 </div>
                 <div className="flex flex-col items-center gap-2">
                     <CheckCircle className="h-5 w-5 text-emerald-500" />
@@ -460,7 +595,7 @@ export const TIERROICalculator: React.FC = () => {
             <Mail className="h-8 w-8 text-emerald-400 mx-auto mb-3" />
             <h3 className="text-lg font-semibold mb-2">Get Your Detailed TIER Savings Report</h3>
             <p className="text-sm text-slate-400 mb-4">
-              Receive a PDF breakdown with compliance pathway comparison, timeline, and implementation steps.
+              Receive the CFO memo and scenario appendix by email for internal review.
             </p>
             {emailSubmitted ? (
               <div className="flex items-center justify-center gap-2 text-emerald-400">
@@ -491,8 +626,8 @@ export const TIERROICalculator: React.FC = () => {
 
           {/* Data Sources */}
           <div className="mt-6 text-xs text-slate-500 text-center space-y-1">
-            <p>Data sources: Alberta.ca TIER Regulation, S&P Global Commodity Insights, ICAP Carbon Action</p>
-            <p>Fund price frozen at ${FUND_PRICE}/t ({tierPricing.source}, {tierPricing.effectiveDate}). Market credit prices as of {tierPricing.periodLabel}. Direct Investment Standard expected early 2026.</p>
+            <p>Data sources: Government of Alberta TIER materials plus route-level market pricing provenance when available.</p>
+            <p>Fund price basis: ${FUND_PRICE}/t ({tierPricing.source}, effective {tierPricing.effectiveDate}). Market credit price: {liveTierMarketRateSource ? 'live route source shown above' : tierPricing.marketPriceDisclosure} Direct Investment eligibility still requires buyer-specific review under current Alberta guidance.</p>
           </div>
           </section>
         </div>

@@ -571,10 +571,10 @@ export const StakeholderDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Real-time Collaboration Panel */}
+        {/* Live collaboration panel */}
         <div className="mt-8 card shadow overflow-hidden">
           <div className="p-6 border-b border-[var(--border-subtle)]">
-            <h3 className="text-xl font-semibold text-primary">Real-time Collaboration</h3>
+            <h3 className="text-xl font-semibold text-primary">Live Collaboration</h3>
             <p className="text-secondary">Discuss consultations and share updates</p>
           </div>
 
@@ -600,7 +600,7 @@ export const StakeholderDashboard: React.FC = () => {
                       <span className={`inline-block w-2 h-2 rounded-full mr-1 ${
                         showWebSocketConnection ? 'bg-green-500' : 'bg-amber-500'
                       }`}></span>
-                      {showWebSocketConnection ? 'Real-time' : 'HTTP Fallback'}
+                      {showWebSocketConnection ? 'Live' : 'HTTP Fallback'}
                     </div>
                     {wsParticipants.length > 0 && showWebSocketConnection && (
                       <span className="text-xs text-tertiary">

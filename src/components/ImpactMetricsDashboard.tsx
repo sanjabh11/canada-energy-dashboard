@@ -249,7 +249,7 @@ export const ImpactMetricsDashboard: React.FC<ImpactMetricsDashboardProps> = ({
             Impact Metrics Dashboard
           </h2>
           <p className="text-slate-400 mt-1">
-            Real-time ESG and sustainability KPIs across tracked projects
+            Current ESG and sustainability KPIs across tracked projects
           </p>
         </div>
         <div className="flex items-center gap-3">

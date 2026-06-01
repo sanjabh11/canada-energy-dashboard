@@ -50,9 +50,10 @@ function dedupeByRetailerKey(rows: RetailerRateOfferRow[]): RetailerRateOfferRow
 }
 
 export function getLatestTierMarketRate(rows: TierMarketRateRow[]): TierMarketRateSelection {
-  return [...rows]
-    .sort((left, right) => compareObservedAtDesc(left.observed_at, right.observed_at))
-    [0] ?? null;
+  return (
+    [...rows].sort((left, right) => compareObservedAtDesc(left.observed_at, right.observed_at))[0]
+    ?? null
+  );
 }
 
 export function getActiveRetailerOffers(rows: RetailerRateOfferRow[]): RetailerRateOfferSelection {
@@ -89,4 +90,3 @@ export async function fetchActiveRetailerOffers(): Promise<RetailerRateOfferSele
     return [];
   }
 }
-

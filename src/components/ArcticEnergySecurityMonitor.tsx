@@ -573,7 +573,7 @@ export const ArcticEnergySecurityMonitor: React.FC = () => {
             <div className="flex items-center justify-between mb-6">
               <div>
                 <h2 className="text-xl font-bold text-slate-900">Diesel-to-Renewable Optimization Engine</h2>
-                <p className="text-sm text-slate-600">Plan your community's transition with AI-powered scenario modeling</p>
+                <p className="text-sm text-slate-600">Plan your community's transition with model-assisted scenario modeling</p>
               </div>
               <Settings className="text-blue-600" size={24} />
             </div>

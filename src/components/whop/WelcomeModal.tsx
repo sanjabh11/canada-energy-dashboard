@@ -146,7 +146,7 @@ const watchdogContent = {
         {
             icon: <TrendingUp className="h-6 w-6 text-cyan-400" />,
             title: '12-Hour Forecast',
-            description: 'AI-powered predictions help you plan when to use high-energy appliances.'
+            description: 'Model-assisted predictions help you plan when to use high-energy appliances.'
         },
         {
             icon: <Sparkles className="h-6 w-6 text-cyan-400" />,

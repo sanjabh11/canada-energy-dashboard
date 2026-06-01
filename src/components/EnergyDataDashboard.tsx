@@ -615,7 +615,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
 
             {activeTab === 'Innovation' && (
               <div className="space-y-8">
-                <TabHero icon={Zap} title="Innovation Hub" subtitle="AI-powered research and technology innovation for sustainable energy solutions" shaderClass="shader-bg-primary" cards={[
+                <TabHero icon={Zap} title="Innovation Hub" subtitle="Research and technology innovation for sustainable energy solutions" shaderClass="shader-bg-primary" cards={[
                   { icon: Zap, iconColor: 'text-yellow-300', title: 'Technology Search', description: 'Advanced patent and innovation discovery' },
                   { icon: TrendingUp, iconColor: 'text-green-300', title: 'Market Analysis', description: 'Emerging technology market insights' },
                   { icon: Gauge, iconColor: 'text-purple-300', title: 'Feasibility Studies', description: 'Technical and economic viability assessment' },
@@ -630,7 +630,7 @@ export function EnergyDataDashboard({ initialTab = 'Dashboard' }: EnergyDataDash
                 <TabHero icon={Shield} title="Indigenous Energy Sovereignty" subtitle="Respectful integration of Indigenous knowledge and governance in energy planning" shaderClass="shader-bg-energy" cards={[
                   { icon: Shield, iconColor: 'text-blue-300', title: 'Traditional Knowledge', description: 'Integration of Indigenous ecological knowledge' },
                   { icon: MapPin, iconColor: 'text-green-300', title: 'Territory Mapping', description: 'Traditional territory and consultation tracking' },
-                  { icon: Gauge, iconColor: 'text-orange-300', title: 'FPIC Compliance', description: 'Free, Prior, Informed Consent workflows' },
+                  { icon: Gauge, iconColor: 'text-orange-300', title: 'Consent Workflow Support', description: 'Free, Prior, Informed Consent workflow artifacts' },
                 ]} />
                 <IndigenousDashboard />
               </div>

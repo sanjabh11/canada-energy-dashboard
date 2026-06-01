@@ -2,6 +2,12 @@
 
 # Final Deployment Check Script
 # Comprehensive validation before deploying the Canada Energy Intelligence Platform
+#
+# Historical utility note:
+# This script checks local build/deployment mechanics only. Do not convert its
+# output into production-ready, market-ready, or 95% confidence claims without
+# reconciling against docs/COMMERCIAL_SOURCE_OF_TRUTH.md and the pilot evidence
+# register.
 
 echo "🚀 Starting Final Deployment Check..."
 echo "====================================="
@@ -124,4 +130,4 @@ echo "2. Run accessibility audit: Use accessibilityAuditor in browser"
 echo "3. Run performance tests: Use performanceMonitor in browser"
 echo "4. Test with injected data: Use testDataInjector for QA"
 echo ""
-echo "🌟 Platform is now production-ready with all requested improvements!"
+echo "🌟 Local deployment mechanics are ready for operator review; commercial readiness still depends on current claim-boundary and pilot-evidence checks."

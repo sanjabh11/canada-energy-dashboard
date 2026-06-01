@@ -1,394 +1,409 @@
-/**
- * AICEIReportingModule - Alberta Indigenous Clean Energy Initiative Reporting
- * 
- * Grant compliance reporting for First Nations energy projects.
- * Gemini Strategy 1: Indigenous Energy Sovereignty Platform enhancement
- * 
- * Features:
- * - GHG reduction tracking (required for AICEI)
- * - Energy generation metrics
- * - Capacity building activities log
- * - Funder-ready PDF export
- */
-
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-    FileText,
-    Download,
-    Calendar,
-    Users,
-    Zap,
-    Leaf,
-    TrendingUp,
-    CheckCircle,
-    Clock,
-    Building2,
-    ArrowRight,
-    AlertCircle,
-    BarChart3
+  AlertCircle,
+  CheckCircle,
+  Download,
+  FileText,
+  Leaf,
+  Upload,
+  Users,
+  Zap,
 } from 'lucide-react';
-import { SEOHead } from './SEOHead';
 import {
-    BarChart,
-    Bar,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-    LineChart,
-    Line
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
 } from 'recharts';
-
-// Mock data for demonstration
-const REPORTING_PERIODS = [
-    { id: 'q4-2024', label: 'Q4 2024', startDate: '2024-10-01', endDate: '2024-12-31', status: 'current' },
-    { id: 'q3-2024', label: 'Q3 2024', startDate: '2024-07-01', endDate: '2024-09-30', status: 'submitted' },
-    { id: 'q2-2024', label: 'Q2 2024', startDate: '2024-04-01', endDate: '2024-06-30', status: 'approved' }
-];
-
-const ENERGY_GENERATION_DATA = [
-    { month: 'Oct', solar: 12500, wind: 45000, total: 57500 },
-    { month: 'Nov', solar: 8200, wind: 62000, total: 70200 },
-    { month: 'Dec', solar: 5100, wind: 78000, total: 83100 }
-];
-
-const GHG_REDUCTION_DATA = [
-    { month: 'Oct', baseline: 42, actual: 31, reduction: 11 },
-    { month: 'Nov', baseline: 48, actual: 28, reduction: 20 },
-    { month: 'Dec', baseline: 55, actual: 22, reduction: 33 }
-];
-
-const CAPACITY_ACTIVITIES = [
-    {
-        id: 1,
-        title: 'Solar Panel Installation Training',
-        date: '2024-10-15',
-        participants: 12,
-        hours: 24,
-        type: 'technical'
-    },
-    {
-        id: 2,
-        title: 'Energy Management Workshop',
-        date: '2024-11-02',
-        participants: 18,
-        hours: 8,
-        type: 'management'
-    },
-    {
-        id: 3,
-        title: 'Youth STEM Energy Camp',
-        date: '2024-11-20',
-        participants: 35,
-        hours: 40,
-        type: 'youth'
-    }
-];
+import { SEOHead } from './SEOHead';
+import DataTrustNotice from './DataTrustNotice';
+import ProofPackPanel from './ProofPackPanel';
+import ConstructedScenarioPanel from './ConstructedScenarioPanel';
+import { AICEI_CONSTRUCTED_SCENARIO } from '../lib/commercialScenarioBundles';
+import {
+  buildAiceiChecklist,
+  buildAiceiMetricsCsv,
+  buildAiceiSourceLabel,
+  buildStarterAiceiProjects,
+  listAiceiReportingPeriods,
+  parseAiceiProjects,
+  type AiceiProjectRecord,
+  type AiceiSourceMode,
+} from '../lib/aiceiReportingSupport';
+import {
+  buildAiceiProofBundle,
+  buildAiceiReportDescriptor,
+} from '../lib/aiceiReportingProofPack';
+import {
+  downloadPdfArtifact,
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 export function AICEIReportingModule() {
-    const [selectedPeriod, setSelectedPeriod] = useState(REPORTING_PERIODS[0]);
-    const [showExportModal, setShowExportModal] = useState(false);
+  const [records, setRecords] = useState<AiceiProjectRecord[]>(() => buildStarterAiceiProjects());
+  const [sourceMode, setSourceMode] = useState<AiceiSourceMode>('starter_portfolio');
+  const [importError, setImportError] = useState<string | null>(null);
+  const periods = useMemo(() => listAiceiReportingPeriods(records), [records]);
+  const [selectedPeriod, setSelectedPeriod] = useState<string>(() => listAiceiReportingPeriods(buildStarterAiceiProjects())[0] ?? 'Q1 2026');
+  const filteredRecords = useMemo(
+    () => records.filter((record) => record.reportingPeriod === selectedPeriod),
+    [records, selectedPeriod],
+  );
+  const proofBundle = useMemo(() => buildAiceiProofBundle(sourceMode), [sourceMode]);
+  const proofActions = useMemo(() => {
+    const descriptor = buildAiceiReportDescriptor({
+      sourceMode,
+      period: selectedPeriod,
+      records: filteredRecords,
+    });
+    const checklist = buildAiceiChecklist(filteredRecords);
 
-    // Calculate totals
-    const totalGeneration = ENERGY_GENERATION_DATA.reduce((sum, m) => sum + m.total, 0);
-    const totalGHGReduction = GHG_REDUCTION_DATA.reduce((sum, m) => sum + m.reduction, 0);
-    const totalParticipants = CAPACITY_ACTIVITIES.reduce((sum, a) => sum + a.participants, 0);
-    const totalTrainingHours = CAPACITY_ACTIVITIES.reduce((sum, a) => sum + a.hours, 0);
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'aicei-quarterly-pdf') {
+        return {
+          ...artifact,
+          onDownload: () => downloadPdfArtifact({ ...descriptor, definition: artifact }),
+        };
+      }
+      if (artifact.id === 'aicei-quarterly-html') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'aicei-metrics-csv') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildAiceiMetricsCsv(filteredRecords),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => downloadTextArtifact(
+          artifact,
+          ['# AICEI approval-gap checklist', '', ...checklist.map((item) => `- ${item}`)].join('\n'),
+          'text/markdown;charset=utf-8;',
+        ),
+      };
+    });
+  }, [filteredRecords, proofBundle.artifacts, selectedPeriod, sourceMode]);
 
-    const handleExport = (format: 'pdf' | 'csv') => {
-        alert(`Exporting ${selectedPeriod.label} report as ${format.toUpperCase()}...\n\nThis will include:\n- Energy generation summary\n- GHG reduction metrics\n- Capacity building activities\n- OCAP® compliance certification`);
-        setShowExportModal(false);
-    };
+  const totals = useMemo(() => ({
+    generation: filteredRecords.reduce((sum, record) => sum + record.generationKwh, 0),
+    reduction: filteredRecords.reduce((sum, record) => sum + Math.max(record.baselineGhgTonnes - record.actualGhgTonnes, 0), 0),
+    participants: filteredRecords.reduce((sum, record) => sum + record.participantsCount, 0),
+    hours: filteredRecords.reduce((sum, record) => sum + record.participantsHours, 0),
+  }), [filteredRecords]);
+  const chartData = useMemo(() => filteredRecords.map((record) => ({
+    name: record.name,
+    generation: record.generationKwh,
+    reduction: Math.max(record.baselineGhgTonnes - record.actualGhgTonnes, 0),
+  })), [filteredRecords]);
+  const checklist = useMemo(() => buildAiceiChecklist(filteredRecords), [filteredRecords]);
 
-    return (
-        <div className="min-h-screen bg-slate-900">
-            <SEOHead
-                title="AICEI Grant Reporting | Indigenous Energy Dashboard"
-                description="Alberta Indigenous Clean Energy Initiative compliance reporting for First Nations energy projects."
-                path="/aicei"
-                keywords={['AICEI', 'Indigenous clean energy', 'First Nations solar', 'grant reporting', 'GHG reduction']}
+  async function handleImport(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const uploaded = parseAiceiProjects(file.name, text);
+      setRecords(uploaded);
+      const nextPeriods = listAiceiReportingPeriods(uploaded);
+      setSelectedPeriod(nextPeriods[0] ?? 'Q1 2026');
+      setSourceMode('uploaded_portfolio');
+      setImportError(null);
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Unable to parse the AICEI portfolio file.');
+    } finally {
+      event.target.value = '';
+    }
+  }
+
+  function resetStarterPortfolio() {
+    const starter = buildStarterAiceiProjects();
+    setRecords(starter);
+    setSelectedPeriod(listAiceiReportingPeriods(starter)[0] ?? 'Q1 2026');
+    setSourceMode('starter_portfolio');
+    setImportError(null);
+  }
+
+  function loadConstructedScenario() {
+    const jsonScenario = AICEI_CONSTRUCTED_SCENARIO.downloads.find((file) => file.id === 'aicei-json');
+    if (!jsonScenario) return;
+
+    const constructed = parseAiceiProjects(jsonScenario.filename, jsonScenario.content);
+    setRecords(constructed);
+    setSelectedPeriod(listAiceiReportingPeriods(constructed)[0] ?? 'Q1 2026');
+    setSourceMode('constructed_commercial_scenario');
+    setImportError(null);
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-900">
+      <SEOHead
+        title="AICEI Grant Reporting | Indigenous Energy Dashboard"
+        description="Alberta Indigenous Clean Energy Initiative reporting workflow with quarterly exports, owner-supplied governance markers, and program-ready proof artifacts."
+        path="/aicei"
+        keywords={['AICEI', 'Indigenous clean energy', 'Alberta grant reporting', 'GHG reduction', 'quarterly report']}
+      />
+
+      <div className="bg-gradient-to-r from-purple-700 via-indigo-700 to-sky-700 py-12 px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="flex items-center gap-3">
+            <div className="rounded-xl bg-white/20 p-3">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-purple-100">Alberta-specific reporting wedge</div>
+              <h1 className="mt-2 text-3xl font-bold text-white">AICEI Grant Reporting Module</h1>
+              <p className="mt-2 max-w-3xl text-purple-100">
+                Replace the static demo with an uploadable Alberta reporting workflow that carries OCAP language, owner-supplied markers, and program-ready exports.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <Link
+              to="/funder-reporting"
+              className="text-sm text-purple-100 transition-colors hover:text-white"
+            >
+              ← Back to Funder Reporting Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-6xl px-6 py-8">
+        <DataTrustNotice
+          mode={sourceMode === 'starter_portfolio' ? 'mock' : 'fallback'}
+          title={
+            sourceMode === 'starter_portfolio'
+              ? 'Starter AICEI portfolio active'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'Constructed commercial scenario active'
+                : 'Uploaded AICEI portfolio active'
+          }
+          message={
+            sourceMode === 'starter_portfolio'
+              ? 'The route is using a starter Alberta portfolio. Upload an AICEI CSV or JSON file to replace the static demo with buyer-controlled project rows.'
+              : sourceMode === 'constructed_commercial_scenario'
+                ? 'This route is using a constructed Alberta AICEI portfolio built from realistic reporting assumptions. Community approval and governance fields remain explicit, but the data is not a Nation-owned project file.'
+                : 'The current metrics and exports are built from uploaded project rows. Community approval and governance fields remain explicitly owner-supplied.'
+          }
+          className="mb-6"
+        />
+
+        <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-semibold text-white">1. Select period and portfolio source</h2>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Run one Alberta reporting cycle at a time, with a starter or uploaded portfolio.
+                  </p>
+                </div>
+                <Upload className="h-5 w-5 text-purple-300" />
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <select
+                  value={selectedPeriod}
+                  onChange={(event) => setSelectedPeriod(event.target.value)}
+                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-2 text-white"
+                >
+                  {periods.map((period) => (
+                    <option key={period} value={period}>{period}</option>
+                  ))}
+                </select>
+
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg bg-purple-600 px-4 py-2 text-sm font-medium text-white">
+                  <Upload className="h-4 w-4" />
+                  Upload AICEI portfolio
+                  <input
+                    type="file"
+                    accept=".csv,.json,text/csv,application/json"
+                    className="hidden"
+                    onChange={handleImport}
+                  />
+                </label>
+
+                <button
+                  onClick={loadConstructedScenario}
+                  className="rounded-lg border border-purple-500/40 bg-purple-500/10 px-4 py-2 text-sm font-medium text-purple-50 transition-colors hover:border-purple-400"
+                >
+                  Load constructed Alberta case
+                </button>
+
+                <button
+                  onClick={resetStarterPortfolio}
+                  className="rounded-lg border border-slate-600 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-100 transition-colors hover:border-purple-500/50"
+                >
+                  Reload starter portfolio
+                </button>
+              </div>
+
+              {importError && (
+                <div className="mt-4 rounded-xl border border-red-500/30 bg-red-900/20 p-4 text-sm text-red-100">
+                  {importError}
+                </div>
+              )}
+
+              <div className="mt-4 rounded-xl border border-slate-700 bg-slate-900/60 p-4" data-testid="aicei-source-mode">
+                <div className="text-xs uppercase tracking-[0.18em] text-purple-200">Current source mode</div>
+                <div className="mt-2 text-sm text-white">{buildAiceiSourceLabel(sourceMode)}</div>
+                <div className="mt-2 text-xs text-slate-400">
+                  Owner-supplied governance and approval fields stay attached to all exports in this route.
+                </div>
+              </div>
+            </div>
+
+            <ConstructedScenarioPanel
+              scenario={AICEI_CONSTRUCTED_SCENARIO}
+              onLoad={loadConstructedScenario}
+              testId="aicei-constructed-scenario"
             />
 
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 py-12 px-6">
-                <div className="max-w-6xl mx-auto">
-                    <div className="flex items-center gap-3 mb-4">
-                        <div className="p-3 bg-white/20 rounded-xl">
-                            <FileText className="h-8 w-8 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-3xl font-bold text-white">AICEI Grant Reporting</h1>
-                            <p className="text-purple-100">Alberta Indigenous Clean Energy Initiative compliance</p>
-                        </div>
-                    </div>
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+          </section>
 
-                    <div className="flex items-center gap-4 mt-6">
-                        <Link
-                            to="/indigenous"
-                            className="text-sm text-purple-200 hover:text-white transition-colors"
-                        >
-                            ← Back to Indigenous Dashboard
-                        </Link>
-                    </div>
-                </div>
+          <section className="space-y-6">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <MetricCard icon={<Zap className="h-5 w-5 text-amber-300" />} label="Generation" value={`${(totals.generation / 1000).toFixed(1)} MWh`} sub="Selected period" />
+              <MetricCard icon={<Leaf className="h-5 w-5 text-emerald-300" />} label="GHG reduction" value={`${totals.reduction.toFixed(0)} tCO₂e`} sub="Baseline vs actual" />
+              <MetricCard icon={<Users className="h-5 w-5 text-cyan-300" />} label="Participants" value={`${totals.participants}`} sub="Capacity-building reach" />
+              <MetricCard icon={<Download className="h-5 w-5 text-purple-300" />} label="Training hours" value={`${totals.hours}h`} sub="Owner-supplied activity log" />
             </div>
 
-            <div className="max-w-6xl mx-auto py-8 px-6">
-
-                {/* Period Selector */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-4 mb-8">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-3">
-                            <Calendar className="h-5 w-5 text-purple-400" />
-                            <span className="text-white font-medium">Reporting Period:</span>
-                            <select
-                                value={selectedPeriod.id}
-                                onChange={(e) => setSelectedPeriod(REPORTING_PERIODS.find(p => p.id === e.target.value) || REPORTING_PERIODS[0])}
-                                className="px-4 py-2 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-purple-500"
-                            >
-                                {REPORTING_PERIODS.map(p => (
-                                    <option key={p.id} value={p.id}>{p.label}</option>
-                                ))}
-                            </select>
-                            <span className={`px-2 py-1 text-xs rounded ${selectedPeriod.status === 'current' ? 'bg-blue-500/20 text-blue-400' :
-                                selectedPeriod.status === 'submitted' ? 'bg-amber-500/20 text-amber-400' :
-                                    'bg-emerald-500/20 text-emerald-400'
-                                }`}>
-                                {selectedPeriod.status.toUpperCase()}
-                            </span>
-                        </div>
-
-                        <button
-                            onClick={() => setShowExportModal(true)}
-                            className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-                        >
-                            <Download className="h-4 w-4" />
-                            Export Report
-                        </button>
-                    </div>
-                </div>
-
-                {/* Key Metrics */}
-                <div className="grid md:grid-cols-4 gap-4 mb-8">
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-                            <Zap className="h-4 w-4" />
-                            Energy Generated
-                        </div>
-                        <div className="text-2xl font-bold text-white">{(totalGeneration / 1000).toFixed(1)} MWh</div>
-                        <div className="text-xs text-emerald-400 mt-1">↑ 22% from last period</div>
-                    </div>
-
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-                            <Leaf className="h-4 w-4" />
-                            GHG Reduction
-                        </div>
-                        <div className="text-2xl font-bold text-white">{totalGHGReduction} tonnes CO₂e</div>
-                        <div className="text-xs text-emerald-400 mt-1">On track for annual target</div>
-                    </div>
-
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-                            <Users className="h-4 w-4" />
-                            Participants Trained
-                        </div>
-                        <div className="text-2xl font-bold text-white">{totalParticipants}</div>
-                        <div className="text-xs text-slate-500 mt-1">{CAPACITY_ACTIVITIES.length} programs</div>
-                    </div>
-
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-4">
-                        <div className="flex items-center gap-2 text-slate-400 text-sm mb-2">
-                            <Clock className="h-4 w-4" />
-                            Training Hours
-                        </div>
-                        <div className="text-2xl font-bold text-white">{totalTrainingHours}h</div>
-                        <div className="text-xs text-slate-500 mt-1">Capacity building</div>
-                    </div>
-                </div>
-
-                {/* Charts Row */}
-                <div className="grid lg:grid-cols-2 gap-6 mb-8">
-                    {/* Energy Generation Chart */}
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">Energy Generation (kWh)</h3>
-                        <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={ENERGY_GENERATION_DATA}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                    <XAxis dataKey="month" stroke="#94a3b8" />
-                                    <YAxis stroke="#94a3b8" />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                                        labelStyle={{ color: '#f1f5f9' }}
-                                    />
-                                    <Bar dataKey="solar" fill="#f59e0b" name="Solar" stackId="a" />
-                                    <Bar dataKey="wind" fill="#3b82f6" name="Wind" stackId="a" />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-
-                    {/* GHG Reduction Chart */}
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                        <h3 className="text-lg font-semibold text-white mb-4">GHG Reduction (tonnes CO₂e)</h3>
-                        <div className="h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={GHG_REDUCTION_DATA}>
-                                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                                    <XAxis dataKey="month" stroke="#94a3b8" />
-                                    <YAxis stroke="#94a3b8" />
-                                    <Tooltip
-                                        contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }}
-                                        labelStyle={{ color: '#f1f5f9' }}
-                                    />
-                                    <Line type="monotone" dataKey="baseline" stroke="#ef4444" strokeDasharray="5 5" name="Baseline" />
-                                    <Line type="monotone" dataKey="actual" stroke="#10b981" strokeWidth={2} name="Actual" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Capacity Building Activities */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 mb-8">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-white">Capacity Building Activities</h3>
-                        <span className="text-sm text-slate-400">{CAPACITY_ACTIVITIES.length} activities logged</span>
-                    </div>
-
-                    <div className="space-y-3">
-                        {CAPACITY_ACTIVITIES.map(activity => (
-                            <div key={activity.id} className="flex items-center justify-between p-4 bg-slate-900 border border-slate-700 rounded-lg">
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-2 rounded-lg ${activity.type === 'technical' ? 'bg-blue-500/20' :
-                                        activity.type === 'management' ? 'bg-purple-500/20' :
-                                            'bg-emerald-500/20'
-                                        }`}>
-                                        <Users className={`h-5 w-5 ${activity.type === 'technical' ? 'text-blue-400' :
-                                            activity.type === 'management' ? 'text-purple-400' :
-                                                'text-emerald-400'
-                                            }`} />
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-white">{activity.title}</div>
-                                        <div className="text-sm text-slate-500">
-                                            {new Date(activity.date).toLocaleDateString('en-CA')} • {activity.hours}h
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-lg font-semibold text-white">{activity.participants}</div>
-                                    <div className="text-xs text-slate-500">participants</div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* OCAP® Compliance */}
-                <div className="bg-purple-900/20 border border-purple-500/30 rounded-xl p-6 mb-8">
-                    <div className="flex items-center gap-3 mb-4">
-                        <CheckCircle className="h-6 w-6 text-purple-400" />
-                        <h3 className="text-lg font-semibold text-white">OCAP® Compliance Certification</h3>
-                    </div>
-                    <p className="text-slate-400 text-sm mb-4">
-                        This report adheres to OCAP® (Ownership, Control, Access, Possession) principles for
-                        Indigenous data governance. All data shown has been reviewed and approved by community
-                        leadership before inclusion in funder reports.
-                    </p>
-                    <div className="grid md:grid-cols-4 gap-4">
-                        {['Ownership', 'Control', 'Access', 'Possession'].map(principle => (
-                            <div key={principle} className="flex items-center gap-2 p-3 bg-slate-900 rounded-lg">
-                                <CheckCircle className="h-4 w-4 text-emerald-400" />
-                                <span className="text-white text-sm">{principle}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Grant Compliance Checklist */}
-                <div className="bg-slate-800 border border-slate-700 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold text-white mb-4">AICEI Reporting Checklist</h3>
-                    <div className="space-y-3">
-                        {[
-                            { item: 'Energy generation data for reporting period', complete: true },
-                            { item: 'GHG reduction calculations with methodology', complete: true },
-                            { item: 'Capacity building activities log', complete: true },
-                            { item: 'Community participation records', complete: true },
-                            { item: 'OCAP® compliance certification', complete: true },
-                            { item: 'Chief & Council approval signature', complete: false }
-                        ].map((check, i) => (
-                            <div key={i} className="flex items-center gap-3">
-                                {check.complete ? (
-                                    <CheckCircle className="h-5 w-5 text-emerald-400" />
-                                ) : (
-                                    <AlertCircle className="h-5 w-5 text-amber-400" />
-                                )}
-                                <span className={check.complete ? 'text-slate-300' : 'text-amber-400'}>
-                                    {check.item}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
+            <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6">
+              <h2 className="text-lg font-semibold text-white">2. Period metrics by project</h2>
+              <div className="mt-4 h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                    <XAxis dataKey="name" stroke="#94a3b8" />
+                    <YAxis stroke="#94a3b8" />
+                    <Tooltip contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '8px' }} />
+                    <Bar dataKey="generation" fill="#8b5cf6" name="Generation kWh" />
+                    <Bar dataKey="reduction" fill="#10b981" name="GHG reduction tCO2e" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-
-            {/* Export Modal */}
-            {showExportModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-slate-800 border border-slate-700 rounded-xl p-6 max-w-md w-full mx-4">
-                        <h3 className="text-lg font-semibold text-white mb-4">Export Report</h3>
-                        <p className="text-slate-400 text-sm mb-6">
-                            Choose export format for {selectedPeriod.label} report:
-                        </p>
-                        <div className="space-y-3 mb-6">
-                            <button
-                                onClick={() => handleExport('pdf')}
-                                className="w-full flex items-center justify-between p-4 bg-slate-900 border border-slate-600 rounded-lg hover:border-purple-500 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <FileText className="h-5 w-5 text-purple-400" />
-                                    <span className="text-white">PDF Report (Funder-Ready)</span>
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-500" />
-                            </button>
-                            <button
-                                onClick={() => handleExport('csv')}
-                                className="w-full flex items-center justify-between p-4 bg-slate-900 border border-slate-600 rounded-lg hover:border-purple-500 transition-colors"
-                            >
-                                <div className="flex items-center gap-3">
-                                    <BarChart3 className="h-5 w-5 text-purple-400" />
-                                    <span className="text-white">CSV Data Export</span>
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-slate-500" />
-                            </button>
-                        </div>
-                        <button
-                            onClick={() => setShowExportModal(false)}
-                            className="w-full py-2 text-slate-400 hover:text-white transition-colors"
-                        >
-                            Cancel
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Footer */}
-            <div className="py-8 px-6 border-t border-slate-800">
-                <div className="max-w-6xl mx-auto flex items-center justify-between">
-                    <Link to="/indigenous" className="text-slate-400 hover:text-white transition-colors">
-                        ← Back to Indigenous Dashboard
-                    </Link>
-                    <Link to="/for-employers" className="text-purple-400 hover:text-purple-300 transition-colors">
-                        Built by Sanjay Bhargava →
-                    </Link>
-                </div>
-            </div>
+          </section>
         </div>
-    );
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6">
+            <h2 className="text-lg font-semibold text-white">3. Project-level reporting rows</h2>
+            <div className="mt-4 space-y-3">
+              {filteredRecords.map((record) => (
+                <div key={record.id} className="rounded-xl border border-slate-700 bg-slate-900/60 p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <div className="font-medium text-white">{record.name}</div>
+                      <div className="mt-1 text-sm text-slate-400">
+                        {record.community} • {record.technology} • {record.reportingPeriod}
+                      </div>
+                    </div>
+                    <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                      record.communityApprovalStatus === 'approved'
+                        ? 'bg-emerald-500/15 text-emerald-300'
+                        : 'bg-amber-500/15 text-amber-200'
+                    }`}>
+                      {record.communityApprovalStatus}
+                    </span>
+                  </div>
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3 text-sm text-slate-300">
+                    <div>Generation: {record.generationKwh.toLocaleString()} kWh</div>
+                    <div>GHG reduction: {Math.max(record.baselineGhgTonnes - record.actualGhgTonnes, 0).toLocaleString()} tCO₂e</div>
+                    <div>Participants / hours: {record.participantsCount} / {record.participantsHours}</div>
+                  </div>
+                  <div className="mt-3 text-xs text-slate-500">
+                    Activities: {record.capacityBuildingActivities.join(' • ') || 'none provided'}
+                  </div>
+                  {record.ownerSuppliedNotes && (
+                    <div className="mt-2 text-xs text-purple-200">
+                      Owner-supplied note: {record.ownerSuppliedNotes}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="rounded-2xl border border-purple-500/30 bg-purple-900/20 p-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle className="mt-0.5 h-5 w-5 text-purple-300" />
+                <div>
+                  <h2 className="text-lg font-semibold text-white">OCAP and governance framing</h2>
+                  <p className="mt-2 text-sm text-slate-300">
+                    All AICEI exports keep community approval and governance fields visible as owner-supplied unless the Nation or project team confirms them separately.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-700 bg-slate-800 p-6">
+              <h2 className="text-lg font-semibold text-white">4. Approval-gap checklist</h2>
+              <div className="mt-4 space-y-3">
+                {checklist.map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm">
+                    {item.startsWith('No missing') ? (
+                      <CheckCircle className="mt-0.5 h-4 w-4 text-emerald-300" />
+                    ) : (
+                      <AlertCircle className="mt-0.5 h-4 w-4 text-amber-300" />
+                    )}
+                    <span className={item.startsWith('No missing') ? 'text-slate-200' : 'text-amber-200'}>
+                      {item}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MetricCard({
+  icon,
+  label,
+  value,
+  sub,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  sub: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-700 bg-slate-800 p-4">
+      <div className="flex items-center gap-2 text-sm text-slate-400">{icon}{label}</div>
+      <div className="mt-2 text-2xl font-bold text-white">{value}</div>
+      <div className="mt-1 text-xs text-slate-500">{sub}</div>
+    </div>
+  );
 }
 
 export default AICEIReportingModule;

@@ -124,9 +124,9 @@ const ALBERTA_MUNICIPAL_STATS = [
         detail: 'From cities to municipal districts, all facing TIER and GHG reporting requirements'
     },
     {
-        stat: '$95/t',
-        label: 'TIER Fund Price (Frozen)',
-        detail: 'Carbon compliance cost that municipalities can reduce through credit arbitrage'
+        stat: '$110/t',
+        label: '2026 TIER Fund Basis',
+        detail: 'Current Alberta planning basis for municipal and utility compliance scenario work'
     },
     {
         stat: '80%',

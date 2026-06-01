@@ -6,6 +6,8 @@ import './styles/accessibility.css';
 import { debug } from '@/lib/debug';
 import { validateFeatureFlags, getDeploymentStats } from './lib/featureFlags'
 
+const PWA_ENABLED = import.meta.env.VITE_ENABLE_PWA === 'true';
+
 // Global error handlers — catch unhandled async errors outside React tree
 if (typeof window !== 'undefined') {
   window.addEventListener('unhandledrejection', (event) => {
@@ -75,9 +77,31 @@ if (typeof window !== 'undefined') {
     setupScrollAnimations();
   }
 
-  // Register service worker in production builds only (PWA support)
+  // MVP demo freeze: disable the PWA layer unless it is explicitly re-enabled.
   if (import.meta.env.PROD && 'serviceWorker' in navigator) {
     window.addEventListener('load', () => {
+      if (!PWA_ENABLED) {
+        navigator.serviceWorker.getRegistrations()
+          .then(async (registrations) => {
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+
+            if ('caches' in window) {
+              const keys = await window.caches.keys();
+              await Promise.all(
+                keys
+                  .filter((key) => key.startsWith('ceip-'))
+                  .map((key) => window.caches.delete(key))
+              );
+            }
+
+            debug.log('[App] PWA disabled for MVP demo build; cleared CEIP service workers and caches.');
+          })
+          .catch((error) => {
+            debug.error('[App] Failed to clear service workers for MVP demo build:', error);
+          });
+        return;
+      }
+
       navigator.serviceWorker
         .register('/sw.js')
         .then((registration) => {

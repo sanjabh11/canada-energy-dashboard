@@ -36,7 +36,7 @@ export const AboutPage: React.FC = () => {
             </div>
             <h1 className="text-5xl font-bold mb-6">About Canada Energy Intelligence Platform</h1>
             <p className="text-xl text-blue-100 leading-relaxed">
-              Building Canadian energy analytics with live-when-available data, AI-powered insights,
+              Building Canadian energy proof packs with live-when-available data, benchmark transparency,
               and explicit provenance across provincial monitoring workflows.
             </p>
           </div>
@@ -54,8 +54,8 @@ export const AboutPage: React.FC = () => {
             </div>
             <h2 className="text-3xl font-bold text-primary mb-6">Our Mission</h2>
             <p className="text-lg text-secondary leading-relaxed mb-6">
-              To democratize access to Canadian energy data through advanced analytics, live-when-available monitoring,
-              and AI-powered insights that support informed decision-making for energy professionals,
+              To democratize access to Canadian energy data through proof-pack workflows, source-labeled monitoring,
+              and transparent benchmark appendices that support informed decision-making for energy professionals,
               policymakers, and the public.
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
@@ -78,7 +78,7 @@ export const AboutPage: React.FC = () => {
                   <Award className="h-8 w-8 text-orange-600" />
                 </div>
                 <h3 className="font-semibold text-primary mb-2">Innovation</h3>
-                <p className="text-sm text-secondary">AI and machine learning for predictive analytics and optimization</p>
+                <p className="text-sm text-secondary">Forecast benchmarks, scenario modeling, and transparent proof-pack workflows</p>
               </div>
             </div>
           </div>
@@ -103,8 +103,8 @@ export const AboutPage: React.FC = () => {
                   <Target className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-primary mb-1">AI-Powered Analytics</h3>
-                  <p className="text-secondary">Machine learning models for forecasting, anomaly detection, and optimization recommendations</p>
+                  <h3 className="font-semibold text-primary mb-1">Transparent Forecast Analytics</h3>
+                  <p className="text-secondary">Forecast models with source labels, benchmark appendices, and fallback-aware recommendations</p>
                 </div>
               </div>
               <div className="flex items-start gap-4">
@@ -156,7 +156,7 @@ export const AboutPage: React.FC = () => {
             <h2 className="text-3xl font-bold text-primary mb-6">Our Team</h2>
             <p className="text-lg text-secondary leading-relaxed mb-8">
               A diverse team of energy experts, data scientists, software engineers, and policy specialists
-              working together to build Canada's most comprehensive energy intelligence platform.
+              working together to build a transparent Canadian energy proof-pack product.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

@@ -1,15 +1,124 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Database, FileText, Lock, Mail, Shield, ShieldCheck } from 'lucide-react';
+import {
+  ArrowLeft,
+  FileText,
+  Lock,
+  Mail,
+  Shield,
+  ShieldCheck,
+} from 'lucide-react';
+import ProofPackPanel from '../ProofPackPanel';
+import {
+  buildUtilitySecurityControlMatrixCsv,
+  buildUtilitySecurityDescriptor,
+  buildUtilitySecurityEvidenceIndex,
+  buildUtilitySecurityEvidenceMappingCsv,
+  buildUtilitySecurityOwnerChecklistMarkdown,
+  buildUtilitySecurityPilotAttachmentManifestMarkdown,
+  buildUtilitySecurityProofBundle,
+  buildUtilitySecurityQuestionnaireTemplateMarkdown,
+  UTILITY_SECURITY_CHECKLIST,
+  UTILITY_SECURITY_CONTROLS,
+} from '../../lib/utilitySecurityProofPack';
+import {
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../../lib/proofPack';
 
 export function UtilitySecurityStatement() {
+  const proofBundle = useMemo(() => buildUtilitySecurityProofBundle(), []);
+  const proofActions = useMemo(() => {
+    const descriptor = buildUtilitySecurityDescriptor();
+    return proofBundle.artifacts.map((artifact) => {
+      if (artifact.id === 'utility-security-review-pack') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            renderHtmlProofDocument({ ...descriptor, definition: artifact }),
+            'text/html;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-control-matrix') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityControlMatrixCsv(),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-checklist') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            ['# Utility security review checklist', '', ...UTILITY_SECURITY_CHECKLIST.map((item) => `- ${item}`)].join('\n'),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-questionnaire-template') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityQuestionnaireTemplateMarkdown(),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-owner-checklist') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityOwnerChecklistMarkdown(),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-evidence-mapping') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityEvidenceMappingCsv(),
+            'text/csv;charset=utf-8;',
+          ),
+        };
+      }
+      if (artifact.id === 'utility-security-pilot-attachment-manifest') {
+        return {
+          ...artifact,
+          onDownload: () => downloadTextArtifact(
+            artifact,
+            buildUtilitySecurityPilotAttachmentManifestMarkdown(),
+            'text/markdown;charset=utf-8;',
+          ),
+        };
+      }
+      return {
+        ...artifact,
+        onDownload: () => downloadTextArtifact(
+          artifact,
+          JSON.stringify(buildUtilitySecurityEvidenceIndex(), null, 2),
+          'application/json;charset=utf-8;',
+        ),
+      };
+    });
+  }, [proofBundle.artifacts]);
+
   return (
     <div className="min-h-screen bg-slate-900 text-slate-300">
-      <header className="bg-slate-800 border-b border-slate-700 py-4 px-6">
-        <div className="max-w-4xl mx-auto flex items-center gap-4">
+      <header className="border-b border-slate-700 bg-slate-800 py-4 px-6">
+        <div className="mx-auto flex max-w-5xl items-center gap-4">
           <Link
             to="/utility-demand-forecast"
-            className="text-slate-400 hover:text-white transition-colors flex items-center gap-2"
+            className="flex items-center gap-2 text-slate-400 transition-colors hover:text-white"
           >
             <ArrowLeft className="h-5 w-5" />
             Back
@@ -21,127 +130,116 @@ export function UtilitySecurityStatement() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="prose prose-invert prose-slate max-w-none">
-          <p className="text-slate-400 mb-8">
-            <strong>Last Updated:</strong> April 2026
-          </p>
-
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">1. Purpose</h2>
+      <main className="mx-auto max-w-5xl px-6 py-12">
+        <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="text-xs font-semibold uppercase tracking-[0.18em] text-cyan-300">Structured review surface</div>
+              <h2 className="mt-2 text-2xl font-semibold text-white">Security review pack instead of trust-only copy</h2>
+              <p className="mt-2 max-w-3xl text-sm text-slate-400">
+                This route keeps repo-backed design controls separate from deployed evidence and owner-supplied review items. It does not claim SOC 2, NERC, Green Button Alliance approval, or utility production approval.
+              </p>
+              <p className="mt-2 max-w-3xl text-xs text-cyan-200">
+                Constructed forecast-pilot attachment pack. Use these downloads to answer utility diligence questions without presenting them as certifications or production approvals.
+              </p>
             </div>
-            <p>
-              This statement describes the current operational practices used by Canada Energy Intelligence Platform
-              ("CEIP") for utility-authorized forecasting workflows. It is intended to support utility onboarding,
-              privacy review, and technical due diligence. It is not a claim of formal third-party certification or a
-              legal opinion.
-            </p>
+            <Lock className="h-5 w-5 text-cyan-300" />
+          </div>
+        </div>
+
+        <div className="mt-6">
+          <ProofPackPanel
+            title={proofBundle.title}
+            summary={proofBundle.summary}
+            artifacts={proofActions}
+          />
+        </div>
+
+        <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6" data-testid="utility-security-control-matrix">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-cyan-300" />
+              <h2 className="text-lg font-semibold text-white">Control matrix</h2>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-700 text-slate-400">
+                    <th className="px-3 py-2 text-left">Control</th>
+                    <th className="px-3 py-2 text-left">Status</th>
+                    <th className="px-3 py-2 text-left">Detail</th>
+                    <th className="px-3 py-2 text-left">Evidence</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800">
+                  {UTILITY_SECURITY_CONTROLS.map((control) => (
+                    <tr key={control.id}>
+                      <td className="px-3 py-3 text-white">{control.control}</td>
+                      <td className="px-3 py-3">
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          control.status === 'repo_backed_design'
+                            ? 'bg-emerald-500/15 text-emerald-300'
+                            : control.status === 'deployed_evidence_required'
+                              ? 'bg-sky-500/15 text-sky-200'
+                              : 'bg-amber-500/15 text-amber-200'
+                        }`}>
+                          {control.status === 'repo_backed_design'
+                            ? 'repo-backed design'
+                            : control.status === 'deployed_evidence_required'
+                              ? 'deployed evidence required'
+                              : 'owner-supplied'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 text-slate-300">{control.detail}</td>
+                      <td className="px-3 py-3 text-slate-500">{control.evidence}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </section>
 
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Database className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">2. Data in Scope</h2>
+          <section className="space-y-6">
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-cyan-300" />
+                <h2 className="text-lg font-semibold text-white">Utility review checklist</h2>
+              </div>
+              <div className="mt-4 space-y-3">
+                {UTILITY_SECURITY_CHECKLIST.map((item) => (
+                  <div key={item} className="flex items-start gap-3 text-sm text-slate-300">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 text-cyan-300" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <p>
-              For Ontario Green Button and related utility-forecasting workflows, CEIP defaults to requesting
-              <strong> Usage Information only</strong> unless a utility review explicitly requires broader categories.
-              The application uses authorized interval history, connector metadata, and provenance data to support
-              utility planning, benchmarking, and export workflows.
-            </p>
-            <p className="mt-4">
-              CEIP does <strong>not</strong> position utility-authorized customer data as a general-purpose training
-              dataset and does not use it for advertising or unrelated secondary use.
-            </p>
-          </section>
 
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Lock className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">3. Token Custody & Access Controls</h2>
+            <div className="rounded-2xl border border-slate-700 bg-slate-800/60 p-6">
+              <div className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-cyan-300" />
+                <h2 className="text-lg font-semibold text-white">Review boundaries and contacts</h2>
+              </div>
+              <div className="mt-4 space-y-3 text-sm text-slate-300">
+                <p>Use this pack for utility diligence only. Third-party certifications, buyer-specific legal responses, and production credentials remain external approval gates.</p>
+                <p>
+                  <strong>Security:</strong>{' '}
+                  <a href="mailto:security@ceip.energy" className="text-cyan-400 hover:underline">security@ceip.energy</a>
+                </p>
+                <p>
+                  <strong>Privacy:</strong>{' '}
+                  <a href="mailto:privacy@ceip.energy" className="text-cyan-400 hover:underline">privacy@ceip.energy</a>
+                </p>
+                <p>
+                  <strong>Legal:</strong>{' '}
+                  <a href="mailto:legal@ceip.energy" className="text-cyan-400 hover:underline">legal@ceip.energy</a>
+                </p>
+              </div>
             </div>
-            <ul className="space-y-2 mt-4">
-              <li>Deployed connector secrets are managed through Supabase Edge secret custody rather than browser storage.</li>
-              <li>Connector tokens are encrypted at rest and are not presented back to the customer-facing route.</li>
-              <li>Connector audit metadata is retained to prove authorization, synchronization, revocation, and token-purge behavior.</li>
-              <li>Local browser demos use clearly marked starter or mocked flows and do not imply live utility approval.</li>
-            </ul>
-          </section>
-
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <FileText className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">4. Encryption, Retention & Purge</h2>
-            </div>
-            <ul className="space-y-2 mt-4">
-              <li>Transport uses HTTPS / TLS for customer-facing and connector-backed workflows.</li>
-              <li>Normalized interval history, payload fingerprints, and audit records are retained only to support the approved planning workflow and provenance requirements.</li>
-              <li>Stored token material is purged when revocation is confirmed.</li>
-              <li>Retention is intentionally limited; CEIP avoids keeping broader customer records than are necessary for the utility forecasting use case.</li>
-            </ul>
-          </section>
-
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <ShieldCheck className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">5. Revocation & Live-State Truthfulness</h2>
-            </div>
-            <p>
-              CEIP is designed to stop presenting a utility connector as live as soon as disconnect or revocation is
-              initiated. For portal-managed utilities, the application guides the user to the utility-owned
-              manage-connections surface and finalizes the connector as <strong>revoked</strong> only after
-              confirmation or an equivalent follow-up entitlement failure.
-            </p>
-            <p className="mt-4">
-              This behavior is part of the utility connector runtime validation pack and is a required proof point for
-              Ontario onboarding reviews.
-            </p>
-          </section>
-
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Shield className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">6. Review Boundaries</h2>
-            </div>
-            <p>
-              CEIP does not claim Ontario-wide certification, formal Green Button Alliance sandbox certification,
-              formal SOC 2 certification, or NERC compliance through this statement alone. Utility-specific onboarding,
-              legal review, and production credentials remain separate external approval gates.
-            </p>
-          </section>
-
-          <section className="mb-10">
-            <div className="flex items-center gap-3 mb-4">
-              <Mail className="h-5 w-5 text-cyan-400" />
-              <h2 className="text-xl font-semibold text-white m-0">7. Utility Review Contact</h2>
-            </div>
-            <p>
-              For utility security, privacy, or connector review questions:
-            </p>
-            <p className="mt-4">
-              <strong>Security:</strong>{' '}
-              <a href="mailto:security@ceip.energy" className="text-cyan-400 hover:underline">
-                security@ceip.energy
-              </a>
-            </p>
-            <p className="mt-2">
-              <strong>Privacy:</strong>{' '}
-              <a href="mailto:privacy@ceip.energy" className="text-cyan-400 hover:underline">
-                privacy@ceip.energy
-              </a>
-            </p>
-            <p className="mt-2">
-              <strong>Legal:</strong>{' '}
-              <a href="mailto:legal@ceip.energy" className="text-cyan-400 hover:underline">
-                legal@ceip.energy
-              </a>
-            </p>
           </section>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-800 flex gap-6">
+        <div className="mt-12 flex gap-6 border-t border-slate-800 pt-8">
           <Link to="/privacy" className="text-cyan-400 hover:underline">Privacy Policy</Link>
           <Link to="/terms" className="text-cyan-400 hover:underline">Terms of Service</Link>
           <Link to="/utility-demand-forecast" className="text-cyan-400 hover:underline">Utility Forecasting Lane</Link>

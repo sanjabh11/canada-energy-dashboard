@@ -1,3 +1,5 @@
+> **Historical / reconcile-first note (May 30, 2026):** This document is not current commercial source of truth. Before reusing any claim, reconcile it against [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md), [Top20.md](./Top20.md), and [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md). Do not copy claims about production utility onboarding, SOC 2 certification, live TIER pricing, OCAP-compliant infrastructure, AI/GPU superiority, or accurate avalanche prediction from this file.
+
 # Product Requirements Document
 ## Indigenous Energy Intelligence Platform + Consulting API
 
@@ -1809,5 +1811,3 @@ I will immediately:
 3. Generate OpenAPI spec for API documentation
 4. Set up project tracking board (first 90 days)
 5. Create Indigenous advisory board recruitment plan
-
- 

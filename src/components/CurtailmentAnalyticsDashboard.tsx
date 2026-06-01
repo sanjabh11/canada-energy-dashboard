@@ -257,7 +257,7 @@ const CurtailmentAnalyticsDashboard: React.FC = () => {
               <div className="flex items-center gap-4">
                 <div>
                   <h1 className="text-4xl font-bold text-white">Curtailment Reduction Analytics</h1>
-                  <p className="text-secondary mt-2">Phase 2: AI-Powered Curtailment Mitigation</p>
+                  <p className="text-secondary mt-2">Phase 2: Model-Assisted Curtailment Mitigation</p>
                 </div>
                 <HelpButton id="curtailment.overview" />
               </div>

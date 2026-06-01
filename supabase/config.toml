@@ -206,3 +206,13 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/utilityapi-demo/deno.json"
 entrypoint = "./functions/utilityapi-demo/index.ts"
+
+[functions.utility-connector-green-button]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/utility-connector-green-button/index.ts"
+
+[functions.utility-connector-telemetry-ingest]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/utility-connector-telemetry-ingest/index.ts"

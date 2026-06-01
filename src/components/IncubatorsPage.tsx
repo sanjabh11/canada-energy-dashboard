@@ -100,7 +100,7 @@ const PROGRAM_TRACKS = [
   {
     name: 'Indigenous Energy Fellowship',
     duration: '20 weeks',
-    outcomes: ['FPIC/OCAP® certification', 'Consultation protocols', 'Community partnership'],
+    outcomes: ['FPIC/OCAP® review workflow', 'Consultation protocols', 'Community partnership'],
     placementRate: '80%'
   }
 ];

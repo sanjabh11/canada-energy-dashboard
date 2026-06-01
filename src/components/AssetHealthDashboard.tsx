@@ -23,6 +23,18 @@ import {
   type ConditionCategory,
   type RiskPriority,
 } from '../lib/assetHealthScoring';
+import ProofPackPanel from './ProofPackPanel';
+import {
+  buildAssetCostSensitivityChecklistMarkdown,
+  buildAssetExecutiveSummaryDescriptor,
+  buildAssetProofBundle,
+  buildPrioritizedReplacementCsv,
+  rankAssetsForAction,
+} from '../lib/assetHealthProofPack';
+import {
+  downloadTextArtifact,
+  renderHtmlProofDocument,
+} from '../lib/proofPack';
 
 // ============================================================================
 // CONSTANTS
@@ -61,6 +73,7 @@ export const AssetHealthDashboard: React.FC = () => {
   const [parseErrors, setParseErrors] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTemplate, setShowTemplate] = useState(false);
+  const [isSampleDataset, setIsSampleDataset] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +105,7 @@ export const AssetHealthDashboard: React.FC = () => {
         const { results: scored, summary: fleetSummary } = scoreFleet(parsed);
         setResults(scored);
         setSummary(fleetSummary);
+        setIsSampleDataset(false);
       } catch (err) {
         setCsvError(err instanceof Error ? err.message : 'Failed to parse CSV');
       } finally {
@@ -110,6 +124,7 @@ export const AssetHealthDashboard: React.FC = () => {
     const { results: scored, summary: fleetSummary } = scoreFleet(sampleAssets);
     setResults(scored);
     setSummary(fleetSummary);
+    setIsSampleDataset(true);
     setIsProcessing(false);
   }, []);
 
@@ -134,6 +149,46 @@ export const AssetHealthDashboard: React.FC = () => {
     a.click();
     URL.revokeObjectURL(url);
   }, []);
+
+  const proofBundle = useMemo(() => buildAssetProofBundle(isSampleDataset), [isSampleDataset]);
+  const proofActions = useMemo(() => {
+    if (!summary || results.length === 0) return [];
+    const executiveSummary = buildAssetExecutiveSummaryDescriptor(summary, results, isSampleDataset);
+    const rankedCsvArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'asset-priority-csv');
+    const sensitivityArtifact = proofBundle.artifacts.find((artifact) => artifact.id === 'asset-cost-sensitivity-checklist');
+    return [
+      {
+        ...proofBundle.artifacts[0],
+        onDownload: () => downloadTextArtifact(
+          proofBundle.artifacts[0],
+          renderHtmlProofDocument({ ...executiveSummary, definition: proofBundle.artifacts[0] }),
+          'text/html;charset=utf-8;',
+        ),
+      },
+      {
+        ...proofBundle.artifacts[1],
+        onDownload: handleExportCSV,
+      },
+      rankedCsvArtifact ? {
+        ...rankedCsvArtifact,
+        onDownload: () => downloadTextArtifact(
+          rankedCsvArtifact,
+          buildPrioritizedReplacementCsv(results),
+          'text/csv;charset=utf-8;',
+        ),
+      } : null,
+      sensitivityArtifact ? {
+        ...sensitivityArtifact,
+        onDownload: () => downloadTextArtifact(
+          sensitivityArtifact,
+          buildAssetCostSensitivityChecklistMarkdown(),
+          'text/markdown;charset=utf-8;',
+        ),
+      } : null,
+    ].filter((artifact): artifact is NonNullable<typeof artifact> => Boolean(artifact));
+  }, [handleExportCSV, isSampleDataset, proofBundle.artifacts, results, summary]);
+
+  const topActions = useMemo(() => rankAssetsForAction(results).slice(0, 5), [results]);
 
   return (
     <div className="min-h-screen bg-slate-900">
@@ -198,7 +253,7 @@ export const AssetHealthDashboard: React.FC = () => {
                   </div>
                   <p className="text-xs text-slate-500 mt-3">
                     Compatible with OEB Appendix 2-AB Condition-Based Risk Management methodology.
-                    No SCADA, sensors, or real-time data feeds required.
+                    No SCADA, sensors, or live data feeds required.
                   </p>
                 </div>
               </div>
@@ -294,6 +349,12 @@ export const AssetHealthDashboard: React.FC = () => {
         {/* Results Section */}
         {summary && results.length > 0 && (
           <div className="space-y-6">
+            <ProofPackPanel
+              title={proofBundle.title}
+              summary={proofBundle.summary}
+              artifacts={proofActions}
+            />
+
             {/* Summary Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <SummaryCard label="Total Assets" value={String(summary.total_assets)} icon={<Building2 className="h-5 w-5 text-cyan-400" />} />
@@ -321,6 +382,41 @@ export const AssetHealthDashboard: React.FC = () => {
               <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
                 <h3 className="text-white font-semibold mb-4 text-sm">Avg Health Index by Type</h3>
                 <TypeBarChart byType={summary.by_type} />
+              </div>
+            </div>
+
+            <div className="bg-slate-800 border border-slate-700 rounded-xl p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-white font-semibold">Top actions for the current fleet</h3>
+                  <p className="mt-1 text-sm text-slate-400">
+                    Prioritized replacement and inspection candidates with deterministic rationale from the existing scoring model.
+                  </p>
+                </div>
+                <Target className="h-5 w-5 text-cyan-300" />
+              </div>
+
+              <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {topActions.map((asset) => (
+                  <div key={asset.asset_id} className="rounded-lg border border-slate-700 bg-slate-900/60 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium text-white">{asset.asset_name}</div>
+                        <div className="mt-1 text-xs text-slate-500">{asset.location}</div>
+                      </div>
+                      <span
+                        className="rounded-full px-2 py-0.5 text-[11px] uppercase tracking-wide"
+                        style={{ backgroundColor: RISK_COLORS[asset.risk_priority] + '20', color: RISK_COLORS[asset.risk_priority] }}
+                      >
+                        {asset.risk_priority}
+                      </span>
+                    </div>
+                    <div className="mt-3 text-sm text-slate-300">
+                      HI {asset.health_index} • {asset.criticality} criticality • inspect in {asset.next_inspection_months} month(s)
+                    </div>
+                    <p className="mt-2 text-xs leading-5 text-slate-400">{asset.priority_reason}</p>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -392,7 +488,10 @@ export const AssetHealthDashboard: React.FC = () => {
                           </td>
                           <td className="px-3 py-2 text-right text-slate-300">{r.age_years} yr</td>
                           <td className="px-3 py-2 text-right text-slate-300">{r.loading_pct > 0 ? `${r.loading_pct}%` : '—'}</td>
-                          <td className="px-3 py-2 text-slate-400 max-w-[200px] truncate">{r.recommended_action}</td>
+                          <td className="px-3 py-2 text-slate-400 max-w-[260px]">
+                            <div>{r.recommended_action}</div>
+                            <div className="mt-1 text-[11px] leading-4 text-slate-500">{r.priority_reason}</div>
+                          </td>
                         </tr>
                       ))}
                   </tbody>

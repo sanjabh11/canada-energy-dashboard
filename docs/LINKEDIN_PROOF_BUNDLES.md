@@ -4,21 +4,23 @@
 
 ---
 
-## 1. Consultant Data Pack Bundle
-**Target:** Energy Consultants, Analysts at Dunsky, ICF, GLJ, and boutique firms.
-**Core Angle:** Stop scraping AESO/IESO manually. Get structured, compliance-ready data with forecast benchmarking.
+## 1. Consultant Planning Proof Bundle
+**Target:** Energy consultants, analysts, model reviewers, and utility-adjacent advisory teams.
+**Core Angle:** CEIP is strongest when shown as a filing-ready utility planning workflow with visible benchmark trust, not as a generic dashboard or API catalog.
 
 ### The Links to Send:
-1. **Primary Landing:** `https://canada-energy.netlify.app/api-docs`
-   *Why: Shows exactly what they get. Validates our technical maturity.*
-2. **The Trust Layer:** `https://canada-energy.netlify.app/forecast-benchmarking`
-   *Why: Proves we understand energy modeling (MAE, MAPE, RMSE) and aren't just a wrapper.*
-3. **Executive Summary:** `https://canada-energy.netlify.app/overview`
-   *Why: For the managing partner to sign off on the $149/mo or enterprise tier.*
+1. **Primary Planning Lane:** `https://canada-energy.netlify.app/utility-demand-forecast`
+   *Why: Leads with the strongest current wedge, utility planning that turns buyer-supplied history into a board- and filing-ready workflow.*
+2. **Trust Layer:** `https://canada-energy.netlify.app/forecast-benchmarking`
+   *Why: Shows MAE, MAPE, RMSE, persistence, and seasonal-naive comparisons.*
+3. **Executive / Filing Proof:** `https://canada-energy.netlify.app/regulatory-filing`
+   *Why: Makes the compliance-export and packaging value legible to partners and managing directors.*
+4. **Technical Follow-on:** `https://canada-energy.netlify.app/api-docs`
+   *Why: Useful only after the prospect wants implementation-level detail.*
 
 ### What to Attach (if requested):
-- The `openapi.yaml` file (shows the exact schema).
-- A sample JSON output from the `/api/v2/grid-status` endpoint.
+- The `openapi.yaml` file.
+- A sample CSV or export proof from a planning or filing workflow.
 
 ---
 
@@ -27,12 +29,12 @@
 **Core Angle:** Optimize TIER arbitrage, forecast compliance liability, and generate audit-ready shadows.
 
 ### The Links to Send:
-1. **Primary Landing:** `https://canada-energy.netlify.app/roi-calculator` (TIER ROI)
-   *Why: Immediate interactive value showing financial arbitrage between EPCs and offsets.*
-2. **The Trust Layer:** `https://canada-energy.netlify.app/regulatory-filing`
-   *Why: Proves we understand the actual regulatory paperwork (AUC, OEB).*
-3. **Shadow Billing:** `https://canada-energy.netlify.app/shadow-billing`
-   *Why: Shows operational cost-saving potential against RoLR.*
+1. **Primary Landing:** `https://canada-energy.netlify.app/roi-calculator`
+   *Why: Immediate financial legibility using the current CEIP planning basis.*
+2. **Credit Allocation / Audit Layer:** `https://canada-energy.netlify.app/credit-banking`
+   *Why: Extends the story beyond a simple ROI estimate into compliance-year allocation logic.*
+3. **Shadow Billing Follow-on:** `https://canada-energy.netlify.app/shadow-billing`
+   *Why: Makes energy-supply-only savings discussion more operational and buyer-legible.*
 
 ### What to Attach (if requested):
 - A PDF export from the TIER calculator.
@@ -41,11 +43,15 @@
 ---
 
 ## 3. Utility / REA / Municipal Trust Bundle
-**Target:** Co-op managers, Small LDC planners, Municipal energy leads.
-**Core Angle:** Replace legacy spreadsheets with structured asset scoring and regulatory templates.
+**Target:** Co-op managers, small LDC planners, municipal energy leads, and procurement-sensitive utility teams.
+**Core Angle:** Lead with planning and trust boundaries first, then expand into filing and follow-on proof pages.
 
 ### The Links to Send:
-1. **Primary Landing:** `https://canada-energy.netlify.app/asset-health`
-   *Why: CBRM-lite is exactly what small utilities need but can't afford enterprise software for.*
-2. **The Trust Layer:** `https://canada-energy.netlify.app/regulatory-filing`
-   *Why: Solves the immediate pain of annual filing formats.*
+1. **Primary Planning Surface:** `https://canada-energy.netlify.app/utility-demand-forecast`
+   *Why: Strongest current planning-led wedge for utilities and adjacent buyers.*
+2. **Trust / Security Surface:** `https://canada-energy.netlify.app/utility-security`
+   *Why: Makes retention, custody, revocation, and review boundaries explicit.*
+3. **Executive / Filing Proof:** `https://canada-energy.netlify.app/regulatory-filing`
+   *Why: Solves the concrete formatting and submission-packaging burden.*
+4. **Operational Follow-on:** `https://canada-energy.netlify.app/asset-health`
+   *Why: Useful when the conversation expands into CSV-first asset risk and capital planning.*

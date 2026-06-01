@@ -1,0 +1,169 @@
+# CEIP Commercial Source Of Truth
+
+> Date: May 30, 2026
+> Purpose: define which docs can be used for current sales, outreach, pilot scoping, and public positioning.
+> Rule: when this file conflicts with older research, outreach, PRD, or monetization notes, this file and the active docs below win.
+
+## Active Commercial Sources
+
+Use these files for current CEIP positioning:
+
+| File | Role | Required boundary |
+|---|---|---|
+| [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
+| [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
+| [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
+| [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
+| [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
+| [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |
+| [growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md](./growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md) | Current outreach copy library. | Lead with proof packs, not broad dashboards or generic AI. |
+| [growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md](./growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md) | Email/LinkedIn and pilot templates. | Must name route, input data, artifact, caveat, and decision criteria. |
+| [growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv](./growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv) | Machine-readable buyer evidence register. | Must record `time_to_artifact_hours`, `buyer_data_coverage_pct`, `benchmark_lift_or_diagnostic`, `reviewer_acceptance`, and `commercial_commitment_status` before confidence changes. |
+
+## Active Sellability Ratings
+
+The active outreach docs must use the current sellability-confidence ratings from the confidence audit until a real buyer-evidence register passes the 95% gate.
+
+| Rank | Proof pack | Current rating |
+|---:|---|---:|
+| 1 | Utility demand forecast planning pack | 4.5/5 |
+| 2 | Forecast benchmarking and provenance layer | 4.6/5 |
+| 3 | OEB/AUC regulatory filing packs | 4.3/5 |
+| 4 | Ontario GA/ICI 5CP decision-support pack | 4.2/5 |
+| 5 | Privacy-preserving BYO-CSV proof generator | 4.1/5 |
+| 6 | TIER compliance savings pack | 4.0/5 |
+| 7 | TIER credit banking audit pack | 3.9/5 |
+| 8 | Asset health executive capex pack | 4.1/5 |
+| 9 | Utility security procurement pack | 4.0/5 |
+| 10 | Shadow billing invoice proof pack | 3.8/5 |
+
+## Approved Lead Positioning
+
+Use this wording:
+
+> CEIP is a Canadian utility and Alberta TIER proof-pack product that turns forecasts, filing evidence, benchmark transparency, Ontario GA/ICI peak-risk support, privacy-screened CSV proof, compliance scenarios, credit ledgers, asset triage, security review, and billing checks into buyer-ready artifacts.
+
+Do not replace this with:
+
+- "many dashboards plus AI"
+- "AI/GPU forecasting platform"
+- "production utility bridge"
+- "SOC 2 certified utility platform"
+- "OCAP-compliant sovereignty infrastructure"
+- "live TIER market pricing"
+- "engineering approval or power-flow platform"
+- "accurate avalanche prediction" in this repository
+
+## Stale Or Historical Research
+
+The following docs may contain useful research, but they are **not** current commercial source of truth. Do not copy claims from them into outreach, pricing, PR copy, demos, or public pages unless reconciled against the active docs above.
+
+| Historical file | Risk to watch |
+|---|---|
+| [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Superseded May 30 confidence audit with old 90-92% strategic-confidence ceiling and pre-roadmap guard evidence. Keep its buyer-evidence caution only after reconciling with the May 31 roadmap. |
+| [CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md](./CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md) | Superseded May 31 audit with stale 70/100 cap, not-run verification status, old metadata/guard gaps, and old API/large-load top-10 placement. |
+| [DEEP_RESEARCH_GTM_STRATEGY_2026.md](./DEEP_RESEARCH_GTM_STRATEGY_2026.md) | Broad AI, real-time, and OCAP-compliant claims. |
+| [DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md](./DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md) | Enterprise compliance and SOC2 expectations. |
+| [Ph8_PRD.md](./Ph8_PRD.md) | AI-powered platform framing and broad PRD claims. |
+| [Ph8_micro_niche.md](./Ph8_micro_niche.md) | Older AI-powered and SOC2 framing. |
+| [ValueProposition.md](./ValueProposition.md) | OCAP-compliant and private-node positioning beyond current proof. |
+| [ValueProposition_whop.md](./ValueProposition_whop.md) | Older Whop/product framing. |
+| [Grok_suggestions.md](./Grok_suggestions.md) | High-confidence claims not tied to current route proof. |
+| [ADVERSARIAL_USP_ANALYSIS.md](./ADVERSARIAL_USP_ANALYSIS.md) | Useful critique, not final positioning. |
+| [COMET_OUTREACH_STRATEGY.md](./COMET_OUTREACH_STRATEGY.md) | Older outreach language and early-access claims. |
+| [COMET_OUTREACH_STRATEGY_V2.md](./COMET_OUTREACH_STRATEGY_V2.md) | Older outreach language. |
+| [whop_skill.md](./whop_skill.md) | Consumer/Whop AI-powered language. |
+| [Whop_analysis.md](./Whop_analysis.md) | Whop-specific marketing notes. |
+| [PRD_PRODUCTION_MONETIZATION.md](./PRD_PRODUCTION_MONETIZATION.md) | Production monetization assumptions and certification roadmap. |
+| [OEB_SANDBOX_PROPOSAL.md](./OEB_SANDBOX_PROPOSAL.md) | Sandbox proposal language that may sound stronger than current proof. |
+| [FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md](./FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md) | Production use-case analysis beyond current sales lane. |
+| [monetization.md](./monetization.md) | Older enterprise/compliance sales assumptions. |
+| [Final_gaps.md](./Final_gaps.md) | Broad future-state claims. |
+| [IMIPLEMENTATION_VERIFICATION.md](./IMIPLEMENTATION_VERIFICATION.md) | Older implementation score and production-ready claims. |
+| [UI_allpages.md](./UI_allpages.md) | UI inventory with broad real-time/AI wording. |
+| [Linkedin_artical.md](./Linkedin_artical.md) | Article draft with older automation and world-class framing. |
+| [delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md](./delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md) | Older high platform-score and target-score claims. |
+| [delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md](./delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md) | Older implementation-plan ratings and production-readiness language. |
+| [delivery/IMPLEMENTATION_PLAN_HYBRID.md](./delivery/IMPLEMENTATION_PLAN_HYBRID.md) | Older monetization strategy before proof-pack realignment. |
+| [delivery/MONETIZATION_GAP_ANALYSIS.md](./delivery/MONETIZATION_GAP_ANALYSIS.md) | Older monetization analysis before proof-pack realignment. |
+| [delivery/STRATEGY_COMPARISON_FINAL.md](./delivery/STRATEGY_COMPARISON_FINAL.md) | Older strategy comparison before proof-pack realignment. |
+| [../COMMIT_MESSAGE.txt](../COMMIT_MESSAGE.txt) | Retired draft commit message with older implementation-score wording. |
+
+## Claim Translation Table
+
+| Old phrase | Current allowed replacement |
+|---|---|
+| AI-powered forecasting platform | transparent forecast proof pack with benchmark appendix |
+| GPU forecasting | deferred research option; not a lead feature |
+| real-time AESO/IESO platform | live-when-available data with fallback and freshness labels |
+| OCAP-compliant data sovereignty | OCAP-aligned workflow language with owner-supplied governance markers |
+| SOC 2 certified | security review pack; certification not claimed |
+| production utility bridge | UtilityAPI/Green Button sandbox unless approval evidence exists |
+| regulator-ready filing automation | filing-prep proof pack and reviewer checklist |
+| engineering approval / power-flow | planning overlay only |
+| guaranteed savings | source-dated planning estimate with buyer validation required |
+
+## Review Workflow
+
+Before sending outreach or publishing copy:
+
+1. Start with `Top20.md`.
+2. Check the confidence audit.
+3. Use the pilot evidence checklist if the copy implies buyer proof.
+4. Run:
+
+```bash
+pnpm run check:commercial-source
+pnpm run check:claim-boundaries
+pnpm run check:public-metadata
+pnpm run check:public-metadata -- --dist
+pnpm run check:pilot-evidence-95-fixture-gate
+pnpm run check:pilot-evidence-template
+pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
+pnpm run check:strategy-roadmap-doc
+pnpm run report:strategy-completion-audit
+pnpm run check:strategy-completion-audit
+pnpm run report:strategy-source-anchors
+pnpm run check:strategy-source-anchors
+pnpm run check:production-deploy-script
+pnpm run test:strategy-audit-slice
+pnpm run check:release-readiness
+```
+
+Before asking for explicit production approval, generate the current approval packet:
+
+```bash
+pnpm run report:production-approval-packet
+```
+
+After an explicitly approved production deploy, run:
+
+```bash
+pnpm run check:post-deploy-live
+```
+
+`check:post-deploy-live` rebuilds current `dist`, then runs live metadata checks, exact static parity against the built `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`.
+
+`check:release-readiness` includes `check:strategy-source-anchors`, `check:production-deploy-script`, and `check:strategy-completion-audit`, so production approval packets inherit the current-source anchor gate, the production deploy script drift guard, and the original-plan requirement audit before any deploy request. The source-anchor gate uses a bounded retry for transient network, timeout, 408/429, and 5xx fetch failures, then still fails if an anchor is neither live-verified nor covered by current manual evidence.
+
+`report:production-approval-packet` also reports source deploy provenance against the production deploy script's preconditions: branch `main` and a clean worktree. When the worktree is dirty, it classifies each blocker as tracked/untracked and ignored-by-rule/not ignored, then gives a non-destructive cleanup action so generated artifacts are not confused with source changes. The deploy script is guarded to run `check:release-readiness`, require the typed approval phrase `DEPLOY CEIP PRODUCTION`, deploy with the production build path, and run `check:post-deploy-live` after Netlify deploy. The approval packet separates deployment request readiness from live parity achieved: stale live metadata or static parity can support an explicit remediation deploy request only when source provenance and local release readiness are clean, but it must not be reported as live parity until post-deploy live checks pass. Passing local release-readiness evidence is summarized separately from the dedicated live metadata, live static parity, and hosted smoke gates, so nested completion-audit live failures do not make a green local preflight look internally failed. CEIP browser-smoke scripts that participate in release, hosted, or approval checks write Playwright HTML/JSON reports under `/tmp/ceip-*` so generated reports do not create worktree dirt that then blocks source deploy provenance. If `--skip-release-readiness` is used, exact static parity is skipped because local `dist/` has not been freshly rebuilt by the packet. Use `pnpm run check:production-deploy-request` when you need a machine exit gate for requesting explicit owner approval; use `--fail-on-blocker` only when all live-parity gates are expected to pass. It must not be used as production approval when source provenance or local release readiness is failing or skipped.
+
+`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; expected live metadata and static-parity failures remain external production gates.
+
+Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
+
+```bash
+pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md --route /utility-demand-forecast --record-date 2026-05-31 --pii-screen-result redacted --buyer-data-coverage-pct 90 --time-to-artifact-hours 36 --reviewer-role "utility planning reviewer" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status paid_pilot --commercial-commitment-evidence "paid pilot evidence retained in redacted commercial appendix" --claim-boundary "Buyer-supplied redacted planning support only." --do-not-claim "Do not claim production utility onboarding." --diagnostic "MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger."
+pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root path/to/redacted-artifacts
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts
+```
+
+The evidence root must contain retained redacted artifacts only. Use `prepare:pilot-evidence-artifact` to create a text-inspectable extract and print the register-ready SHA-256 reference after direct-identifier and route-diagnostic checks. For forecast trust reports generated from benchmark-pack JSON, prefer `prepare:forecast-trust-report-artifact` so the retained extract is generated from numeric benchmark metrics rather than hand-written keyword prose. The validator recomputes every confidence-moving hash and fails if a referenced artifact is missing, changed, not text-inspectable, lacks the route-specific diagnostic evidence terms, lacks numeric forecast evidence for forecast routes, contains positive overclaims, lacks retained support for the row record date, privacy-screen result, non-status-only strong commercial commitment evidence, buyer-data coverage percentage, time-to-artifact value, reviewer acceptance, reviewer feedback completion, or day-14 proceed decision, or if either the register row values or retained artifact text appear to contain direct identifiers such as emails, phone numbers, account/meter labels, postal codes, addresses, or credential assignments. Retain CSV, TSV, JSON, JSONL, Markdown, text, HTML, or YAML artifacts; for PDFs or scans, hash a redacted `.txt` or `.md` evidence extract instead of the opaque source file.
+
+The 95% gate requires accepted confidence-moving buyer evidence to be dated within the last 365 days; retained local artifact text supporting each accepted row's `record_date`; exact privacy-screen statuses with retained local artifact text supporting each `pii_screen_result`; independent reviewer roles on confidence-moving rows; exact reviewer statuses rather than negated prose; buyer/source claim-boundary wording; route-specific do-not-claim terms; numeric forecast evidence for forecast rows; no positive overclaims or direct identifiers in register evidence text; at least one accepted commercial commitment signal (`design_partner_signed`, `paid_pilot`, `purchase_order`, or `letter_of_intent`) that is supported by retained local artifact text beyond repeating the status; retained local artifact text supporting each accepted row's `buyer_data_coverage_pct`, `time_to_artifact_hours`, `reviewer_acceptance`, `reviewer_feedback_status`, and `day_14_decision=proceed`; at least one accepted buyer proof pack delivered in 48 hours or less with no accepted confidence-moving row above 120 hours; and distinct locally verified SHA-256 evidence artifacts across accepted buyer proof-pack rows.
+
+5. If a stale doc is useful, copy only the underlying research question, not its marketing claim.
+
+## Completion Boundary
+
+This file does not make stale research false or useless. It prevents stale research from becoming current commercial truth without reconciliation.

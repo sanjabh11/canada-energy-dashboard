@@ -104,7 +104,7 @@ export function HomeTab({ connectionStatuses, onNavigate, t }: HomeTabProps) {
         <div className="max-w-2xl mx-auto">
           <h2 className="card-title mb-4">Ready for Deeper Insights?</h2>
           <p className="text-secondary mb-6">
-            Explore advanced analytics, scenario modeling, and AI-powered recommendations to optimize your energy strategy.
+            Explore advanced analytics, scenario modeling, and model-assisted recommendations to optimize your energy strategy.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button

@@ -6,6 +6,8 @@
  * 
  * Data Sources:
  * - Alberta TIER Regulation: https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation
+ * - Canada-Alberta Implementation Agreement, May 15 2026:
+ *   https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding
  * - S&P Global Commodity Insights (market credit prices)
  * - ICAP Carbon Action (market data)
  */
@@ -34,6 +36,24 @@ export interface TIERPricingConfig {
   
   /** Quarter/period label for display (e.g., "Q4 2025") */
   periodLabel: string;
+
+  /** Fallback market-price source used when no live quote is available in-route */
+  marketPriceSource: string;
+
+  /** Optional URL for the fallback market-price basis */
+  marketPriceSourceUrl?: string;
+
+  /** Plain-language disclosure for the fallback market-price basis */
+  marketPriceDisclosure: string;
+
+  /** Current official headline price schedule used for long-range scenario caveats */
+  headlinePriceSchedule: Array<{ year: number; priceCadPerTonne: number }>;
+
+  /** Current official minimum transfer-price floor schedule, when applicable */
+  priceFloorSchedule: Array<{ year: number; priceCadPerTonne: number }>;
+
+  /** Current policy notes that must travel with CFO-facing proof packs */
+  policyNotes: string[];
 }
 
 export interface TIERPricingProvenance {
@@ -46,19 +66,41 @@ export interface TIERPricingProvenance {
 /**
  * Default TIER pricing configuration
  * 
- * Fund price frozen at $95/tonne by Alberta government (May 2025)
- * Market credits trading ~$25/tonne (Q4 2025 data from S&P/ICAP)
- * Effective: May 2025 freeze | Verified: February 2026
+ * Fund price uses the 2026 TIER headline-price basis published in the
+ * Canada-Alberta implementation agreement on May 15, 2026. Market credits remain
+ * a CEIP fallback planning snapshot until the buyer replaces them with a live
+ * quote, registry-backed view, or buyer-approved source.
  */
 export const DEFAULT_TIER_PRICING: TIERPricingConfig = {
   fundPrice: 95,
   marketCreditPrice: 25,
-  effectiveDate: '2025-05-01',
-  source: 'Alberta.ca TIER Regulation',
-  sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-  lastVerifiedAt: '2026-02-01',
+  effectiveDate: '2026-01-01',
+  source: 'Canada-Alberta Implementation Agreement TIER headline price',
+  sourceUrl: 'https://www.pm.gc.ca/en/news/backgrounders/2026/05/15/implementation-agreement-canada-alberta-memorandum-understanding',
+  lastVerifiedAt: '2026-05-31',
   isFrozen: true,
-  periodLabel: 'Q4 2025'
+  periodLabel: '2026 headline price reviewed May 2026',
+  marketPriceSource: 'CEIP fallback secondary-market planning snapshot',
+  marketPriceDisclosure: 'Fallback only. Replace with a live quote or registry-backed market data before buyer approval.',
+  headlinePriceSchedule: [
+    { year: 2026, priceCadPerTonne: 95 },
+    { year: 2027, priceCadPerTonne: 100 },
+    { year: 2028, priceCadPerTonne: 100 },
+    { year: 2029, priceCadPerTonne: 100 },
+    { year: 2030, priceCadPerTonne: 115 },
+    { year: 2035, priceCadPerTonne: 130 },
+    { year: 2040, priceCadPerTonne: 140 },
+  ],
+  priceFloorSchedule: [
+    { year: 2030, priceCadPerTonne: 60 },
+    { year: 2035, priceCadPerTonne: 80 },
+    { year: 2040, priceCadPerTonne: 110 },
+  ],
+  policyNotes: [
+    'Alberta TIER direct-investment guidance is a current policy dependency; eligibility and credit treatment must be validated before buyer approval.',
+    'Verified annual compliance reports are due by June 30 of the following year under Alberta TIER reporting guidance.',
+    'The Canada-Alberta implementation agreement targets stronger TIER credit market prices over time and a minimum transfer-price floor beginning in 2030.',
+  ],
 };
 
 /**
@@ -83,7 +125,8 @@ export function calculateSavingsPercentage(config: TIERPricingConfig = DEFAULT_T
 export function formatPricingWithProvenance(
   config: TIERPricingConfig = DEFAULT_TIER_PRICING
 ): string {
-  return `Fund: $${config.fundPrice}/t | Market: $${config.marketCreditPrice}/t (${config.periodLabel}, ${config.source})`;
+  const frozenLabel = config.isFrozen ? ' frozen' : '';
+  return `Fund: $${config.fundPrice}/t${frozenLabel} (${config.source}) | Market: $${config.marketCreditPrice}/t fallback (${config.periodLabel})`;
 }
 
 /**
@@ -123,9 +166,8 @@ export function useTIERPricing(): TIERPricingConfig {
 /**
  * Check if pricing data is stale (>90 days since verification)
  */
-export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING): boolean {
+export function isPricingStale(config: TIERPricingConfig = DEFAULT_TIER_PRICING, now: Date = new Date()): boolean {
   const verifiedAt = new Date(config.lastVerifiedAt);
-  const now = new Date();
   const daysSinceVerification = (now.getTime() - verifiedAt.getTime()) / (1000 * 60 * 60 * 24);
   return daysSinceVerification > 90;
 }

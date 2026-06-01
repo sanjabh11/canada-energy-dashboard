@@ -1,3 +1,5 @@
+> **Historical / reconcile-first note (May 30, 2026):** This document is not current commercial source of truth. Before reusing any claim, reconcile it against [COMMERCIAL_SOURCE_OF_TRUTH.md](./COMMERCIAL_SOURCE_OF_TRUTH.md), [Top20.md](./Top20.md), and [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md). Do not copy claims about production utility onboarding, SOC 2 certification, live TIER pricing, OCAP-compliant infrastructure, AI/GPU superiority, or accurate avalanche prediction from this file.
+
 Unreasonable Effectiveness of GenAI : Transforming Canada’s Utilities for a Smarter, More Resilient Grid
 Sanjay Bhargava
 Sanjay Bhargava
@@ -172,4 +174,3 @@ The key is strategic implementation that addresses Canada's unique challenges wh
 The future of Canada’s energy landscape will be shaped by those bold enough to embrace innovation today. GenAI offers not just cost savings, but a pathway to resilient, sustainable, and customer-focused utilities. Now is the moment for Canadian utility leaders and policymakers to champion this transformation—securing affordable, reliable power for generations to come. The next move is yours: will you lead the charge?
 
 #AI #GenAI #MachineLearning #Utilities #Energy #Electricity #SmartGrid #GridOptimization #CanadianUtilities #EnergyInnovation #CleanEnergy #DigitalTransformation #SustainableEnergy #Canada #ElectricUtilities #UtilityIndustry #EnergyTransition #TechInUtilities #PowerSector #FutureOfEnergy 
- 

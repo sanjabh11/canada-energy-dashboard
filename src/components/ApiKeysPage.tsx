@@ -151,7 +151,7 @@ function ApiKeysPageContent() {
             <div>
               <h1 className="text-3xl font-bold">API Keys</h1>
               <p className="text-emerald-100 text-sm mt-1">
-                Manage programmatic access for consultant data packs and partner integrations.
+                Manage programmatic access for consultant data packs, proof-led pilots, and partner integrations.
               </p>
             </div>
           </div>
@@ -285,6 +285,30 @@ function ApiKeysPageContent() {
         </div>
 
         <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Consultant Trust Stack</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+            <a href="/api-docs" className="p-4 bg-slate-900 rounded-lg border border-slate-700 hover:border-cyan-700 transition-colors">
+              <div className="text-cyan-300 font-medium mb-1">Technical proof</div>
+              <div className="text-white font-semibold mb-1">API Docs</div>
+              <div className="text-slate-400">Show the structured Canadian energy inputs behind the consultant pack.</div>
+            </a>
+            <a href="/forecast-benchmarking" className="p-4 bg-slate-900 rounded-lg border border-slate-700 hover:border-cyan-700 transition-colors">
+              <div className="text-cyan-300 font-medium mb-1">Model trust</div>
+              <div className="text-white font-semibold mb-1">Forecast Benchmarking</div>
+              <div className="text-slate-400">Use MAE, MAPE, RMSE, and baseline comparisons as the trust layer for buyers.</div>
+            </a>
+            <a href="/overview" className="p-4 bg-slate-900 rounded-lg border border-slate-700 hover:border-cyan-700 transition-colors">
+              <div className="text-cyan-300 font-medium mb-1">Executive summary</div>
+              <div className="text-white font-semibold mb-1">Overview</div>
+              <div className="text-slate-400">Compress the click path into one proof-led summary for partner or managing-director review.</div>
+            </a>
+          </div>
+          <p className="text-xs text-slate-500 mt-4">
+            Consultant outreach should start with one proof URL, then use sample payloads only after the buyer asks for detail.
+          </p>
+        </div>
+
+        <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-xl p-6">
           <h2 className="text-lg font-semibold text-white mb-4">Commercial API Plans</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="p-4 bg-slate-900 rounded-lg border border-slate-700">
@@ -294,17 +318,17 @@ function ApiKeysPageContent() {
             </div>
             <div className="p-4 bg-slate-900 rounded-lg border border-cyan-700">
               <div className="text-2xl font-bold text-cyan-400 mb-1">Consultant Data Pack</div>
-              <div className="text-slate-400 mb-2">1,000 requests/day</div>
+              <div className="text-slate-400 mb-2">1,000 requests/day + proof-led positioning</div>
               <div className="text-cyan-400 font-medium">{formatUsd(CEIP_PRICING.direct.professional)}/month</div>
             </div>
             <div className="p-4 bg-slate-900 rounded-lg border border-purple-700">
               <div className="text-2xl font-bold text-purple-400 mb-1">Enterprise Data Access</div>
-              <div className="text-slate-400 mb-2">Custom limits + official exports</div>
+              <div className="text-slate-400 mb-2">Custom limits + official proof artifacts</div>
               <div className="text-purple-400 font-medium">Sales assisted</div>
             </div>
           </div>
           <p className="text-xs text-slate-500 mt-4">
-            Need higher limits or official export entitlements? <a href="/enterprise?tier=consulting" className="text-emerald-400 hover:underline">Contact sales</a>.
+            Need higher limits, pilot scoping, or consultant-team onboarding? <a href="/enterprise?tier=consulting" className="text-emerald-400 hover:underline">Contact sales</a>.
           </p>
         </div>
       </div>
