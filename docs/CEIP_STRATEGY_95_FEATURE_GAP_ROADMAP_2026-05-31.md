@@ -248,14 +248,14 @@ Before any outbound regulatory/TIER pilot, refresh CEIP source-currency checklis
 
 ```text
 Implement CEIP forecast hardening. Add a multi-public-dataset benchmark artifact path that records MAE, MAPE, RMSE, persistence baseline, seasonal-naive baseline, rolling-origin split count, interval coverage percentage, champion/challenger decision, and failure notes when a baseline wins. Do not claim buyer-specific accuracy without buyer data. Run forecast/proof-pack tests and update the roadmap evidence table.
-Use `pnpm run report:utility-forecast-benchmark` for public/sample discipline packs and `pnpm run prepare:forecast-trust-report-artifact -- --benchmark-pack-file path/to/utility-forecast-benchmark-pack.json --evidence-root path/to/redacted-artifacts --artifact-file forecast-trust-retained.md ...` for buyer-supplied trust-report retained extracts.
+Use `pnpm run report:utility-forecast-benchmark` for public/sample discipline packs and `pnpm run prepare:forecast-trust-report-artifact -- --benchmark-pack-file path/to/utility-forecast-benchmark-pack.json --evidence-root path/to/redacted-artifacts --artifact-file forecast-trust-retained.md --proof-pack-id forecast_benchmark_provenance ...` for buyer-supplied trust-report retained extracts.
 ```
 
 ### Phase F prompt
 
 ```text
 Run CEIP buyer evidence gate. Use only redacted, text-inspectable buyer-approved artifacts outside sensitive originals. Validate the anonymized outreach response log with `plan:outreach-intake` to produce intake commands only after completed buyer activity, prepare retained extracts with prepare:pilot-evidence-artifact, fill the pilot evidence register, then run report:pilot-evidence-95 and validate:pilot-evidence --require-95 --evidence-root. Do not raise market confidence or public sellability ratings unless the gate passes.
-For wedge-specific retained extracts, use prepare:ga-ici-5cp-artifact with --peak-tracker-file or --peak-tracker-url for Ontario 5CP evidence, add --historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv when comparing against prior top-five actuals, and use prepare:byo-csv-proof-artifact for local CSV privacy-screen evidence. BYO-CSV retained extracts must include direct-identifier, spreadsheet formula, retained-raw-value, quasi-identifier/linkage, and confidence-gate diagnostics.
+For wedge-specific retained extracts, use prepare:ga-ici-5cp-artifact with --peak-tracker-file or --peak-tracker-url for Ontario 5CP evidence, add --historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv when comparing against prior top-five actuals, and use prepare:byo-csv-proof-artifact for local CSV privacy-screen evidence. Pass the route-matched --proof-pack-id explicitly for every retained extract. BYO-CSV retained extracts must include direct-identifier, spreadsheet formula, retained-raw-value, quasi-identifier/linkage, and confidence-gate diagnostics.
 ```
 
 ## 11. Completion Audit And Production Approval Packet
