@@ -12,6 +12,7 @@ const BASE_ACTIVE_PATHS = [
   'public/manifest.json',
   'public/schema-webapp.jsonld',
   'public/data/ga_ici_5cp_public_historical_actuals.csv',
+  'scripts/deploy-production.sh',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'docs/LINKEDIN_PROOF_BUNDLES.md',
@@ -34,7 +35,7 @@ const SKIP_SEGMENTS = new Set([
   'test-results',
 ]);
 
-const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld', '.csv']);
+const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld', '.csv', '.sh']);
 
 const REFERENCE_ONLY_FILES = new Set([
   'src/lib/helpContent.ts',

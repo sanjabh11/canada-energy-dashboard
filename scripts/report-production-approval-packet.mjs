@@ -286,7 +286,7 @@ const markdown = [
   '1. Review this packet and confirm source deploy provenance is on `main` with a clean worktree.',
   '2. Confirm local release readiness is passing.',
   '3. Confirm the owner explicitly approves production deployment.',
-  '4. Deploy current source using the approved release path only after approval.',
+  '4. Deploy current source using the guarded production deploy path only after approval.',
   '5. Run `pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
   '6. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',

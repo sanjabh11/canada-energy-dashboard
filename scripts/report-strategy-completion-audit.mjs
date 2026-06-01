@@ -249,14 +249,16 @@ const rows = [
       'check:strategy-roadmap-doc',
       'check:strategy-source-anchors',
       'check:ga-ici-public-actuals',
+      'check:production-deploy-script',
       'test:strategy-audit-slice',
     ]) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-source-anchors/) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:ga-ici-public-actuals/) &&
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:production-deploy-script/) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-completion-audit/)
       ? 'complete_locally'
       : 'incomplete',
-    'package.json scripts and roadmap evidence ledger, including source-anchor currency and completion-audit coverage in release readiness.',
+    'package.json scripts and roadmap evidence ledger, including source-anchor currency, deploy-script drift, and completion-audit coverage in release readiness.',
     'Run before any approval or release request.',
   ),
 ];
@@ -267,6 +269,7 @@ const checkSteps = includeChecks
       runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
       runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
       runStep('GA/ICI public historical actuals', 'pnpm', ['run', 'check:ga-ici-public-actuals']),
+      runStep('Production deploy script guard', 'pnpm', ['run', 'check:production-deploy-script']),
       runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
       runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
@@ -278,6 +281,7 @@ const requiredLocalCheckLabels = new Set([
   'Commercial source guard',
   'Strategy source anchors',
   'GA/ICI public historical actuals',
+  'Production deploy script guard',
   'Pilot evidence fixture gate',
   'Pilot evidence template',
 ]);
