@@ -143,7 +143,7 @@ pnpm run check:post-deploy-live
 
 `check:post-deploy-live` rebuilds current `dist`, then runs live metadata checks, exact static parity against the built `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`.
 
-`check:release-readiness` includes `check:strategy-source-anchors`, so production approval packets inherit the current-source anchor gate before any deploy request.
+`check:release-readiness` includes `check:strategy-source-anchors` and `check:strategy-completion-audit`, so production approval packets inherit both the current-source anchor gate and the original-plan requirement audit before any deploy request.
 
 `report:production-approval-packet` also reports source deploy provenance against the production deploy script's preconditions: branch `main` and a clean worktree. It separates deployment request readiness from live parity achieved: stale live metadata or static parity can support an explicit remediation deploy request only when source provenance and local release readiness are clean, but it must not be reported as live parity until post-deploy live checks pass. Use `pnpm run check:production-deploy-request` when you need a machine exit gate for requesting explicit owner approval; use `--fail-on-blocker` only when all live-parity gates are expected to pass. It must not be used as production approval when source provenance or local release readiness is failing or skipped.
 

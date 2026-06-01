@@ -185,6 +185,8 @@ if (!existsSync(roadmapPath)) {
     'pnpm run report:production-approval-packet',
     'pnpm run report:strategy-source-anchors',
     'pnpm run check:strategy-source-anchors',
+    'original-plan completion audit coverage',
+    'Release readiness could pass while the original 95% strategy-plan requirement map silently drifts.',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',
     'Live static parity',

@@ -237,10 +237,11 @@ const rows = [
       'check:strategy-source-anchors',
       'test:strategy-audit-slice',
     ]) &&
-      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-source-anchors/)
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-source-anchors/) &&
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-completion-audit/)
       ? 'complete_locally'
       : 'incomplete',
-    'package.json scripts and roadmap evidence ledger, including source-anchor currency in release readiness.',
+    'package.json scripts and roadmap evidence ledger, including source-anchor currency and completion-audit coverage in release readiness.',
     'Run before any approval or release request.',
   ),
 ];
