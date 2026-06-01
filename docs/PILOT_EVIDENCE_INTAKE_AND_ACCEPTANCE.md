@@ -30,6 +30,7 @@
 | Route-specific claim-boundary guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A row could move confidence while `claim_boundary` or `do_not_claim` stayed generic, contradictory, or empty-style. | Confidence-moving rows must include buyer/source boundary wording plus route-specific do-not-claim language. |
 | Immutable evidence reference guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A confidence-moving row could point at an arbitrary file label with no stable evidence handle. | Confidence-moving `evidence_file_reference` values must include `sha256=<64 hex chars>` or `sha256:<64 hex chars>`. |
 | Local evidence-hash verification | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A stable SHA-256 handle could still point at a file nobody rechecked locally. | Required for the 95% gate; the validator recomputes each confidence-moving artifact hash. |
+| Pilot evidence intake packet generator | `pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake` | Operators had to hand-assemble route-specific starter registers, redaction instructions, and artifact folders before a buyer pilot. | Generates a route-specific starter packet with `confidence_delta=0`; it is intake scaffolding only until real buyer evidence, reviewer acceptance, and retained artifact hashes are attached. |
 | Retained-artifact diagnostic guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | The register could contain the right diagnostic words while the retained artifact stayed too thin. | When retained artifacts are supplied, each confidence-moving artifact must also contain the route-specific diagnostic evidence terms, and forecast artifacts must include numeric forecast evidence. |
 | Retained-artifact overclaim guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | A clean register row could hash-reference an artifact that still claimed production utility onboarding, SOC2 certification, live TIER pricing, GPU superiority, regulator approval, or other unsafe positive language. | Retained artifacts are scanned for the same positive overclaim patterns as register row text; keep those risks only in `claim_boundary` or `do_not_claim`. |
 | Retained record-date evidence guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95 --evidence-root path/to/redacted-artifacts` | A row could make old buyer evidence look current by editing `record_date` while the retained artifact never proves that date. | Accepted confidence-moving rows must have retained artifact text supporting the exact `record_date`. |
@@ -217,6 +218,7 @@ Required scorecard columns in the CSV:
 Validate a filled register before changing any feature rating:
 
 ```bash
+pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv
 ```
 
