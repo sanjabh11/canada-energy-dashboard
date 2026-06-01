@@ -165,6 +165,23 @@ describe('pilot evidence register validator', () => {
     expect(output).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
   });
 
+  it('keeps 95% report and hard gate aggregate failures aligned', async () => {
+    const hardGateResult = await runValidator('valid-buyer-evidence-register.csv', ['--require-95']);
+    const reportResult = await runValidator('valid-buyer-evidence-register.csv', ['--require-95', '--report-95']);
+    const hardGateFailures = hardGateResult.stderr
+      .split('\n')
+      .filter((line) => line.startsWith('- 95% confidence gate requires'));
+    const reportFailures = reportResult.stderr
+      .split('\n')
+      .filter((line) => line.startsWith('- 95% confidence gate requires'));
+
+    expect(hardGateResult.status).toBe(1);
+    expect(reportResult.status).toBe(1);
+    expect(reportResult.stdout).toContain('95% Evidence Readiness Report');
+    expect(reportFailures).toEqual(hardGateFailures);
+    expect(reportFailures.length).toBeGreaterThan(0);
+  });
+
   it('rejects 95% confidence when local evidence hash verification is not supplied', async () => {
     const result = await runValidator(
       'valid-95-evidence-register.csv',
