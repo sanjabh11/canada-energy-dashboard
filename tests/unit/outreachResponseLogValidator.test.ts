@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-outreach-response-log.mjs');
 const generatorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
+const appenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-response-log-row.mjs');
 const templatePath = path.join(process.cwd(), 'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv');
 const tempRoots: string[] = [];
 
@@ -61,6 +62,149 @@ afterEach(() => {
 });
 
 describe('outreach response log validator', () => {
+  it('appends a validated anonymized response row and derives route identity before writing', async () => {
+    const root = makeTempRoot();
+    const outputDir = path.join(root, 'outreach-workspace');
+    const generator = await runScript(generatorScriptPath, ['--output-dir', outputDir]);
+    expect(generator.status).toBe(0);
+
+    const logPath = path.join(outputDir, 'outreach-response-log.csv');
+    const result = await runScript(appenderScriptPath, [
+      '--log-file',
+      logPath,
+      '--activity-date',
+      '2026-06-01',
+      '--channel',
+      'linkedin',
+      '--target-label',
+      'ontario_peak_advisor_001',
+      '--route',
+      '/ga-ici-5cp',
+      '--rating',
+      '4.2',
+      '--variant-id',
+      'ga_ici_5cp',
+      '--reply-status',
+      'data_offered',
+      '--response-summary',
+      'Buyer offered a redacted interval-load sample for peak-window review.',
+      '--pain-signal',
+      'Ontario peak-risk planning question',
+      '--requested-input',
+      'redacted interval load for candidate peak windows',
+      '--reviewer-role',
+      'energy manager reviewer',
+      '--next-action',
+      'create intake packet and request redacted retained extract',
+      '--pilot-evidence-register-action',
+      'create_intake_packet',
+      '--notes',
+      'No direct identifiers retained in the repo log.',
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Outreach response log row appended.');
+    expect(result.stdout).toContain('Proof pack: ga_ici_5cp_decision_support_pack');
+    expect(result.stdout).toContain('Buyer lane: utility');
+    expect(result.stdout).toContain('Confidence movement: none');
+
+    const csv = readFileSync(logPath, 'utf8');
+    expect(csv).toContain('ga_ici_5cp_decision_support_pack');
+    expect(csv).toContain('/ga-ici-5cp');
+    expect(csv).toContain('GA/ICI 5CP decision-support pack');
+    expect(csv).toContain('Do not claim guaranteed savings, final IESO settlement, eligibility decision, or curtailment instruction.');
+
+    const report = await runValidator([logPath, '--report']);
+    expect(report.status).toBe(0);
+    expect(report.stdout).toContain('Rows: 1');
+    expect(report.stdout).toContain('Rows requiring evidence action: 1');
+  });
+
+  it('does not mutate the response log when an appended row fails validation', async () => {
+    const root = makeTempRoot();
+    const outputDir = path.join(root, 'outreach-workspace');
+    const generator = await runScript(generatorScriptPath, ['--output-dir', outputDir]);
+    expect(generator.status).toBe(0);
+
+    const logPath = path.join(outputDir, 'outreach-response-log.csv');
+    const before = readFileSync(logPath, 'utf8');
+    const result = await runScript(appenderScriptPath, [
+      '--log-file',
+      logPath,
+      '--activity-date',
+      '2026-06-01',
+      '--channel',
+      'email',
+      '--target-label',
+      'jane@example.com',
+      '--route',
+      '/utility-demand-forecast',
+      '--rating',
+      '4.5',
+      '--variant-id',
+      'utility_forecast',
+      '--reply-status',
+      'interested',
+      '--response-summary',
+      'Buyer asked for a bounded forecast sample.',
+      '--pain-signal',
+      'Load growth planning',
+      '--requested-input',
+      'anonymized load history',
+      '--reviewer-role',
+      'utility planning reviewer',
+      '--next-action',
+      'create intake packet',
+      '--pilot-evidence-register-action',
+      'create_intake_packet',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('append failed validation; original log was not modified');
+    expect(result.stderr).toContain('appears to contain email address');
+    expect(readFileSync(logPath, 'utf8')).toBe(before);
+  });
+
+  it('rejects unsupported routes before attempting to append', async () => {
+    const filePath = writeLog([]);
+    const before = readFileSync(filePath, 'utf8');
+    const result = await runScript(appenderScriptPath, [
+      '--log-file',
+      filePath,
+      '--activity-date',
+      '2026-06-01',
+      '--channel',
+      'manual',
+      '--target-label',
+      'unknown_route_001',
+      '--route',
+      '/not-a-proof-pack',
+      '--rating',
+      '4.0',
+      '--variant-id',
+      'unknown',
+      '--reply-status',
+      'interested',
+      '--response-summary',
+      'Buyer asked for a bounded sample.',
+      '--pain-signal',
+      'Planning question',
+      '--requested-input',
+      'redacted sample',
+      '--reviewer-role',
+      'reviewer',
+      '--next-action',
+      'create intake packet',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('Usage:');
+    expect(result.stderr).toContain('Unsupported --route /not-a-proof-pack');
+    expect(readFileSync(filePath, 'utf8')).toBe(before);
+  });
+
   it('creates a header-only anonymized response log workspace that validates with zero rows', async () => {
     const root = makeTempRoot();
     const outputDir = path.join(root, 'outreach-workspace');

@@ -26,6 +26,10 @@ const manualEvidenceMaxAgeDays = Number(readArg('--manual-evidence-max-age-days'
 const anchorsRelativePath = readArg('--anchors-file');
 const fetchRetries = Math.max(0, Number(readArg('--fetch-retries', '1')));
 const retryDelayMs = Math.max(0, Number(readArg('--retry-delay-ms', '250')));
+const requestedSearchCharLimit = Number(readArg('--source-search-char-limit', '1000000'));
+const sourceSearchCharLimit = Number.isFinite(requestedSearchCharLimit)
+  ? Math.max(500_000, requestedSearchCharLimit)
+  : 1_000_000;
 const failOnUnverified = args.includes('--fail-on-unverified');
 const roadmapPath = path.resolve(repoRoot, roadmapRelativePath);
 const manualEvidencePath =
@@ -260,7 +264,7 @@ const results = await Promise.all(
   sourceAnchors.map(async (anchor) => {
     const appearsInRoadmap = roadmap.includes(anchor.url);
     const fetched = await fetchWithRetry(anchor.url);
-    const searchable = normalizeText(`${fetched.title}\n${fetched.body.slice(0, 500_000)}`);
+    const searchable = normalizeText(`${fetched.title}\n${fetched.body.slice(0, sourceSearchCharLimit)}`);
     const missingTerms = anchor.terms.filter((term) => !searchable.includes(normalizeText(term)));
     const fetchFailureKind = classifyFetchFailure(fetched);
     const manual = validateManualEvidence(anchor, manualEvidence);
@@ -342,6 +346,7 @@ const markdown = [
   `- Manual evidence file: ${manualEvidence.path}${manualEvidence.loaded ? '' : ' (not loaded)'}`,
   `- Manual evidence max age: ${manualEvidenceMaxAgeDays} days`,
   `- Fetch retries per anchor: ${fetchRetries}`,
+  `- Source text search limit: ${sourceSearchCharLimit} characters`,
   manualEvidence.error ? `- Manual evidence error: ${manualEvidence.error}` : '',
   '- This report checks source reachability, expected anchor terms, and date-stamped manual web evidence when official sites are unreachable, blocked, or not reliably text-matchable through local fetch. It does not replace human source review, buyer evidence, legal review, or production approval.',
   '',

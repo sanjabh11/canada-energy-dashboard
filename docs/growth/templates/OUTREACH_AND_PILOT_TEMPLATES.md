@@ -242,9 +242,11 @@ To start a clean non-template log workspace, run:
 
 ```bash
 pnpm run create:outreach-response-log -- --output-dir /tmp/ceip-outreach-response-log
+pnpm run append:outreach-response-log-row -- --log-file path/to/outreach-response-log.csv --activity-date 2026-06-01 --channel linkedin --target-label utility_planner_001 --route /utility-demand-forecast --rating 4.5 --variant-id utility_forecast --reply-status interested --response-summary "Buyer asked for a bounded forecast sample." --pain-signal "Load growth planning" --requested-input "anonymized load history" --reviewer-role "utility planning reviewer" --next-action "create intake packet" --pilot-evidence-register-action create_intake_packet
 ```
 
 The generated header-only log is zero-evidence scaffolding. Add rows only after completed outreach activity exists.
+The appender derives `buyer_lane` and `proof_pack_id` from the selected route and writes only after a temporary candidate log passes validation. It is safer than hand-editing CSV, but it still records outreach activity only and does not create buyer evidence.
 
 Validate before treating a reply as pilot follow-up:
 
