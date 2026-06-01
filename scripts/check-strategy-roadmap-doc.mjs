@@ -3,6 +3,8 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import { strategySourceAnchorUrls } from './lib/strategy-source-anchors.mjs';
+
 const repoRoot = process.cwd();
 const roadmapRelativePath = 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md';
 const roadmapPath = path.join(repoRoot, roadmapRelativePath);
@@ -146,42 +148,7 @@ if (!existsSync(roadmapPath)) {
     requirePattern(roadmap, 'adversarial loophole ledger', questionPattern);
   }
 
-  const sourceAnchors = [
-    'https://www.ieso.ca/en/Learn/Electricity-Pricing-Explained/Global-Adjustment',
-    'https://www.ieso.ca/en/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility',
-    'https://www.ieso.ca/peaktracker',
-    'https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications',
-    'https://www.oeb.ca/ontarios-energy-sector/overview-energy-sector/energy-at-a-glance-by-the-numbers',
-    'https://www.oeb.ca/ontarios-energy-sector/list-licensed-companies',
-    'https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates',
-    'https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates/2027-electricity-distribution-rate',
-    'https://ucahelps.alberta.ca/REAs-and-Natural-Gas-Co-ops.aspx',
-    'https://afrea.ab.ca/who-we-are/',
-    'https://www.auc.ab.ca/rules/rule005/',
-    'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-    'https://www.energycap.com/energycap-faqs/',
-    'https://www.energycap.com/product-features/utility-bill-auditing-software/',
-    'https://gridx.com/',
-    'https://www.bidgely.com/',
-    'https://www.oracle.com/customer-hub/utilities/opower/',
-    'https://www.innowatts.com/',
-    'https://www.enverus.com/segments/power-and-renewables/',
-    'https://www.amperon.co/products/demand-forecasts',
-    'https://na.itron.com/products/grid-planning',
-    'https://utilityapi.com/products/utility-data-exchange',
-    'https://utilityapi.com/docs/api/authorizations',
-    'https://robjhyndman.com/publications/another-look-at-measures-of-forecast-accuracy/',
-    'https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html',
-    'https://stat.uw.edu/research/tech-reports/strictly-proper-scoring-rules-prediction-and-estimation-revised',
-    'https://www.nist.gov/publications/artificial-intelligence-risk-management-framework-ai-rmf-10',
-    'https://arxiv.org/abs/1810.03993',
-    'https://owasp.org/www-community/attacks/CSV_Injection',
-    'https://csrc.nist.gov/pubs/ir/8053/final',
-    'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-226.pdf',
-    'https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/privacy/guidance-preparing-information-sharing-agreements-involving-personal-information.html',
-  ];
-
-  for (const sourceAnchor of sourceAnchors) {
+  for (const sourceAnchor of strategySourceAnchorUrls) {
     requireText(roadmap, 'current source anchors', sourceAnchor);
   }
 
