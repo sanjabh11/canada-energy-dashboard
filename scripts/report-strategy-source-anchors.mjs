@@ -2,8 +2,9 @@
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 
-import { strategySourceAnchors } from './lib/strategy-source-anchors.mjs';
+import { strategySourceAnchors as defaultStrategySourceAnchors } from './lib/strategy-source-anchors.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -22,13 +23,40 @@ const manualEvidenceRelativePath = readArg(
 const outPath = readArg('--out');
 const timeoutMs = Number(readArg('--timeout-ms', '12000'));
 const manualEvidenceMaxAgeDays = Number(readArg('--manual-evidence-max-age-days', '45'));
+const anchorsRelativePath = readArg('--anchors-file');
+const fetchRetries = Math.max(0, Number(readArg('--fetch-retries', '1')));
+const retryDelayMs = Math.max(0, Number(readArg('--retry-delay-ms', '250')));
 const failOnUnverified = args.includes('--fail-on-unverified');
 const roadmapPath = path.resolve(repoRoot, roadmapRelativePath);
 const manualEvidencePath =
   manualEvidenceRelativePath === 'none' ? null : path.resolve(repoRoot, manualEvidenceRelativePath);
 const generatedAt = new Date().toISOString();
 
-const sourceAnchors = strategySourceAnchors;
+function readSourceAnchors() {
+  if (!anchorsRelativePath) return defaultStrategySourceAnchors;
+
+  const anchorsPath = path.resolve(repoRoot, anchorsRelativePath);
+  try {
+    const parsed = JSON.parse(readFileSync(anchorsPath, 'utf8'));
+    const anchors = Array.isArray(parsed) ? parsed : parsed.anchors;
+    if (!Array.isArray(anchors)) {
+      throw new Error('expected an array or an object with an anchors array');
+    }
+
+    for (const [index, anchor] of anchors.entries()) {
+      if (!anchor?.label || !anchor?.url || !Array.isArray(anchor?.terms)) {
+        throw new Error(`anchor at index ${index} must include label, url, and terms[]`);
+      }
+    }
+
+    return anchors;
+  } catch (error) {
+    console.error(`Strategy source anchor report failed: invalid --anchors-file ${anchorsRelativePath}: ${describeFetchError(error)}`);
+    process.exit(1);
+  }
+}
+
+const sourceAnchors = readSourceAnchors();
 
 function normalizeText(value) {
   return value.toLowerCase().replace(/\s+/g, ' ');
@@ -52,6 +80,11 @@ function classifyFetchFailure(fetched) {
   if (/ENOTFOUND|EAI_AGAIN/i.test(fetched.error)) return 'network_dns';
   if (/UND_ERR_CONNECT_TIMEOUT|AbortError|timed out|timeout/i.test(fetched.error)) return 'network_timeout';
   return 'fetch_error';
+}
+
+function isRetriableFetchFailure(fetched) {
+  const failureKind = classifyFetchFailure(fetched);
+  return failureKind === 'fetch_error' || failureKind.startsWith('network_') || /^http_(408|429|5\d\d)$/.test(failureKind);
 }
 
 function readManualEvidence() {
@@ -182,6 +215,39 @@ async function fetchWithTimeout(url) {
   }
 }
 
+async function fetchWithRetry(url) {
+  const attempts = [];
+
+  for (let attemptIndex = 0; attemptIndex <= fetchRetries; attemptIndex += 1) {
+    const fetched = await fetchWithTimeout(url);
+    attempts.push(fetched);
+
+    if (fetched.ok || !isRetriableFetchFailure(fetched) || attemptIndex === fetchRetries) {
+      return {
+        ...fetched,
+        attempts: attempts.length,
+        retryErrors: attempts.slice(0, -1).map((attempt) => classifyFetchFailure(attempt) || attempt.error || 'unknown'),
+      };
+    }
+
+    if (retryDelayMs > 0) {
+      await delay(retryDelayMs);
+    }
+  }
+
+  return {
+    ok: false,
+    statusCode: 0,
+    finalUrl: url,
+    contentType: '',
+    title: '',
+    body: '',
+    error: 'exhausted fetch retry loop unexpectedly',
+    attempts: attempts.length,
+    retryErrors: attempts.map((attempt) => classifyFetchFailure(attempt) || attempt.error || 'unknown'),
+  };
+}
+
 if (!existsSync(roadmapPath)) {
   console.error(`Strategy source anchor report failed: missing ${roadmapRelativePath}`);
   process.exit(1);
@@ -193,7 +259,7 @@ const manualEvidence = readManualEvidence();
 const results = await Promise.all(
   sourceAnchors.map(async (anchor) => {
     const appearsInRoadmap = roadmap.includes(anchor.url);
-    const fetched = await fetchWithTimeout(anchor.url);
+    const fetched = await fetchWithRetry(anchor.url);
     const searchable = normalizeText(`${fetched.title}\n${fetched.body.slice(0, 500_000)}`);
     const missingTerms = anchor.terms.filter((term) => !searchable.includes(normalizeText(term)));
     const fetchFailureKind = classifyFetchFailure(fetched);
@@ -220,6 +286,8 @@ const results = await Promise.all(
       finalUrl: fetched.finalUrl,
       contentType: fetched.contentType,
       title: fetched.title,
+      fetchAttempts: fetched.attempts,
+      retryErrors: fetched.retryErrors,
       missingTerms,
       manual,
       error: fetched.error,
@@ -246,13 +314,14 @@ const rows = results
   .map((result) => {
     const evidence =
       result.status === 'verified'
-        ? `matched: ${result.terms.join(', ')}`
+        ? `matched: ${result.terms.join(', ')}${result.fetchAttempts > 1 ? `; fetch attempts: ${result.fetchAttempts}` : ''}`
         : result.status === 'manual_verified'
           ? `manual ${result.manual.retrievalTool} ${result.manual.verifiedAt}; matched: ${result.manual.matchedTerms.join(', ')}; local fetch limitation: ${result.fetchFailureKind || `missing terms: ${result.missingTerms.join(', ') || 'n/a'}`}`
           : result.manual.exists
             ? result.manual.reason
-            : result.error || `missing terms: ${result.missingTerms.join(', ') || 'n/a'}`;
-    return `| ${result.label} | ${result.status} | ${result.appearsInRoadmap ? 'yes' : 'no'} | ${result.httpStatus || 'n/a'} | ${result.finalUrl} | ${result.fetchFailureKind || 'ok'} | ${evidence} |`;
+            : `${result.error || `missing terms: ${result.missingTerms.join(', ') || 'n/a'}`}${result.fetchAttempts > 1 ? `; fetch attempts: ${result.fetchAttempts}` : ''}`;
+    const fetchHealth = result.fetchFailureKind || (result.fetchAttempts > 1 ? `ok_after_${result.fetchAttempts}_attempts` : 'ok');
+    return `| ${result.label} | ${result.status} | ${result.appearsInRoadmap ? 'yes' : 'no'} | ${result.httpStatus || 'n/a'} | ${result.finalUrl} | ${fetchHealth} | ${evidence} |`;
   })
   .join('\n');
 
@@ -272,6 +341,7 @@ const markdown = [
   `- Fetch-failed anchors: ${counts.fetch_failed}`,
   `- Manual evidence file: ${manualEvidence.path}${manualEvidence.loaded ? '' : ' (not loaded)'}`,
   `- Manual evidence max age: ${manualEvidenceMaxAgeDays} days`,
+  `- Fetch retries per anchor: ${fetchRetries}`,
   manualEvidence.error ? `- Manual evidence error: ${manualEvidence.error}` : '',
   '- This report checks source reachability, expected anchor terms, and date-stamped manual web evidence when official sites are unreachable, blocked, or not reliably text-matchable through local fetch. It does not replace human source review, buyer evidence, legal review, or production approval.',
   '',

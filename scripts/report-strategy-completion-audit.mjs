@@ -295,7 +295,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|Fetch retries|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
         line,
       ),
     )
