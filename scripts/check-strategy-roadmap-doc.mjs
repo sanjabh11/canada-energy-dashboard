@@ -26,6 +26,12 @@ function requirePattern(source, label, pattern) {
   }
 }
 
+function forbidText(source, label, needle) {
+  if (source.includes(needle)) {
+    fail(`${label} contains forbidden text: ${needle}`);
+  }
+}
+
 function sectionBetween(source, startPattern, endPattern) {
   const start = source.search(startPattern);
   if (start === -1) return '';
@@ -204,6 +210,7 @@ if (!existsSync(roadmapPath)) {
     'fixture-proof 95% buyer-evidence gate',
     '110 tests across 14 files',
     'source-anchor transient retry behavior',
+    'not deploy-request-ready until source deploy provenance is on branch `main` with a clean worktree',
     'check:pilot-evidence-95-fixture-gate',
     'check:pilot-evidence-template',
     'original-plan completion audit coverage',
@@ -221,6 +228,12 @@ if (!existsSync(roadmapPath)) {
   for (const needle of liveParityNeedles) {
     requireText(roadmap, 'live-parity and production approval gate', needle);
   }
+
+  forbidText(
+    roadmap,
+    'live-parity and production approval gate',
+    'Source is preflight-clean for an approved deploy',
+  );
 
   const codexPromptNeedles = [
     '### Phase A prompt',
