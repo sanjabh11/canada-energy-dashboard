@@ -48,6 +48,30 @@ const sourceAnchors = [
     terms: ['filing requirements', 'distribution'],
   },
   {
+    label: 'OEB Energy at a Glance',
+    url: 'https://www.oeb.ca/ontarios-energy-sector/overview-energy-sector/energy-at-a-glance-by-the-numbers',
+    terms: ['Energy at a glance', 'Energy Utility Consumers', '59 licensed electricity distributors'],
+  },
+  {
+    label: 'OEB licensed companies',
+    url: 'https://www.oeb.ca/ontarios-energy-sector/list-licensed-companies',
+    terms: ['List of licensed companies', 'Electricity Distributor', 'licensed by the OEB'],
+  },
+  {
+    label: 'OEB electricity distribution rates',
+    url: 'https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates',
+    terms: ['Electricity Distributors apply', 'Distribution Rate Applications'],
+  },
+  {
+    label: 'OEB 2027 electricity distribution rates',
+    url: 'https://www.oeb.ca/applications/applications-oeb/electricity-distribution-rates/2027-electricity-distribution-rate',
+    terms: [
+      '2027 electricity distribution rate applications',
+      'rate regulated electricity distributors',
+      'cost of service applications',
+    ],
+  },
+  {
     label: 'Alberta Utilities Consumer Advocate REAs',
     url: 'https://ucahelps.alberta.ca/REAs-and-Natural-Gas-Co-ops.aspx',
     terms: ['Rural Electrification Associations', 'Alberta'],
@@ -56,6 +80,11 @@ const sourceAnchors = [
     label: 'AFREA rural power co-operatives',
     url: 'https://afrea.ab.ca/who-we-are/',
     terms: ['Rural Electrification Associations', 'AFREA'],
+  },
+  {
+    label: 'AUC Rule 005 annual reporting',
+    url: 'https://www.auc.ab.ca/rules/rule005/',
+    terms: ['Annual Reporting Requirements', 'audited financial statements', 'reconciliation'],
   },
   {
     label: 'Alberta TIER regulation',
@@ -91,6 +120,11 @@ const sourceAnchors = [
     label: 'Innowatts energy analytics',
     url: 'https://www.innowatts.com/',
     terms: ['Innowatts', 'Energy Analytics'],
+  },
+  {
+    label: 'Enverus power and renewables',
+    url: 'https://www.enverus.com/segments/power-and-renewables/',
+    terms: ['Power and Renewables', 'Enverus', 'load forecasts'],
   },
   {
     label: 'Amperon demand forecasts',
@@ -146,6 +180,11 @@ const sourceAnchors = [
     label: 'NIST IR 8053 de-identification',
     url: 'https://csrc.nist.gov/pubs/ir/8053/final',
     terms: ['De-Identification', 'Privacy'],
+  },
+  {
+    label: 'NIST SP 800-226 differential privacy',
+    url: 'https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-226.pdf',
+    terms: ['NIST SP 800-226', 'differential privacy', 'de-identification'],
   },
   {
     label: 'Treasury Board information-sharing privacy guidance',
@@ -325,10 +364,10 @@ const results = await Promise.all(
     const status =
       appearsInRoadmap && fetched.ok && missingTerms.length === 0
         ? 'verified'
-        : appearsInRoadmap && fetched.ok
-          ? 'reachable_needs_review'
-          : manual.ok
-            ? 'manual_verified'
+        : appearsInRoadmap && manual.ok
+          ? 'manual_verified'
+          : appearsInRoadmap && fetched.ok
+            ? 'reachable_needs_review'
             : manual.exists
               ? 'manual_needs_review'
               : fetchFailureKind.startsWith('network_')
@@ -372,7 +411,7 @@ const rows = results
       result.status === 'verified'
         ? `matched: ${result.terms.join(', ')}`
         : result.status === 'manual_verified'
-          ? `manual ${result.manual.retrievalTool} ${result.manual.verifiedAt}; matched: ${result.manual.matchedTerms.join(', ')}; live fetch fallback: ${result.fetchFailureKind || 'n/a'}`
+          ? `manual ${result.manual.retrievalTool} ${result.manual.verifiedAt}; matched: ${result.manual.matchedTerms.join(', ')}; local fetch limitation: ${result.fetchFailureKind || `missing terms: ${result.missingTerms.join(', ') || 'n/a'}`}`
           : result.manual.exists
             ? result.manual.reason
             : result.error || `missing terms: ${result.missingTerms.join(', ') || 'n/a'}`;
