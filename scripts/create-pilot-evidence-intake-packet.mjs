@@ -118,6 +118,74 @@ function markdownList(items) {
   return items.map((item) => `- ${item}`).join('\n');
 }
 
+function routeSpecificRetainedArtifactCommand() {
+  if (route === '/forecast-benchmarking') {
+    return [
+      'pnpm run prepare:forecast-trust-report-artifact -- \\',
+      '  --benchmark-pack-file path/to/redacted-utility-forecast-benchmark-pack.json \\',
+      `  --evidence-root ${redactedArtifactDirDisplay} \\`,
+      `  --artifact-file ${packetSlug}-retained.md \\`,
+      `  --route ${route} \\`,
+      `  --proof-pack-id ${config.proofPackId} \\`,
+      `  --record-date ${recordDate} \\`,
+      '  --buyer-data-coverage-pct "<replace with buyer data coverage percentage>" \\',
+      '  --time-to-artifact-hours "<replace with elapsed artifact hours>" \\',
+      '  --reviewer-role "<replace with independent buyer/reviewer role>" \\',
+      '  --reviewer-acceptance "<accepted|approved|signed>" \\',
+      '  --reviewer-feedback-status "<complete|accepted|approved|signed>" \\',
+      '  --day-14-decision proceed \\',
+      '  --commercial-commitment-status "<none|design_partner_signed|paid_pilot|purchase_order|letter_of_intent>" \\',
+      '  --commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>"',
+    ].join('\n');
+  }
+
+  if (route === '/byo-csv-proof') {
+    return [
+      'pnpm run prepare:byo-csv-proof-artifact -- \\',
+      '  --csv-file path/to/redacted-local.csv \\',
+      `  --evidence-root ${redactedArtifactDirDisplay} \\`,
+      `  --artifact-file ${packetSlug}-retained.md \\`,
+      `  --route ${route} \\`,
+      `  --proof-pack-id ${config.proofPackId} \\`,
+      `  --record-date ${recordDate} \\`,
+      '  --buyer-data-coverage-pct "<replace with buyer data coverage percentage>" \\',
+      '  --time-to-artifact-hours "<replace with elapsed artifact hours>" \\',
+      '  --reviewer-role "<replace with independent buyer/reviewer role>" \\',
+      '  --reviewer-acceptance "<accepted|approved|signed>" \\',
+      '  --reviewer-feedback-status "<complete|accepted|approved|signed>" \\',
+      '  --day-14-decision proceed \\',
+      '  --commercial-commitment-status "<none|design_partner_signed|paid_pilot|purchase_order|letter_of_intent>" \\',
+      '  --commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>"',
+    ].join('\n');
+  }
+
+  if (route === '/ga-ici-5cp') {
+    return [
+      'pnpm run prepare:ga-ici-5cp-artifact -- \\',
+      '  --peak-tracker-file path/to/ieso-peak-tracker-snapshot.md \\',
+      '  --historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv \\',
+      '  --customer-load-file path/to/redacted-ontario-interval-load.csv \\',
+      `  --evidence-root ${redactedArtifactDirDisplay} \\`,
+      `  --artifact-file ${packetSlug}-retained.md \\`,
+      `  --route ${route} \\`,
+      `  --proof-pack-id ${config.proofPackId} \\`,
+      '  --base-period-start "<replace with YYYY-MM-DD>" \\',
+      '  --base-period-end "<replace with YYYY-MM-DD>" \\',
+      `  --record-date ${recordDate} \\`,
+      '  --buyer-data-coverage-pct "<replace with buyer data coverage percentage>" \\',
+      '  --time-to-artifact-hours "<replace with elapsed artifact hours>" \\',
+      '  --reviewer-role "<replace with independent buyer/reviewer role>" \\',
+      '  --reviewer-acceptance "<accepted|approved|signed>" \\',
+      '  --reviewer-feedback-status "<complete|accepted|approved|signed>" \\',
+      '  --day-14-decision proceed \\',
+      '  --commercial-commitment-status "<none|design_partner_signed|paid_pilot|purchase_order|letter_of_intent>" \\',
+      '  --commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>"',
+    ].join('\n');
+  }
+
+  return '';
+}
+
 if (listRoutes) {
   printRoutes();
   process.exit(0);
@@ -224,6 +292,7 @@ Run the starter validation immediately. The retained-artifact command is a templ
 
 \`\`\`bash
 pnpm run validate:pilot-evidence -- ${starterRegisterDisplay}
+${routeSpecificRetainedArtifactCommand() ? `\n# Preferred route-specific retained-artifact helper\n${routeSpecificRetainedArtifactCommand()}\n\n# Generic fallback retained-artifact helper` : '# Generic retained-artifact helper'}
 pnpm run prepare:pilot-evidence-artifact -- --evidence-root ${redactedArtifactDirDisplay} --artifact-file ${packetSlug}-retained.md --route ${route} --proof-pack-id ${config.proofPackId} --record-date ${recordDate} --pii-screen-result redacted --buyer-data-coverage-pct "<replace with buyer data coverage percentage>" --time-to-artifact-hours "<replace with elapsed artifact hours>" --reviewer-role "<replace with independent buyer/reviewer role>" --reviewer-acceptance "<accepted|approved|signed>" --reviewer-feedback-status "<complete|accepted|approved|signed>" --day-14-decision proceed --commercial-commitment-status "<none|design_partner_signed|paid_pilot|purchase_order|letter_of_intent>" --commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>" --claim-boundary "${config.claimBoundary}" --do-not-claim "${config.doNotClaim}" --diagnostic "<replace with retained route-specific diagnostic evidence>"
 pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root ${redactedArtifactDirDisplay}
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root ${redactedArtifactDirDisplay}

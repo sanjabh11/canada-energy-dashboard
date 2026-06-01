@@ -104,6 +104,8 @@ const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:
 const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
+const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
+const byoCsvArtifactHelperPhrase = /prepare:byo-csv-proof-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
 const stalePostP1LiveParityPhrases = [
   'live deploy and buyer evidence remain blockers',
@@ -412,6 +414,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
   }
 
+  if (!gaIciArtifactHelperPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:ga-ici-5cp-artifact for GA/ICI retained extracts.');
+  }
+
+  if (!byoCsvArtifactHelperPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention prepare:byo-csv-proof-artifact for BYO-CSV retained extracts.');
+  }
+
   if (!nonStatusCommercialCommitmentEvidencePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must require strong commercial commitment evidence beyond status-only text.');
   }
@@ -440,6 +450,12 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!forecastTrustArtifactHelperPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
+    }
+    if (!gaIciArtifactHelperPhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:ga-ici-5cp-artifact for GA/ICI retained extracts.');
+    }
+    if (!byoCsvArtifactHelperPhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:byo-csv-proof-artifact for BYO-CSV retained extracts.');
     }
     if (!nonStatusCommercialCommitmentEvidencePhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must require strong commercial commitment evidence beyond status-only text.');

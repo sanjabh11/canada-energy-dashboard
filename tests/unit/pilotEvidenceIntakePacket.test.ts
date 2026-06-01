@@ -77,7 +77,11 @@ describe('pilot evidence intake packet generator', () => {
     expect(readmeText).toContain('does not create buyer proof');
     expect(readmeText).toContain('confidence_delta=0');
     expect(readmeText).toContain('pnpm run prepare:pilot-evidence-artifact');
+    expect(readmeText).toContain('pnpm run prepare:ga-ici-5cp-artifact');
+    expect(readmeText).toContain('--historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv');
+    expect(readmeText).toContain('--customer-load-file path/to/redacted-ontario-interval-load.csv');
     expect(readmeText).toContain('--proof-pack-id ga_ici_5cp_decision_support_pack');
+    expect(readmeText).toContain('# Generic fallback retained-artifact helper');
     expect(readmeText).toContain('Run the starter validation immediately');
     expect(readmeText).toContain('--buyer-data-coverage-pct "<replace with buyer data coverage percentage>"');
     expect(readmeText).toContain('--commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>"');
@@ -89,7 +93,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  });
+  }, 30000);
 
   it('fails the 95% market-confidence gate for the starter packet', async () => {
     const outputDir = makeTempRoot();

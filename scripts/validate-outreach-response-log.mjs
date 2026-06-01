@@ -294,6 +294,124 @@ function slugify(value) {
     .slice(0, 72) || 'outreach-row';
 }
 
+function buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs) {
+  return [
+    'pnpm',
+    'run',
+    'prepare:pilot-evidence-artifact',
+    '--',
+    '--evidence-root',
+    evidenceRoot,
+    '--artifact-file',
+    artifactFile,
+    '--route',
+    row.route,
+    '--proof-pack-id',
+    row.proof_pack_id,
+    '--record-date',
+    row.activity_date,
+    '--pii-screen-result',
+    '<replace with redacted/no personal data status>',
+    '--buyer-data-coverage-pct',
+    '<replace with 0-100 buyer data coverage percent>',
+    '--time-to-artifact-hours',
+    '<replace with hours from buyer input to retained artifact>',
+    '--reviewer-role',
+    row.reviewer_role,
+    '--reviewer-acceptance',
+    '<accepted|approved|signed after independent reviewer confirms>',
+    '--reviewer-feedback-status',
+    '<complete|accepted|approved|signed>',
+    '--day-14-decision',
+    '<proceed|park|pivot|reject|pending>',
+    '--commercial-commitment-status',
+    row.commercial_commitment_status,
+    ...commercialCommitmentArgs,
+    '--claim-boundary',
+    '<replace with buyer-approved bounded claim boundary>',
+    '--do-not-claim',
+    row.caveat_used,
+    '--diagnostic',
+    '<replace with route-specific buyer diagnostic evidence>',
+  ].map(shellQuote).join(' ');
+}
+
+function buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs) {
+  const commonOutcomeArgs = [
+    '--evidence-root',
+    evidenceRoot,
+    '--artifact-file',
+    artifactFile,
+    '--route',
+    row.route,
+    '--proof-pack-id',
+    row.proof_pack_id,
+    '--record-date',
+    row.activity_date,
+    '--buyer-data-coverage-pct',
+    '<replace with 0-100 buyer data coverage percent>',
+    '--time-to-artifact-hours',
+    '<replace with hours from buyer input to retained artifact>',
+    '--reviewer-role',
+    row.reviewer_role,
+    '--reviewer-acceptance',
+    '<accepted|approved|signed after independent reviewer confirms>',
+    '--reviewer-feedback-status',
+    '<complete|accepted|approved|signed>',
+    '--day-14-decision',
+    '<proceed|park|pivot|reject|pending>',
+    '--commercial-commitment-status',
+    row.commercial_commitment_status,
+    ...commercialCommitmentArgs,
+  ];
+
+  if (row.route === '/forecast-benchmarking') {
+    return [
+      'pnpm',
+      'run',
+      'prepare:forecast-trust-report-artifact',
+      '--',
+      '--benchmark-pack-file',
+      '<replace with redacted utility forecast benchmark-pack JSON>',
+      ...commonOutcomeArgs,
+    ].map(shellQuote).join(' ');
+  }
+
+  if (row.route === '/byo-csv-proof') {
+    return [
+      'pnpm',
+      'run',
+      'prepare:byo-csv-proof-artifact',
+      '--',
+      '--csv-file',
+      '<replace with redacted local CSV path>',
+      ...commonOutcomeArgs,
+    ].map(shellQuote).join(' ');
+  }
+
+  if (row.route === '/ga-ici-5cp') {
+    return [
+      'pnpm',
+      'run',
+      'prepare:ga-ici-5cp-artifact',
+      '--',
+      '--peak-tracker-file',
+      '<replace with IESO Peak Tracker snapshot or export>',
+      '--historical-actuals-file',
+      'public/data/ga_ici_5cp_public_historical_actuals.csv',
+      '--customer-load-file',
+      '<replace with redacted Ontario interval load CSV>',
+      '--base-period-start',
+      '<replace with YYYY-MM-DD>',
+      '--base-period-end',
+      '<replace with YYYY-MM-DD>',
+      ...commonOutcomeArgs,
+    ].map(shellQuote).join(' ');
+  }
+
+  return null;
+}
+
 function parseRating(value, rowNumber) {
   const rating = Number(String(value ?? '').replace('/5', '').trim());
   if (!Number.isFinite(rating)) {
@@ -402,47 +520,18 @@ function printActionPlan(rows) {
           '--commercial-commitment-evidence',
           `<replace with retained ${row.commercial_commitment_status} evidence text>`,
         ];
-      console.log(`  1. ${[
-        'pnpm',
-        'run',
-        'prepare:pilot-evidence-artifact',
-        '--',
-        '--evidence-root',
-        evidenceRoot,
-        '--artifact-file',
-        artifactFile,
-        '--route',
-        row.route,
-        '--proof-pack-id',
-        row.proof_pack_id,
-        '--record-date',
-        row.activity_date,
-        '--pii-screen-result',
-        '<replace with redacted/no personal data status>',
-        '--buyer-data-coverage-pct',
-        '<replace with 0-100 buyer data coverage percent>',
-        '--time-to-artifact-hours',
-        '<replace with hours from buyer input to retained artifact>',
-        '--reviewer-role',
-        row.reviewer_role,
-        '--reviewer-acceptance',
-        '<accepted|approved|signed after independent reviewer confirms>',
-        '--reviewer-feedback-status',
-        '<complete|accepted|approved|signed>',
-        '--day-14-decision',
-        '<proceed|park|pivot|reject|pending>',
-        '--commercial-commitment-status',
-        row.commercial_commitment_status,
-        ...commercialCommitmentArgs,
-        '--claim-boundary',
-        '<replace with buyer-approved bounded claim boundary>',
-        '--do-not-claim',
-        row.caveat_used,
-        '--diagnostic',
-        '<replace with route-specific buyer diagnostic evidence>',
-      ].map(shellQuote).join(' ')}`);
-      console.log('  2. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
-      console.log('  3. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+      const specializedCommand = buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs);
+      if (specializedCommand) {
+        console.log(`  1. ${specializedCommand}`);
+        console.log('  2. Prefer the specialized helper above when its input files are available; it reduces hand-written diagnostic drift.');
+        console.log(`  3. Fallback generic text-extract helper: ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
+        console.log('  4. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
+        console.log('  5. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+      } else {
+        console.log(`  1. ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
+        console.log('  2. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
+        console.log('  3. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+      }
       continue;
     }
 
