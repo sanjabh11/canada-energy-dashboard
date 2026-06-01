@@ -1,4 +1,12 @@
 node_modules
+.DS_Store
+dev.log
+COMMIT_MESSAGE.txt
+FETCH_HEAD
+Secrets
+docs.zip
+supabase.zip
+test-results/
 # Environment files (never commit secrets)
 .env
 .env.*

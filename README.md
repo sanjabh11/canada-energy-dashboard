@@ -6,6 +6,18 @@ CEIP is a Canadian utility and Alberta TIER proof-pack product. Its current USP 
 
 This repository should not be positioned as a broad dashboard suite, an enterprise AI/GPU forecasting platform, a production utility connector, a SOC 2 certified system, or an avalanche prediction product. Current market confidence remains bounded until buyer-supplied pilot evidence is accepted through the pilot evidence register.
 
+## Repository Snapshot
+
+CEIP is maintained as an open-source React/TypeScript evidence-pack application with MIT licensing, GitHub Actions CI, 20 workflow definitions, Vitest unit coverage, Playwright route smoke checks, source-anchor verification, proof-pack bundle budgets, claim-boundary gates, and a scripted release-readiness/deploy process. Current public adoption is early-stage, so evaluation should focus on maintainer discipline, reproducible checks, and public-benefit energy workflows rather than stars, forks, or PR backlog.
+
+| Public review signal | Current proof |
+|---|---|
+| License | MIT, see [LICENSE](LICENSE). |
+| CI and scheduled operations | 20 workflow files under `.github/workflows/`, including CI plus data/cron/train jobs. |
+| Release readiness | `pnpm run check:release-readiness` combines claim, source, pilot-evidence, unit, browser, build, metadata, and bundle-budget gates. |
+| Runtime smoke | `pnpm run test:browser:phase6` and `pnpm run test:browser:hosted:proof-packs` cover local and hosted proof-pack routes. |
+| Claim discipline | `pnpm run check:claim-boundaries` and `pnpm run check:commercial-source` keep public positioning bounded to decision support, proof packs, workflow prototypes, and buyer-evidence gates. |
+
 ## Current Commercial Status
 
 | Item | Current state |
@@ -47,7 +59,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | Strategy completion audit | `pnpm run report:strategy-completion-audit` / `pnpm run check:strategy-completion-audit` | It was easy to confuse completed desk research with unresolved live deploy or buyer evidence gates. | Requirement-by-requirement audit only; the check command exits nonzero when local strategy/source gates fail while live metadata remains an external gate. |
 | Strategy source-anchor report | `pnpm run report:strategy-source-anchors` / `pnpm run check:strategy-source-anchors` | Current-source claims could drift if URLs move, block access, local fetch fails, or manual web evidence expires. | Live-fetch plus date-stamped manual web evidence only; human review still controls strategy claims. This gate is part of `check:release-readiness`. |
 | Production approval packet | `pnpm run report:production-approval-packet` | Local readiness, source provenance, and live stale-metadata blockers could be discussed from memory instead of current command evidence. | Generates an approval report only; it does not deploy or approve production, and skipped local readiness or non-deployable source provenance cannot be treated as approval-ready. |
-| Live static parity guard | `pnpm run check:live-static-parity` | Hosted metadata could lose stale phrases while still not matching the built `dist` files. | Static parity only; `check:post-deploy-live` rebuilds current `dist` before comparing, but it still does not approve deployment or prove buyer evidence. |
+| Live static parity guard | `pnpm run check:live-static-parity` | Hosted metadata could lose stale phrases while still not matching the deployed `dist` files. | Static parity only; the production deploy script builds `dist` before deploy, and `check:post-deploy-live` compares the live site against that already-built artifact without rebuilding. |
 | Top-10 route consistency guard | `pnpm run check:commercial-source` | A sellable proof pack could keep the right score while pointing to a stale or missing app route. | Proves route registration and allowlist consistency, not buyer adoption. |
 | Claim-boundary guard | `pnpm run check:claim-boundaries` | Unsafe phrases in active source/docs could remain unnoticed, including world-class, avalanche, production, certification, live-price, and AI/GPU overclaims. | Known-pattern check, not a legal or compliance review. |
 | Proof-pack identity guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | A buyer evidence row could use a valid route but arbitrary `proof_pack_id`. | Canonical proof-pack identity is required before confidence can move. |

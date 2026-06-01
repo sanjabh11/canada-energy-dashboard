@@ -14,7 +14,7 @@
 
 Senior Software Engineer with **34 years** architecting enterprise platforms and leading digital transformation. **Relocating to Alberta** (blood relative in Calgary) to contribute to the province's energy transition.
 
-Expert in **React, TypeScript, AESO/IESO data integration**, and Indigenous data sovereignty (**OCAP®/FPIC**). Builder of the **Canada Energy Intelligence Platform** – a production-grade SaaS demonstrating immediate understanding of Alberta grid operations, renewable integration, and regulatory compliance.
+Expert in **React, TypeScript, AESO/IESO data workflows**, and OCAP®/FPIC-aware reporting design. Builder of the **Canada Energy Intelligence Platform** – an energy decision-support and proof-pack prototype demonstrating understanding of Alberta grid operations, renewable integration, and regulatory evidence workflows.
 
 **Available for:** LMIA-sponsored employment via **Global Talent Stream** (Category B eligible). I provide HR-ready job descriptions and LMIA documentation to simplify hiring.
 
@@ -27,7 +27,7 @@ Expert in **React, TypeScript, AESO/IESO data integration**, and Indigenous data
 | **Languages** | TypeScript, Python, JavaScript (ES6+), SQL |
 | **Frameworks** | React, Next.js, Node.js, Django, Supabase |
 | **Cloud/DevOps** | AWS (Lambda, EC2), Docker, CI/CD, Netlify |
-| **Domain** | AESO API, Alberta Township System (ATS), SCADA integration |
+| **Domain** | AESO API, Alberta Township System (ATS), utility data workflows |
 | **AI/ML** | TensorFlow, Gemini API, RAG systems, pgvector |
 | **Energy** | Grid analytics, RRO forecasting, Micro-generation regulation |
 
@@ -40,19 +40,19 @@ Expert in **React, TypeScript, AESO/IESO data integration**, and Indigenous data
 
 ### Technical Achievements
 
-- **Architected real-time energy SaaS** integrating AESO pool price APIs and carbon intensity data, reducing data latency by 40%
-- **Developed Indigenous data sovereignty dashboard** with OCAP®/FPIC compliance and territory mapping for First Nations communities
-- **Built 20+ production dashboards**: Grid analytics, hydrogen economy, critical minerals, SMR tracking, EV charging, VPP/DER aggregation
-- **Implemented automated compliance modules** for AUC Rule 007 and Micro-generation Regulation using Python scripts
+- **Built energy decision-support workflows** using AESO pool price APIs, carbon-intensity data, and explicit freshness/fallback labels
+- **Developed OCAP®/FPIC-aware reporting prototypes** with governance review fields and territory mapping for Indigenous energy workflows
+- **Built 20+ dashboard and proof-pack routes**: Grid analytics, hydrogen economy, critical minerals, SMR tracking, EV charging, VPP/DER aggregation
+- **Implemented regulatory evidence helpers** for AUC Rule 007 and Micro-generation Regulation using Python scripts
 - **Designed cohort-based learning system** for credentialed energy training programs (EdTech monetization)
 
 ### Business Relevance for Alberta
 
 | Feature | Pain Point Addressed |
 |---------|---------------------|
-| Real-time AESO integration | Grid visibility for operators |
+| AESO data workflow integration | Grid visibility and evidence review |
 | RRO price monitoring | Consumer bill shock protection |
-| Indigenous FPIC workflows | AICEI grant compliance |
+| Indigenous FPIC workflows | AICEI reporting support |
 | Municipal GHG tracking | Climate Action Plan reporting |
 
 **Tech Stack:** React, TypeScript, Supabase Edge Functions, Recharts, Mapbox, AESO REST API
@@ -85,7 +85,7 @@ Expert in **React, TypeScript, AESO/IESO data integration**, and Indigenous data
 **Client Sectors:** Energy, Banking, Healthcare, Government
 
 **Representative Engagements:**
-- **Energy Sector:** AI-powered grid analytics, renewable optimization, operational efficiency automation
+- **Energy Sector:** grid analytics decision support, renewable optimization, operational efficiency automation
 - **Banking:** GenAI/RAG implementation for customer service, fraud detection, compliance documentation
 - **Healthcare:** RPA deployment for claims processing, EHR optimization
 - **Government:** AI strategy for workforce transformation, automation roadmaps
@@ -110,9 +110,9 @@ Built 100+ FTE delivery teams, established service delivery best practices adopt
 
 | Market Driver | My Capability |
 |---------------|---------------|
-| Coal-to-renewable transition | Real-time grid monitoring + curtailment analytics |
+| Coal-to-renewable transition | Grid monitoring workflows + curtailment analytics |
 | AESO 2025-2030 Strategy | AESO API integration + demand forecasting |
-| Indigenous energy sovereignty | OCAP®/FPIC-compliant dashboards |
+| Indigenous energy reporting | OCAP®/FPIC-aware workflow prototypes |
 | Consumer price volatility | RRO alert system + rate comparison tools |
 
 ### Target Employers

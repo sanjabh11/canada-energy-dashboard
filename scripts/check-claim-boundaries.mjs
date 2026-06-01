@@ -11,6 +11,8 @@ const BASE_ACTIVE_PATHS = [
   'index.html',
   'public/manifest.json',
   'public/schema-webapp.jsonld',
+  'public/openapi.yaml',
+  'public/resume-canada.md',
   'public/data/ga_ici_5cp_public_historical_actuals.csv',
   'scripts/deploy-production.sh',
   'src',
@@ -35,7 +37,7 @@ const SKIP_SEGMENTS = new Set([
   'test-results',
 ]);
 
-const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld', '.csv', '.sh']);
+const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld', '.csv', '.sh', '.yaml', '.yml']);
 
 const REFERENCE_ONLY_FILES = new Set([
   'src/lib/helpContent.ts',
