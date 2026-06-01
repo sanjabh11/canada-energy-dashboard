@@ -84,6 +84,16 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    exit 0',
       '    ;;',
       'esac',
+      'if [ "$CEIP_ASSERT_PLAYWRIGHT_TMP_OUTPUTS" = "1" ]; then',
+      '  case "$PLAYWRIGHT_HTML_OUTPUT_DIR" in',
+      '    /tmp/ceip-*) ;;',
+      '    *) echo "Playwright HTML output must be under /tmp/ceip-*"; exit 2 ;;',
+      '  esac',
+      '  case "$PLAYWRIGHT_JSON_OUTPUT_FILE" in',
+      '    /tmp/ceip-*.json) ;;',
+      '    *) echo "Playwright JSON output must be under /tmp/ceip-*.json"; exit 2 ;;',
+      '  esac',
+      'fi',
       'echo "Hosted proof-pack route smoke passed."',
       'exit 0',
       '',
@@ -244,6 +254,16 @@ describe('production approval packet', () => {
     expect(localReadinessSection).not.toContain('nested live metadata failure');
     expect(liveMetadataSection).toContain('Public metadata check failed:');
     expect(liveStaticSection).toContain('Live static parity check failed:');
+  });
+
+  it('runs hosted proof-pack smoke without writing Playwright reports into the repo', async () => {
+    const result = await runPacket(['--skip-release-readiness', '--include-hosted-smoke'], {
+      CEIP_ASSERT_PLAYWRIGHT_TMP_OUTPUTS: '1',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Hosted proof-pack smoke: pass.');
+    expect(result.stderr).toBe('');
   });
 
   it('allows pre-deploy request gates to pass when only live parity is stale', async () => {

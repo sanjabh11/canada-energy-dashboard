@@ -81,6 +81,21 @@ if (packageJson) {
     /"check:release-readiness":\s*"[^"]*check:production-deploy-script/,
     'include the production deploy script guard in release readiness',
   );
+
+  const browserScripts = [
+    'test:wedge-prototype-routes',
+    'test:browser:phase6',
+    'test:browser:hosted:phase6',
+    'test:browser:hosted:proof-packs',
+  ];
+  for (const scriptName of browserScripts) {
+    requirePattern(
+      packageJson,
+      packageRelativePath,
+      new RegExp(`"${scriptName}":\\s*"[^"]*PLAYWRIGHT_HTML_OUTPUT_DIR=/tmp/ceip-[^"]*PLAYWRIGHT_JSON_OUTPUT_FILE=/tmp/ceip-`),
+      `send ${scriptName} Playwright HTML and JSON output outside the repo before deploy gates run`,
+    );
+  }
 }
 
 if (failures.length > 0) {

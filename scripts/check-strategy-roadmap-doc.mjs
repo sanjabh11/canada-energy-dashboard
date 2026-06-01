@@ -220,6 +220,7 @@ if (!existsSync(roadmapPath)) {
     'dirty worktree blocker classification',
     'skipping exact static parity when `--skip-release-readiness` is used',
     'Passing local release-readiness evidence inside the production approval packet could quote nested completion-audit live failures',
+    'Playwright reports to `/tmp/ceip-*` paths',
     'Completion audit could claim the buyer-evidence boundary is enforced without running the fixture-proof and template gates.',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',

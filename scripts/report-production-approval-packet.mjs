@@ -284,6 +284,8 @@ if (includeHostedSmoke) {
         env: {
           PLAYWRIGHT_SKIP_WEBSERVER: 'true',
           TEST_BASE_URL: baseUrl,
+          PLAYWRIGHT_HTML_OUTPUT_DIR: '/tmp/ceip-approval-hosted-proof-packs-playwright-report',
+          PLAYWRIGHT_JSON_OUTPUT_FILE: '/tmp/ceip-approval-hosted-proof-packs-playwright-results.json',
         },
       },
     ),
