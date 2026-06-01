@@ -88,6 +88,7 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Production pilot evidence registers: 0');
     expect(result.stdout).toContain('Production outreach response logs: 0');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
+    expect(result.stdout).toContain('Batchable intake-packet outreach rows: 0');
     expect(result.stdout).toContain('Minimum Phase F 95% Evidence Map');
     expect(result.stdout).toContain('/utility-demand-forecast (utility_forecast_planning_pack)');
     expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack) or /credit-banking (tier_credit_banking_audit_pack)');
@@ -135,11 +136,15 @@ describe('buyer evidence readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Production outreach response logs: 1');
     expect(result.stdout).toContain('Actionable outreach rows: 1');
+    expect(result.stdout).toContain('Batchable intake-packet outreach rows: 1');
+    expect(result.stdout).toContain('batchable intake-packet rows: 1');
+    expect(result.stdout).toContain(`Batch packet command: pnpm run create:outreach-intake-packets -- --log-file ${logPath} --output-dir /tmp/ceip-outreach-intake-packets`);
     expect(result.stdout).toContain('Action plan: available');
     expect(result.stdout).toContain('Action plan excerpt:');
     expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
     expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet');
     expect(result.stdout).toContain('Use the outreach action plan excerpt above');
+    expect(result.stdout).toContain('Use the batch packet command above for `create_intake_packet` rows');
     expect(result.stdout).toContain('Minimum Phase F 95% Evidence Map');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
   });
@@ -155,6 +160,7 @@ describe('buyer evidence readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Production outreach response logs: 1');
     expect(result.stdout).toContain('Actionable outreach rows: 0');
+    expect(result.stdout).toContain('Batchable intake-packet outreach rows: 0');
     expect(result.stdout).toContain('Record real buyer replies in the existing anonymized outreach response log');
     expect(result.stdout).toContain('Keep Phase F blocked until an actionable row creates intake or retained-artifact work');
     expect(result.stdout).not.toContain('A retained-evidence register passed the hard gate');
