@@ -93,8 +93,11 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack) or /credit-banking (tier_credit_banking_audit_pack)');
     expect(result.stdout).toContain('/shadow-billing (shadow_billing_invoice_pack) or /utility-security (utility_security_procurement_pack)');
     expect(result.stdout).toContain('At least three distinct accepted buyer-supplied proof_pack_id values');
-    expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet -- --route /utility-security --output-dir /tmp/ceip-phase-f-utility-security');
+    expect(result.stdout).toContain('pnpm run create:phase-f-minimum-intake-bundle -- --output-dir /tmp/ceip-phase-f-minimum-intake');
+    expect(result.stdout).toContain('Default bundle routes: /utility-demand-forecast (utility_forecast_planning_pack), /roi-calculator (tier_cfo_savings_pack), /utility-security (utility_security_procurement_pack).');
+    expect(result.stdout).not.toContain('pnpm run create:pilot-evidence-intake-packet -- --route /utility-security --output-dir /tmp/ceip-phase-f-utility-security');
     expect(result.stdout).toContain('Fill a non-template anonymized outreach response log');
+    expect(result.stdout).toContain('Generate the minimum Phase F starter bundle');
   });
 
   it('discovers actionable outreach rows and keeps confidence movement at zero', async () => {
