@@ -2,6 +2,11 @@
 
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
+import {
+  proofPackBuyerLanes,
+  proofPackIdsByRoute,
+  proofPackRoutes,
+} from './lib/proof-pack-routes.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -85,45 +90,9 @@ const forbiddenColumns = new Set([
   'password',
 ]);
 
-const allowedRoutes = new Set([
-  '/utility-demand-forecast',
-  '/forecast-benchmarking',
-  '/regulatory-filing',
-  '/roi-calculator',
-  '/credit-banking',
-  '/shadow-billing',
-  '/asset-health',
-  '/utility-security',
-  '/ai-datacentres',
-  '/api-docs',
-  '/ga-ici-5cp',
-  '/byo-csv-proof',
-]);
-
-const allowedProofPackIdsByRoute = new Map([
-  ['/utility-demand-forecast', new Set(['utility_forecast_planning_pack'])],
-  ['/forecast-benchmarking', new Set(['forecast_benchmark_provenance'])],
-  ['/regulatory-filing', new Set(['regulatory_filing_pack'])],
-  ['/roi-calculator', new Set(['tier_cfo_savings_pack'])],
-  ['/credit-banking', new Set(['tier_credit_banking_audit_pack'])],
-  ['/shadow-billing', new Set(['shadow_billing_invoice_pack'])],
-  ['/asset-health', new Set(['asset_health_capex_pack'])],
-  ['/utility-security', new Set(['utility_security_procurement_pack'])],
-  ['/ai-datacentres', new Set(['large_load_readiness_overlay'])],
-  ['/api-docs', new Set(['consultant_api_data_pack'])],
-  ['/ga-ici-5cp', new Set(['ga_ici_5cp_decision_support_pack'])],
-  ['/byo-csv-proof', new Set(['byo_csv_privacy_proof_pack'])],
-]);
-
-const allowedBuyerLanes = new Set([
-  'utility',
-  'industrial',
-  'municipal/public sector',
-  'municipal',
-  'security',
-  'large load',
-  'consultant/api',
-]);
+const allowedRoutes = proofPackRoutes;
+const allowedProofPackIdsByRoute = proofPackIdsByRoute;
+const allowedBuyerLanes = new Set([...proofPackBuyerLanes, 'municipal']);
 
 const allowedChannels = new Set([
   'linkedin',
