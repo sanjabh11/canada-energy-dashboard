@@ -164,6 +164,18 @@ if (!existsSync(roadmapPath)) {
     requireText(roadmap, 'buyer-evidence dependency separation', needle);
   }
 
+  const activeGuardNeedles = [
+    'shared active commercial-doc registry',
+    'this roadmap and `docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv`',
+    'scripts/lib/commercial-docs.mjs',
+    'check:commercial-source` and `check:claim-boundaries` now consume the same active-doc registry',
+    '`.csv` evidence templates are scan-eligible',
+  ];
+
+  for (const needle of activeGuardNeedles) {
+    requireText(roadmap, 'active commercial doc claim-boundary guard coverage', needle);
+  }
+
   const liveParityNeedles = [
     'Hosted root HTML',
     'Hosted manifest / JSON-LD',
