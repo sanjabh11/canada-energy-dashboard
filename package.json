@@ -2,6 +2,24 @@
   "name": "canada-energy-dashboard",
   "description": "Canadian energy intelligence dashboard for utility demand forecasting, regulatory proof packs, ESG/NPRI data workflows, and buyer-ready energy analytics.",
   "license": "MIT",
+  "homepage": "https://canada-energy.netlify.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sanjabh11/canada-energy-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sanjabh11/canada-energy-dashboard/issues"
+  },
+  "keywords": [
+    "analytics",
+    "canada",
+    "energy",
+    "esg",
+    "forecasting",
+    "react",
+    "supabase",
+    "typescript"
+  ],
   "version": "0.0.0",
   "type": "module",
   "scripts": {
