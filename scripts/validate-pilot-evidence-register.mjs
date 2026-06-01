@@ -4,6 +4,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { validateExistingEvidencePathInsideRoot } from './lib/evidence-path-safety.mjs';
+import {
+  proofPackBuyerLanes,
+  proofPackIdsByRoute,
+  proofPackRoutes,
+} from './lib/proof-pack-routes.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -124,40 +129,14 @@ const forbiddenColumns = new Set([
   'password',
 ]);
 
-const allowedRoutes = new Set([
-  '/utility-demand-forecast',
-  '/forecast-benchmarking',
-  '/regulatory-filing',
-  '/roi-calculator',
-  '/credit-banking',
-  '/shadow-billing',
-  '/asset-health',
-  '/utility-security',
-  '/ai-datacentres',
-  '/api-docs',
-  '/pilot-readiness',
-  '/pilot-evidence',
-  '/ga-ici-5cp',
-  '/byo-csv-proof',
-]);
+const evidenceGateOnlyRoutes = new Set(['/pilot-readiness', '/pilot-evidence']);
+const allowedRoutes = new Set([...proofPackRoutes, ...evidenceGateOnlyRoutes]);
 const forecastEvidenceRoutes = new Set(['/utility-demand-forecast', '/forecast-benchmarking']);
 const allowedProofPackIdsByRoute = new Map([
-  ['/utility-demand-forecast', new Set(['utility_forecast_planning_pack'])],
-  ['/forecast-benchmarking', new Set(['forecast_benchmark_provenance'])],
-  ['/regulatory-filing', new Set(['regulatory_filing_pack'])],
-  ['/roi-calculator', new Set(['tier_cfo_savings_pack'])],
-  ['/credit-banking', new Set(['tier_credit_banking_audit_pack'])],
-  ['/shadow-billing', new Set(['shadow_billing_invoice_pack'])],
-  ['/asset-health', new Set(['asset_health_capex_pack'])],
-  ['/utility-security', new Set(['utility_security_procurement_pack'])],
-  ['/ai-datacentres', new Set(['large_load_readiness_overlay'])],
-  ['/api-docs', new Set(['consultant_api_data_pack'])],
+  ...Array.from(proofPackIdsByRoute, ([route, proofPackIds]) => [route, new Set(proofPackIds)]),
   ['/pilot-readiness', new Set(['pilot_readiness_gate'])],
   ['/pilot-evidence', new Set(['pilot_readiness_gate'])],
-  ['/ga-ici-5cp', new Set(['ga_ici_5cp_decision_support_pack'])],
-  ['/byo-csv-proof', new Set(['byo_csv_privacy_proof_pack'])],
 ]);
-const evidenceGateOnlyRoutes = new Set(['/pilot-readiness', '/pilot-evidence']);
 const confidenceDiagnosticRulesByRoute = new Map([
   ['/utility-demand-forecast', {
     label: 'MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, and champion/challenger diagnostics',
@@ -412,15 +391,7 @@ const commercialCommitmentEvidenceRules = new Map([
     pattern: /(?:letter[-_ ]?of[-_ ]?intent|\bloi\b)[\s\S]{0,100}(?:signed|received|executed|evidence|appendix|retained|redacted|confirmation)/i,
   }],
 ]);
-const allowedBuyerLanes = new Set([
-  'utility',
-  'industrial',
-  'municipal/public sector',
-  'municipal',
-  'security',
-  'large load',
-  'consultant/api',
-]);
+const allowedBuyerLanes = new Set([...proofPackBuyerLanes, 'municipal']);
 const buyerEvidenceLabels = new Set(['buyer_supplied_anonymized', 'buyer_supplied_confidential']);
 const buyerEvidencePiiScreenResults = new Set([
   'no personal data',
