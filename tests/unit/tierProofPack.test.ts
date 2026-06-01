@@ -41,20 +41,28 @@ describe('tierProofPack', () => {
   it('uses the current 2026 frozen TIER headline-price basis with source provenance', () => {
     expect(DEFAULT_TIER_PRICING.fundPrice).toBe(95);
     expect(DEFAULT_TIER_PRICING.isFrozen).toBe(true);
-    expect(DEFAULT_TIER_PRICING.lastVerifiedAt).toBe('2026-05-31');
+    expect(DEFAULT_TIER_PRICING.lastVerifiedAt).toBe('2026-06-02');
     expect(DEFAULT_TIER_PRICING.sourceUrl).toContain('pm.gc.ca');
     expect(DEFAULT_TIER_PRICING.headlinePriceSchedule).toEqual(expect.arrayContaining([
       { year: 2026, priceCadPerTonne: 95 },
       { year: 2030, priceCadPerTonne: 115 },
+      { year: 2031, priceCadPerTonne: 118 },
+      { year: 2035, priceCadPerTonne: 130 },
+      { year: 2039, priceCadPerTonne: 138 },
       { year: 2040, priceCadPerTonne: 140 },
     ]));
     expect(DEFAULT_TIER_PRICING.priceFloorSchedule).toEqual(expect.arrayContaining([
       { year: 2030, priceCadPerTonne: 60 },
+      { year: 2031, priceCadPerTonne: 63 },
+      { year: 2035, priceCadPerTonne: 80 },
+      { year: 2039, priceCadPerTonne: 100 },
       { year: 2040, priceCadPerTonne: 110 },
     ]));
     expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('June 30');
+    expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('50% of eligible capital');
+    expect(DEFAULT_TIER_PRICING.policyNotes.join(' ')).toContain('December 31, 2026');
     expect(formatPricingWithProvenance()).toContain('Fund: $95/t frozen');
-    expect(isPricingStale(DEFAULT_TIER_PRICING, new Date('2026-05-31T12:00:00.000Z'))).toBe(false);
+    expect(isPricingStale(DEFAULT_TIER_PRICING, new Date('2026-06-02T12:00:00.000Z'))).toBe(false);
   });
 
   it('marks fallback pricing honestly when no live market source is present', () => {
@@ -100,7 +108,9 @@ describe('tierProofPack', () => {
       ? provenanceSection.body.join(' ')
       : provenanceSection?.body ?? '';
     expect(provenanceBody).toContain('Headline price schedule: 2026 CAD 95/t');
+    expect(provenanceBody).toContain('2031 CAD 118/t');
     expect(provenanceBody).toContain('Future price-floor schedule: 2030 CAD 60/t');
+    expect(provenanceBody).toContain('2039 CAD 100/t');
     expect(provenanceBody).toContain('Official Alberta TIER source');
     expect(descriptor.sections.find((section) => section.heading === 'Direct-investment sensitivity')).toBeTruthy();
     expect(appendix).toContain('# TIER scenario appendix');
@@ -109,6 +119,11 @@ describe('tierProofPack', () => {
     expect(sourceCurrency).toContain('Fall 2025 amendments');
     expect(sourceCurrency).toContain('Direct Investment standard status');
     expect(sourceCurrency).toContain('June 30 annual compliance reporting requirement');
+    expect(sourceCurrency).toContain('Order in Council 369/2025');
+    expect(sourceCurrency).toContain('implementation agreement published 2026-05-15');
+    expect(sourceCurrency).toContain('minimum transfer-price floor schedule');
+    expect(sourceCurrency).toContain('## Outbound-use refresh checklist');
+    expect(sourceCurrency).toContain('Re-open the Canada-Alberta implementation agreement source');
     expect(sourceCurrency).toContain('Replace fallback market pricing');
   });
 });

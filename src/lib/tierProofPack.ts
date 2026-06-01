@@ -48,20 +48,20 @@ function buildTierSourceCurrencyItems(snapshot: TierProofSnapshot): TierSourceCu
     {
       label: 'Government of Alberta TIER regulation overview',
       sourceUrl: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
-      sourceDate: 'Fall 2025 amendments; page reviewed 2026-05-31',
-      reviewedAt: '2026-05-31',
-      currentUse: 'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, and buyer-specific eligibility caveats.',
-      verifyBeforeOutbound: 'Confirm the Alberta page still lists the December 2025 amendments, current Direct Investment standard status, June 30 annual compliance reporting requirement, and current verification-document links before sending a CFO memo.',
+      sourceDate: 'Fall 2025 amendments and Order in Council 369/2025; page reviewed 2026-06-02',
+      reviewedAt: '2026-06-02',
+      currentUse: 'Compliance options, direct-investment amendment context, annual compliance report timing, verification-documents dependency, compliance-cost-containment trigger, and buyer-specific eligibility caveats.',
+      verifyBeforeOutbound: 'Confirm the Alberta page still lists the December 2025 amendments, current Direct Investment standard status, June 30 annual compliance reporting requirement, current verification-document links, and any newer compliance-workshop or guidance updates before sending a CFO memo.',
       doNotClaim: 'Do not claim direct-investment eligibility, compliance approval, legal advice, tax treatment, or verified reporting completeness without buyer-specific review.',
     },
     {
       label: snapshot.pricing.source,
       sourceUrl: snapshot.pricing.sourceUrl,
-      sourceDate: snapshot.pricing.effectiveDate,
+      sourceDate: `${snapshot.pricing.effectiveDate}; implementation agreement published 2026-05-15`,
       reviewedAt: snapshot.pricing.lastVerifiedAt,
-      currentUse: `Headline fund-price basis of CAD ${snapshot.pricing.fundPrice}/t plus future scenario schedules carried for planning context.`,
-      verifyBeforeOutbound: 'Confirm no newer Alberta or Canada-Alberta pricing guidance supersedes this implementation-agreement source before external use.',
-      doNotClaim: 'Do not claim future-year price floors, credit eligibility, or binding compliance economics as final buyer advice.',
+      currentUse: `Headline fund-price basis of CAD ${snapshot.pricing.fundPrice}/t plus annual headline and minimum-transfer-price schedules carried for planning context.`,
+      verifyBeforeOutbound: 'Confirm no newer Alberta or Canada-Alberta pricing guidance supersedes the May 15, 2026 implementation-agreement source, annual headline schedule, minimum transfer-price floor schedule, Direct Investment caps, or carbon contracts for difference terms before external use.',
+      doNotClaim: 'Do not claim future-year price floors, executed trade pricing, credit eligibility, carbon-contract entitlement, or binding compliance economics as final buyer advice.',
     },
     {
       label: snapshot.liveTierMarketRateSource?.sourceName ?? snapshot.pricing.marketPriceSource,
@@ -286,6 +286,13 @@ export function buildTierSourceCurrencyChecklistMarkdown(snapshot: TierProofSnap
     '- Replace fallback market pricing with a live quote, registry-backed source, or buyer-approved source before making any strong savings claim.',
     '- Verify facility eligibility, compliance year, Direct Investment pathway details, verification costs, and reporting status with the buyer before recommending a pathway.',
     '- Treat the memo as scenario planning only; legal, tax, trading, and final compliance decisions remain outside CEIP proof.',
+    '',
+    '## Outbound-use refresh checklist',
+    '- [ ] Re-open the Alberta TIER regulation page and confirm the Fall 2025 amendments, Direct Investment standard status, June 30 compliance-reporting requirement, and verification-document links.',
+    '- [ ] Re-open the Canada-Alberta implementation agreement source and confirm the annual headline price schedule, 2030-2040 minimum transfer-price floor schedule, Direct Investment caps, and any carbon-contracts-for-difference updates.',
+    '- [ ] Replace fallback market pricing with a live quote, registry-backed view, or buyer-approved price source retained outside this repository.',
+    '- [ ] Attach facility-specific eligibility, compliance-year, verification-cost, and reviewer notes before using the memo outside a planning discussion.',
+    '- [ ] Keep legal, tax, trading, compliance approval, guaranteed savings, and executed-credit-price claims out of the outbound artifact unless buyer counsel and source evidence are separately retained.',
   ].join('\n');
 }
 

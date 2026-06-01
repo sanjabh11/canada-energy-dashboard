@@ -55,10 +55,17 @@ describe('regulatoryProofPack', () => {
     expect(checklist).toContain('Attach audited financial statements and reconciliation support');
     expect(albertaSourceCurrency).toContain('# AUC Rule 005 filing prep pack source currency checklist');
     expect(albertaSourceCurrency).toContain('Effective March 31, 2021');
+    expect(albertaSourceCurrency).toContain('AUC Rule 005 forms for electric utilities');
+    expect(albertaSourceCurrency).toContain('Forms page reviewed 2026-06-02');
     expect(albertaSourceCurrency).toContain('Annual financial and operational reporting');
     expect(albertaSourceCurrency).toContain('Verify before outbound use');
+    expect(albertaSourceCurrency).toContain('## Outbound-use refresh checklist');
+    expect(albertaSourceCurrency).toContain('Download or retain the current regulator forms/models outside this repository');
     expect(ontarioSourceCurrency).toContain('# OEB Chapter 5 filing prep pack source currency checklist');
     expect(ontarioSourceCurrency).toContain('2027 Chapter 5 materials dated December 16, 2025');
+    expect(ontarioSourceCurrency).toContain('OEB 2027 electricity distribution rate applications page');
+    expect(ontarioSourceCurrency).toContain('model updates through April 8, 2026');
+    expect(ontarioSourceCurrency).toContain('58 rate-regulated distributor application context');
     expect(ontarioSourceCurrency).toContain('vulnerability/system-hardening');
     expect(ontarioSourceCurrency).toContain('buyer source-of-record data');
     expect(scheduleExports).toHaveLength(4);
