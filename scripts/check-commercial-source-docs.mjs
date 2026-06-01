@@ -102,6 +102,7 @@ const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persisten
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:outreach-response-log/;
 const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
+const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
@@ -402,8 +403,16 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:outreach-intake-plan-template wired to the outreach response-log action-plan template gate.');
   }
 
+  if (packageScripts['create:outreach-intake-packets'] !== 'node scripts/create-outreach-intake-packets.mjs') {
+    failures.push('package.json must keep create:outreach-intake-packets wired to the outreach intake packet batch generator.');
+  }
+
   if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:outreach-intake-plan-template')) {
     failures.push('check:release-readiness must include check:outreach-intake-plan-template so the action-plan path cannot drift.');
+  }
+
+  if (!outreachIntakePacketBatchPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention create:outreach-intake-packets for validated outreach-to-intake scaffolding.');
   }
 
   if (!pilotEvidenceIntakePacketPhrase.test(sourceDoc)) {
@@ -448,6 +457,9 @@ if (!existsSync(sourceDocPath)) {
     if (!pilotEvidenceIntakePacketPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention create:pilot-evidence-intake-packet for buyer-evidence intake scaffolding.');
     }
+    if (!outreachIntakePacketBatchPhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention create:outreach-intake-packets for validated outreach-to-intake scaffolding.');
+    }
     if (!forecastTrustArtifactHelperPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
     }
@@ -470,6 +482,9 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!outreachIntakePlanPhrase.test(outreachTemplatesDoc)) {
       failures.push('docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
+    }
+    if (!outreachIntakePacketBatchPhrase.test(outreachTemplatesDoc)) {
+      failures.push('docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md must mention create:outreach-intake-packets for validated outreach-to-intake scaffolding.');
     }
   }
 

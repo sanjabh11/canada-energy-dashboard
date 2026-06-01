@@ -6,6 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const generatorScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
 const bundleGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-minimum-intake-bundle.mjs');
+const outreachLogGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
+const outreachRowAppenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-response-log-row.mjs');
+const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-outreach-intake-packets.mjs');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const tempRoots: string[] = [];
 
@@ -48,6 +51,158 @@ afterEach(() => {
 });
 
 describe('pilot evidence intake packet generator', () => {
+  it('creates starter intake packets from validated actionable outreach rows without moving confidence', async () => {
+    const root = makeTempRoot();
+    const outreachDir = path.join(root, 'outreach-log');
+    const batchDir = path.join(root, 'outreach-intake-packets');
+    const createLog = await runNodeScript(outreachLogGeneratorScriptPath, ['--output-dir', outreachDir]);
+    expect(createLog.status).toBe(0);
+
+    const logPath = path.join(outreachDir, 'outreach-response-log.csv');
+    const appendRow = await runNodeScript(outreachRowAppenderScriptPath, [
+      '--log-file',
+      logPath,
+      '--activity-date',
+      '2026-06-01',
+      '--channel',
+      'linkedin',
+      '--target-label',
+      'utility_planner_001',
+      '--route',
+      '/utility-demand-forecast',
+      '--rating',
+      '4.5',
+      '--variant-id',
+      'utility_forecast',
+      '--reply-status',
+      'interested',
+      '--response-summary',
+      'Buyer asked for a bounded forecast sample.',
+      '--pain-signal',
+      'Load growth planning',
+      '--requested-input',
+      'anonymized load history',
+      '--reviewer-role',
+      'utility planning reviewer',
+      '--next-action',
+      'create intake packet',
+      '--pilot-evidence-register-action',
+      'create_intake_packet',
+    ]);
+    expect(appendRow.status).toBe(0);
+
+    const dryRun = await runNodeScript(outreachIntakeBatchScriptPath, [
+      '--log-file',
+      logPath,
+      '--output-dir',
+      batchDir,
+      '--dry-run',
+    ]);
+    expect(dryRun.status).toBe(0);
+    expect(dryRun.stdout).toContain('Planned intake packets: 1');
+    expect(dryRun.stdout).toContain('Confidence movement: none');
+    expect(existsSync(batchDir)).toBe(false);
+
+    const result = await runNodeScript(outreachIntakeBatchScriptPath, [
+      '--log-file',
+      logPath,
+      '--output-dir',
+      batchDir,
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Outreach intake packet generation complete.');
+    expect(result.stdout).toContain('Created intake packets: 1');
+    expect(result.stdout).toContain('Confidence movement: none');
+
+    const packetDir = path.join(batchDir, '2026-06-01-utility-planner-001-utility-demand-forecast');
+    const registerPath = path.join(packetDir, 'pilot-evidence-register-starter.csv');
+    const manifestPath = path.join(batchDir, 'outreach-intake-packet-manifest.json');
+    const readmePath = path.join(batchDir, 'README.md');
+
+    expect(existsSync(registerPath)).toBe(true);
+    expect(existsSync(path.join(packetDir, 'redacted-artifacts/README.md'))).toBe(true);
+    expect(readFileSync(registerPath, 'utf8')).toContain('confidence_delta');
+    expect(readFileSync(registerPath, 'utf8')).toContain(',pending,0,');
+    expect(readFileSync(registerPath, 'utf8')).toContain('utility_forecast_planning_pack');
+    expect(readFileSync(readmePath, 'utf8')).toContain('does not create buyer proof');
+
+    const manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+    expect(manifest.confidenceMovement).toBe('none');
+    expect(manifest.createdPacketCount).toBe(1);
+    expect(manifest.packets[0].route).toBe('/utility-demand-forecast');
+    expect(manifest.packets[0].proofPackId).toBe('utility_forecast_planning_pack');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [registerPath]);
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
+
+    const gateResult = await runNodeScript(validatorScriptPath, [
+      registerPath,
+      '--require-95',
+      '--evidence-root',
+      path.join(packetDir, 'redacted-artifacts'),
+    ]);
+    const gateOutput = `${gateResult.stderr}\n${gateResult.stdout}`;
+    expect(gateResult.status).toBe(1);
+    expect(gateOutput).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
+  }, 30000);
+
+  it('skips non-actionable outreach rows without creating intake packet folders', async () => {
+    const root = makeTempRoot();
+    const outreachDir = path.join(root, 'outreach-log');
+    const batchDir = path.join(root, 'outreach-intake-packets');
+    const createLog = await runNodeScript(outreachLogGeneratorScriptPath, ['--output-dir', outreachDir]);
+    expect(createLog.status).toBe(0);
+
+    const logPath = path.join(outreachDir, 'outreach-response-log.csv');
+    const appendRow = await runNodeScript(outreachRowAppenderScriptPath, [
+      '--log-file',
+      logPath,
+      '--activity-date',
+      '2026-06-01',
+      '--channel',
+      'email',
+      '--target-label',
+      'utility_planner_002',
+      '--route',
+      '/utility-demand-forecast',
+      '--rating',
+      '4.5',
+      '--variant-id',
+      'utility_forecast',
+      '--reply-status',
+      'sent_no_reply',
+      '--response-summary',
+      'No reply yet.',
+      '--pain-signal',
+      'Load growth planning',
+      '--requested-input',
+      'anonymized load history',
+      '--reviewer-role',
+      'utility planning reviewer',
+      '--next-action',
+      'wait for reply',
+    ]);
+    expect(appendRow.status).toBe(0);
+
+    const result = await runNodeScript(outreachIntakeBatchScriptPath, [
+      '--log-file',
+      logPath,
+      '--output-dir',
+      batchDir,
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('Created intake packets: 0');
+    expect(result.stdout).toContain('Skipped rows: 1');
+    expect(existsSync(path.join(batchDir, 'outreach-intake-packet-manifest.json'))).toBe(true);
+    const manifest = JSON.parse(readFileSync(path.join(batchDir, 'outreach-intake-packet-manifest.json'), 'utf8'));
+    expect(manifest.createdPacketCount).toBe(0);
+    expect(manifest.skippedRows[0].reason).toContain('pilot_evidence_register_action is not create_intake_packet');
+  }, 30000);
+
   it('creates a route-specific starter packet that passes base register validation without moving confidence', async () => {
     const outputDir = makeTempRoot();
     const result = await runNodeScript(generatorScriptPath, [

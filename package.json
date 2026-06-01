@@ -63,6 +63,7 @@
     "report:utility-forecast-benchmark": "tsx scripts/utility-forecast-benchmark-pack.ts",
     "create:outreach-response-log": "node scripts/create-outreach-response-log.mjs",
     "append:outreach-response-log-row": "node scripts/append-outreach-response-log-row.mjs",
+    "create:outreach-intake-packets": "node scripts/create-outreach-intake-packets.mjs",
     "create:pilot-evidence-intake-packet": "node scripts/create-pilot-evidence-intake-packet.mjs",
     "create:phase-f-minimum-intake-bundle": "node scripts/create-phase-f-minimum-intake-bundle.mjs",
     "prepare:byo-csv-proof-artifact": "tsx scripts/byo-csv-proof-artifact.ts",
