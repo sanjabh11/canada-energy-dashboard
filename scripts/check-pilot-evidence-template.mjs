@@ -55,6 +55,7 @@ const forbiddenColumns = [
 
 const requiredDocPhrases = [
   'PILOT_EVIDENCE_REGISTER_TEMPLATE.csv',
+  'create:pilot-evidence-intake-packet',
   'time_to_artifact_hours',
   'buyer_data_coverage_pct',
   'benchmark_lift_or_diagnostic',
