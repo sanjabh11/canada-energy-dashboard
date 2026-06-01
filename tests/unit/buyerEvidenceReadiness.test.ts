@@ -98,7 +98,10 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Production outreach response logs: 1');
     expect(result.stdout).toContain('Actionable outreach rows: 1');
     expect(result.stdout).toContain('Action plan: available');
-    expect(result.stdout).toContain('Run the printed outreach action plan commands');
+    expect(result.stdout).toContain('Action plan excerpt:');
+    expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
+    expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet');
+    expect(result.stdout).toContain('Use the outreach action plan excerpt above');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
   });
 
