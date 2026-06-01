@@ -147,7 +147,7 @@ pnpm run check:post-deploy-live
 
 `report:production-approval-packet` also reports source deploy provenance against the production deploy script's preconditions: branch `main` and a clean worktree. It separates deployment request readiness from live parity achieved: stale live metadata or static parity can support an explicit remediation deploy request only when source provenance and local release readiness are clean, but it must not be reported as live parity until post-deploy live checks pass. Use `pnpm run check:production-deploy-request` when you need a machine exit gate for requesting explicit owner approval; use `--fail-on-blocker` only when all live-parity gates are expected to pass. It must not be used as production approval when source provenance or local release readiness is failing or skipped.
 
-`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; the expected live metadata failure remains an external production gate.
+`check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail; expected live metadata and static-parity failures remain external production gates.
 
 Before any copy says CEIP has reached 95% buyer-proven market confidence, validate the filled buyer-evidence register with:
 

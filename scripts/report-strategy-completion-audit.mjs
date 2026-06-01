@@ -252,6 +252,7 @@ const checkSteps = includeChecks
       runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
       runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
+      runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
     ]
   : [];
 const requiredLocalCheckLabels = new Set([
@@ -269,7 +270,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|static parity|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata/i.test(
         line,
       ),
     )

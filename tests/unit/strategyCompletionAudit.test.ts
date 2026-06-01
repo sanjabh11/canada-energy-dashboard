@@ -47,6 +47,11 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
       '    echo "- stale metadata phrase found"',
       '    exit 1',
       '    ;;',
+      '  *check:live-static-parity*)',
+      '    echo "Live static parity check failed:"',
+      '    echo "- /: remote static content does not match dist/index.html"',
+      '    exit 1',
+      '    ;;',
       'esac',
       `exec ${shellSingleQuote(process.execPath)} "$@"`,
       '',
@@ -103,5 +108,7 @@ describe('strategy completion audit', () => {
     expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
     expect(result.stdout).toContain('Public metadata check failed:');
+    expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');
+    expect(result.stdout).toContain('Live static parity check failed:');
   });
 });
