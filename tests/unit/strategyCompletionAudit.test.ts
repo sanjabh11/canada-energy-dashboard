@@ -58,7 +58,7 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParit
       '    exit 0',
       '    ;;',
       '  *check:pilot-evidence-template*)',
-      '    echo "Pilot evidence register template check passed for 25 required columns."',
+      '    echo "Pilot evidence register template check passed for 24 required columns and canonical validator compatibility."',
       '    exit 0',
       '    ;;',
       '  *check:outreach-response-log-template*)',
