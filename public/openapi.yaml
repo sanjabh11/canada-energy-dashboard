@@ -3,16 +3,16 @@ info:
   title: Canada Energy Intelligence Platform API
   version: 1.0.0
   description: |
-    **RESTful API for Canadian energy data, compliance workflows, and stakeholder-ready exports.**
+    **RESTful API description for Canadian energy data, regulatory evidence workflows, and stakeholder-ready exports.**
     
     The CEIP API enables third-party integrations for:
-    - Alberta TIER compliance tracking
-    - Alberta grid data access (AESO pool prices and related workflows)
-    - Shadow billing & savings analysis
+    - Alberta TIER source-dated planning support
+    - Alberta grid data access when available, with fallback workflows
+    - Shadow billing comparison
     - OCAP®-aligned Indigenous reporting/export workflows
     - bank-ready export package generation
     
-    *Note: The endpoints below represent a core subset of the 40+ available commercial datasets in the CEIP API v2 architecture. Full access to all `api-v2-*` microservices is provided upon API key provisioning.*
+    *Note: The endpoints below are a representative API contract for proof-pack workflows. Available endpoint families vary by deployment, evidence status, and API key provisioning.*
     
     ## Authentication
     All requests require an API key in the `X-API-Key` header.
@@ -23,8 +23,8 @@ info:
     ```
     
     ## Rate Limits
-    - **Professional Tier**: 1,000 calls/day
-    - **Enterprise Tier**: Custom (10,000-100,000 calls/day)
+    - **Professional Tier**: 1,000 calls/day where enabled
+    - **Enterprise Tier**: Custom limits by deployment
     
     Exceeding your rate limit returns HTTP 429.
     
@@ -39,20 +39,20 @@ info:
 
 servers:
   - url: https://qnymbecjgeaoxsfphrti.functions.supabase.co/api/v1
-    description: Production API
+    description: Hosted API base where enabled
 
 security:
   - ApiKeyAuth: []
 
 tags:
-  - name: TIER Compliance
-    description: Alberta TIER emission reduction credits and compliance tracking
+  - name: TIER Planning
+    description: Alberta TIER emission reduction credits and source-dated planning workflows
   - name: Grid Data
     description: Alberta grid monitoring with AESO-sourced data (live when available, historical fallback otherwise)
-  - name: Billing & Savings
-    description: Shadow billing and rate comparison
+  - name: Billing Review
+    description: Shadow billing and rate comparison support
   - name: OCAP® Data
-    description: Indigenous data sovereignty and export
+    description: OCAP-aligned Indigenous reporting workflow export
   - name: Reports
     description: Bank-ready reports and compliance exports
 
@@ -63,7 +63,7 @@ paths:
       description: Retrieve annual emissions data for a specific facility and year
       operationId: getTierEmissions
       tags:
-        - TIER Compliance
+        - TIER Planning
       parameters:
         - name: facilityId
           in: query
@@ -151,7 +151,7 @@ paths:
       description: Retrieve current TIER credit portfolio (EPCs and Offsets)
       operationId: getTierCredits
       tags:
-        - TIER Compliance
+        - TIER Planning
       parameters:
         - name: facilityId
           in: query
@@ -209,7 +209,7 @@ paths:
       description: Compare actual bill vs. RoLR and pool price alternatives
       operationId: getShadowBilling
       tags:
-        - Billing & Savings
+        - Billing Review
       parameters:
         - name: month
           in: query
@@ -234,8 +234,8 @@ paths:
 
   /ocap/export:
     post:
-      summary: Export Indigenous community data
-      description: Generate OCAP®-compliant data export with audit trail
+      summary: Export owner-supplied Indigenous reporting data
+      description: Generate an OCAP®-aligned workflow export with audit trail fields. This is not a certification of Indigenous data sovereignty or legal compliance.
       operationId: exportOcapData
       tags:
         - OCAP® Data
