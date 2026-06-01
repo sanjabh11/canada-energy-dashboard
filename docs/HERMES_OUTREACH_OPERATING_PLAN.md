@@ -28,6 +28,10 @@
 5. Send manually only.
 6. Immediately log each real send:
    - `python3 ~/.hermes/scripts/ceip_log_manual_send.py --target "<full name>" --channel linkedin --variant <variant_id>`
+7. Mirror only anonymized proof-pack response evidence into the repo template when a reply changes pilot follow-up:
+   - `docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv`
+   - `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv`
+   - `pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv`
 
 ## Route-Selection Matrix
 
@@ -82,6 +86,8 @@ Every real send must capture:
 - `reply_status`
 
 If the current logger cannot accept all fields, record them in the notes column or append them to the manual activity row until the script is upgraded.
+
+Repo-retained response logs must stay anonymized. Use `target_label` values such as `utility_consultant_001`; keep full names, emails, phone numbers, account IDs, meter IDs, addresses, and sensitive originals outside this repo. The response log is an outreach evidence queue only; it does not move market confidence until the matching buyer evidence register and retained artifact hashes pass validation.
 
 ## Weekly Workflow
 

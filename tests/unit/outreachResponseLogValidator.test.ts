@@ -1,0 +1,210 @@
+import { spawn } from 'node:child_process';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
+
+const scriptPath = path.join(process.cwd(), 'scripts/validate-outreach-response-log.mjs');
+const templatePath = path.join(process.cwd(), 'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv');
+const tempRoots: string[] = [];
+
+const header = 'activity_date,channel,target_label,buyer_lane,proof_pack_id,route,rating,variant_id,caveat_used,artifact_promised,reply_status,response_summary,pain_signal,requested_input,reviewer_role,commercial_commitment_status,next_action,pilot_evidence_register_action,notes';
+
+function makeTempRoot() {
+  const root = mkdtempSync(path.join(tmpdir(), 'ceip-outreach-response-log-'));
+  tempRoots.push(root);
+  return root;
+}
+
+function runValidator(args: string[]) {
+  return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+    const child = spawn(process.execPath, [scriptPath, ...args], {
+      cwd: process.cwd(),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.setEncoding('utf8');
+    child.stderr.setEncoding('utf8');
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk;
+    });
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (status) => {
+      resolve({ status, stdout, stderr });
+    });
+  });
+}
+
+function writeLog(rows: string[]) {
+  const root = makeTempRoot();
+  const filePath = path.join(root, 'outreach-response-log.csv');
+  writeFileSync(filePath, [header, ...rows, ''].join('\n'), 'utf8');
+  return filePath;
+}
+
+afterEach(() => {
+  while (tempRoots.length > 0) {
+    const root = tempRoots.pop();
+    if (root) rmSync(root, { recursive: true, force: true });
+  }
+});
+
+describe('outreach response log validator', () => {
+  it('accepts the checked-in anonymized template with the template flag', async () => {
+    const result = await runValidator([templatePath, '--allow-template', '--report']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('CEIP Outreach Response Log Report');
+    expect(result.stdout).toContain('Rows: 0');
+    expect(result.stdout).toContain('Outreach response log validation passed for 0 row(s)');
+  });
+
+  it('accepts an anonymized interested reply that points to the next evidence action', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'linkedin',
+        'ontario_peak_advisor_001',
+        'utility',
+        'ga_ici_5cp_decision_support_pack',
+        '/ga-ici-5cp',
+        '4.2',
+        'ga_ici_5cp',
+        '"No guaranteed savings, final IESO settlement, eligibility decision, or curtailment instruction is claimed."',
+        'GA/ICI 5CP decision-support note',
+        'data_offered',
+        'Buyer offered a redacted interval-load sample for peak-window review.',
+        'Ontario peak-risk planning question',
+        'redacted interval load for candidate peak windows',
+        'energy manager reviewer',
+        'none',
+        'create intake packet and request redacted retained extract',
+        'create_intake_packet',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath, '--report']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Rows requiring evidence action: 1');
+    expect(result.stdout).toContain('ga_ici_5cp_decision_support_pack: 1');
+    expect(result.stdout).toContain('data_offered: 1');
+  });
+
+  it('rejects route/proof-pack mismatches', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'email',
+        'tier_reviewer_001',
+        'industrial',
+        'utility_forecast_planning_pack',
+        '/roi-calculator',
+        '4.0',
+        'tier_cfo',
+        '"No guaranteed savings or live market price is claimed."',
+        'TIER planning memo',
+        'interested',
+        'Buyer asked for a bounded TIER scenario.',
+        'Compliance cost planning',
+        'facility assumptions',
+        'industrial compliance reviewer',
+        'none',
+        'create intake packet',
+        'create_intake_packet',
+        'Mismatch fixture.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('proof_pack_id utility_forecast_planning_pack is not valid for route /roi-calculator');
+  });
+
+  it('rejects direct identifiers and unsafe positive claims in repo-retained response logs', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'linkedin',
+        'planner_001',
+        'utility',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        '4.5',
+        'ufp_consultant',
+        '"No production utility onboarding is claimed."',
+        'production utility bridge',
+        'meeting_booked',
+        'Reply from jane@example.com asked for customer LDC history.',
+        'Load growth planning',
+        'anonymized load history',
+        'utility planning reviewer',
+        'none',
+        'update register',
+        'update_register',
+        'Unsafe fixture.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('appears to contain email address');
+    expect(output).toContain('contains a positive production utility or telemetry claim');
+  });
+
+  it('rejects commercial commitment replies that do not identify evidence-register follow-up', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'referral',
+        'security_procurement_001',
+        'security',
+        'utility_security_procurement_pack',
+        '/utility-security',
+        '4.0',
+        'security_procurement',
+        '"No SOC certification or production approval is claimed."',
+        'security procurement evidence matrix',
+        'meeting_booked',
+        'Buyer asked for procurement review.',
+        'Security review before data sharing',
+        'redacted security questionnaire',
+        'procurement reviewer',
+        'letter_of_intent',
+        'follow up manually',
+        'none',
+        'Commercial signal must not be status-only.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('commercial commitment replies must set pilot_evidence_register_action');
+  });
+});
+
+describe('outreach response log template file', () => {
+  it('does not include direct identifier columns', () => {
+    const headerLine = readFileSync(templatePath, 'utf8').split(/\r?\n/)[0];
+
+    expect(headerLine).toContain('target_label');
+    expect(headerLine).not.toContain('email');
+    expect(headerLine).not.toContain('phone');
+    expect(headerLine).not.toContain('full_name');
+  });
+});

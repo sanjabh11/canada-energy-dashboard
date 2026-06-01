@@ -44,6 +44,17 @@ These are current sellability-confidence ratings, not target ratings. They must 
 | Reserve | Consultant/API Canadian energy data pack | Consultants, analysts | `/api-docs` | 3.1/5 |
 | Reserve | Indigenous funder and AICEI reporting pack | Indigenous project teams | `/funder-reporting`, `/aicei` | 3.2/5 |
 
+## Response Logging Gate
+
+Manual sends and replies should be mirrored into an anonymized response log only when they change pilot follow-up. Use [templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv) and validate it with:
+
+```bash
+pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
+pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv
+```
+
+The log records proof-pack route, caveat, artifact promise, reply status, and the next pilot-evidence action. It must not retain direct names, emails, phone numbers, account IDs, meter IDs, addresses, secrets, or raw buyer files, and it does not move confidence until the buyer evidence register and retained artifact hashes pass their own gates.
+
 ## Lead Lists By Lane
 
 | Lane | Example targets | Primary route | Opening angle |
