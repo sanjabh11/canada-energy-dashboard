@@ -31,6 +31,7 @@
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "validate:outreach-response-log": "node scripts/validate-outreach-response-log.mjs",
     "report:outreach-response-log": "node scripts/validate-outreach-response-log.mjs --report",
+    "plan:outreach-intake": "node scripts/validate-outreach-response-log.mjs --action-plan",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
     "report:production-approval-packet": "node scripts/report-production-approval-packet.mjs",
     "check:production-deploy-request": "node scripts/report-production-approval-packet.mjs --fail-on-predeploy-blocker",

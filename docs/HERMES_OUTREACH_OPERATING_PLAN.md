@@ -32,6 +32,7 @@
    - `docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv`
    - `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv`
    - `pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv`
+   - `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`
 
 ## Route-Selection Matrix
 

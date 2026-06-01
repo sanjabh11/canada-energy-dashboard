@@ -243,9 +243,10 @@ Validate before treating a reply as pilot follow-up:
 ```bash
 pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
 pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv
+pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv
 ```
 
-The response log can point to `create_intake_packet`, `prepare_retained_artifact`, `update_register`, or `run_95_gate`, but it does not itself create buyer evidence or move confidence.
+The response log can point to `create_intake_packet`, `prepare_retained_artifact`, `update_register`, or `run_95_gate`, but it does not itself create buyer evidence or move confidence. It rejects future-dated outreach activity and blocks no-reply/not-fit statuses from creating evidence actions; `plan:outreach-intake` prints the next intake commands for rows that are actually actionable.
 
 ## Discovery Coding Taxonomy
 

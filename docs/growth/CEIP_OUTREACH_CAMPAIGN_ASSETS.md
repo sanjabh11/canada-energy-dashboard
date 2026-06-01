@@ -51,9 +51,10 @@ Manual sends and replies should be mirrored into an anonymized response log only
 ```bash
 pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
 pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv
+pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv
 ```
 
-The log records proof-pack route, caveat, artifact promise, reply status, and the next pilot-evidence action. It must not retain direct names, emails, phone numbers, account IDs, meter IDs, addresses, secrets, or raw buyer files, and it does not move confidence until the buyer evidence register and retained artifact hashes pass their own gates.
+The log records proof-pack route, caveat, artifact promise, reply status, completed activity date, and the next pilot-evidence action. It must not retain direct names, emails, phone numbers, account IDs, meter IDs, addresses, secrets, or raw buyer files; future-dated activity and no-reply evidence actions fail validation. The `plan:outreach-intake` output can prepare intake commands, but the log does not move confidence until the buyer evidence register and retained artifact hashes pass their own gates.
 
 ## Lead Lists By Lane
 

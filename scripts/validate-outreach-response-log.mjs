@@ -8,6 +8,7 @@ const args = process.argv.slice(2);
 const failures = [];
 let allowTemplate = false;
 let report = false;
+let actionPlan = false;
 let fileArg = null;
 
 for (let index = 0; index < args.length; index += 1) {
@@ -19,6 +20,10 @@ for (let index = 0; index < args.length; index += 1) {
   }
   if (arg === '--report') {
     report = true;
+    continue;
+  }
+  if (arg === '--action-plan') {
+    actionPlan = true;
     continue;
   }
   if (arg.startsWith('--')) {
@@ -147,6 +152,26 @@ const allowedEvidenceActions = new Set([
   'prepare_retained_artifact',
   'update_register',
   'run_95_gate',
+]);
+
+const noEvidenceActionReplyStatuses = new Set([
+  'drafted',
+  'sent_no_reply',
+  'not_now',
+  'not_fit',
+  'unsubscribe',
+]);
+
+const intakePacketReplyStatuses = new Set([
+  'interested',
+  'requested_info',
+  'data_offered',
+  'meeting_booked',
+]);
+
+const artifactOrRegisterReplyStatuses = new Set([
+  'data_offered',
+  'meeting_booked',
 ]);
 
 const allowedCommercialCommitmentStatuses = new Set([
@@ -282,6 +307,24 @@ function isValidIsoDate(value) {
   return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
 }
 
+function todayIso() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function shellQuote(value) {
+  if (/^[A-Za-z0-9_./:=@-]+$/.test(value)) return value;
+  return `'${String(value).replaceAll("'", "'\\''")}'`;
+}
+
+function slugify(value) {
+  return String(value ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 72) || 'outreach-row';
+}
+
 function parseRating(value, rowNumber) {
   const rating = Number(String(value ?? '').replace('/5', '').trim());
   if (!Number.isFinite(rating)) {
@@ -349,6 +392,80 @@ function printReport(rows) {
   for (const [key, count] of byEvidenceAction) console.log(`- ${key}: ${count}`);
 }
 
+function printActionPlan(rows) {
+  const actionableRows = rows.filter((row) => row.pilot_evidence_register_action !== 'none');
+
+  console.log('\nCEIP Outreach Intake Action Plan');
+  console.log(`Log: ${relativeLogPath}`);
+  console.log(`Rows requiring evidence action: ${actionableRows.length}`);
+  console.log('Confidence movement: none; these commands prepare intake scaffolding or validation only.');
+
+  for (const row of actionableRows) {
+    const targetSlug = slugify(row.target_label);
+    const routeSlug = slugify(row.route.replace(/^\//, ''));
+    const actionSlug = slugify(row.pilot_evidence_register_action);
+    const packetDir = `/tmp/ceip-pilot-intake/${row.activity_date}-${targetSlug}-${routeSlug}`;
+    const evidenceRoot = `/tmp/ceip-pilot-evidence/${row.activity_date}-${targetSlug}-${routeSlug}/redacted-artifacts`;
+    const artifactFile = `${row.activity_date}-${targetSlug}-${routeSlug}-retained.md`;
+
+    console.log(`\n- Row ${row.__rowNumber}: ${row.target_label} / ${row.route} / ${row.pilot_evidence_register_action}`);
+    console.log(`  Reply status: ${row.reply_status}; commercial commitment: ${row.commercial_commitment_status}`);
+
+    if (row.pilot_evidence_register_action === 'create_intake_packet') {
+      console.log(`  1. ${[
+        'pnpm',
+        'run',
+        'create:pilot-evidence-intake-packet',
+        '--',
+        '--route',
+        row.route,
+        '--output-dir',
+        packetDir,
+      ].map(shellQuote).join(' ')}`);
+      console.log('  2. Fill the generated starter register only after redacted buyer artifacts exist; starter rows keep confidence_delta=0.');
+      continue;
+    }
+
+    if (row.pilot_evidence_register_action === 'prepare_retained_artifact') {
+      console.log(`  1. ${[
+        'pnpm',
+        'run',
+        'prepare:pilot-evidence-artifact',
+        '--',
+        '--evidence-root',
+        evidenceRoot,
+        '--artifact-file',
+        artifactFile,
+        '--route',
+        row.route,
+        '--record-date',
+        row.activity_date,
+        '--reviewer-role',
+        row.reviewer_role,
+        '--commercial-commitment-status',
+        row.commercial_commitment_status,
+        '--diagnostic',
+        '<replace with route-specific buyer diagnostic evidence>',
+      ].map(shellQuote).join(' ')}`);
+      console.log('  2. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+      continue;
+    }
+
+    if (row.pilot_evidence_register_action === 'update_register') {
+      console.log(`  1. Update a filled pilot evidence register with proof_pack_id=${row.proof_pack_id}, route=${row.route}, and the retained artifact SHA-256 reference.`);
+      console.log(`  2. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
+      continue;
+    }
+
+    if (row.pilot_evidence_register_action === 'run_95_gate') {
+      console.log(`  1. pnpm run report:pilot-evidence-95 -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
+      console.log(`  2. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --require-95 --evidence-root ${shellQuote(evidenceRoot)}`);
+    }
+
+    if (actionSlug.length === 0) console.log('  No command available for this action.');
+  }
+}
+
 if (!existsSync(logPath)) {
   console.error(`Outreach response log not found: ${relativeLogPath}`);
   process.exit(1);
@@ -389,6 +506,8 @@ if (rows.length < 2) {
 
     if (!isValidIsoDate(row.activity_date ?? '')) {
       failures.push(`Row ${rowNumber}: activity_date must use a valid YYYY-MM-DD calendar date.`);
+    } else if ((row.activity_date ?? '') > todayIso()) {
+      failures.push(`Row ${rowNumber}: activity_date must not be in the future; repo-retained outreach response logs can only record completed activity.`);
     }
 
     if (!allowedChannels.has(normalizeText(row.channel))) {
@@ -422,13 +541,40 @@ if (rows.length < 2) {
       failures.push(`Row ${rowNumber}: pilot_evidence_register_action must be one of ${Array.from(allowedEvidenceActions).join(', ')}.`);
     }
 
-    if (normalizeText(row.commercial_commitment_status) !== 'none'
-      && normalizeText(row.pilot_evidence_register_action) === 'none') {
+    const replyStatus = normalizeText(row.reply_status);
+    const evidenceAction = normalizeText(row.pilot_evidence_register_action);
+    const commercialCommitmentStatus = normalizeText(row.commercial_commitment_status);
+
+    if (evidenceAction !== 'none' && noEvidenceActionReplyStatuses.has(replyStatus)) {
+      failures.push(`Row ${rowNumber}: ${row.reply_status} replies cannot set pilot_evidence_register_action to ${row.pilot_evidence_register_action}; keep evidence action as none until a buyer asks for information, offers data, books a meeting, or records a commercial signal.`);
+    }
+
+    if (evidenceAction === 'create_intake_packet' && !intakePacketReplyStatuses.has(replyStatus)) {
+      failures.push(`Row ${rowNumber}: create_intake_packet requires reply_status to be interested, requested_info, data_offered, or meeting_booked.`);
+    }
+
+    if (['prepare_retained_artifact', 'update_register'].includes(evidenceAction)
+      && !artifactOrRegisterReplyStatuses.has(replyStatus)
+      && commercialCommitmentStatus === 'none') {
+      failures.push(`Row ${rowNumber}: ${row.pilot_evidence_register_action} requires buyer data offered, a booked meeting, or a commercial commitment signal.`);
+    }
+
+    if (evidenceAction === 'run_95_gate') {
+      if (!artifactOrRegisterReplyStatuses.has(replyStatus)) {
+        failures.push(`Row ${rowNumber}: run_95_gate requires reply_status to be data_offered or meeting_booked; earlier outreach statuses are not enough for the 95% evidence gate.`);
+      }
+      if (commercialCommitmentStatus === 'none') {
+        failures.push(`Row ${rowNumber}: run_95_gate requires a commercial_commitment_status beyond none.`);
+      }
+    }
+
+    if (commercialCommitmentStatus !== 'none'
+      && evidenceAction === 'none') {
       failures.push(`Row ${rowNumber}: commercial commitment replies must set pilot_evidence_register_action to create_intake_packet, prepare_retained_artifact, update_register, or run_95_gate.`);
     }
 
-    if (['data_offered', 'meeting_booked'].includes(normalizeText(row.reply_status))
-      && normalizeText(row.pilot_evidence_register_action) === 'none') {
+    if (['data_offered', 'meeting_booked'].includes(replyStatus)
+      && evidenceAction === 'none') {
       failures.push(`Row ${rowNumber}: ${row.reply_status} replies must identify the next pilot evidence register action.`);
     }
 
@@ -438,7 +584,7 @@ if (rows.length < 2) {
 
     scanDirectIdentifiers(row, rowNumber);
     scanOverclaims(row, rowNumber);
-    responseRows.push(row);
+    responseRows.push({ ...row, __rowNumber: String(rowNumber) });
   });
 }
 
@@ -449,5 +595,6 @@ if (failures.length > 0) {
 }
 
 if (report) printReport(responseRows);
+if (actionPlan) printActionPlan(responseRows);
 
 console.log(`Outreach response log validation passed for ${responseRows.length} row(s): ${relativeLogPath}`);

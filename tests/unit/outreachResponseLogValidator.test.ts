@@ -100,6 +100,41 @@ describe('outreach response log validator', () => {
     expect(result.stdout).toContain('data_offered: 1');
   });
 
+  it('prints an intake action plan without moving confidence', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'linkedin',
+        'ontario_peak_advisor_001',
+        'utility',
+        'ga_ici_5cp_decision_support_pack',
+        '/ga-ici-5cp',
+        '4.2',
+        'ga_ici_5cp',
+        '"No guaranteed savings, final IESO settlement, eligibility decision, or curtailment instruction is claimed."',
+        'GA/ICI 5CP decision-support note',
+        'data_offered',
+        'Buyer offered a redacted interval-load sample for peak-window review.',
+        'Ontario peak-risk planning question',
+        'redacted interval load for candidate peak windows',
+        'energy manager reviewer',
+        'none',
+        'create intake packet and request redacted retained extract',
+        'create_intake_packet',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath, '--action-plan']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
+    expect(result.stdout).toContain('Confidence movement: none');
+    expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet -- --route /ga-ici-5cp');
+    expect(result.stdout).toContain('starter rows keep confidence_delta=0');
+  });
+
   it('rejects route/proof-pack mismatches', async () => {
     const filePath = writeLog([
       [
@@ -130,6 +165,38 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('proof_pack_id utility_forecast_planning_pack is not valid for route /roi-calculator');
+  });
+
+  it('rejects future-dated outreach rows', async () => {
+    const filePath = writeLog([
+      [
+        '2999-01-01',
+        'email',
+        'utility_planner_001',
+        'utility',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        '4.5',
+        'utility_forecast',
+        '"No production utility onboarding is claimed."',
+        'forecast planning pack',
+        'interested',
+        'Buyer asked for a bounded forecast sample.',
+        'Load growth planning',
+        'anonymized load history',
+        'utility planning reviewer',
+        'none',
+        'create intake packet',
+        'create_intake_packet',
+        'Future row should fail.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('activity_date must not be in the future');
   });
 
   it('rejects direct identifiers and unsafe positive claims in repo-retained response logs', async () => {
@@ -195,6 +262,71 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(1);
     expect(output).toContain('commercial commitment replies must set pilot_evidence_register_action');
+  });
+
+  it('rejects non-actionable replies that try to create buyer-evidence actions', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'email',
+        'utility_planner_002',
+        'utility',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        '4.5',
+        'utility_forecast',
+        '"No production utility onboarding is claimed."',
+        'forecast planning pack',
+        'sent_no_reply',
+        'No reply yet.',
+        'Load growth planning',
+        'anonymized load history',
+        'utility planning reviewer',
+        'none',
+        'create intake packet',
+        'create_intake_packet',
+        'No reply cannot create intake action.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('sent_no_reply replies cannot set pilot_evidence_register_action');
+  });
+
+  it('rejects 95% gate actions without data-offered or commercial-commitment evidence', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'email',
+        'forecast_reviewer_001',
+        'utility',
+        'forecast_benchmark_provenance',
+        '/forecast-benchmarking',
+        '4.6',
+        'forecast_trust',
+        '"No guaranteed accuracy or AI superiority is claimed."',
+        'forecast trust report',
+        'requested_info',
+        'Buyer asked for more detail.',
+        'Forecast benchmark review',
+        'buyer forecast baseline',
+        'forecast reviewer',
+        'none',
+        'run 95 gate',
+        'run_95_gate',
+        'Too early for 95 gate.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('run_95_gate requires reply_status to be data_offered or meeting_booked');
+    expect(output).toContain('run_95_gate requires a commercial_commitment_status beyond none');
   });
 });
 
