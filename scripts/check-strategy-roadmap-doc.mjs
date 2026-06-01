@@ -218,6 +218,7 @@ if (!existsSync(roadmapPath)) {
     'bounded source-anchor retry',
     'The production deploy script could drift from the approval packet and skip the CEIP-specific readiness or post-deploy parity gates.',
     'dirty worktree blocker classification',
+    'skipping exact static parity when `--skip-release-readiness` is used',
     'Completion audit could claim the buyer-evidence boundary is enforced without running the fixture-proof and template gates.',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',

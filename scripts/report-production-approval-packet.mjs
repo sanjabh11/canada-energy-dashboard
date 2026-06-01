@@ -185,6 +185,10 @@ function relevantLines(step) {
     .map((line) => line.trimEnd())
     .filter(Boolean);
 
+  if (step.status === 'skipped') {
+    return lines.slice(0, 80);
+  }
+
   if (step.label === 'Live metadata parity') {
     return lines.filter((line) => /^-|Public metadata check/.test(line)).slice(0, 80);
   }
@@ -234,7 +238,16 @@ if (skipReleaseReadiness) {
 }
 
 steps.push(runStep('Live metadata parity', 'node', ['scripts/check-public-metadata.mjs', '--base-url', baseUrl]));
-steps.push(runStep('Live static dist parity', 'node', ['scripts/check-live-static-parity.mjs', '--base-url', baseUrl]));
+if (skipReleaseReadiness) {
+  steps.push(
+    skippedStep(
+      'Live static dist parity',
+      'Skipped because local release readiness was skipped; exact static parity requires a freshly built dist from `pnpm run check:release-readiness` or `pnpm run check:post-deploy-live`.',
+    ),
+  );
+} else {
+  steps.push(runStep('Live static dist parity', 'node', ['scripts/check-live-static-parity.mjs', '--base-url', baseUrl]));
+}
 
 if (includeHostedSmoke) {
   steps.push(
@@ -278,6 +291,7 @@ const liveParityAchieved = deploymentRequestReady && liveMetadataGreen && liveSt
 const approvalReady = liveParityAchieved;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
 const blockedByStaticParity = liveStaticParity?.status === 'fail';
+const staticParityNotRun = liveStaticParity?.status === 'skipped';
 const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
 const preDeployBlockers = [
   !sourceDeployable ? 'source deploy provenance is not deploy-script-ready' : null,
@@ -286,6 +300,7 @@ const preDeployBlockers = [
 const liveParityBlockers = [
   blockedByLiveMetadata ? 'live metadata parity is failing' : null,
   blockedByStaticParity ? 'live static dist parity is failing' : null,
+  staticParityNotRun ? 'live static dist parity was skipped' : null,
   hostedSmokeNotRun ? 'hosted proof-pack route smoke was skipped' : null,
 ].filter(Boolean);
 const blockers = [...preDeployBlockers, ...liveParityBlockers];
@@ -329,6 +344,8 @@ const markdown = [
       ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production is still serving stale metadata; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
       : blockedByStaticParity
         ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production static files do not match built `dist`; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
+      : staticParityNotRun
+        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Static parity was skipped because local release readiness did not provide a freshly built `dist`; run the full packet or `pnpm run check:post-deploy-live` before declaring live parity.'
       : hostedSmokeNotRun
         ? 'Metadata is green, but hosted proof-pack smoke was not run. Use `--include-hosted-smoke` or `pnpm run check:post-deploy-live` before declaring live parity.'
       : 'Do not approve production release until failed or skipped required gates are resolved.',

@@ -135,11 +135,12 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Local source approval state: skipped.');
     expect(result.stdout).toContain('- Live metadata parity: pass.');
-    expect(result.stdout).toContain('- Live static dist parity: pass.');
+    expect(result.stdout).toContain('- Live static dist parity: skipped.');
     expect(result.stdout).toContain('- Hosted proof-pack smoke: pass.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
+    expect(result.stdout).toContain('Skipped because local release readiness was skipped; exact static parity requires a freshly built dist');
     expect(result.stdout).toContain(
       'route /(utility-demand-forecast|forecast-benchmarking|regulatory-filing|pilot-readiness|ga-ici-5cp|byo-csv-proof)',
     );
