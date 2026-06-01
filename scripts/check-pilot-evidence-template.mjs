@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
@@ -23,7 +24,6 @@ const requiredColumns = [
   'artifact_generated',
   'time_to_artifact_hours',
   'buyer_data_coverage_pct',
-  'commercial_commitment_status',
   'benchmark_lift_or_diagnostic',
   'reviewer_role',
   'reviewer_feedback_status',
@@ -64,6 +64,11 @@ const requiredDocPhrases = [
 
 const failures = [];
 
+const duplicateRequiredColumns = requiredColumns.filter((column, index) => requiredColumns.indexOf(column) !== index);
+if (duplicateRequiredColumns.length > 0) {
+  failures.push(`Pilot evidence template check has duplicate required columns: ${Array.from(new Set(duplicateRequiredColumns)).join(', ')}`);
+}
+
 function readRequiredFile(filePath, label) {
   if (!existsSync(filePath)) {
     failures.push(`${label} is missing: ${path.relative(repoRoot, filePath)}`);
@@ -101,6 +106,25 @@ if (template) {
   if (!template.includes('production telemetry') || !template.includes('forecast superiority')) {
     failures.push('Pilot evidence register template must include do-not-claim examples.');
   }
+
+  const validatorPath = path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs');
+  if (!existsSync(validatorPath)) {
+    failures.push('Pilot evidence register validator is missing: scripts/validate-pilot-evidence-register.mjs');
+  } else {
+    const validationResult = spawnSync(process.execPath, [
+      validatorPath,
+      templatePath,
+      '--allow-template',
+    ], {
+      cwd: repoRoot,
+      encoding: 'utf8',
+    });
+
+    if (validationResult.status !== 0) {
+      const output = `${validationResult.stderr ?? ''}\n${validationResult.stdout ?? ''}`.trim();
+      failures.push(`Pilot evidence register template must pass the canonical validator with --allow-template.${output ? ` Validator output: ${output}` : ''}`);
+    }
+  }
 }
 
 for (const [label, filePath] of [
@@ -123,4 +147,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log(`Pilot evidence register template check passed for ${requiredColumns.length} required columns.`);
+console.log(`Pilot evidence register template check passed for ${requiredColumns.length} required columns and canonical validator compatibility.`);
