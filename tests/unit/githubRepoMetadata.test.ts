@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -100,5 +100,20 @@ describe('GitHub repository metadata guard', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('GitHub repository must remain public.');
+  });
+
+  it('keeps package metadata aligned with the public GitHub About panel', () => {
+    const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), 'package.json'), 'utf8'));
+    const keywords = new Set(packageJson.keywords);
+
+    expect(packageJson.name).toBe('canada-energy-dashboard');
+    expect(packageJson.description).toBe(validMetadata.description);
+    expect(packageJson.license).toBe('MIT');
+    expect(packageJson.homepage).toBe(validMetadata.homepage);
+    expect(packageJson.repository.url).toBe('https://github.com/sanjabh11/canada-energy-dashboard.git');
+    expect(packageJson.bugs.url).toBe('https://github.com/sanjabh11/canada-energy-dashboard/issues');
+    for (const topic of validMetadata.topics) {
+      expect(keywords.has(topic)).toBe(true);
+    }
   });
 });

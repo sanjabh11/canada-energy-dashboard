@@ -28,6 +28,20 @@ const forbiddenTrackedPrefixes = [
   'test-results/',
 ];
 
+const expectedPublicTopics = [
+  'analytics',
+  'canada',
+  'energy',
+  'esg',
+  'forecasting',
+  'react',
+  'supabase',
+  'typescript',
+];
+
+const expectedRepositoryUrl = 'https://github.com/sanjabh11/canada-energy-dashboard.git';
+const expectedHomepage = 'https://canada-energy.netlify.app';
+
 function readJson(relativePath) {
   return JSON.parse(readFileSync(path.join(repoRoot, relativePath), 'utf8'));
 }
@@ -80,6 +94,21 @@ if (packageJson.license !== 'MIT') {
 }
 if (!packageJson.description?.includes('Canadian energy intelligence dashboard')) {
   failures.push('package.json must include the public repository description.');
+}
+if (packageJson.homepage !== expectedHomepage) {
+  failures.push(`package.json homepage must be \`${expectedHomepage}\`.`);
+}
+if (packageJson.repository?.url !== expectedRepositoryUrl) {
+  failures.push(`package.json repository.url must be \`${expectedRepositoryUrl}\`.`);
+}
+if (packageJson.bugs?.url !== 'https://github.com/sanjabh11/canada-energy-dashboard/issues') {
+  failures.push('package.json bugs.url must point to the public GitHub issue tracker.');
+}
+
+const packageKeywords = new Set((packageJson.keywords ?? []).map((keyword) => String(keyword).toLowerCase()));
+const missingKeywords = expectedPublicTopics.filter((topic) => !packageKeywords.has(topic));
+if (missingKeywords.length > 0) {
+  failures.push(`package.json keywords missing public-discovery topics: ${missingKeywords.join(', ')}.`);
 }
 
 requireText('LICENSE', 'MIT License', 'GitHub should detect a visible open-source license');
