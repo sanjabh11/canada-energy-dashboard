@@ -366,10 +366,13 @@ ${markdownList([
 
 ## First Commands
 
+Run the starter validation immediately. The retained-artifact command is a template to fill only after buyer-supplied redacted evidence, reviewer status, timing, coverage, and commercial-commitment evidence are known.
+
 \`\`\`bash
 pnpm run validate:pilot-evidence -- ${starterRegisterDisplay}
-pnpm run prepare:pilot-evidence-artifact -- --evidence-root ${redactedArtifactDirDisplay} --artifact-file ${packetSlug}-retained.md --route ${route} --record-date ${recordDate} --pii-screen-result redacted --buyer-data-coverage-pct 0 --time-to-artifact-hours 0 --reviewer-role "buyer reviewer role" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status none --claim-boundary "${config.claimBoundary}" --do-not-claim "${config.doNotClaim}" --diagnostic "${config.diagnosticPrompt}"
+pnpm run prepare:pilot-evidence-artifact -- --evidence-root ${redactedArtifactDirDisplay} --artifact-file ${packetSlug}-retained.md --route ${route} --record-date ${recordDate} --pii-screen-result redacted --buyer-data-coverage-pct "<replace with buyer data coverage percentage>" --time-to-artifact-hours "<replace with elapsed artifact hours>" --reviewer-role "<replace with independent buyer/reviewer role>" --reviewer-acceptance "<accepted|approved|signed>" --reviewer-feedback-status "<complete|accepted|approved|signed>" --day-14-decision proceed --commercial-commitment-status "<none|design_partner_signed|paid_pilot|purchase_order|letter_of_intent>" --commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>" --claim-boundary "${config.claimBoundary}" --do-not-claim "${config.doNotClaim}" --diagnostic "<replace with retained route-specific diagnostic evidence>"
 pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root ${redactedArtifactDirDisplay}
+pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root ${redactedArtifactDirDisplay}
 \`\`\`
 
 After preparing a retained artifact, replace the starter row's \`evidence_file_reference\` with the printed \`sha256\` reference and replace pending reviewer fields with buyer-side evidence.
@@ -421,3 +424,4 @@ console.log('');
 console.log('Next checks:');
 console.log(`pnpm run validate:pilot-evidence -- ${starterRegisterDisplay}`);
 console.log(`pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root ${redactedArtifactDirDisplay}`);
+console.log(`pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root ${redactedArtifactDirDisplay}`);

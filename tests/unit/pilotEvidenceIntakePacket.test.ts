@@ -60,6 +60,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Pilot evidence intake packet created.');
     expect(result.stdout).toContain('ga_ici_5cp_decision_support_pack');
+    expect(result.stdout).toContain('validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95');
 
     const registerPath = path.join(outputDir, 'pilot-evidence-register-starter.csv');
     const readmePath = path.join(outputDir, 'README.md');
@@ -76,6 +77,11 @@ describe('pilot evidence intake packet generator', () => {
     expect(readmeText).toContain('does not create buyer proof');
     expect(readmeText).toContain('confidence_delta=0');
     expect(readmeText).toContain('pnpm run prepare:pilot-evidence-artifact');
+    expect(readmeText).toContain('Run the starter validation immediately');
+    expect(readmeText).toContain('--buyer-data-coverage-pct "<replace with buyer data coverage percentage>"');
+    expect(readmeText).toContain('--commercial-commitment-evidence "<replace with retained commercial-commitment evidence text when status is stronger than none>"');
+    expect(readmeText).toContain('pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root');
+    expect(readmeText).not.toContain('--buyer-data-coverage-pct 0 --time-to-artifact-hours 0');
     expect(artifactReadmeText).toContain('Do not store raw buyer files');
 
     const validationResult = await runNodeScript(validatorScriptPath, [registerPath]);
