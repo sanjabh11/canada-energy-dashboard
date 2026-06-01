@@ -19,6 +19,9 @@ function writeExecutable(filePath: string, content: string) {
 async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-completion-audit-'));
   const fakePnpmPath = path.join(tempDir, 'pnpm');
+  const planPath = path.join(tempDir, 'ceip-95-strategy-feature-gap.md');
+
+  writeFileSync(planPath, '# CEIP Plan\n\n95% Strategy-Direction Confidence\n');
 
   writeExecutable(
     fakePnpmPath,
@@ -76,7 +79,7 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
 
   try {
     return await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-      const child = spawn(process.execPath, [scriptPath, '--include-checks', '--fail-on-local-checks'], {
+      const child = spawn(process.execPath, [scriptPath, '--plan', planPath, '--include-checks', '--fail-on-local-checks'], {
         cwd: process.cwd(),
         env: {
           ...process.env,
