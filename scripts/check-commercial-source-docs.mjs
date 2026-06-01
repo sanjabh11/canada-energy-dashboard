@@ -99,6 +99,7 @@ const overconfidentOutreachRatings = ['4.7/5', '4.8/5', '4.9/5'];
 const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evidence-register\.csv --require-95(?! --evidence-root)/;
 const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
+const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:outreach-response-log/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
@@ -293,6 +294,7 @@ if (!existsSync(sourceDocPath)) {
     'OCAP-aligned workflow',
     'accurate avalanche prediction',
     'current P1 live parity is achieved',
+    'OUTREACH_RESPONSE_LOG_TEMPLATE.csv',
   ];
 
   for (const phrase of requiredPhrases) {
@@ -344,6 +346,10 @@ if (!existsSync(sourceDocPath)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention numeric forecast evidence for the 95% pilot-evidence workflow.');
   }
 
+  if (!outreachResponseLogPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the outreach response log template and validator.');
+  }
+
   if (!pilotEvidenceIntakePacketPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention create:pilot-evidence-intake-packet for buyer-evidence intake scaffolding.');
   }
@@ -383,6 +389,22 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!nonStatusCommercialCommitmentEvidencePhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must require strong commercial commitment evidence beyond status-only text.');
+    }
+  }
+
+  const outreachTemplatesPath = path.join(repoRoot, 'docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md');
+  if (existsSync(outreachTemplatesPath)) {
+    const outreachTemplatesDoc = readFileSync(outreachTemplatesPath, 'utf8');
+    if (!outreachResponseLogPhrase.test(outreachTemplatesDoc)) {
+      failures.push('docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md must mention the outreach response log template and validator.');
+    }
+  }
+
+  const outreachCampaignPath = path.join(repoRoot, 'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md');
+  if (existsSync(outreachCampaignPath)) {
+    const outreachCampaignDoc = readFileSync(outreachCampaignPath, 'utf8');
+    if (!outreachResponseLogPhrase.test(outreachCampaignDoc)) {
+      failures.push('docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md must mention the outreach response log template and validator.');
     }
   }
 

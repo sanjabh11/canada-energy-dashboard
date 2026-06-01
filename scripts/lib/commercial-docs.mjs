@@ -7,6 +7,7 @@ export const requiredActiveCommercialDocs = [
   'docs/HERMES_OUTREACH_OPERATING_PLAN.md',
   'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md',
   'docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md',
+  'docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv',
   'docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv',
 ];
 

@@ -234,6 +234,19 @@ Would a short walkthrough of `/ai-datacentres` and `/utility-demand-forecast` he
 - `do_not_claim`:
 - `next_artifact_if_success`:
 
+## Anonymized Response Log
+
+Use [OUTREACH_RESPONSE_LOG_TEMPLATE.csv](./OUTREACH_RESPONSE_LOG_TEMPLATE.csv) when a manual send or reply changes pilot follow-up. Keep direct contact details in the external outreach system only; repo-retained rows use `target_label` and proof-pack evidence fields.
+
+Validate before treating a reply as pilot follow-up:
+
+```bash
+pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
+pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv
+```
+
+The response log can point to `create_intake_packet`, `prepare_retained_artifact`, `update_register`, or `run_95_gate`, but it does not itself create buyer evidence or move confidence.
+
 ## Discovery Coding Taxonomy
 
 - `utility_forecast_pain`
