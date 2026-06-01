@@ -189,6 +189,22 @@ function relevantLines(step) {
     return lines.slice(0, 80);
   }
 
+  if (step.label === 'Local release readiness' && step.status === 'pass') {
+    const noisyNestedLiveEvidence =
+      /^(?:[-# ]*Status: fail|Public metadata check failed:|Live static parity check failed:|.*ELIFECYCLE.*|[-] https?:\/\/|[-] \/: remote static content|[-] \/manifest\.json: remote static content|[-] \/schema-webapp\.jsonld: remote static content)/i;
+    const localPassLines = lines.filter((line) =>
+      !noisyNestedLiveEvidence.test(line)
+      && /passed|PASS|Test Files|Tests|Claim-boundary|Commercial source|Pilot evidence|bundle budgets|built in|Public metadata check passed|GA\/ICI public historical actuals|Production deploy script guard/i.test(
+        line,
+      ),
+    );
+
+    return [
+      'Local release readiness passed; live parity is reported by the dedicated live metadata, static parity, and hosted smoke gates below.',
+      ...localPassLines,
+    ].slice(0, 80);
+  }
+
   if (step.label === 'Live metadata parity') {
     return lines.filter((line) => /^-|Public metadata check/.test(line)).slice(0, 80);
   }

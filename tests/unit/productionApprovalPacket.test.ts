@@ -16,6 +16,15 @@ function writeExecutable(filePath: string, content: string) {
   chmodSync(filePath, 0o755);
 }
 
+function markdownSection(markdown: string, heading: string) {
+  const marker = `### ${heading}`;
+  const start = markdown.indexOf(marker);
+  if (start === -1) return '';
+  const rest = markdown.slice(start);
+  const next = rest.indexOf('\n### ', marker.length);
+  return next === -1 ? rest : rest.slice(0, next);
+}
+
 async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-approval-packet-'));
   const fakeNodePath = path.join(tempDir, 'node');
@@ -56,6 +65,25 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
     fakePnpmPath,
     [
       '#!/bin/sh',
+      'case "$*" in',
+      '  *check:release-readiness*)',
+      '    echo "Commercial source-of-truth check passed for 9 active docs and 28 historical docs."',
+      '    echo "Strategy roadmap document check passed for docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md."',
+      '    echo "### Live public metadata"',
+      '    echo "- Status: fail"',
+      '    echo "Public metadata check failed:"',
+      '    echo "- https://example.test/: nested live metadata failure from completion-audit evidence"',
+      '    echo "### Live static dist parity"',
+      '    echo "- Status: fail"',
+      '    echo "Live static parity check failed:"',
+      '    echo "- /: remote static content does not match dist/index.html"',
+      '    echo "Pilot evidence fixture 95% gate check passed."',
+      '    echo "Public metadata check passed for local source metadata."',
+      '    echo "Public metadata check passed for built dist metadata."',
+      '    echo "All proof-pack route bundle budgets passed."',
+      '    exit 0',
+      '    ;;',
+      'esac',
       'echo "Hosted proof-pack route smoke passed."',
       'exit 0',
       '',
@@ -196,6 +224,26 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('Local source is ready to request explicit production remediation approval, but live parity is not achieved.');
     expect(result.stdout).toContain('deploy current source only after explicit owner approval');
     expect(result.stdout).not.toContain('Do not request production deploy approval.');
+  });
+
+  it('keeps nested live failures out of passing local readiness evidence', async () => {
+    const result = await runPacket(['--include-hosted-smoke'], {
+      CEIP_FAKE_LIVE_METADATA_FAIL: '1',
+      CEIP_FAKE_LIVE_STATIC_FAIL: '1',
+    });
+
+    const localReadinessSection = markdownSection(result.stdout, 'Local release readiness');
+    const liveMetadataSection = markdownSection(result.stdout, 'Live metadata parity');
+    const liveStaticSection = markdownSection(result.stdout, 'Live static dist parity');
+
+    expect(result.status).toBe(0);
+    expect(localReadinessSection).toContain('Local release readiness passed; live parity is reported by the dedicated live metadata');
+    expect(localReadinessSection).toContain('Public metadata check passed for local source metadata.');
+    expect(localReadinessSection).not.toContain('Public metadata check failed:');
+    expect(localReadinessSection).not.toContain('Live static parity check failed:');
+    expect(localReadinessSection).not.toContain('nested live metadata failure');
+    expect(liveMetadataSection).toContain('Public metadata check failed:');
+    expect(liveStaticSection).toContain('Live static parity check failed:');
   });
 
   it('allows pre-deploy request gates to pass when only live parity is stale', async () => {

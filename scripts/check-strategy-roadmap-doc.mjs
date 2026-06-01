@@ -219,6 +219,7 @@ if (!existsSync(roadmapPath)) {
     'The production deploy script could drift from the approval packet and skip the CEIP-specific readiness or post-deploy parity gates.',
     'dirty worktree blocker classification',
     'skipping exact static parity when `--skip-release-readiness` is used',
+    'Passing local release-readiness evidence inside the production approval packet could quote nested completion-audit live failures',
     'Completion audit could claim the buyer-evidence boundary is enforced without running the fixture-proof and template gates.',
     'pnpm run check:post-deploy-live',
     'Live metadata parity',
