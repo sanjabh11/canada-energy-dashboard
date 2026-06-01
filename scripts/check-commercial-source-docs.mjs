@@ -3,51 +3,16 @@
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
+import {
+  historicalCommercialDocsToGovern,
+  requiredActiveCommercialDocs,
+} from './lib/commercial-docs.mjs';
+
 const repoRoot = process.cwd();
 const sourceDocPath = path.join(repoRoot, 'docs/COMMERCIAL_SOURCE_OF_TRUTH.md');
 
-const requiredActiveDocs = [
-  'README.md',
-  'docs/Top20.md',
-  'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
-  'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md',
-  'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',
-  'docs/MVP_DEMO_FREEZE_HANDOFF.md',
-  'docs/HERMES_OUTREACH_OPERATING_PLAN.md',
-  'docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md',
-  'docs/growth/templates/OUTREACH_AND_PILOT_TEMPLATES.md',
-  'docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv',
-];
-
-const historicalDocsToGovern = [
-  'docs/CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md',
-  'docs/DEEP_RESEARCH_GTM_STRATEGY_2026.md',
-  'docs/DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md',
-  'docs/Ph8_PRD.md',
-  'docs/Ph8_micro_niche.md',
-  'docs/ValueProposition.md',
-  'docs/ValueProposition_whop.md',
-  'docs/Grok_suggestions.md',
-  'docs/ADVERSARIAL_USP_ANALYSIS.md',
-  'docs/COMET_OUTREACH_STRATEGY.md',
-  'docs/COMET_OUTREACH_STRATEGY_V2.md',
-  'docs/whop_skill.md',
-  'docs/Whop_analysis.md',
-  'docs/PRD_PRODUCTION_MONETIZATION.md',
-  'docs/OEB_SANDBOX_PROPOSAL.md',
-  'docs/FEASIBILITY_ANALYSIS_PRODUCTION_USE_CASES.md',
-  'docs/monetization.md',
-  'docs/Final_gaps.md',
-  'docs/IMIPLEMENTATION_VERIFICATION.md',
-  'docs/UI_allpages.md',
-  'docs/Linkedin_artical.md',
-  'docs/delivery/GAP_ANALYSIS_COMPREHENSIVE_2025_12_13.md',
-  'docs/delivery/GAP_ANALYSIS_IMPLEMENTATION_PLAN.md',
-  'docs/delivery/IMPLEMENTATION_PLAN_HYBRID.md',
-  'docs/delivery/MONETIZATION_GAP_ANALYSIS.md',
-  'docs/delivery/STRATEGY_COMPARISON_FINAL.md',
-  'COMMIT_MESSAGE.txt',
-];
+const requiredActiveDocs = requiredActiveCommercialDocs;
+const historicalDocsToGovern = historicalCommercialDocsToGovern;
 
 const failures = [];
 const staleBannerPhrase = 'Historical / reconcile-first note';

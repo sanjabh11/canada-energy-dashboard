@@ -3,25 +3,23 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 
+import { requiredActiveCommercialDocs } from './lib/commercial-docs.mjs';
+
 const repoRoot = process.cwd();
 
-const ACTIVE_PATHS = [
+const BASE_ACTIVE_PATHS = [
   'index.html',
-  'README.md',
   'public/manifest.json',
   'public/schema-webapp.jsonld',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
-  'docs/Top20.md',
-  'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
-  'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',
-  'docs/MVP_DEMO_FREEZE_HANDOFF.md',
-  'docs/HERMES_OUTREACH_OPERATING_PLAN.md',
   'docs/LINKEDIN_PROOF_BUNDLES.md',
   'docs/OPENCLAW_CONSOLE_KICKSTART_STRATEGY.md',
   'docs/Openclaw_outreach.md',
   'docs/growth',
 ];
+
+const ACTIVE_PATHS = [...new Set([...BASE_ACTIVE_PATHS, ...requiredActiveCommercialDocs])];
 
 const SKIP_SEGMENTS = new Set([
   'archive',
@@ -34,7 +32,7 @@ const SKIP_SEGMENTS = new Set([
   'test-results',
 ]);
 
-const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld']);
+const CHECK_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.md', '.mdx', '.html', '.json', '.jsonld', '.csv']);
 
 const REFERENCE_ONLY_FILES = new Set([
   'src/lib/helpContent.ts',
