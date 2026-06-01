@@ -174,6 +174,34 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(() => readFileSync(path.join(evidenceRoot, 'missing-commercial-evidence.md'), 'utf8')).toThrow();
   });
 
+  it('requires proof pack metadata to match the shared route registry before writing', async () => {
+    const evidenceRoot = makeTempRoot();
+    const result = await runNodeScript(prepScriptPath, [
+      ...buildValidPrepArgs(evidenceRoot, 'mismatched-proof-pack.md').filter((arg, index, args) => (
+        arg !== '--proof-pack-id' && args[index - 1] !== '--proof-pack-id'
+      )),
+      '--proof-pack-id',
+      'tier_cfo_savings_pack',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--proof-pack-id tier_cfo_savings_pack is not valid for --route /utility-demand-forecast');
+    expect(result.stderr).toContain('utility_forecast_planning_pack');
+    expect(() => readFileSync(path.join(evidenceRoot, 'mismatched-proof-pack.md'), 'utf8')).toThrow();
+  });
+
+  it('requires explicit proof pack metadata for retained artifact generation', async () => {
+    const evidenceRoot = makeTempRoot();
+    const result = await runNodeScript(prepScriptPath, buildValidPrepArgs(evidenceRoot, 'missing-proof-pack.md').filter((arg, index, args) => (
+      arg !== '--proof-pack-id' && args[index - 1] !== '--proof-pack-id'
+    )));
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('Missing required option: --proof-pack-id');
+    expect(result.stderr).not.toContain('not valid for --route /utility-demand-forecast');
+    expect(() => readFileSync(path.join(evidenceRoot, 'missing-proof-pack.md'), 'utf8')).toThrow();
+  });
+
   it('rejects direct identifiers before writing the retained artifact', async () => {
     const evidenceRoot = makeTempRoot();
     const result = await runNodeScript(prepScriptPath, [
