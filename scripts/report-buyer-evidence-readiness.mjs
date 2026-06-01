@@ -244,8 +244,8 @@ function routeWithProofPack(route) {
   return config ? `${route} (${config.proofPackId})` : route;
 }
 
-function starterOutputDir(route) {
-  return `/tmp/ceip-phase-f-${route.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-')}`;
+function phaseFMinimumBundleCommand(outputDir = '/tmp/ceip-phase-f-minimum-intake') {
+  return `pnpm run create:phase-f-minimum-intake-bundle -- --output-dir ${outputDir}`;
 }
 
 function printPhaseFMinimumEvidenceMap() {
@@ -257,10 +257,10 @@ function printPhaseFMinimumEvidenceMap() {
   console.log('- Global gate checks:');
   for (const check of phaseFGlobalGateChecks) console.log(`  - ${check}`);
 
-  console.log('\nStarter intake packets for the minimum lane mix:');
-  for (const route of phaseFDefaultMinimumRoutes) {
-    console.log(`- pnpm run create:pilot-evidence-intake-packet -- --route ${route} --output-dir ${starterOutputDir(route)}`);
-  }
+  console.log('\nStarter intake bundle for the default minimum lane mix:');
+  console.log(`- ${phaseFMinimumBundleCommand()}`);
+  console.log(`- Default bundle routes: ${phaseFDefaultMinimumRoutes.map(routeWithProofPack).join(', ')}.`);
+  console.log('- Override the finance or billing/security lane with `--tier-route /credit-banking` or `--billing-security-route /shadow-billing` when the buyer evidence points there.');
 }
 
 function summarizePilotRegister(filePath, rows) {
@@ -405,7 +405,7 @@ if (outreachLogs.length > 0) {
 console.log('\n## Next Actions');
 if (!hasProductionEvidenceInputs) {
   console.log('- Fill a non-template anonymized outreach response log when real buyer activity exists, then run `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
-  console.log('- Generate route-specific intake scaffolding with `pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake`.');
+  console.log(`- Generate the minimum Phase F starter bundle with \`${phaseFMinimumBundleCommand()}\`.`);
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
 } else if (totalActionableOutreachRows > 0 && pilotRegisters.length === 0) {
   console.log('- Use the outreach action plan excerpt above to create intake packets or retained artifacts.');
