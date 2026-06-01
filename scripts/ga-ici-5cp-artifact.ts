@@ -190,6 +190,13 @@ function parseTable(text: string, label: string) {
   return rows.slice(1).map((row) => Object.fromEntries(headers.map((header, index) => [header, row[index]?.trim() ?? ''])));
 }
 
+function hasBasePeriodColumns(text: string): boolean {
+  const delimiter = text.includes('\t') && !text.includes(',') ? '\t' : ',';
+  const headerRow = parseDelimitedRows(text, delimiter)[0] ?? [];
+  const headers = new Set(headerRow.map(normalizeColumn));
+  return headers.has('base_period_start') && headers.has('base_period_end');
+}
+
 function findDirectIdentifier(text: string) {
   return directIdentifierPatterns.find(({ pattern }) => pattern.test(text));
 }
@@ -213,6 +220,39 @@ function parseSystemPeaks(text: string, label = '--system-peaks-file'): IciSyste
       ontario_demand_mw: demand,
       status: statusText as IciSystemPeakHour['status'],
       source: row.source || undefined,
+    };
+  });
+}
+
+function parseHistoricalActuals(text: string, label = '--historical-actuals-file'): IciSystemPeakHour[] {
+  const directIdentifier = findDirectIdentifier(text);
+  if (directIdentifier) failures.push(`${label} appears to contain ${directIdentifier.label}; retain only public IESO top-five rows or redacted planning extracts.`);
+
+  const rows = parseTable(text, label);
+  const hasBasePeriodColumns = rows.some((row) => row.base_period_start || row.base_period_end);
+  const filteredRows = hasBasePeriodColumns
+    ? rows.filter((row) => row.base_period_start === basePeriodStart && row.base_period_end === basePeriodEnd)
+    : rows;
+
+  if (hasBasePeriodColumns && filteredRows.length === 0) {
+    failures.push(`${label} has base-period columns but no rows for ${basePeriodStart} to ${basePeriodEnd}.`);
+  }
+
+  return filteredRows.map((row, index) => {
+    const timestamp = row.timestamp ?? row.hour ?? row.datetime ?? '';
+    const demandText = row.ontario_demand_mw ?? row.ici_ontario_demand_mw ?? row.ontario_demand ?? row.demand_mw ?? row.system_demand_mw ?? '';
+    const demand = Number(demandText);
+    const statusText = normalizeText(row.status ?? 'final');
+
+    if (!timestamp) failures.push(`${label} selected row ${index + 2} is missing timestamp.`);
+    if (!Number.isFinite(demand) || demand <= 0) failures.push(`${label} selected row ${index + 2} has invalid ontario_demand_mw.`);
+    if (!allowedPeakStatuses.has(statusText)) failures.push(`${label} selected row ${index + 2} has invalid status.`);
+
+    return {
+      timestamp,
+      ontario_demand_mw: demand,
+      status: statusText as IciSystemPeakHour['status'],
+      source: row.source_url || row.source || undefined,
     };
   });
 }
@@ -346,15 +386,17 @@ if (peakTrackerUrl && /^https?:\/\//i.test(peakTrackerUrl)) {
 }
 if (historicalActualsFile && existsSync(historicalActualsFile)) {
   const historicalActualsText = readFileSync(historicalActualsFile, 'utf8');
-  const directIdentifier = findDirectIdentifier(historicalActualsText);
-  if (directIdentifier) failures.push(`--historical-actuals-file appears to contain ${directIdentifier.label}; retain only public IESO top-five rows or redacted planning extracts.`);
-  try {
-    historicalActualPeaks = parseIesoPeakTrackerSnapshot(historicalActualsText, { sourceUrl: IESO_PEAK_TRACKER_SOURCE_URL });
-  } catch (error) {
-    const failureCountBeforeFallback = failures.length;
-    historicalActualPeaks = parseSystemPeaks(historicalActualsText, '--historical-actuals-file');
-    if (historicalActualPeaks.length === 0 && failures.length === failureCountBeforeFallback) {
-      failures.push(`--historical-actuals-file could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
+  const failureCountBeforeFallback = failures.length;
+  if (hasBasePeriodColumns(historicalActualsText)) {
+    historicalActualPeaks = parseHistoricalActuals(historicalActualsText, '--historical-actuals-file');
+  } else {
+    try {
+      historicalActualPeaks = parseIesoPeakTrackerSnapshot(historicalActualsText, { sourceUrl: IESO_PEAK_TRACKER_SOURCE_URL });
+    } catch (error) {
+      historicalActualPeaks = parseHistoricalActuals(historicalActualsText, '--historical-actuals-file');
+      if (historicalActualPeaks.length === 0 && failures.length === failureCountBeforeFallback) {
+        failures.push(`--historical-actuals-file could not be parsed: ${error instanceof Error ? error.message : String(error)}`);
+      }
     }
   }
 }
@@ -370,7 +412,7 @@ const explicitSourceUrls = (values.get('source-urls') ?? '')
   .split(',')
   .map((url) => url.trim())
   .filter(Boolean);
-const sourceUrlsFromRows = systemPeaks
+const sourceUrlsFromRows = [...systemPeaks, ...historicalActualPeaks]
   .map((row) => row.source)
   .filter((source): source is string => Boolean(source && /^https?:\/\//i.test(source)));
 const sourceUrls = Array.from(new Set([

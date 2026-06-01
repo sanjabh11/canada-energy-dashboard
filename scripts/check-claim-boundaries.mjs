@@ -11,6 +11,7 @@ const BASE_ACTIVE_PATHS = [
   'index.html',
   'public/manifest.json',
   'public/schema-webapp.jsonld',
+  'public/data/ga_ici_5cp_public_historical_actuals.csv',
   'src',
   'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'docs/LINKEDIN_PROOF_BUNDLES.md',

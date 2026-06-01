@@ -517,12 +517,22 @@ describe('pilot evidence artifact preparation CLI', () => {
       '5 | 05 May 2026 | 17 | 17,033 | 16,468 | Prelim',
     ].join('\n'), 'utf8');
     writeFileSync(historicalActualsPath, [
-      'timestamp,ontario_demand_mw,status,source',
-      '2026-05-19T17:00:00.000Z,20820,final,https://www.ieso.ca/peaktracker',
-      '2026-05-26T19:00:00.000Z,19109,final,https://www.ieso.ca/peaktracker',
-      '2026-05-18T18:00:00.000Z,18889,final,https://www.ieso.ca/peaktracker',
-      '2026-05-25T19:00:00.000Z,17561,final,https://www.ieso.ca/peaktracker',
-      '2026-05-05T17:00:00.000Z,17033,final,https://www.ieso.ca/peaktracker',
+      'base_period_start,base_period_end,timestamp,ontario_demand_mw,status,source_url',
+      '2025-05-01,2026-04-30,2025-07-01T18:00:00.000Z,50000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2025.xml',
+      '2025-05-01,2026-04-30,2025-07-02T18:00:00.000Z,49000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2025.xml',
+      '2025-05-01,2026-04-30,2025-07-03T18:00:00.000Z,48000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2025.xml',
+      '2025-05-01,2026-04-30,2025-07-04T18:00:00.000Z,47000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2025.xml',
+      '2025-05-01,2026-04-30,2025-07-05T18:00:00.000Z,46000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2025.xml',
+      '2026-05-01,2027-04-30,2026-05-19T17:00:00.000Z,20820,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml',
+      '2026-05-01,2027-04-30,2026-05-26T19:00:00.000Z,19109,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml',
+      '2026-05-01,2027-04-30,2026-05-18T18:00:00.000Z,18889,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml',
+      '2026-05-01,2027-04-30,2026-05-25T19:00:00.000Z,17561,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml',
+      '2026-05-01,2027-04-30,2026-05-05T17:00:00.000Z,17033,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml',
+      '2027-05-01,2028-04-30,2027-07-01T18:00:00.000Z,51000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2027.xml',
+      '2027-05-01,2028-04-30,2027-07-02T18:00:00.000Z,50000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2027.xml',
+      '2027-05-01,2028-04-30,2027-07-03T18:00:00.000Z,49000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2027.xml',
+      '2027-05-01,2028-04-30,2027-07-04T18:00:00.000Z,48000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2027.xml',
+      '2027-05-01,2028-04-30,2027-07-05T18:00:00.000Z,47000,final,https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2027.xml',
     ].join('\n'), 'utf8');
     writeFileSync(customerLoadPath, [
       'timestamp,load_mw',
@@ -569,6 +579,9 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(artifactText).toContain('Historical Backtest Summary');
     expect(artifactText).toContain('watchlist capture rate: 1');
     expect(artifactText).toContain('backtest claim boundary:');
+    expect(artifactText).toContain('https://reports-public.ieso.ca/public/ICIPeakTracker/PUB_ICIPeakTracker_2026.xml');
+    expect(artifactText).not.toContain('PUB_ICIPeakTracker_2025.xml');
+    expect(artifactText).not.toContain('PUB_ICIPeakTracker_2027.xml');
     expect(artifactText).toContain('commercial_commitment_evidence: letter of intent evidence retained in redacted commercial appendix');
     expect(artifactText).not.toMatch(/guaranteed savings/i);
 

@@ -25,6 +25,8 @@ const generatedAt = new Date().toISOString();
 const planPath = path.resolve(repoRoot, planRelativePath);
 const roadmapPath = path.resolve(repoRoot, roadmapRelativePath);
 const packagePath = path.join(repoRoot, 'package.json');
+const gaIciPublicActualsRelativePath = 'public/data/ga_ici_5cp_public_historical_actuals.csv';
+const gaIciPublicActualsPath = path.join(repoRoot, gaIciPublicActualsRelativePath);
 
 function fileText(filePath) {
   return existsSync(filePath) ? readFileSync(filePath, 'utf8') : '';
@@ -211,6 +213,17 @@ const rows = [
   ),
   requirementRow(
     'R10',
+    'GA/ICI 5CP public historical actuals are curated as source-dated public evidence rather than synthetic-only fixtures.',
+    existsSync(gaIciPublicActualsPath) &&
+      roadmap.includes(gaIciPublicActualsRelativePath) &&
+      packageJson.includes('check:ga-ici-public-actuals')
+      ? 'complete_locally'
+      : 'incomplete',
+    `${gaIciPublicActualsRelativePath}, \`pnpm run check:ga-ici-public-actuals\`, and the GA/ICI gap row.`,
+    'Buyer interval-load validation and reviewer acceptance remain external.',
+  ),
+  requirementRow(
+    'R11',
     'Live production parity remains explicitly gated and not claimed.',
     hasAll(roadmap, [
       'Hosted root HTML',
@@ -227,7 +240,7 @@ const rows = [
     'Explicit owner approval, deploy, then post-deploy live checks.',
   ),
   requirementRow(
-    'R11',
+    'R12',
     'Release/local verification gates are codified.',
     hasAll(packageJson, [
       'check:release-readiness',
@@ -235,9 +248,11 @@ const rows = [
       'check:strategy-completion-audit',
       'check:strategy-roadmap-doc',
       'check:strategy-source-anchors',
+      'check:ga-ici-public-actuals',
       'test:strategy-audit-slice',
     ]) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-source-anchors/) &&
+      hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:ga-ici-public-actuals/) &&
       hasPattern(packageJson, /"check:release-readiness":\s*"[^"]*check:strategy-completion-audit/)
       ? 'complete_locally'
       : 'incomplete',
@@ -251,6 +266,7 @@ const checkSteps = includeChecks
       runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
       runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
       runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
+      runStep('GA/ICI public historical actuals', 'pnpm', ['run', 'check:ga-ici-public-actuals']),
       runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
       runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
       runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
@@ -261,6 +277,7 @@ const requiredLocalCheckLabels = new Set([
   'Strategy roadmap structure',
   'Commercial source guard',
   'Strategy source anchors',
+  'GA/ICI public historical actuals',
   'Pilot evidence fixture gate',
   'Pilot evidence template',
 ]);

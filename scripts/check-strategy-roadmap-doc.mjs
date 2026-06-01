@@ -122,6 +122,18 @@ if (!existsSync(roadmapPath)) {
     requireText(topTenSection || roadmap, 'top-10 roadmap', feature);
   }
 
+  const gaIciPublicActualNeedles = [
+    'https://reports-public.ieso.ca/public/ICIPeakTracker/',
+    'public/data/ga_ici_5cp_public_historical_actuals.csv',
+    'check:ga-ici-public-actuals',
+    'base-period filtering in `prepare:ga-ici-5cp-artifact`',
+    'GA/ICI historical backtests could depend on synthetic fixtures or mix actuals from the wrong base period.',
+  ];
+
+  for (const needle of gaIciPublicActualNeedles) {
+    requireText(roadmap, 'GA/ICI public historical actuals evidence', needle);
+  }
+
   const radicalCandidates = [
     'Ontario GA/ICI 5CP predictor',
     'Forecast trust report / champion-challenger evidence generator',
@@ -187,6 +199,7 @@ if (!existsSync(roadmapPath)) {
     'pnpm run report:production-approval-packet',
     'pnpm run report:strategy-source-anchors',
     'pnpm run check:strategy-source-anchors',
+    'GA/ICI public historical actuals guard',
     'fixture-proof 95% buyer-evidence gate',
     'check:pilot-evidence-95-fixture-gate',
     'check:pilot-evidence-template',

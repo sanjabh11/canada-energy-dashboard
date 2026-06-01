@@ -42,6 +42,10 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
       '    echo "Manual-verified anchors: 4"',
       '    exit 0',
       '    ;;',
+      '  *check:ga-ici-public-actuals*)',
+      '    echo "GA/ICI public historical actuals check passed for public/data/ga_ici_5cp_public_historical_actuals.csv."',
+      '    exit 0',
+      '    ;;',
       '  *check:pilot-evidence-95-fixture-gate*)',
       '    echo "Pilot evidence fixture 95% gate check passed."',
       '    exit 0',
@@ -114,6 +118,8 @@ describe('strategy completion audit', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
+    expect(result.stdout).toContain('- Command: `pnpm run check:ga-ici-public-actuals`');
+    expect(result.stdout).toContain('GA/ICI public historical actuals check passed');
     expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-95-fixture-gate`');
     expect(result.stdout).toContain('Pilot evidence fixture 95% gate check passed.');
     expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-template`');
