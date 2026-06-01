@@ -1,7 +1,6 @@
 export const requiredActiveCommercialDocs = [
   'README.md',
   'docs/Top20.md',
-  'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
   'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md',
   'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',
   'docs/MVP_DEMO_FREEZE_HANDOFF.md',
@@ -12,6 +11,7 @@ export const requiredActiveCommercialDocs = [
 ];
 
 export const historicalCommercialDocsToGovern = [
+  'docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md',
   'docs/CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md',
   'docs/DEEP_RESEARCH_GTM_STRATEGY_2026.md',
   'docs/DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md',

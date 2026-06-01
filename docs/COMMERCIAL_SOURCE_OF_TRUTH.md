@@ -12,7 +12,6 @@ Use these files for current CEIP positioning:
 |---|---|---|
 | [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
-| [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Prior adversarial confidence audit and market-proof caution. | Superseded for strategy-direction scoring by the May 31 roadmap; do not convert confidence estimates into market-outcome claims. |
 | [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live deploy and buyer evidence remain blockers. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
 | [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
@@ -61,6 +60,7 @@ The following docs may contain useful research, but they are **not** current com
 
 | Historical file | Risk to watch |
 |---|---|
+| [CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](./CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) | Superseded May 30 confidence audit with old 90-92% strategic-confidence ceiling and pre-roadmap guard evidence. Keep its buyer-evidence caution only after reconciling with the May 31 roadmap. |
 | [CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md](./CEIP_95_CONFIDENCE_AUDIT_2026-05-31.md) | Superseded May 31 audit with stale 70/100 cap, not-run verification status, old metadata/guard gaps, and old API/large-load top-10 placement. |
 | [DEEP_RESEARCH_GTM_STRATEGY_2026.md](./DEEP_RESEARCH_GTM_STRATEGY_2026.md) | Broad AI, real-time, and OCAP-compliant claims. |
 | [DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md](./DEEP_RESEARCH_MARKET_ALIGNMENT_GTM_2026.md) | Enterprise compliance and SOC2 expectations. |

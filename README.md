@@ -12,7 +12,7 @@ This repository should not be positioned as a broad dashboard suite, an enterpri
 |---|---|
 | Commercial source of truth | [docs/COMMERCIAL_SOURCE_OF_TRUTH.md](docs/COMMERCIAL_SOURCE_OF_TRUTH.md) |
 | Ranked USP and top features | [docs/Top20.md](docs/Top20.md) |
-| Confidence audit | [docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md](docs/CEIP_STRATEGY_CONFIDENCE_AUDIT_2026-05-29.md) |
+| Current 95% strategy roadmap | [docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) |
 | Pilot evidence gate | [docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) |
 | Demo handoff | [docs/MVP_DEMO_FREEZE_HANDOFF.md](docs/MVP_DEMO_FREEZE_HANDOFF.md) |
 | Live demo | [https://canada-energy.netlify.app](https://canada-energy.netlify.app) |
