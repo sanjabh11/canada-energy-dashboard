@@ -53,6 +53,16 @@ const sourceAnchors = [
     terms: ['Technology Innovation and Emissions Reduction', 'TIER'],
   },
   {
+    label: 'EnergyCAP utility management FAQ',
+    url: 'https://www.energycap.com/energycap-faqs/',
+    terms: ['EnergyCAP', 'utility bill management', 'bill management'],
+  },
+  {
+    label: 'EnergyCAP utility bill auditing',
+    url: 'https://www.energycap.com/product-features/utility-bill-auditing-software/',
+    terms: ['EnergyCAP', 'utility bill auditing', 'billing errors'],
+  },
+  {
     label: 'Amperon demand forecasts',
     url: 'https://www.amperon.co/products/demand-forecasts',
     terms: ['Demand Forecasts', 'Amperon'],

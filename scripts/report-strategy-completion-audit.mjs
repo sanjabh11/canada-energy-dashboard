@@ -129,6 +129,8 @@ const sourceAnchors = [
   'https://www.ieso.ca/peaktracker',
   'https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications',
   'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
+  'https://www.energycap.com/energycap-faqs/',
+  'https://www.energycap.com/product-features/utility-bill-auditing-software/',
   'https://www.amperon.co/products/demand-forecasts',
   'https://utilityapi.com/products/utility-data-exchange',
   'https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html',
