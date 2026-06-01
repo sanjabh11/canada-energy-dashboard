@@ -141,14 +141,14 @@ const strategyRoadmapWhitespacePhrases = [
   'ga-ici-5cp',
   'byo-csv-proof',
   'fixture-proof 95% gate',
-  'focused 110-test strategy-audit slice',
+  'focused strategy-audit unit slice',
   'wedge route smoke',
   'pilot-readiness, GA/ICI, and BYO-CSV route chunks',
   'PilotReadinessPage',
   'GaIciPeakPredictorPage',
   'ByoCsvProofPage',
   'non-status-only commercial commitment evidence',
-  'Do not deploy without explicit production approval',
+  'future production deploys without explicit production approval',
   'buyer-proven 95% market confidence',
 ];
 const commercialPositioningPath = path.join(repoRoot, 'src/lib/commercialPositioning.ts');

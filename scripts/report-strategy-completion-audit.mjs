@@ -129,6 +129,46 @@ const adversarialQuestions = [
 
 const sourceAnchors = strategySourceAnchorUrls;
 
+const checkSteps = includeChecks
+  ? [
+      runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
+      runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
+      runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
+      runStep('GA/ICI public historical actuals', 'pnpm', ['run', 'check:ga-ici-public-actuals']),
+      runStep('Production deploy script guard', 'pnpm', ['run', 'check:production-deploy-script']),
+      runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
+      runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
+      runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
+      runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
+    ]
+  : [];
+const requiredLocalCheckLabels = new Set([
+  'Strategy roadmap structure',
+  'Commercial source guard',
+  'Strategy source anchors',
+  'GA/ICI public historical actuals',
+  'Production deploy script guard',
+  'Pilot evidence fixture gate',
+  'Pilot evidence template',
+]);
+const failedRequiredLocalChecks = checkSteps.filter(
+  (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
+);
+const liveMetadataStep = checkSteps.find((step) => step.label === 'Live public metadata');
+const liveStaticParityStep = checkSteps.find((step) => step.label === 'Live static dist parity');
+const liveParityChecked = Boolean(liveMetadataStep && liveStaticParityStep);
+const liveParityAchieved =
+  liveParityChecked && liveMetadataStep?.status === 'pass' && liveStaticParityStep?.status === 'pass';
+const liveParityStatus = liveParityAchieved ? 'complete_live' : 'external_gate';
+const liveParityEvidence = liveParityAchieved
+  ? '`pnpm run check:live-public-metadata` and `pnpm run check:live-static-parity` passed in this audit, with the roadmap and production approval packet keeping the post-deploy gate explicit.'
+  : 'Roadmap evidence ledger, production approval packet command, and static parity gate.';
+const liveParityRemainingGate = liveParityAchieved
+  ? 'No current live-static parity gate remains for the deployed metadata artifacts; rerun post-deploy live checks after future deploys.'
+  : liveParityChecked
+    ? 'Fix or redeploy until live metadata and static parity pass; buyer evidence remains separate.'
+    : 'Run `pnpm run check:post-deploy-live` or this audit with `--include-checks` after approved deploy.';
+
 const rows = [
   requirementRow(
     'R1',
@@ -224,20 +264,20 @@ const rows = [
   ),
   requirementRow(
     'R11',
-    'Live production parity remains explicitly gated and not claimed.',
+    'Live production parity is verified when post-deploy live checks pass and remains gated when they do not.',
     hasAll(roadmap, [
       'Hosted root HTML',
       'Live metadata parity',
       'Live static parity',
       'check:live-static-parity',
-      'Do not deploy without explicit production approval',
+      'future production deploy',
       'pnpm run report:production-approval-packet',
       'pnpm run check:post-deploy-live',
     ])
-      ? 'external_gate'
+      ? liveParityStatus
       : 'incomplete',
-    'Roadmap evidence ledger, production approval packet command, and static parity gate.',
-    'Explicit owner approval, deploy, then post-deploy live checks.',
+    liveParityEvidence,
+    liveParityRemainingGate,
   ),
   requirementRow(
     'R12',
@@ -262,32 +302,6 @@ const rows = [
     'Run before any approval or release request.',
   ),
 ];
-
-const checkSteps = includeChecks
-  ? [
-      runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
-      runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
-      runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
-      runStep('GA/ICI public historical actuals', 'pnpm', ['run', 'check:ga-ici-public-actuals']),
-      runStep('Production deploy script guard', 'pnpm', ['run', 'check:production-deploy-script']),
-      runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
-      runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
-      runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
-      runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
-    ]
-  : [];
-const requiredLocalCheckLabels = new Set([
-  'Strategy roadmap structure',
-  'Commercial source guard',
-  'Strategy source anchors',
-  'GA/ICI public historical actuals',
-  'Production deploy script guard',
-  'Pilot evidence fixture gate',
-  'Pilot evidence template',
-]);
-const failedRequiredLocalChecks = checkSteps.filter(
-  (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
-);
 
 function compactOutput(step) {
   const combined = `${step.stdout}\n${step.stderr}\n${step.error}`.trim();
@@ -345,8 +359,16 @@ const completionVerdict =
     ? `The completion audit found failing local verification gates: ${failedRequiredLocalChecks
         .map((step) => step.label)
         .join(', ')}.`
-    : rows.every((row) => row.status === 'complete_locally' || row.status === 'complete_locally_external_gate' || row.status === 'external_gate')
-    ? 'The desk-research strategy-direction deliverable is complete locally. The full product/business goal is not complete because live production parity and buyer-proven market confidence remain external gates.'
+    : rows.every(
+          (row) =>
+            row.status === 'complete_locally' ||
+            row.status === 'complete_live' ||
+            row.status === 'complete_locally_external_gate' ||
+            row.status === 'external_gate',
+        )
+      ? liveParityAchieved
+        ? 'The desk-research strategy-direction deliverable and current live static metadata parity are complete. The full product/business goal is not complete because buyer-proven market confidence remains an external gate.'
+        : 'The desk-research strategy-direction deliverable is complete locally. The full product/business goal is not complete because live production parity has not been checked or achieved in this audit and buyer-proven market confidence remains an external gate.'
     : 'The completion audit found missing or incomplete desk-research requirements.';
 
 const markdown = [
@@ -363,6 +385,7 @@ const markdown = [
   '## Status Counts',
   '',
   `- complete_locally: ${summary.complete_locally ?? 0}`,
+  `- complete_live: ${summary.complete_live ?? 0}`,
   `- complete_locally_external_gate: ${summary.complete_locally_external_gate ?? 0}`,
   `- external_gate: ${summary.external_gate ?? 0}`,
   `- incomplete: ${summary.incomplete ?? 0}`,

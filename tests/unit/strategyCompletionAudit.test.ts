@@ -16,7 +16,7 @@ function writeExecutable(filePath: string, content: string) {
   chmodSync(filePath, 0o755);
 }
 
-async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
+async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParityStatus: 'pass' | 'fail' = 'fail') {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-completion-audit-'));
   const fakePnpmPath = path.join(tempDir, 'pnpm');
   const planPath = path.join(tempDir, 'ceip-95-strategy-feature-gap.md');
@@ -62,11 +62,20 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
       '    exit 0',
       '    ;;',
       '  *check:live-public-metadata*)',
+      '    if [ "$CEIP_FAKE_LIVE_PARITY_STATUS" = "pass" ]; then',
+      '      echo "Public metadata check passed for remote deployment metadata."',
+      '      exit 0',
+      '    fi',
       '    echo "Public metadata check failed:"',
       '    echo "- stale metadata phrase found"',
       '    exit 1',
       '    ;;',
       '  *check:live-static-parity*)',
+      '    if [ "$CEIP_FAKE_LIVE_PARITY_STATUS" = "pass" ]; then',
+      '      echo "Live static parity check passed for https://example.test"',
+      '      echo "- / matches dist/index.html (abc123, 100 bytes)"',
+      '      exit 0',
+      '    fi',
       '    echo "Live static parity check failed:"',
       '    echo "- /: remote static content does not match dist/index.html"',
       '    exit 1',
@@ -84,6 +93,7 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail') {
         env: {
           ...process.env,
           CEIP_FAKE_SOURCE_ANCHOR_STATUS: sourceAnchorStatus,
+          CEIP_FAKE_LIVE_PARITY_STATUS: liveParityStatus,
           PATH: `${tempDir}:${process.env.PATH ?? ''}`,
         },
         stdio: ['ignore', 'pipe', 'pipe'],
@@ -125,6 +135,8 @@ describe('strategy completion audit', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
+    expect(result.stdout).toContain('| R11 | Live production parity is verified when post-deploy live checks pass');
+    expect(result.stdout).toContain('| external_gate | Roadmap evidence ledger');
     expect(result.stdout).toContain('- Command: `pnpm run check:ga-ici-public-actuals`');
     expect(result.stdout).toContain('GA/ICI public historical actuals check passed');
     expect(result.stdout).toContain('- Command: `pnpm run check:production-deploy-script`');
@@ -137,5 +149,18 @@ describe('strategy completion audit', () => {
     expect(result.stdout).toContain('Public metadata check failed:');
     expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');
     expect(result.stdout).toContain('Live static parity check failed:');
+  });
+
+  it('marks live parity complete when live checks pass', async () => {
+    const result = await runCompletionAudit('pass', 'pass');
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain(
+      'The desk-research strategy-direction deliverable and current live static metadata parity are complete.',
+    );
+    expect(result.stdout).toContain('- complete_live: 1');
+    expect(result.stdout).toContain('| complete_live | `pnpm run check:live-public-metadata` and `pnpm run check:live-static-parity` passed');
+    expect(result.stdout).toContain('Public metadata check passed for remote deployment metadata.');
+    expect(result.stdout).toContain('Live static parity check passed for https://example.test');
   });
 });
