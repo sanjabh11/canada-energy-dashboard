@@ -3,6 +3,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { proofPackRouteConfigs } from './lib/proof-pack-routes.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -71,6 +72,34 @@ const outreachLogColumns = [
   'route',
   'reply_status',
   'pilot_evidence_register_action',
+];
+
+const phaseFRequiredLaneGroups = [
+  {
+    label: 'Utility forecast proof pack',
+    routes: ['/utility-demand-forecast'],
+    reason: 'Required for buyer-specific prediction credibility.',
+  },
+  {
+    label: 'TIER CFO or credit-banking proof pack',
+    routes: ['/roi-calculator', '/credit-banking'],
+    reason: 'Required for the Alberta compliance / finance lane.',
+  },
+  {
+    label: 'Shadow-billing or utility-security proof pack',
+    routes: ['/shadow-billing', '/utility-security'],
+    reason: 'Required for the billing / security procurement lane.',
+  },
+];
+
+const phaseFGlobalGateChecks = [
+  'At least three distinct accepted buyer-supplied proof_pack_id values with day_14_decision=proceed.',
+  'Total accepted buyer-supplied confidence_delta of at least 0.9.',
+  'Distinct SHA-256 retained redacted artifacts for every accepted confidence-moving row.',
+  'buyer_data_coverage_pct >= 70 for every accepted confidence-moving row.',
+  'time_to_artifact_hours <= 120 for every accepted confidence-moving row, with at least one accepted proof pack at or below 48 hours.',
+  'At least one strong commercial commitment: design_partner_signed, paid_pilot, purchase_order, or letter_of_intent.',
+  'Retained artifacts must support record_date, pii_screen_result, buyer_data_coverage_pct, time_to_artifact_hours, reviewer_acceptance, reviewer_feedback_status, day_14_decision=proceed, and any strong commercial commitment.',
 ];
 
 const ignoredPathSegments = new Set([
@@ -233,6 +262,30 @@ function indentedOutputLines(output, limit = 28) {
   return firstOutputLines(output, limit).map((line) => `    ${line}`);
 }
 
+function routeWithProofPack(route) {
+  const config = proofPackRouteConfigs.get(route);
+  return config ? `${route} (${config.proofPackId})` : route;
+}
+
+function starterOutputDir(route) {
+  return `/tmp/ceip-phase-f-${route.replace(/^\//, '').replace(/[^a-z0-9]+/gi, '-')}`;
+}
+
+function printPhaseFMinimumEvidenceMap() {
+  console.log('\n## Minimum Phase F 95% Evidence Map');
+  console.log('The hard 95% gate is intentionally stricter than finding any one buyer reply or demo artifact. Minimum accepted buyer-evidence coverage:');
+  for (const group of phaseFRequiredLaneGroups) {
+    console.log(`- ${group.label}: ${group.routes.map(routeWithProofPack).join(' or ')}. ${group.reason}`);
+  }
+  console.log('- Global gate checks:');
+  for (const check of phaseFGlobalGateChecks) console.log(`  - ${check}`);
+
+  console.log('\nStarter intake packets for the minimum lane mix:');
+  for (const route of ['/utility-demand-forecast', '/roi-calculator', '/utility-security']) {
+    console.log(`- pnpm run create:pilot-evidence-intake-packet -- --route ${route} --output-dir ${starterOutputDir(route)}`);
+  }
+}
+
 function summarizePilotRegister(filePath, rows) {
   const rowObjects = rowsToObjects(rows);
   const confidenceRows = rowObjects.filter((row) => Number(row.confidence_delta) > 0);
@@ -334,6 +387,8 @@ if (passing95Gates > 0) {
 } else {
   console.log('Phase F 95% gate: not ready (no production register passed --require-95).');
 }
+
+printPhaseFMinimumEvidenceMap();
 
 if (pilotRegisters.length > 0) {
   console.log('\n## Pilot Evidence Registers');

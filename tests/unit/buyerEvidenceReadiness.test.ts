@@ -88,6 +88,12 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Production pilot evidence registers: 0');
     expect(result.stdout).toContain('Production outreach response logs: 0');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
+    expect(result.stdout).toContain('Minimum Phase F 95% Evidence Map');
+    expect(result.stdout).toContain('/utility-demand-forecast (utility_forecast_planning_pack)');
+    expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack) or /credit-banking (tier_credit_banking_audit_pack)');
+    expect(result.stdout).toContain('/shadow-billing (shadow_billing_invoice_pack) or /utility-security (utility_security_procurement_pack)');
+    expect(result.stdout).toContain('At least three distinct accepted buyer-supplied proof_pack_id values');
+    expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet -- --route /utility-security --output-dir /tmp/ceip-phase-f-utility-security');
     expect(result.stdout).toContain('Fill a non-template anonymized outreach response log');
   });
 
@@ -131,6 +137,7 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
     expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet');
     expect(result.stdout).toContain('Use the outreach action plan excerpt above');
+    expect(result.stdout).toContain('Minimum Phase F 95% Evidence Map');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
   });
 
