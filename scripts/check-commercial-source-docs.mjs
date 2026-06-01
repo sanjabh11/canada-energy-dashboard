@@ -189,18 +189,55 @@ function extractAppRoutes(appSource) {
   );
 }
 
+function sectionBetween(source, startPattern, endPattern) {
+  const start = source.search(startPattern);
+  if (start === -1) return '';
+  const rest = source.slice(start);
+  const end = rest.slice(1).search(endPattern);
+  return end === -1 ? rest : rest.slice(0, end + 1);
+}
+
+function docReference(docPath) {
+  return docPath.replace(/^docs\//, '');
+}
+
 if (!existsSync(sourceDocPath)) {
   failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md is missing.');
 } else {
   const sourceDoc = readFileSync(sourceDocPath, 'utf8');
+  const activeCommercialSection = sectionBetween(
+    sourceDoc,
+    /^## Active Commercial Sources/m,
+    /^## Active Sellability Ratings/m,
+  );
+  const historicalResearchSection = sectionBetween(
+    sourceDoc,
+    /^## Stale Or Historical Research/m,
+    /^## Claim Translation Table/m,
+  );
+
+  if (!activeCommercialSection) {
+    failures.push('COMMERCIAL_SOURCE_OF_TRUTH.md is missing the Active Commercial Sources section.');
+  }
+
+  if (!historicalResearchSection) {
+    failures.push('COMMERCIAL_SOURCE_OF_TRUTH.md is missing the Stale Or Historical Research section.');
+  }
 
   for (const docPath of requiredActiveDocs) {
+    const docRef = docReference(docPath);
     const absoluteActiveDocPath = path.join(repoRoot, docPath);
     if (!existsSync(absoluteActiveDocPath)) {
       failures.push(`Active commercial doc is missing: ${docPath}`);
     }
     if (!sourceDoc.includes(docPath.replace(/^docs\//, '')) && !sourceDoc.includes(docPath)) {
       failures.push(`COMMERCIAL_SOURCE_OF_TRUTH.md does not reference active doc: ${docPath}`);
+    }
+    if (activeCommercialSection && !activeCommercialSection.includes(docRef) && !activeCommercialSection.includes(docPath)) {
+      failures.push(`Active commercial doc is not listed in the Active Commercial Sources section: ${docPath}`);
+    }
+    if (historicalResearchSection && (historicalResearchSection.includes(docRef) || historicalResearchSection.includes(docPath))) {
+      failures.push(`Active commercial doc is incorrectly listed as historical/reconcile-first: ${docPath}`);
     }
     if (existsSync(absoluteActiveDocPath)) {
       const activeDoc = readFileSync(absoluteActiveDocPath, 'utf8');
@@ -214,9 +251,21 @@ if (!existsSync(sourceDocPath)) {
   }
 
   for (const docPath of historicalDocsToGovern) {
+    const docRef = docReference(docPath);
     const historicalPath = path.join(repoRoot, docPath);
     if (existsSync(historicalPath) && !sourceDoc.includes(docPath.replace(/^docs\//, ''))) {
       failures.push(`Historical doc exists but is not governed as stale/reconcile-first: ${docPath}`);
+    }
+    if (activeCommercialSection && (activeCommercialSection.includes(docRef) || activeCommercialSection.includes(docPath))) {
+      failures.push(`Historical doc is incorrectly listed in the Active Commercial Sources section: ${docPath}`);
+    }
+    if (
+      existsSync(historicalPath) &&
+      historicalResearchSection &&
+      !historicalResearchSection.includes(docRef) &&
+      !historicalResearchSection.includes(docPath)
+    ) {
+      failures.push(`Historical doc is not listed in the Stale Or Historical Research section: ${docPath}`);
     }
     if (existsSync(historicalPath)) {
       const historicalDoc = readFileSync(historicalPath, 'utf8');
