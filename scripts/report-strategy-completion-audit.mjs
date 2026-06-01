@@ -128,12 +128,21 @@ const sourceAnchors = [
   'https://www.ieso.ca/en/Sector-Participants/Settlements/Global-Adjustment-Class-A-Eligibility',
   'https://www.ieso.ca/peaktracker',
   'https://www.oeb.ca/regulatory-rules-and-documents/rules-codes-and-requirements/filing-requirements-transmission-distribution-applications',
+  'https://ucahelps.alberta.ca/REAs-and-Natural-Gas-Co-ops.aspx',
+  'https://afrea.ab.ca/who-we-are/',
   'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
   'https://www.energycap.com/energycap-faqs/',
   'https://www.energycap.com/product-features/utility-bill-auditing-software/',
+  'https://gridx.com/',
+  'https://www.bidgely.com/',
+  'https://www.oracle.com/customer-hub/utilities/opower/',
+  'https://www.innowatts.com/',
   'https://www.amperon.co/products/demand-forecasts',
   'https://utilityapi.com/products/utility-data-exchange',
+  'https://robjhyndman.com/publications/another-look-at-measures-of-forecast-accuracy/',
   'https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html',
+  'https://arxiv.org/abs/1810.03993',
+  'https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/privacy/guidance-preparing-information-sharing-agreements-involving-personal-information.html',
 ];
 
 const rows = [

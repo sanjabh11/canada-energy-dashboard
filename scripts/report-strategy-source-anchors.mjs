@@ -48,6 +48,16 @@ const sourceAnchors = [
     terms: ['filing requirements', 'distribution'],
   },
   {
+    label: 'Alberta Utilities Consumer Advocate REAs',
+    url: 'https://ucahelps.alberta.ca/REAs-and-Natural-Gas-Co-ops.aspx',
+    terms: ['Rural Electrification Associations', 'Alberta'],
+  },
+  {
+    label: 'AFREA rural power co-operatives',
+    url: 'https://afrea.ab.ca/who-we-are/',
+    terms: ['Rural Electrification Associations', 'AFREA'],
+  },
+  {
     label: 'Alberta TIER regulation',
     url: 'https://www.alberta.ca/technology-innovation-and-emissions-reduction-regulation',
     terms: ['Technology Innovation and Emissions Reduction', 'TIER'],
@@ -61,6 +71,26 @@ const sourceAnchors = [
     label: 'EnergyCAP utility bill auditing',
     url: 'https://www.energycap.com/product-features/utility-bill-auditing-software/',
     terms: ['EnergyCAP', 'utility bill auditing', 'billing errors'],
+  },
+  {
+    label: 'GridX enterprise rate engine',
+    url: 'https://gridx.com/',
+    terms: ['GridX', 'Enterprise Rate Engine', 'utilities'],
+  },
+  {
+    label: 'Bidgely UtilityAI',
+    url: 'https://www.bidgely.com/',
+    terms: ['Bidgely', 'UtilityAI', 'Energy Analytics'],
+  },
+  {
+    label: 'Oracle Opower utility customer engagement',
+    url: 'https://www.oracle.com/customer-hub/utilities/opower/',
+    terms: ['Opower', 'Oracle', 'utility'],
+  },
+  {
+    label: 'Innowatts energy analytics',
+    url: 'https://www.innowatts.com/',
+    terms: ['Innowatts', 'Energy Analytics'],
   },
   {
     label: 'Amperon demand forecasts',
@@ -83,6 +113,11 @@ const sourceAnchors = [
     terms: ['authorizations', 'UtilityAPI'],
   },
   {
+    label: 'Hyndman and Koehler forecast accuracy measures',
+    url: 'https://robjhyndman.com/publications/another-look-at-measures-of-forecast-accuracy/',
+    terms: ['MASE', 'forecast accuracy'],
+  },
+  {
     label: 'Nixtla conformal prediction',
     url: 'https://nixtlaverse.nixtla.io/statsforecast/docs/tutorials/conformalprediction.html',
     terms: ['Conformal', 'StatsForecast'],
@@ -98,6 +133,11 @@ const sourceAnchors = [
     terms: ['Artificial Intelligence Risk Management Framework', 'AI RMF'],
   },
   {
+    label: 'Model Cards for Model Reporting',
+    url: 'https://arxiv.org/abs/1810.03993',
+    terms: ['Model Cards', 'Model Reporting'],
+  },
+  {
     label: 'OWASP CSV injection',
     url: 'https://owasp.org/www-community/attacks/CSV_Injection',
     terms: ['CSV Injection', 'Formula Injection'],
@@ -106,6 +146,11 @@ const sourceAnchors = [
     label: 'NIST IR 8053 de-identification',
     url: 'https://csrc.nist.gov/pubs/ir/8053/final',
     terms: ['De-Identification', 'Privacy'],
+  },
+  {
+    label: 'Treasury Board information-sharing privacy guidance',
+    url: 'https://www.canada.ca/en/treasury-board-secretariat/services/access-information-privacy/privacy/guidance-preparing-information-sharing-agreements-involving-personal-information.html',
+    terms: ['Information Sharing Agreements', 'personal information'],
   },
 ];
 
