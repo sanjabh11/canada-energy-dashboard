@@ -38,7 +38,7 @@ if (deployScript) {
     'pnpm run check:release-readiness',
     'pnpm run build:prod',
     'DEPLOY CEIP PRODUCTION',
-    'netlify deploy --prod',
+    'netlify deploy --prod --no-build --dir=dist',
     'pnpm run check:post-deploy-live',
     'validate:pilot-evidence --require-95',
   ];

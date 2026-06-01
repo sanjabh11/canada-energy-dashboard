@@ -165,7 +165,7 @@ echo "This deploy requires explicit owner approval outside this script."
 read -p "Type DEPLOY CEIP PRODUCTION to deploy to production: " DEPLOY_CONFIRMATION
 echo
 if [ "$DEPLOY_CONFIRMATION" = "DEPLOY CEIP PRODUCTION" ]; then
-  netlify deploy --prod || {
+  netlify deploy --prod --no-build --dir=dist || {
     echo -e "${RED}❌ Deployment failed${NC}"
     exit 1
   }
