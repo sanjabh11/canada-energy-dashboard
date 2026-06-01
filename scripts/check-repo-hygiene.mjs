@@ -9,12 +9,18 @@ const failures = [];
 
 const forbiddenTrackedPaths = [
   '.DS_Store',
+  'Actions',
   'COMMIT_MESSAGE.txt',
   'FETCH_HEAD',
+  'New',
   'Secrets',
   'dev.log',
   'docs.zip',
   'supabase.zip',
+];
+
+const forbiddenTrackedBasenames = [
+  '.DS_Store',
 ];
 
 const forbiddenTrackedPrefixes = [
@@ -45,6 +51,13 @@ const trackedFiles = execFileSync('git', ['ls-files'], {
 for (const forbiddenPath of forbiddenTrackedPaths) {
   if (trackedFiles.includes(forbiddenPath)) {
     failures.push(`${forbiddenPath} must not be tracked; it is a local/generated artifact.`);
+  }
+}
+
+for (const forbiddenBasename of forbiddenTrackedBasenames) {
+  const matches = trackedFiles.filter((trackedFile) => path.basename(trackedFile) === forbiddenBasename);
+  if (matches.length > 0) {
+    failures.push(`${forbiddenBasename} must not be tracked anywhere; found ${matches.slice(0, 3).join(', ')}.`);
   }
 }
 

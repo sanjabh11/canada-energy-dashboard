@@ -6,6 +6,8 @@ FETCH_HEAD
 Secrets
 docs.zip
 supabase.zip
+/Actions
+/New
 test-results/
 # Environment files (never commit secrets)
 .env
