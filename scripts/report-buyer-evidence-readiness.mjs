@@ -219,6 +219,10 @@ function firstOutputLines(output, limit = 8) {
     .slice(0, limit);
 }
 
+function indentedOutputLines(output, limit = 28) {
+  return firstOutputLines(output, limit).map((line) => `    ${line}`);
+}
+
 function summarizePilotRegister(filePath, rows) {
   const rowObjects = rowsToObjects(rows);
   const confidenceRows = rowObjects.filter((row) => Number(row.confidence_delta) > 0);
@@ -337,6 +341,10 @@ if (outreachLogs.length > 0) {
     console.log(`  Rows: ${log.rows}; actionable evidence rows: ${log.actionableRows}.`);
     console.log(`  Validation: ${log.validation.status === 0 ? 'pass' : 'fail'}.`);
     console.log(`  Action plan: ${log.actionPlan.status === 0 ? 'available' : 'blocked'}.`);
+    if (log.actionableRows > 0 && log.actionPlan.status === 0) {
+      console.log('  Action plan excerpt:');
+      for (const line of indentedOutputLines(log.actionPlan.stdout)) console.log(line);
+    }
     if (log.validation.status !== 0 || log.actionPlan.status !== 0) {
       for (const line of firstOutputLines(`${log.validation.stderr}\n${log.validation.stdout}\n${log.actionPlan.stderr}\n${log.actionPlan.stdout}`)) console.log(`    ${line}`);
     }
@@ -349,7 +357,7 @@ if (!hasProductionEvidenceInputs) {
   console.log('- Generate route-specific intake scaffolding with `pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake`.');
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
 } else if (totalActionableOutreachRows > 0 && pilotRegisters.length === 0) {
-  console.log('- Run the printed outreach action plan commands to create intake packets or retained artifacts.');
+  console.log('- Use the outreach action plan excerpt above to create intake packets or retained artifacts.');
 } else if (pilotRegisters.length > 0 && !evidenceRoot) {
   console.log('- Re-run with `--evidence-root path/to/redacted-artifacts` to test the retained-artifact 95% gate.');
 } else if (passing95Gates === 0) {
