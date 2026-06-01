@@ -4,6 +4,10 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { validateWritableArtifactPathInsideRoot } from './lib/evidence-path-safety.mjs';
+import {
+  proofPackIdsByRoute,
+  proofPackRoutes,
+} from './lib/proof-pack-routes.mjs';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -55,6 +59,7 @@ const requiredOptions = [
   'evidence-root',
   'artifact-file',
   'route',
+  'proof-pack-id',
   'record-date',
   'pii-screen-result',
   'buyer-data-coverage-pct',
@@ -85,20 +90,7 @@ const displayEvidenceRoot = evidenceRoot && relativeEvidenceRoot && !relativeEvi
   ? relativeEvidenceRoot
   : evidenceRoot;
 
-const allowedRoutes = new Set([
-  '/utility-demand-forecast',
-  '/forecast-benchmarking',
-  '/regulatory-filing',
-  '/roi-calculator',
-  '/credit-banking',
-  '/shadow-billing',
-  '/asset-health',
-  '/utility-security',
-  '/ai-datacentres',
-  '/api-docs',
-  '/ga-ici-5cp',
-  '/byo-csv-proof',
-]);
+const allowedRoutes = proofPackRoutes;
 const allowedExtensions = new Set(['.csv', '.tsv', '.json', '.jsonl', '.md', '.txt', '.html', '.htm', '.yaml', '.yml']);
 const acceptedReviewerStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['complete', 'accepted', 'approved', 'signed']);
@@ -283,6 +275,7 @@ if (evidenceRoot && artifactPath) {
 }
 
 const route = values.get('route') ?? '';
+const proofPackId = values.get('proof-pack-id') ?? '';
 const recordDate = values.get('record-date') ?? '';
 const piiScreenResult = normalizeText(values.get('pii-screen-result') ?? '');
 const coverage = parseFiniteNumber('buyer-data-coverage-pct');
@@ -295,6 +288,10 @@ const commercialCommitmentEvidence = values.get('commercial-commitment-evidence'
 const diagnosticText = diagnostics.join('\n');
 
 if (!allowedRoutes.has(route)) failures.push(`--route must be one of ${Array.from(allowedRoutes).join(', ')}.`);
+const allowedProofPackIds = proofPackIdsByRoute.get(route);
+if (proofPackId && allowedProofPackIds && !allowedProofPackIds.has(proofPackId)) {
+  failures.push(`--proof-pack-id ${proofPackId} is not valid for --route ${route}; expected one of ${Array.from(allowedProofPackIds).join(', ')}.`);
+}
 if (!isValidIsoDate(recordDate)) failures.push('--record-date must be a valid YYYY-MM-DD date.');
 if (!allowedPiiScreenResults.has(piiScreenResult)) {
   failures.push('--pii-screen-result must be no personal data, no personal data or meter identifiers found, redacted, or screened.');
@@ -344,7 +341,6 @@ const reviewerRole = values.get('reviewer-role');
 const claimBoundary = values.get('claim-boundary');
 const doNotClaim = values.get('do-not-claim');
 const sourceLabel = values.get('source-label') ?? 'buyer_supplied_anonymized';
-const proofPackId = values.get('proof-pack-id') ?? '(fill matching proof_pack_id in register)';
 const retainedCommercialCommitmentEvidence = commercialCommitmentStatus === 'none'
   ? 'none'
   : commercialCommitmentEvidence.trim();
