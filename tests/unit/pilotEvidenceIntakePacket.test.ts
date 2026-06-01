@@ -1,10 +1,11 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const generatorScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
+const bundleGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-minimum-intake-bundle.mjs');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const tempRoots: string[] = [];
 
@@ -133,5 +134,81 @@ describe('pilot evidence intake packet generator', () => {
     expect(listResult.status).toBe(0);
     expect(listResult.stdout).toContain('/utility-demand-forecast');
     expect(listResult.stdout).toContain('/byo-csv-proof');
+  });
+
+  it('creates a Phase F minimum bundle with a combined non-confidence-moving starter register', async () => {
+    const outputDir = makeTempRoot();
+    const result = await runNodeScript(bundleGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Phase F minimum intake bundle created.');
+    expect(result.stdout).toContain('/utility-demand-forecast (utility_forecast_planning_pack)');
+    expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack)');
+    expect(result.stdout).toContain('/utility-security (utility_security_procurement_pack)');
+
+    const registerPath = path.join(outputDir, 'phase-f-minimum-register-starter.csv');
+    const readmePath = path.join(outputDir, 'README.md');
+    const registerText = readFileSync(registerPath, 'utf8');
+    const readmeText = readFileSync(readmePath, 'utf8');
+
+    expect(existsSync(path.join(outputDir, 'utility-demand-forecast/README.md'))).toBe(true);
+    expect(existsSync(path.join(outputDir, 'roi-calculator/README.md'))).toBe(true);
+    expect(existsSync(path.join(outputDir, 'utility-security/README.md'))).toBe(true);
+    expect(registerText).toContain('/utility-demand-forecast');
+    expect(registerText).toContain('/roi-calculator');
+    expect(registerText).toContain('/utility-security');
+    expect(registerText).toContain('utility-demand-forecast/redacted-artifacts/README.md');
+    expect(registerText).toContain('roi-calculator/redacted-artifacts/README.md');
+    expect(registerText).toContain('utility-security/redacted-artifacts/README.md');
+    expect(registerText).toContain('confidence_delta');
+    expect(registerText).toContain('Phase F bundle starter row only; not buyer proof');
+    expect(readmeText).toContain('does not create buyer proof');
+    expect(readmeText).toContain('Global 95% Gate Checks');
+    expect(readmeText).toContain('The two 95% commands are expected to fail for this starter bundle');
+    expect(readmeText).toContain('prefix that reference with the route folder');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [registerPath]);
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed for 3 row(s)');
+    expect(validationResult.stderr).toBe('');
+  }, 30000);
+
+  it('keeps the Phase F minimum bundle below the hard 95% gate until buyer evidence exists', async () => {
+    const outputDir = makeTempRoot();
+    const createResult = await runNodeScript(bundleGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const registerPath = path.join(outputDir, 'phase-f-minimum-register-starter.csv');
+    const result = await runNodeScript(validatorScriptPath, [
+      registerPath,
+      '--require-95',
+      '--evidence-root',
+      outputDir,
+    ]);
+    const output = `${result.stderr}\n${result.stdout}`;
+
+    expect(result.status).toBe(1);
+    expect(output).toContain('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence');
+    expect(output).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
+    expect(output).toContain('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence');
+    expect(output).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
+  }, 30000);
+
+  it('rejects invalid Phase F lane route overrides', async () => {
+    const outputDir = makeTempRoot();
+    const result = await runNodeScript(bundleGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--tier-route', '/utility-security',
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('--tier-route must be one of /roi-calculator, /credit-banking.');
   });
 });

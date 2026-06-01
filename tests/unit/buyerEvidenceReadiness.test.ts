@@ -185,4 +185,28 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('CSV files scanned: 0');
     expect(result.stdout).toContain('Production outreach response logs: 0');
   });
+
+  it('does not ask operators to run the retained-artifact gate before starter rows become confidence-moving', async () => {
+    const root = makeTempRoot();
+    const packetDir = path.join(root, 'pilot-intake');
+    const createResult = await runNodeScript(intakePacketScriptPath, [
+      '--route',
+      '/utility-demand-forecast',
+      '--output-dir',
+      packetDir,
+      '--record-date',
+      '2026-01-15',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const result = await runNodeScript(readinessScriptPath, ['--root', packetDir]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Production pilot evidence registers: 1');
+    expect(result.stdout).toContain('Confidence-moving register rows: 0');
+    expect(result.stdout).toContain('Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence');
+    expect(result.stdout).toContain('Keep `confidence_delta=0` until buyer evidence includes reviewer acceptance');
+    expect(result.stdout).not.toContain('Re-run with `--evidence-root path/to/redacted-artifacts` to test the retained-artifact 95% gate.');
+  });
 });
