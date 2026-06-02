@@ -248,6 +248,14 @@ function phaseFMinimumBundleCommand(outputDir = '/tmp/ceip-phase-f-minimum-intak
   return `pnpm run create:phase-f-minimum-intake-bundle -- --output-dir ${outputDir}`;
 }
 
+function phaseFEvidenceWorkspaceCommand(outputDir = '/tmp/ceip-phase-f-evidence') {
+  return `pnpm run create:phase-f-evidence-workspace -- --output-dir ${outputDir}`;
+}
+
+function phaseFEvidenceWorkspaceReportCommand(workspaceDir = '/tmp/ceip-phase-f-evidence') {
+  return `pnpm run report:phase-f-evidence-workspace -- --workspace-dir ${workspaceDir}`;
+}
+
 function printPhaseFMinimumEvidenceMap() {
   console.log('\n## Minimum Phase F 95% Evidence Map');
   console.log('The hard 95% gate is intentionally stricter than finding any one buyer reply or demo artifact. Minimum accepted buyer-evidence coverage:');
@@ -261,6 +269,10 @@ function printPhaseFMinimumEvidenceMap() {
   console.log(`- ${phaseFMinimumBundleCommand()}`);
   console.log(`- Default bundle routes: ${phaseFDefaultMinimumRoutes.map(routeWithProofPack).join(', ')}.`);
   console.log('- Override the finance or billing/security lane with `--tier-route /credit-banking` or `--billing-security-route /shadow-billing` when the buyer evidence points there.');
+  console.log('\nAll-in-one Phase F collection workspace for operators:');
+  console.log(`- ${phaseFEvidenceWorkspaceCommand()}`);
+  console.log(`- ${phaseFEvidenceWorkspaceReportCommand()}`);
+  console.log('- The workspace wraps the outreach log, default minimum starter bundle, readiness report, and hard-gate blocker check without creating buyer proof.');
 }
 
 function summarizePilotRegister(filePath, rows) {
@@ -411,8 +423,9 @@ if (outreachLogs.length > 0) {
 
 console.log('\n## Next Actions');
 if (!hasProductionEvidenceInputs) {
-  console.log('- Fill a non-template anonymized outreach response log when real buyer activity exists, then run `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
-  console.log(`- Generate the minimum Phase F starter bundle with \`${phaseFMinimumBundleCommand()}\`.`);
+  console.log(`- Start the all-in-one Phase F evidence workspace with \`${phaseFEvidenceWorkspaceCommand()}\`.`);
+  console.log(`- Run \`${phaseFEvidenceWorkspaceReportCommand()}\` before resuming collection; it validates the workspace, shows hard-gate blockers, and prints next operator commands.`);
+  console.log('- Append only real, anonymized buyer activity rows with `pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...`.');
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
 } else if (outreachLogs.length > 0 && totalActionableOutreachRows === 0 && pilotRegisters.length === 0) {
   console.log('- Record real buyer replies in the existing anonymized outreach response log; header-only, drafted, sent-no-reply, not-now, not-fit, and unsubscribe rows do not create evidence actions.');
