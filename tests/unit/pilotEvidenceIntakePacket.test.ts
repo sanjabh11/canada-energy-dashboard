@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const generatorScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
 const bundleGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-minimum-intake-bundle.mjs');
+const workspaceGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-evidence-workspace.mjs');
 const outreachLogGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
 const outreachRowAppenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-response-log-row.mjs');
 const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-outreach-intake-packets.mjs');
@@ -453,6 +454,47 @@ describe('pilot evidence intake packet generator', () => {
     expect(output).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
     expect(output).toContain('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence');
     expect(output).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
+  }, 30000);
+
+  it('creates a Phase F evidence workspace without moving confidence', async () => {
+    const outputDir = makeTempRoot();
+    const result = await runNodeScript(workspaceGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Phase F evidence workspace created.');
+    expect(result.stdout).toContain('Confidence movement: none');
+    expect(result.stdout).toContain('Buyer proof created: no');
+
+    const manifest = JSON.parse(readFileSync(path.join(outputDir, 'phase-f-evidence-workspace-manifest.json'), 'utf8'));
+    expect(manifest.confidence_movement).toBe('none');
+    expect(manifest.buyer_proof_created).toBe(false);
+    expect(manifest.selected_routes.map((entry: { route: string }) => entry.route)).toEqual([
+      '/utility-demand-forecast',
+      '/roi-calculator',
+      '/utility-security',
+    ]);
+
+    const readmeText = readFileSync(path.join(outputDir, 'README.md'), 'utf8');
+    expect(readmeText).toContain('This workspace is collection scaffolding only.');
+    expect(readmeText).toContain('Confidence movement: none');
+    expect(readmeText).toContain('Buyer proof created: no');
+    expect(readmeText).toContain('pnpm run report:buyer-evidence-readiness');
+
+    expect(existsSync(path.join(outputDir, 'outreach/outreach-response-log.csv'))).toBe(true);
+    expect(existsSync(path.join(outputDir, 'phase-f-minimum-intake/phase-f-minimum-register-starter.csv'))).toBe(true);
+
+    const gateResult = await runNodeScript(validatorScriptPath, [
+      path.join(outputDir, 'phase-f-minimum-intake/phase-f-minimum-register-starter.csv'),
+      '--require-95',
+      '--evidence-root',
+      path.join(outputDir, 'phase-f-minimum-intake'),
+    ]);
+    expect(gateResult.status).toBe(1);
+    expect(`${gateResult.stderr}\n${gateResult.stdout}`).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
   }, 30000);
 
   it('rejects invalid Phase F lane route overrides', async () => {

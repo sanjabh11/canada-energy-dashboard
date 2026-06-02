@@ -255,10 +255,12 @@ pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv
 pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv
 pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv
 pnpm run create:outreach-intake-packets -- --log-file path/to/outreach-response-log.csv --output-dir /tmp/ceip-outreach-intake-packets
+pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
 ```
 
 The response log can point to `create_intake_packet`, `prepare_retained_artifact`, `update_register`, or `run_95_gate`, but it does not itself create buyer evidence or move confidence. It rejects future-dated outreach activity and blocks no-reply/not-fit statuses from creating evidence actions; `plan:outreach-intake` prints the next intake commands for rows that are actually actionable.
 Use `create:outreach-intake-packets` only after rows have a valid `create_intake_packet` action. It creates starter packet folders and a manifest, not buyer evidence.
+Use `create:phase-f-evidence-workspace` when the operator needs the response-log scaffold, minimum Phase F starter bundle, manifest, and readiness report together before collecting retained buyer artifacts.
 
 ## Discovery Coding Taxonomy
 
