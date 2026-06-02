@@ -237,7 +237,7 @@ ${markdownList(phaseFGlobalGateChecks)}
 ${markdownList([
   '`phase-f-minimum-register-starter.csv` combines the three starter rows with `confidence_delta=0`.',
   'Each route folder contains its own `pilot-evidence-register-starter.csv`, README, and `redacted-artifacts/` folder.',
-  'Use the top-level bundle directory as `--evidence-root` after replacing starter evidence references with route-prefixed retained extract SHA-256 references.',
+  'Use the top-level bundle directory as `--evidence-root`; when a retained extract is prepared inside a route folder, pass that route folder as `--artifact-root` to the register updater so it writes the top-level relative SHA-256 reference.',
 ])}
 
 ## First Commands
@@ -253,10 +253,16 @@ The two 95% commands are expected to fail for this starter bundle until real buy
 
 ## Retained Artifact References
 
-When a route-specific helper prints \`artifact.md#sha256=...\`, prefix that reference with the route folder before pasting it into the top-level register. Example:
+When a route-specific helper prints \`artifact.md#sha256=...\`, do not hand-prefix it into the top-level register. Use \`update:pilot-evidence-register-row\` with the top-level bundle as \`--evidence-root\` and the route-local artifact folder as \`--artifact-root\`:
 
-\`\`\`text
-utility-demand-forecast/redacted-artifacts/utility-demand-forecast-retained.md#sha256=<hash>
+\`\`\`bash
+pnpm run update:pilot-evidence-register-row -- \\
+  --register-file ${displayPath(bundleRegisterPath)} \\
+  --evidence-root ${displayPath(outputDir)} \\
+  --artifact-root ${displayPath(path.join(outputDir, 'utility-demand-forecast/redacted-artifacts'))} \\
+  --evidence-file-reference utility-demand-forecast-retained.md#sha256=<hash-from-helper> \\
+  --confidence-delta "<explicit 0..0.4, or 0 for staging>" \\
+  --output-file path/to/phase-f-minimum-register-updated.csv
 \`\`\`
 `;
 

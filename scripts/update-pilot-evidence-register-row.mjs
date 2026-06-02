@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { validateExistingEvidencePathInsideRoot } from './lib/evidence-path-safety.mjs';
+import { isInsideDirectory, validateExistingEvidencePathInsideRoot } from './lib/evidence-path-safety.mjs';
 import { proofPackIdsByRoute } from './lib/proof-pack-routes.mjs';
 
 const repoRoot = process.cwd();
@@ -57,6 +57,7 @@ Options:
   --evidence-file-reference <ref>    Required. Relative retained artifact reference with sha256.
   --confidence-delta <0..0.4>        Required. Explicit confidence movement; use 0 for staging.
   --output-file <csv>                Required unless --in-place is used.
+  --artifact-root <dir>              Optional. Route-local artifact root inside --evidence-root.
   --row-index <n>                    Optional. 1-based data row to update when multiple rows match.
   --follow-up-action <text>          Optional. Defaults to rerunning retained evidence gates.
   --notes <text>                     Optional. Defaults to artifact-updated boundary note.
@@ -73,6 +74,7 @@ if (inPlace && values.has('output-file')) failures.push('Use either --in-place o
 
 const registerPath = values.has('register-file') ? path.resolve(repoRoot, values.get('register-file')) : null;
 const evidenceRoot = values.has('evidence-root') ? path.resolve(repoRoot, values.get('evidence-root')) : null;
+const artifactRoot = values.has('artifact-root') ? path.resolve(repoRoot, values.get('artifact-root')) : evidenceRoot;
 const outputPath = inPlace
   ? registerPath
   : (values.has('output-file') ? path.resolve(repoRoot, values.get('output-file')) : null);
@@ -196,6 +198,19 @@ if (registerPath && !existsSync(registerPath)) failures.push(`Register file not 
 if (registerPath && existsSync(registerPath) && !statSync(registerPath).isFile()) failures.push(`Register path must be a file: ${displayPath(registerPath)}`);
 if (evidenceRoot && !existsSync(evidenceRoot)) failures.push(`Evidence root not found: ${displayPath(evidenceRoot)}`);
 if (evidenceRoot && existsSync(evidenceRoot) && !statSync(evidenceRoot).isDirectory()) failures.push(`Evidence root must be a directory: ${displayPath(evidenceRoot)}`);
+if (artifactRoot && !existsSync(artifactRoot)) failures.push(`Artifact root not found: ${displayPath(artifactRoot)}`);
+if (artifactRoot && existsSync(artifactRoot) && !statSync(artifactRoot).isDirectory()) failures.push(`Artifact root must be a directory: ${displayPath(artifactRoot)}`);
+if (evidenceRoot && artifactRoot && existsSync(evidenceRoot) && existsSync(artifactRoot)) {
+  if (!isInsideDirectory(artifactRoot, evidenceRoot)) {
+    failures.push('--artifact-root must stay inside --evidence-root.');
+  } else {
+    const realEvidenceRoot = realpathSync(evidenceRoot);
+    const realArtifactRoot = realpathSync(artifactRoot);
+    if (!isInsideDirectory(realArtifactRoot, realEvidenceRoot)) {
+      failures.push('--artifact-root resolves outside --evidence-root; symlink escapes are not allowed.');
+    }
+  }
+}
 if (outputPath && existsSync(outputPath) && outputPath !== registerPath && !force) {
   failures.push(`Output file already exists: ${displayPath(outputPath)} (rerun with --force to replace).`);
 }
@@ -215,13 +230,16 @@ if (parsedReference?.artifactFile.startsWith('/') || path.isAbsolute(parsedRefer
 let artifactPath = null;
 let artifactText = '';
 let artifactMetadata = {};
-if (evidenceRoot && parsedReference) {
-  artifactPath = path.resolve(evidenceRoot, parsedReference.artifactFile);
+let registerEvidenceReference = evidenceReference;
+if (artifactRoot && evidenceRoot && parsedReference) {
+  artifactPath = path.resolve(artifactRoot, parsedReference.artifactFile);
   if (!existsSync(artifactPath)) {
     failures.push(`Retained artifact not found: ${displayPath(artifactPath)}`);
   } else if (!statSync(artifactPath).isFile()) {
     failures.push(`Retained artifact path must be a file: ${displayPath(artifactPath)}`);
   } else {
+    const artifactRootSafetyFailure = validateExistingEvidencePathInsideRoot({ evidenceRoot: artifactRoot, evidencePath: artifactPath });
+    if (artifactRootSafetyFailure) failures.push(artifactRootSafetyFailure.replace('evidence_file_reference', '--evidence-file-reference'));
     const safetyFailure = validateExistingEvidencePathInsideRoot({ evidenceRoot, evidencePath: artifactPath });
     if (safetyFailure) failures.push(safetyFailure);
     artifactText = readFileSync(artifactPath, 'utf8');
@@ -230,6 +248,8 @@ if (evidenceRoot && parsedReference) {
       failures.push(`Retained artifact SHA-256 mismatch for ${displayPath(artifactPath)}.`);
     }
     artifactMetadata = parseArtifactMetadata(artifactText);
+    const registerArtifactReference = path.relative(evidenceRoot, artifactPath).split(path.sep).join('/');
+    registerEvidenceReference = `${registerArtifactReference}#sha256=${parsedReference.sha256}`;
   }
 }
 
@@ -359,7 +379,7 @@ for (const [column, artifactField] of [
   ['do_not_claim', 'do_not_claim'],
   ['day_14_decision', 'day_14_decision'],
 ]) {
-  setCell(targetRow, column, artifactField ? artifactMetadata[artifactField] : evidenceReference);
+  setCell(targetRow, column, artifactField ? artifactMetadata[artifactField] : registerEvidenceReference);
 }
 setCell(targetRow, 'confidence_delta', String(confidenceDelta));
 setCell(
@@ -408,7 +428,7 @@ console.log(`Updated row index: ${targetDataIndex}`);
 console.log(`route: ${route}`);
 console.log(`proof_pack_id: ${proofPackId}`);
 console.log(`confidence_delta: ${confidenceDelta}`);
-console.log(`evidence_file_reference: ${evidenceReference}`);
+console.log(`evidence_file_reference: ${registerEvidenceReference}`);
 console.log('');
 console.log('Next validation commands:');
 console.log(`pnpm run report:pilot-evidence-95 -- ${displayPath(outputPath)} --evidence-root ${displayPath(evidenceRoot)}`);
