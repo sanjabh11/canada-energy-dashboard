@@ -21,6 +21,7 @@ const ROUTE_CHECKS: RouteCheck[] = [
   { path: '/utility-security', marker: 'Utility Security & Data-Handling Statement' },
   { path: '/api-docs', marker: 'CEIP API Documentation' },
   { path: '/ai-datacentres', marker: 'AI Data Centre Energy Dashboard' },
+  { path: '/status', marker: 'Release and evidence posture' },
 ];
 
 const ROUTE_ERROR_PATTERN = /Something Went Wrong|Page Not Found/i;

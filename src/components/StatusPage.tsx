@@ -44,6 +44,52 @@ interface EndpointStatus {
   intervalMinutes: number;
 }
 
+interface ReleasePostureItem {
+  title: string;
+  status: 'verified' | 'watch' | 'external_gate' | 'needs_remediation';
+  rating: string;
+  evidence: string;
+  nextAction: string;
+}
+
+const RELEASE_POSTURE: ReleasePostureItem[] = [
+  {
+    title: 'Production deploy and route parity',
+    status: 'verified',
+    rating: '4.8/5',
+    evidence: 'Post-deploy live gate checks remote metadata, static artifact parity, and six hosted proof-pack routes.',
+    nextAction: 'Rerun `pnpm run check:post-deploy-live` after every production deploy.',
+  },
+  {
+    title: 'GitHub release and cron gates',
+    status: 'verified',
+    rating: '4.7/5',
+    evidence: 'CI, trained dispatch soak, PV fault soak, and Weather Ingestion cron are expected to pass on the current main branch.',
+    nextAction: 'Review GitHub Actions after every push because older failed runs remain visible until superseded.',
+  },
+  {
+    title: 'Supabase edge-function surface',
+    status: 'watch',
+    rating: '4.0/5',
+    evidence: '`llm` and `weather-ingestion-cron` are deployed, while many older edge functions predate the current proof-pack strategy.',
+    nextAction: 'Keep edge-function deploys function-scoped and verify each cron or route after deployment.',
+  },
+  {
+    title: 'Buyer-evidence confidence gate',
+    status: 'external_gate',
+    rating: '1.5/5',
+    evidence: 'The app has templates, intake packets, retained-artifact hashing, and the hard 95% validator, but no real accepted buyer register is present.',
+    nextAction: 'Collect anonymized buyer evidence; keep rehearsal-only rows at `confidence_delta=0`.',
+  },
+  {
+    title: 'Supabase database advisor debt',
+    status: 'needs_remediation',
+    rating: '2.0/5',
+    evidence: 'Current advisor scan found security and performance debt that needs table-by-table migration review.',
+    nextAction: 'Run a scoped RLS/security-definer/index remediation phase before stronger production-security claims.',
+  },
+];
+
 const StatusPage: React.FC = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
   const endpoints: EndpointStatus[] = UPTIME_MONITORS.map((monitor) => ({
@@ -104,6 +150,37 @@ const StatusPage: React.FC = () => {
         return `${baseClasses} bg-slate-100 text-slate-700`;
       default:
         return `${baseClasses} bg-slate-100 text-slate-800`;
+    }
+  };
+
+  const getPostureBadge = (status: ReleasePostureItem['status']) => {
+    const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
+    switch (status) {
+      case 'verified':
+        return `${baseClasses} bg-emerald-100 text-emerald-800`;
+      case 'watch':
+        return `${baseClasses} bg-sky-100 text-sky-800`;
+      case 'external_gate':
+        return `${baseClasses} bg-amber-100 text-amber-800`;
+      case 'needs_remediation':
+        return `${baseClasses} bg-red-100 text-red-800`;
+      default:
+        return `${baseClasses} bg-slate-100 text-slate-800`;
+    }
+  };
+
+  const getPostureIcon = (status: ReleasePostureItem['status']) => {
+    switch (status) {
+      case 'verified':
+        return <CheckCircle className="h-5 w-5 text-emerald-500" />;
+      case 'watch':
+        return <Activity className="h-5 w-5 text-sky-500" />;
+      case 'external_gate':
+        return <Clock className="h-5 w-5 text-amber-500" />;
+      case 'needs_remediation':
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Activity className="h-5 w-5 text-slate-400" />;
     }
   };
 
@@ -170,6 +247,33 @@ const StatusPage: React.FC = () => {
           message="Source freshness and ops-health panels are the canonical trust layer on this page. Endpoint coverage and uptime history below are currently reference views derived from monitor configuration, not live ping evidence or persisted SLA history."
           className="mb-8"
         />
+
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-slate-500" />
+            Release and evidence posture
+          </h2>
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {RELEASE_POSTURE.map((item) => (
+              <article key={item.title} className="bg-white border border-slate-200 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    {getPostureIcon(item.status)}
+                    <div>
+                      <h3 className="font-semibold text-slate-900">{item.title}</h3>
+                      <div className="mt-1 text-sm text-slate-500">Readiness rating: {item.rating}</div>
+                    </div>
+                  </div>
+                  <span className={getPostureBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                </div>
+                <p className="mt-4 text-sm leading-6 text-slate-600">{item.evidence}</p>
+                <div className="mt-4 rounded-lg bg-slate-50 border border-slate-200 p-3 text-sm text-slate-700">
+                  <span className="font-medium text-slate-900">Next action:</span> {item.nextAction}
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-3 gap-8">

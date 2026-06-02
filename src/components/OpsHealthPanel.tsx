@@ -81,7 +81,7 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         setError(null);
         return;
       }
-      console.error('OpsHealthPanel: Supabase Edge not configured while not in DEV; treating as error.');
+      console.warn('OpsHealthPanel: Supabase Edge not configured while not in DEV; showing unavailable state.');
       setEdgeDisabled(false);
       setLoading(false);
       setMetrics(null);

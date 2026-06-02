@@ -10,12 +10,14 @@ export interface UptimeMonitorDefinition {
   owner: string;
 }
 
+const PRODUCTION_BASE_URL = 'https://canada-energy.netlify.app';
+
 export const UPTIME_MONITORS: UptimeMonitorDefinition[] = [
-  { id: 'homepage', name: 'Homepage', url: 'https://ceip.io/', expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
-  { id: 'lead-capture', name: 'Lead Capture API', url: 'https://ceip.io/api/leads/intake', expectedStatus: [200, 201], intervalMinutes: 5, owner: 'ops@ceip.io' },
-  { id: 'ops-health', name: 'Health Endpoint', url: 'https://ceip.io/ops-health', expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
-  { id: 'roi-calculator', name: 'TIER Calculator', url: 'https://ceip.io/roi-calculator', expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
-  { id: 'municipal', name: 'Municipal Page', url: 'https://ceip.io/municipal', expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
+  { id: 'homepage', name: 'Homepage', url: `${PRODUCTION_BASE_URL}/`, expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
+  { id: 'pilot-readiness', name: 'Pilot Readiness', url: `${PRODUCTION_BASE_URL}/pilot-readiness`, expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
+  { id: 'utility-forecast', name: 'Utility Forecast Pack', url: `${PRODUCTION_BASE_URL}/utility-demand-forecast`, expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
+  { id: 'ga-ici-5cp', name: 'Ontario GA/ICI 5CP Pack', url: `${PRODUCTION_BASE_URL}/ga-ici-5cp`, expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
+  { id: 'byo-csv-proof', name: 'BYO-CSV Proof Pack', url: `${PRODUCTION_BASE_URL}/byo-csv-proof`, expectedStatus: [200], intervalMinutes: 5, owner: 'ops@ceip.io' },
 ];
 
 export interface SourceRegistryEntry {
