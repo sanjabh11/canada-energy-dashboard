@@ -105,6 +105,7 @@ const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const phaseFMinimumIntakeBundlePhrase = /create:phase-f-minimum-intake-bundle|check:phase-f-minimum-intake-bundle/;
+const phaseFEvidenceWorkspacePhrase = /create:phase-f-evidence-workspace|check:phase-f-evidence-workspace/;
 const pilotEvidenceRegisterUpdaterPhrase = /update:pilot-evidence-register-row/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
@@ -413,6 +414,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:phase-f-minimum-intake-bundle wired to the Phase F starter bundle smoke check.');
   }
 
+  if (packageScripts['create:phase-f-evidence-workspace'] !== 'node scripts/create-phase-f-evidence-workspace.mjs') {
+    failures.push('package.json must keep create:phase-f-evidence-workspace wired to the Phase F evidence workspace generator.');
+  }
+
+  if (packageScripts['check:phase-f-evidence-workspace'] !== 'node scripts/check-phase-f-evidence-workspace.mjs') {
+    failures.push('package.json must keep check:phase-f-evidence-workspace wired to the Phase F evidence workspace smoke check.');
+  }
+
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
     failures.push('package.json must keep update:pilot-evidence-register-row wired to the retained-artifact register updater.');
   }
@@ -425,6 +434,10 @@ if (!existsSync(sourceDocPath)) {
     failures.push('check:release-readiness must include check:phase-f-minimum-intake-bundle so the Phase F starter bundle cannot drift.');
   }
 
+  if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:phase-f-evidence-workspace')) {
+    failures.push('check:release-readiness must include check:phase-f-evidence-workspace so the Phase F workspace cannot drift.');
+  }
+
   if (!outreachIntakePacketBatchPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention create:outreach-intake-packets for validated outreach-to-intake scaffolding.');
   }
@@ -435,6 +448,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!phaseFMinimumIntakeBundlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the Phase F minimum intake bundle generator or smoke check.');
+  }
+
+  if (!phaseFEvidenceWorkspacePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the Phase F evidence workspace generator or smoke check.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {
@@ -484,6 +501,9 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!phaseFMinimumIntakeBundlePhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention the Phase F minimum intake bundle generator or smoke check.');
+    }
+    if (!phaseFEvidenceWorkspacePhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention the Phase F evidence workspace generator or smoke check.');
     }
     if (!pilotEvidenceRegisterUpdaterPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention update:pilot-evidence-register-row for retained-artifact register updates.');

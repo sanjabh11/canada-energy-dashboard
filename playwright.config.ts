@@ -2,7 +2,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 const defaultPort = process.env.PLAYWRIGHT_PHASE6_PORT || '4175';
 const baseUrl = process.env.TEST_BASE_URL || `http://127.0.0.1:${defaultPort}`;
-const webServerTimeoutMs = Number(process.env.PLAYWRIGHT_WEBSERVER_TIMEOUT_MS || '420000');
+// Local smoke tests build the full proof-pack app before `vite preview`.
+// Keep the default above the observed cold-build time while still allowing
+// scripts to lower it with PLAYWRIGHT_WEBSERVER_TIMEOUT_MS when needed.
+const webServerTimeoutMs = Number(process.env.PLAYWRIGHT_WEBSERVER_TIMEOUT_MS || '1200000');
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === 'true';
 
 /**
