@@ -56,6 +56,24 @@ export interface PilotOperatorCommand {
   whenToUse: string;
 }
 
+export interface PilotIntakeRoutePlan {
+  route: string;
+  label: string;
+  buyerLane: string;
+  proofPackId: string;
+  rating: string;
+  variantId: string;
+  requiredInput: string;
+  artifactPromised: string;
+  reviewerRole: string;
+  painSignal: string;
+  claimBoundary: string;
+  doNotClaim: string;
+  outreachCommand: string;
+  intakePacketCommand: string;
+  registerUpdateCommand: string;
+}
+
 export const pilotEvidenceRequirements: PilotEvidenceRequirement[] = [
   {
     id: 'buyer-load-history',
@@ -384,6 +402,94 @@ export const pilotOperatorCommands: PilotOperatorCommand[] = [
   },
 ];
 
+export const pilotIntakeRoutePlans: PilotIntakeRoutePlan[] = [
+  {
+    route: '/utility-demand-forecast',
+    label: 'Utility forecast planning pack',
+    buyerLane: 'utility',
+    proofPackId: 'utility_forecast_planning_pack',
+    rating: '4.5',
+    variantId: 'utility_forecast',
+    requiredInput: '12-36 months of anonymized utility load history plus benchmarkable forecast evidence.',
+    artifactPromised: 'forecast planning pack with retained benchmark appendix',
+    reviewerRole: 'utility planning reviewer',
+    painSignal: 'Load growth planning, electrification scenario, or regulator-ready forecast appendix.',
+    claimBoundary: 'Buyer-supplied redacted planning support only; no production utility onboarding claim.',
+    doNotClaim: 'Do not claim live telemetry, customer LDC history, utility approval, or control-room use.',
+    outreachCommand: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --activity-date YYYY-MM-DD --channel linkedin --target-label anonymized_utility_target --route /utility-demand-forecast --rating 4.5 --variant-id utility_forecast --reply-status data_offered --response-summary "Buyer offered a redacted load-history sample for planning review." --pain-signal "Load growth planning question" --requested-input "redacted utility load history" --reviewer-role "utility planning reviewer" --next-action "create intake packet and request retained benchmark artifact" --pilot-evidence-register-action create_intake_packet',
+    intakePacketCommand: 'pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets --target-label anonymized_utility_target',
+    registerUpdateCommand: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --artifact-root /tmp/ceip-phase-f-evidence/redacted-artifacts/utility-demand-forecast --evidence-file-reference utility-demand-forecast/retained-forecast-artifact.md#sha256=<64-hex> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+  },
+  {
+    route: '/roi-calculator',
+    label: 'TIER CFO compliance memo',
+    buyerLane: 'industrial',
+    proofPackId: 'tier_cfo_savings_pack',
+    rating: '4.0',
+    variantId: 'tier_cfo',
+    requiredInput: 'Annual emissions, benchmark exceedance, compliance year, direct-investment assumptions, and approval owner.',
+    artifactPromised: 'source-dated TIER planning memo with separated pricing assumptions',
+    reviewerRole: 'industrial compliance or finance reviewer',
+    painSignal: 'TIER pathway decision, fund contribution comparison, or direct-investment sensitivity.',
+    claimBoundary: 'Buyer-supplied planning support only; no trading, tax, legal, or guaranteed-savings advice.',
+    doNotClaim: 'Do not claim guaranteed savings, live market price, broker execution, tax advice, or legal advice.',
+    outreachCommand: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --activity-date YYYY-MM-DD --channel email --target-label anonymized_industrial_target --route /roi-calculator --rating 4.0 --variant-id tier_cfo --reply-status data_offered --response-summary "Buyer offered redacted TIER assumptions for planning review." --pain-signal "TIER compliance pathway decision" --requested-input "redacted facility assumptions" --reviewer-role "industrial compliance reviewer" --next-action "create intake packet and request retained TIER memo artifact" --pilot-evidence-register-action create_intake_packet',
+    intakePacketCommand: 'pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets --target-label anonymized_industrial_target',
+    registerUpdateCommand: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --artifact-root /tmp/ceip-phase-f-evidence/redacted-artifacts/roi-calculator --evidence-file-reference roi-calculator/retained-tier-artifact.md#sha256=<64-hex> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+  },
+  {
+    route: '/credit-banking',
+    label: 'TIER credit banking audit pack',
+    buyerLane: 'industrial',
+    proofPackId: 'tier_credit_banking_audit_pack',
+    rating: '3.9',
+    variantId: 'tier_credit_banking',
+    requiredInput: 'Credit lots, vintage, quantity, purchase price, status, expiry, and compliance-year liability.',
+    artifactPromised: 'credit banking allocation schedule and expiry-risk register',
+    reviewerRole: 'industrial compliance or finance reviewer',
+    painSignal: 'Credit expiry, compliance-year liability, or credit-use policy review.',
+    claimBoundary: 'Buyer-supplied ledger-planning support only; no broker, trade, registry, certification, or legal claim.',
+    doNotClaim: 'Do not claim broker execution, trade execution, registry certification, legal advice, or live market price.',
+    outreachCommand: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --activity-date YYYY-MM-DD --channel email --target-label anonymized_credit_target --route /credit-banking --rating 3.9 --variant-id tier_credit_banking --reply-status data_offered --response-summary "Buyer offered a redacted credit ledger for expiry-risk review." --pain-signal "TIER credit expiry planning" --requested-input "redacted credit ledger and liability file" --reviewer-role "industrial compliance reviewer" --next-action "create intake packet and request retained credit-banking artifact" --pilot-evidence-register-action create_intake_packet',
+    intakePacketCommand: 'pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets --target-label anonymized_credit_target',
+    registerUpdateCommand: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --artifact-root /tmp/ceip-phase-f-evidence/redacted-artifacts/credit-banking --evidence-file-reference credit-banking/retained-credit-artifact.md#sha256=<64-hex> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+  },
+  {
+    route: '/shadow-billing',
+    label: 'Shadow billing invoice proof pack',
+    buyerLane: 'municipal/public sector',
+    proofPackId: 'shadow_billing_invoice_pack',
+    rating: '3.8',
+    variantId: 'shadow_billing',
+    requiredInput: 'At least 6-12 months of redacted bills or exported supply-cost rows.',
+    artifactPromised: 'monthly delta CSV, field map, and audit note',
+    reviewerRole: 'municipal energy or billing reviewer',
+    painSignal: 'Invoice accuracy, rate selection, or switching-outcome review.',
+    claimBoundary: 'Buyer-supplied field-level billing support only; no full-bill reconstruction claim.',
+    doNotClaim: 'Do not claim verified savings, guaranteed savings, beyond-supplied-field coverage, or full tariff reconstruction.',
+    outreachCommand: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --activity-date YYYY-MM-DD --channel email --target-label anonymized_billing_target --route /shadow-billing --rating 3.8 --variant-id shadow_billing --reply-status data_offered --response-summary "Buyer offered a redacted invoice sample for field-level review." --pain-signal "Invoice accuracy or rate-selection question" --requested-input "redacted invoice sample or extracted supply-cost rows" --reviewer-role "billing reviewer" --next-action "create intake packet and request retained billing artifact" --pilot-evidence-register-action create_intake_packet',
+    intakePacketCommand: 'pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets --target-label anonymized_billing_target',
+    registerUpdateCommand: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --artifact-root /tmp/ceip-phase-f-evidence/redacted-artifacts/shadow-billing --evidence-file-reference shadow-billing/retained-billing-artifact.md#sha256=<64-hex> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+  },
+  {
+    route: '/utility-security',
+    label: 'Utility security procurement pack',
+    buyerLane: 'security',
+    proofPackId: 'utility_security_procurement_pack',
+    rating: '4.0',
+    variantId: 'utility_security',
+    requiredInput: 'Buyer security questionnaire or review checklist with owner-approved redacted review notes.',
+    artifactPromised: 'security procurement evidence matrix',
+    reviewerRole: 'utility security or procurement reviewer',
+    painSignal: 'Security questionnaire, data-handling review, or pilot procurement blocker.',
+    claimBoundary: 'Buyer-supplied security review support only; no certification or production approval claim.',
+    doNotClaim: 'Do not claim SOC certification, NERC certification, production utility approval, or legal/privacy approval.',
+    outreachCommand: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --activity-date YYYY-MM-DD --channel linkedin --target-label anonymized_security_target --route /utility-security --rating 4.0 --variant-id utility_security --reply-status data_offered --response-summary "Buyer offered a redacted security questionnaire for procurement review." --pain-signal "Utility security review blocker" --requested-input "redacted security questionnaire or review checklist" --reviewer-role "utility security reviewer" --next-action "create intake packet and request retained security artifact" --pilot-evidence-register-action create_intake_packet',
+    intakePacketCommand: 'pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets --target-label anonymized_security_target',
+    registerUpdateCommand: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --artifact-root /tmp/ceip-phase-f-evidence/redacted-artifacts/utility-security --evidence-file-reference utility-security/retained-security-artifact.md#sha256=<64-hex> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+  },
+];
+
 export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
   {
     id: 'time-to-artifact',
@@ -437,6 +543,7 @@ export function getPilotEvidenceCoverageSummary() {
     ninetyFiveGateCount: pilotNinetyFiveGates.length,
     minimumLaneCount: pilotMinimumEvidenceLanes.length,
     operatorCommandCount: pilotOperatorCommands.length,
+    intakeRoutePlanCount: pilotIntakeRoutePlans.length,
     outcomeMetricCount: pilotOutcomeMetrics.length,
     stopConditionCount: pilotStopConditions.length,
   };

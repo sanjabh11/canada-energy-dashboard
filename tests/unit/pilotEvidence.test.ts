@@ -3,6 +3,7 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotIntakeRoutePlans,
   pilotNinetyFiveGateCommand,
   pilotNinetyFiveGates,
   pilotOutcomeMetrics,
@@ -16,6 +17,7 @@ describe('pilotEvidence', () => {
     expect(summary.requirementCount).toBeGreaterThanOrEqual(10);
     expect(summary.confidenceRuleCount).toBeGreaterThanOrEqual(5);
     expect(summary.ninetyFiveGateCount).toBeGreaterThanOrEqual(5);
+    expect(summary.intakeRoutePlanCount).toBeGreaterThanOrEqual(5);
     expect(summary.outcomeMetricCount).toBeGreaterThanOrEqual(4);
     expect(summary.stopConditionCount).toBeGreaterThanOrEqual(5);
     expect(pilotEvidenceRequirements.map((item) => item.id)).toEqual(expect.arrayContaining([
@@ -36,6 +38,28 @@ describe('pilotEvidence', () => {
       expect(item.artifact, item.id).toBeTruthy();
       expect(item.blockedClaim, item.id).toBeTruthy();
       expect(item.acceptance.length, item.id).toBeGreaterThanOrEqual(3);
+    }
+  });
+
+  it('publishes route-aware intake plans for the minimum 95% buyer-evidence lanes', () => {
+    expect(pilotIntakeRoutePlans.map((plan) => plan.route)).toEqual(expect.arrayContaining([
+      '/utility-demand-forecast',
+      '/roi-calculator',
+      '/credit-banking',
+      '/shadow-billing',
+      '/utility-security',
+    ]));
+
+    for (const plan of pilotIntakeRoutePlans) {
+      expect(plan.proofPackId, plan.route).toMatch(/^[a-z0-9_]+$/);
+      expect(plan.outreachCommand, plan.route).toContain('append:outreach-response-log-row');
+      expect(plan.outreachCommand, plan.route).toContain(`--route ${plan.route}`);
+      expect(plan.outreachCommand, plan.route).toContain('--pilot-evidence-register-action create_intake_packet');
+      expect(plan.intakePacketCommand, plan.route).toContain('create:outreach-intake-packets');
+      expect(plan.registerUpdateCommand, plan.route).toContain('update:pilot-evidence-register-row');
+      expect(plan.registerUpdateCommand, plan.route).toContain('--confidence-delta 0.3');
+      expect(plan.doNotClaim, plan.route).toMatch(/Do not claim/i);
+      expect(plan.claimBoundary, plan.route).toMatch(/Buyer-supplied/i);
     }
   });
 

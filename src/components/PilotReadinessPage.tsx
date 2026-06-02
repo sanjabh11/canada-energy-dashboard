@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, ClipboardCheck, FileSearch, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
@@ -6,6 +6,7 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotIntakeRoutePlans,
   pilotMinimumEvidenceLanes,
   pilotNinetyFiveGateCommand,
   pilotNinetyFiveGates,
@@ -16,6 +17,11 @@ import {
 
 export function PilotReadinessPage() {
   const summary = getPilotEvidenceCoverageSummary();
+  const [selectedRoute, setSelectedRoute] = useState(pilotIntakeRoutePlans[0]?.route ?? '');
+  const selectedPlan = useMemo(
+    () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
+    [selectedRoute],
+  );
 
   return (
     <div
@@ -82,6 +88,7 @@ export function PilotReadinessPage() {
                 <Metric value={`${summary.ninetyFiveGateCount}`} label="95% gates" />
                 <Metric value={`${summary.minimumLaneCount}`} label="Minimum lanes" />
                 <Metric value={`${summary.operatorCommandCount}`} label="Operator commands" />
+                <Metric value={`${summary.intakeRoutePlanCount}`} label="Route planners" />
                 <Metric value={`${summary.outcomeMetricCount}`} label="Outcome metrics" />
                 <Metric value={`${summary.stopConditionCount}`} label="Stop conditions" />
               </div>
@@ -150,6 +157,68 @@ export function PilotReadinessPage() {
                 </article>
               ))}
             </div>
+
+            {selectedPlan && (
+              <div className="mt-10 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+                <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+                  <div>
+                    <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
+                      Route-aware intake planner
+                    </div>
+                    <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
+                      Pick the proof-pack lane before running a real outreach or intake command.
+                    </h2>
+                    <p className="mt-4 text-sm leading-6 text-slate-300">
+                      The selector keeps the route, proof_pack_id, buyer lane, manual input, and do-not-claim boundary
+                      together. It still creates collection records only; confidence movement stays blocked until retained
+                      buyer artifacts, reviewer acceptance, day-14 proceed, and commercial evidence are attached.
+                    </p>
+
+                    <label htmlFor="pilot-intake-route" className="mt-6 block text-sm font-semibold text-emerald-100">
+                      Buyer proof-pack route
+                    </label>
+                    <select
+                      id="pilot-intake-route"
+                      value={selectedRoute}
+                      onChange={(event) => setSelectedRoute(event.target.value)}
+                      className="mt-2 w-full rounded-2xl border border-emerald-200/25 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
+                    >
+                      {pilotIntakeRoutePlans.map((plan) => (
+                        <option key={plan.route} value={plan.route}>
+                          {plan.label} ({plan.route})
+                        </option>
+                      ))}
+                    </select>
+
+                    <dl className="mt-5 grid gap-3 text-sm leading-6 text-slate-200">
+                      <RoutePlanInfo label="Buyer lane" value={selectedPlan.buyerLane} />
+                      <RoutePlanInfo label="Proof pack ID" value={selectedPlan.proofPackId} />
+                      <RoutePlanInfo label="Current rating" value={`${selectedPlan.rating}/5 before buyer evidence`} />
+                      <RoutePlanInfo label="Required manual input" value={selectedPlan.requiredInput} />
+                    </dl>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                      <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Claim boundary</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-200">{selectedPlan.claimBoundary}</div>
+                      <div className="mt-3 text-xs uppercase tracking-[0.2em] text-amber-100">Do not claim</div>
+                      <div className="mt-2 text-sm leading-6 text-slate-200">{selectedPlan.doNotClaim}</div>
+                    </div>
+
+                    <CommandBlock label="Append outreach row" command={selectedPlan.outreachCommand} />
+                    <CommandBlock label="Create intake packet" command={selectedPlan.intakePacketCommand} />
+                    <CommandBlock label="Attach retained artifact" command={selectedPlan.registerUpdateCommand} />
+
+                    <div className="rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-5 text-sm leading-6 text-slate-200">
+                      Run the 95% retained-evidence gate only after all three minimum lanes have accepted buyer artifacts,
+                      matching SHA-256 references, complete reviewer feedback, day_14_decision=proceed, and a real
+                      commercial signal.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </section>
 
@@ -357,6 +426,26 @@ function Info({ label, value }: { label: string; value: string }) {
     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
       <div className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</div>
       <div className="mt-2 text-sm leading-6 text-slate-200">{value}</div>
+    </div>
+  );
+}
+
+function RoutePlanInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+      <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</dt>
+      <dd className="mt-1 break-words text-slate-200">{value}</dd>
+    </div>
+  );
+}
+
+function CommandBlock({ label, command }: { label: string; command: string }) {
+  return (
+    <div className="rounded-2xl border border-emerald-200/15 bg-black/30 p-5">
+      <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</div>
+      <div className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+        <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{command}</code>
+      </div>
     </div>
   );
 }
