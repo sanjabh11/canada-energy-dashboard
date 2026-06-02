@@ -298,6 +298,7 @@ export const pilotConfidenceRules: PilotConfidenceRule[] = [
 ];
 
 export const pilotNinetyFiveGateCommand = 'pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts';
+export const pilotBuyerEvidenceReadinessCommand = 'pnpm run report:buyer-evidence-readiness -- --root path/to/anonymized-outreach-or-registers --evidence-root path/to/redacted-artifacts';
 
 export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   getPilotEvidenceCoverageSummary,
+  pilotBuyerEvidenceReadinessCommand,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
   pilotIntakeRoutePlans,
@@ -86,6 +87,8 @@ describe('pilotEvidence', () => {
   });
 
   it('publishes a buyer-evidence gate before any 95% confidence claim', () => {
+    expect(pilotBuyerEvidenceReadinessCommand).toContain('report:buyer-evidence-readiness');
+    expect(pilotBuyerEvidenceReadinessCommand).toContain('--evidence-root');
     expect(pilotNinetyFiveGateCommand).toContain('--require-95');
     expect(pilotNinetyFiveGateCommand).toContain('--evidence-root');
     expect(pilotNinetyFiveGates.map((item) => item.id)).toEqual(expect.arrayContaining([

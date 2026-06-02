@@ -98,6 +98,7 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByTestId('pilot-register-preview-gate-commercial-signal')).toContainText('Pass');
     await expect(page.getByTestId('pilot-register-preview-gate-retained-artifact-hashes')).toContainText('Pass');
     await expect(preview.getByRole('button', { name: 'Copy 95% gate command' })).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'Copy readiness report command' })).toBeVisible();
     await expect(preview.getByRole('button', { name: 'Copy validator command' })).toBeVisible();
   });
 });

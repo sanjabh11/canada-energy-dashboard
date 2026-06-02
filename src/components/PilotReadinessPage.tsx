@@ -5,6 +5,7 @@ import { SEOHead } from './SEOHead';
 import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
+  pilotBuyerEvidenceReadinessCommand,
   pilotEvidenceRequirements,
   pilotIntakeRoutePlans,
   pilotMinimumEvidenceLanes,
@@ -408,6 +409,20 @@ export function PilotReadinessPage() {
                     label="Copy 95% gate command"
                     onClick={() => handleCopy(pilotNinetyFiveGateCommand, '95% gate command')}
                   />
+                  <div className="mt-5 rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-4">
+                    <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Readiness report command</div>
+                    <p className="mt-2 text-xs leading-5 text-slate-300">
+                      Run this non-mutating report first when the question is what still blocks Phase F, not whether the
+                      hard 95% gate can already pass.
+                    </p>
+                    <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+                      {pilotBuyerEvidenceReadinessCommand}
+                    </code>
+                    <CopyButton
+                      label="Copy readiness report command"
+                      onClick={() => handleCopy(pilotBuyerEvidenceReadinessCommand, 'Readiness report command')}
+                    />
+                  </div>
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
