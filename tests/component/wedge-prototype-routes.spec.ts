@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import path from 'node:path';
 
 test.describe('CEIP wedge prototype routes', () => {
   test('renders the bounded Ontario GA/ICI 5CP decision-support route', async ({ page }) => {
@@ -76,5 +77,24 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByText(/redacted_utility\.md#sha256=[a-f0-9]{64}/)).toBeVisible();
     await expect(page.getByText('Bytes hashed')).toBeVisible();
     await expect(page.getByText('No retained-artifact warnings were detected.')).toBeVisible();
+  });
+
+  test('previews a local pilot evidence register before the hard 95% gate', async ({ page }) => {
+    await page.goto('/pilot-readiness', { waitUntil: 'domcontentloaded' });
+
+    const preview = page.getByTestId('pilot-register-preview');
+    await expect(preview.getByText('95% register preview')).toBeVisible();
+    await expect(preview.getByText(/not uploaded/)).toBeVisible();
+
+    await page.getByLabel('Local filled register CSV').setInputFiles(
+      path.join(process.cwd(), 'tests/fixtures/pilot-evidence/valid-95-evidence-register.csv'),
+    );
+
+    await expect(preview.getByText(/valid-95-evidence-register\.csv loaded locally/)).toBeVisible();
+    await expect(preview.getByText('Accepted rows')).toBeVisible();
+    await expect(preview.getByText('Confidence delta')).toBeVisible();
+    await expect(page.getByTestId('pilot-register-preview-gate-utility-forecast-evidence')).toContainText('Pass');
+    await expect(page.getByTestId('pilot-register-preview-gate-commercial-signal')).toContainText('Pass');
+    await expect(page.getByTestId('pilot-register-preview-gate-retained-artifact-hashes')).toContainText('Pass');
   });
 });

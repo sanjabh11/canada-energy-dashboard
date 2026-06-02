@@ -14,7 +14,10 @@ import {
   pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
+import { previewPilotEvidenceRegister, type PilotEvidenceRegisterPreview } from '../lib/pilotEvidenceRegisterPreview';
 import { computeRetainedArtifactHash, type RetainedArtifactHashResult } from '../lib/retainedArtifactHash';
+
+const MAX_REGISTER_PREVIEW_BYTES = 1024 * 1024;
 
 export function PilotReadinessPage() {
   const summary = getPilotEvidenceCoverageSummary();
@@ -24,10 +27,17 @@ export function PilotReadinessPage() {
   const [artifactHashResult, setArtifactHashResult] = useState<RetainedArtifactHashResult | null>(null);
   const [artifactHashError, setArtifactHashError] = useState('');
   const [artifactHashPending, setArtifactHashPending] = useState(false);
+  const [registerText, setRegisterText] = useState('');
+  const [registerFileStatus, setRegisterFileStatus] = useState('');
+  const [registerFileError, setRegisterFileError] = useState('');
   const selectedPlan = useMemo(
     () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
     [selectedRoute],
   );
+  const registerPreview = useMemo<PilotEvidenceRegisterPreview | null>(() => {
+    if (registerText.trim().length === 0) return null;
+    return previewPilotEvidenceRegister(registerText);
+  }, [registerText]);
 
   async function handleRetainedArtifactHash(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,6 +56,23 @@ export function PilotReadinessPage() {
     } finally {
       setArtifactHashPending(false);
     }
+  }
+
+  async function handleRegisterFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    setRegisterFileError('');
+    setRegisterFileStatus('');
+
+    if (!file) return;
+    if (file.size > MAX_REGISTER_PREVIEW_BYTES) {
+      setRegisterFileError(`Register file is ${formatBytes(file.size)}; limit is ${formatBytes(MAX_REGISTER_PREVIEW_BYTES)} for browser-only preview.`);
+      event.target.value = '';
+      return;
+    }
+
+    const text = await file.text();
+    setRegisterText(text);
+    setRegisterFileStatus(`${file.name} loaded locally for preview; no upload was performed.`);
   }
 
   return (
@@ -342,6 +369,119 @@ export function PilotReadinessPage() {
                 </form>
               </div>
             </div>
+
+            <div data-testid="pilot-register-preview" className="mt-10 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+              <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+                <div>
+                  <div className="flex items-center gap-3 text-emerald-100">
+                    <ClipboardCheck className="h-5 w-5" />
+                    <span className="text-sm uppercase tracking-[0.26em]">95% register preview</span>
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
+                    Check whether a local buyer-evidence register is even close before running the hard gate.
+                  </h2>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">
+                    Paste or select the filled register CSV to preview obvious 95% blockers in the browser. The file is
+                    read locally and is not uploaded. This preview is intentionally narrower than the canonical CLI; the
+                    final gate remains the validator command below with an evidence-root directory.
+                  </p>
+                  <div className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4">
+                    <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{pilotNinetyFiveGateCommand}</code>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                  <label htmlFor="pilot-register-local-file" className="block text-sm font-semibold text-emerald-100">
+                    Local filled register CSV
+                  </label>
+                  <input
+                    id="pilot-register-local-file"
+                    type="file"
+                    accept=".csv,text/csv"
+                    onChange={handleRegisterFileChange}
+                    className="mt-2 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm text-white file:mr-4 file:rounded-xl file:border-0 file:bg-emerald-300 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-slate-950"
+                  />
+                  <div className="mt-2 text-xs leading-5 text-slate-400">
+                    Max file size: {formatBytes(MAX_REGISTER_PREVIEW_BYTES)}. Use redacted register rows only.
+                  </div>
+
+                  {registerFileStatus && (
+                    <div className="mt-4 rounded-2xl border border-emerald-200/15 bg-emerald-300/10 p-4 text-sm leading-6 text-emerald-100">
+                      {registerFileStatus}
+                    </div>
+                  )}
+                  {registerFileError && (
+                    <div className="mt-4 rounded-2xl border border-red-200/15 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
+                      {registerFileError}
+                    </div>
+                  )}
+
+                  <label htmlFor="pilot-register-csv-text" className="mt-5 block text-sm font-semibold text-emerald-100">
+                    Register CSV text
+                  </label>
+                  <textarea
+                    id="pilot-register-csv-text"
+                    value={registerText}
+                    onChange={(event) => {
+                      setRegisterText(event.target.value);
+                      setRegisterFileStatus('');
+                      setRegisterFileError('');
+                    }}
+                    className="mt-2 min-h-44 w-full rounded-2xl border border-emerald-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-emerald-200 focus:ring-2 focus:ring-emerald-200/20"
+                    placeholder="Paste the filled 24-column pilot evidence register CSV here."
+                  />
+
+                  {registerPreview && (
+                    <div className="mt-5 space-y-4">
+                      <div className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-4">
+                        <RoutePlanInfo label="Rows" value={`${registerPreview.rowCount}`} />
+                        <RoutePlanInfo label="Columns" value={`${registerPreview.columnCount}`} />
+                        <RoutePlanInfo label="Accepted rows" value={`${registerPreview.acceptedConfidenceRowCount}`} />
+                        <RoutePlanInfo label="Confidence delta" value={`${registerPreview.totalAcceptedConfidenceDelta}`} />
+                      </div>
+
+                      {(registerPreview.warnings.length > 0 || registerPreview.missingRequiredColumns.length > 0 || registerPreview.forbiddenColumnsFound.length > 0) && (
+                        <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
+                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">Preview warnings</div>
+                          <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-50">
+                            {registerPreview.missingRequiredColumns.length > 0 && (
+                              <li>Missing required columns: {registerPreview.missingRequiredColumns.join(', ')}</li>
+                            )}
+                            {registerPreview.forbiddenColumnsFound.length > 0 && (
+                              <li>Forbidden sensitive columns: {registerPreview.forbiddenColumnsFound.join(', ')}</li>
+                            )}
+                            {registerPreview.warnings.map((warning) => (
+                              <li key={warning}>{warning}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="grid gap-3">
+                        {registerPreview.gates.map((gate) => (
+                          <div
+                            key={gate.id}
+                            data-testid={`pilot-register-preview-gate-${gate.id}`}
+                            className="rounded-2xl border border-white/10 bg-slate-950/60 p-4"
+                          >
+                            <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                              <div>
+                                <div className="text-sm font-semibold text-white">{gate.label}</div>
+                                <div className="mt-2 text-sm leading-6 text-slate-300">{gate.evidence}</div>
+                                {gate.status !== 'pass' && (
+                                  <div className="mt-2 text-sm leading-6 text-amber-100">{gate.nextAction}</div>
+                                )}
+                              </div>
+                              <GateStatusPill status={gate.status} />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -571,4 +711,25 @@ function CommandBlock({ label, command }: { label: string; command: string }) {
       </div>
     </div>
   );
+}
+
+function GateStatusPill({ status }: { status: 'pass' | 'blocked' | 'warning' }) {
+  const label = status === 'pass' ? 'Pass' : status === 'warning' ? 'Review' : 'Blocked';
+  const className = status === 'pass'
+    ? 'border-emerald-200/30 bg-emerald-300/15 text-emerald-100'
+    : status === 'warning'
+      ? 'border-amber-200/30 bg-amber-300/15 text-amber-100'
+      : 'border-red-200/30 bg-red-500/15 text-red-100';
+
+  return (
+    <span className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 }
