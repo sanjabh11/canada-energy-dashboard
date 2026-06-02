@@ -16,7 +16,7 @@ for (let index = 0; index < args.length; index += 1) {
     const key = arg.slice(2);
     const value = args[index + 1] ?? '';
     index += 1;
-    if (key !== 'workspace-dir') {
+    if (!['workspace-dir', 'register-file'].includes(key)) {
       failures.push(`Unknown option: ${arg}`);
     } else if (!value || value.startsWith('--')) {
       failures.push(`${arg} requires a value.`);
@@ -36,6 +36,7 @@ function printUsage() {
 
 Options:
   --workspace-dir <dir>  Required. Phase F evidence workspace created by create:phase-f-evidence-workspace.
+  --register-file <csv>  Optional. Candidate register inside the workspace to validate and hard-gate.
 `);
 }
 
@@ -102,6 +103,9 @@ const manifestPath = path.join(workspaceDir, 'phase-f-evidence-workspace-manifes
 const outreachLogPath = path.join(workspaceDir, 'outreach', 'outreach-response-log.csv');
 const evidenceRoot = path.join(workspaceDir, 'phase-f-minimum-intake');
 const starterRegisterPath = path.join(evidenceRoot, 'phase-f-minimum-register-starter.csv');
+const candidateRegisterPath = values.has('register-file')
+  ? path.resolve(repoRoot, values.get('register-file'))
+  : starterRegisterPath;
 
 let manifest = null;
 if (!existsSync(manifestPath)) {
@@ -117,11 +121,19 @@ if (!existsSync(manifestPath)) {
 for (const [label, filePath] of [
   ['Outreach log', outreachLogPath],
   ['Starter register', starterRegisterPath],
+  ['Selected register', candidateRegisterPath],
 ]) {
   if (!existsSync(filePath)) {
     failures.push(`${label} not found: ${displayPath(filePath)}`);
   } else if (!statSync(filePath).isFile()) {
     failures.push(`${label} must be a file: ${displayPath(filePath)}`);
+  }
+}
+
+if (existsSync(workspaceDir) && existsSync(candidateRegisterPath)) {
+  const relativeRegisterPath = path.relative(workspaceDir, candidateRegisterPath);
+  if (relativeRegisterPath.startsWith('..') || path.isAbsolute(relativeRegisterPath)) {
+    failures.push(`Selected register must be inside the workspace: ${displayPath(candidateRegisterPath)}`);
   }
 }
 
@@ -147,7 +159,7 @@ if (failures.length > 0) {
 
 const outreachValidation = runScript('validate-outreach-response-log.mjs', [outreachLogPath, '--report']);
 const outreachActionPlan = runScript('validate-outreach-response-log.mjs', [outreachLogPath, '--action-plan']);
-const starterValidation = runScript('validate-pilot-evidence-register.mjs', [starterRegisterPath]);
+const selectedRegisterValidation = runScript('validate-pilot-evidence-register.mjs', [candidateRegisterPath]);
 const readinessReport = runScript('report-buyer-evidence-readiness.mjs', [
   '--root',
   workspaceDir,
@@ -155,7 +167,7 @@ const readinessReport = runScript('report-buyer-evidence-readiness.mjs', [
   evidenceRoot,
 ]);
 const hardGate = runScript('validate-pilot-evidence-register.mjs', [
-  starterRegisterPath,
+  candidateRegisterPath,
   '--require-95',
   '--evidence-root',
   evidenceRoot,
@@ -164,7 +176,7 @@ const hardGate = runScript('validate-pilot-evidence-register.mjs', [
 for (const [label, result] of [
   ['Outreach log validation', outreachValidation],
   ['Outreach action plan', outreachActionPlan],
-  ['Starter register validation', starterValidation],
+  ['Selected register validation', selectedRegisterValidation],
   ['Buyer evidence readiness report', readinessReport],
 ]) {
   if (result.status !== 0) {
@@ -190,6 +202,7 @@ console.log('# CEIP Phase F Evidence Workspace Report');
 console.log(`Generated: ${new Date().toISOString()}`);
 console.log(`Workspace: ${displayPath(workspaceDir)}`);
 console.log(`Manifest: ${displayPath(manifestPath)}`);
+console.log(`Selected register: ${displayPath(candidateRegisterPath)}`);
 console.log(`Record date: ${manifest.record_date ?? 'not recorded'}`);
 console.log(`Confidence movement: ${manifest.confidence_movement}`);
 console.log(`Buyer proof created: ${manifest.buyer_proof_created ? 'yes' : 'no'}`);
@@ -202,7 +215,8 @@ for (const route of selectedRoutes) {
 console.log('\n## Validation');
 console.log(`- Outreach log: ${outreachValidation.status === 0 ? 'pass' : 'fail'} (${displayPath(outreachLogPath)})`);
 console.log(`- Outreach action plan: ${outreachActionPlan.status === 0 ? 'available' : 'blocked'}`);
-console.log(`- Starter register: ${starterValidation.status === 0 ? 'pass' : 'fail'} (${displayPath(starterRegisterPath)})`);
+console.log(`- Starter register scaffold: ${existsSync(starterRegisterPath) ? 'present' : 'missing'} (${displayPath(starterRegisterPath)})`);
+console.log(`- Selected register validation: ${selectedRegisterValidation.status === 0 ? 'pass' : 'fail'} (${displayPath(candidateRegisterPath)})`);
 console.log(`- Buyer evidence readiness report: ${readinessReport.status === 0 ? 'pass' : 'fail'}`);
 console.log(`- Hard 95% retained-evidence gate: ${hardGateReady ? 'pass' : 'blocked'}`);
 
@@ -274,6 +288,7 @@ printCommand([
 ]);
 
 console.log('\nAfter real retained artifacts exist, update the top-level Phase F starter register through the updater:');
+const updatedRegisterPath = path.join(workspaceDir, 'phase-f-minimum-register-updated.csv');
 const firstArtifactRoot = selectedRoutes[0]?.artifact_root
   ? path.resolve(repoRoot, selectedRoutes[0].artifact_root)
   : path.join(evidenceRoot, 'utility-demand-forecast', 'redacted-artifacts');
@@ -293,10 +308,22 @@ printCommand([
   '--confidence-delta',
   '<explicit 0..0.4, or 0 for staging>',
   '--output-file',
-  path.join(workspaceDir, 'phase-f-minimum-register-updated.csv'),
+  updatedRegisterPath,
+]);
+
+console.log('\nThen rerun this workspace report against the updated candidate register:');
+printCommand([
+  'pnpm',
+  'run',
+  'report:phase-f-evidence-workspace',
+  '--',
+  '--workspace-dir',
+  workspaceDir,
+  '--register-file',
+  updatedRegisterPath,
 ]);
 
 console.log('\nRun the hard gate only after accepted buyer rows and retained hashes exist:');
-printCommand(['pnpm', 'run', 'validate:pilot-evidence', '--', starterRegisterPath, '--require-95', '--evidence-root', evidenceRoot]);
+printCommand(['pnpm', 'run', 'validate:pilot-evidence', '--', candidateRegisterPath, '--require-95', '--evidence-root', evidenceRoot]);
 
 console.log('\nBoundary: this report does not create buyer proof or raise market confidence.');

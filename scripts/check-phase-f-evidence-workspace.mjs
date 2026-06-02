@@ -127,6 +127,25 @@ try {
   ]) {
     assertContains('Hard gate output', hardGateOutput, expected);
   }
+
+  const workspaceReport = runScript('report-phase-f-evidence-workspace.mjs', [
+    '--workspace-dir',
+    workspaceDir,
+  ]);
+  if (workspaceReport.status !== 0) {
+    failures.push(`Phase F workspace report exited ${workspaceReport.status}.`);
+    if (workspaceReport.stderr.trim()) failures.push(workspaceReport.stderr.trim());
+    if (workspaceReport.stdout.trim()) failures.push(workspaceReport.stdout.trim());
+  }
+  for (const expected of [
+    'Selected register:',
+    'Starter register scaffold: present',
+    'Selected register validation: pass',
+    'Then rerun this workspace report against the updated candidate register',
+    '--register-file',
+  ]) {
+    assertContains('Phase F workspace report', workspaceReport.stdout, expected);
+  }
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }

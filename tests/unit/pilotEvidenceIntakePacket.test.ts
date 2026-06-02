@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -515,7 +515,10 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain('CEIP Phase F Evidence Workspace Report');
     expect(result.stdout).toContain('Confidence movement: none');
     expect(result.stdout).toContain('Buyer proof created: no');
+    expect(result.stdout).toContain('Selected register:');
     expect(result.stdout).toContain('Hard 95% retained-evidence gate: blocked');
+    expect(result.stdout).toContain('Starter register scaffold: present');
+    expect(result.stdout).toContain('Selected register validation: pass');
     expect(result.stdout).toContain('Production outreach response logs: 1');
     expect(result.stdout).toContain('Confidence-moving register rows: 0');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
@@ -524,7 +527,58 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain('pnpm run plan:outreach-intake');
     expect(result.stdout).toContain('pnpm run create:outreach-intake-packets');
     expect(result.stdout).toContain('pnpm run update:pilot-evidence-register-row');
+    expect(result.stdout).toContain('Then rerun this workspace report against the updated candidate register');
+    expect(result.stdout).toContain('--register-file');
     expect(result.stdout).toContain('Boundary: this report does not create buyer proof or raise market confidence.');
+  }, 30000);
+
+  it('reports against an explicitly selected updated Phase F register', async () => {
+    const outputDir = makeTempRoot();
+    const createResult = await runNodeScript(workspaceGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const starterRegisterPath = path.join(outputDir, 'phase-f-minimum-intake/phase-f-minimum-register-starter.csv');
+    const updatedRegisterPath = path.join(outputDir, 'phase-f-minimum-register-updated.csv');
+    copyFileSync(starterRegisterPath, updatedRegisterPath);
+
+    const result = await runNodeScript(workspaceReportScriptPath, [
+      '--workspace-dir', outputDir,
+      '--register-file', updatedRegisterPath,
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain(`Selected register: ${updatedRegisterPath}`);
+    expect(result.stdout).toContain(`Selected register validation: pass (${updatedRegisterPath})`);
+    expect(result.stdout).toContain('Hard 95% retained-evidence gate: blocked');
+    expect(result.stdout).toContain(`pnpm run validate:pilot-evidence -- ${updatedRegisterPath} --require-95`);
+  }, 30000);
+
+  it('rejects selected Phase F registers outside the workspace', async () => {
+    const outputDir = makeTempRoot();
+    const outsideDir = makeTempRoot();
+    const createResult = await runNodeScript(workspaceGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const starterRegisterPath = path.join(outputDir, 'phase-f-minimum-intake/phase-f-minimum-register-starter.csv');
+    const outsideRegisterPath = path.join(outsideDir, 'phase-f-minimum-register-updated.csv');
+    copyFileSync(starterRegisterPath, outsideRegisterPath);
+
+    const result = await runNodeScript(workspaceReportScriptPath, [
+      '--workspace-dir', outputDir,
+      '--register-file', outsideRegisterPath,
+    ]);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('Phase F evidence workspace report failed:');
+    expect(result.stderr).toContain('Selected register must be inside the workspace');
   }, 30000);
 
   it('rejects invalid Phase F lane route overrides', async () => {
