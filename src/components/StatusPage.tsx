@@ -33,7 +33,12 @@ import {
 import { OpsHealthPanel } from './OpsHealthPanel';
 import { SEOHead } from './SEOHead';
 import { HIGH_RISK_SOURCE_REGISTRY, UPTIME_MONITORS } from '../lib/opsMonitoring';
-import { RELEASE_POSTURE, type ReleasePostureItem } from '../lib/releasePosture';
+import {
+  DEPLOYMENT_APPROVAL_CHECKLIST,
+  RELEASE_POSTURE,
+  type DeploymentApprovalChecklistItem,
+  type ReleasePostureItem,
+} from '../lib/releasePosture';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import DataTrustNotice from './DataTrustNotice';
 
@@ -139,6 +144,37 @@ const StatusPage: React.FC = () => {
     }
   };
 
+  const getApprovalBadge = (status: DeploymentApprovalChecklistItem['status']) => {
+    const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
+    switch (status) {
+      case 'predeploy_ready':
+        return `${baseClasses} bg-sky-100 text-sky-800`;
+      case 'manual_stop':
+        return `${baseClasses} bg-red-100 text-red-800`;
+      case 'postdeploy_required':
+        return `${baseClasses} bg-amber-100 text-amber-800`;
+      case 'external_gate':
+        return `${baseClasses} bg-violet-100 text-violet-800`;
+      default:
+        return `${baseClasses} bg-slate-100 text-slate-800`;
+    }
+  };
+
+  const getApprovalIcon = (status: DeploymentApprovalChecklistItem['status']) => {
+    switch (status) {
+      case 'predeploy_ready':
+        return <CheckCircle className="h-5 w-5 text-sky-500" />;
+      case 'manual_stop':
+        return <Shield className="h-5 w-5 text-red-500" />;
+      case 'postdeploy_required':
+        return <RefreshCw className="h-5 w-5 text-amber-500" />;
+      case 'external_gate':
+        return <Clock className="h-5 w-5 text-violet-500" />;
+      default:
+        return <Activity className="h-5 w-5 text-slate-400" />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50">
       <SEOHead
@@ -202,6 +238,37 @@ const StatusPage: React.FC = () => {
           message="Source freshness and ops-health panels are the canonical trust layer on this page. Endpoint coverage and uptime history below are currently reference views derived from monitor configuration, not live ping evidence or persisted SLA history."
           className="mb-8"
         />
+
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-slate-500" />
+            Deployment approval checklist
+          </h2>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm text-slate-700">
+              This checklist shows the production release evidence path. It is not production approval and does not claim buyer-proven market confidence.
+            </div>
+            <div className="divide-y divide-slate-200">
+              {DEPLOYMENT_APPROVAL_CHECKLIST.map((item) => (
+                <article key={item.gate} className="p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-3">
+                      {getApprovalIcon(item.status)}
+                      <div>
+                        <h3 className="font-semibold text-slate-900">{item.gate}</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                      </div>
+                    </div>
+                    <span className={getApprovalBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                  </div>
+                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100">
+                    {item.command}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">

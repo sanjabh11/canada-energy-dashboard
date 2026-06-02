@@ -6,6 +6,13 @@ export interface ReleasePostureItem {
   nextAction: string;
 }
 
+export interface DeploymentApprovalChecklistItem {
+  gate: string;
+  status: 'predeploy_ready' | 'manual_stop' | 'postdeploy_required' | 'external_gate';
+  command: string;
+  evidenceBoundary: string;
+}
+
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
     title: 'Production deploy gate and live parity',
@@ -41,5 +48,32 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     rating: '4.1/5',
     evidence: '`pnpm run report:supabase-app-lint` reports zero app-owned lint findings on the linked project; remaining findings are extension-owned PostGIS/long-transaction functions.',
     nextAction: 'Keep `check:supabase-app-lint` in the production preflight and review account-level Supabase dashboard advisors manually before stronger production-security claims.',
+  },
+];
+
+export const DEPLOYMENT_APPROVAL_CHECKLIST: DeploymentApprovalChecklistItem[] = [
+  {
+    gate: 'Pre-deploy source and release gate',
+    status: 'predeploy_ready',
+    command: 'pnpm run check:production-deploy-request',
+    evidenceBoundary: 'Proves clean main-branch source, local release readiness, and whether production is ready for an approved remediation deploy request.',
+  },
+  {
+    gate: 'Owner production approval',
+    status: 'manual_stop',
+    command: 'Type DEPLOY CEIP PRODUCTION in the guarded deploy script only after approval.',
+    evidenceBoundary: 'This is the manual production stop; no script output or local check substitutes for explicit owner approval.',
+  },
+  {
+    gate: 'Post-deploy live parity',
+    status: 'postdeploy_required',
+    command: 'pnpm run check:post-deploy-live',
+    evidenceBoundary: 'Proves hosted metadata, exact static dist parity, and hosted proof-pack route smoke after the current artifact is deployed.',
+  },
+  {
+    gate: 'Buyer-proven confidence',
+    status: 'external_gate',
+    command: 'pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+    evidenceBoundary: 'Deployment never raises market confidence; accepted buyer rows, reviewer feedback, commercial signal, and retained hashes are required.',
   },
 ];
