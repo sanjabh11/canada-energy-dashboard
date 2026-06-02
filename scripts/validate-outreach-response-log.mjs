@@ -526,18 +526,34 @@ function printActionPlan(rows) {
         console.log('  2. Prefer the specialized helper above when its input files are available; it reduces hand-written diagnostic drift.');
         console.log(`  3. Fallback generic text-extract helper: ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
         console.log('  4. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
-        console.log('  5. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+        console.log('  5. Use `pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
       } else {
         console.log(`  1. ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
         console.log('  2. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
-        console.log('  3. Copy the printed SHA-256 evidence reference into a filled pilot evidence register row.');
+        console.log('  3. Use `pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
       }
       continue;
     }
 
     if (row.pilot_evidence_register_action === 'update_register') {
-      console.log(`  1. Update a filled pilot evidence register with proof_pack_id=${row.proof_pack_id}, route=${row.route}, and the retained artifact SHA-256 reference.`);
-      console.log(`  2. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
+      console.log(`  1. ${[
+        'pnpm',
+        'run',
+        'update:pilot-evidence-register-row',
+        '--',
+        '--register-file',
+        'path/to/filled-pilot-evidence-register.csv',
+        '--evidence-root',
+        evidenceRoot,
+        '--evidence-file-reference',
+        '<replace with retained-artifact.md#sha256=...>',
+        '--confidence-delta',
+        '<replace with explicit 0..0.4 confidence movement, or 0 for staging>',
+        '--output-file',
+        'path/to/updated-pilot-evidence-register.csv',
+      ].map(shellQuote).join(' ')}`);
+      console.log('  2. The updater copies only fields supported by the retained artifact and runs the canonical register validator before writing output.');
+      console.log(`  3. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/updated-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
       continue;
     }
 
