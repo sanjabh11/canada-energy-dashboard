@@ -1,14 +1,19 @@
+# Dependencies
 node_modules
-.DS_Store
-dev.log
-COMMIT_MESSAGE.txt
-FETCH_HEAD
-Secrets
-docs.zip
-supabase.zip
+
+# Root-only local/generated artifacts that must never appear in the public repo
+/.DS_Store
 /Actions
+/COMMIT_MESSAGE.txt
+/FETCH_HEAD
 /New
-test-results/
+/Secrets
+/dev.log
+/docs.zip
+/supabase.zip
+/playwright-report/
+/test-results/
+
 # Environment files (never commit secrets)
 .env
 .env.*
@@ -47,6 +52,5 @@ docs/archive/
 # Generated local artifacts
 *.DS_Store
 .playwright-mcp/
-playwright-report/
 training/**/__pycache__/
 training/**/out/

@@ -14,7 +14,22 @@ const validMetadata = {
   license: { spdx_id: 'MIT' },
   private: false,
   visibility: 'public',
-  topics: ['analytics', 'canada', 'energy', 'esg', 'forecasting', 'react', 'supabase', 'typescript'],
+  topics: [
+    'analytics',
+    'canada',
+    'climate-tech',
+    'demand-forecasting',
+    'energy',
+    'energy-analytics',
+    'esg',
+    'forecasting',
+    'npri',
+    'react',
+    'regulatory',
+    'supabase',
+    'typescript',
+    'utilities',
+  ],
 };
 
 function makeTempRoot() {

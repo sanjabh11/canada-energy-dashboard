@@ -22,12 +22,18 @@ const expectedHomepage = 'https://canada-energy.netlify.app';
 const expectedTopics = [
   'analytics',
   'canada',
+  'climate-tech',
+  'demand-forecasting',
   'energy',
+  'energy-analytics',
   'esg',
   'forecasting',
+  'npri',
   'react',
+  'regulatory',
   'supabase',
   'typescript',
+  'utilities',
 ];
 
 function normalizeTopic(value) {
