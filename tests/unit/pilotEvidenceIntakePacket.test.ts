@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const generatorScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
 const bundleGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-minimum-intake-bundle.mjs');
 const workspaceGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase-f-evidence-workspace.mjs');
+const workspaceReportScriptPath = path.join(process.cwd(), 'scripts/report-phase-f-evidence-workspace.mjs');
 const outreachLogGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
 const outreachRowAppenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-response-log-row.mjs');
 const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-outreach-intake-packets.mjs');
@@ -495,6 +496,35 @@ describe('pilot evidence intake packet generator', () => {
     ]);
     expect(gateResult.status).toBe(1);
     expect(`${gateResult.stderr}\n${gateResult.stdout}`).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
+  }, 30000);
+
+  it('reports Phase F evidence workspace status and next commands without moving confidence', async () => {
+    const outputDir = makeTempRoot();
+    const createResult = await runNodeScript(workspaceGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const result = await runNodeScript(workspaceReportScriptPath, [
+      '--workspace-dir', outputDir,
+    ]);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('CEIP Phase F Evidence Workspace Report');
+    expect(result.stdout).toContain('Confidence movement: none');
+    expect(result.stdout).toContain('Buyer proof created: no');
+    expect(result.stdout).toContain('Hard 95% retained-evidence gate: blocked');
+    expect(result.stdout).toContain('Production outreach response logs: 1');
+    expect(result.stdout).toContain('Confidence-moving register rows: 0');
+    expect(result.stdout).toContain('Phase F 95% gate: not ready');
+    expect(result.stdout).toContain('Current 95% Gate Blockers');
+    expect(result.stdout).toContain('pnpm run append:outreach-response-log-row');
+    expect(result.stdout).toContain('pnpm run plan:outreach-intake');
+    expect(result.stdout).toContain('pnpm run create:outreach-intake-packets');
+    expect(result.stdout).toContain('pnpm run update:pilot-evidence-register-row');
+    expect(result.stdout).toContain('Boundary: this report does not create buyer proof or raise market confidence.');
   }, 30000);
 
   it('rejects invalid Phase F lane route overrides', async () => {

@@ -105,7 +105,7 @@ const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const phaseFMinimumIntakeBundlePhrase = /create:phase-f-minimum-intake-bundle|check:phase-f-minimum-intake-bundle/;
-const phaseFEvidenceWorkspacePhrase = /create:phase-f-evidence-workspace|check:phase-f-evidence-workspace/;
+const phaseFEvidenceWorkspacePhrase = /create:phase-f-evidence-workspace|check:phase-f-evidence-workspace|report:phase-f-evidence-workspace/;
 const pilotEvidenceRegisterUpdaterPhrase = /update:pilot-evidence-register-row/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
@@ -420,6 +420,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (packageScripts['check:phase-f-evidence-workspace'] !== 'node scripts/check-phase-f-evidence-workspace.mjs') {
     failures.push('package.json must keep check:phase-f-evidence-workspace wired to the Phase F evidence workspace smoke check.');
+  }
+
+  if (packageScripts['report:phase-f-evidence-workspace'] !== 'node scripts/report-phase-f-evidence-workspace.mjs') {
+    failures.push('package.json must keep report:phase-f-evidence-workspace wired to the Phase F evidence workspace status report.');
   }
 
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
