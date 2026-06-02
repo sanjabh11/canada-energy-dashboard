@@ -26,8 +26,8 @@ test.describe('Phase 0 foundation gating', () => {
   test('status page shows tracked uptime monitors', async ({ page }) => {
     await page.goto('/status');
     await expect(page.getByRole('heading', { name: 'System Status' })).toBeVisible();
-    await expect(page.getByText('Lead Capture API').first()).toBeVisible();
-    await expect(page.getByText('Health Endpoint').first()).toBeVisible();
+    await expect(page.getByText('Pilot Readiness').first()).toBeVisible();
+    await expect(page.getByText('Utility Forecast Pack').first()).toBeVisible();
   });
 
   test('hydrogen standalone route resolves', async ({ page }) => {
