@@ -9,6 +9,8 @@ const prepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-
 const byoCsvPrepScriptPath = path.join(process.cwd(), 'scripts/byo-csv-proof-artifact.ts');
 const forecastTrustPrepScriptPath = path.join(process.cwd(), 'scripts/forecast-trust-report-artifact.ts');
 const gaIciPrepScriptPath = path.join(process.cwd(), 'scripts/ga-ici-5cp-artifact.ts');
+const intakePacketScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
+const registerUpdaterScriptPath = path.join(process.cwd(), 'scripts/update-pilot-evidence-register-row.mjs');
 const tsxBinPath = path.join(process.cwd(), 'node_modules/.bin/tsx');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const registerHeader = 'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes';
@@ -109,6 +111,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(prepResult.stdout).toContain('Pilot evidence artifact prepared.');
     expect(prepResult.stdout).toContain(`Evidence root: ${evidenceRoot}`);
     expect(prepResult.stdout).toContain('evidence_file_reference: redacted-utility.md#sha256=');
+    expect(prepResult.stdout).toContain('update:pilot-evidence-register-row');
 
     const artifactPath = path.join(evidenceRoot, 'redacted-utility.md');
     const artifactText = readFileSync(artifactPath, 'utf8');
@@ -272,6 +275,105 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(result.stderr).toContain('numeric MAE value');
     expect(() => readFileSync(path.join(evidenceRoot, 'nonnumeric.md'), 'utf8')).toThrow();
   });
+
+  it('updates a starter register row from a retained artifact reference without hand-editing CSV fields', async () => {
+    const root = makeTempRoot();
+    const packetDir = path.join(root, 'pilot-intake');
+    const intakeResult = await runNodeScript(intakePacketScriptPath, [
+      '--route',
+      '/utility-demand-forecast',
+      '--output-dir',
+      packetDir,
+      '--record-date',
+      '2026-05-30',
+    ]);
+    expect(intakeResult.status).toBe(0);
+
+    const evidenceRoot = path.join(packetDir, 'redacted-artifacts');
+    const prepResult = await runNodeScript(prepScriptPath, buildValidPrepArgs(evidenceRoot));
+    expect(prepResult.status).toBe(0);
+    const evidenceReference = prepResult.stdout.match(/evidence_file_reference: (redacted-utility\.md#sha256=[a-f0-9]{64})/)?.[1];
+    expect(evidenceReference).toBeTruthy();
+
+    const starterRegisterPath = path.join(packetDir, 'pilot-evidence-register-starter.csv');
+    const updatedRegisterPath = path.join(packetDir, 'pilot-evidence-register-filled.csv');
+    const updateResult = await runNodeScript(registerUpdaterScriptPath, [
+      '--register-file',
+      starterRegisterPath,
+      '--evidence-root',
+      evidenceRoot,
+      '--evidence-file-reference',
+      evidenceReference ?? '',
+      '--confidence-delta',
+      '0.3',
+      '--output-file',
+      updatedRegisterPath,
+      '--follow-up-action',
+      'Run retained-evidence gate after all minimum lanes are updated.',
+      '--notes',
+      'Accepted anonymized buyer forecast evidence retained outside raw source files.',
+    ]);
+
+    expect(updateResult.status).toBe(0);
+    expect(updateResult.stderr).toBe('');
+    expect(updateResult.stdout).toContain('Pilot evidence register row updated.');
+    expect(updateResult.stdout).toContain('confidence_delta: 0.3');
+    expect(updateResult.stdout).toContain(`evidence_file_reference: ${evidenceReference}`);
+
+    const updatedRegister = readFileSync(updatedRegisterPath, 'utf8');
+    expect(updatedRegister).toContain(evidenceReference);
+    expect(updatedRegister).toContain('0.3');
+    expect(updatedRegister).toContain('paid_pilot');
+    expect(updatedRegister).toContain('reviewer_acceptance,claim_boundary');
+    expect(updatedRegister).toContain('Accepted anonymized buyer forecast evidence retained outside raw source files.');
+    expect(updatedRegister).toContain('MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [
+      updatedRegisterPath,
+      '--evidence-root',
+      evidenceRoot,
+    ]);
+
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
+    expect(validationResult.stderr).toBe('');
+  }, 30000);
+
+  it('rejects register updates when the retained artifact hash does not match', async () => {
+    const root = makeTempRoot();
+    const packetDir = path.join(root, 'pilot-intake');
+    const intakeResult = await runNodeScript(intakePacketScriptPath, [
+      '--route',
+      '/utility-demand-forecast',
+      '--output-dir',
+      packetDir,
+      '--record-date',
+      '2026-05-30',
+    ]);
+    expect(intakeResult.status).toBe(0);
+
+    const evidenceRoot = path.join(packetDir, 'redacted-artifacts');
+    const prepResult = await runNodeScript(prepScriptPath, buildValidPrepArgs(evidenceRoot));
+    expect(prepResult.status).toBe(0);
+    const badReference = 'redacted-utility.md#sha256=0000000000000000000000000000000000000000000000000000000000000000';
+    const outputPath = path.join(packetDir, 'bad-update.csv');
+    const updateResult = await runNodeScript(registerUpdaterScriptPath, [
+      '--register-file',
+      path.join(packetDir, 'pilot-evidence-register-starter.csv'),
+      '--evidence-root',
+      evidenceRoot,
+      '--evidence-file-reference',
+      badReference,
+      '--confidence-delta',
+      '0.3',
+      '--output-file',
+      outputPath,
+    ]);
+
+    expect(updateResult.status).toBe(1);
+    expect(updateResult.stderr).toContain('Retained artifact SHA-256 mismatch');
+    expect(() => readFileSync(outputPath, 'utf8')).toThrow();
+  }, 30000);
 
   it('prepares a BYO-CSV retained extract, hash reference, and validator-compatible row', async () => {
     const evidenceRoot = makeTempRoot();

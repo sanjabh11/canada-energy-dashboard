@@ -366,7 +366,46 @@ describe('outreach response log validator', () => {
     expect(result.stdout).toContain('<replace with retained letter_of_intent evidence text>');
     expect(result.stdout).toContain('Prefer the specialized helper above');
     expect(result.stdout).toContain('Replace every <...> placeholder');
-    expect(result.stdout).toContain('Copy the printed SHA-256 evidence reference');
+    expect(result.stdout).toContain('update:pilot-evidence-register-row');
+    expect(result.stdout).toContain('do not hand-edit confidence-moving CSV rows');
+  });
+
+  it('prints a validated register updater command for update_register rows', async () => {
+    const filePath = writeLog([
+      [
+        '2026-06-01',
+        'email',
+        'utility_reviewer_003',
+        'utility',
+        'utility_forecast_planning_pack',
+        '/utility-demand-forecast',
+        '4.5',
+        'utility_forecast',
+        '"Buyer-supplied planning support only; no production utility onboarding is claimed."',
+        'forecast planning pack',
+        'data_offered',
+        'Buyer supplied a redacted retained artifact reference for register update.',
+        'Load growth planning',
+        'redacted load history',
+        'utility planning reviewer',
+        'paid_pilot',
+        'update pilot evidence register with retained artifact',
+        'update_register',
+        'No direct identifiers retained in the repo log.',
+      ].join(','),
+    ]);
+
+    const result = await runValidator([filePath, '--action-plan']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('pnpm run update:pilot-evidence-register-row');
+    expect(result.stdout).toContain('--register-file path/to/filled-pilot-evidence-register.csv');
+    expect(result.stdout).toContain('--evidence-file-reference');
+    expect(result.stdout).toContain('<replace with retained-artifact.md#sha256=...>');
+    expect(result.stdout).toContain('--confidence-delta');
+    expect(result.stdout).toContain('canonical register validator before writing output');
+    expect(result.stdout).toContain('path/to/updated-pilot-evidence-register.csv');
   });
 
   it('prints route-specific retained-artifact helpers for GA/ICI and BYO-CSV rows', async () => {

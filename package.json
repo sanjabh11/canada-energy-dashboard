@@ -71,6 +71,7 @@
     "prepare:forecast-trust-report-artifact": "tsx scripts/forecast-trust-report-artifact.ts",
     "prepare:ga-ici-5cp-artifact": "tsx scripts/ga-ici-5cp-artifact.ts",
     "prepare:pilot-evidence-artifact": "node scripts/prepare-pilot-evidence-artifact.mjs",
+    "update:pilot-evidence-register-row": "node scripts/update-pilot-evidence-register-row.mjs",
     "lint": "eslint .",
     "test": "vitest run",
     "test:strategy-audit-slice": "vitest run tests/unit/commercialPositioning.test.ts tests/unit/forecastBaselines.test.ts tests/unit/utilityForecasting.test.ts tests/unit/utilityForecastProofPack.test.ts tests/unit/utilityForecastBenchmarkPack.test.ts tests/unit/proofPackGates.test.ts tests/unit/regulatoryProofPack.test.ts tests/unit/pilotEvidenceRegisterValidator.test.ts tests/unit/pilotEvidenceArtifactPrep.test.ts tests/unit/pilotEvidenceIntakePacket.test.ts tests/unit/buyerEvidenceReadiness.test.ts tests/unit/outreachResponseLogValidator.test.ts tests/unit/githubRepoMetadata.test.ts tests/unit/productionApprovalPacket.test.ts tests/unit/strategyCompletionAudit.test.ts tests/unit/strategySourceAnchors.test.ts tests/unit/byoCsvProofGenerator.test.ts tests/unit/gaIciPeakPredictor.test.ts --testTimeout=15000",

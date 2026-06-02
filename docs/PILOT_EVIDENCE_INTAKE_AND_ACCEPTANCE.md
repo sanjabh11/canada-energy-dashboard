@@ -48,6 +48,7 @@
 | Retained pilot-outcome evidence guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --require-95 --evidence-root path/to/redacted-artifacts` | A row could claim fast artifact delivery, reviewer acceptance, completed feedback, or day-14 proceed while the retained artifact never proves those outcome markers. | Accepted confidence-moving rows must have retained artifact text supporting `time_to_artifact_hours`, `reviewer_acceptance`, `reviewer_feedback_status`, and `day_14_decision=proceed`. |
 | Inspectable retained-artifact guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | Hash-verified PDFs, scans, or opaque binaries could bypass the retained-artifact redaction scan. | Retained evidence must be text-inspectable: CSV, TSV, JSON, JSONL, Markdown, text, HTML, YAML, or a hashed redacted text/Markdown extract for PDF source material. |
 | Retained-artifact preparation helper | `pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-utility.md --route /utility-demand-forecast --proof-pack-id utility_forecast_planning_pack ...` | Operators could hand-write evidence extracts that omit exact validator support fields or accidentally include direct identifiers. | The helper writes a redacted text extract, rejects direct identifiers and thin route diagnostics, computes SHA-256, and prints the register-ready `evidence_file_reference`. |
+| Pilot evidence register row updater | `pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference artifact.md#sha256=... --confidence-delta 0.3 --output-file path/to/updated.csv` | Operators had to hand-edit CSV rows after artifact preparation, creating hash, field-copy, and claim-boundary drift risk. | Recomputes the retained artifact hash, copies only artifact-supported fields into the matching route/proof-pack row, requires explicit `confidence_delta`, and validates the candidate register before writing output. |
 | Forecast trust retained-extract helper | `pnpm run prepare:forecast-trust-report-artifact -- --benchmark-pack-file path/to/utility-forecast-benchmark-pack.json --evidence-root path/to/redacted-artifacts --artifact-file forecast-trust-retained.md --proof-pack-id forecast_benchmark_provenance ...` | Forecast trust rows could be hand-written from keyword prose and drift from actual benchmark-pack metrics. | The helper converts benchmark-pack JSON into a hashable retained extract with numeric MAE, MAPE, RMSE, persistence, seasonal-naive, rolling-origin, interval coverage, central 90% interval-score, and champion/challenger diagnostics. |
 | 95% readiness report | `pnpm run report:pilot-evidence-95 -- path/to/filled.csv --evidence-root path/to/redacted-artifacts` | The hard gate could fail without giving an operator-grade view of which buyer-evidence lanes are still missing. | The report prints pass/fail checks, evidence counts, and next actions while preserving the same nonzero failure behavior as the 95% gate. |
 | Pilot date and reviewer guard | `pnpm run validate:pilot-evidence -- path/to/filled.csv` | Future-dated or reviewer-anonymous evidence could move confidence. | Confidence-moving rows require a valid non-future `record_date` and a reviewer role. |
@@ -258,7 +259,18 @@ pnpm run prepare:pilot-evidence-artifact -- \
   --diagnostic "MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger."
 ```
 
-Paste the printed `evidence_file_reference` value into the filled register row. The helper is not buyer evidence by itself; it only creates a text-inspectable retained extract that the validator can hash and scan.
+Prefer the register-row updater instead of hand-editing CSV after the helper prints `evidence_file_reference`:
+
+```bash
+pnpm run update:pilot-evidence-register-row -- \
+  --register-file path/to/pilot-evidence-register-starter.csv \
+  --evidence-root path/to/redacted-artifacts \
+  --evidence-file-reference redacted-utility-forecast.md#sha256=<hash-from-helper> \
+  --confidence-delta "<explicit 0..0.4 confidence movement, or 0 for staging>" \
+  --output-file path/to/filled-pilot-evidence-register.csv
+```
+
+The updater refuses template or fixture registers, recomputes the retained artifact hash, fails if the route/proof-pack row is ambiguous, and runs `validate:pilot-evidence -- --evidence-root` on the candidate output before writing. The helper and updater are not buyer evidence by themselves; they only make a buyer-approved redacted extract and register row inspectable by the canonical validator.
 
 For forecast trust rows generated from a benchmark pack, use the metric-derived helper instead of hand-writing diagnostic prose:
 
