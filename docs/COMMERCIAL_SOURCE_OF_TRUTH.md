@@ -131,6 +131,7 @@ pnpm run create:phase-f-minimum-intake-bundle -- --output-dir /tmp/ceip-phase-f-
 pnpm run check:phase-f-minimum-intake-bundle
 pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
 pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence
+pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv
 pnpm run check:phase-f-evidence-workspace
 pnpm run validate:pilot-evidence -- docs/growth/templates/PILOT_EVIDENCE_REGISTER_TEMPLATE.csv --allow-template
 pnpm run validate:outreach-response-log -- docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv --allow-template
@@ -171,6 +172,7 @@ Before any copy says CEIP has reached 95% buyer-proven market confidence, valida
 pnpm run report:buyer-evidence-readiness -- --root path/to/anonymized-outreach-or-registers
 pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
 pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence
+pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv
 pnpm run create:pilot-evidence-intake-packet -- --route /utility-demand-forecast --output-dir /tmp/ceip-pilot-intake
 pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md --route /utility-demand-forecast --proof-pack-id utility_forecast_planning_pack --record-date 2026-05-31 --pii-screen-result redacted --buyer-data-coverage-pct 90 --time-to-artifact-hours 36 --reviewer-role "utility planning reviewer" --reviewer-acceptance accepted --reviewer-feedback-status complete --day-14-decision proceed --commercial-commitment-status paid_pilot --commercial-commitment-evidence "paid pilot evidence retained in redacted commercial appendix" --claim-boundary "Buyer-supplied redacted planning support only." --do-not-claim "Do not claim production utility onboarding." --diagnostic "MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger."
 pnpm run update:pilot-evidence-register-row -- --register-file path/to/pilot-evidence-register-starter.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=<hash-from-helper> --confidence-delta "<explicit 0..0.4, or 0 for staging>" --output-file path/to/filled-pilot-evidence-register.csv

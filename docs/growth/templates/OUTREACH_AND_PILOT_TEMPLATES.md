@@ -257,11 +257,12 @@ pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv
 pnpm run create:outreach-intake-packets -- --log-file path/to/outreach-response-log.csv --output-dir /tmp/ceip-outreach-intake-packets
 pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
 pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence
+pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv
 ```
 
 The response log can point to `create_intake_packet`, `prepare_retained_artifact`, `update_register`, or `run_95_gate`, but it does not itself create buyer evidence or move confidence. It rejects future-dated outreach activity and blocks no-reply/not-fit statuses from creating evidence actions; `plan:outreach-intake` prints the next intake commands for rows that are actually actionable.
 Use `create:outreach-intake-packets` only after rows have a valid `create_intake_packet` action. It creates starter packet folders and a manifest, not buyer evidence.
-Use `create:phase-f-evidence-workspace` when the operator needs the response-log scaffold, minimum Phase F starter bundle, manifest, and readiness report together before collecting retained buyer artifacts. Use `report:phase-f-evidence-workspace` before resuming so the next commands and current hard-gate blockers are visible from one status report.
+Use `create:phase-f-evidence-workspace` when the operator needs the response-log scaffold, minimum Phase F starter bundle, manifest, and readiness report together before collecting retained buyer artifacts. Use `report:phase-f-evidence-workspace` before resuming so the next commands and current hard-gate blockers are visible from one status report. After `update:pilot-evidence-register-row` writes an updated candidate register inside the workspace, rerun the workspace report with `--register-file` so the selected CSV, not only the starter register, is validated and hard-gated.
 
 ## Discovery Coding Taxonomy
 

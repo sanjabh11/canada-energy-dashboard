@@ -31,6 +31,7 @@
 7. Start Phase F repo evidence collection from a zero-evidence workspace, not from hand-edited CSV files:
    - `pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence`
    - `pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence`
+   - after `update:pilot-evidence-register-row` writes an updated candidate register inside that workspace, rerun `pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv`
 8. Mirror only anonymized proof-pack response evidence into the repo when a completed send or reply changes pilot follow-up:
    - append rows with `pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...`
    - do not hand-edit confidence-moving CSV rows

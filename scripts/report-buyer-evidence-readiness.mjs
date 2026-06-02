@@ -256,6 +256,13 @@ function phaseFEvidenceWorkspaceReportCommand(workspaceDir = '/tmp/ceip-phase-f-
   return `pnpm run report:phase-f-evidence-workspace -- --workspace-dir ${workspaceDir}`;
 }
 
+function phaseFEvidenceWorkspaceUpdatedRegisterReportCommand(
+  workspaceDir = '/tmp/ceip-phase-f-evidence',
+  registerFile = '/tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+) {
+  return `${phaseFEvidenceWorkspaceReportCommand(workspaceDir)} --register-file ${registerFile}`;
+}
+
 function printPhaseFMinimumEvidenceMap() {
   console.log('\n## Minimum Phase F 95% Evidence Map');
   console.log('The hard 95% gate is intentionally stricter than finding any one buyer reply or demo artifact. Minimum accepted buyer-evidence coverage:');
@@ -272,6 +279,7 @@ function printPhaseFMinimumEvidenceMap() {
   console.log('\nAll-in-one Phase F collection workspace for operators:');
   console.log(`- ${phaseFEvidenceWorkspaceCommand()}`);
   console.log(`- ${phaseFEvidenceWorkspaceReportCommand()}`);
+  console.log(`- After updating a candidate register: ${phaseFEvidenceWorkspaceUpdatedRegisterReportCommand()}`);
   console.log('- The workspace wraps the outreach log, default minimum starter bundle, readiness report, and hard-gate blocker check without creating buyer proof.');
 }
 
@@ -425,6 +433,7 @@ console.log('\n## Next Actions');
 if (!hasProductionEvidenceInputs) {
   console.log(`- Start the all-in-one Phase F evidence workspace with \`${phaseFEvidenceWorkspaceCommand()}\`.`);
   console.log(`- Run \`${phaseFEvidenceWorkspaceReportCommand()}\` before resuming collection; it validates the workspace, shows hard-gate blockers, and prints next operator commands.`);
+  console.log(`- After \`update:pilot-evidence-register-row\` writes an updated candidate register inside the workspace, rerun \`${phaseFEvidenceWorkspaceUpdatedRegisterReportCommand()}\` so the selected register is validated and hard-gated.`);
   console.log('- Append only real, anonymized buyer activity rows with `pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...`.');
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
 } else if (outreachLogs.length > 0 && totalActionableOutreachRows === 0 && pilotRegisters.length === 0) {
@@ -439,6 +448,7 @@ if (!hasProductionEvidenceInputs) {
 } else if (pilotRegisters.length > 0 && totalConfidenceRows === 0) {
   console.log('- Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence before running the 95% retained-artifact gate.');
   console.log('- Keep `confidence_delta=0` until buyer evidence includes reviewer acceptance, complete feedback, day_14_decision=proceed, and route-specific diagnostics.');
+  console.log(`- If this is a Phase F workspace register, rerun \`${phaseFEvidenceWorkspaceUpdatedRegisterReportCommand()}\` after writing a candidate updated register so the selected CSV, not only the starter register, is validated and hard-gated.`);
   console.log('- After accepted buyer rows exist, attach retained redacted artifact hashes and rerun with `--evidence-root path/to/redacted-artifacts`.');
 } else if (pilotRegisters.length > 0 && !evidenceRoot) {
   console.log('- Re-run with `--evidence-root path/to/redacted-artifacts` to test the retained-artifact 95% gate.');

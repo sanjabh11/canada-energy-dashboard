@@ -438,6 +438,13 @@ if (!existsSync(sourceDocPath)) {
     if (!/report:phase-f-evidence-workspace/.test(buyerEvidenceReadinessReport)) {
       failures.push('scripts/report-buyer-evidence-readiness.mjs must point empty Phase F collection to report:phase-f-evidence-workspace.');
     }
+    if (
+      !buyerEvidenceReadinessReport.includes('phaseFEvidenceWorkspaceUpdatedRegisterReportCommand')
+      || !buyerEvidenceReadinessReport.includes('--register-file')
+      || !buyerEvidenceReadinessReport.includes('/tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv')
+    ) {
+      failures.push('scripts/report-buyer-evidence-readiness.mjs must point updated Phase F workspace registers to report:phase-f-evidence-workspace --register-file.');
+    }
     if (!outreachRowAppenderPhrase.test(buyerEvidenceReadinessReport)) {
       failures.push('scripts/report-buyer-evidence-readiness.mjs must point real outreach rows through append:outreach-response-log-row.');
     }

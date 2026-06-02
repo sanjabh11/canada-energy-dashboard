@@ -98,9 +98,11 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('All-in-one Phase F collection workspace for operators');
     expect(result.stdout).toContain('pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence');
     expect(result.stdout).toContain('pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence');
+    expect(result.stdout).toContain('pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv');
     expect(result.stdout).toContain('Default bundle routes: /utility-demand-forecast (utility_forecast_planning_pack), /roi-calculator (tier_cfo_savings_pack), /utility-security (utility_security_procurement_pack).');
     expect(result.stdout).not.toContain('pnpm run create:pilot-evidence-intake-packet -- --route /utility-security --output-dir /tmp/ceip-phase-f-utility-security');
     expect(result.stdout).toContain('Start the all-in-one Phase F evidence workspace');
+    expect(result.stdout).toContain('After `update:pilot-evidence-register-row` writes an updated candidate register inside the workspace');
     expect(result.stdout).toContain('Append only real, anonymized buyer activity rows');
     expect(result.stdout).toContain('append:outreach-response-log-row');
   });
