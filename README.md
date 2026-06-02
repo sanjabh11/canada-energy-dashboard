@@ -28,6 +28,7 @@ CEIP is maintained as an open-source React/TypeScript evidence-pack application 
 | Ranked USP and top features | [docs/Top20.md](docs/Top20.md) |
 | Current 95% strategy roadmap | [docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) |
 | Pilot evidence gate | [docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) |
+| Comet Phase F evidence runbook | [docs/COMET_PHASE_F_BUYER_EVIDENCE_RUNBOOK.md](docs/COMET_PHASE_F_BUYER_EVIDENCE_RUNBOOK.md) |
 | Demo handoff | [docs/MVP_DEMO_FREEZE_HANDOFF.md](docs/MVP_DEMO_FREEZE_HANDOFF.md) |
 | Live demo | [https://canada-energy.netlify.app](https://canada-energy.netlify.app) |
 
