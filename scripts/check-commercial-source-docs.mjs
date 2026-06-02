@@ -101,6 +101,7 @@ const filledNinetyFiveCommandWithoutEvidenceRoot = /path\/to\/filled-pilot-evide
 const staleForecastDiagnosticPhrase = /MAE,\s*MAPE,\s*RMSE recorded;\s*persistence and seasonal-naive compared;\s*rolling-origin split record,\s*interval coverage,\s*and champion\/challenger note attached\.?/i;
 const numericForecastEvidencePhrase = /numeric forecast evidence|numeric MAE|MAE\s+\d+(?:\.\d+)?\s*(?:MW|%)/i;
 const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:outreach-response-log/;
+const outreachRowAppenderPhrase = /append:outreach-response-log-row/;
 const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
@@ -548,6 +549,23 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!outreachIntakePlanPhrase.test(outreachCampaignDoc)) {
       failures.push('docs/growth/CEIP_OUTREACH_CAMPAIGN_ASSETS.md must mention plan:outreach-intake or --action-plan for outreach response intake actions.');
+    }
+  }
+
+  const hermesOutreachPath = path.join(repoRoot, 'docs/HERMES_OUTREACH_OPERATING_PLAN.md');
+  if (existsSync(hermesOutreachPath)) {
+    const hermesOutreachDoc = readFileSync(hermesOutreachPath, 'utf8');
+    if (!outreachRowAppenderPhrase.test(hermesOutreachDoc)) {
+      failures.push('docs/HERMES_OUTREACH_OPERATING_PLAN.md must route repo-retained outreach rows through append:outreach-response-log-row.');
+    }
+    if (!phaseFEvidenceWorkspacePhrase.test(hermesOutreachDoc)) {
+      failures.push('docs/HERMES_OUTREACH_OPERATING_PLAN.md must mention the Phase F evidence workspace generator or report before buyer evidence collection.');
+    }
+    if (!outreachIntakePacketBatchPhrase.test(hermesOutreachDoc)) {
+      failures.push('docs/HERMES_OUTREACH_OPERATING_PLAN.md must mention create:outreach-intake-packets for actionable outreach rows.');
+    }
+    if (!/validate:pilot-evidence -- .*--require-95 .*--evidence-root|validate:pilot-evidence -- .*--evidence-root .*--require-95/.test(hermesOutreachDoc)) {
+      failures.push('docs/HERMES_OUTREACH_OPERATING_PLAN.md must keep the 95% buyer-evidence command tied to --evidence-root hash verification.');
     }
   }
 
