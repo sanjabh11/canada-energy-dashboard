@@ -32,7 +32,7 @@ CEIP is maintained as an open-source React/TypeScript evidence-pack application 
 | Demo handoff | [docs/MVP_DEMO_FREEZE_HANDOFF.md](docs/MVP_DEMO_FREEZE_HANDOFF.md) |
 | Live demo | [https://canada-energy.netlify.app](https://canada-energy.netlify.app) |
 
-The active roadmap now scores desk-research strategy-direction confidence at 95/100 after proof-boundary hardening, incumbent whitespace mapping, radical-feature validation, source-currency work, and P1 live parity. Current P1 live metadata/static parity is achieved; future production deploys still require explicit approval and post-deploy live checks. This is not a 95% market-confidence claim. Buyer-proven market confidence still requires a filled buyer-evidence register to pass:
+The active roadmap now scores desk-research strategy-direction confidence at 95/100 after proof-boundary hardening, incumbent whitespace mapping, radical-feature validation, source-currency work, and deploy/live-parity guardrails. Live metadata/static parity is achieved only when the post-deploy live gate passes for the current production artifact; future production deploys still require explicit approval and post-deploy live checks. This is not a 95% market-confidence claim. Buyer-proven market confidence still requires a filled buyer-evidence register to pass:
 
 ```bash
 pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts

@@ -335,7 +335,7 @@ if (!existsSync(sourceDocPath)) {
     'UtilityAPI/Green Button sandbox',
     'OCAP-aligned workflow',
     'accurate avalanche prediction',
-    'current P1 live parity is achieved',
+    'live parity is achieved only when post-deploy live checks pass',
     'OUTREACH_RESPONSE_LOG_TEMPLATE.csv',
   ];
 

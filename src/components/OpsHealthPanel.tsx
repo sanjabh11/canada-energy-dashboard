@@ -97,6 +97,11 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
         throw new Error(`HTTP ${response.status}`);
       }
 
+      const contentType = response.headers.get('content-type') ?? '';
+      if (!contentType.toLowerCase().includes('application/json')) {
+        throw new Error('Ops health endpoint returned a non-JSON response');
+      }
+
       const metricsPayload = await response.json() as OpsHealthMetrics;
 
       setMetrics(metricsPayload);
@@ -105,7 +110,6 @@ export const OpsHealthPanel: React.FC<OpsHealthPanelProps> = ({
       setError(null);
     } catch (err: any) {
       if (err.name === 'AbortError') return;
-      console.error('Failed to fetch ops health:', err);
       setEdgeDisabled(false);
       setError(err.message || 'Failed to load');
       // Stop polling on network/CORS errors to prevent console spam

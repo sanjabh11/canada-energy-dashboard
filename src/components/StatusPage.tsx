@@ -33,6 +33,7 @@ import {
 import { OpsHealthPanel } from './OpsHealthPanel';
 import { SEOHead } from './SEOHead';
 import { HIGH_RISK_SOURCE_REGISTRY, UPTIME_MONITORS } from '../lib/opsMonitoring';
+import { RELEASE_POSTURE, type ReleasePostureItem } from '../lib/releasePosture';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import DataTrustNotice from './DataTrustNotice';
 
@@ -43,52 +44,6 @@ interface EndpointStatus {
   expectedStatus: string;
   intervalMinutes: number;
 }
-
-interface ReleasePostureItem {
-  title: string;
-  status: 'verified' | 'watch' | 'external_gate' | 'needs_remediation';
-  rating: string;
-  evidence: string;
-  nextAction: string;
-}
-
-const RELEASE_POSTURE: ReleasePostureItem[] = [
-  {
-    title: 'Production deploy and route parity',
-    status: 'verified',
-    rating: '4.8/5',
-    evidence: 'Post-deploy live gate checks remote metadata, static artifact parity, and six hosted proof-pack routes.',
-    nextAction: 'Rerun `pnpm run check:post-deploy-live` after every production deploy.',
-  },
-  {
-    title: 'GitHub release and cron gates',
-    status: 'verified',
-    rating: '4.7/5',
-    evidence: 'CI, trained dispatch soak, PV fault soak, and Weather Ingestion cron are expected to pass on the current main branch.',
-    nextAction: 'Review GitHub Actions after every push because older failed runs remain visible until superseded.',
-  },
-  {
-    title: 'Supabase edge-function surface',
-    status: 'watch',
-    rating: '4.0/5',
-    evidence: '`llm` and `weather-ingestion-cron` are deployed, while many older edge functions predate the current proof-pack strategy.',
-    nextAction: 'Keep edge-function deploys function-scoped and verify each cron or route after deployment.',
-  },
-  {
-    title: 'Buyer-evidence confidence gate',
-    status: 'external_gate',
-    rating: '1.5/5',
-    evidence: 'The app has templates, intake packets, retained-artifact hashing, and the hard 95% validator, but no real accepted buyer register is present.',
-    nextAction: 'Collect anonymized buyer evidence; keep rehearsal-only rows at `confidence_delta=0`.',
-  },
-  {
-    title: 'Supabase database advisor debt',
-    status: 'needs_remediation',
-    rating: '2.0/5',
-    evidence: 'Current advisor scan found security and performance debt that needs table-by-table migration review.',
-    nextAction: 'Run a scoped RLS/security-definer/index remediation phase before stronger production-security claims.',
-  },
-];
 
 const StatusPage: React.FC = () => {
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
