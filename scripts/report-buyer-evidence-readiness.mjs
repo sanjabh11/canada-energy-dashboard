@@ -289,6 +289,7 @@ function summarizePilotRegister(filePath, rows) {
 function summarizeOutreachLog(filePath, rows) {
   const rowObjects = rowsToObjects(rows);
   const actionableRows = rowObjects.filter((row) => String(row.pilot_evidence_register_action ?? '').trim() !== 'none');
+  const batchableRows = rowObjects.filter((row) => String(row.pilot_evidence_register_action ?? '').trim() === 'create_intake_packet');
   const validation = runNodeScript(path.join(repoRoot, 'scripts/validate-outreach-response-log.mjs'), [filePath, '--report']);
   const actionPlan = runNodeScript(path.join(repoRoot, 'scripts/validate-outreach-response-log.mjs'), [filePath, '--action-plan']);
 
@@ -296,6 +297,7 @@ function summarizeOutreachLog(filePath, rows) {
     path: filePath,
     rows: rowObjects.length,
     actionableRows: actionableRows.length,
+    batchableRows: batchableRows.length,
     validation,
     actionPlan,
   };
@@ -339,6 +341,7 @@ for (const root of roots) {
 }
 
 const totalActionableOutreachRows = outreachLogs.reduce((sum, log) => sum + log.actionableRows, 0);
+const totalBatchableOutreachRows = outreachLogs.reduce((sum, log) => sum + log.batchableRows, 0);
 const totalConfidenceRows = pilotRegisters.reduce((sum, register) => sum + register.confidenceRows, 0);
 const passing95Gates = pilotRegisters.filter((register) => register.gate95?.status === 0).length;
 const allValid = [...pilotRegisters, ...outreachLogs].every((item) => item.validation.status === 0);
@@ -353,6 +356,7 @@ console.log(`Production pilot evidence registers: ${pilotRegisters.length}`);
 console.log(`Production outreach response logs: ${outreachLogs.length}`);
 console.log(`Confidence-moving register rows: ${totalConfidenceRows}`);
 console.log(`Actionable outreach rows: ${totalActionableOutreachRows}`);
+console.log(`Batchable intake-packet outreach rows: ${totalBatchableOutreachRows}`);
 console.log(`Evidence root: ${evidenceRoot ? displayPath(evidenceRoot) : 'not provided'}`);
 
 if (passing95Gates > 0) {
@@ -389,9 +393,12 @@ if (outreachLogs.length > 0) {
   console.log('\n## Outreach Response Logs');
   for (const log of outreachLogs) {
     console.log(`- ${displayPath(log.path)}`);
-    console.log(`  Rows: ${log.rows}; actionable evidence rows: ${log.actionableRows}.`);
+    console.log(`  Rows: ${log.rows}; actionable evidence rows: ${log.actionableRows}; batchable intake-packet rows: ${log.batchableRows}.`);
     console.log(`  Validation: ${log.validation.status === 0 ? 'pass' : 'fail'}.`);
     console.log(`  Action plan: ${log.actionPlan.status === 0 ? 'available' : 'blocked'}.`);
+    if (log.batchableRows > 0 && log.validation.status === 0) {
+      console.log(`  Batch packet command: pnpm run create:outreach-intake-packets -- --log-file ${displayPath(log.path)} --output-dir /tmp/ceip-outreach-intake-packets`);
+    }
     if (log.actionableRows > 0 && log.actionPlan.status === 0) {
       console.log('  Action plan excerpt:');
       for (const line of indentedOutputLines(log.actionPlan.stdout)) console.log(line);
@@ -412,7 +419,10 @@ if (!hasProductionEvidenceInputs) {
   console.log('- When a row becomes interested, requested_info, data_offered, or meeting_booked with a valid pilot_evidence_register_action, rerun `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
   console.log('- Keep Phase F blocked until an actionable row creates intake or retained-artifact work and a production pilot evidence register exists.');
 } else if (totalActionableOutreachRows > 0 && pilotRegisters.length === 0) {
-  console.log('- Use the outreach action plan excerpt above to create intake packets or retained artifacts.');
+  if (totalBatchableOutreachRows > 0) {
+    console.log('- Use the batch packet command above for `create_intake_packet` rows so the starter register folders are created consistently.');
+  }
+  console.log('- Use the outreach action plan excerpt above for any retained-artifact, register-update, or hard-gate rows that are not batch packet creation.');
 } else if (pilotRegisters.length > 0 && totalConfidenceRows === 0) {
   console.log('- Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence before running the 95% retained-artifact gate.');
   console.log('- Keep `confidence_delta=0` until buyer evidence includes reviewer acceptance, complete feedback, day_14_decision=proceed, and route-specific diagnostics.');

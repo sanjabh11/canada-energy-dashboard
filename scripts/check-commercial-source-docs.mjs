@@ -104,6 +104,7 @@ const outreachResponseLogPhrase = /OUTREACH_RESPONSE_LOG_TEMPLATE\.csv|validate:
 const outreachIntakePlanPhrase = /plan:outreach-intake|--action-plan/;
 const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
+const phaseFMinimumIntakeBundlePhrase = /create:phase-f-minimum-intake-bundle|check:phase-f-minimum-intake-bundle/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
 const byoCsvArtifactHelperPhrase = /prepare:byo-csv-proof-artifact/;
@@ -407,8 +408,16 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep create:outreach-intake-packets wired to the outreach intake packet batch generator.');
   }
 
+  if (packageScripts['check:phase-f-minimum-intake-bundle'] !== 'node scripts/check-phase-f-minimum-intake-bundle.mjs') {
+    failures.push('package.json must keep check:phase-f-minimum-intake-bundle wired to the Phase F starter bundle smoke check.');
+  }
+
   if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:outreach-intake-plan-template')) {
     failures.push('check:release-readiness must include check:outreach-intake-plan-template so the action-plan path cannot drift.');
+  }
+
+  if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:phase-f-minimum-intake-bundle')) {
+    failures.push('check:release-readiness must include check:phase-f-minimum-intake-bundle so the Phase F starter bundle cannot drift.');
   }
 
   if (!outreachIntakePacketBatchPhrase.test(sourceDoc)) {
@@ -417,6 +426,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!pilotEvidenceIntakePacketPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention create:pilot-evidence-intake-packet for buyer-evidence intake scaffolding.');
+  }
+
+  if (!phaseFMinimumIntakeBundlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the Phase F minimum intake bundle generator or smoke check.');
   }
 
   if (!forecastTrustArtifactHelperPhrase.test(sourceDoc)) {
@@ -459,6 +472,9 @@ if (!existsSync(sourceDocPath)) {
     }
     if (!outreachIntakePacketBatchPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention create:outreach-intake-packets for validated outreach-to-intake scaffolding.');
+    }
+    if (!phaseFMinimumIntakeBundlePhrase.test(pilotEvidenceDoc)) {
+      failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention the Phase F minimum intake bundle generator or smoke check.');
     }
     if (!forecastTrustArtifactHelperPhrase.test(pilotEvidenceDoc)) {
       failures.push('docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md must mention prepare:forecast-trust-report-artifact for forecast trust retained extracts.');
