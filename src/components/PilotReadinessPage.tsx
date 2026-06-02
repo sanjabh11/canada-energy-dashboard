@@ -14,14 +14,39 @@ import {
   pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
+import { computeRetainedArtifactHash, type RetainedArtifactHashResult } from '../lib/retainedArtifactHash';
 
 export function PilotReadinessPage() {
   const summary = getPilotEvidenceCoverageSummary();
   const [selectedRoute, setSelectedRoute] = useState(pilotIntakeRoutePlans[0]?.route ?? '');
+  const [artifactFileName, setArtifactFileName] = useState('retained-artifact.md');
+  const [artifactText, setArtifactText] = useState('');
+  const [artifactHashResult, setArtifactHashResult] = useState<RetainedArtifactHashResult | null>(null);
+  const [artifactHashError, setArtifactHashError] = useState('');
+  const [artifactHashPending, setArtifactHashPending] = useState(false);
   const selectedPlan = useMemo(
     () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
     [selectedRoute],
   );
+
+  async function handleRetainedArtifactHash(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setArtifactHashError('');
+    setArtifactHashPending(true);
+
+    try {
+      const result = await computeRetainedArtifactHash({
+        fileName: artifactFileName,
+        text: artifactText,
+      });
+      setArtifactHashResult(result);
+    } catch (error) {
+      setArtifactHashResult(null);
+      setArtifactHashError(error instanceof Error ? error.message : 'Unable to compute retained artifact hash.');
+    } finally {
+      setArtifactHashPending(false);
+    }
+  }
 
   return (
     <div
@@ -219,6 +244,104 @@ export function PilotReadinessPage() {
                 </div>
               </div>
             )}
+
+            <div className="mt-10 rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
+              <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
+                <div>
+                  <div className="flex items-center gap-3 text-cyan-100">
+                    <FileSearch className="h-5 w-5" />
+                    <span className="text-sm uppercase tracking-[0.26em]">Retained artifact hash helper</span>
+                  </div>
+                  <h2 className="mt-4 text-2xl font-semibold text-white md:text-3xl">
+                    Hash the redacted retained extract before updating the evidence register.
+                  </h2>
+                  <p className="mt-4 text-sm leading-6 text-slate-300">
+                    Use this only after the original buyer file has been reduced to a text-inspectable retained artifact.
+                    The browser computes a SHA-256 reference locally from the pasted retained text. Do not paste raw buyer
+                    files, account numbers, meter identifiers, secrets, or unapproved personal data.
+                  </p>
+                  <div className="mt-5 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50">
+                    This helper creates a hash reference only. It does not prove reviewer acceptance, commercial commitment,
+                    day_14_decision=proceed, or confidence_delta movement.
+                  </div>
+                </div>
+
+                <form onSubmit={handleRetainedArtifactHash} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                  <label htmlFor="retained-artifact-file-name" className="block text-sm font-semibold text-cyan-100">
+                    Retained artifact filename
+                  </label>
+                  <input
+                    id="retained-artifact-file-name"
+                    value={artifactFileName}
+                    onChange={(event) => setArtifactFileName(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
+                    placeholder="redacted-utility-forecast-retained.md"
+                  />
+
+                  <label htmlFor="retained-artifact-text" className="mt-5 block text-sm font-semibold text-cyan-100">
+                    Redacted retained artifact text
+                  </label>
+                  <textarea
+                    id="retained-artifact-text"
+                    value={artifactText}
+                    onChange={(event) => setArtifactText(event.target.value)}
+                    className="mt-2 min-h-44 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
+                    placeholder="Paste only the retained extract: schema, completeness, reviewer notes, source labels, and no raw buyer values."
+                  />
+
+                  <button
+                    type="submit"
+                    disabled={artifactHashPending}
+                    className="mt-5 inline-flex items-center justify-center gap-2 rounded-2xl bg-cyan-300 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-cyan-200 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {artifactHashPending ? 'Computing SHA-256...' : 'Generate SHA-256 reference'}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+
+                  {artifactHashError && (
+                    <div className="mt-4 rounded-2xl border border-red-200/15 bg-red-500/10 p-4 text-sm leading-6 text-red-100">
+                      {artifactHashError}
+                    </div>
+                  )}
+
+                  {artifactHashResult && (
+                    <div className="mt-5 space-y-4 rounded-2xl border border-emerald-200/15 bg-emerald-300/10 p-4">
+                      <div>
+                        <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">Evidence reference</div>
+                        <code className="mt-2 block break-all rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-emerald-100">
+                          {artifactHashResult.reference}
+                        </code>
+                      </div>
+
+                      <dl className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-3">
+                        <RoutePlanInfo label="Normalized file" value={artifactHashResult.fileName} />
+                        <RoutePlanInfo label="Bytes hashed" value={`${artifactHashResult.byteLength}`} />
+                        <RoutePlanInfo label="Line count" value={`${artifactHashResult.lineCount}`} />
+                      </dl>
+
+                      {artifactHashResult.warnings.length > 0 ? (
+                        <div className="rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4">
+                          <div className="text-xs uppercase tracking-[0.2em] text-amber-100">Review warnings</div>
+                          <ul className="mt-3 space-y-2 text-sm leading-6 text-amber-50">
+                            {artifactHashResult.warnings.map((warning) => (
+                              <li key={warning} className="flex gap-2">
+                                <AlertTriangle className="mt-1 h-4 w-4 shrink-0" />
+                                <span>{warning}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-emerald-200/15 bg-slate-950/50 p-4 text-sm leading-6 text-emerald-100">
+                          No retained-artifact warnings were detected. Still verify the extract manually before attaching it
+                          to the buyer-evidence register.
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </form>
+              </div>
+            </div>
           </div>
         </section>
 

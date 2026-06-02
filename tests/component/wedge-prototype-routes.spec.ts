@@ -58,4 +58,23 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByTestId('byo-csv-markdown')).not.toContainText('FDR-9');
     await expect(page.getByRole('button', { name: 'Download report' })).toBeVisible();
   });
+
+  test('generates a retained artifact hash reference on the pilot-readiness route', async ({ page }) => {
+    await page.goto('/pilot-readiness', { waitUntil: 'domcontentloaded' });
+
+    await expect(page.getByText('Retained artifact hash helper')).toBeVisible();
+    await expect(page.getByText(/does not prove reviewer acceptance/)).toBeVisible();
+
+    await page.getByLabel('Retained artifact filename').fill('folder/redacted utility.md');
+    await page.getByLabel('Redacted retained artifact text').fill([
+      'record_date: 2026-06-02',
+      'source_label: buyer_supplied_anonymized',
+      'reviewer_feedback_status: accepted',
+    ].join('\n'));
+    await page.getByRole('button', { name: /Generate SHA-256 reference/ }).click();
+
+    await expect(page.getByText(/redacted_utility\.md#sha256=[a-f0-9]{64}/)).toBeVisible();
+    await expect(page.getByText('Bytes hashed')).toBeVisible();
+    await expect(page.getByText('No retained-artifact warnings were detected.')).toBeVisible();
+  });
 });
