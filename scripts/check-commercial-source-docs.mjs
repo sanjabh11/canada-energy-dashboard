@@ -118,6 +118,7 @@ const stalePostP1LiveParityPhrases = [
   'expected live metadata and static-parity failures remain external production gates',
 ];
 const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
+const buyerEvidenceReadinessReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-readiness.mjs');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
   'Do not compete on enterprise bill management',
@@ -425,6 +426,21 @@ if (!existsSync(sourceDocPath)) {
 
   if (packageScripts['report:phase-f-evidence-workspace'] !== 'node scripts/report-phase-f-evidence-workspace.mjs') {
     failures.push('package.json must keep report:phase-f-evidence-workspace wired to the Phase F evidence workspace status report.');
+  }
+
+  if (!existsSync(buyerEvidenceReadinessReportPath)) {
+    failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
+  } else {
+    const buyerEvidenceReadinessReport = readFileSync(buyerEvidenceReadinessReportPath, 'utf8');
+    if (!/create:phase-f-evidence-workspace/.test(buyerEvidenceReadinessReport)) {
+      failures.push('scripts/report-buyer-evidence-readiness.mjs must point empty Phase F collection to create:phase-f-evidence-workspace.');
+    }
+    if (!/report:phase-f-evidence-workspace/.test(buyerEvidenceReadinessReport)) {
+      failures.push('scripts/report-buyer-evidence-readiness.mjs must point empty Phase F collection to report:phase-f-evidence-workspace.');
+    }
+    if (!outreachRowAppenderPhrase.test(buyerEvidenceReadinessReport)) {
+      failures.push('scripts/report-buyer-evidence-readiness.mjs must point real outreach rows through append:outreach-response-log-row.');
+    }
   }
 
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
