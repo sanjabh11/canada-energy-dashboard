@@ -40,6 +40,22 @@ export interface PilotNinetyFiveGate {
   evidence: string;
 }
 
+export interface PilotMinimumEvidenceLane {
+  id: string;
+  label: string;
+  routeOptions: string[];
+  proofPackOptions: string[];
+  requiredManualInput: string;
+  acceptanceSignal: string;
+}
+
+export interface PilotOperatorCommand {
+  id: string;
+  label: string;
+  command: string;
+  whenToUse: string;
+}
+
 export const pilotEvidenceRequirements: PilotEvidenceRequirement[] = [
   {
     id: 'buyer-load-history',
@@ -308,6 +324,66 @@ export const pilotNinetyFiveGates: PilotNinetyFiveGate[] = [
   },
 ];
 
+export const pilotMinimumEvidenceLanes: PilotMinimumEvidenceLane[] = [
+  {
+    id: 'minimum-utility-forecast',
+    label: 'Utility forecast lane',
+    routeOptions: ['/utility-demand-forecast'],
+    proofPackOptions: ['utility_forecast_planning_pack'],
+    requiredManualInput: 'Anonymized buyer utility load history plus numeric forecast benchmark evidence.',
+    acceptanceSignal: 'Accepted reviewer feedback with day_14_decision=proceed.',
+  },
+  {
+    id: 'minimum-tier-credit',
+    label: 'TIER or credit lane',
+    routeOptions: ['/roi-calculator', '/credit-banking'],
+    proofPackOptions: ['tier_cfo_savings_pack', 'tier_credit_banking_audit_pack'],
+    requiredManualInput: 'Buyer facility assumptions or credit ledger plus reviewer-approved planning output.',
+    acceptanceSignal: 'Accepted reviewer feedback with buyer-specific coverage and retained hash evidence.',
+  },
+  {
+    id: 'minimum-billing-security',
+    label: 'Billing or security lane',
+    routeOptions: ['/shadow-billing', '/utility-security'],
+    proofPackOptions: ['shadow_billing_invoice_pack', 'utility_security_procurement_pack'],
+    requiredManualInput: 'Buyer invoice sample or security questionnaire with redacted retained artifact text.',
+    acceptanceSignal: 'Accepted reviewer feedback plus one strong commercial signal across the buyer rows.',
+  },
+];
+
+export const pilotOperatorCommands: PilotOperatorCommand[] = [
+  {
+    id: 'create-workspace',
+    label: 'Create collection workspace',
+    command: 'pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence',
+    whenToUse: 'Start here before real outreach or Comet-assisted collection. This creates scaffolding only and keeps confidence_delta=0.',
+  },
+  {
+    id: 'report-workspace',
+    label: 'Report current readiness',
+    command: 'pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence',
+    whenToUse: 'Run after workspace creation and after each real buyer-evidence update to see which gates remain blocked.',
+  },
+  {
+    id: 'append-outreach',
+    label: 'Append real anonymized outreach row',
+    command: 'pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --route /utility-demand-forecast --activity-date YYYY-MM-DD --target-label anonymized_target --reply-status data_offered --pilot-evidence-register-action create_intake_packet',
+    whenToUse: 'Use only after a real anonymized buyer reply. Rehearsal rows must not move confidence.',
+  },
+  {
+    id: 'update-register',
+    label: 'Attach retained artifact to register',
+    command: 'pnpm run update:pilot-evidence-register-row -- --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-starter.csv --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts --evidence-file-reference route/artifact.md#sha256=<hash> --confidence-delta 0.3 --output-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv',
+    whenToUse: 'Use after a text-inspectable redacted artifact is prepared and reviewer acceptance can be supported by retained text.',
+  },
+  {
+    id: 'hard-gate',
+    label: 'Run 95% retained-evidence gate',
+    command: 'pnpm run validate:pilot-evidence -- /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv --require-95 --evidence-root /tmp/ceip-phase-f-evidence/redacted-artifacts',
+    whenToUse: 'Run only after the three minimum lanes, hashes, reviewer acceptance, fast delivery, and commercial signal are real.',
+  },
+];
+
 export const pilotOutcomeMetrics: PilotOutcomeMetric[] = [
   {
     id: 'time-to-artifact',
@@ -359,6 +435,8 @@ export function getPilotEvidenceCoverageSummary() {
     laneCount: uniqueLanes.size,
     confidenceRuleCount: pilotConfidenceRules.length,
     ninetyFiveGateCount: pilotNinetyFiveGates.length,
+    minimumLaneCount: pilotMinimumEvidenceLanes.length,
+    operatorCommandCount: pilotOperatorCommands.length,
     outcomeMetricCount: pilotOutcomeMetrics.length,
     stopConditionCount: pilotStopConditions.length,
   };

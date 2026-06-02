@@ -6,8 +6,10 @@ import {
   getPilotEvidenceCoverageSummary,
   pilotConfidenceRules,
   pilotEvidenceRequirements,
+  pilotMinimumEvidenceLanes,
   pilotNinetyFiveGateCommand,
   pilotNinetyFiveGates,
+  pilotOperatorCommands,
   pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
@@ -78,9 +80,75 @@ export function PilotReadinessPage() {
                 <Metric value={`${summary.laneCount}`} label="Buyer lanes" />
                 <Metric value={`${summary.confidenceRuleCount}`} label="Confidence rules" />
                 <Metric value={`${summary.ninetyFiveGateCount}`} label="95% gates" />
+                <Metric value={`${summary.minimumLaneCount}`} label="Minimum lanes" />
+                <Metric value={`${summary.operatorCommandCount}`} label="Operator commands" />
                 <Metric value={`${summary.outcomeMetricCount}`} label="Outcome metrics" />
                 <Metric value={`${summary.stopConditionCount}`} label="Stop conditions" />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="border-b border-white/10 bg-slate-900/40">
+          <div className="mx-auto max-w-7xl px-6 py-16">
+            <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+              <div>
+                <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">Operator runbook</div>
+                <h2 className="mt-4 text-3xl font-semibold text-white md:text-4xl">
+                  The practical next step is a three-lane buyer-evidence workspace, not another demo.
+                </h2>
+                <p className="mt-4 text-base leading-7 text-slate-300">
+                  Use this sequence with real anonymized buyer activity only. It creates the collection workspace,
+                  records route-specific outreach, attaches retained text-inspectable artifacts, and keeps the hard
+                  95% gate blocked until the evidence is actually present.
+                </p>
+              </div>
+
+              <div className="grid gap-4">
+                {pilotMinimumEvidenceLanes.map((lane) => (
+                  <article key={lane.id} className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <h3 className="text-lg font-semibold text-white">{lane.label}</h3>
+                      <div className="text-xs uppercase tracking-[0.18em] text-cyan-100">
+                        {lane.routeOptions.join(' or ')}
+                      </div>
+                    </div>
+                    <dl className="mt-4 grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-2">
+                      <div>
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Proof pack</dt>
+                        <dd className="mt-1">{lane.proofPackOptions.join(' or ')}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Manual input</dt>
+                        <dd className="mt-1">{lane.requiredManualInput}</dd>
+                      </div>
+                      <div className="md:col-span-2">
+                        <dt className="text-xs uppercase tracking-[0.18em] text-slate-400">Acceptance signal</dt>
+                        <dd className="mt-1">{lane.acceptanceSignal}</dd>
+                      </div>
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-10 grid gap-4">
+              {pilotOperatorCommands.map((item, index) => (
+                <article key={item.id} className="rounded-2xl border border-white/10 bg-black/25 p-5">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
+                        Step {index + 1}
+                      </div>
+                      <h3 className="mt-2 text-lg font-semibold text-white">{item.label}</h3>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">{item.whenToUse}</p>
+                    </div>
+                    <div className="w-full overflow-x-auto rounded-xl border border-emerald-200/15 bg-slate-950 p-3 lg:max-w-2xl">
+                      <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{item.command}</code>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </section>

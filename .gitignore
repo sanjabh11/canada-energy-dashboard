@@ -12,6 +12,7 @@ node_modules
 /docs.zip
 /supabase.zip
 /playwright-report/
+/playwright-results.json
 /test-results/
 
 # Environment files (never commit secrets)
@@ -31,6 +32,7 @@ build/
 
 # Supabase generated dumps
 tmp/
+supabase/.temp/linked-project.json
 ops/utility-connector-bridge/tmp/utilityapi-live/
 
 # Ignore nested clone
