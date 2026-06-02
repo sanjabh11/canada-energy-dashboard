@@ -9,6 +9,8 @@ const bundleGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-phase
 const outreachLogGeneratorScriptPath = path.join(process.cwd(), 'scripts/create-outreach-response-log.mjs');
 const outreachRowAppenderScriptPath = path.join(process.cwd(), 'scripts/append-outreach-response-log-row.mjs');
 const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-outreach-intake-packets.mjs');
+const artifactPrepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
+const registerUpdaterScriptPath = path.join(process.cwd(), 'scripts/update-pilot-evidence-register-row.mjs');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const tempRoots: string[] = [];
 
@@ -324,12 +326,109 @@ describe('pilot evidence intake packet generator', () => {
     expect(readmeText).toContain('does not create buyer proof');
     expect(readmeText).toContain('Global 95% Gate Checks');
     expect(readmeText).toContain('The two 95% commands are expected to fail for this starter bundle');
-    expect(readmeText).toContain('prefix that reference with the route folder');
+    expect(readmeText).toContain('--artifact-root');
+    expect(readmeText).toContain('do not hand-prefix it into the top-level register');
 
     const validationResult = await runNodeScript(validatorScriptPath, [registerPath]);
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed for 3 row(s)');
     expect(validationResult.stderr).toBe('');
+  }, 30000);
+
+  it('updates a top-level Phase F bundle register from a route-local retained artifact root', async () => {
+    const outputDir = makeTempRoot();
+    const createResult = await runNodeScript(bundleGeneratorScriptPath, [
+      '--output-dir', outputDir,
+      '--record-date', '2026-06-01',
+    ]);
+    expect(createResult.status).toBe(0);
+
+    const artifactRoot = path.join(outputDir, 'utility-demand-forecast/redacted-artifacts');
+    const prepResult = await runNodeScript(artifactPrepScriptPath, [
+      '--evidence-root',
+      artifactRoot,
+      '--artifact-file',
+      'utility-demand-forecast-retained.md',
+      '--route',
+      '/utility-demand-forecast',
+      '--proof-pack-id',
+      'utility_forecast_planning_pack',
+      '--record-date',
+      '2026-06-01',
+      '--pii-screen-result',
+      'redacted',
+      '--buyer-data-coverage-pct',
+      '90',
+      '--time-to-artifact-hours',
+      '36',
+      '--reviewer-role',
+      'utility planning reviewer',
+      '--reviewer-acceptance',
+      'accepted',
+      '--reviewer-feedback-status',
+      'complete',
+      '--day-14-decision',
+      'proceed',
+      '--commercial-commitment-status',
+      'paid_pilot',
+      '--commercial-commitment-evidence',
+      'paid pilot evidence retained in redacted commercial appendix',
+      '--claim-boundary',
+      'Buyer supplied redacted planning support only and no production onboarding claim.',
+      '--do-not-claim',
+      'Do not claim utility approval or live telemetry.',
+      '--diagnostic',
+      'MAE 12.4 MW; MAPE 3.8%; RMSE 18.6 MW; persistence MAE 21.3 MW; seasonal-naive MAE 19.9 MW; rolling-origin split count 4; interval coverage 91.2%; CEIP champion vs seasonal-naive challenger.',
+    ]);
+    expect(prepResult.status).toBe(0);
+    const evidenceReference = prepResult.stdout.match(/evidence_file_reference: (utility-demand-forecast-retained\.md#sha256=[a-f0-9]{64})/)?.[1];
+    expect(evidenceReference).toBeTruthy();
+
+    const starterRegisterPath = path.join(outputDir, 'phase-f-minimum-register-starter.csv');
+    const updatedRegisterPath = path.join(outputDir, 'phase-f-minimum-register-updated.csv');
+    const updateResult = await runNodeScript(registerUpdaterScriptPath, [
+      '--register-file',
+      starterRegisterPath,
+      '--evidence-root',
+      outputDir,
+      '--artifact-root',
+      artifactRoot,
+      '--evidence-file-reference',
+      evidenceReference as string,
+      '--confidence-delta',
+      '0.3',
+      '--output-file',
+      updatedRegisterPath,
+    ]);
+    expect(updateResult.status).toBe(0);
+    expect(updateResult.stderr).toBe('');
+    expect(updateResult.stdout).toContain('Pilot evidence register row updated.');
+    expect(updateResult.stdout).toContain('evidence_file_reference: utility-demand-forecast/redacted-artifacts/utility-demand-forecast-retained.md#sha256=');
+
+    const updatedRegisterText = readFileSync(updatedRegisterPath, 'utf8');
+    expect(updatedRegisterText).toContain('utility-demand-forecast/redacted-artifacts/utility-demand-forecast-retained.md#sha256=');
+    expect(updatedRegisterText).toContain(',0.3,');
+    expect(updatedRegisterText).not.toContain('utility-demand-forecast-retained.md#sha256=0000');
+
+    const validationResult = await runNodeScript(validatorScriptPath, [
+      updatedRegisterPath,
+      '--evidence-root',
+      outputDir,
+    ]);
+    expect(validationResult.status).toBe(0);
+    expect(validationResult.stderr).toBe('');
+    expect(validationResult.stdout).toContain('Pilot evidence register validation passed for 3 row(s)');
+
+    const gateResult = await runNodeScript(validatorScriptPath, [
+      updatedRegisterPath,
+      '--require-95',
+      '--evidence-root',
+      outputDir,
+    ]);
+    const gateOutput = `${gateResult.stderr}\n${gateResult.stdout}`;
+    expect(gateResult.status).toBe(1);
+    expect(gateOutput).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
+    expect(gateOutput).toContain('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence');
   }, 30000);
 
   it('keeps the Phase F minimum bundle below the hard 95% gate until buyer evidence exists', async () => {
