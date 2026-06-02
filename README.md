@@ -13,10 +13,12 @@ CEIP is maintained as an open-source React/TypeScript evidence-pack application 
 | Public review signal | Current proof |
 |---|---|
 | License | MIT, see [LICENSE](LICENSE). |
+| About metadata | GitHub description, homepage, license, and discovery topics are checked by `pnpm run check:github-repo-metadata`. |
 | CI and scheduled operations | 20 workflow files under `.github/workflows/`, including CI plus data/cron/train jobs. |
 | Release readiness | `pnpm run check:release-readiness` combines claim, source, pilot-evidence, unit, browser, build, metadata, and bundle-budget gates. |
 | Runtime smoke | `pnpm run test:browser:phase6` and `pnpm run test:browser:hosted:proof-packs` cover local and hosted proof-pack routes. |
 | Claim discipline | `pnpm run check:claim-boundaries` and `pnpm run check:commercial-source` keep public positioning bounded to decision support, proof packs, workflow prototypes, and buyer-evidence gates. |
+| Repo hygiene | `pnpm run check:repo-hygiene` blocks scaffold package names, missing license metadata, and tracked local artifacts such as `.DS_Store`, logs, zipped dumps, `Secrets`, Playwright reports, and test results. |
 
 ## Current Commercial Status
 
@@ -55,7 +57,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | New capability | Usage syntax | What was not possible before | Proof boundary |
 |---|---|---|---|
 | Commercial source-of-truth guard | `pnpm run check:commercial-source` | Active outreach, public positioning, root README, and stale historical docs could drift from the current proof-pack strategy. | Guardrail only; human review still required for new claims. |
-| GitHub repository metadata guard | `pnpm run check:github-repo-metadata` | GitHub About fields could regress to a null description, missing license, missing homepage, or empty topics after the source tree was clean. | Public metadata check only; stars, forks, and watchers remain adoption signals, not repo-readiness gates. |
+| GitHub repository metadata guard | `pnpm run check:github-repo-metadata` | GitHub About fields could regress to a null description, missing license, missing homepage, or weak discovery topics after the source tree was clean. | Public metadata check only; stars, forks, and watchers remain adoption signals, not repo-readiness gates. |
 | Strategy roadmap structure guard | `pnpm run check:strategy-roadmap-doc` | The 95% roadmap could lose required sections, source anchors, top-10 rows, loophole questions, or production/buyer gates. | Structural proof only; it does not create buyer evidence or approve deployment. |
 | Strategy completion audit | `pnpm run report:strategy-completion-audit` / `pnpm run check:strategy-completion-audit` | It was easy to confuse completed desk research, live parity, future deploy approval, and buyer evidence gates. | Requirement-by-requirement audit only; it can mark current live parity complete when live checks pass, while buyer-proven market confidence remains external. |
 | Strategy source-anchor report | `pnpm run report:strategy-source-anchors` / `pnpm run check:strategy-source-anchors` | Current-source claims could drift if URLs move, block access, local fetch fails, or manual web evidence expires. | Live-fetch plus date-stamped manual web evidence only; human review still controls strategy claims. This gate is part of `check:release-readiness`. |

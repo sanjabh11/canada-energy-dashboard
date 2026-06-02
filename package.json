@@ -16,9 +16,15 @@
     "energy",
     "esg",
     "forecasting",
+    "regulatory",
     "react",
     "supabase",
-    "typescript"
+    "typescript",
+    "utilities",
+    "npri",
+    "demand-forecasting",
+    "energy-analytics",
+    "climate-tech"
   ],
   "version": "0.0.0",
   "type": "module",

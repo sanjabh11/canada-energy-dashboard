@@ -31,12 +31,18 @@ const forbiddenTrackedPrefixes = [
 const expectedPublicTopics = [
   'analytics',
   'canada',
+  'climate-tech',
+  'demand-forecasting',
   'energy',
+  'energy-analytics',
   'esg',
   'forecasting',
+  'npri',
   'react',
+  'regulatory',
   'supabase',
   'typescript',
+  'utilities',
 ];
 
 const expectedRepositoryUrl = 'https://github.com/sanjabh11/canada-energy-dashboard.git';
@@ -116,9 +122,23 @@ requireText('README.md', 'Repository Snapshot', 'external reviewers need the CI,
 requireText('README.md', '20 workflow files', 'README should surface workflow depth rather than relying on stars or forks');
 
 const gitignore = readFileSync(path.join(repoRoot, '.gitignore'), 'utf8');
-for (const forbiddenPath of [...forbiddenTrackedPaths, 'test-results/']) {
-  if (!gitignore.includes(forbiddenPath)) {
-    failures.push(`.gitignore must include \`${forbiddenPath}\`.`);
+const requiredIgnorePatterns = [
+  '/.DS_Store',
+  '/Actions',
+  '/COMMIT_MESSAGE.txt',
+  '/FETCH_HEAD',
+  '/New',
+  '/Secrets',
+  '/dev.log',
+  '/docs.zip',
+  '/supabase.zip',
+  '/playwright-report/',
+  '/test-results/',
+];
+
+for (const requiredIgnorePattern of requiredIgnorePatterns) {
+  if (!gitignore.includes(requiredIgnorePattern)) {
+    failures.push(`.gitignore must include \`${requiredIgnorePattern}\`.`);
   }
 }
 
