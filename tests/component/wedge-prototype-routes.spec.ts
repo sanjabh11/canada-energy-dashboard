@@ -77,6 +77,7 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByText(/redacted_utility\.md#sha256=[a-f0-9]{64}/)).toBeVisible();
     await expect(page.getByText('Bytes hashed')).toBeVisible();
     await expect(page.getByText('No retained-artifact warnings were detected.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy evidence reference' })).toBeVisible();
   });
 
   test('previews a local pilot evidence register before the hard 95% gate', async ({ page }) => {
@@ -96,5 +97,7 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByTestId('pilot-register-preview-gate-utility-forecast-evidence')).toContainText('Pass');
     await expect(page.getByTestId('pilot-register-preview-gate-commercial-signal')).toContainText('Pass');
     await expect(page.getByTestId('pilot-register-preview-gate-retained-artifact-hashes')).toContainText('Pass');
+    await expect(preview.getByRole('button', { name: 'Copy 95% gate command' })).toBeVisible();
+    await expect(preview.getByRole('button', { name: 'Copy validator command' })).toBeVisible();
   });
 });

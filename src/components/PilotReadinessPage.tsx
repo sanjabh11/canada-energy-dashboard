@@ -30,6 +30,7 @@ export function PilotReadinessPage() {
   const [registerText, setRegisterText] = useState('');
   const [registerFileStatus, setRegisterFileStatus] = useState('');
   const [registerFileError, setRegisterFileError] = useState('');
+  const [copyStatus, setCopyStatus] = useState('');
   const selectedPlan = useMemo(
     () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
     [selectedRoute],
@@ -73,6 +74,17 @@ export function PilotReadinessPage() {
     const text = await file.text();
     setRegisterText(text);
     setRegisterFileStatus(`${file.name} loaded locally for preview; no upload was performed.`);
+  }
+
+  async function handleCopy(value: string, label: string) {
+    setCopyStatus('');
+
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopyStatus(`${label} copied.`);
+    } catch {
+      setCopyStatus(`Unable to copy ${label}. Select the text and copy it manually.`);
+    }
   }
 
   return (
@@ -338,6 +350,10 @@ export function PilotReadinessPage() {
                         <code className="mt-2 block break-all rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-emerald-100">
                           {artifactHashResult.reference}
                         </code>
+                        <CopyButton
+                          label="Copy evidence reference"
+                          onClick={() => handleCopy(artifactHashResult.reference, 'Evidence reference')}
+                        />
                       </div>
 
                       <dl className="grid gap-3 text-sm leading-6 text-slate-200 md:grid-cols-3">
@@ -388,6 +404,10 @@ export function PilotReadinessPage() {
                   <div className="mt-5 overflow-x-auto rounded-2xl border border-emerald-200/15 bg-slate-950 p-4">
                     <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{pilotNinetyFiveGateCommand}</code>
                   </div>
+                  <CopyButton
+                    label="Copy 95% gate command"
+                    onClick={() => handleCopy(pilotNinetyFiveGateCommand, '95% gate command')}
+                  />
                 </div>
 
                 <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
@@ -477,6 +497,22 @@ export function PilotReadinessPage() {
                           </div>
                         ))}
                       </div>
+                      <div className="rounded-2xl border border-cyan-200/15 bg-cyan-300/10 p-4">
+                        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Canonical validator command</div>
+                        <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+                          {registerPreview.cliCommand}
+                        </code>
+                        <CopyButton
+                          label="Copy validator command"
+                          onClick={() => handleCopy(registerPreview.cliCommand, 'Validator command')}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {copyStatus && (
+                    <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/70 p-4 text-sm leading-6 text-slate-200" role="status">
+                      {copyStatus}
                     </div>
                   )}
                 </div>
@@ -725,6 +761,18 @@ function GateStatusPill({ status }: { status: 'pass' | 'blocked' | 'warning' }) 
     <span className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${className}`}>
       {label}
     </span>
+  );
+}
+
+function CopyButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-3 inline-flex items-center justify-center rounded-2xl border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-200 transition hover:border-cyan-200/40 hover:text-white"
+    >
+      {label}
+    </button>
   );
 }
 
