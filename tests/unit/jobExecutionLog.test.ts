@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSupabase = vi.hoisted(() => {
   const insert = vi.fn();
@@ -14,8 +14,14 @@ import { logFallbackEvent } from '../../src/lib/jobExecutionLog';
 
 describe('job execution fallback telemetry', () => {
   beforeEach(() => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'anon-test-key');
     mockSupabase.insert.mockReset();
     mockSupabase.from.mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('writes fallback telemetry to job_execution_log with provenance metadata', async () => {
@@ -56,5 +62,20 @@ describe('job execution fallback telemetry', () => {
         reason: 'dispatch_runtime_heuristic',
       }),
     ).resolves.toBeUndefined();
+  });
+
+  it('no-ops when Supabase telemetry config is absent', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+
+    await expect(
+      logFallbackEvent({
+        jobName: 'ml-forecast:dispatch-runtime',
+        reason: 'dispatch_runtime_heuristic',
+      }),
+    ).resolves.toBeUndefined();
+
+    expect(mockSupabase.from).not.toHaveBeenCalled();
+    expect(mockSupabase.insert).not.toHaveBeenCalled();
   });
 });

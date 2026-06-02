@@ -1,4 +1,4 @@
-import { supabase } from './supabaseClient';
+import { getSupabaseConfig } from './config';
 
 export interface FallbackEvent {
   jobName: string;
@@ -11,6 +11,10 @@ export interface FallbackEvent {
 
 export async function logFallbackEvent(context: FallbackEvent): Promise<void> {
   try {
+    const { url, anonKey } = getSupabaseConfig();
+    if (!url || !anonKey) return;
+
+    const { supabase } = await import('./supabaseClient');
     const completedAt = new Date().toISOString();
     await supabase.from('job_execution_log').insert({
       job_name: context.jobName,
