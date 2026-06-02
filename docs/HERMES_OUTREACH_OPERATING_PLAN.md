@@ -28,11 +28,19 @@
 5. Send manually only.
 6. Immediately log each real send:
    - `python3 ~/.hermes/scripts/ceip_log_manual_send.py --target "<full name>" --channel linkedin --variant <variant_id>`
-7. Mirror only anonymized proof-pack response evidence into the repo template when a reply changes pilot follow-up:
-   - `docs/growth/templates/OUTREACH_RESPONSE_LOG_TEMPLATE.csv`
-   - `pnpm run validate:outreach-response-log -- path/to/outreach-response-log.csv`
-   - `pnpm run report:outreach-response-log -- path/to/outreach-response-log.csv`
-   - `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`
+7. Start Phase F repo evidence collection from a zero-evidence workspace, not from hand-edited CSV files:
+   - `pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence`
+   - `pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence`
+8. Mirror only anonymized proof-pack response evidence into the repo when a completed send or reply changes pilot follow-up:
+   - append rows with `pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...`
+   - do not hand-edit confidence-moving CSV rows
+   - validate status with `pnpm run validate:outreach-response-log -- /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv`
+   - summarize with `pnpm run report:outreach-response-log -- /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv`
+   - plan intake with `pnpm run plan:outreach-intake -- /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv`
+   - create intake packets only for actionable rows with `pnpm run create:outreach-intake-packets -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv --output-dir /tmp/ceip-phase-f-evidence/outreach-intake-packets`
+9. Keep market confidence unchanged until retained buyer artifacts and the register pass:
+   - `pnpm run report:buyer-evidence-readiness -- --root /tmp/ceip-phase-f-evidence --evidence-root /tmp/ceip-phase-f-evidence/phase-f-minimum-intake`
+   - `pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts`
 
 ## Route-Selection Matrix
 
@@ -86,7 +94,7 @@ Every real send must capture:
 - `artifact_promised`
 - `reply_status`
 
-If the current logger cannot accept all fields, record them in the notes column or append them to the manual activity row until the script is upgraded.
+If the current Hermes logger cannot accept all fields, record them in the Hermes notes column or append them to the manual Hermes activity row until that external script is upgraded. The repo mirror must still use `append:outreach-response-log-row` so `buyer_lane`, `proof_pack_id`, direct-identifier screening, future-date screening, and evidence-action rules are validated before the row is retained.
 
 Repo-retained response logs must stay anonymized. Use `target_label` values such as `utility_consultant_001`; keep full names, emails, phone numbers, account IDs, meter IDs, addresses, and sensitive originals outside this repo. The response log is an outreach evidence queue only; it does not move market confidence until the matching buyer evidence register and retained artifact hashes pass validation.
 
