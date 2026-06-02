@@ -48,6 +48,12 @@ It is intentionally descriptive first: it explains current source -> function ->
 - A dedicated ECCC cron wrapper if weather needs a separate operational schedule beyond the current weather ingestion job.
 - A more complete curated corpus before broader RAG tuning.
 
+## Supabase Production Lint Gate
+- Run `pnpm run report:supabase-app-lint` from a Supabase-authenticated workstation to separate CEIP app-owned lint findings from extension-owned findings.
+- Run `pnpm run check:supabase-app-lint` before production approval when database credentials are available locally. This fails if app-owned PL/pgSQL lint findings remain.
+- Current known residual lints after the June 2 resilience-score patch are extension-owned PostGIS/long-transaction functions, not CEIP application functions. Treat them as extension lifecycle debt unless Supabase Advisor reports an app-owned security or performance finding.
+- Do not print or commit Supabase database passwords, service-role keys, or raw linter connection strings. The report script prints function names and lint messages only.
+
 ## Operating Rules
 - Do not add a new cron/function unless the current topology proves a concrete gap.
 - All user-facing outputs that consume these flows must preserve provenance and freshness metadata where available.

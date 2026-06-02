@@ -143,6 +143,7 @@ pnpm run report:strategy-source-anchors
 pnpm run check:strategy-source-anchors
 pnpm run check:production-deploy-script
 pnpm run check:client-env-safety
+pnpm run check:supabase-app-lint
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```
@@ -162,6 +163,8 @@ pnpm run check:post-deploy-live
 `check:post-deploy-live` runs live metadata checks, exact static parity against the already-built and deployed `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`. Build `dist` first with `pnpm run build:prod` or the full release-readiness/deploy script; the post-deploy gate does not rebuild because rebuilding can produce different hashed entry chunks than the artifact that was just deployed.
 
 `check:client-env-safety` rejects client-exposed `VITE_*` key names that look privileged, including service-role, secret, private, password, database URL, JWT, signing, webhook, admin, root, or master credentials. Supabase's frontend-safe key remains the anon or publishable key with RLS; service-role keys must stay backend-only because they bypass RLS. The guard reports only key names and source surfaces, never values.
+
+`check:supabase-app-lint` runs the linked Supabase database linter and classifies findings as extension-owned or CEIP app-owned. It fails when app-owned PL/pgSQL lint findings remain, while keeping extension-owned PostGIS/long-transaction findings visible as platform lifecycle debt. Run it from a Supabase-authenticated workstation before production approval; do not add database passwords or service-role values to CI logs.
 
 `check:release-readiness` includes `check:strategy-source-anchors`, `check:production-deploy-script`, `check:client-env-safety`, and `check:strategy-completion-audit`, so production approval packets inherit the current-source anchor gate, the production deploy script drift guard, the client env safety gate, and the original-plan requirement audit before any deploy request. The source-anchor gate uses a bounded retry for transient network, timeout, 408/429, and 5xx fetch failures, then still fails if an anchor is neither live-verified nor covered by current manual evidence.
 
