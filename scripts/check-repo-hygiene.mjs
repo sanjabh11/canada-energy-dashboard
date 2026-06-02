@@ -17,6 +17,7 @@ const forbiddenTrackedPaths = [
   'dev.log',
   'docs.zip',
   'supabase.zip',
+  'playwright-results.json',
 ];
 
 const forbiddenTrackedBasenames = [
@@ -133,6 +134,7 @@ const requiredIgnorePatterns = [
   '/docs.zip',
   '/supabase.zip',
   '/playwright-report/',
+  '/playwright-results.json',
   '/test-results/',
 ];
 

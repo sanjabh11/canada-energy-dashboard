@@ -95,6 +95,13 @@ if (packageJson) {
     /"check:release-readiness":\s*"[^"]*check:production-deploy-script/,
     'include the production deploy script guard in release readiness',
   );
+  requireText(packageJson, packageRelativePath, '"check:client-env-safety"');
+  requirePattern(
+    packageJson,
+    packageRelativePath,
+    /"check:release-readiness":\s*"[^"]*check:client-env-safety/,
+    'include the client env safety guard in release readiness',
+  );
 
   const browserScripts = [
     'test:wedge-prototype-routes',
