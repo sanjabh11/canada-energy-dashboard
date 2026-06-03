@@ -94,6 +94,10 @@ pnpm run build:prod || {
   echo -e "${RED}❌ Build failed${NC}"
   exit 1
 }
+pnpm run check:built-client-env || {
+  echo -e "${RED}❌ Built client env check failed${NC}"
+  exit 1
+}
 echo -e "${GREEN}✅ Build successful${NC}"
 
 # Check build size

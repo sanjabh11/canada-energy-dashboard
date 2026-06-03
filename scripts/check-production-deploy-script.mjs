@@ -46,11 +46,21 @@ const deployScript = requireFile(deployScriptPath, deployScriptRelativePath);
 const packageJson = requireFile(packagePath, packageRelativePath);
 const publicRedirects = requireFile(publicRedirectsPath, publicRedirectsRelativePath);
 const publicHeaders = requireFile(publicHeadersPath, publicHeadersRelativePath);
+let packageConfig = {};
+
+if (packageJson) {
+  try {
+    packageConfig = JSON.parse(packageJson);
+  } catch {
+    failures.push(`${packageRelativePath} must be valid JSON.`);
+  }
+}
 
 if (deployScript) {
   const requiredFragments = [
     'pnpm run check:release-readiness',
     'pnpm run build:prod',
+    'pnpm run check:built-client-env',
     'DEPLOY CEIP PRODUCTION',
     'netlify deploy --prod --no-build --dir=dist',
     'pnpm run check:post-deploy-live',
@@ -96,12 +106,33 @@ if (packageJson) {
     'include the production deploy script guard in release readiness',
   );
   requireText(packageJson, packageRelativePath, '"check:client-env-safety"');
+  requireText(packageJson, packageRelativePath, '"check:built-client-env"');
   requirePattern(
     packageJson,
     packageRelativePath,
     /"check:release-readiness":\s*"[^"]*check:client-env-safety/,
     'include the client env safety guard in release readiness',
   );
+  requirePattern(
+    packageJson,
+    packageRelativePath,
+    /"check:release-readiness":\s*"[^"]*check:built-client-env/,
+    'include the built client env guard in release readiness',
+  );
+
+  const e2ePreviewScript = String(packageConfig.scripts?.['test:e2e:preview'] ?? '');
+  if (!e2ePreviewScript.includes('PLAYWRIGHT_DIST_DIR:-/tmp/ceip-playwright-dist')) {
+    failures.push(`${packageRelativePath} must keep Playwright preview builds outside production dist/.`);
+  }
+  if (!e2ePreviewScript.includes('vite preview --outDir "$OUT_DIR"')) {
+    failures.push(`${packageRelativePath} must serve Playwright preview tests from the temporary outDir.`);
+  }
+  if (!e2ePreviewScript.includes('vite build --outDir "$OUT_DIR" --emptyOutDir')) {
+    failures.push(`${packageRelativePath} must build Playwright preview tests into the temporary outDir.`);
+  }
+  if (/pnpm run build/.test(e2ePreviewScript)) {
+    failures.push(`${packageRelativePath} must not let Playwright preview builds overwrite production dist/.`);
+  }
 
   const browserScripts = [
     'test:wedge-prototype-routes',
