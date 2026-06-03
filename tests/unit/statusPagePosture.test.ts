@@ -8,7 +8,7 @@ describe('status page release posture', () => {
     expect(deployPosture).toBeTruthy();
     expect(deployPosture?.status).toBe('watch');
     expect(deployPosture?.rating).toBe('4.2/5');
-    expect(deployPosture?.evidence).toMatch(/d602a58/);
+    expect(deployPosture?.evidence).toMatch(/current pushed `main` source/i);
     expect(deployPosture?.evidence).toMatch(/live static parity is not achieved/i);
     expect(deployPosture?.nextAction).toMatch(/DEPLOY CEIP PRODUCTION/);
     expect(deployPosture?.nextAction).toMatch(/check:post-deploy-live/);
@@ -45,7 +45,7 @@ describe('status page release posture', () => {
     expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(6);
     expect(deployEvidence?.status).toBe('watch');
     expect(deployEvidence?.publicReference?.url).toContain('6a1fc17dad273f241f9ba768');
-    expect(deployEvidence?.evidenceBoundary).toMatch(/latest source `d602a58` is ahead of production/i);
+    expect(deployEvidence?.evidenceBoundary).toMatch(/current pushed source is ahead of production/i);
     expect(deployRequestEvidence?.status).toBe('verified');
     expect(deployRequestEvidence?.command).toContain('report:production-approval-packet');
     expect(deployRequestEvidence?.evidenceBoundary).toMatch(/live static dist parity fails/i);

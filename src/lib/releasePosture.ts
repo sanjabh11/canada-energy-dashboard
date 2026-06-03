@@ -29,14 +29,14 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     title: 'Production deploy gate and live parity',
     status: 'watch',
     rating: '4.2/5',
-    evidence: 'Latest source `d602a58` passes local release readiness and is ready for an explicit owner-approved remediation deploy request, but live static parity is not achieved because production still serves the older deployed artifact.',
+    evidence: 'The current pushed `main` source passes local release readiness and is ready for an explicit owner-approved remediation deploy request, but live static parity is not achieved because production still serves the older deployed artifact.',
     nextAction: 'Deploy only after explicit `DEPLOY CEIP PRODUCTION` approval, then rerun `pnpm run check:post-deploy-live` before calling current-source live parity complete.',
   },
   {
     title: 'GitHub release and cron gates',
     status: 'verified',
     rating: '4.7/5',
-    evidence: 'GitHub CI passed for latest commit `d602a58`; recent scheduled/soak workflows remain visible as separate workflow evidence and must be reviewed after their own triggers.',
+    evidence: 'GitHub CI passed for the current pushed `main` source; recent scheduled/soak workflows remain visible as separate workflow evidence and must be reviewed after their own triggers.',
     nextAction: 'Review GitHub Actions after every push because older failed runs remain visible until superseded.',
   },
   {
@@ -74,7 +74,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     label: 'Last verified production artifact',
     status: 'watch',
     command: 'pnpm run check:post-deploy-live',
-    evidenceBoundary: 'Production deploy `6a1fc17dad273f241f9ba768` previously passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for that deployed artifact only; latest source `d602a58` is ahead of production until a new approved deploy passes post-deploy live checks.',
+    evidenceBoundary: 'Production deploy `6a1fc17dad273f241f9ba768` previously passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for that deployed artifact only; current pushed source is ahead of production until a new approved deploy passes post-deploy live checks.',
     publicReference: {
       label: 'Netlify deploy',
       url: 'https://app.netlify.com/projects/canada-energy/deploys/6a1fc17dad273f241f9ba768',
@@ -84,7 +84,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     label: 'Current source deploy request',
     status: 'verified',
     command: 'pnpm run report:production-approval-packet',
-    evidenceBoundary: 'Source deploy provenance and local release readiness pass on clean `main` at `d602a58`; live metadata passes, live static dist parity fails, and deployment request readiness is ready for explicit owner approval.',
+    evidenceBoundary: 'Source deploy provenance and local release readiness pass on clean pushed `main`; live metadata passes, live static dist parity fails, and deployment request readiness is ready for explicit owner approval.',
   },
   {
     label: 'Current source CI gate',

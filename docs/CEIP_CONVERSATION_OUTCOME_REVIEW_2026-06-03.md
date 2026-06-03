@@ -2,13 +2,13 @@
 
 > Date: 2026-06-03
 > Scope: Canada Energy Intelligence Platform strategy, proof-pack implementation, buyer-evidence gates, Supabase/GitHub readiness, and production deploy status.
-> Evidence basis: current repo at `d602a58`, GitHub CI run `26871146346`, Netlify production deploy `6a1fc17dad273f241f9ba768`, production approval packet generated 2026-06-03T07:58:34Z, repo-native verification commands, Supabase CLI lint, Supabase connector checks, and current official/source anchors.
+> Evidence basis: current pushed `main` source verified with repo-native commands, the latest GitHub CI run for that pushed source, Netlify production deploy `6a1fc17dad273f241f9ba768`, production approval packet output, Supabase CLI lint, Supabase connector checks, and current official/source anchors. Refresh `git log -1`, `gh run list`, and `pnpm run report:production-approval-packet` after every new commit.
 
 ## Current Verdict
 
 The desk-research strategy, public proof-pack positioning, release hygiene, GitHub hygiene, local release readiness, Supabase app-owned lint posture, and source-side claim boundaries are in strong shape. The repo is clean on `main`, current GitHub CI is green, and the production deploy request is ready for explicit owner approval.
 
-The full market-confidence and production-currentness goal is not complete. Production static parity is currently not achieved because latest source `d602a58` is ahead of the live Netlify artifact. Buyer-proven 95% market confidence is still blocked because there is no real production buyer-evidence register, no accepted buyer proof packs, no real commercial commitment artifact, and Supabase MCP advisor access is still permission-denied for project `qnymbecjgeaoxsfphrti`.
+The full market-confidence and production-currentness goal is not complete. Production static parity is currently not achieved because the current pushed source is ahead of the live Netlify artifact. Buyer-proven 95% market confidence is still blocked because there is no real production buyer-evidence register, no accepted buyer proof packs, no real commercial commitment artifact, and Supabase MCP advisor access is still permission-denied for project `qnymbecjgeaoxsfphrti`.
 
 Buyer-proven 95% market confidence must remain blocked until a real filled pilot evidence register passes:
 
@@ -20,8 +20,8 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 
 | Area | Current state | Verification |
 |---|---|---|
-| Repo head | `main` matches `origin/main` at `d602a58 chore: remove committed supabase token literals` | `git status --short --branch`, `git log --oneline -5` |
-| GitHub CI | Latest CI passed for `d602a58` | `gh run watch 26871146346 --repo sanjabh11/canada-energy-dashboard --exit-status` |
+| Repo head | `main` matches `origin/main`; use the latest local SHA at review time, not a frozen document literal, as source truth | `git status --short --branch`, `git log --oneline -5` |
+| GitHub CI | Latest CI for the current pushed source must be green before release work continues | `gh run list --repo sanjabh11/canada-energy-dashboard --limit 5`; watch the latest run with `gh run watch <run-id> --exit-status` |
 | Production deploy | Live site is still the prior Netlify artifact `6a1fc17dad273f241f9ba768` | `pnpm run report:production-approval-packet` |
 | Production deploy request | Ready for explicit owner approval; source provenance and local release readiness pass | `pnpm run report:production-approval-packet` |
 | Live static parity | Fails for current source because production still serves older static files | `check-live-static-parity` inside the production approval packet |
@@ -30,7 +30,7 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 | Supabase app-owned lint | 0 app-owned findings; 14 extension-owned lint rows remain visible but not app blockers | `pnpm run check:supabase-app-lint` |
 | Supabase connector advisors | Still permission denied for project `qnymbecjgeaoxsfphrti` | Supabase MCP `_get_project`, `_get_advisors` security/performance |
 | Supabase token hygiene | Current scanned source surfaces contain no JWT-like literals; guard now fails future committed token literals | `pnpm run check:client-env-safety` |
-| Git LFS | Installed and push path works | `git lfs version`; successful pushes of `4e5f5d6` and `d602a58` |
+| Git LFS | Installed and push path works | `git lfs version`; successful pushes on `main` |
 
 Rating scale used below: 5 = strong and verified now, 4 = strong but needs buyer proof or post-deploy proof, 3 = implemented but secondary, 2 = partial/candidate, 1 = blocked or absent.
 
@@ -56,10 +56,10 @@ Rating scale used below: 5 = strong and verified now, 4 = strong but needs buyer
 | 95/100 desk-research strategy-direction confidence | 5 | Seven strategy pillars, top-10 proof packs, whitespace, loophole ledger, and source anchors are documented and guarded | Active roadmap plus `check:strategy-roadmap-doc`; official IESO, OEB, Alberta TIER, incumbent, NIST, OWASP, and Supabase sources |
 | Public app front door leads with proof packs | 5 | Landing flow now sells ten proof packs and pilot gates, not generic AI/dashboard surface area | Production site screenshots, `/solutions`, claim-boundary guard |
 | Live stale metadata fixed for last deployed artifact | 5 | Prior root, manifest, and JSON-LD overclaims were removed from production | Last post-deploy live checks for deploy `6a1fc17dad273f241f9ba768` |
-| Current source release readiness | 5 | Latest source passes release-readiness preflight, unit/browser/build/metadata/bundle gates | Production approval packet at `d602a58`; GitHub CI `26871146346` |
+| Current source release readiness | 5 | Current pushed source passes release-readiness preflight, unit/browser/build/metadata/bundle gates | Production approval packet and latest GitHub CI for pushed `main` |
 | Deploy safety model | 5 | Deploy script requires clean `main`, local release readiness, exact owner phrase, no-build `dist` deploy, and post-deploy checks | `check:production-deploy-script`, `report:production-approval-packet` |
 | GitHub OSS hygiene | 5 | Description, MIT license, topics, repo hygiene, package identity, Git LFS push path, and CI are aligned | GitHub checks and latest CI |
-| Supabase source hygiene | 5 | Committed Supabase JWT-like literals removed; client env safety now scans 874 source surfaces for JWT-like literals | Commit `d602a58`, `check:client-env-safety` |
+| Supabase source hygiene | 5 | Committed Supabase JWT-like literals removed; client env safety scans source surfaces for JWT-like literals | `check:client-env-safety` |
 | Supabase app lint posture | 4 | App-owned lint findings are zero; extension-owned PostGIS/long-transaction findings stay visible | `check:supabase-app-lint` |
 | GA/ICI and BYO-CSV candidate wedges | 4 | Both became bounded route-level prototypes with retained-artifact support and guarded copy | Wedge route tests, source anchors, browser smoke |
 | Buyer-evidence automation scaffolding | 4 | Phase F workspaces, outreach logs, intake packets, retained hashes, and hard 95% validator exist | Templates, validators, `report:buyer-evidence-readiness`; no real buyer evidence yet |
@@ -68,7 +68,7 @@ Rating scale used below: 5 = strong and verified now, 4 = strong but needs buyer
 
 | Gap | Severity | Why still open | Next target | Strategy / action | Owner |
 |---|---:|---|---|---|---|
-| Current source is not live in production | Critical | Live static parity fails because Netlify still serves the older artifact | Deploy `d602a58` and pass `check:post-deploy-live` | Send exact approval phrase `DEPLOY CEIP PRODUCTION`; run guarded deploy; verify hosted metadata, exact static parity, and hosted proof-pack smoke | User approval, then Codex |
+| Current source is not live in production | Critical | Live static parity fails because Netlify still serves the older artifact | Deploy current pushed `main` and pass `check:post-deploy-live` | Send exact approval phrase `DEPLOY CEIP PRODUCTION`; run guarded deploy; verify hosted metadata, exact static parity, and hosted proof-pack smoke | User approval, then Codex |
 | No real buyer-evidence register | Critical | Repo scan finds no production register or outreach response log outside templates/fixtures | Three accepted buyer proof packs and `confidence_delta >= 0.9` | Use Phase F workspace; append real anonymized buyer rows; prepare retained artifacts; update register through helper; run hard 95% gate | User/operator with buyer access |
 | No commercial commitment artifact | Critical | App is not released; no paid pilot, PO, LOI, or signed design-partner evidence exists | One accepted commercial signal with retained redacted text proof | Keep rehearsals at `confidence_delta=0`; capture real commitment only when available | User/operator |
 | Supabase MCP advisor permission denied | High | Connector can list some projects but cannot read `qnymbecjgeaoxsfphrti` advisors | Security/performance advisors readable and reviewed | Reauthorize connector or invite connector-authenticated user to the project/org; rerun `_get_advisors` security and performance | User/account admin |
