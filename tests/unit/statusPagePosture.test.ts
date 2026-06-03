@@ -2,17 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { DEPLOYMENT_APPROVAL_CHECKLIST, RELEASE_HEALTH_EVIDENCE, RELEASE_POSTURE } from '../../src/lib/releasePosture';
 
 describe('status page release posture', () => {
-  it('marks production live parity verified only for the current post-deploy live gate evidence', () => {
+  it('marks production live parity as a watch item when current source is ahead of production', () => {
     const deployPosture = RELEASE_POSTURE.find((item) => item.title.includes('live parity'));
 
     expect(deployPosture).toBeTruthy();
-    expect(deployPosture?.status).toBe('verified');
-    expect(deployPosture?.rating).toBe('5.0/5');
-    expect(deployPosture?.evidence).toMatch(/6a1fc17dad273f241f9ba768/);
-    expect(deployPosture?.evidence).toMatch(/check:post-deploy-live/);
-    expect(deployPosture?.evidence).toMatch(/hosted proof-pack route smoke/i);
-    expect(deployPosture?.nextAction).toMatch(/current deployed artifact/i);
-    expect(deployPosture?.nextAction).toMatch(/after any source or deploy change/i);
+    expect(deployPosture?.status).toBe('watch');
+    expect(deployPosture?.rating).toBe('4.2/5');
+    expect(deployPosture?.evidence).toMatch(/d602a58/);
+    expect(deployPosture?.evidence).toMatch(/live static parity is not achieved/i);
+    expect(deployPosture?.nextAction).toMatch(/DEPLOY CEIP PRODUCTION/);
+    expect(deployPosture?.nextAction).toMatch(/check:post-deploy-live/);
   });
 
   it('reports Supabase lint status without treating extension-owned findings as app-owned blockers', () => {
@@ -37,14 +36,19 @@ describe('status page release posture', () => {
   });
 
   it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
-    const deployEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current verified production artifact');
+    const deployEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Last verified production artifact');
+    const deployRequestEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source deploy request');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(5);
-    expect(deployEvidence?.status).toBe('verified');
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(6);
+    expect(deployEvidence?.status).toBe('watch');
     expect(deployEvidence?.publicReference?.url).toContain('6a1fc17dad273f241f9ba768');
+    expect(deployEvidence?.evidenceBoundary).toMatch(/latest source `d602a58` is ahead of production/i);
+    expect(deployRequestEvidence?.status).toBe('verified');
+    expect(deployRequestEvidence?.command).toContain('report:production-approval-packet');
+    expect(deployRequestEvidence?.evidenceBoundary).toMatch(/live static dist parity fails/i);
     expect(sourceEvidence?.status).toBe('verified');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();

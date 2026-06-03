@@ -1,6 +1,6 @@
 # CEIP Commercial Source Of Truth
 
-> Date: June 1, 2026
+> Date: June 3, 2026
 > Purpose: define which docs can be used for current sales, outreach, pilot scoping, and public positioning.
 > Rule: when this file conflicts with older research, outreach, PRD, or monetization notes, this file and the active docs below win.
 
@@ -13,6 +13,7 @@ Use these files for current CEIP positioning:
 | [README.md](../README.md) | Public repo entrypoint. | Must lead with proof-pack positioning, current ratings, verification commands, and do-not-claim boundaries. |
 | [Top20.md](./Top20.md) | Ranked product and USP source of truth. | Desk-research strategy-direction confidence is 95/100; 95% market confidence needs buyer-supplied pilot evidence. |
 | [CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md](./CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md) | Current 95% desk-research strategy-direction roadmap and gap ledger. | Does not raise market confidence above the buyer-evidence gate; live parity is achieved only when post-deploy live checks pass for the current production artifact, future deploys require approval, and buyer evidence remains the confidence blocker. |
+| [CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md](./CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md) | Current conversation mission review, achieved-target table, remaining-gap table, and next UI-feature roadmap. | Production static parity for latest source is not achieved until an approved deploy passes `check:post-deploy-live`; buyer-proven 95% market confidence remains blocked until the real pilot evidence register passes the hard gate. |
 | [PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md](./PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md) | Buyer evidence intake and 14-day pilot acceptance checklist. | No feature rating increase without matching buyer evidence. |
 | [MVP_DEMO_FREEZE_HANDOFF.md](./MVP_DEMO_FREEZE_HANDOFF.md) | Demo runbook and customer narrative boundary. | UtilityAPI remains fixture/sandbox; no production onboarding claims. |
 | [HERMES_OUTREACH_OPERATING_PLAN.md](./HERMES_OUTREACH_OPERATING_PLAN.md) | Manual outreach operating plan. | Proof-pack pilot outreach only; stop conditions apply. |

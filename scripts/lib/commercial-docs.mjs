@@ -2,6 +2,7 @@ export const requiredActiveCommercialDocs = [
   'README.md',
   'docs/Top20.md',
   'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md',
+  'docs/CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md',
   'docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md',
   'docs/MVP_DEMO_FREEZE_HANDOFF.md',
   'docs/HERMES_OUTREACH_OPERATING_PLAN.md',
