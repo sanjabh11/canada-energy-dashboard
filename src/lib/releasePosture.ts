@@ -27,10 +27,10 @@ export interface DeploymentApprovalChecklistItem {
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
     title: 'Production deploy gate and live parity',
-    status: 'watch',
-    rating: '4.2/5',
-    evidence: 'The current pushed `main` source passes local release readiness and is ready for an explicit owner-approved remediation deploy request, but live static parity is not achieved because production still serves the older deployed artifact.',
-    nextAction: 'Deploy only after explicit `DEPLOY CEIP PRODUCTION` approval, then rerun `pnpm run check:post-deploy-live` before calling current-source live parity complete.',
+    status: 'verified',
+    rating: '5.0/5',
+    evidence: 'Production live parity is verified for the deployed artifact: remote metadata passed, hosted `/`, `/manifest.json`, and `/schema-webapp.jsonld` match built `dist`, and hosted proof-pack smoke passed.',
+    nextAction: 'Rerun `pnpm run check:post-deploy-live` after every approved production deploy; do not treat a future source commit as live-proven until that gate passes again.',
   },
   {
     title: 'GitHub release and cron gates',
@@ -72,19 +72,19 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
 export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Last verified production artifact',
-    status: 'watch',
+    status: 'verified',
     command: 'pnpm run check:post-deploy-live',
-    evidenceBoundary: 'Production deploy `6a1fc17dad273f241f9ba768` previously passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for that deployed artifact only; current pushed source is ahead of production until a new approved deploy passes post-deploy live checks.',
+    evidenceBoundary: 'The latest approved production deploy passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for that deployed artifact only; future source changes require another approved deploy and post-deploy live check.',
     publicReference: {
-      label: 'Netlify deploy',
-      url: 'https://app.netlify.com/projects/canada-energy/deploys/6a1fc17dad273f241f9ba768',
+      label: 'Netlify deploys',
+      url: 'https://app.netlify.com/projects/canada-energy/deploys',
     },
   },
   {
-    label: 'Current source deploy request',
+    label: 'Current production parity gate',
     status: 'verified',
-    command: 'pnpm run report:production-approval-packet',
-    evidenceBoundary: 'Source deploy provenance and local release readiness pass on clean pushed `main`; live metadata passes, live static dist parity fails, and deployment request readiness is ready for explicit owner approval.',
+    command: 'pnpm run check:post-deploy-live',
+    evidenceBoundary: 'The approved production artifact passed live metadata, exact static dist parity, and hosted proof-pack route smoke; rerun this after future source changes and production deploys.',
   },
   {
     label: 'Current source CI gate',
