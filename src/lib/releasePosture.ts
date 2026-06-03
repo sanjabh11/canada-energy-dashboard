@@ -16,10 +16,10 @@ export interface DeploymentApprovalChecklistItem {
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
     title: 'Production deploy gate and live parity',
-    status: 'watch',
-    rating: '4.2/5',
-    evidence: 'Deploy script and post-deploy gates are configured, but latest live parity is proven only when `check:post-deploy-live` passes after the explicit production deploy.',
-    nextAction: 'Run `pnpm run report:production-approval-packet`, obtain the exact owner approval phrase, deploy, then run `pnpm run check:post-deploy-live`.',
+    status: 'verified',
+    rating: '5.0/5',
+    evidence: 'Production deploy `6a1fc17dad273f241f9ba768` is live, and `pnpm run check:post-deploy-live` passed for hosted metadata, exact static dist parity, and hosted proof-pack route smoke.',
+    nextAction: 'Keep this verified only for the current deployed artifact; after any source or deploy change, rerun the guarded deploy flow and `pnpm run check:post-deploy-live`.',
   },
   {
     title: 'GitHub release and cron gates',
@@ -48,6 +48,13 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     rating: '4.1/5',
     evidence: '`pnpm run report:supabase-app-lint` reports zero app-owned lint findings on the linked project; remaining findings are extension-owned PostGIS/long-transaction functions.',
     nextAction: 'Keep `check:supabase-app-lint` in the production preflight and review account-level Supabase dashboard advisors manually before stronger production-security claims.',
+  },
+  {
+    title: 'Supabase advisor connector access',
+    status: 'needs_remediation',
+    rating: '2.0/5',
+    evidence: 'Supabase MCP security and performance advisor calls still return permission denied for project `qnymbecjgeaoxsfphrti`; CLI lint works, but connector-backed advisor evidence is unavailable.',
+    nextAction: 'Fix Supabase connector or project authorization, then rerun the security and performance advisors before claiming connector-level Supabase review coverage.',
   },
 ];
 
