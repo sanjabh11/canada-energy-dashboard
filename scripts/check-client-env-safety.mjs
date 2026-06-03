@@ -9,6 +9,8 @@ const repoRoot = rootArgIndex >= 0 ? path.resolve(args[rootArgIndex + 1] ?? '') 
 
 const checkedSources = [];
 const failures = [];
+const jwtLikeLiteralPattern = /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/g;
+const jwtLiteralScanExtensions = /\.(?:mjs|js|ts|tsx|yml|yaml|toml|sql|md|json|sh)$/i;
 
 const dangerousClientKeyPatterns = [
   { label: 'service-role key', pattern: /SERVICE_?ROLE/i },
@@ -88,6 +90,16 @@ function scanTextForViteKeys(source, text) {
   for (const match of matches) inspectClientKey(source, match[1]);
 }
 
+function scanTextForJwtLikeLiterals(source, text) {
+  checkedSources.push(source);
+  const lines = text.split(/\r?\n/);
+  lines.forEach((line, index) => {
+    const matches = line.match(jwtLikeLiteralPattern);
+    if (!matches) return;
+    failures.push(`${source}:${index + 1}: found ${matches.length} JWT-like literal(s). Keep Supabase anon/publishable keys and other bearer tokens in env vars or placeholders, not committed source.`);
+  });
+}
+
 function scanEnvFile(relativePath) {
   const absolutePath = path.join(repoRoot, relativePath);
   const text = readFileSync(absolutePath, 'utf8');
@@ -123,6 +135,12 @@ for (const configFile of ['netlify.toml', 'vite.config.ts', 'vite.config.js']) {
 
 for (const workflowFile of listFilesRecursively('.github', (relativePath) => /\.(ya?ml)$/i.test(relativePath))) {
   scanTextForViteKeys(workflowFile, readFileSync(path.join(repoRoot, workflowFile), 'utf8'));
+}
+
+for (const sourceRoot of ['.github', 'scripts', 'src', 'supabase']) {
+  for (const sourceFile of listFilesRecursively(sourceRoot, (relativePath) => jwtLiteralScanExtensions.test(relativePath))) {
+    scanTextForJwtLikeLiterals(sourceFile, readFileSync(path.join(repoRoot, sourceFile), 'utf8'));
+  }
 }
 
 scanPackageJson();

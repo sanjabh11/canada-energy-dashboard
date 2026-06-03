@@ -5,8 +5,16 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://qnymbecjgeaoxsfphrti.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFueW1iZWNqZ2Vhb3hzZnBocnRpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTYwMTczNjEsImV4cCI6MjA3MTU5MzM2MX0.6wAWe5GdKzTOjVa0eUVhDJ4IwczseO9A83uwXlDg0DU';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_FUNCTIONS_BASE =
+  process.env.VITE_SUPABASE_EDGE_BASE ??
+  (SUPABASE_URL ? SUPABASE_URL.replace('.supabase.co', '.functions.supabase.co') : undefined);
+
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !SUPABASE_FUNCTIONS_BASE) {
+  console.error('Missing environment variables: VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are required.');
+  process.exit(1);
+}
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -40,7 +48,7 @@ async function checkTable(tableName: string, expectedMinRows: number = 1): Promi
 
 async function checkEdgeFunction(path: string): Promise<{ available: boolean; response: any; error: any }> {
   try {
-    const response = await fetch(`https://qnymbecjgeaoxsfphrti.functions.supabase.co/${path}`, {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_BASE}/${path}`, {
       headers: {
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
       }
