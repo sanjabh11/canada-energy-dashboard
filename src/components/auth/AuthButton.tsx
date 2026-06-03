@@ -26,7 +26,7 @@ export function AuthButton() {
   const location = useLocation();
   const isWhopRoute = location.pathname.startsWith('/whop/') || 
                       location.pathname.startsWith('/whop-mini/');
-  const { user, tier, edubizUser, isWhopUser, isGuest, signOut } = useAuth();
+  const { user, tier, edubizUser, isWhopUser, isGuest, signOut, refreshUser } = useAuth();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
@@ -44,6 +44,11 @@ export function AuthButton() {
     setShowUserMenu(false);
   };
 
+  const handleAuthSuccess = async () => {
+    await refreshUser();
+    setShowAuthModal(false);
+  };
+
   // Not authenticated - show Whop/Guest entry button (NOT "Sign In")
   // This is the fix for Whop App Store rejection
   if (!user) {
@@ -59,7 +64,7 @@ export function AuthButton() {
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
         />
       </>
     );
@@ -213,7 +218,7 @@ export function AuthButton() {
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-        onSuccess={() => setShowAuthModal(false)}
+        onSuccess={handleAuthSuccess}
       />
     </div>
   );

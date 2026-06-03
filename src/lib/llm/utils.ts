@@ -3,10 +3,20 @@
 
 import type { LlmResponseMeta } from './types';
 
-const preferLite = String((import.meta as any)?.env?.VITE_LLM_PREFER_LITE || '').toLowerCase() === 'true';
+function isEnvFlagEnabled(name: string): boolean {
+  return String((import.meta as any)?.env?.[name] || '').toLowerCase() === 'true';
+}
 
 export function orderCandidates(primary: string, fallback: string): string[] {
-  return preferLite ? [fallback, primary] : [primary, fallback];
+  const liteEnabled = isEnvFlagEnabled('VITE_LLM_LITE_ENABLED');
+  if (!liteEnabled) {
+    return [primary];
+  }
+
+  const preferLite = isEnvFlagEnabled('VITE_LLM_PREFER_LITE');
+  const candidates = preferLite ? [fallback, primary] : [primary, fallback];
+
+  return Array.from(new Set(candidates));
 }
 
 export function attachMeta<T>(json: unknown, payload: T): T {

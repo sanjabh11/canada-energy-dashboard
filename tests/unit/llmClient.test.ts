@@ -44,7 +44,7 @@ describe('llmClient', () => {
     expect(result.summary).toBe('transition summary');
     expect(result.meta?.source).toBe('supabase-llm/transition-report');
     expect(result.meta?.is_fallback).toBe(false);
-    expect(paths).toEqual(expect.arrayContaining(['llm/transition-report', 'llm-lite/transition-report']));
+    expect(paths).toEqual(['llm/transition-report']);
     expect(body).toEqual({ datasetPath: 'ontario_demand', timeframe: '30d' });
     expect(options).toEqual({});
   });
@@ -80,7 +80,7 @@ describe('llmClient', () => {
 
     expect(Array.from(result)).toEqual([{ endpoint: 'history' }]);
     expect((result as typeof result & { meta?: { source?: string } }).meta?.source).toBe('supabase-llm/history');
-    expect(paths).toEqual(expect.arrayContaining(['llm/history', 'llm-lite/history']));
+    expect(paths).toEqual(['llm/history']);
     expect(params).toEqual({ datasetPath: 'ontario_demand', limit: '2' });
     expect(options).toEqual({});
   });

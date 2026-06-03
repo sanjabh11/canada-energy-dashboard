@@ -28,7 +28,7 @@ import {
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess?: () => void;
+  onSuccess?: () => void | Promise<void>;
 }
 
 export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
@@ -52,7 +52,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setLoading(true);
     try {
       whopClient.loginAsGuest();
-      onSuccess?.();
+      await onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Guest login error:', error);
@@ -65,7 +65,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     setLoading(true);
     try {
       await whopClient.simulateLogin(tier);
-      onSuccess?.();
+      await onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Simulated login error:', error);

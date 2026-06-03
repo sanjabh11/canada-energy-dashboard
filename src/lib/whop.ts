@@ -444,6 +444,19 @@ class WhopClient {
   private currentUser: WhopUser | null = null;
   private initialized: boolean = false;
 
+  private restoreStoredUser(): void {
+    const storedUser = localStorage.getItem('whop_user');
+    if (!storedUser) {
+      return;
+    }
+
+    try {
+      this.currentUser = JSON.parse(storedUser);
+    } catch {
+      localStorage.removeItem('whop_user');
+    }
+  }
+
   /**
    * Initialize Whop SDK
    */
@@ -456,6 +469,11 @@ class WhopClient {
     console.info(`[Whop] Initializing in ${config.mode} mode: ${config.message}`);
 
     this.initialized = true;
+
+    if (isStandaloneMode()) {
+      this.restoreStoredUser();
+      return;
+    }
 
     // Check for existing session from httpOnly cookie
     try {
@@ -475,14 +493,7 @@ class WhopClient {
       }
     } catch {
       // Fallback: try localStorage (dev mode without Netlify Functions)
-      const storedUser = localStorage.getItem('whop_user');
-      if (storedUser) {
-        try {
-          this.currentUser = JSON.parse(storedUser);
-        } catch {
-          localStorage.removeItem('whop_user');
-        }
-      }
+      this.restoreStoredUser();
     }
 
     // Check for Whop token in URL params (iframe mode)

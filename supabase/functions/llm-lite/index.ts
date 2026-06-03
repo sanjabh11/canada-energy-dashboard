@@ -78,15 +78,18 @@ function logsContainBlacklist(logs: any): boolean {
 }
 
 serve(async (req) => {
-  const rl = applyRateLimit(req, 'llm-lite');
-  if (rl.response) return rl.response;
-
-  _corsHeaders = createCorsHeaders(req);
-  const url = new URL(req.url);
-  const path = url.pathname.replace(/\/functions\/v1\/llm-lite\b/, '');
   if (req.method === 'OPTIONS') {
     return handleCorsOptions(req);
   }
+
+  _corsHeaders = createCorsHeaders(req);
+  const rl = applyRateLimit(req, 'llm-lite');
+  if (rl.response) return rl.response;
+
+  const url = new URL(req.url);
+  const path = url.pathname
+    .replace(/^\/functions\/v1\/llm-lite\b/, '')
+    .replace(/^\/llm-lite\b/, '');
   if (req.method === 'GET' && (path === '/health' || url.pathname.endsWith('/health'))) {
     return json({ ok: true, mode: 'lite' });
   }

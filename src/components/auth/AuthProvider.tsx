@@ -175,6 +175,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (currentUser.email) {
         await syncLegacyData(currentUser.email);
       }
+    } else {
+      setUser(null);
+      setLegacyEdubizUser(null);
     }
   }, []);
 

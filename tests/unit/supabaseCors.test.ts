@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { createCorsHeaders, getAllowedOrigins } from '../../supabase/functions/_shared/cors';
+import { createCorsHeaders, getAllowedOrigins, handleCorsOptions } from '../../supabase/functions/_shared/cors';
 
 const originalDeno = (globalThis as typeof globalThis & { Deno?: { env: { get: (name: string) => string | undefined } } }).Deno;
 
@@ -42,5 +42,23 @@ describe('shared Supabase CORS helper', () => {
 
     expect(headers['Access-Control-Allow-Origin']).toBe('http://127.0.0.1:4175');
     expect(headers.Vary).toBe('Origin');
+  });
+
+  it('returns a browser-ok preflight for the production Netlify dashboard origin', () => {
+    setCorsEnv(undefined);
+
+    const response = handleCorsOptions(new Request('https://qnymbecjgeaoxsfphrti.functions.supabase.co/llm-lite/transition-kpis', {
+      method: 'OPTIONS',
+      headers: {
+        origin: 'https://canada-energy.netlify.app',
+        'access-control-request-method': 'POST',
+        'access-control-request-headers': 'authorization, x-client-info, apikey, content-type',
+      },
+    }));
+
+    expect(response.status).toBe(204);
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://canada-energy.netlify.app');
+    expect(response.headers.get('Access-Control-Allow-Methods')).toContain('POST');
+    expect(response.headers.get('Access-Control-Allow-Headers')).toContain('authorization');
   });
 });

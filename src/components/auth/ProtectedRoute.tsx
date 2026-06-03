@@ -37,11 +37,16 @@ export function ProtectedRoute({
   requiredTier = 'free',
   fallback,
 }: ProtectedRouteProps) {
-  const { user, loading, edubizUser } = useAuth();
+  const { user, loading, edubizUser, refreshUser } = useAuth();
   const whopTier = legacyToWhopTier[requiredTier];
   const hasTier = useHasTier(whopTier);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
+  const handleAuthSuccess = async () => {
+    await refreshUser();
+    setShowAuthModal(false);
+  };
 
   useEffect(() => {
     // If not loading and user is not authenticated, show auth modal
@@ -92,7 +97,7 @@ export function ProtectedRoute({
         <AuthModal
           isOpen={showAuthModal}
           onClose={() => setShowAuthModal(false)}
-          onSuccess={() => setShowAuthModal(false)}
+          onSuccess={handleAuthSuccess}
         />
       </>
     );
