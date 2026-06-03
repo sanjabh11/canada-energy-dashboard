@@ -6,6 +6,17 @@ export interface ReleasePostureItem {
   nextAction: string;
 }
 
+export interface ReleaseHealthEvidenceItem {
+  label: string;
+  status: ReleasePostureItem['status'];
+  command: string;
+  evidenceBoundary: string;
+  publicReference?: {
+    label: string;
+    url: string;
+  };
+}
+
 export interface DeploymentApprovalChecklistItem {
   gate: string;
   status: 'predeploy_ready' | 'manual_stop' | 'postdeploy_required' | 'external_gate';
@@ -55,6 +66,43 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     rating: '2.0/5',
     evidence: 'Supabase MCP security and performance advisor calls still return permission denied for project `qnymbecjgeaoxsfphrti`; CLI lint works, but connector-backed advisor evidence is unavailable.',
     nextAction: 'Fix Supabase connector or project authorization, then rerun the security and performance advisors before claiming connector-level Supabase review coverage.',
+  },
+];
+
+export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
+  {
+    label: 'Current verified production artifact',
+    status: 'verified',
+    command: 'pnpm run check:post-deploy-live',
+    evidenceBoundary: 'Production deploy `6a1fc17dad273f241f9ba768` passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for the deployed artifact only.',
+    publicReference: {
+      label: 'Netlify deploy',
+      url: 'https://app.netlify.com/projects/canada-energy/deploys/6a1fc17dad273f241f9ba768',
+    },
+  },
+  {
+    label: 'Current source CI gate',
+    status: 'verified',
+    command: 'gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',
+    evidenceBoundary: 'GitHub CI must pass on the current pushed commit before source is considered release-ready; source CI still does not prove that production has been redeployed from that commit.',
+  },
+  {
+    label: 'Buyer evidence scan',
+    status: 'external_gate',
+    command: 'pnpm run report:buyer-evidence-readiness',
+    evidenceBoundary: 'Current scan finds no production buyer-evidence register or outreach response log outside templates/fixtures, so buyer-proven 95% market confidence remains blocked.',
+  },
+  {
+    label: 'Supabase CLI app lint',
+    status: 'watch',
+    command: 'pnpm run check:supabase-app-lint',
+    evidenceBoundary: 'CLI lint currently reports zero app-owned findings; extension-owned rows are not treated as app blockers.',
+  },
+  {
+    label: 'Supabase MCP advisors',
+    status: 'needs_remediation',
+    command: 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+    evidenceBoundary: 'Connector advisor calls return permission denied, so connector-backed security/performance advisor evidence is unavailable until project authorization is fixed.',
   },
 ];
 

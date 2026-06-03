@@ -35,8 +35,10 @@ import { SEOHead } from './SEOHead';
 import { HIGH_RISK_SOURCE_REGISTRY, UPTIME_MONITORS } from '../lib/opsMonitoring';
 import {
   DEPLOYMENT_APPROVAL_CHECKLIST,
+  RELEASE_HEALTH_EVIDENCE,
   RELEASE_POSTURE,
   type DeploymentApprovalChecklistItem,
+  type ReleaseHealthEvidenceItem,
   type ReleasePostureItem,
 } from '../lib/releasePosture';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
@@ -144,6 +146,10 @@ const StatusPage: React.FC = () => {
     }
   };
 
+  const getReleaseHealthBadge = (status: ReleaseHealthEvidenceItem['status']) => getPostureBadge(status);
+
+  const getReleaseHealthIcon = (status: ReleaseHealthEvidenceItem['status']) => getPostureIcon(status);
+
   const getApprovalBadge = (status: DeploymentApprovalChecklistItem['status']) => {
     const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
     switch (status) {
@@ -238,6 +244,48 @@ const StatusPage: React.FC = () => {
           message="Source freshness and ops-health panels are the canonical trust layer on this page. Endpoint coverage and uptime history below are currently reference views derived from monitor configuration, not live ping evidence or persisted SLA history."
           className="mb-8"
         />
+
+        <section data-testid="release-health-evidence" className="mb-8">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+            <Shield className="h-5 w-5 text-slate-500" />
+            Release health evidence
+          </h2>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm text-slate-700">
+              Public-safe evidence handles for the current source, deployed artifact, buyer-evidence gate, and Supabase review status. These records do not create buyer proof or production approval.
+            </div>
+            <div className="divide-y divide-slate-200">
+              {RELEASE_HEALTH_EVIDENCE.map((item) => (
+                <article key={item.label} className="p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-3">
+                      {getReleaseHealthIcon(item.status)}
+                      <div>
+                        <h3 className="font-semibold text-slate-900">{item.label}</h3>
+                        <p className="mt-1 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                      </div>
+                    </div>
+                    <span className={getReleaseHealthBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                  </div>
+                  <div className="mt-3 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs text-slate-100">
+                    {item.command}
+                  </div>
+                  {item.publicReference ? (
+                    <a
+                      href={item.publicReference.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+                    >
+                      {item.publicReference.label}
+                      <ExternalLink className="h-4 w-4" />
+                    </a>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section className="mb-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">

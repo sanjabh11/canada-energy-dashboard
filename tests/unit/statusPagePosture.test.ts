@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEPLOYMENT_APPROVAL_CHECKLIST, RELEASE_POSTURE } from '../../src/lib/releasePosture';
+import { DEPLOYMENT_APPROVAL_CHECKLIST, RELEASE_HEALTH_EVIDENCE, RELEASE_POSTURE } from '../../src/lib/releasePosture';
 
 describe('status page release posture', () => {
   it('marks production live parity verified only for the current post-deploy live gate evidence', () => {
@@ -34,6 +34,25 @@ describe('status page release posture', () => {
     expect(advisorPosture?.evidence).toMatch(/qnymbecjgeaoxsfphrti/);
     expect(advisorPosture?.evidence).toMatch(/CLI lint works/i);
     expect(advisorPosture?.nextAction).toMatch(/Fix Supabase connector/i);
+  });
+
+  it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
+    const deployEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current verified production artifact');
+    const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+    const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
+    const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
+
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(5);
+    expect(deployEvidence?.status).toBe('verified');
+    expect(deployEvidence?.publicReference?.url).toContain('6a1fc17dad273f241f9ba768');
+    expect(sourceEvidence?.status).toBe('verified');
+    expect(sourceEvidence?.command).toContain('gh run list');
+    expect(sourceEvidence?.publicReference).toBeUndefined();
+    expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
+    expect(buyerEvidence?.status).toBe('external_gate');
+    expect(buyerEvidence?.evidenceBoundary).toMatch(/no production buyer-evidence register/i);
+    expect(supabaseAdvisorEvidence?.status).toBe('needs_remediation');
+    expect(supabaseAdvisorEvidence?.evidenceBoundary).toMatch(/permission denied/i);
   });
 
   it('surfaces the deployment approval checklist without treating deployment as buyer proof', () => {
