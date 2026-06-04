@@ -145,6 +145,17 @@ describe('launch evidence manifest report', () => {
     expect(result).toContain('Launch evidence manifest check passed');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('accepts the pnpm option separator for the launch evidence manifest check', () => {
+    const result = execFileSync(process.execPath, [checkScriptPath, '--', '--skip-probes'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
+    });
+
+    expect(result).toContain('Launch evidence manifest check passed');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('renders the orchestrator final-report tables from the validated manifest', () => {
     const tempRoot = makeTempRoot();
     const reportPath = path.join(tempRoot, 'commercial-launch-readiness.md');
@@ -203,6 +214,17 @@ describe('launch evidence manifest report', () => {
 
   it('keeps the Markdown launch readiness report wired to the blocked proof-boundary contract', () => {
     const result = execFileSync(process.execPath, [checkMarkdownReportScriptPath, '--skip-probes'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
+    });
+
+    expect(result).toContain('Commercial launch readiness report check passed');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('accepts the pnpm option separator for the Markdown launch readiness report check', () => {
+    const result = execFileSync(process.execPath, [checkMarkdownReportScriptPath, '--', '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,

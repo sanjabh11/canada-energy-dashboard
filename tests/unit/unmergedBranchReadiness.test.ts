@@ -239,6 +239,18 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('read-only boundary, branch-family pairing, branch freshness, focused review packets, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
+  it('accepts the pnpm option separator for the release-gate check', () => {
+    const root = createRepo();
+    const result = runCheck(root, ['--', '--max-files', '10']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Unmerged branch readiness report check passed:');
+    expect(result.stdout).toContain('local=2');
+    expect(result.stdout).toContain('origin=2');
+    expect(result.stdout).toContain('high=3');
+  }, gitBackedTestTimeoutMs);
+
   it('rejects a selected branch that is not in the unmerged review scope', () => {
     const root = createRepo();
     const result = runReport(root, ['--branch', 'missing-review-branch']);

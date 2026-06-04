@@ -11,6 +11,7 @@ const failures = [];
 let skipProbes = false;
 
 for (const arg of args) {
+  if (arg === '--') continue;
   if (arg === '--skip-probes') {
     skipProbes = true;
     continue;
