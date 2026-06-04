@@ -111,6 +111,7 @@ if (deployScript) {
 
 if (packageJson) {
   requireText(packageJson, packageRelativePath, '"check:production-deploy-script"');
+  requireText(packageJson, packageRelativePath, '"check:corepack-toolchain"');
   requirePattern(
     packageJson,
     packageRelativePath,
@@ -131,6 +132,11 @@ if (packageJson) {
     /"check:release-readiness":\s*"[^"]*check:built-client-env/,
     'include the built client env guard in release readiness',
   );
+
+  const releaseReadinessScript = String(packageConfig.scripts?.['check:release-readiness'] ?? '');
+  if (!releaseReadinessScript.startsWith('node scripts/check-corepack-toolchain.mjs && corepack pnpm run check:claim-boundaries')) {
+    failures.push(`${packageRelativePath} check:release-readiness must start with the Corepack toolchain preflight before running Corepack-pinned gates.`);
+  }
 
   const e2ePreviewScript = String(packageConfig.scripts?.['test:e2e:preview'] ?? '');
   if (!e2ePreviewScript.includes('PLAYWRIGHT_DIST_DIR:-/tmp/ceip-playwright-dist')) {
