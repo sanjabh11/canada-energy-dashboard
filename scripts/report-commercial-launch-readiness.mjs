@@ -130,6 +130,8 @@ function renderReport(manifest, validationText) {
   const openP1 = gaps.filter((gap) => gap?.severity === 'P1' && gap?.status === 'open').length;
   const buyerDeficits = manifest.buyer_evidence?.hard_gate_deficits ?? {};
   const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
+  const buyerRemediationQueue = buyerDeficits.remediation_queue ?? {};
+  const buyerRemediationItems = Array.isArray(buyerRemediationQueue.items) ? buyerRemediationQueue.items : [];
   const supabaseDeficits = manifest.supabase_advisor?.clearance_deficits ?? {};
   const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
   const supabaseRemediationQueue = supabaseDeficits.remediation_queue ?? {};
@@ -272,6 +274,27 @@ ${buyerDeficitItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Deficit ledger', 'not available', 'Run report:buyer-evidence-readiness', buyerDeficits.status ?? 'unknown', buyerDeficits.evidence ?? 'No deficit ledger was captured.'])}
+
+## Buyer Evidence Remediation Queue
+
+Open buyer-evidence actions: ${text(buyerRemediationQueue.blocked_count ?? 'unknown')}/${text(buyerRemediationQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.
+
+| Rank | Requirement | Current | Needed | Deficit Status | Owner | Action | Proof Command | Stop Gate | Resolution Status |
+|---:|---|---|---|---|---|---|---|---|---|
+${buyerRemediationItems.length > 0
+    ? buyerRemediationItems.map((item) => row([
+      item.rank,
+      item.requirement,
+      item.current,
+      item.needed,
+      item.deficit_status,
+      item.owner,
+      item.action,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'no buyer hard-gate actions available', 'Run report:buyer-evidence-readiness before claiming Phase F inputs', buyerRemediationQueue.status ?? 'unknown', 'buyer_operator', 'Regenerate buyer evidence readiness with current evidence roots.', 'corepack pnpm run report:buyer-evidence-readiness', buyerRemediationQueue.evidence ?? 'No buyer evidence remediation queue was captured.', buyerRemediationQueue.status ?? 'unknown'])}
 
 ## Supabase Advisor Clearance Deficits
 

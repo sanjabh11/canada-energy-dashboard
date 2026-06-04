@@ -138,6 +138,58 @@ try {
       assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].status must be set.`);
       assert(typeof item.next_action === 'string' && item.next_action.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].next_action must be set.`);
     }
+    assert(typeof manifest.buyer_evidence?.hard_gate_deficits?.remediation_queue?.evidence === 'string', 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.evidence must be set.');
+    assert(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.evidence.includes('Buyer evidence remediation queue'), 'Manifest buyer evidence remediation queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.open_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.total_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.total_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.item_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.blocked_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.blocked_count must be an integer or null.');
+    assert(
+      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.open_count === manifest.buyer_evidence.hard_gate_deficits.open_count,
+      'Buyer evidence remediation queue open_count must match hard_gate_deficits.open_count.',
+    );
+    assert(
+      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.total_count === manifest.buyer_evidence.hard_gate_deficits.total_count,
+      'Buyer evidence remediation queue total_count must match hard_gate_deficits.total_count.',
+    );
+    assert(Array.isArray(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.items must be a list.');
+    assert(
+      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.item_count === manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.length,
+      'Buyer evidence remediation queue item_count must match items length.',
+    );
+    for (const [index, item] of (manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].needed must be set.`);
+      assert(typeof item.deficit_status === 'string' && item.deficit_status.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].deficit_status must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].owner must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].stop_gate must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must be set.`);
+      assert(item.status !== 'ready', `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must remain non-ready until the hard-gate row passes.`);
+    }
+    const buyerQueueRequirements = (manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items ?? []).map((item) => item.requirement);
+    const nonPassBuyerRequirements = (manifest.buyer_evidence.hard_gate_deficits.items ?? [])
+      .filter((item) => item.status !== 'pass')
+      .map((item) => item.requirement);
+    assert(
+      JSON.stringify(buyerQueueRequirements) === JSON.stringify(nonPassBuyerRequirements),
+      'Buyer evidence remediation queue must include exactly the current non-pass buyer hard-gate requirements.',
+    );
+    if (buyerQueueRequirements.includes('Retained-artifact 95% validation')) {
+      assert(
+        manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.some((item) => item.proof_command.includes('validate:pilot-evidence')),
+        'Buyer evidence remediation queue must include validate:pilot-evidence while retained-artifact 95% validation is unresolved.',
+      );
+    }
+    if (buyerQueueRequirements.length > 0) {
+      assert(
+        manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.some((item) => /Do not/.test(item.stop_gate)),
+        'Buyer evidence remediation queue must preserve explicit no-scaffolding stop gates.',
+      );
+    }
     if (!skipProbes) {
       assert(Number.isInteger(manifest.buyer_evidence?.production_registers), 'Non-skipped manifest must include numeric buyer-evidence production register count.');
       assert(Number.isInteger(manifest.buyer_evidence?.outreach_logs), 'Non-skipped manifest must include numeric buyer-evidence outreach log count.');
@@ -567,4 +619,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

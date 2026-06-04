@@ -737,6 +737,138 @@ function buyerDeficitEvidence(deficits) {
   ].join(' ');
 }
 
+function buyerEvidenceRemediationOwner(requirement) {
+  switch (requirement) {
+    case 'Retained SHA-256 references':
+    case 'Retained-artifact 95% validation':
+      return 'evidence_operator';
+    case 'Strong commercial signal':
+      return 'commercial_owner';
+    default:
+      return 'buyer_operator';
+  }
+}
+
+function buyerEvidenceRemediationProofCommand(requirement) {
+  switch (requirement) {
+    case 'Utility forecast lane':
+      return 'corepack pnpm run prepare:forecast-trust-report-artifact -- <benchmark-pack.json> --output-file path/to/redacted-artifacts/utility-forecast.md';
+    case 'TIER or credit lane':
+      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --route /credit-banking --evidence-root path/to/redacted-artifacts --artifact-file credit-banking.md';
+    case 'Billing or security lane':
+      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --route /shadow-billing --evidence-root path/to/redacted-artifacts --artifact-file shadow-billing.md';
+    case 'Distinct accepted proof packs':
+      return 'corepack pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root path/to/redacted-artifacts';
+    case 'Accepted confidence_delta':
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --confidence-delta <0..0.4> --output-file path/to/filled-register.csv';
+    case 'Retained SHA-256 references':
+      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md';
+    case 'Buyer data coverage':
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --buyer-data-coverage-pct <70..100> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+    case 'Artifact turnaround':
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --time-to-artifact-hours <0..120> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+    case 'Strong commercial signal':
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --commercial-commitment-status <design_partner_signed|paid_pilot|purchase_order|letter_of_intent> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+    case 'Retained-artifact 95% validation':
+      return 'corepack pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts';
+    default:
+      return 'corepack pnpm run report:buyer-evidence-readiness -- --root path/to/anonymized-outreach-or-registers --evidence-root path/to/redacted-artifacts';
+  }
+}
+
+function buyerEvidenceRemediationStopGate(requirement) {
+  switch (requirement) {
+    case 'Utility forecast lane':
+      return 'Do not count forecast demos, generated benchmark packs, or non-buyer diagnostics without accepted buyer review and retained redacted support.';
+    case 'TIER or credit lane':
+      return 'Do not count TIER or credit scaffolding, rehearsals, or consultant assumptions without accepted buyer-supplied retained evidence.';
+    case 'Billing or security lane':
+      return 'Do not count shadow-billing or security examples until buyer-supplied artifacts are accepted and privacy-screened.';
+    case 'Distinct accepted proof packs':
+      return 'Do not count multiple rows from the same proof pack or generated starter rows as distinct buyer acceptance.';
+    case 'Accepted confidence_delta':
+      return 'Do not move confidence from rehearsal rows, templates, no-reply outreach, not-fit rows, or constructed demos.';
+    case 'Retained SHA-256 references':
+      return 'Do not reference missing, changed, opaque, unredacted, direct-identifier, or non-text-inspectable artifacts.';
+    case 'Buyer data coverage':
+      return 'Do not count rows below the buyer-data coverage threshold as confidence-moving evidence.';
+    case 'Artifact turnaround':
+      return 'Do not hide slow proof-pack delivery; rows above 120 hours cannot support the 95% gate.';
+    case 'Strong commercial signal':
+      return 'Do not treat status labels, informal interest, or unretained claims as a strong commercial commitment.';
+    case 'Retained-artifact 95% validation':
+      return 'Do not claim 95% buyer-proven confidence until validate:pilot-evidence --require-95 passes with retained artifacts.';
+    default:
+      return 'Do not count generated scaffolding, outreach headers, starter registers, or constructed demos as buyer acceptance.';
+  }
+}
+
+function buyerEvidenceRemediationStatus(status) {
+  if (status === 'pass') return 'ready';
+  return 'blocked';
+}
+
+function buyerEvidenceRemediationEvidence(queue) {
+  if (queue.status === 'skipped') {
+    return 'Buyer evidence remediation queue skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for current buyer hard-gate actions.';
+  }
+  if (queue.status === 'pass') {
+    return 'Buyer evidence remediation queue: status=pass open=0 approval_gate=95% validation evidence still must remain retained and current';
+  }
+
+  const topBlocked = queue.items
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Buyer evidence remediation queue:',
+    `status=${queue.status}`,
+    `open=${queue.open_count ?? 'unknown'}/${queue.total_count ?? 'unknown'}`,
+    `items=${queue.item_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=queue does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance',
+  ].join(' ');
+}
+
+function buildBuyerEvidenceRemediationQueue(deficits) {
+  if (deficits.status === 'skipped') {
+    const queue = {
+      status: 'skipped',
+      open_count: null,
+      total_count: null,
+      item_count: 0,
+      blocked_count: 0,
+      items: [],
+    };
+    return { ...queue, evidence: buyerEvidenceRemediationEvidence(queue) };
+  }
+
+  const items = (deficits.items ?? [])
+    .filter((item) => item.status !== 'pass')
+    .map((item, index) => ({
+      rank: index + 1,
+      requirement: item.requirement,
+      current: item.current,
+      needed: item.needed,
+      deficit_status: item.status,
+      owner: buyerEvidenceRemediationOwner(item.requirement),
+      action: item.next_action,
+      proof_command: buyerEvidenceRemediationProofCommand(item.requirement),
+      stop_gate: buyerEvidenceRemediationStopGate(item.requirement),
+      status: buyerEvidenceRemediationStatus(item.status),
+    }));
+  const queue = {
+    status: items.length === 0 ? 'pass' : 'blocked',
+    open_count: deficits.open_count,
+    total_count: deficits.total_count,
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    items,
+  };
+  return { ...queue, evidence: buyerEvidenceRemediationEvidence(queue) };
+}
+
 function extractMarkdownSection(markdown, heading) {
   const start = markdown.indexOf(`## ${heading}`);
   if (start < 0) return '';
@@ -1736,6 +1868,10 @@ function probeBuyerEvidence() {
       total_count: null,
       items: [],
     };
+    const hardGateDeficitsWithQueue = {
+      ...hardGateDeficits,
+      remediation_queue: buildBuyerEvidenceRemediationQueue(hardGateDeficits),
+    };
     const probe = {
       status: 'skipped',
       evidence: 'Probe skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for current evidence.',
@@ -1747,13 +1883,17 @@ function probeBuyerEvidence() {
       evidenceRoot: 'unknown',
       phaseFGate: 'unknown',
       workspaceNextStep: 'run report:buyer-evidence-readiness before creating or claiming Phase F inputs',
-      hardGateDeficits: { ...hardGateDeficits, evidence: buyerDeficitEvidence(hardGateDeficits) },
+      hardGateDeficits: { ...hardGateDeficitsWithQueue, evidence: buyerDeficitEvidence(hardGateDeficits) },
     };
     return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
   }
   const result = run(process.execPath, ['scripts/report-buyer-evidence-readiness.mjs']);
   const output = `${result.stdout}\n${result.stderr}`.trim();
   const hardGateDeficits = parseBuyerDeficitRows(output);
+  const hardGateDeficitsWithQueue = {
+    ...hardGateDeficits,
+    remediation_queue: buildBuyerEvidenceRemediationQueue(hardGateDeficits),
+  };
   const probe = {
     status: result.status === 0 ? 'pass' : 'fail',
     evidence: output.split(/\r?\n/).slice(0, 12).join(' | '),
@@ -1767,7 +1907,7 @@ function probeBuyerEvidence() {
     workspaceNextStep: output.includes('create:phase-f-evidence-workspace')
       ? 'create:phase-f-evidence-workspace'
       : 'inspect report:buyer-evidence-readiness next actions',
-    hardGateDeficits,
+    hardGateDeficits: hardGateDeficitsWithQueue,
   };
   return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
 }
@@ -2154,6 +2294,7 @@ const manifest = {
       sourceProvenanceResolutionQueue.evidence,
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
+      buyerProbe.hardGateDeficits.remediation_queue.evidence,
       branchProbe.evidence,
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
@@ -2409,9 +2550,10 @@ const manifest = {
           'source provenance resolution queue synthesis',
           'release preflight remediation queue synthesis',
           'Supabase advisor remediation queue synthesis',
+          'buyer evidence remediation queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, buyer contact state, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

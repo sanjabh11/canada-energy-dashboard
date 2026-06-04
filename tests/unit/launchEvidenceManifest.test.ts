@@ -67,6 +67,12 @@ describe('launch evidence manifest report', () => {
     expect(manifest.buyer_evidence.hard_gate_deficits.total_count).toBeNull();
     expect(manifest.buyer_evidence.hard_gate_deficits.items).toEqual([]);
     expect(manifest.buyer_evidence.hard_gate_deficits.evidence).toContain('Buyer hard-gate deficit ledger skipped');
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.status).toBe('skipped');
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.evidence).toContain('Buyer evidence remediation queue skipped');
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.open_count).toBeNull();
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.total_count).toBeNull();
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.item_count).toBe(0);
+    expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items).toEqual([]);
     expect(manifest.supabase_advisor.status).toBe('needs_remediation');
     expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
     expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
@@ -272,6 +278,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Source Provenance Resolution Queue');
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
+    expect(stdout).toContain('## Buyer Evidence Remediation Queue');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Supabase Advisor Remediation Queue');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
@@ -304,6 +311,9 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Batchable intake-packet outreach rows');
     expect(stdout).toContain('Buyer hard-gate deficit ledger skipped');
     expect(stdout).toContain('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.');
+    expect(stdout).toContain('Buyer evidence remediation queue skipped');
+    expect(stdout).toContain('does not contact buyers');
+    expect(stdout).toContain('create accepted evidence, move confidence');
     expect(stdout).toContain('Supabase advisor review');
     expect(stdout).toContain('Supabase security/performance advisor clearance remains unavailable');
     expect(stdout).toContain('Supabase advisor clearance deficit ledger');

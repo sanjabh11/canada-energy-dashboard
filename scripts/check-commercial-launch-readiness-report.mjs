@@ -110,6 +110,7 @@ function assertReport(markdown, options = {}) {
     'Source Provenance Resolution Queue',
     'Branch Canonical Head Decision Deficits',
     'Buyer Evidence Hard Gate Deficits',
+    'Buyer Evidence Remediation Queue',
     'Supabase Advisor Clearance Deficits',
     'Supabase Advisor Remediation Queue',
     'Release Toolchain And Approval Deficits',
@@ -166,11 +167,18 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
   assert(markdown.includes('## Buyer Evidence Hard Gate Deficits'), 'Report must include the buyer hard-gate deficit table.');
   assert(markdown.includes('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.'), 'Report must preserve the no-scaffolding buyer-deficit boundary.');
+  assert(markdown.includes('## Buyer Evidence Remediation Queue'), 'Report must include the buyer evidence remediation queue table.');
+  assert(markdown.includes('Buyer evidence remediation queue'), 'Report must include structured buyer evidence remediation from the manifest.');
+  assert(markdown.includes('does not contact buyers'), 'Report must preserve the buyer remediation no-contact boundary.');
+  assert(markdown.includes('create accepted evidence, move confidence'), 'Report must preserve the buyer remediation no-evidence boundary.');
   if (options.skipProbes) {
     assert(markdown.includes('Buyer hard-gate deficit ledger skipped'), 'Skipped report must preserve the skipped buyer-deficit evidence boundary.');
+    assert(markdown.includes('Buyer evidence remediation queue skipped'), 'Skipped report must preserve the skipped buyer remediation queue boundary.');
   } else {
     assert(markdown.includes('| Utility forecast lane |'), 'Report must include the utility forecast buyer-deficit row.');
     assert(markdown.includes('| Retained-artifact 95% validation |'), 'Report must include the retained-artifact validation buyer-deficit row.');
+    assert(markdown.includes('corepack pnpm run validate:pilot-evidence'), 'Report must include the retained-artifact 95% validation proof command.');
+    assert(markdown.includes('Do not claim 95% buyer-proven confidence'), 'Report must preserve the buyer 95% stop gate.');
   }
   assert(markdown.includes('Supabase advisor review'), 'Report must include structured Supabase advisor evidence from the manifest.');
   assert(markdown.includes('Supabase security/performance advisor clearance remains unavailable'), 'Report must preserve the Supabase advisor clearance launch blocker.');
@@ -230,6 +238,7 @@ function assertReport(markdown, options = {}) {
   const sourceResolutionSection = extractSection(markdown, 'Source Provenance Resolution Queue');
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
+  const buyerRemediationSection = extractSection(markdown, 'Buyer Evidence Remediation Queue');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
   const supabaseRemediationSection = extractSection(markdown, 'Supabase Advisor Remediation Queue');
   const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
@@ -243,6 +252,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(sourceResolutionSection) >= 1, 'Source provenance resolution queue must include at least the clean/dirty boundary row.');
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
+  assert(countDataRows(buyerRemediationSection) >= 1, 'Buyer evidence remediation queue must include at least one row or skipped boundary.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
   assert(countDataRows(supabaseRemediationSection) >= 3, 'Supabase advisor remediation queue must include the key advisor remediation rows.');
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
@@ -260,4 +270,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
