@@ -14,6 +14,7 @@ let skipProbes = false;
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
+  if (arg === '--') continue;
   if (arg === '--skip-probes') {
     skipProbes = true;
     continue;

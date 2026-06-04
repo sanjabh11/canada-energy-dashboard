@@ -186,6 +186,21 @@ describe('launch evidence manifest report', () => {
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('accepts the pnpm option separator documented for the Markdown launch readiness report', () => {
+    const tempRoot = makeTempRoot();
+    const reportPath = path.join(tempRoot, 'commercial-launch-readiness.md');
+    const stdout = execFileSync(process.execPath, [markdownReportScriptPath, '--', '--skip-probes', '--output', reportPath], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
+    });
+
+    expect(stdout).toContain('# CEIP Commercial Launch Readiness Report');
+    expect(stdout).toContain('Decision: `blocked`');
+    expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('keeps the Markdown launch readiness report wired to the blocked proof-boundary contract', () => {
     const result = execFileSync(process.execPath, [checkMarkdownReportScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
