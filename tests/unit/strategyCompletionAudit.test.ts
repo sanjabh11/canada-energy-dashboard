@@ -18,15 +18,18 @@ function writeExecutable(filePath: string, content: string) {
 
 async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParityStatus: 'pass' | 'fail' = 'fail') {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-completion-audit-'));
-  const fakePnpmPath = path.join(tempDir, 'pnpm');
+  const fakeCorepackPath = path.join(tempDir, 'corepack');
   const planPath = path.join(tempDir, 'ceip-95-strategy-feature-gap.md');
 
   writeFileSync(planPath, '# CEIP Plan\n\n95% Strategy-Direction Confidence\n');
 
   writeExecutable(
-    fakePnpmPath,
+    fakeCorepackPath,
     [
       '#!/bin/sh',
+      'if [ "$1" = "pnpm" ]; then',
+      '  shift',
+      'fi',
       'case "$*" in',
       '  *check:strategy-roadmap-doc*)',
       '    echo "Strategy roadmap document check passed."',
@@ -136,7 +139,7 @@ describe('strategy completion audit', () => {
 
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('The completion audit found failing local verification gates: Strategy source anchors.');
-    expect(result.stdout).toContain('- Command: `pnpm run check:strategy-source-anchors`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:strategy-source-anchors`');
     expect(result.stdout).toContain('Fetch-failed anchors: 1');
   });
 
@@ -147,21 +150,21 @@ describe('strategy completion audit', () => {
     expect(result.stdout).toContain('The desk-research strategy-direction deliverable is complete locally.');
     expect(result.stdout).toContain('| R11 | Live production parity is verified when post-deploy live checks pass');
     expect(result.stdout).toContain('| external_gate | Roadmap evidence ledger');
-    expect(result.stdout).toContain('- Command: `pnpm run check:ga-ici-public-actuals`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:ga-ici-public-actuals`');
     expect(result.stdout).toContain('GA/ICI public historical actuals check passed');
-    expect(result.stdout).toContain('- Command: `pnpm run check:production-deploy-script`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:production-deploy-script`');
     expect(result.stdout).toContain('Production deploy script guard passed');
-    expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-95-fixture-gate`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:pilot-evidence-95-fixture-gate`');
     expect(result.stdout).toContain('Pilot evidence fixture 95% gate check passed.');
-    expect(result.stdout).toContain('- Command: `pnpm run check:pilot-evidence-template`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:pilot-evidence-template`');
     expect(result.stdout).toContain('Pilot evidence register template check passed');
-    expect(result.stdout).toContain('- Command: `pnpm run check:outreach-response-log-template`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:outreach-response-log-template`');
     expect(result.stdout).toContain('Outreach response log validation passed');
-    expect(result.stdout).toContain('- Command: `pnpm run check:outreach-intake-plan-template`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:outreach-intake-plan-template`');
     expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
-    expect(result.stdout).toContain('- Command: `pnpm run check:live-public-metadata`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:live-public-metadata`');
     expect(result.stdout).toContain('Public metadata check failed:');
-    expect(result.stdout).toContain('- Command: `pnpm run check:live-static-parity`');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:live-static-parity`');
     expect(result.stdout).toContain('Live static parity check failed:');
   });
 

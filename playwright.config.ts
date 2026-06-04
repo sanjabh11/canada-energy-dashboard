@@ -96,7 +96,7 @@ export default defineConfig({
 
   // Run local preview server unless a hosted/deployed URL is being tested.
   webServer: skipWebServer ? undefined : {
-    command: 'pnpm run test:e2e:preview',
+    command: 'corepack pnpm run test:e2e:preview',
     env: {
       VITE_ENABLE_EDGE_FETCH: process.env.VITE_ENABLE_EDGE_FETCH ?? 'true',
       VITE_ALLOW_LOCAL_EDGE_FETCH: process.env.VITE_ALLOW_LOCAL_EDGE_FETCH ?? 'true',

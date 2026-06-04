@@ -62,6 +62,10 @@ function runStep(label, command, commandArgs) {
   };
 }
 
+function runPackageStep(label, scriptName) {
+  return runStep(label, 'corepack', ['pnpm', 'run', scriptName]);
+}
+
 function hasAll(source, needles) {
   return needles.every((needle) => source.includes(needle));
 }
@@ -131,17 +135,17 @@ const sourceAnchors = strategySourceAnchorUrls;
 
 const checkSteps = includeChecks
   ? [
-      runStep('Strategy roadmap structure', 'pnpm', ['run', 'check:strategy-roadmap-doc']),
-      runStep('Commercial source guard', 'pnpm', ['run', 'check:commercial-source']),
-      runStep('Strategy source anchors', 'pnpm', ['run', 'check:strategy-source-anchors']),
-      runStep('GA/ICI public historical actuals', 'pnpm', ['run', 'check:ga-ici-public-actuals']),
-      runStep('Production deploy script guard', 'pnpm', ['run', 'check:production-deploy-script']),
-      runStep('Pilot evidence fixture gate', 'pnpm', ['run', 'check:pilot-evidence-95-fixture-gate']),
-      runStep('Pilot evidence template', 'pnpm', ['run', 'check:pilot-evidence-template']),
-      runStep('Outreach response log template', 'pnpm', ['run', 'check:outreach-response-log-template']),
-      runStep('Outreach intake action plan template', 'pnpm', ['run', 'check:outreach-intake-plan-template']),
-      runStep('Live public metadata', 'pnpm', ['run', 'check:live-public-metadata']),
-      runStep('Live static dist parity', 'pnpm', ['run', 'check:live-static-parity']),
+      runPackageStep('Strategy roadmap structure', 'check:strategy-roadmap-doc'),
+      runPackageStep('Commercial source guard', 'check:commercial-source'),
+      runPackageStep('Strategy source anchors', 'check:strategy-source-anchors'),
+      runPackageStep('GA/ICI public historical actuals', 'check:ga-ici-public-actuals'),
+      runPackageStep('Production deploy script guard', 'check:production-deploy-script'),
+      runPackageStep('Pilot evidence fixture gate', 'check:pilot-evidence-95-fixture-gate'),
+      runPackageStep('Pilot evidence template', 'check:pilot-evidence-template'),
+      runPackageStep('Outreach response log template', 'check:outreach-response-log-template'),
+      runPackageStep('Outreach intake action plan template', 'check:outreach-intake-plan-template'),
+      runPackageStep('Live public metadata', 'check:live-public-metadata'),
+      runPackageStep('Live static dist parity', 'check:live-static-parity'),
     ]
   : [];
 const requiredLocalCheckLabels = new Set([
