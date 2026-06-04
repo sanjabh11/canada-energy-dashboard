@@ -107,8 +107,20 @@ test.describe('CEIP wedge prototype routes', () => {
     );
 
     await expect(preview.getByText(/valid-95-evidence-register\.csv loaded locally/)).toBeVisible();
-    await expect(preview.getByText('Accepted rows')).toBeVisible();
-    await expect(preview.getByText('Confidence delta')).toBeVisible();
+    await expect(preview.locator('dt').filter({ hasText: /^Accepted rows$/ })).toBeVisible();
+    await expect(preview.locator('dt').filter({ hasText: /^Confidence delta$/ })).toBeVisible();
+    const dashboard = page.getByTestId('buyer-evidence-readiness-dashboard');
+    await expect(dashboard.getByText('Buyer evidence readiness dashboard')).toBeVisible();
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-lane-coverage')).toContainText('3/3 lanes');
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-reviewer-status')).toContainText('3/3 accepted');
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-confidence-delta')).toContainText('0.9');
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-fast-artifact-loop')).toContainText('<=48h present');
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-retained-hashes')).toContainText('3/3');
+    await expect(page.getByTestId('buyer-evidence-dashboard-metric-commercial-signal')).toContainText('Present');
+    await expect(page.getByTestId('buyer-evidence-dashboard-lane-utility-forecast')).toContainText('Pass');
+    await expect(page.getByTestId('buyer-evidence-dashboard-lane-tier-or-credit')).toContainText('Pass');
+    await expect(page.getByTestId('buyer-evidence-dashboard-lane-billing-or-security')).toContainText('Pass');
+    await expect(dashboard).toContainText('does not create buyer evidence');
     await expect(page.getByTestId('pilot-register-preview-gate-utility-forecast-evidence')).toContainText('Pass');
     await expect(page.getByTestId('pilot-register-preview-gate-commercial-signal')).toContainText('Pass');
     await expect(page.getByTestId('pilot-register-preview-gate-retained-artifact-hashes')).toContainText('Pass');

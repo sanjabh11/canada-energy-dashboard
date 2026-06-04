@@ -10,6 +10,25 @@ export interface PilotEvidencePreviewGate {
   nextAction: string;
 }
 
+export interface PilotEvidenceReadinessMetric {
+  id: string;
+  label: string;
+  status: PilotEvidencePreviewStatus;
+  value: string;
+  evidence: string;
+  nextAction: string;
+}
+
+export interface PilotEvidenceLaneCoverage {
+  id: string;
+  label: string;
+  status: PilotEvidencePreviewStatus;
+  acceptedRowCount: number;
+  proofPackIds: string[];
+  evidence: string;
+  nextAction: string;
+}
+
 export interface PilotEvidenceRegisterPreview {
   rowCount: number;
   columnCount: number;
@@ -19,6 +38,8 @@ export interface PilotEvidenceRegisterPreview {
   acceptedConfidenceRowCount: number;
   distinctAcceptedProofPackCount: number;
   totalAcceptedConfidenceDelta: number;
+  readinessMetrics: PilotEvidenceReadinessMetric[];
+  laneCoverage: PilotEvidenceLaneCoverage[];
   gates: PilotEvidencePreviewGate[];
   cliCommand: string;
 }
@@ -123,6 +144,9 @@ export function previewPilotEvidenceRegister(text: string): PilotEvidenceRegiste
   const acceptedConfidenceRows = missingRequiredColumns.length === 0
     ? rows.filter(isAcceptedConfidenceMovingBuyerRow)
     : [];
+  const confidenceMovingBuyerRows = missingRequiredColumns.length === 0
+    ? rows.filter((row) => parseNumber(row.confidence_delta) > 0 && BUYER_SOURCE_LABELS.has(normalizeText(row.source_label)))
+    : [];
   const distinctAcceptedProofPackIds = new Set(acceptedConfidenceRows.map((row) => normalizeText(row.proof_pack_id)));
   const totalAcceptedConfidenceDelta = acceptedConfidenceRows.reduce(
     (total, row) => total + parseNumber(row.confidence_delta),
@@ -156,6 +180,105 @@ export function previewPilotEvidenceRegister(text: string): PilotEvidenceRegiste
     const expectedProofPackId = PROOF_PACK_BY_ROUTE.get(route);
     return expectedProofPackId && normalizeText(row.proof_pack_id) && expectedProofPackId !== normalizeText(row.proof_pack_id);
   });
+  const tierOrCreditRows = acceptedConfidenceRows.filter((row) => {
+    const proofPackId = normalizeText(row.proof_pack_id);
+    return proofPackId === 'tier_cfo_savings_pack' || proofPackId === 'tier_credit_banking_audit_pack';
+  });
+  const billingOrSecurityRows = acceptedConfidenceRows.filter((row) => {
+    const proofPackId = normalizeText(row.proof_pack_id);
+    return proofPackId === 'shadow_billing_invoice_pack' || proofPackId === 'utility_security_procurement_pack';
+  });
+  const laneCoverage: PilotEvidenceLaneCoverage[] = [
+    {
+      id: 'utility-forecast',
+      label: 'Utility forecast lane',
+      status: hasUtilityForecastEvidence ? 'pass' : 'blocked',
+      acceptedRowCount: utilityForecastRows.length,
+      proofPackIds: uniqueProofPackIds(utilityForecastRows),
+      evidence: hasUtilityForecastEvidence
+        ? 'Accepted utility forecast evidence includes the required forecast diagnostic set.'
+        : 'No accepted utility forecast row has the full forecast diagnostic set.',
+      nextAction: 'Attach accepted utility forecast or forecast-trust evidence with numeric benchmark diagnostics.',
+    },
+    {
+      id: 'tier-or-credit',
+      label: 'TIER or credit lane',
+      status: hasTierOrCreditEvidence ? 'pass' : 'blocked',
+      acceptedRowCount: tierOrCreditRows.length,
+      proofPackIds: uniqueProofPackIds(tierOrCreditRows),
+      evidence: hasTierOrCreditEvidence
+        ? 'Accepted TIER or credit-banking evidence is present.'
+        : 'No accepted TIER CFO or credit-banking proof-pack row is present.',
+      nextAction: 'Add accepted TIER CFO or credit-banking evidence with reviewer feedback.',
+    },
+    {
+      id: 'billing-or-security',
+      label: 'Billing or security lane',
+      status: hasBillingOrSecurityEvidence ? 'pass' : 'blocked',
+      acceptedRowCount: billingOrSecurityRows.length,
+      proofPackIds: uniqueProofPackIds(billingOrSecurityRows),
+      evidence: hasBillingOrSecurityEvidence
+        ? 'Accepted shadow-billing or utility-security evidence is present.'
+        : 'No accepted shadow-billing or utility-security proof-pack row is present.',
+      nextAction: 'Add accepted shadow-billing or utility-security evidence with reviewer feedback.',
+    },
+  ];
+  const passedLaneCount = laneCoverage.filter((lane) => lane.status === 'pass').length;
+  const reviewerStatus = acceptedConfidenceRows.length > 0 && acceptedConfidenceRows.length === confidenceMovingBuyerRows.length
+    ? 'pass'
+    : confidenceMovingBuyerRows.length > 0
+      ? 'warning'
+      : 'blocked';
+  const readinessMetrics: PilotEvidenceReadinessMetric[] = [
+    {
+      id: 'lane-coverage',
+      label: 'Lane coverage',
+      status: passedLaneCount === 3 ? 'pass' : 'blocked',
+      value: `${passedLaneCount}/3 lanes`,
+      evidence: 'Minimum Phase F coverage requires accepted utility forecast, TIER/credit, and billing/security evidence.',
+      nextAction: 'Fill the missing minimum evidence lanes before claiming 95% market confidence.',
+    },
+    {
+      id: 'reviewer-status',
+      label: 'Reviewer status',
+      status: reviewerStatus,
+      value: `${acceptedConfidenceRows.length}/${Math.max(confidenceMovingBuyerRows.length, acceptedConfidenceRows.length)} accepted`,
+      evidence: 'Rows count only when reviewer feedback is complete, reviewer acceptance is accepted/approved/signed, and day_14_decision=proceed.',
+      nextAction: 'Capture reviewer role, feedback status, acceptance, and day-14 decision for each confidence-moving row.',
+    },
+    {
+      id: 'confidence-delta',
+      label: 'Confidence delta',
+      status: totalAcceptedConfidenceDelta + CONFIDENCE_DELTA_EPSILON >= 0.9 && acceptedConfidenceRows.length > 0 ? 'pass' : 'blocked',
+      value: formatNumber(totalAcceptedConfidenceDelta),
+      evidence: 'Accepted buyer-supplied rows must total confidence_delta >= 0.9.',
+      nextAction: 'Keep rehearsal rows at 0.0 and move confidence only after accepted buyer evidence exists.',
+    },
+    {
+      id: 'fast-artifact-loop',
+      label: 'Fast artifact loop',
+      status: hasFastArtifact && hasOnlyTimelyArtifacts ? 'pass' : 'blocked',
+      value: hasFastArtifact ? '<=48h present' : 'No <=48h row',
+      evidence: 'At least one accepted proof pack must be delivered in 48 hours or less and all accepted rows must stay within 120 hours.',
+      nextAction: 'Record time_to_artifact_hours for every accepted row and keep one accepted proof pack at or below 48 hours.',
+    },
+    {
+      id: 'retained-hashes',
+      label: 'Retained hashes',
+      status: acceptedConfidenceRows.length > 0 && hashRows.length === acceptedConfidenceRows.length ? 'pass' : 'blocked',
+      value: `${hashRows.length}/${acceptedConfidenceRows.length}`,
+      evidence: 'Every accepted confidence-moving row needs a distinct retained redacted artifact SHA-256 reference.',
+      nextAction: 'Attach text-inspectable retained artifacts and hash references for every accepted row.',
+    },
+    {
+      id: 'commercial-signal',
+      label: 'Commercial signal',
+      status: hasCommercialSignal ? 'pass' : 'blocked',
+      value: hasCommercialSignal ? 'Present' : 'Missing',
+      evidence: 'At least one accepted row must prove design partner, paid pilot, purchase order, or letter of intent status.',
+      nextAction: 'Attach retained text proving a strong commercial commitment before raising sellability confidence.',
+    },
+  ];
 
   return {
     rowCount: rows.length,
@@ -169,6 +292,8 @@ export function previewPilotEvidenceRegister(text: string): PilotEvidenceRegiste
     acceptedConfidenceRowCount: acceptedConfidenceRows.length,
     distinctAcceptedProofPackCount: distinctAcceptedProofPackIds.size,
     totalAcceptedConfidenceDelta,
+    readinessMetrics,
+    laneCoverage,
     cliCommand: 'pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts',
     gates: [
       {
@@ -292,6 +417,10 @@ function isAcceptedConfidenceMovingBuyerRow(row: CsvRecord): boolean {
     && COMPLETE_FEEDBACK_STATUSES.has(normalizeText(row.reviewer_feedback_status))
     && ACCEPTED_REVIEW_STATUSES.has(normalizeText(row.reviewer_acceptance))
     && normalizeText(row.day_14_decision) === 'proceed';
+}
+
+function uniqueProofPackIds(rows: CsvRecord[]): string[] {
+  return Array.from(new Set(rows.map((row) => normalizeText(row.proof_pack_id)).filter(Boolean)));
 }
 
 function normalizeColumnName(value: string): string {

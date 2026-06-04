@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "phase-o-buyer-evidence-dashboard",
+  "goal": "Add a browser-local buyer evidence readiness dashboard on /pilot-readiness that reads a redacted pilot evidence register preview and shows lane coverage, reviewer acceptance, confidence delta, fast artifact loop, retained hash, and commercial signal without creating buyer evidence, requiring secrets, deploying production, or touching unrelated staged files.",
+  "repoRoot": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "mode": "manual",
+  "maxConcurrency": 4,
+  "maxAgents": 64,
+  "tokenWarning": {
+    "risk": "low",
+    "estimatedAgentRuns": 4,
+    "estimatedReviewRuns": 2,
+    "estimatedTotalRuns": 6,
+    "warning": "Scoped run; still verify before exporting worker plans."
+  },
+  "createdAt": "2026-06-04T16:24:01.728Z",
+  "updatedAt": "2026-06-04T16:55:51.032Z"
+}

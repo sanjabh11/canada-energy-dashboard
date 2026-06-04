@@ -19,6 +19,19 @@ describe('pilotEvidenceRegisterPreview', () => {
     expect(preview.acceptedConfidenceRowCount).toBe(3);
     expect(preview.distinctAcceptedProofPackCount).toBe(3);
     expect(preview.totalAcceptedConfidenceDelta).toBeCloseTo(0.9);
+    expect(preview.readinessMetrics.map((metric) => [metric.id, metric.status, metric.value])).toEqual([
+      ['lane-coverage', 'pass', '3/3 lanes'],
+      ['reviewer-status', 'pass', '3/3 accepted'],
+      ['confidence-delta', 'pass', '0.9'],
+      ['fast-artifact-loop', 'pass', '<=48h present'],
+      ['retained-hashes', 'pass', '3/3'],
+      ['commercial-signal', 'pass', 'Present'],
+    ]);
+    expect(preview.laneCoverage.map((lane) => [lane.id, lane.status, lane.acceptedRowCount])).toEqual([
+      ['utility-forecast', 'pass', 1],
+      ['tier-or-credit', 'pass', 1],
+      ['billing-or-security', 'pass', 1],
+    ]);
     expect(preview.gates.map((gate) => [gate.id, gate.status])).toEqual([
       ['required-schema', 'pass'],
       ['utility-forecast-evidence', 'pass'],
@@ -51,8 +64,27 @@ describe('pilotEvidenceRegisterPreview', () => {
     expect(preview.missingRequiredColumns).toContain('buyer_lane');
     expect(preview.forbiddenColumnsFound).toContain('account_number');
     expect(preview.acceptedConfidenceRowCount).toBe(0);
+    expect(preview.readinessMetrics.find((metric) => metric.id === 'lane-coverage')?.value).toBe('0/3 lanes');
+    expect(preview.readinessMetrics.find((metric) => metric.id === 'reviewer-status')?.status).toBe('blocked');
+    expect(preview.laneCoverage.every((lane) => lane.status === 'blocked')).toBe(true);
     expect(preview.gates.find((gate) => gate.id === 'required-schema')?.status).toBe('blocked');
     expect(preview.gates.filter((gate) => gate.status === 'blocked').length).toBeGreaterThan(1);
+  });
+
+  it('warns when confidence-moving buyer rows are not all reviewer accepted', () => {
+    const fixture = readFileSync(path.join(repoRoot, 'tests/fixtures/pilot-evidence/valid-95-evidence-register.csv'), 'utf8')
+      .replace('utility planning reviewer,complete,accepted', 'utility planning reviewer,complete,pending');
+    const preview = previewPilotEvidenceRegister(fixture);
+
+    expect(preview.acceptedConfidenceRowCount).toBe(2);
+    expect(preview.readinessMetrics.find((metric) => metric.id === 'reviewer-status')).toMatchObject({
+      status: 'warning',
+      value: '2/3 accepted',
+    });
+    expect(preview.laneCoverage.find((lane) => lane.id === 'utility-forecast')).toMatchObject({
+      status: 'blocked',
+      acceptedRowCount: 0,
+    });
   });
 
   it('flags route/proof-pack mismatches without treating the preview as final validation', () => {

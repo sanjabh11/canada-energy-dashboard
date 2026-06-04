@@ -1,0 +1,13 @@
+{"type":"bulk-review-tasks-added","taskIds":[],"createdAt":"2026-06-04T16:24:28.863Z"}
+{"type":"evidence","taskId":"T001","evidence":"src/lib/pilotEvidenceRegisterPreview.ts; src/components/PilotReadinessPage.tsx; tests/unit/pilotEvidenceRegisterPreview.test.ts","createdAt":"2026-06-04T16:53:58.745Z"}
+{"type":"evidence","taskId":"T002","evidence":"PilotEvidenceReadinessMetric; PilotEvidenceLaneCoverage; /pilot-readiness boundary copy","createdAt":"2026-06-04T16:53:58.864Z"}
+{"type":"evidence","taskId":"T003","evidence":"src/lib/pilotEvidenceRegisterPreview.ts; src/components/PilotReadinessPage.tsx; docs/PILOT_EVIDENCE_INTAKE_AND_ACCEPTANCE.md","createdAt":"2026-06-04T16:53:58.991Z"}
+{"type":"evidence","taskId":"T004","evidence":"git diff --check; pnpm exec tsc -b --pretty false; vitest pilotEvidenceRegisterPreview; test:wedge-prototype-routes; Node REPL Playwright screenshot; pnpm run check:release-readiness","createdAt":"2026-06-04T16:53:59.137Z"}
+{"type":"synthesis-check","ready":false,"blockers":["no passed adversarial review tasks","4 completed non-review task(s) lack passed adversarial review"],"createdAt":"2026-06-04T16:54:22.783Z"}
+{"type":"bulk-review-tasks-added","taskIds":["T005","T006","T007"],"createdAt":"2026-06-04T16:54:49.837Z"}
+{"type":"review-task-added","taskId":"T008","reviewOf":"T004","createdAt":"2026-06-04T16:55:27.594Z"}
+{"type":"evidence","taskId":"T005","evidence":"rg/diff review of pilotEvidenceRegisterPreview and PilotReadinessPage; no pre-existing buyer-evidence-readiness-dashboard test id before Phase O","createdAt":"2026-06-04T16:55:50.285Z"}
+{"type":"evidence","taskId":"T006","evidence":"tests/unit/pilotEvidenceRegisterPreview.test.ts partial reviewer case; /pilot-readiness boundary copy; dashboard top status preserves warning","createdAt":"2026-06-04T16:55:50.600Z"}
+{"type":"evidence","taskId":"T007","evidence":"Node REPL Playwright 390px CSS viewport: scrollWidth 390; component test dashboard assertions; docs local-preview-only row","createdAt":"2026-06-04T16:55:50.782Z"}
+{"type":"evidence","taskId":"T008","evidence":"git diff --check; tsc; vitest 5 tests; Playwright 5 tests; Node REPL visual smoke desktop and 390px; check:release-readiness passed with live static parity retained as external gate","createdAt":"2026-06-04T16:55:51.033Z"}
+{"type":"synthesis-check","ready":true,"blockers":[],"createdAt":"2026-06-04T16:56:08.062Z"}

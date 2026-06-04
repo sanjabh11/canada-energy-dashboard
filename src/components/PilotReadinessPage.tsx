@@ -15,7 +15,11 @@ import {
   pilotOutcomeMetrics,
   pilotStopConditions,
 } from '../lib/pilotEvidence';
-import { previewPilotEvidenceRegister, type PilotEvidenceRegisterPreview } from '../lib/pilotEvidenceRegisterPreview';
+import {
+  previewPilotEvidenceRegister,
+  type PilotEvidenceReadinessMetric,
+  type PilotEvidenceRegisterPreview,
+} from '../lib/pilotEvidenceRegisterPreview';
 import { computeRetainedArtifactHash, type RetainedArtifactHashResult } from '../lib/retainedArtifactHash';
 
 const MAX_REGISTER_PREVIEW_BYTES = 1024 * 1024;
@@ -269,16 +273,16 @@ export function PilotReadinessPage() {
 
             <div className="mt-10 grid gap-4">
               {pilotOperatorCommands.map((item, index) => (
-                <article key={item.id} className="rounded-2xl border border-white/10 bg-black/25 p-5">
+                <article key={item.id} className="min-w-0 rounded-2xl border border-white/10 bg-black/25 p-5">
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">
                         Step {index + 1}
                       </div>
                       <h3 className="mt-2 text-lg font-semibold text-white">{item.label}</h3>
                       <p className="mt-2 text-sm leading-6 text-slate-300">{item.whenToUse}</p>
                     </div>
-                    <div className="w-full overflow-x-auto rounded-xl border border-emerald-200/15 bg-slate-950 p-3 lg:max-w-2xl">
+                    <div className="w-full min-w-0 overflow-x-auto rounded-xl border border-emerald-200/15 bg-slate-950 p-3 lg:max-w-2xl">
                       <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{item.command}</code>
                     </div>
                   </div>
@@ -287,9 +291,9 @@ export function PilotReadinessPage() {
             </div>
 
             {selectedPlan && (
-              <div data-testid="phase-f-intake-wizard" className="mt-10 rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
-                <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
-                  <div>
+              <div data-testid="phase-f-intake-wizard" className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
+                <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+                  <div className="min-w-0">
                     <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
                       Phase F intake wizard
                     </div>
@@ -307,11 +311,11 @@ export function PilotReadinessPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4">
+                  <div className="grid min-w-0 gap-4">
                     {phaseFIntakeSteps.map((step, index) => (
-                      <article key={step.id} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                      <article key={step.id} className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                          <div>
+                          <div className="min-w-0">
                             <div className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">
                               Step {index + 1}
                             </div>
@@ -322,7 +326,7 @@ export function PilotReadinessPage() {
                             {step.status}
                           </span>
                         </div>
-                        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+                        <div className="mt-4 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
                           <code className="whitespace-nowrap text-xs leading-6 text-cyan-100">{step.command}</code>
                         </div>
                         <div className="mt-3 rounded-xl border border-amber-200/10 bg-amber-300/[0.07] p-3 text-sm leading-6 text-amber-50">
@@ -340,9 +344,9 @@ export function PilotReadinessPage() {
             )}
 
             {selectedPlan && (
-              <div className="mt-10 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
-                <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
-                  <div>
+              <div className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+                <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
+                  <div className="min-w-0">
                     <div className="text-sm uppercase tracking-[0.26em] text-emerald-100/80">
                       Route-aware intake planner
                     </div>
@@ -379,7 +383,7 @@ export function PilotReadinessPage() {
                     </dl>
                   </div>
 
-                  <div className="grid gap-4">
+                  <div className="grid min-w-0 gap-4">
                     <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                       <div className="text-xs uppercase tracking-[0.2em] text-slate-400">Claim boundary</div>
                       <div className="mt-2 text-sm leading-6 text-slate-200">{selectedPlan.claimBoundary}</div>
@@ -401,9 +405,9 @@ export function PilotReadinessPage() {
               </div>
             )}
 
-            <div className="mt-10 rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
-              <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-                <div>
+            <div className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
+              <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                <div className="min-w-0">
                   <div className="flex items-center gap-3 text-cyan-100">
                     <FileSearch className="h-5 w-5" />
                     <span className="text-sm uppercase tracking-[0.26em]">Retained artifact hash helper</span>
@@ -422,7 +426,7 @@ export function PilotReadinessPage() {
                   </div>
                 </div>
 
-                <form onSubmit={handleRetainedArtifactHash} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                <form onSubmit={handleRetainedArtifactHash} className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                   <label htmlFor="retained-artifact-file-name" className="block text-sm font-semibold text-cyan-100">
                     Retained artifact filename
                   </label>
@@ -503,9 +507,9 @@ export function PilotReadinessPage() {
               </div>
             </div>
 
-            <div data-testid="pilot-register-preview" className="mt-10 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
-              <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
-                <div>
+            <div data-testid="pilot-register-preview" className="mt-10 min-w-0 overflow-hidden rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">
+              <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+                <div className="min-w-0">
                   <div className="flex items-center gap-3 text-emerald-100">
                     <ClipboardCheck className="h-5 w-5" />
                     <span className="text-sm uppercase tracking-[0.26em]">95% register preview</span>
@@ -541,7 +545,7 @@ export function PilotReadinessPage() {
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-5">
                   <label htmlFor="pilot-register-local-file" className="block text-sm font-semibold text-emerald-100">
                     Local filled register CSV
                   </label>
@@ -589,6 +593,66 @@ export function PilotReadinessPage() {
                         <RoutePlanInfo label="Columns" value={`${registerPreview.columnCount}`} />
                         <RoutePlanInfo label="Accepted rows" value={`${registerPreview.acceptedConfidenceRowCount}`} />
                         <RoutePlanInfo label="Confidence delta" value={`${registerPreview.totalAcceptedConfidenceDelta}`} />
+                      </div>
+
+                      <div data-testid="buyer-evidence-readiness-dashboard" className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4">
+                        <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Buyer evidence readiness dashboard</div>
+                            <p className="mt-2 text-sm leading-6 text-slate-300">
+                              Local browser preview only. This dashboard does not create buyer evidence, production
+                              approval, or confidence movement; the canonical CLI gate below remains final.
+                            </p>
+                          </div>
+                          <GateStatusPill
+                            status={
+                              registerPreview.readinessMetrics.some((metric) => metric.status === 'blocked')
+                                ? 'blocked'
+                                : registerPreview.readinessMetrics.some((metric) => metric.status === 'warning')
+                                  ? 'warning'
+                                  : 'pass'
+                            }
+                          />
+                        </div>
+
+                        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                          {registerPreview.readinessMetrics.map((metric) => (
+                            <ReadinessMetricCard key={metric.id} metric={metric} />
+                          ))}
+                        </div>
+
+                        <div className="mt-5 overflow-hidden rounded-2xl border border-white/10">
+                          <div className="grid gap-3 bg-slate-950/80 px-4 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]">
+                            <div>Minimum lane</div>
+                            <div>Status</div>
+                            <div>Accepted rows</div>
+                            <div>Next action</div>
+                          </div>
+                          <div className="divide-y divide-white/10">
+                            {registerPreview.laneCoverage.map((lane) => (
+                              <div
+                                key={lane.id}
+                                data-testid={`buyer-evidence-dashboard-lane-${lane.id}`}
+                                className="grid gap-3 px-4 py-4 text-sm leading-6 text-slate-200 md:grid-cols-[0.8fr_0.55fr_1fr_1.2fr]"
+                              >
+                                <div>
+                                  <div className="font-semibold text-slate-50">{lane.label}</div>
+                                  <div className="mt-1 text-xs text-slate-400">{lane.evidence}</div>
+                                </div>
+                                <div>
+                                  <GateStatusPill status={lane.status} />
+                                </div>
+                                <div>
+                                  <div>{lane.acceptedRowCount}</div>
+                                  <div className="mt-1 break-words text-xs text-slate-400">
+                                    {lane.proofPackIds.length > 0 ? lane.proofPackIds.join(', ') : 'No accepted proof pack'}
+                                  </div>
+                                </div>
+                                <div className="text-slate-300">{lane.nextAction}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
 
                       {(registerPreview.warnings.length > 0 || registerPreview.missingRequiredColumns.length > 0 || registerPreview.forbiddenColumnsFound.length > 0) && (
@@ -764,8 +828,8 @@ export function PilotReadinessPage() {
 
         <section className="border-b border-white/10 bg-slate-950">
           <div className="mx-auto max-w-7xl px-6 py-16">
-            <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr]">
-              <div>
+            <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+              <div className="min-w-0">
                 <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">95% market gate</div>
                 <h2 className="mt-4 text-3xl font-semibold text-white">
                   CEIP cannot claim 95% until the filled buyer-evidence register passes this gate.
@@ -779,7 +843,7 @@ export function PilotReadinessPage() {
                 </div>
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid min-w-0 gap-3">
                 {pilotNinetyFiveGates.map((gate) => (
                   <div key={gate.id} className="rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-5">
                     <div className="text-sm font-semibold text-white">{gate.label}</div>
@@ -844,7 +908,7 @@ export function PilotReadinessPage() {
 
 function Metric({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[1.4rem] border border-white/10 bg-black/20 p-5">
+    <div className="min-w-0 rounded-[1.4rem] border border-white/10 bg-black/20 p-5">
       <div className="text-3xl font-semibold text-white">{value}</div>
       <div className="mt-2 text-sm text-slate-300">{label}</div>
     </div>
@@ -853,16 +917,16 @@ function Metric({ value, label }: { value: string; label: string }) {
 
 function Info({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/50 p-4">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/50 p-4">
       <div className="text-xs uppercase tracking-[0.2em] text-slate-400">{label}</div>
-      <div className="mt-2 text-sm leading-6 text-slate-200">{value}</div>
+      <div className="mt-2 break-words text-sm leading-6 text-slate-200">{value}</div>
     </div>
   );
 }
 
 function RoutePlanInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-950/45 p-4">
+    <div className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/45 p-4">
       <dt className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</dt>
       <dd className="mt-1 break-words text-slate-200">{value}</dd>
     </div>
@@ -871,9 +935,9 @@ function RoutePlanInfo({ label, value }: { label: string; value: string }) {
 
 function CommandBlock({ label, command }: { label: string; command: string }) {
   return (
-    <div className="rounded-2xl border border-emerald-200/15 bg-black/30 p-5">
+    <div className="min-w-0 rounded-2xl border border-emerald-200/15 bg-black/30 p-5">
       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</div>
-      <div className="mt-3 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+      <div className="mt-3 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
         <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{command}</code>
       </div>
     </div>
@@ -892,6 +956,29 @@ function GateStatusPill({ status }: { status: 'pass' | 'blocked' | 'warning' }) 
     <span className={`inline-flex shrink-0 items-center justify-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${className}`}>
       {label}
     </span>
+  );
+}
+
+function ReadinessMetricCard({ metric }: { metric: PilotEvidenceReadinessMetric }) {
+  return (
+    <div
+      data-testid={`buyer-evidence-dashboard-metric-${metric.id}`}
+      className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/55 p-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{metric.label}</div>
+          <div className="mt-2 text-2xl font-semibold text-slate-50">{metric.value}</div>
+        </div>
+        <GateStatusPill status={metric.status} />
+      </div>
+      <p className="mt-3 text-sm leading-6 text-slate-300">{metric.evidence}</p>
+      {metric.status !== 'pass' && (
+        <div className="mt-3 rounded-xl border border-amber-200/10 bg-amber-300/[0.07] p-3 text-sm leading-6 text-amber-50">
+          {metric.nextAction}
+        </div>
+      )}
+    </div>
   );
 }
 
