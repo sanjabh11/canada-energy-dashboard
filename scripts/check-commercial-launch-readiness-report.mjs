@@ -106,6 +106,7 @@ function assertReport(markdown, options = {}) {
   const requiredSections = [
     'Launch Decision',
     'Gap Analysis',
+    'Buyer Evidence Hard Gate Deficits',
     'Proof Buckets',
     'Top 10 Pain Points',
     'Top 10 Target Customers Or Segments',
@@ -128,6 +129,14 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Scaffolding, fixtures, and constructed demos do not count as buyer acceptance.'), 'Report must preserve the no-scaffolding-as-buyer-proof boundary.');
   assert(markdown.includes('Buyer evidence review'), 'Report must include structured buyer-evidence readiness from the manifest.');
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
+  assert(markdown.includes('## Buyer Evidence Hard Gate Deficits'), 'Report must include the buyer hard-gate deficit table.');
+  assert(markdown.includes('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.'), 'Report must preserve the no-scaffolding buyer-deficit boundary.');
+  if (options.skipProbes) {
+    assert(markdown.includes('Buyer hard-gate deficit ledger skipped'), 'Skipped report must preserve the skipped buyer-deficit evidence boundary.');
+  } else {
+    assert(markdown.includes('| Utility forecast lane |'), 'Report must include the utility forecast buyer-deficit row.');
+    assert(markdown.includes('| Retained-artifact 95% validation |'), 'Report must include the retained-artifact validation buyer-deficit row.');
+  }
   assert(markdown.includes('Supabase advisor review'), 'Report must include structured Supabase advisor evidence from the manifest.');
   assert(markdown.includes('Supabase security/performance advisor clearance remains unavailable'), 'Report must preserve the Supabase advisor clearance launch blocker.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
@@ -157,11 +166,13 @@ function assertReport(markdown, options = {}) {
   const targetSection = extractSection(markdown, 'Top 10 Target Customers Or Segments');
   const launchSection = extractSection(markdown, 'Launch Decision');
   const gapSection = extractSection(markdown, 'Gap Analysis');
+  const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
   const eccSection = extractSection(markdown, 'ECC Ledger');
 
   assert(countDataRows(launchSection) === 5, 'Launch score table must include five dimensions.');
   assert(countDataRows(gapSection) >= 4, 'Gap analysis table must include current P0/P1 launch blockers.');
+  assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');
@@ -175,4 +186,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

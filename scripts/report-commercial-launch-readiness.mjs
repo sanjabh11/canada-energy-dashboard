@@ -128,6 +128,8 @@ function renderReport(manifest, validationText) {
   const gaps = Array.isArray(manifest.gaps) ? manifest.gaps : [];
   const openP0 = gaps.filter((gap) => gap?.severity === 'P0' && gap?.status === 'open').length;
   const openP1 = gaps.filter((gap) => gap?.severity === 'P1' && gap?.status === 'open').length;
+  const buyerDeficits = manifest.buyer_evidence?.hard_gate_deficits ?? {};
+  const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -175,6 +177,22 @@ ${gaps.map((gap) => row([
     gap.fix,
     gap.status,
   ])).join('\n')}
+
+## Buyer Evidence Hard Gate Deficits
+
+Open hard-gate deficits: ${text(buyerDeficits.open_count ?? 'unknown')}/${text(buyerDeficits.total_count ?? 'unknown')}. Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.
+
+| Requirement | Current | Needed | Status | Next Action |
+|---|---|---|---|---|
+${buyerDeficitItems.length > 0
+    ? buyerDeficitItems.map((item) => row([
+      item.requirement,
+      item.current,
+      item.needed,
+      item.status,
+      item.next_action,
+    ])).join('\n')
+    : row(['Deficit ledger', 'not available', 'Run report:buyer-evidence-readiness', buyerDeficits.status ?? 'unknown', buyerDeficits.evidence ?? 'No deficit ledger was captured.'])}
 
 ## Proof Buckets
 

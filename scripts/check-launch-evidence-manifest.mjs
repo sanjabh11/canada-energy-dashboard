@@ -126,10 +126,27 @@ try {
     assert(hasIntegerOrNull(manifest.buyer_evidence?.confidence_moving_rows), 'Manifest buyer_evidence.confidence_moving_rows must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.actionable_outreach_rows), 'Manifest buyer_evidence.actionable_outreach_rows must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.batchable_intake_packet_rows), 'Manifest buyer_evidence.batchable_intake_packet_rows must be an integer or null.');
+    assert(typeof manifest.buyer_evidence?.hard_gate_deficits?.evidence === 'string', 'Manifest buyer_evidence.hard_gate_deficits.evidence must be set.');
+    assert(manifest.buyer_evidence.hard_gate_deficits.evidence.includes('Buyer hard-gate deficit ledger'), 'Manifest buyer hard-gate deficits evidence must include a ledger marker.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.hard_gate_deficits?.open_count), 'Manifest buyer_evidence.hard_gate_deficits.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.hard_gate_deficits?.total_count), 'Manifest buyer_evidence.hard_gate_deficits.total_count must be an integer or null.');
+    assert(Array.isArray(manifest.buyer_evidence?.hard_gate_deficits?.items), 'Manifest buyer_evidence.hard_gate_deficits.items must be a list.');
+    for (const [index, item] of (manifest.buyer_evidence.hard_gate_deficits.items ?? []).entries()) {
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].needed must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].status must be set.`);
+      assert(typeof item.next_action === 'string' && item.next_action.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].next_action must be set.`);
+    }
     if (!skipProbes) {
       assert(Number.isInteger(manifest.buyer_evidence?.production_registers), 'Non-skipped manifest must include numeric buyer-evidence production register count.');
       assert(Number.isInteger(manifest.buyer_evidence?.outreach_logs), 'Non-skipped manifest must include numeric buyer-evidence outreach log count.');
       assert(Number.isInteger(manifest.buyer_evidence?.confidence_moving_rows), 'Non-skipped manifest must include numeric buyer-evidence confidence row count.');
+      assert(Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count), 'Non-skipped manifest must include numeric buyer hard-gate deficit open count.');
+      assert(Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.total_count), 'Non-skipped manifest must include numeric buyer hard-gate deficit total count.');
+      assert(manifest.buyer_evidence.hard_gate_deficits.items.length >= 10, 'Non-skipped manifest must include the buyer hard-gate deficit item table.');
+      assert(manifest.buyer_evidence.hard_gate_deficits.items.some((item) => item.requirement === 'Utility forecast lane'), 'Buyer hard-gate deficits must include the utility forecast lane.');
+      assert(manifest.buyer_evidence.hard_gate_deficits.items.some((item) => item.requirement === 'Retained-artifact 95% validation'), 'Buyer hard-gate deficits must include retained-artifact validation.');
     }
     assert(typeof manifest.source_provenance?.evidence === 'string', 'Manifest must include source_provenance.evidence.');
     assert(manifest.source_provenance.evidence.includes('Source provenance:'), 'Manifest source provenance evidence must include a summary marker.');
@@ -293,4 +310,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

@@ -62,6 +62,11 @@ describe('launch evidence manifest report', () => {
     expect(manifest.buyer_evidence.phase_f_gate).toBe('unknown');
     expect(manifest.buyer_evidence.evidence).toContain('Buyer evidence review');
     expect(manifest.buyer_evidence.workspace_next_step).toContain('report:buyer-evidence-readiness');
+    expect(manifest.buyer_evidence.hard_gate_deficits.status).toBe('skipped');
+    expect(manifest.buyer_evidence.hard_gate_deficits.open_count).toBeNull();
+    expect(manifest.buyer_evidence.hard_gate_deficits.total_count).toBeNull();
+    expect(manifest.buyer_evidence.hard_gate_deficits.items).toEqual([]);
+    expect(manifest.buyer_evidence.hard_gate_deficits.evidence).toContain('Buyer hard-gate deficit ledger skipped');
     expect(manifest.supabase_advisor.status).toBe('needs_remediation');
     expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
     expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
@@ -170,6 +175,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Decision: `blocked`');
     expect(stdout).toContain('## Launch Decision');
     expect(stdout).toContain('## Gap Analysis');
+    expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -182,6 +188,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');
     expect(stdout).toContain('Batchable intake-packet outreach rows');
+    expect(stdout).toContain('Buyer hard-gate deficit ledger skipped');
+    expect(stdout).toContain('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.');
     expect(stdout).toContain('Supabase advisor review');
     expect(stdout).toContain('Supabase security/performance advisor clearance remains unavailable');
     expect(stdout).toContain('Branch family review skipped');

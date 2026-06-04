@@ -161,11 +161,68 @@ function buyerEvidenceReviewEvidence(probe) {
   ].join(' ');
 }
 
+function buyerDeficitEvidence(deficits) {
+  if (deficits.status === 'skipped') {
+    return 'Buyer hard-gate deficit ledger skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for the current hard-gate deficit table.';
+  }
+
+  const topOpen = deficits.items
+    .filter((item) => item.status !== 'pass')
+    .slice(0, 4)
+    .map((item) => `${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Buyer hard-gate deficit ledger:',
+    `open=${deficits.open_count ?? 'unknown'}/${deficits.total_count ?? 'unknown'}`,
+    `top_open=${topOpen}`,
+  ].join(' ');
+}
+
 function extractMarkdownSection(markdown, heading) {
   const start = markdown.indexOf(`## ${heading}`);
   if (start < 0) return '';
   const next = markdown.indexOf('\n## ', start + 1);
   return markdown.slice(start, next < 0 ? markdown.length : next);
+}
+
+function parseBuyerDeficitRows(markdown) {
+  const section = extractMarkdownSection(markdown, 'Hard 95% Gate Deficit Ledger');
+  if (!section) {
+    return {
+      status: 'missing',
+      open_count: null,
+      total_count: null,
+      evidence: 'Buyer hard-gate deficit ledger missing from report:buyer-evidence-readiness output.',
+      items: [],
+    };
+  }
+
+  const countMatch = section.match(/Open hard-gate deficits:\s*(\d+)\/(\d+)/);
+  const items = section
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('| '))
+    .filter((line) => !line.startsWith('| Requirement |') && !line.startsWith('|---'))
+    .map((line) => line
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim()))
+    .filter((cells) => cells.length >= 5)
+    .map(([requirement, current, needed, status, nextAction]) => ({
+      requirement,
+      current,
+      needed,
+      status,
+      next_action: nextAction,
+    }));
+
+  const deficits = {
+    status: 'pass',
+    open_count: countMatch ? Number.parseInt(countMatch[1], 10) : items.filter((item) => item.status !== 'pass').length,
+    total_count: countMatch ? Number.parseInt(countMatch[2], 10) : items.length,
+    items,
+  };
+  return { ...deficits, evidence: buyerDeficitEvidence(deficits) };
 }
 
 function parseBranchFreshnessRows(markdown) {
@@ -959,6 +1016,12 @@ function probeSupabaseAdvisorStatus() {
 
 function probeBuyerEvidence() {
   if (skipProbes) {
+    const hardGateDeficits = {
+      status: 'skipped',
+      open_count: null,
+      total_count: null,
+      items: [],
+    };
     const probe = {
       status: 'skipped',
       evidence: 'Probe skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for current evidence.',
@@ -970,11 +1033,13 @@ function probeBuyerEvidence() {
       evidenceRoot: 'unknown',
       phaseFGate: 'unknown',
       workspaceNextStep: 'run report:buyer-evidence-readiness before creating or claiming Phase F inputs',
+      hardGateDeficits: { ...hardGateDeficits, evidence: buyerDeficitEvidence(hardGateDeficits) },
     };
     return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
   }
   const result = run(process.execPath, ['scripts/report-buyer-evidence-readiness.mjs']);
   const output = `${result.stdout}\n${result.stderr}`.trim();
+  const hardGateDeficits = parseBuyerDeficitRows(output);
   const probe = {
     status: result.status === 0 ? 'pass' : 'fail',
     evidence: output.split(/\r?\n/).slice(0, 12).join(' | '),
@@ -988,6 +1053,7 @@ function probeBuyerEvidence() {
     workspaceNextStep: output.includes('create:phase-f-evidence-workspace')
       ? 'create:phase-f-evidence-workspace'
       : 'inspect report:buyer-evidence-readiness next actions',
+    hardGateDeficits,
   };
   return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
 }
@@ -1310,6 +1376,7 @@ const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
 
 const buyerGapEvidence = [
   buyerProbe.reviewEvidence,
+  buyerProbe.hardGateDeficits?.evidence,
   `Production pilot evidence registers: ${buyerProbe.productionRegisters ?? 'unknown'}`,
   `Production outreach response logs: ${buyerProbe.outreachLogs ?? 'unknown'}`,
   `Confidence-moving register rows: ${buyerProbe.confidenceRows ?? 'unknown'}`,
@@ -1406,6 +1473,7 @@ const manifest = {
     evidence_root: buyerProbe.evidenceRoot,
     phase_f_gate: buyerProbe.phaseFGate,
     workspace_next_step: buyerProbe.workspaceNextStep,
+    hard_gate_deficits: buyerProbe.hardGateDeficits,
     evidence: buyerProbe.reviewEvidence,
   },
   supabase_advisor: {
