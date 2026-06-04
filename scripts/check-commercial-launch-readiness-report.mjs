@@ -135,8 +135,10 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Branch freshness review'), 'Report must include branch freshness evidence from the manifest.');
   assert(markdown.includes('Branch review queue'), 'Report must include the actionable branch review queue evidence from the manifest.');
   assert(markdown.includes('Top branch review packet'), 'Report must include the focused top branch review packet evidence from the manifest.');
+  assert(markdown.includes('Canonical head comparison'), 'Report must include the local-vs-origin canonical head comparison evidence from the manifest.');
   assert(markdown.includes('approval_gate=no checkout/merge/deploy/migration/push'), 'Report must preserve the top branch packet no-mutation approval gate.');
   if (!options.skipProbes) {
+    assert(markdown.includes('local_only='), 'Report must surface canonical-head local-only commit counts when branch probes run.');
     assert(markdown.includes('review_first'), 'Report must surface review-first branch queue priority when branch probes run.');
   }
   assert(markdown.includes('| validate_launch_evidence.py | pass | VALID |'), 'Report must include a passing launch evidence schema validation row.');
@@ -169,4 +171,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, canonical head comparison, and validation boundaries are present.');

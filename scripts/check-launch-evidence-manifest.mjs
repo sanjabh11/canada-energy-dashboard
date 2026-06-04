@@ -177,6 +177,9 @@ try {
     assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.review_first_count), 'Manifest branch_review.review_queue.review_first_count must be an integer or null.');
     for (const [index, item] of (manifest.branch_review.review_queue.items ?? []).entries()) {
       assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.review_queue.items[${index}].family must be set.`);
+      assert(Array.isArray(item.family_refs), `branch_review.review_queue.items[${index}].family_refs must be a list.`);
+      assert(item.local_ref === null || typeof item.local_ref === 'string', `branch_review.review_queue.items[${index}].local_ref must be string or null.`);
+      assert(item.origin_ref === null || typeof item.origin_ref === 'string', `branch_review.review_queue.items[${index}].origin_ref must be string or null.`);
       assert(typeof item.review_ref === 'string' && item.review_ref.length > 0, `branch_review.review_queue.items[${index}].review_ref must be set.`);
       assert(typeof item.priority === 'string' && item.priority.length > 0, `branch_review.review_queue.items[${index}].priority must be set.`);
       assert(typeof item.highest_risk === 'string' && item.highest_risk.length > 0, `branch_review.review_queue.items[${index}].highest_risk must be set.`);
@@ -190,6 +193,14 @@ try {
     assert(Array.isArray(manifest.branch_review?.top_review_packet?.categories), 'Manifest branch_review.top_review_packet.categories must be a list.');
     assert(Array.isArray(manifest.branch_review?.top_review_packet?.changed_supabase_functions), 'Manifest branch_review.top_review_packet.changed_supabase_functions must be a list.');
     assert(hasIntegerOrNull(manifest.branch_review?.top_review_packet?.changed_supabase_function_count), 'Manifest branch_review.top_review_packet.changed_supabase_function_count must be an integer or null.');
+    assert(typeof manifest.branch_review?.top_review_packet?.canonical_head_comparison?.evidence === 'string', 'Manifest branch_review.top_review_packet.canonical_head_comparison.evidence must be set.');
+    assert(manifest.branch_review.top_review_packet.canonical_head_comparison.evidence.includes('Canonical head comparison'), 'Manifest canonical head comparison evidence must include a comparison marker.');
+    assert(typeof manifest.branch_review?.top_review_packet?.canonical_head_comparison?.status === 'string', 'Manifest canonical head comparison status must be set.');
+    assert(typeof manifest.branch_review?.top_review_packet?.canonical_head_comparison?.state === 'string', 'Manifest canonical head comparison state must be set.');
+    assert(hasIntegerOrNull(manifest.branch_review?.top_review_packet?.canonical_head_comparison?.local_only_count), 'Manifest canonical head comparison local_only_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.top_review_packet?.canonical_head_comparison?.origin_only_count), 'Manifest canonical head comparison origin_only_count must be an integer or null.');
+    assert(Array.isArray(manifest.branch_review?.top_review_packet?.canonical_head_comparison?.local_only_subjects), 'Manifest canonical head comparison local_only_subjects must be a list.');
+    assert(Array.isArray(manifest.branch_review?.top_review_packet?.canonical_head_comparison?.origin_only_subjects), 'Manifest canonical head comparison origin_only_subjects must be a list.');
     assert(typeof manifest.branch_review?.top_review_packet?.command === 'string' && manifest.branch_review.top_review_packet.command.includes('report:unmerged-branch-readiness'), 'Manifest branch_review.top_review_packet.command must point to the focused branch report.');
     assert(typeof manifest.branch_review?.top_review_packet?.stop_gate === 'string' && /no branch mutation|no checkout|no .*merge|owner approval/i.test(manifest.branch_review.top_review_packet.stop_gate), 'Manifest branch_review.top_review_packet.stop_gate must preserve the non-mutating approval boundary.');
     if (!skipProbes) {
@@ -206,6 +217,13 @@ try {
         manifest.branch_review.top_review_packet.changed_supabase_functions.length === manifest.branch_review.top_review_packet.changed_supabase_function_count,
         'Top branch review packet function names must match changed_supabase_function_count.',
       );
+      if (manifest.branch_review.top_review_packet.canonical_head_comparison.status === 'pass') {
+        assert(
+          typeof manifest.branch_review.top_review_packet.canonical_head_comparison.command === 'string'
+            && manifest.branch_review.top_review_packet.canonical_head_comparison.command.includes('git log --left-right --cherry-pick --oneline'),
+          'Passing canonical head comparison must record the read-only git log command.',
+        );
+      }
     }
     assert(
       typeof manifest.outreach_plan?.email_script_boundary === 'string'
@@ -235,4 +253,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

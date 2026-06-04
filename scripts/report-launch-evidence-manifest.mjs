@@ -426,8 +426,17 @@ function reviewCommandForFamily(familyRow) {
 }
 
 function reviewRefForFamily(familyRow) {
+  const refs = refsForFamily(familyRow);
+  return refs.local_ref || refs.origin_ref || refs.family_refs[0] || familyRow.family;
+}
+
+function refsForFamily(familyRow) {
   const refs = refNamesFromFamilyRefs(familyRow.refs);
-  return refs.find((ref) => !ref.startsWith('origin/')) ?? refs[0] ?? familyRow.family;
+  return {
+    family_refs: refs,
+    local_ref: refs.find((ref) => !ref.startsWith('origin/')) ?? null,
+    origin_ref: refs.find((ref) => ref.startsWith('origin/')) ?? null,
+  };
 }
 
 function priorityForBranchFamily(familyRow, freshness) {
@@ -469,8 +478,12 @@ function branchReviewQueueForProbe(probe) {
   const items = familyRows
     .map((familyRow) => {
       const freshness = worstFreshnessForFamily(familyRow.family, freshnessRows);
+      const refs = refsForFamily(familyRow);
       return {
         family: familyRow.family,
+        family_refs: refs.family_refs,
+        local_ref: refs.local_ref,
+        origin_ref: refs.origin_ref,
         review_ref: reviewRefForFamily(familyRow),
         priority: priorityForBranchFamily(familyRow, freshness),
         highest_risk: familyRow.highestRisk,
@@ -509,6 +522,123 @@ function branchReviewQueueForProbe(probe) {
     ].join(' '),
     items: items.slice(0, 8),
   };
+}
+
+function canonicalHeadComparisonEvidence(comparison) {
+  if (comparison.status === 'skipped') {
+    return 'Canonical head comparison skipped by --skip-probes.';
+  }
+
+  if (comparison.status === 'single_ref') {
+    return [
+      'Canonical head comparison:',
+      `status=${comparison.status}`,
+      `local_ref=${comparison.local_ref ?? 'none'}`,
+      `origin_ref=${comparison.origin_ref ?? 'none'}`,
+      'state=single_ref',
+      'action=review available ref only; no push, checkout, merge, or discard decision is implied',
+    ].join(' ');
+  }
+
+  if (comparison.status !== 'pass') {
+    return [
+      'Canonical head comparison:',
+      `status=${comparison.status}`,
+      `local_ref=${comparison.local_ref ?? 'unknown'}`,
+      `origin_ref=${comparison.origin_ref ?? 'unknown'}`,
+      'state=unknown',
+      'action=refresh Git refs before choosing a canonical head',
+    ].join(' ');
+  }
+
+  return [
+    'Canonical head comparison:',
+    `status=${comparison.status}`,
+    `local_ref=${comparison.local_ref}`,
+    `origin_ref=${comparison.origin_ref}`,
+    `state=${comparison.state}`,
+    `local_only=${comparison.local_only_count}`,
+    `origin_only=${comparison.origin_only_count}`,
+    comparison.local_only_subjects.length > 0 ? `local_only_subjects=${comparison.local_only_subjects.join(' || ')}` : 'local_only_subjects=none',
+    comparison.origin_only_subjects.length > 0 ? `origin_only_subjects=${comparison.origin_only_subjects.join(' || ')}` : 'origin_only_subjects=none',
+    'action=choose canonical head through read-only review before merge, push, or discard',
+  ].join(' ');
+}
+
+function compareCanonicalHeads(topItem) {
+  if (skipProbes) {
+    const comparison = {
+      status: 'skipped',
+      local_ref: null,
+      origin_ref: null,
+      state: 'unknown',
+      local_only_count: null,
+      origin_only_count: null,
+      local_only_subjects: [],
+      origin_only_subjects: [],
+    };
+    return { ...comparison, evidence: canonicalHeadComparisonEvidence(comparison) };
+  }
+
+  if (!topItem?.local_ref || !topItem?.origin_ref) {
+    const comparison = {
+      status: 'single_ref',
+      local_ref: topItem?.local_ref ?? null,
+      origin_ref: topItem?.origin_ref ?? null,
+      state: 'single_ref',
+      local_only_count: topItem?.local_ref ? 1 : 0,
+      origin_only_count: topItem?.origin_ref ? 1 : 0,
+      local_only_subjects: [],
+      origin_only_subjects: [],
+    };
+    return { ...comparison, evidence: canonicalHeadComparisonEvidence(comparison) };
+  }
+
+  const result = run('git', [
+    'log',
+    '--left-right',
+    '--cherry-pick',
+    '--oneline',
+    `${topItem.local_ref}...${topItem.origin_ref}`,
+  ]);
+  const output = `${result.stdout}\n${result.stderr}`.trim();
+  if (result.status !== 0) {
+    const comparison = {
+      status: 'fail',
+      local_ref: topItem.local_ref,
+      origin_ref: topItem.origin_ref,
+      state: 'unknown',
+      local_only_count: null,
+      origin_only_count: null,
+      local_only_subjects: [],
+      origin_only_subjects: [],
+      evidence_excerpt: output.split(/\r?\n/).slice(0, 8).join(' | '),
+    };
+    return { ...comparison, evidence: canonicalHeadComparisonEvidence(comparison) };
+  }
+
+  const lines = output.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const localOnly = lines.filter((line) => line.startsWith('< ')).map((line) => line.slice(2));
+  const originOnly = lines.filter((line) => line.startsWith('> ')).map((line) => line.slice(2));
+  const state = localOnly.length > 0 && originOnly.length > 0
+    ? 'diverged'
+    : localOnly.length > 0
+      ? 'local_ahead'
+      : originOnly.length > 0
+        ? 'origin_ahead'
+        : 'matching_or_cherry_equivalent';
+  const comparison = {
+    status: 'pass',
+    local_ref: topItem.local_ref,
+    origin_ref: topItem.origin_ref,
+    command: `git log --left-right --cherry-pick --oneline ${topItem.local_ref}...${topItem.origin_ref}`,
+    state,
+    local_only_count: localOnly.length,
+    origin_only_count: originOnly.length,
+    local_only_subjects: localOnly.slice(0, 6),
+    origin_only_subjects: originOnly.slice(0, 6),
+  };
+  return { ...comparison, evidence: canonicalHeadComparisonEvidence(comparison) };
 }
 
 function extractFocusedReviewLine(markdown, label) {
@@ -561,6 +691,7 @@ function topBranchReviewPacketEvidence(packet) {
   }
 
   const functionRefs = packet.changed_supabase_functions.slice(0, 6).join(', ') || 'none';
+  const comparison = packet.canonical_head_comparison ?? {};
   return [
     'Top branch review packet:',
     `branch=${packet.branch}`,
@@ -573,6 +704,9 @@ function topBranchReviewPacketEvidence(packet) {
     `categories=${packet.categories.join(',') || 'none'}`,
     `supabase_functions=${packet.changed_supabase_function_count}`,
     `function_refs=${functionRefs}`,
+    `canonical_state=${comparison.state ?? 'unknown'}`,
+    `canonical_local_only=${comparison.local_only_count ?? 'unknown'}`,
+    `canonical_origin_only=${comparison.origin_only_count ?? 'unknown'}`,
     'approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates',
   ].join(' ');
 }
@@ -590,6 +724,7 @@ function probeTopBranchReviewPacket(reviewQueue) {
       categories: [],
       changed_supabase_function_count: null,
       changed_supabase_functions: [],
+      canonical_head_comparison: compareCanonicalHeads(null),
       command: 'corepack pnpm run report:unmerged-branch-readiness -- --branch <top-review-ref> --max-files 12',
       stop_gate: 'Read-only focused review first; no branch mutation or production action.',
     };
@@ -609,6 +744,7 @@ function probeTopBranchReviewPacket(reviewQueue) {
       categories: [],
       changed_supabase_function_count: 0,
       changed_supabase_functions: [],
+      canonical_head_comparison: compareCanonicalHeads(topItem),
       command: 'corepack pnpm run report:unmerged-branch-readiness',
       stop_gate: 'No branch review item available.',
     };
@@ -626,6 +762,7 @@ function probeTopBranchReviewPacket(reviewQueue) {
   const categories = splitCommaList(extractFocusedReviewLine(output, 'Categories'));
   const functionRows = parseChangedFunctionRows(output);
   const focusedFreshness = parseFocusedBranchFreshness(output, topItem.review_ref);
+  const canonicalHeadComparison = compareCanonicalHeads(topItem);
   const packet = {
     status: result.status === 0 ? 'pass' : 'fail',
     branch: topItem.review_ref,
@@ -640,6 +777,7 @@ function probeTopBranchReviewPacket(reviewQueue) {
     changed_supabase_function_count: functionRows.length,
     changed_supabase_functions: functionRows.map((row) => row.function_name),
     changed_supabase_function_rows: functionRows.slice(0, 12),
+    canonical_head_comparison: canonicalHeadComparison,
     command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${topItem.review_ref} --max-files 12`,
     stop_gate: topItem.stop_gate,
     evidence_excerpt: output.split(/\r?\n/).slice(0, 24).join(' | '),
@@ -1052,6 +1190,7 @@ const branchReviewEvidence = [
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
   topBranchReviewPacket.evidence,
+  topBranchReviewPacket.canonical_head_comparison?.evidence,
 ].join(' ');
 
 const manifest = {
@@ -1089,6 +1228,7 @@ const manifest = {
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
       topBranchReviewPacket.evidence,
+      topBranchReviewPacket.canonical_head_comparison?.evidence,
       supabaseAdvisor.evidence,
     ],
     repo_artifact: [
@@ -1180,6 +1320,7 @@ const manifest = {
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
       topBranchReviewPacket.evidence,
+      topBranchReviewPacket.canonical_head_comparison?.evidence,
     ].join(' '),
   },
   source_provenance: {
