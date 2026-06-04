@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 7) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, branch-review, buyer-evidence, and Supabase advisor records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 8) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch action queue, branch-review, buyer-evidence, and Supabase advisor records.');
   }
 
   const ids = new Set();
@@ -67,6 +67,7 @@ function validateManifest(manifest) {
     'current_source_live_parity',
     'current_source_release_gate',
     'source_provenance',
+    'launch_blocker_action_queue',
     'unmerged_branch_review_queue',
     'buyer_evidence_gate',
     'supabase_advisor_access',
@@ -83,6 +84,13 @@ function validateManifest(manifest) {
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+  const launchQueue = itemById.get('launch_blocker_action_queue') ?? {};
+  if (!/sequenced|source provenance|post-deploy/i.test(`${launchQueue.evidenceBoundary ?? ''}\n${launchQueue.nextAction ?? ''}`)) {
+    failures.push('launch_blocker_action_queue must describe the sequenced launch blocker plan.');
+  }
+  if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
+    failures.push('launch_blocker_action_queue must preserve the non-execution launch boundary.');
   }
 
   const serialized = JSON.stringify(manifest);

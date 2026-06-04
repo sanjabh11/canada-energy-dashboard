@@ -10,6 +10,7 @@
     "pnpm run check:release-readiness",
     "pnpm run check:production-deploy-request",
     "pnpm run check:post-deploy-live",
+    "pnpm run report:commercial-launch-readiness",
     "pnpm run report:buyer-evidence-readiness"
   ],
   "items": [
@@ -48,6 +49,15 @@
       "command": "pnpm run report:production-approval-packet -- --skip-release-readiness",
       "evidenceBoundary": "Deploy requests require clean main-branch source provenance. The local packet classifies dirty paths by staged-only, unstaged-only, mixed, untracked, or ignored state, but this public manifest does not prove current local cleanliness or production approval.",
       "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
+    },
+    {
+      "id": "launch_blocker_action_queue",
+      "label": "Launch blocker action queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The launch blocker action queue sequences source provenance, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof, but it does not deploy, merge, contact buyers, mutate branches, clear blockers, or create launch readiness; it does not create launch readiness.",
+      "nextAction": "Work the queue in order, keep source provenance and approval gates first-class, then rerun the commercial launch readiness report and launch evidence manifest."
     },
     {
       "id": "unmerged_branch_review_queue",

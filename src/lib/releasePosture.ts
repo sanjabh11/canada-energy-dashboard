@@ -142,6 +142,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs and review-first packet evidence; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
+    label: 'Launch blocker action queue',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The launch blocker action queue sequences source provenance, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof; it does not deploy, merge, contact buyers, mutate branches, clear blockers, or create launch readiness, and it does not create launch readiness.',
+  },
+  {
     label: 'Buyer evidence scan',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-readiness',
