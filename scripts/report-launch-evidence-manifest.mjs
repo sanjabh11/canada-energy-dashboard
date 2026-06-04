@@ -959,6 +959,86 @@ function branchReviewQueueForProbe(probe) {
   };
 }
 
+function canonicalHeadDecisionEvidence(decisions) {
+  if (decisions.status === 'skipped') {
+    return 'Canonical head decision ledger skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for split, local-only, origin-only, and stale branch-family decisions.';
+  }
+
+  const topOpen = decisions.items
+    .filter((item) => item.status !== 'pass')
+    .slice(0, 5)
+    .map((item) => `${item.family}:${item.local_origin_state}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Canonical head decision ledger:',
+    `open=${decisions.open_count}/${decisions.total_count}`,
+    `local_only=${decisions.local_only_count}`,
+    `origin_only=${decisions.origin_only_count}`,
+    `split=${decisions.split_count}`,
+    `top_open=${topOpen}`,
+    'approval_gate=no checkout/merge/push/discard/deploy until canonical heads are selected through read-only review and explicit owner approval',
+  ].join(' ');
+}
+
+function canonicalDecisionNeeded(item) {
+  const stateKey = familyStateKey(item.local_origin_state);
+  if (stateKey === 'local_ahead') return 'Choose whether the local branch head is canonical before any merge or push discussion.';
+  if (stateKey === 'origin_ahead') return 'Choose whether the origin branch head is canonical before any merge or local branch update discussion.';
+  if (stateKey === 'diverged') return 'Choose a canonical local or origin head after bidirectional read-only commit review.';
+  if (stateKey === 'local_only') return 'Decide whether the local-only branch remains a review candidate or is explicitly retired after owner review.';
+  if (stateKey === 'origin_only') return 'Decide whether the origin-only branch remains a review candidate or is explicitly retired after owner review.';
+  if (stateKey === 'unknown') return 'Refresh local/origin refs before selecting a canonical head.';
+  return 'Canonical heads match; complete focused risk review before any merge discussion.';
+}
+
+function buildCanonicalHeadDecisionLedger(reviewQueue) {
+  if (reviewQueue.status === 'skipped') {
+    const decisions = {
+      status: 'skipped',
+      open_count: null,
+      total_count: null,
+      local_only_count: null,
+      origin_only_count: null,
+      split_count: null,
+      items: [],
+    };
+    return { ...decisions, evidence: canonicalHeadDecisionEvidence(decisions) };
+  }
+
+  const items = (reviewQueue.items ?? [])
+    .filter((item) => familyStateKey(item.local_origin_state) !== 'matching_heads')
+    .map((item, index) => {
+      const stateKey = familyStateKey(item.local_origin_state);
+      return {
+        rank: index + 1,
+        family: item.family,
+        local_ref: item.local_ref,
+        origin_ref: item.origin_ref,
+        review_ref: item.review_ref,
+        local_origin_state: item.local_origin_state,
+        state_key: stateKey,
+        highest_risk: item.highest_risk,
+        freshness: item.freshness,
+        decision_needed: canonicalDecisionNeeded(item),
+        proof_command: item.review_command,
+        stop_gate: 'No checkout, merge, push, discard, deploy, migration, or production approval until the canonical head decision is explicit and release gates are clean.',
+        status: 'blocked',
+      };
+    });
+  const decisions = {
+    status: items.length > 0 ? 'blocked' : 'pass',
+    open_count: items.length,
+    total_count: items.length,
+    local_only_count: items.filter((item) => item.state_key === 'local_only').length,
+    origin_only_count: items.filter((item) => item.state_key === 'origin_only').length,
+    split_count: items.filter((item) => ['local_ahead', 'origin_ahead', 'diverged'].includes(item.state_key)).length,
+    items,
+  };
+
+  return { ...decisions, evidence: canonicalHeadDecisionEvidence(decisions) };
+}
+
 function canonicalHeadComparisonEvidence(comparison) {
   if (comparison.status === 'skipped') {
     return 'Canonical head comparison skipped by --skip-probes.';
@@ -1687,6 +1767,7 @@ const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
+const canonicalHeadDecisions = buildCanonicalHeadDecisionLedger(branchReviewQueue);
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
@@ -1721,6 +1802,7 @@ const branchReviewEvidence = [
   branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
+  canonicalHeadDecisions.evidence,
   reviewFirstBranchPackets.evidence,
   topBranchReviewPacket.evidence,
   topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -1760,6 +1842,7 @@ const manifest = {
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
+      canonicalHeadDecisions.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -1855,12 +1938,14 @@ const manifest = {
     family_evidence: branchProbe.familyEvidence,
     freshness_evidence: branchProbe.freshnessEvidence,
     review_queue: branchReviewQueue,
+    canonical_head_decisions: canonicalHeadDecisions,
     review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
     evidence: [
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
+      canonicalHeadDecisions.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -1944,6 +2029,7 @@ const manifest = {
       'corepack pnpm run report:buyer-evidence-readiness',
       'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
+      'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
@@ -2000,9 +2086,10 @@ const manifest = {
           'corepack pnpm --version',
           'git lfs version',
           'launch blocker action queue synthesis',
+          'canonical head decision ledger synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, and an ordered launch blocker action queue.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, an ordered launch blocker action queue, and canonical-head branch decision deficits.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

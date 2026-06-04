@@ -136,6 +136,8 @@ function renderReport(manifest, validationText) {
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
+  const branchCanonicalDecisions = manifest.branch_review?.canonical_head_decisions ?? {};
+  const branchCanonicalDecisionItems = Array.isArray(branchCanonicalDecisions.items) ? branchCanonicalDecisions.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -202,6 +204,28 @@ ${launchActionItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'queue_missing', 'not available', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run report:launch-evidence-manifest', launchActionQueue.evidence ?? 'No launch action queue was captured.', launchActionQueue.status ?? 'unknown'])}
+
+## Branch Canonical Head Decision Deficits
+
+Open canonical-head decisions: ${text(branchCanonicalDecisions.open_count ?? 'unknown')}/${text(branchCanonicalDecisions.total_count ?? 'unknown')}. This ledger is read-only; it does not checkout, merge, push, discard, deploy, or select a branch head for the owner.
+
+| Rank | Family | Local Ref | Origin Ref | State | Risk | Freshness | Decision Needed | Proof Command | Stop Gate | Status |
+|---:|---|---|---|---|---|---|---|---|---|---|
+${branchCanonicalDecisionItems.length > 0
+    ? branchCanonicalDecisionItems.map((item) => row([
+      item.rank,
+      item.family,
+      item.local_ref ?? 'n/a',
+      item.origin_ref ?? 'n/a',
+      item.local_origin_state,
+      item.highest_risk,
+      item.freshness,
+      item.decision_needed,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'n/a', 'n/a', branchCanonicalDecisions.status ?? 'unknown', 'n/a', 'n/a', 'No canonical-head decision rows were captured.', 'corepack pnpm run report:unmerged-branch-readiness', branchCanonicalDecisions.evidence ?? 'No canonical head decision ledger was captured.', branchCanonicalDecisions.status ?? 'unknown'])}
 
 ## Buyer Evidence Hard Gate Deficits
 

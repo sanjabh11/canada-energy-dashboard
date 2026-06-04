@@ -307,6 +307,26 @@ try {
       assert(typeof item.review_command === 'string' && item.review_command.includes('report:unmerged-branch-readiness'), `branch_review.review_queue.items[${index}].review_command must point to the focused branch report.`);
       assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|owner approval/i.test(item.stop_gate), `branch_review.review_queue.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
     }
+    assert(typeof manifest.branch_review?.canonical_head_decisions?.evidence === 'string', 'Manifest branch_review.canonical_head_decisions.evidence must be set.');
+    assert(manifest.branch_review.canonical_head_decisions.evidence.includes('Canonical head decision ledger'), 'Manifest branch_review.canonical_head_decisions evidence must include a ledger marker.');
+    assert(hasIntegerOrNull(manifest.branch_review?.canonical_head_decisions?.open_count), 'Manifest branch_review.canonical_head_decisions.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.canonical_head_decisions?.total_count), 'Manifest branch_review.canonical_head_decisions.total_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.canonical_head_decisions?.local_only_count), 'Manifest branch_review.canonical_head_decisions.local_only_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.canonical_head_decisions?.origin_only_count), 'Manifest branch_review.canonical_head_decisions.origin_only_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.canonical_head_decisions?.split_count), 'Manifest branch_review.canonical_head_decisions.split_count must be an integer or null.');
+    assert(Array.isArray(manifest.branch_review?.canonical_head_decisions?.items), 'Manifest branch_review.canonical_head_decisions.items must be a list.');
+    for (const [index, item] of (manifest.branch_review.canonical_head_decisions.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `branch_review.canonical_head_decisions.items[${index}].rank must be an integer.`);
+      assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.canonical_head_decisions.items[${index}].family must be set.`);
+      assert(item.local_ref === null || typeof item.local_ref === 'string', `branch_review.canonical_head_decisions.items[${index}].local_ref must be string or null.`);
+      assert(item.origin_ref === null || typeof item.origin_ref === 'string', `branch_review.canonical_head_decisions.items[${index}].origin_ref must be string or null.`);
+      assert(typeof item.local_origin_state === 'string' && item.local_origin_state.length > 0, `branch_review.canonical_head_decisions.items[${index}].local_origin_state must be set.`);
+      assert(typeof item.state_key === 'string' && item.state_key.length > 0, `branch_review.canonical_head_decisions.items[${index}].state_key must be set.`);
+      assert(typeof item.decision_needed === 'string' && /choose|decide|refresh/i.test(item.decision_needed), `branch_review.canonical_head_decisions.items[${index}].decision_needed must describe the decision.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_review.canonical_head_decisions.items[${index}].proof_command must point to the focused branch report.`);
+      assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|no .*push|owner approval/i.test(item.stop_gate), `branch_review.canonical_head_decisions.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
+      assert(item.status !== 'pass', `branch_review.canonical_head_decisions.items[${index}].status must remain blocked until owner review clears the decision.`);
+    }
     assert(typeof manifest.branch_review?.review_first_packets?.evidence === 'string', 'Manifest branch_review.review_first_packets.evidence must be set.');
     assert(manifest.branch_review.review_first_packets.evidence.includes('Review-first branch packets'), 'Manifest branch_review.review_first_packets evidence must include a packet-set marker.');
     assert(hasIntegerOrNull(manifest.branch_review?.review_first_packets?.item_count), 'Manifest branch_review.review_first_packets.item_count must be an integer or null.');
@@ -352,6 +372,9 @@ try {
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
       assert(Number.isInteger(manifest.branch_review?.review_queue?.item_count), 'Non-skipped manifest must include numeric branch review queue item count.');
       assert(manifest.branch_review.review_queue.items.length > 0 || manifest.branch_review.review_queue.item_count === 0, 'Non-skipped manifest branch review queue must include items when queue count is positive.');
+      assert(Number.isInteger(manifest.branch_review?.canonical_head_decisions?.open_count), 'Non-skipped manifest must include numeric canonical-head decision open count.');
+      assert(manifest.branch_review.canonical_head_decisions.items.length === manifest.branch_review.canonical_head_decisions.open_count, 'Canonical-head decision item count must match open_count.');
+      assert(manifest.branch_review.canonical_head_decisions.evidence.includes('approval_gate=no checkout/merge/push/discard/deploy'), 'Canonical-head decision ledger must preserve the no-mutation approval gate.');
       assert(Number.isInteger(manifest.branch_review?.review_first_packets?.item_count), 'Non-skipped manifest must include numeric review-first packet count.');
       assert(manifest.branch_review.review_first_packets.item_count === manifest.branch_review.review_first_packets.packets.length, 'Review-first packet count must match packet list length.');
       assert(
@@ -402,4 +425,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

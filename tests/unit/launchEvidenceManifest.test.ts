@@ -137,6 +137,10 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.review_queue.review_first_count).toBeNull();
     expect(manifest.branch_review.review_queue.evidence).toContain('Branch review queue skipped');
     expect(manifest.branch_review.review_queue.items).toEqual([]);
+    expect(manifest.branch_review.canonical_head_decisions.status).toBe('skipped');
+    expect(manifest.branch_review.canonical_head_decisions.open_count).toBeNull();
+    expect(manifest.branch_review.canonical_head_decisions.items).toEqual([]);
+    expect(manifest.branch_review.canonical_head_decisions.evidence).toContain('Canonical head decision ledger skipped');
     expect(manifest.branch_review.review_first_packets.status).toBe('skipped');
     expect(manifest.branch_review.review_first_packets.item_count).toBeNull();
     expect(manifest.branch_review.review_first_packets.queue_review_first_count).toBeNull();
@@ -217,6 +221,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Launch Decision');
     expect(stdout).toContain('## Gap Analysis');
     expect(stdout).toContain('## Launch Blocker Action Queue');
+    expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
@@ -258,6 +263,9 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');
+    expect(stdout).toContain('Canonical head decision ledger skipped');
+    expect(stdout).toContain('This ledger is read-only');
+    expect(stdout).toContain('corepack pnpm run report:unmerged-branch-readiness');
     expect(stdout).toContain('Review-first branch packets skipped');
     expect(stdout).toContain('Top branch review packet skipped');
     expect(stdout).toContain('Canonical head comparison skipped');
