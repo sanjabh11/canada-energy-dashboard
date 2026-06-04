@@ -77,6 +77,11 @@ function gitText(commandArgs, fallback = '') {
   return result.status === 0 ? result.stdout.trim() : fallback;
 }
 
+function gitPathCheck(commandArgs) {
+  const result = run('git', commandArgs);
+  return result.status === 0;
+}
+
 function packageMetadata() {
   try {
     const data = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
@@ -138,6 +143,75 @@ function countFreshnessRows(rows, freshness, risk = '') {
     row.freshness === freshness
     && (!risk || row.risk === risk)
   )).length;
+}
+
+function parsePorcelainStatusLine(line) {
+  const statusCode = line.slice(0, 2);
+  const rawPath = line.slice(3).trim();
+  const filePath = rawPath.includes(' -> ') ? rawPath.split(' -> ').pop().trim() : rawPath;
+  return { statusCode, rawPath, filePath };
+}
+
+function statusLabel(statusCode) {
+  if (statusCode === '??') return 'untracked';
+  if (statusCode === '!!') return 'ignored';
+  if (statusCode.includes('D')) return 'deleted';
+  if (statusCode.includes('R')) return 'renamed';
+  if (statusCode.includes('A')) return 'added';
+  if (statusCode.includes('M')) return 'modified';
+  return statusCode.trim() || 'changed';
+}
+
+function dirtyPathAction({ tracked, ignoredByRule }) {
+  if (tracked && ignoredByRule) {
+    return 'tracked generated-or-local artifact; restore or intentionally remove from index before deploy';
+  }
+  if (!tracked && ignoredByRule) {
+    return 'ignored local artifact; remove local copy before deploy if it appears in status';
+  }
+  if (!tracked) {
+    return 'untracked non-ignored path; move outside repo, add an intentional ignore rule, or commit only if source evidence';
+  }
+  return 'tracked source change; commit, stash, or revert before deploy';
+}
+
+function classifyDirtyPath(statusLine) {
+  const { statusCode, rawPath, filePath } = parsePorcelainStatusLine(statusLine);
+  const tracked = gitPathCheck(['ls-files', '--error-unmatch', '--', filePath]);
+  const ignoredByRule = gitPathCheck(['check-ignore', '--no-index', '-q', '--', filePath]);
+  return {
+    raw: statusLine,
+    raw_path: rawPath,
+    file_path: filePath,
+    status: statusLabel(statusCode),
+    tracked,
+    ignored_by_rule: ignoredByRule,
+    action: dirtyPathAction({ tracked, ignoredByRule }),
+  };
+}
+
+function sourceProvenanceEvidence(status) {
+  const summary = [
+    'Source provenance:',
+    `branch=${status.branch}`,
+    `commit=${status.commit}`,
+    `worktree=${status.isDirty ? 'dirty' : 'clean'}`,
+    `dirty_paths=${status.dirtyLines.length}`,
+  ];
+
+  if (status.dirtyDetails.length === 0) return summary.join(' ');
+
+  return [
+    ...summary,
+    'dirty_details=',
+    status.dirtyDetails.map((detail) => [
+      `${detail.file_path}`,
+      `status=${detail.status}`,
+      `tracked=${detail.tracked ? 'yes' : 'no'}`,
+      `ignored_by_rule=${detail.ignored_by_rule ? 'yes' : 'no'}`,
+      `action=${detail.action}`,
+    ].join(' | ')).join('; '),
+  ].join(' ');
 }
 
 function branchFreshnessEvidence(rows) {
@@ -231,10 +305,12 @@ function probeUnmergedBranches() {
 function gitStatusSummary() {
   const short = gitText(['status', '--porcelain=v1']);
   const dirtyLines = short.split(/\r?\n/).filter(Boolean);
+  const dirtyDetails = dirtyLines.slice(0, 40).map(classifyDirtyPath);
   return {
     branch: gitText(['branch', '--show-current'], 'unknown'),
     commit: gitText(['rev-parse', '--short', 'HEAD'], 'unknown'),
     dirtyLines,
+    dirtyDetails,
     isDirty: dirtyLines.length > 0,
   };
 }
@@ -471,9 +547,7 @@ const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
 const generatedAt = new Date().toISOString();
 
-const dirtyEvidence = gitStatus.isDirty
-  ? `git status --porcelain found ${gitStatus.dirtyLines.length} dirty path(s): ${gitStatus.dirtyLines.join('; ')}`
-  : 'git status --porcelain found a clean worktree at manifest generation time';
+const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
 
 const buyerGapEvidence = [
   `Production pilot evidence registers: ${buyerProbe.productionRegisters ?? 'unknown'}`,
@@ -514,6 +588,7 @@ const manifest = {
     hosted_live: [],
     local: [
       'Local release readiness is verified separately with corepack pnpm run check:release-readiness; do not infer current deploy approval from this JSON alone.',
+      dirtyEvidence,
       buyerProbe.evidence,
       branchProbe.evidence,
       branchProbe.freshnessEvidence,
@@ -561,6 +636,17 @@ const manifest = {
       aging_high_risk: branchProbe.agingHighRiskCount,
     },
     evidence: branchProbe.freshnessEvidence,
+  },
+  source_provenance: {
+    branch: gitStatus.branch,
+    commit: gitStatus.commit,
+    is_dirty: gitStatus.isDirty,
+    dirty_path_count: gitStatus.dirtyLines.length,
+    dirty_paths: gitStatus.dirtyDetails,
+    evidence: dirtyEvidence,
+    deploy_gate: gitStatus.isDirty
+      ? 'blocked until dirty tracked/untracked paths are committed, stashed, removed, or otherwise intentionally resolved before deploy approval'
+      : 'source worktree clean at manifest generation time; owner approval and release gates still apply before deploy',
   },
   gaps: [
     {

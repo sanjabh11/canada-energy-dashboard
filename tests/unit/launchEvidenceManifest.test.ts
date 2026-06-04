@@ -53,6 +53,11 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
+    expect(manifest.source_provenance.branch).toBeTruthy();
+    expect(manifest.source_provenance.commit).toBeTruthy();
+    expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
+    expect(manifest.source_provenance.evidence).toContain('Source provenance:');
+    expect(manifest.source_provenance.deploy_gate).toContain('deploy');
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.risk_counts.high).toBeNull();
     expect(manifest.branch_review.freshness_counts.stale).toBeNull();
@@ -108,6 +113,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Adversarial Review');
     expect(stdout).toContain('## Evidence Validation');
     expect(stdout).toContain('## ECC Ledger');
+    expect(stdout).toContain('Source provenance:');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('High-risk or stale/aging unmerged branches');

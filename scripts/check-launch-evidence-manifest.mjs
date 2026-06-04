@@ -67,6 +67,10 @@ function hasIntegerOrNull(value) {
   return value === null || Number.isInteger(value);
 }
 
+function isBoolean(value) {
+  return value === true || value === false;
+}
+
 const tempRoot = mkdtempSync(path.join(tmpdir(), 'ceip-launch-evidence-check-'));
 const manifestPath = path.join(tempRoot, 'launch-evidence.json');
 
@@ -112,6 +116,25 @@ try {
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
     );
     assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
+    assert(typeof manifest.source_provenance?.evidence === 'string', 'Manifest must include source_provenance.evidence.');
+    assert(manifest.source_provenance.evidence.includes('Source provenance:'), 'Manifest source provenance evidence must include a summary marker.');
+    assert(typeof manifest.source_provenance?.branch === 'string' && manifest.source_provenance.branch.length > 0, 'Manifest source_provenance.branch must be set.');
+    assert(typeof manifest.source_provenance?.commit === 'string' && manifest.source_provenance.commit.length > 0, 'Manifest source_provenance.commit must be set.');
+    assert(isBoolean(manifest.source_provenance?.is_dirty), 'Manifest source_provenance.is_dirty must be boolean.');
+    assert(Number.isInteger(manifest.source_provenance?.dirty_path_count), 'Manifest source_provenance.dirty_path_count must be an integer.');
+    assert(Array.isArray(manifest.source_provenance?.dirty_paths), 'Manifest source_provenance.dirty_paths must be a list.');
+    assert(
+      manifest.source_provenance.dirty_paths.length === manifest.source_provenance.dirty_path_count
+        || manifest.source_provenance.dirty_paths.length === Math.min(manifest.source_provenance.dirty_path_count, 40),
+      'Manifest source_provenance dirty_paths must match the dirty path count or the 40-path cap.',
+    );
+    for (const [index, dirtyPath] of (manifest.source_provenance.dirty_paths ?? []).entries()) {
+      assert(typeof dirtyPath.file_path === 'string' && dirtyPath.file_path.length > 0, `source_provenance.dirty_paths[${index}].file_path must be set.`);
+      assert(typeof dirtyPath.status === 'string' && dirtyPath.status.length > 0, `source_provenance.dirty_paths[${index}].status must be set.`);
+      assert(isBoolean(dirtyPath.tracked), `source_provenance.dirty_paths[${index}].tracked must be boolean.`);
+      assert(isBoolean(dirtyPath.ignored_by_rule), `source_provenance.dirty_paths[${index}].ignored_by_rule must be boolean.`);
+      assert(typeof dirtyPath.action === 'string' && dirtyPath.action.length > 0, `source_provenance.dirty_paths[${index}].action must be set.`);
+    }
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
@@ -150,4 +173,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, source provenance, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
