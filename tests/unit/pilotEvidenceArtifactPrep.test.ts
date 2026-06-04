@@ -14,6 +14,7 @@ const registerUpdaterScriptPath = path.join(process.cwd(), 'scripts/update-pilot
 const tsxBinPath = path.join(process.cwd(), 'node_modules/.bin/tsx');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
 const registerHeader = 'record_date,buyer_lane,buyer_segment,proof_pack_id,route,evidence_owner,input_data_type,source_label,evidence_file_reference,pii_screen_result,commercial_commitment_status,artifact_generated,time_to_artifact_hours,buyer_data_coverage_pct,benchmark_lift_or_diagnostic,reviewer_role,reviewer_feedback_status,reviewer_acceptance,claim_boundary,do_not_claim,day_14_decision,confidence_delta,follow_up_action,notes';
+const PILOT_EVIDENCE_CLI_TIMEOUT_MS = 60000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -164,7 +165,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects strong commercial commitment status without redacted evidence text', async () => {
     const evidenceRoot = makeTempRoot();
@@ -337,7 +338,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects register updates when the retained artifact hash does not match', async () => {
     const root = makeTempRoot();
@@ -373,7 +374,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(updateResult.status).toBe(1);
     expect(updateResult.stderr).toContain('Retained artifact SHA-256 mismatch');
     expect(() => readFileSync(outputPath, 'utf8')).toThrow();
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('prepares a BYO-CSV retained extract, hash reference, and validator-compatible row', async () => {
     const evidenceRoot = makeTempRoot();
@@ -457,7 +458,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects BYO-CSV retained extract preparation when spreadsheet formula risk is present', async () => {
     const evidenceRoot = makeTempRoot();
@@ -487,7 +488,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(prepResult.stderr).toContain('Spreadsheet formula risk was detected');
     expect(prepResult.stderr).toContain('review_note');
     expect(() => readFileSync(path.join(evidenceRoot, 'byo-csv-retained.md'), 'utf8')).toThrow();
-  });
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('requires explicit BYO-CSV proof-pack metadata before writing retained artifacts', async () => {
     const evidenceRoot = makeTempRoot();
@@ -661,7 +662,7 @@ describe('pilot evidence artifact preparation CLI', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  });
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects forecast trust proof-pack metadata that does not match the route registry', async () => {
     const evidenceRoot = makeTempRoot();

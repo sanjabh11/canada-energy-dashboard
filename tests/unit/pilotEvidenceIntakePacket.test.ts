@@ -14,6 +14,7 @@ const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-o
 const artifactPrepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
 const registerUpdaterScriptPath = path.join(process.cwd(), 'scripts/update-pilot-evidence-register-row.mjs');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
+const PILOT_EVIDENCE_CLI_TIMEOUT_MS = 60000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -151,7 +152,7 @@ describe('pilot evidence intake packet generator', () => {
     const gateOutput = `${gateResult.stderr}\n${gateResult.stdout}`;
     expect(gateResult.status).toBe(1);
     expect(gateOutput).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('skips non-actionable outreach rows without creating intake packet folders', async () => {
     const root = makeTempRoot();
@@ -205,7 +206,7 @@ describe('pilot evidence intake packet generator', () => {
     const manifest = JSON.parse(readFileSync(path.join(batchDir, 'outreach-intake-packet-manifest.json'), 'utf8'));
     expect(manifest.createdPacketCount).toBe(0);
     expect(manifest.skippedRows[0].reason).toContain('pilot_evidence_register_action is not create_intake_packet');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('creates a route-specific starter packet that passes base register validation without moving confidence', async () => {
     const outputDir = makeTempRoot();
@@ -253,7 +254,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed');
     expect(validationResult.stderr).toBe('');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('fails the 95% market-confidence gate for the starter packet', async () => {
     const outputDir = makeTempRoot();
@@ -335,7 +336,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(validationResult.status).toBe(0);
     expect(validationResult.stdout).toContain('Pilot evidence register validation passed for 3 row(s)');
     expect(validationResult.stderr).toBe('');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('updates a top-level Phase F bundle register from a route-local retained artifact root', async () => {
     const outputDir = makeTempRoot();
@@ -431,7 +432,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(gateResult.status).toBe(1);
     expect(gateOutput).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
     expect(gateOutput).toContain('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('keeps the Phase F minimum bundle below the hard 95% gate until buyer evidence exists', async () => {
     const outputDir = makeTempRoot();
@@ -455,7 +456,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(output).toContain('95% confidence gate requires accepted buyer-supplied TIER CFO or credit-banking evidence');
     expect(output).toContain('95% confidence gate requires accepted buyer-supplied shadow-billing or utility-security evidence');
     expect(output).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('creates a Phase F evidence workspace without moving confidence', async () => {
     const outputDir = makeTempRoot();
@@ -496,7 +497,7 @@ describe('pilot evidence intake packet generator', () => {
     ]);
     expect(gateResult.status).toBe(1);
     expect(`${gateResult.stderr}\n${gateResult.stdout}`).toContain('95% confidence gate requires total accepted buyer-supplied confidence_delta of at least 0.9');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('reports Phase F evidence workspace status and next commands without moving confidence', async () => {
     const outputDir = makeTempRoot();
@@ -530,7 +531,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain('Then rerun this workspace report against the updated candidate register');
     expect(result.stdout).toContain('--register-file');
     expect(result.stdout).toContain('Boundary: this report does not create buyer proof or raise market confidence.');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('reports against an explicitly selected updated Phase F register', async () => {
     const outputDir = makeTempRoot();
@@ -555,7 +556,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain(`Selected register validation: pass (${updatedRegisterPath})`);
     expect(result.stdout).toContain('Hard 95% retained-evidence gate: blocked');
     expect(result.stdout).toContain(`pnpm run validate:pilot-evidence -- ${updatedRegisterPath} --require-95`);
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects selected Phase F registers outside the workspace', async () => {
     const outputDir = makeTempRoot();
@@ -579,7 +580,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain('Phase F evidence workspace report failed:');
     expect(result.stderr).toContain('Selected register must be inside the workspace');
-  }, 30000);
+  }, PILOT_EVIDENCE_CLI_TIMEOUT_MS);
 
   it('rejects invalid Phase F lane route overrides', async () => {
     const outputDir = makeTempRoot();

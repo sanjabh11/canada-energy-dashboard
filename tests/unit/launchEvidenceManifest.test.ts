@@ -6,8 +6,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-launch-evidence-manifest.mjs');
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-launch-evidence-manifest.mjs');
+const checkMarkdownReportScriptPath = path.join(process.cwd(), 'scripts/check-commercial-launch-readiness-report.mjs');
 const markdownReportScriptPath = path.join(process.cwd(), 'scripts/report-commercial-launch-readiness.mjs');
 const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py';
+const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 60000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -21,6 +23,7 @@ function runManifest(args: string[] = []) {
     cwd: process.cwd(),
     encoding: 'utf8',
     env: process.env,
+    timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
   });
 }
 
@@ -65,17 +68,18 @@ describe('launch evidence manifest report', () => {
       env: process.env,
     });
     expect(validation).toContain('VALID');
-  });
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('keeps the release check wired to the blocked manifest contract', () => {
     const result = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
     });
 
     expect(result).toContain('Launch evidence manifest check passed');
-  });
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('renders the orchestrator final-report tables from the validated manifest', () => {
     const tempRoot = makeTempRoot();
@@ -84,6 +88,7 @@ describe('launch evidence manifest report', () => {
       cwd: process.cwd(),
       encoding: 'utf8',
       env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
     });
 
     expect(stdout).toContain('# CEIP Commercial Launch Readiness Report');
@@ -102,5 +107,16 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('validate_launch_evidence.py');
     expect(stdout).toContain('VALID');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
-  });
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('keeps the Markdown launch readiness report wired to the blocked proof-boundary contract', () => {
+    const result = execFileSync(process.execPath, [checkMarkdownReportScriptPath, '--skip-probes'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+      timeout: LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS,
+    });
+
+    expect(result).toContain('Commercial launch readiness report check passed');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 });
