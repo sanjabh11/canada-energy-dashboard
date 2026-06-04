@@ -74,10 +74,12 @@ describe('status page release posture', () => {
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
     const launchQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch blocker action queue');
+    const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
+    const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(9);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(11);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -104,6 +106,16 @@ describe('status page release posture', () => {
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/sequences source provenance, release toolchain, branch review/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/create launch readiness/i);
+    expect(productionApprovalQueueEvidence?.status).toBe('external_gate');
+    expect(productionApprovalQueueEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/clean source provenance, Corepack release-readiness/i);
+    expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/claim post-deploy live parity/i);
+    expect(postDeployQueueEvidence?.status).toBe('external_gate');
+    expect(postDeployQueueEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
+    expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
+    expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
     expect(buyerEvidence?.status).toBe('external_gate');
     expect(buyerEvidence?.evidenceBoundary).toMatch(/no production buyer-evidence register/i);
     expect(supabaseAdvisorEvidence?.status).toBe('needs_remediation');
@@ -147,6 +159,8 @@ describe('status page release posture', () => {
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const launchQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_blocker_action_queue');
+    const productionApprovalQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_prerequisite_queue');
+    const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
     const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
@@ -161,6 +175,8 @@ describe('status page release posture', () => {
       'current_source_release_gate',
       'source_provenance',
       'launch_blocker_action_queue',
+      'production_approval_prerequisite_queue',
+      'post_deploy_live_proof_gate_queue',
       'unmerged_branch_review_queue',
       'buyer_evidence_gate',
       'supabase_advisor_access',
@@ -180,6 +196,15 @@ describe('status page release posture', () => {
     expect(launchQueueGate?.evidenceBoundary).toMatch(/sequences source provenance, release toolchain, branch review/i);
     expect(launchQueueGate?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueGate?.nextAction).toMatch(/Work the queue in order/i);
+    expect(productionApprovalQueueGate?.status).toBe('external_gate');
+    expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/Corepack release-readiness/i);
+    expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(productionApprovalQueueGate?.nextAction).toMatch(/Clear every prerequisite row/i);
+    expect(postDeployQueueGate?.status).toBe('external_gate');
+    expect(postDeployQueueGate?.proofBucket).toBe('hosted/live');
+    expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);
+    expect(postDeployQueueGate?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
+    expect(postDeployQueueGate?.nextAction).toMatch(/check:post-deploy-live passes/i);
     expect(branchReviewGate?.status).toBe('external_gate');
     expect(branchReviewGate?.command).toContain('report:unmerged-branch-readiness');
     expect(branchReviewGate?.command).toContain('report:launch-evidence-manifest');

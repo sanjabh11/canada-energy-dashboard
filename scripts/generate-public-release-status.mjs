@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 8) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch action queue, branch-review, buyer-evidence, and Supabase advisor records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 10) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, and Supabase advisor records.');
   }
 
   const ids = new Set();
@@ -68,6 +68,8 @@ function validateManifest(manifest) {
     'current_source_release_gate',
     'source_provenance',
     'launch_blocker_action_queue',
+    'production_approval_prerequisite_queue',
+    'post_deploy_live_proof_gate_queue',
     'unmerged_branch_review_queue',
     'buyer_evidence_gate',
     'supabase_advisor_access',
@@ -91,6 +93,20 @@ function validateManifest(manifest) {
   }
   if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
     failures.push('launch_blocker_action_queue must preserve the non-execution launch boundary.');
+  }
+  const productionApprovalQueue = itemById.get('production_approval_prerequisite_queue') ?? {};
+  if (!/clean source provenance|Corepack release-readiness|explicit owner approval|post-deploy live proof/i.test(`${productionApprovalQueue.evidenceBoundary ?? ''}\n${productionApprovalQueue.nextAction ?? ''}`)) {
+    failures.push('production_approval_prerequisite_queue must describe the approval prerequisite sequence.');
+  }
+  if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers/i.test(productionApprovalQueue.evidenceBoundary ?? '')) {
+    failures.push('production_approval_prerequisite_queue must preserve the non-approval and non-execution boundary.');
+  }
+  const postDeployQueue = itemById.get('post_deploy_live_proof_gate_queue') ?? {};
+  if (!/live public metadata|live static dist parity|hosted proof-pack route smoke|check:post-deploy-live/i.test(`${postDeployQueue.evidenceBoundary ?? ''}\n${postDeployQueue.nextAction ?? ''}`)) {
+    failures.push('post_deploy_live_proof_gate_queue must describe the post-deploy live proof gates.');
+  }
+  if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
+    failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
   }
 
   const serialized = JSON.stringify(manifest);

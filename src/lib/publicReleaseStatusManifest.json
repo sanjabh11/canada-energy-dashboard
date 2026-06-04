@@ -60,6 +60,24 @@
       "nextAction": "Work the queue in order, keep source provenance and approval gates first-class, then rerun the commercial launch readiness report and launch evidence manifest."
     },
     {
+      "id": "production_approval_prerequisite_queue",
+      "label": "Production approval prerequisite queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The production approval prerequisite queue sequences clean source provenance, Corepack release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof, but it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or claim post-deploy live parity.",
+      "nextAction": "Clear every prerequisite row, request explicit owner approval only after the queue is ready, then rerun the launch evidence manifest and production approval packet."
+    },
+    {
+      "id": "post_deploy_live_proof_gate_queue",
+      "label": "Post-deploy live proof gate queue",
+      "status": "external_gate",
+      "proofBucket": "hosted/live",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim, but it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.",
+      "nextAction": "Use it only after explicit owner approval and the guarded deploy path; current-source hosted parity is not claimable until pnpm run check:post-deploy-live passes."
+    },
+    {
       "id": "unmerged_branch_review_queue",
       "label": "Unmerged branch review queue",
       "status": "external_gate",

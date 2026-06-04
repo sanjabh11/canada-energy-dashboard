@@ -148,6 +148,18 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The launch blocker action queue sequences source provenance, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof; it does not deploy, merge, contact buyers, mutate branches, clear blockers, or create launch readiness, and it does not create launch readiness.',
   },
   {
+    label: 'Production approval prerequisite queue',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The production approval prerequisite queue sequences clean source provenance, Corepack release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof; it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or claim post-deploy live parity.',
+  },
+  {
+    label: 'Post-deploy live proof gate queue',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim; it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.',
+  },
+  {
     label: 'Buyer evidence scan',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-readiness',
