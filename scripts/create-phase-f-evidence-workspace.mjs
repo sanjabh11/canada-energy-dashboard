@@ -290,4 +290,5 @@ console.log('Buyer proof created: no');
 console.log('');
 console.log('Next checks:');
 console.log(pnpmRunCommand('report:buyer-evidence-readiness', `-- --root ${displayPath(outputDir)} --evidence-root ${displayPath(bundleDir)}`));
+console.log('Expected blocker: the hard 95% gate below should fail until real buyer-supplied retained artifacts, reviewer acceptance, day-14 proceed decisions, and a strong commercial commitment are attached.');
 console.log(pnpmRunCommand('validate:pilot-evidence', `-- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(bundleDir)}`));

@@ -278,4 +278,5 @@ console.log('');
 console.log('Next checks:');
 console.log(`pnpm run validate:pilot-evidence -- ${displayPath(bundleRegisterPath)}`);
 console.log(`pnpm run report:buyer-evidence-readiness -- --root ${displayPath(outputDir)}`);
+console.log('Expected blocker: the hard 95% gate below should fail until real buyer-supplied redacted artifacts, independent reviewer acceptance, and at least one strong commercial commitment are attached.');
 console.log(`pnpm run validate:pilot-evidence -- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(outputDir)}`);

@@ -309,6 +309,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain('/utility-demand-forecast (utility_forecast_planning_pack)');
     expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack)');
     expect(result.stdout).toContain('/utility-security (utility_security_procurement_pack)');
+    expect(result.stdout).toContain('Expected blocker: the hard 95% gate below should fail until real buyer-supplied redacted artifacts');
 
     const registerPath = path.join(outputDir, 'phase-f-minimum-register-starter.csv');
     const readmePath = path.join(outputDir, 'README.md');
@@ -470,6 +471,7 @@ describe('pilot evidence intake packet generator', () => {
     expect(result.stdout).toContain('Phase F evidence workspace created.');
     expect(result.stdout).toContain('Confidence movement: none');
     expect(result.stdout).toContain('Buyer proof created: no');
+    expect(result.stdout).toContain('Expected blocker: the hard 95% gate below should fail until real buyer-supplied retained artifacts');
 
     const manifest = JSON.parse(readFileSync(path.join(outputDir, 'phase-f-evidence-workspace-manifest.json'), 'utf8'));
     expect(manifest.confidence_movement).toBe('none');
