@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-launch-evidence-manifest.mjs');
+const checkScriptPath = path.join(process.cwd(), 'scripts/check-launch-evidence-manifest.mjs');
 const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py';
 const tempRoots: string[] = [];
 
@@ -63,5 +64,15 @@ describe('launch evidence manifest report', () => {
       env: process.env,
     });
     expect(validation).toContain('VALID');
+  });
+
+  it('keeps the release check wired to the blocked manifest contract', () => {
+    const result = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+    });
+
+    expect(result).toContain('Launch evidence manifest check passed');
   });
 });
