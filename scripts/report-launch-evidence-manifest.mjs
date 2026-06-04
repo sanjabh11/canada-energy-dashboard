@@ -250,6 +250,119 @@ function releasePreflightDeficitEvidence(deficits) {
   ].join(' ');
 }
 
+function releaseRemediationOwner(requirement) {
+  if (requirement === 'Explicit owner production approval') return 'owner';
+  if (requirement === 'Git LFS push-path proof') return 'operator';
+  if (requirement === 'Clean source provenance') return 'operator';
+  if (requirement === 'Corepack pnpm resolver') return 'operator';
+  if (requirement === 'Release-readiness execution') return 'operator';
+  return 'operator';
+}
+
+function releaseRemediationAction(item) {
+  switch (item.requirement) {
+    case 'Corepack pnpm resolver':
+      return 'Expose Corepack in the release shell and verify the pinned pnpm version before treating release-readiness as current.';
+    case 'Release-readiness execution':
+      return 'Run the full guarded release-readiness chain only after source provenance is clean and Corepack resolves the pinned pnpm.';
+    case 'Git LFS push-path proof':
+      return 'Install or expose Git LFS on PATH for the same shell used for commit/push evidence, then rerun the version probe.';
+    case 'Clean source provenance':
+      return 'Resolve dirty source paths intentionally with owner approval, then regenerate the production approval packet.';
+    case 'Explicit owner production approval':
+      return 'Request explicit production approval only after source provenance, release-readiness, branch review, and advisor gates are clean.';
+    default:
+      return item.next_action;
+  }
+}
+
+function releaseRemediationProofCommand(requirement) {
+  switch (requirement) {
+    case 'Corepack pnpm resolver':
+      return 'corepack pnpm --version';
+    case 'Release-readiness execution':
+      return 'corepack pnpm run check:release-readiness';
+    case 'Git LFS push-path proof':
+      return 'git lfs version';
+    case 'Clean source provenance':
+      return 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness';
+    case 'Explicit owner production approval':
+      return 'corepack pnpm run check:production-deploy-request';
+    default:
+      return 'corepack pnpm run report:launch-evidence-manifest';
+  }
+}
+
+function releaseRemediationStopGate(requirement) {
+  switch (requirement) {
+    case 'Corepack pnpm resolver':
+      return 'Do not treat bare pnpm, local shims, or skipped probes as Corepack-pinned release evidence.';
+    case 'Release-readiness execution':
+      return 'Do not run or claim release-readiness while source provenance is dirty or Corepack cannot resolve the pinned pnpm.';
+    case 'Git LFS push-path proof':
+      return 'Do not treat commit hook warnings, previous pushes, or a missing git-lfs binary as current push-path proof.';
+    case 'Clean source provenance':
+      return 'Do not commit, unstage, stash, revert, delete, rename, or move source paths without explicit owner intent.';
+    case 'Explicit owner production approval':
+      return 'Do not run deploy-production.sh, netlify deploy, push, or claim production approval from this report.';
+    default:
+      return 'Do not use this queue as production approval evidence.';
+  }
+}
+
+function releaseRemediationStatus(status) {
+  if (status === 'pass') return 'ready';
+  if (status === 'manual_stop') return 'manual_stop';
+  if (status === 'needs_remediation') return 'needs_remediation';
+  return 'blocked';
+}
+
+function releasePreflightRemediationEvidence(queue) {
+  if (queue.status === 'pass') {
+    return 'Release preflight remediation queue: status=pass open=0 approval_gate=owner approval and live proof still apply before production deploy';
+  }
+
+  const topBlocked = queue.items
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Release preflight remediation queue:',
+    `status=${queue.status}`,
+    `open=${queue.open_count}/${queue.total_count}`,
+    `items=${queue.item_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=queue does not install tools, clear source provenance, run release-readiness, push, deploy, or grant production approval',
+  ].join(' ');
+}
+
+function buildReleasePreflightRemediationQueue(deficits) {
+  const items = deficits.items
+    .filter((item) => item.status !== 'pass')
+    .map((item, index) => ({
+      rank: index + 1,
+      requirement: item.requirement,
+      current: item.current,
+      needed: item.needed,
+      deficit_status: item.status,
+      owner: releaseRemediationOwner(item.requirement),
+      action: releaseRemediationAction(item),
+      proof_command: releaseRemediationProofCommand(item.requirement),
+      stop_gate: releaseRemediationStopGate(item.requirement),
+      status: releaseRemediationStatus(item.status),
+    }));
+  const queue = {
+    status: items.length === 0 ? 'pass' : 'blocked',
+    open_count: deficits.open_count,
+    total_count: deficits.total_count,
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    items,
+  };
+  return { ...queue, evidence: releasePreflightRemediationEvidence(queue) };
+}
+
 function probeReleasePreflight({ packageManager, gitStatus }) {
   const expectedVersion = expectedPnpmVersion(packageManager);
   const packageManagerPinned = Boolean(expectedVersion);
@@ -333,6 +446,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
 
   return {
     ...deficits,
+    remediation_queue: buildReleasePreflightRemediationQueue(deficits),
     evidence: releasePreflightDeficitEvidence(deficits),
   };
 }
@@ -1923,6 +2037,7 @@ const manifest = {
       supabaseAdvisor.evidence,
       supabaseAdvisor.clearanceDeficits.evidence,
       releasePreflight.evidence,
+      releasePreflight.remediation_queue.evidence,
       launchActionQueue.evidence,
     ],
     repo_artifact: [
@@ -2163,9 +2278,10 @@ const manifest = {
           'launch blocker action queue synthesis',
           'canonical head decision ledger synthesis',
           'source provenance resolution queue synthesis',
+          'release preflight remediation queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, release remediation actions, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

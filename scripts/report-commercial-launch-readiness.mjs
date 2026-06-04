@@ -134,6 +134,8 @@ function renderReport(manifest, validationText) {
   const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
   const releasePreflight = manifest.release_preflight ?? {};
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
+  const releaseRemediationQueue = releasePreflight.remediation_queue ?? {};
+  const releaseRemediationItems = Array.isArray(releaseRemediationQueue.items) ? releaseRemediationQueue.items : [];
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
   const sourceResolutionQueue = manifest.source_provenance?.resolution_queue ?? {};
@@ -300,6 +302,27 @@ ${releasePreflightItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Release preflight ledger', 'not available', 'Run report:launch-evidence-manifest', releasePreflight.status ?? 'unknown', releasePreflight.evidence ?? 'No release preflight deficit ledger was captured.'])}
+
+## Release Preflight Remediation Queue
+
+Open release-preflight actions: ${text(releaseRemediationQueue.blocked_count ?? 'unknown')}/${text(releaseRemediationQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not install tools, clear source provenance, run release-readiness, push, deploy, or grant production approval.
+
+| Rank | Requirement | Current | Needed | Deficit Status | Owner | Action | Proof Command | Stop Gate | Resolution Status |
+|---:|---|---|---|---|---|---|---|---|---|
+${releaseRemediationItems.length > 0
+    ? releaseRemediationItems.map((item) => row([
+      item.rank,
+      item.requirement,
+      item.current,
+      item.needed,
+      item.deficit_status,
+      item.owner,
+      item.action,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'all release preflight rows passed', 'owner approval and live proof still apply before deploy', releaseRemediationQueue.status ?? 'unknown', 'operator', 'Keep release evidence current before requesting approval.', 'corepack pnpm run report:launch-evidence-manifest', releaseRemediationQueue.evidence ?? 'No release preflight remediation queue was captured.', releaseRemediationQueue.status ?? 'unknown'])}
 
 ## Proof Buckets
 

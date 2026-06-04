@@ -238,6 +238,62 @@ try {
       manifest.release_preflight.items.some((item) => item.requirement === 'Explicit owner production approval'),
       'Release preflight deficits must include explicit owner approval.',
     );
+    assert(typeof manifest.release_preflight?.remediation_queue?.evidence === 'string', 'Manifest release_preflight.remediation_queue.evidence must be set.');
+    assert(manifest.release_preflight.remediation_queue.evidence.includes('Release preflight remediation queue'), 'Manifest release preflight remediation queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.release_preflight.remediation_queue?.open_count), 'Manifest release_preflight.remediation_queue.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.remediation_queue?.total_count), 'Manifest release_preflight.remediation_queue.total_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.remediation_queue?.item_count), 'Manifest release_preflight.remediation_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.remediation_queue?.blocked_count), 'Manifest release_preflight.remediation_queue.blocked_count must be an integer or null.');
+    assert(
+      manifest.release_preflight.remediation_queue.open_count === manifest.release_preflight.open_count,
+      'Release preflight remediation queue open_count must match release_preflight.open_count.',
+    );
+    assert(
+      manifest.release_preflight.remediation_queue.total_count === manifest.release_preflight.total_count,
+      'Release preflight remediation queue total_count must match release_preflight.total_count.',
+    );
+    assert(Array.isArray(manifest.release_preflight.remediation_queue.items), 'Manifest release_preflight.remediation_queue.items must be a list.');
+    assert(
+      manifest.release_preflight.remediation_queue.item_count === manifest.release_preflight.remediation_queue.items.length,
+      'Release preflight remediation queue item_count must match items length.',
+    );
+    for (const [index, item] of (manifest.release_preflight.remediation_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `release_preflight.remediation_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `release_preflight.remediation_queue.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.remediation_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `release_preflight.remediation_queue.items[${index}].needed must be set.`);
+      assert(typeof item.deficit_status === 'string' && item.deficit_status.length > 0, `release_preflight.remediation_queue.items[${index}].deficit_status must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `release_preflight.remediation_queue.items[${index}].owner must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `release_preflight.remediation_queue.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `release_preflight.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `release_preflight.remediation_queue.items[${index}].stop_gate must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.remediation_queue.items[${index}].status must be set.`);
+      assert(item.status !== 'ready', `release_preflight.remediation_queue.items[${index}].status must remain non-ready until the deficit row passes.`);
+    }
+    const releaseQueueRequirements = (manifest.release_preflight.remediation_queue.items ?? []).map((item) => item.requirement);
+    const nonPassReleaseRequirements = (manifest.release_preflight.items ?? [])
+      .filter((item) => item.status !== 'pass')
+      .map((item) => item.requirement);
+    assert(
+      JSON.stringify(releaseQueueRequirements) === JSON.stringify(nonPassReleaseRequirements),
+      'Release preflight remediation queue must include exactly the current non-pass release preflight requirements.',
+    );
+    if (releaseQueueRequirements.includes('Corepack pnpm resolver')) {
+      assert(
+        manifest.release_preflight.remediation_queue.items.some((item) => item.proof_command === 'corepack pnpm --version'),
+        'Release preflight remediation queue must include the Corepack proof command when Corepack is unresolved.',
+      );
+    }
+    if (releaseQueueRequirements.includes('Git LFS push-path proof')) {
+      assert(
+        manifest.release_preflight.remediation_queue.items.some((item) => item.proof_command === 'git lfs version'),
+        'Release preflight remediation queue must include the Git LFS proof command when Git LFS proof is unresolved.',
+      );
+    }
+    assert(
+      manifest.release_preflight.remediation_queue.items.some((item) => item.stop_gate.includes('Do not')),
+      'Release preflight remediation queue must preserve explicit stop gates.',
+    );
     assert(typeof manifest.launch_action_queue?.evidence === 'string', 'Manifest launch_action_queue.evidence must be set.');
     assert(manifest.launch_action_queue.evidence.includes('Launch blocker action queue'), 'Manifest launch action queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.launch_action_queue?.item_count), 'Manifest launch_action_queue.item_count must be an integer or null.');
@@ -455,4 +511,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

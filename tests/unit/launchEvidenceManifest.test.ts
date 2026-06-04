@@ -100,6 +100,24 @@ describe('launch evidence manifest report', () => {
       'Clean source provenance',
       'Explicit owner production approval',
     ]);
+    expect(manifest.release_preflight.remediation_queue.status).toMatch(/blocked|pass/);
+    expect(manifest.release_preflight.remediation_queue.evidence).toContain('Release preflight remediation queue');
+    expect(manifest.release_preflight.remediation_queue.open_count).toBe(manifest.release_preflight.open_count);
+    expect(manifest.release_preflight.remediation_queue.total_count).toBe(manifest.release_preflight.total_count);
+    expect(manifest.release_preflight.remediation_queue.item_count).toBe(manifest.release_preflight.remediation_queue.items.length);
+    expect(manifest.release_preflight.remediation_queue.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      manifest.release_preflight.items
+        .filter((item: { status: string }) => item.status !== 'pass')
+        .map((item: { requirement: string }) => item.requirement),
+    );
+    if (manifest.release_preflight.remediation_queue.items.length > 0) {
+      const firstReleaseAction = manifest.release_preflight.remediation_queue.items[0];
+      expect(firstReleaseAction.owner).toBeTruthy();
+      expect(firstReleaseAction.action).toBeTruthy();
+      expect(firstReleaseAction.proof_command).toBeTruthy();
+      expect(firstReleaseAction.stop_gate).toMatch(/Do not/i);
+      expect(firstReleaseAction.status).not.toBe('ready');
+    }
     expect(manifest.launch_action_queue.status).toBe('blocked');
     expect(manifest.launch_action_queue.evidence).toContain('Launch blocker action queue');
     expect(manifest.launch_action_queue.items.map((item: { phase: string }) => item.phase)).toEqual([
@@ -238,6 +256,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
+    expect(stdout).toContain('## Release Preflight Remediation Queue');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -277,6 +296,10 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| Release-readiness execution |');
     expect(stdout).toContain('| Git LFS push-path proof |');
     expect(stdout).toContain('| Explicit owner production approval |');
+    expect(stdout).toContain('Release preflight remediation queue');
+    expect(stdout).toContain('does not install tools');
+    expect(stdout).toContain('corepack pnpm run check:release-readiness');
+    expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');
