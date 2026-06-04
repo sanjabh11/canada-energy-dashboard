@@ -559,6 +559,107 @@ function branchFamilyRows(branchList) {
     });
 }
 
+function refNamesFromFamilyRefs(familyRefs) {
+  return String(familyRefs ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => value.replace(/^(?:local|remote):/, '').replace(/@[0-9a-f]+$/i, ''))
+    .filter(Boolean);
+}
+
+function reviewRefForFamily(family) {
+  const refs = refNamesFromFamilyRefs(family.refs);
+  return refs.find((ref) => !ref.startsWith('origin/')) ?? refs.find((ref) => ref.startsWith('origin/')) ?? family.canonicalName;
+}
+
+function familyStateRequiresCanonicalReview(state) {
+  return state !== 'local and origin heads match';
+}
+
+function reviewQueueStateRank(state) {
+  if (/diverged/i.test(state)) return 0;
+  if (/local ahead|origin ahead/i.test(state)) return 1;
+  if (/local-only|origin-only/i.test(state)) return 2;
+  if (/differ|inspect refs/i.test(state)) return 3;
+  if (state === 'local and origin heads match') return 4;
+  return 5;
+}
+
+function reviewQueueFreshnessForFamily(family, branchFreshnessRows) {
+  const matches = branchFreshnessRows
+    .filter((row) => canonicalBranchName(row.branch.name) === family.canonicalName)
+    .sort((a, b) => {
+      const freshnessDelta = freshnessRank(a.freshness.status) - freshnessRank(b.freshness.status);
+      if (freshnessDelta !== 0) return freshnessDelta;
+      const riskDelta = riskRank(a.branch.risk) - riskRank(b.branch.risk);
+      if (riskDelta !== 0) return riskDelta;
+      return a.branch.name.localeCompare(b.branch.name);
+    });
+
+  return matches[0] ?? {
+    branch: { name: family.canonicalName, risk: family.highestRisk },
+    freshness: {
+      ageLabel: 'unknown',
+      status: 'unknown',
+      action: 'refresh Git metadata before review; do not merge a branch whose commit freshness cannot be established',
+    },
+  };
+}
+
+function reviewQueuePriority(family, freshness) {
+  const needsCanonicalReview = familyStateRequiresCanonicalReview(family.state);
+  if (family.highestRisk === 'high' && freshness.status === 'stale') return 'review_first_high_stale';
+  if (family.highestRisk === 'high' && freshness.status === 'aging') return 'review_first_high_aging';
+  if (family.highestRisk === 'high' && needsCanonicalReview) return 'review_first_high_split';
+  if (family.highestRisk === 'high') return 'high_risk_review';
+  if (freshness.status === 'stale' || freshness.status === 'aging') return 'drift_review';
+  if (needsCanonicalReview) return 'canonical_head_review';
+  return 'standard_review';
+}
+
+function reviewQueueReason(family, freshnessRow) {
+  const reasons = [];
+  const freshness = freshnessRow.freshness;
+  if (family.highestRisk === 'high') reasons.push('high-risk launch surface');
+  if (family.highestRisk === 'medium') reasons.push('medium-risk buyer-visible or source surface');
+  if (familyStateRequiresCanonicalReview(family.state)) reasons.push(family.state);
+  if (['stale', 'aging', 'unknown'].includes(freshness.status)) {
+    reasons.push(`${freshness.status} commit freshness (${freshness.ageLabel})`);
+  }
+  return reasons.length > 0 ? reasons.join('; ') : 'normal branch review queue item';
+}
+
+function branchReviewQueueRows(familyRowsForQueue, branchFreshnessRowsForQueue) {
+  return familyRowsForQueue
+    .map((family) => {
+      const freshnessRow = reviewQueueFreshnessForFamily(family, branchFreshnessRowsForQueue);
+      const reviewRef = reviewRefForFamily(family);
+      return {
+        family: family.canonicalName,
+        reviewRef,
+        priority: reviewQueuePriority(family, freshnessRow.freshness),
+        highestRisk: family.highestRisk,
+        familyState: family.state,
+        freshness: freshnessRow.freshness.status,
+        reason: reviewQueueReason(family, freshnessRow),
+        command: focusedReviewCommand({ name: reviewRef }),
+        stopGate: 'read-only focused review first; no checkout, merge, deploy, migration, push, discard, or production approval without explicit owner approval and release gates',
+      };
+    })
+    .sort((a, b) => {
+      const riskDelta = riskRank(a.highestRisk) - riskRank(b.highestRisk);
+      if (riskDelta !== 0) return riskDelta;
+      const freshnessDelta = freshnessRank(a.freshness) - freshnessRank(b.freshness);
+      if (freshnessDelta !== 0) return freshnessDelta;
+      const stateDelta = reviewQueueStateRank(a.familyState) - reviewQueueStateRank(b.familyState);
+      if (stateDelta !== 0) return stateDelta;
+      const priorityDelta = a.priority.localeCompare(b.priority);
+      if (priorityDelta !== 0) return priorityDelta;
+      return a.family.localeCompare(b.family);
+    });
+}
+
 function freshnessRows(branchList) {
   return branchList
     .map((branch) => ({
@@ -695,6 +796,8 @@ if (branches.length === 0) {
 const familySourceBranches = selectedBranch ? allBranches.filter((branch) => canonicalBranchName(branch.name) === canonicalBranchName(selectedBranch.name)) : branches;
 const familyRows = branchFamilyRows(familySourceBranches);
 const branchFreshnessRows = freshnessRows(branches);
+const queueFreshnessRows = selectedBranch ? freshnessRows(familySourceBranches) : branchFreshnessRows;
+const reviewQueueRows = branchReviewQueueRows(familyRows, queueFreshnessRows);
 
 console.log('');
 console.log('## Next Review Order');
@@ -730,6 +833,19 @@ if (branchFreshnessRows.length === 0) {
       `| ${row.branch.name} | ${row.branch.scope} | ${row.branch.risk} | ${row.branch.date || 'unknown'} | ${row.freshness.ageLabel} | ${row.freshness.status} | ${row.freshness.action} |`,
     );
   }
+}
+
+console.log('');
+console.log('## Branch Review Queue');
+console.log('');
+if (reviewQueueRows.length === 0) {
+  console.log('- None.');
+} else {
+  console.log('| Rank | Family | Review ref | Priority | Reason | Review command | Stop/approval gate |');
+  console.log('|---:|---|---|---|---|---|---|');
+  reviewQueueRows.forEach((row, index) => {
+    console.log(`| ${index + 1} | ${row.family} | ${row.reviewRef} | ${row.priority} | ${row.reason} | ${commandText(row.command)} | ${row.stopGate} |`);
+  });
 }
 
 if (selectedBranch) {

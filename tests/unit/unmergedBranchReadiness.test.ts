@@ -162,6 +162,12 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('| origin/export-risk | remote | high | 2025-01-02T00:00:00Z |');
     expect(result.stdout).toContain('| stale | treat as stale review queue;');
     expect(result.stdout).toContain('require full release-readiness after any rebase or cherry-pick');
+    expect(result.stdout).toContain('## Branch Review Queue');
+    expect(result.stdout).toContain('| Rank | Family | Review ref | Priority | Reason | Review command | Stop/approval gate |');
+    expect(result.stdout).toContain('| 1 | export-risk | export-risk | review_first_high_stale |');
+    expect(result.stdout).toContain('high-risk launch surface; local ahead of origin by 1 commit(s); stale commit freshness');
+    expect(result.stdout).toContain('corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 8');
+    expect(result.stdout).toContain('no checkout, merge, deploy, migration, push, discard, or production approval without explicit owner approval and release gates');
     expect(result.stdout).not.toContain('already-merged');
   }, gitBackedTestTimeoutMs);
 
@@ -190,6 +196,8 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('| export-risk | local | high |');
     expect(result.stdout).not.toContain('| docs-only | local |');
     expect(result.stdout).not.toContain('origin/stripe-remote');
+    expect(result.stdout).toContain('## Branch Review Queue');
+    expect(result.stdout).toContain('| 1 | export-risk | export-risk | review_first_high_stale |');
     expect(result.stdout).toContain('## Focused Review Plan: export-risk');
     expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 10`');
     expect(result.stdout).toContain('corepack pnpm run check:production-deploy-script');
@@ -214,6 +222,8 @@ describe('unmerged branch readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('## Focused Review Queue: high risk branches');
     expect(result.stdout).toContain('## Branch Freshness Review');
+    expect(result.stdout).toContain('## Branch Review Queue');
+    expect(result.stdout).toContain('review_first_high_stale');
     expect(result.stdout).toContain('### Focused Review Plan: export-risk');
     expect(result.stdout).toContain('### Focused Review Plan: origin/export-risk');
     expect(result.stdout).toContain('### Focused Review Plan: origin/stripe-remote');
@@ -236,7 +246,7 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('origin=2');
     expect(result.stdout).toContain('high=3');
     expect(result.stdout).toContain('low=1');
-    expect(result.stdout).toContain('read-only boundary, branch-family pairing, branch freshness, focused review packets, and high-risk failure semantics are intact');
+    expect(result.stdout).toContain('read-only boundary, branch-family pairing, branch freshness, branch review queue, focused review packets, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
   it('accepts the pnpm option separator for the release-gate check', () => {
