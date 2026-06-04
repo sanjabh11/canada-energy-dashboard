@@ -107,6 +107,7 @@ const outreachIntakePacketBatchPhrase = /create:outreach-intake-packets/;
 const pilotEvidenceIntakePacketPhrase = /create:pilot-evidence-intake-packet/;
 const phaseFMinimumIntakeBundlePhrase = /create:phase-f-minimum-intake-bundle|check:phase-f-minimum-intake-bundle/;
 const phaseFEvidenceWorkspacePhrase = /create:phase-f-evidence-workspace|check:phase-f-evidence-workspace|report:phase-f-evidence-workspace/;
+const unmergedBranchReadinessPhrase = /report:unmerged-branch-readiness|Unmerged Branch Readiness Report|non-merged branch/i;
 const pilotEvidenceRegisterUpdaterPhrase = /update:pilot-evidence-register-row/;
 const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifact/;
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
@@ -428,6 +429,10 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep report:phase-f-evidence-workspace wired to the Phase F evidence workspace status report.');
   }
 
+  if (packageScripts['report:unmerged-branch-readiness'] !== 'node scripts/report-unmerged-branch-readiness.mjs') {
+    failures.push('package.json must keep report:unmerged-branch-readiness wired to the non-merged branch launch-readiness report.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -480,6 +485,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!phaseFEvidenceWorkspacePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the Phase F evidence workspace generator or smoke check.');
+  }
+
+  if (!unmergedBranchReadinessPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:unmerged-branch-readiness for current main-plus-unmerged-branch review.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {
