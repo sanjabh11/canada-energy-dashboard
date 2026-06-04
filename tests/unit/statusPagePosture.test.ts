@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { DEPLOYMENT_APPROVAL_CHECKLIST, RELEASE_HEALTH_EVIDENCE, RELEASE_POSTURE } from '../../src/lib/releasePosture';
+import { PUBLIC_RELEASE_STATUS_MANIFEST } from '../../src/lib/publicReleaseStatusManifest';
 
 describe('status page release posture', () => {
   it('marks production live parity as verified only after post-deploy live checks pass', () => {
@@ -35,6 +36,19 @@ describe('status page release posture', () => {
     expect(advisorPosture?.nextAction).toMatch(/Fix Supabase connector/i);
   });
 
+  it('keeps current source CI as a watch gate rather than production proof', () => {
+    const sourcePosture = RELEASE_POSTURE.find((item) => item.title.includes('GitHub release'));
+    const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+
+    expect(sourcePosture).toBeTruthy();
+    expect(sourcePosture?.status).toBe('watch');
+    expect(sourcePosture?.evidence).toMatch(/local source can be ahead of origin or dirty/i);
+    expect(sourcePosture?.evidence).toMatch(/does not prove production deploy parity/i);
+    expect(sourcePosture?.nextAction).toMatch(/git status --porcelain=v1 --branch/);
+    expect(sourceEvidence?.status).toBe('watch');
+    expect(sourceEvidence?.evidenceBoundary).toMatch(/local ahead-of-origin work must be checked separately/i);
+  });
+
   it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
     const deployEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Last verified production artifact');
     const productionParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current production parity gate');
@@ -49,7 +63,7 @@ describe('status page release posture', () => {
     expect(productionParityEvidence?.status).toBe('verified');
     expect(productionParityEvidence?.command).toContain('check:post-deploy-live');
     expect(productionParityEvidence?.evidenceBoundary).toMatch(/exact static dist parity/i);
-    expect(sourceEvidence?.status).toBe('verified');
+    expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
     expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
@@ -70,5 +84,33 @@ describe('status page release posture', () => {
     expect(commands).toContain('validate:pilot-evidence');
     expect(boundaries).toMatch(/not production approval|manual production stop/i);
     expect(boundaries).toMatch(/Deployment never raises market confidence/i);
+  });
+
+  it('defines a public-safe release status manifest for the status page', () => {
+    const itemIds = PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => item.id);
+    const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
+    const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
+    const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
+    const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
+
+    expect(PUBLIC_RELEASE_STATUS_MANIFEST.schemaVersion).toBe('ceip.public-release-status.v1');
+    expect(PUBLIC_RELEASE_STATUS_MANIFEST.publicPath).toBe('/status/release-health.json');
+    expect(PUBLIC_RELEASE_STATUS_MANIFEST.decision).toBe('blocked');
+    expect(PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary).toMatch(/does not create buyer evidence/i);
+    expect(itemIds).toEqual([
+      'deployed_artifact_live_parity',
+      'current_source_release_gate',
+      'source_provenance',
+      'buyer_evidence_gate',
+      'supabase_advisor_access',
+    ]);
+    expect(sourceGate?.status).toBe('watch');
+    expect(sourceGate?.evidenceBoundary).toMatch(/does not prove production deploy parity/i);
+    expect(provenanceGate?.command).toContain('git status --porcelain=v1 --branch');
+    expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(buyerGate?.status).toBe('external_gate');
+    expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
+    expect(advisorGate?.status).toBe('needs_remediation');
+    expect(advisorGate?.evidenceBoundary).toMatch(/does not substitute for connector-backed advisors/i);
   });
 });

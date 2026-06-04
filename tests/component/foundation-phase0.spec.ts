@@ -26,6 +26,10 @@ test.describe('Phase 0 foundation gating', () => {
   test('status page shows tracked uptime monitors', async ({ page }) => {
     await page.goto('/status');
     await expect(page.getByRole('heading', { name: 'System Status' })).toBeVisible();
+    await expect(page.getByTestId('public-release-status-manifest')).toBeVisible();
+    await expect(page.getByText('Public release status manifest')).toBeVisible();
+    await expect(page.getByText('Source provenance and dirty-worktree gate')).toBeVisible();
+    await expect(page.getByRole('link', { name: /Open JSON manifest/ })).toHaveAttribute('href', '/status/release-health.json');
     await expect(page.getByText('Pilot Readiness').first()).toBeVisible();
     await expect(page.getByText('Utility Forecast Pack').first()).toBeVisible();
   });

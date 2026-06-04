@@ -34,10 +34,10 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
   },
   {
     title: 'GitHub release and cron gates',
-    status: 'verified',
-    rating: '4.7/5',
-    evidence: 'GitHub CI passed for the current pushed `main` source; recent scheduled/soak workflows remain visible as separate workflow evidence and must be reviewed after their own triggers.',
-    nextAction: 'Review GitHub Actions after every push because older failed runs remain visible until superseded.',
+    status: 'watch',
+    rating: '4.3/5',
+    evidence: 'GitHub CI is a required release gate for the current pushed `main` source, but local source can be ahead of origin or dirty until `git status` and `gh run list` are refreshed. Source CI still does not prove production deploy parity.',
+    nextAction: 'Refresh `git status --porcelain=v1 --branch` and GitHub Actions after every push; only a post-deploy live gate proves the hosted artifact.',
   },
   {
     title: 'Supabase edge-function surface',
@@ -88,9 +88,9 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   },
   {
     label: 'Current source CI gate',
-    status: 'verified',
+    status: 'watch',
     command: 'gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',
-    evidenceBoundary: 'GitHub CI must pass on the current pushed commit before source is considered release-ready; source CI still does not prove that production has been redeployed from that commit.',
+    evidenceBoundary: 'GitHub CI must pass on the current pushed commit before source is considered release-ready; source CI still does not prove that production has been redeployed from that commit, and local ahead-of-origin work must be checked separately.',
   },
   {
     label: 'Buyer evidence scan',

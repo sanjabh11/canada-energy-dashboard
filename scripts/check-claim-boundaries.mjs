@@ -13,6 +13,7 @@ const BASE_ACTIVE_PATHS = [
   'public/schema-webapp.jsonld',
   'public/openapi.yaml',
   'public/resume-canada.md',
+  'public/status/release-health.json',
   'public/data/ga_ici_5cp_public_historical_actuals.csv',
   'scripts/deploy-production.sh',
   'src',

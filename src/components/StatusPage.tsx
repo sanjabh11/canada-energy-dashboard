@@ -41,6 +41,10 @@ import {
   type ReleaseHealthEvidenceItem,
   type ReleasePostureItem,
 } from '../lib/releasePosture';
+import {
+  PUBLIC_RELEASE_STATUS_MANIFEST,
+  type PublicReleaseStatus,
+} from '../lib/publicReleaseStatusManifest';
 import { DataFreshnessBadge } from './ui/DataFreshnessBadge';
 import DataTrustNotice from './DataTrustNotice';
 
@@ -150,6 +154,10 @@ const StatusPage: React.FC = () => {
 
   const getReleaseHealthIcon = (status: ReleaseHealthEvidenceItem['status']) => getPostureIcon(status);
 
+  const getPublicStatusBadge = (status: PublicReleaseStatus) => getPostureBadge(status);
+
+  const getPublicStatusIcon = (status: PublicReleaseStatus) => getPostureIcon(status);
+
   const getApprovalBadge = (status: DeploymentApprovalChecklistItem['status']) => {
     const baseClasses = 'px-2 py-1 rounded text-xs font-medium';
     switch (status) {
@@ -244,6 +252,58 @@ const StatusPage: React.FC = () => {
           message="Source freshness and ops-health panels are the canonical trust layer on this page. Endpoint coverage and uptime history below are currently reference views derived from monitor configuration, not live ping evidence or persisted SLA history."
           className="mb-8"
         />
+
+        <section data-testid="public-release-status-manifest" className="mb-8">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-slate-500" />
+                Public release status manifest
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Machine-readable release posture for the public page. Last material review:{' '}
+                {PUBLIC_RELEASE_STATUS_MANIFEST.lastMaterialReviewDate}.
+              </p>
+            </div>
+            <a
+              href={PUBLIC_RELEASE_STATUS_MANIFEST.publicPath}
+              className="inline-flex items-center gap-2 text-sm font-medium text-emerald-700 hover:text-emerald-800"
+            >
+              Open JSON manifest
+              <ExternalLink className="h-4 w-4" />
+            </a>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm leading-6 text-slate-700">
+              {PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary}
+            </div>
+            <div className="grid gap-4 p-4 lg:grid-cols-2">
+              {PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => (
+                <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-3">
+                      {getPublicStatusIcon(item.status)}
+                      <div>
+                        <h3 className="font-semibold text-slate-900">{item.label}</h3>
+                        <div className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                          {item.proofBucket}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={getPublicStatusBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs leading-5 text-slate-100">
+                    {item.command}
+                  </div>
+                  <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                    <span className="font-medium text-slate-900">Next action:</span> {item.nextAction}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
 
         <section data-testid="release-health-evidence" className="mb-8">
           <h2 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">

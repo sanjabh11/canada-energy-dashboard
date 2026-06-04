@@ -1,0 +1,62 @@
+{
+  "schemaVersion": "ceip.public-release-status.v1",
+  "generatedBy": "scripts/generate-public-release-status.mjs",
+  "publicPath": "/status/release-health.json",
+  "lastMaterialReviewDate": "2026-06-04",
+  "decision": "blocked",
+  "decisionBoundary": "This public-safe manifest separates proof buckets. It does not create buyer evidence, production deploy approval, Supabase advisor clearance, or launch-ready status.",
+  "refreshCommands": [
+    "git status --porcelain=v1 --branch",
+    "pnpm run check:release-readiness",
+    "pnpm run check:production-deploy-request",
+    "pnpm run check:post-deploy-live",
+    "pnpm run report:buyer-evidence-readiness"
+  ],
+  "items": [
+    {
+      "id": "deployed_artifact_live_parity",
+      "label": "Last approved production artifact",
+      "status": "verified",
+      "proofBucket": "hosted/live",
+      "command": "pnpm run check:post-deploy-live",
+      "evidenceBoundary": "Only proves the deployed artifact checked during the latest approved deploy; it does not prove production parity for future source commits, which require an approved deploy and another live parity run.",
+      "nextAction": "Rerun after every approved production deploy before calling live parity current."
+    },
+    {
+      "id": "current_source_release_gate",
+      "label": "Current source release gate",
+      "status": "watch",
+      "proofBucket": "local/source",
+      "command": "pnpm run check:release-readiness && gh run list --repo sanjabh11/canada-energy-dashboard --limit 5",
+      "evidenceBoundary": "Local and CI checks must be refreshed for the current SHA; a source check does not prove production deploy parity.",
+      "nextAction": "Run source and CI checks before any approval packet or release request."
+    },
+    {
+      "id": "source_provenance",
+      "label": "Source provenance and dirty-worktree gate",
+      "status": "watch",
+      "proofBucket": "local/source",
+      "command": "git status --porcelain=v1 --branch",
+      "evidenceBoundary": "Deploy requests require a clean main worktree; this public manifest does not prove current local cleanliness.",
+      "nextAction": "Resolve, commit, or explicitly approve unrelated local changes before any production deploy request."
+    },
+    {
+      "id": "buyer_evidence_gate",
+      "label": "Buyer evidence 95% gate",
+      "status": "external_gate",
+      "proofBucket": "buyer evidence",
+      "command": "pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts",
+      "evidenceBoundary": "No buyer-proven market confidence without accepted buyer rows, reviewer evidence, commercial signal, and retained artifact hashes.",
+      "nextAction": "Collect real anonymized buyer evidence and keep rehearsal rows at confidence_delta=0."
+    },
+    {
+      "id": "supabase_advisor_access",
+      "label": "Supabase connector advisors",
+      "status": "needs_remediation",
+      "proofBucket": "external account",
+      "command": "Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti",
+      "evidenceBoundary": "CLI lint does not substitute for connector-backed advisors; current advisor evidence remains account-authorization dependent.",
+      "nextAction": "Fix Supabase connector or project authorization, then rerun security and performance advisors."
+    }
+  ]
+}
