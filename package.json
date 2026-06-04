@@ -69,6 +69,7 @@
     "report:phase-f-evidence-workspace": "node scripts/report-phase-f-evidence-workspace.mjs",
     "report:pilot-evidence-95": "node scripts/validate-pilot-evidence-register.mjs --require-95 --report-95",
     "report:production-approval-packet": "node scripts/report-production-approval-packet.mjs",
+    "report:commercial-launch-readiness": "node scripts/report-commercial-launch-readiness.mjs",
     "report:launch-evidence-manifest": "node scripts/report-launch-evidence-manifest.mjs",
     "report:unmerged-branch-readiness": "node scripts/report-unmerged-branch-readiness.mjs",
     "report:supabase-app-lint": "node scripts/report-supabase-app-lint.mjs",

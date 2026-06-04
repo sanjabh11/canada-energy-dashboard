@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-launch-evidence-manifest.mjs');
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-launch-evidence-manifest.mjs');
+const markdownReportScriptPath = path.join(process.cwd(), 'scripts/report-commercial-launch-readiness.mjs');
 const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py';
 const tempRoots: string[] = [];
 
@@ -74,5 +75,32 @@ describe('launch evidence manifest report', () => {
     });
 
     expect(result).toContain('Launch evidence manifest check passed');
+  });
+
+  it('renders the orchestrator final-report tables from the validated manifest', () => {
+    const tempRoot = makeTempRoot();
+    const reportPath = path.join(tempRoot, 'commercial-launch-readiness.md');
+    const stdout = execFileSync(process.execPath, [markdownReportScriptPath, '--skip-probes', '--output', reportPath], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+    });
+
+    expect(stdout).toContain('# CEIP Commercial Launch Readiness Report');
+    expect(stdout).toContain('Decision: `blocked`');
+    expect(stdout).toContain('## Launch Decision');
+    expect(stdout).toContain('## Gap Analysis');
+    expect(stdout).toContain('## Proof Buckets');
+    expect(stdout).toContain('## Top 10 Pain Points');
+    expect(stdout).toContain('## Top 10 Target Customers Or Segments');
+    expect(stdout).toContain('## Outreach Plan');
+    expect(stdout).toContain('## Fix Report');
+    expect(stdout).toContain('## Adversarial Review');
+    expect(stdout).toContain('## Evidence Validation');
+    expect(stdout).toContain('## ECC Ledger');
+    expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
+    expect(stdout).toContain('validate_launch_evidence.py');
+    expect(stdout).toContain('VALID');
+    expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 });
