@@ -66,7 +66,7 @@ echo ""
 echo "🔒 Step 3: Running security audit..."
 corepack pnpm audit --audit-level=high || {
   echo -e "${YELLOW}⚠️  Security vulnerabilities found${NC}"
-  echo "   Run: pnpm audit fix"
+  echo "   Run: corepack pnpm audit fix"
   exit 1
 }
 echo -e "${GREEN}✅ Security audit passed${NC}"
@@ -74,23 +74,20 @@ echo -e "${GREEN}✅ Security audit passed${NC}"
 # Step 4: Type checking
 echo ""
 echo "📝 Step 4: Running TypeScript type check..."
-TYPE_CHECK_RAN=false
-if corepack pnpm run --if-present type-check; then
-  TYPE_CHECK_RAN=true
-elif npm run --if-present type-check; then
-  TYPE_CHECK_RAN=true
-fi
-
-if [ "$TYPE_CHECK_RAN" = false ]; then
-  echo -e "${YELLOW}⚠️  No type-check script found, skipping${NC}"
-else
+if node -e "const pkg = require('./package.json'); process.exit(pkg.scripts && pkg.scripts['type-check'] ? 0 : 1)" >/dev/null 2>&1; then
+  corepack pnpm run type-check || {
+    echo -e "${RED}❌ Type check failed${NC}"
+    exit 1
+  }
   echo -e "${GREEN}✅ Type check passed${NC}"
+else
+  echo -e "${YELLOW}⚠️  No type-check script found, skipping${NC}"
 fi
 
 # Step 5: Linting
 echo ""
 echo "🔍 Step 5: Running ESLint..."
-corepack pnpm run lint || npm run lint || {
+corepack pnpm run lint || {
   echo -e "${YELLOW}⚠️  Linting issues found${NC}"
   exit 1
 }

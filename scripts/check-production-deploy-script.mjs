@@ -107,6 +107,15 @@ if (deployScript) {
     /(^|\n)\s*pnpm\s+(run|audit|exec|install)\b/,
     'call bare pnpm commands; use Corepack so the pinned packageManager version is honored',
   );
+  rejectPattern(
+    deployScript,
+    deployScriptRelativePath,
+    /(^|\n)\s*npm\s+run\b/,
+    'fall back to npm scripts; production deploy gates must use Corepack-pinned pnpm evidence',
+  );
+  requireText(deployScript, deployScriptRelativePath, 'node -e "const pkg = require(\'./package.json\'); process.exit(pkg.scripts && pkg.scripts[\'type-check\'] ? 0 : 1)"');
+  requireText(deployScript, deployScriptRelativePath, 'corepack pnpm run type-check');
+  requireText(deployScript, deployScriptRelativePath, 'corepack pnpm run lint || {');
 }
 
 if (packageJson) {
