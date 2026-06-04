@@ -24,7 +24,7 @@ for (let index = 0; index < args.length; index += 1) {
     const key = arg.slice(2);
     const value = args[index + 1] ?? '';
     index += 1;
-    if (!['base', 'branch', 'max-files'].includes(key)) {
+    if (!['base', 'branch', 'focus-risk', 'max-files'].includes(key)) {
       failures.push(`Unknown option: ${arg}`);
     } else if (!value || value.startsWith('--')) {
       failures.push(`${arg} requires a value.`);
@@ -40,9 +40,16 @@ for (let index = 0; index < args.length; index += 1) {
 
 const baseRef = values.get('base') ?? 'main';
 const selectedBranchName = values.get('branch') ?? '';
+const focusRisk = values.get('focus-risk') ?? '';
 const maxFiles = Number.parseInt(values.get('max-files') ?? '8', 10);
 if (!Number.isInteger(maxFiles) || maxFiles < 1 || maxFiles > 50) {
   failures.push('--max-files must be an integer from 1 to 50.');
+}
+if (focusRisk && !['high', 'medium', 'low', 'all'].includes(focusRisk)) {
+  failures.push('--focus-risk must be one of: high, medium, low, all.');
+}
+if (selectedBranchName && focusRisk) {
+  failures.push('Use --branch or --focus-risk, not both.');
 }
 
 function printUsage() {
@@ -52,6 +59,7 @@ function printUsage() {
 Options:
   --base <ref>           Base branch/ref to compare against. Defaults to main.
   --branch <ref>         Focus output on one unmerged branch/ref and print review checks.
+  --focus-risk <risk>    Print focused review packets for branches with risk high, medium, low, or all.
   --max-files <count>    Max changed paths shown per branch. Defaults to 8.
   --local-only           Inspect local branches only.
   --fail-on-high-risk    Exit nonzero when any unmerged branch touches high-risk surfaces.
@@ -359,13 +367,25 @@ function focusedFunctionReviewRows(branch) {
   return changedSupabaseFunctionNames(branch.files).map((functionName) => ({
     functionName,
     changedPaths: changedPathsForFunction(branch.files, functionName),
-    reviewFocus: 'Verify configured entrypoint, JWT/auth posture, secret handling, upstream idempotency, database writes, and log/metric observability before merge.',
-    checks: [
-      `git diff --name-status ${baseRef}...${branch.name} -- supabase/functions/${functionName}`,
-      `git diff ${baseRef}...${branch.name} -- supabase/functions/${functionName}/index.ts`,
-      `supabase functions serve ${functionName} --env-file <local-non-production-env>`,
-    ],
-    gate: 'No production function deploy, cron rewire, service-role use change, or live data write until local review passes and owner approval is explicit.',
+    ...(functionName === '_shared'
+      ? {
+          reviewFocus: 'Review shared Edge Function modules for secret handling, auth helpers, entitlement boundaries, database writes, and every importing function before merge.',
+          checks: [
+            `git diff --name-status ${baseRef}...${branch.name} -- supabase/functions/_shared`,
+            `git diff ${baseRef}...${branch.name} -- supabase/functions/_shared`,
+            'manual import-impact review for functions that import changed _shared modules',
+          ],
+          gate: 'No production function deploy, shared helper rollout, service-role use change, or live data write until every affected function is reviewed and owner approval is explicit.',
+        }
+      : {
+          reviewFocus: 'Verify configured entrypoint, JWT/auth posture, secret handling, upstream idempotency, database writes, and log/metric observability before merge.',
+          checks: [
+            `git diff --name-status ${baseRef}...${branch.name} -- supabase/functions/${functionName}`,
+            `git diff ${baseRef}...${branch.name} -- supabase/functions/${functionName}/index.ts`,
+            `supabase functions serve ${functionName} --env-file <local-non-production-env>`,
+          ],
+          gate: 'No production function deploy, cron rewire, service-role use change, or live data write until local review passes and owner approval is explicit.',
+        }),
   }));
 }
 
@@ -377,6 +397,45 @@ function compactFiles(files) {
   const visible = files.slice(0, maxFiles);
   const suffix = files.length > visible.length ? `, ... +${files.length - visible.length} more` : '';
   return `${visible.join(', ')}${suffix}` || 'none';
+}
+
+function focusedReviewCommand(branch) {
+  return `corepack pnpm run report:unmerged-branch-readiness -- --branch ${branch.name} --max-files ${maxFiles}`;
+}
+
+function printFocusedReviewPlan(branch, heading = '##') {
+  console.log('');
+  console.log(`${heading} Focused Review Plan: ${branch.name}`);
+  console.log('');
+  console.log(`- Risk: ${branch.risk}`);
+  console.log(`- Categories: ${markdownList(branch.categories)}`);
+  console.log(`- Review command: \`${focusedReviewCommand(branch)}\``);
+  console.log(`- Merge stance: ${branch.action}`);
+  console.log('- Confidence boundary: this plan can make the branch reviewable, but it does not create buyer evidence or production approval.');
+  console.log('');
+  console.log('| Area | Review focus | Suggested checks | Stop/approval gate |');
+  console.log('|---|---|---|---|');
+  for (const plan of focusedReviewPlans(branch)) {
+    console.log(`| ${plan.category} | ${plan.reviewFocus} | ${tableText(plan.checks)} | ${plan.gate} |`);
+  }
+
+  const functionRows = focusedFunctionReviewRows(branch);
+  if (functionRows.length > 0) {
+    console.log('');
+    console.log(`${heading} Changed Supabase Function Review Queue`);
+    console.log('');
+    console.log('| Function | Changed paths | Review focus | Suggested checks | Stop/approval gate |');
+    console.log('|---|---|---|---|---|');
+    for (const row of functionRows) {
+      console.log(`| ${row.functionName} | ${compactFiles(row.changedPaths)} | ${row.reviewFocus} | ${tableText(row.checks)} | ${row.gate} |`);
+    }
+  }
+}
+
+function branchesForFocusedRisk(branchList) {
+  if (!focusRisk) return [];
+  if (focusRisk === 'all') return branchList;
+  return branchList.filter((branch) => branch.risk === focusRisk);
 }
 
 if (selectedBranchName && !shellSafeRef(selectedBranchName)) {
@@ -506,30 +565,17 @@ for (const branch of branches.slice(0, 8)) {
 if (branches.length === 0) console.log('- None.');
 
 if (selectedBranch) {
+  printFocusedReviewPlan(selectedBranch);
+} else if (focusRisk) {
   console.log('');
-  console.log(`## Focused Review Plan: ${selectedBranch.name}`);
-  console.log('');
-  console.log(`- Risk: ${selectedBranch.risk}`);
-  console.log(`- Categories: ${markdownList(selectedBranch.categories)}`);
-  console.log(`- Merge stance: ${selectedBranch.action}`);
-  console.log('- Confidence boundary: this plan can make the branch reviewable, but it does not create buyer evidence or production approval.');
-  console.log('');
-  console.log('| Area | Review focus | Suggested checks | Stop/approval gate |');
-  console.log('|---|---|---|---|');
-  for (const plan of focusedReviewPlans(selectedBranch)) {
-    console.log(`| ${plan.category} | ${plan.reviewFocus} | ${tableText(plan.checks)} | ${plan.gate} |`);
-  }
-
-  const functionRows = focusedFunctionReviewRows(selectedBranch);
-  if (functionRows.length > 0) {
+  console.log(`## Focused Review Queue: ${focusRisk === 'all' ? 'all branches' : `${focusRisk} risk branches`}`);
+  const focusedBranches = branchesForFocusedRisk(branches);
+  if (focusedBranches.length === 0) {
     console.log('');
-    console.log('## Changed Supabase Function Review Queue');
-    console.log('');
-    console.log('| Function | Changed paths | Review focus | Suggested checks | Stop/approval gate |');
-    console.log('|---|---|---|---|---|');
-    for (const row of functionRows) {
-      console.log(`| ${row.functionName} | ${compactFiles(row.changedPaths)} | ${row.reviewFocus} | ${tableText(row.checks)} | ${row.gate} |`);
-    }
+    const riskLabel = focusRisk === 'all' ? 'unmerged branches' : `${focusRisk} risk unmerged branches`;
+    console.log(`- No ${riskLabel} were found for the selected scope.`);
+  } else {
+    for (const branch of focusedBranches) printFocusedReviewPlan(branch, '###');
   }
 }
 

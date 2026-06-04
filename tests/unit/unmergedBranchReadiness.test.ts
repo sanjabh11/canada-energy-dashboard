@@ -60,6 +60,7 @@ function createRepo() {
   git(root, ['checkout', '-q', '-b', 'export-risk']);
   write(root, 'DEPLOY_THIS_EXPORT_FUNCTION.ts', 'export const deployCopy = true;\n');
   write(root, 'stripe-webhook-FINAL.ts', 'export const finalCopy = true;\n');
+  write(root, 'supabase/functions/_shared/exportEntitlement.ts', 'export const sharedEntitlement = true;\n');
   write(root, 'supabase/functions/stripe-webhook/index.ts', 'export const handler = () => null;\n');
   write(root, 'src/lib/exportJobsClient.ts', 'export const exportJob = true;\n');
   commitAll(root, 'export risk branch');
@@ -166,14 +167,34 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).not.toContain('| docs-only | local |');
     expect(result.stdout).not.toContain('origin/stripe-remote');
     expect(result.stdout).toContain('## Focused Review Plan: export-risk');
+    expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 10`');
     expect(result.stdout).toContain('corepack pnpm run check:production-deploy-script');
     expect(result.stdout).toContain('corepack pnpm run report:supabase-app-lint');
     expect(result.stdout).toContain('No manual dashboard copy/paste');
     expect(result.stdout).toContain('## Changed Supabase Function Review Queue');
+    expect(result.stdout).toContain('| _shared | supabase/functions/_shared/exportEntitlement.ts |');
+    expect(result.stdout).toContain('manual import-impact review for functions that import changed _shared modules');
+    expect(result.stdout).not.toContain('supabase functions serve _shared');
     expect(result.stdout).toContain('| stripe-webhook | supabase/functions/stripe-webhook/index.ts |');
     expect(result.stdout).toContain('git diff --name-status main...export-risk -- supabase/functions/stripe-webhook');
     expect(result.stdout).toContain('supabase functions serve stripe-webhook --env-file <local-non-production-env>');
     expect(result.stdout).toContain('payment/entitlement');
+    expect(result.stdout).toContain('does not create buyer evidence or production approval');
+  }, gitBackedTestTimeoutMs);
+
+  it('can print focused review packets for every high-risk branch in one read-only run', () => {
+    const root = createRepo();
+    const result = runReport(root, ['--focus-risk', 'high', '--max-files', '10']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('## Focused Review Queue: high risk branches');
+    expect(result.stdout).toContain('### Focused Review Plan: export-risk');
+    expect(result.stdout).toContain('### Focused Review Plan: origin/stripe-remote');
+    expect(result.stdout).not.toContain('### Focused Review Plan: docs-only');
+    expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 10`');
+    expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch origin/stripe-remote --max-files 10`');
+    expect(result.stdout).toContain('Read-only review first; this report does not checkout, merge, deploy, or mutate branch state.');
     expect(result.stdout).toContain('does not create buyer evidence or production approval');
   }, gitBackedTestTimeoutMs);
 
@@ -188,7 +209,7 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('origin=1');
     expect(result.stdout).toContain('high=2');
     expect(result.stdout).toContain('low=1');
-    expect(result.stdout).toContain('read-only boundary, focused review plan, and high-risk failure semantics are intact');
+    expect(result.stdout).toContain('read-only boundary, focused review packets, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
   it('rejects a selected branch that is not in the unmerged review scope', () => {
@@ -198,5 +219,16 @@ describe('unmerged branch readiness report', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain('Selected branch/ref is not an unmerged branch in the selected scope: missing-review-branch');
+  }, gitBackedTestTimeoutMs);
+
+  it('rejects ambiguous or invalid focused review options', () => {
+    const root = createRepo();
+    const invalidRisk = runReport(root, ['--focus-risk', 'critical']);
+    const ambiguous = runReport(root, ['--branch', 'export-risk', '--focus-risk', 'high']);
+
+    expect(invalidRisk.status).toBe(1);
+    expect(invalidRisk.stderr).toContain('--focus-risk must be one of: high, medium, low, all.');
+    expect(ambiguous.status).toBe(1);
+    expect(ambiguous.stderr).toContain('Use --branch or --focus-risk, not both.');
   }, gitBackedTestTimeoutMs);
 });

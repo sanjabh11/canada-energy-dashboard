@@ -156,6 +156,7 @@ if (branchRows.length > 0) {
   assert(focusedResult.status === 0, `Focused report for ${focusedCandidate.branch} exited ${focusedResult.status}.`);
   assertContains('Focused report', focused, `Focused branch: ${focusedCandidate.branch}`);
   assertContains('Focused report', focused, `## Focused Review Plan: ${focusedCandidate.branch}`);
+  assertContains('Focused report', focused, `Review command: \`corepack pnpm run report:unmerged-branch-readiness -- --branch ${focusedCandidate.branch} --max-files ${maxFiles}\``);
   assertContains('Focused report', focused, '- Confidence boundary: this plan can make the branch reviewable, but it does not create buyer evidence or production approval.');
   assertContains('Focused report', focused, '| Area | Review focus | Suggested checks | Stop/approval gate |');
   assertContains('Focused report', focused, 'git diff --name-status');
@@ -164,14 +165,45 @@ if (branchRows.length > 0) {
 
   if (/supabase\/functions\/[^/]+\//.test(focused)) {
     assertContains('Focused report', focused, '## Changed Supabase Function Review Queue');
-    assertContains('Focused report', focused, 'supabase functions serve');
     assertContains('Focused report', focused, 'No production function deploy');
   }
+  if (/supabase\/functions\/(?!_shared\/)[^/]+\//.test(focused)) {
+    assertContains('Focused report', focused, 'supabase functions serve');
+  }
+  if (/supabase\/functions\/_shared\//.test(focused)) {
+    assertContains('Focused report', focused, 'manual import-impact review for functions that import changed _shared modules');
+  }
+}
+
+if (highCount > 0) {
+  const focusedRiskResult = runReport(['--focus-risk', 'high', '--max-files', String(maxFiles)]);
+  const focusedRisk = focusedRiskResult.stdout;
+  assert(focusedRiskResult.status === 0, `Focused high-risk queue exited ${focusedRiskResult.status}.`);
+  assertContains('Focused high-risk queue', focusedRisk, '## Focused Review Queue: high risk branches');
+  assertContains('Focused high-risk queue', focusedRisk, '### Focused Review Plan:');
+  assertContains('Focused high-risk queue', focusedRisk, 'Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch');
+  assertContains('Focused high-risk queue', focusedRisk, 'Read-only review first; this report does not checkout, merge, deploy, or mutate branch state.');
+  assertContains('Focused high-risk queue', focusedRisk, 'does not create buyer evidence or production approval');
+} else {
+  const focusedRiskResult = runReport(['--focus-risk', 'high', '--max-files', String(maxFiles)]);
+  assert(focusedRiskResult.status === 0, `Focused high-risk queue should pass with no high-risk branches; got ${focusedRiskResult.status}.`);
+  assertContains('Focused high-risk queue', focusedRiskResult.stdout, '## Focused Review Queue: high risk branches');
+  assertContains('Focused high-risk queue', focusedRiskResult.stdout, '- No high risk unmerged branches were found for the selected scope.');
 }
 
 const missingBranchResult = runReport(['--branch', 'ceip-nonexistent-review-branch']);
 assert(missingBranchResult.status === 1, `Missing branch focus should exit 1; got ${missingBranchResult.status}.`);
 assertContains('Missing branch stderr', missingBranchResult.stderr, 'Selected branch/ref is not an unmerged branch in the selected scope: ceip-nonexistent-review-branch');
+
+const invalidFocusRiskResult = runReport(['--focus-risk', 'critical']);
+assert(invalidFocusRiskResult.status === 1, `Invalid --focus-risk should exit 1; got ${invalidFocusRiskResult.status}.`);
+assertContains('Invalid focus risk stderr', invalidFocusRiskResult.stderr, '--focus-risk must be one of: high, medium, low, all.');
+
+if (branchRows.length > 0) {
+  const ambiguousFocusResult = runReport(['--branch', branchRows[0].branch, '--focus-risk', 'high']);
+  assert(ambiguousFocusResult.status === 1, `Ambiguous --branch plus --focus-risk should exit 1; got ${ambiguousFocusResult.status}.`);
+  assertContains('Ambiguous focus stderr', ambiguousFocusResult.stderr, 'Use --branch or --focus-risk, not both.');
+}
 
 if (failures.length > 0) {
   console.error('Unmerged branch readiness report check failed:\n');
@@ -187,6 +219,6 @@ console.log(
     `high=${highCount}`,
     `medium=${mediumCount}`,
     `low=${lowCount}`,
-    'read-only boundary, focused review plan, and high-risk failure semantics are intact.',
+    'read-only boundary, focused review packets, and high-risk failure semantics are intact.',
   ].join(' '),
 );
