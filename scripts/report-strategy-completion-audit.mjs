@@ -41,6 +41,23 @@ function commandText(command, commandArgs) {
   return [command, ...commandArgs].map(shellQuote).join(' ');
 }
 
+function processErrorText(command, error) {
+  if (!error) return '';
+
+  const message = String(error.message ?? error);
+  const code = String(error.code ?? '');
+  if (command === 'corepack' && (code === 'ENOENT' || /ENOENT/i.test(message))) {
+    return [
+      'Corepack executable was not found on PATH.',
+      'Strategy completion audit uses Corepack to honor the pinned packageManager pnpm version before treating local gate evidence as release-ready.',
+      'Enable Corepack in this shell or run from a Corepack-enabled environment; do not treat bare pnpm or a temporary local shim as release-readiness evidence.',
+      `Raw error: ${message}`,
+    ].join('\n');
+  }
+
+  return message;
+}
+
 function runStep(label, command, commandArgs) {
   const startedAt = Date.now();
   const result = spawnSync(command, commandArgs, {
@@ -58,7 +75,7 @@ function runStep(label, command, commandArgs) {
     durationMs: Date.now() - startedAt,
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
-    error: result.error ? String(result.error.message ?? result.error) : '',
+    error: processErrorText(command, result.error),
   };
 }
 
@@ -161,6 +178,9 @@ const requiredLocalCheckLabels = new Set([
 ]);
 const failedRequiredLocalChecks = checkSteps.filter(
   (step) => requiredLocalCheckLabels.has(step.label) && step.status !== 'pass',
+);
+const corepackToolchainBlocked = checkSteps.some(
+  (step) => step.command.startsWith('corepack ') && step.error.includes('Corepack executable was not found on PATH.'),
 );
 const liveMetadataStep = checkSteps.find((step) => step.label === 'Live public metadata');
 const liveStaticParityStep = checkSteps.find((step) => step.label === 'Live static dist parity');
@@ -318,7 +338,7 @@ function compactOutput(step) {
   return combined
     .split(/\r?\n/)
     .filter((line) =>
-      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|Fetch retries|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata|Outreach Intake Action Plan|Rows requiring evidence action|Confidence movement/i.test(
+      /passed|failed|Verified anchors|Live-verified anchors|Manual-verified anchors|Network-unreachable anchors|Fetch-failed anchors|Fetch retries|manual evidence|static parity|remote static content|does not match dist|stale metadata|missing proof-pack|Strategy roadmap|Commercial source|Public metadata|Outreach Intake Action Plan|Rows requiring evidence action|Confidence movement|Corepack executable|pinned packageManager|release-readiness evidence|Raw error/i.test(
         line,
       ),
     )
@@ -364,7 +384,9 @@ const checkMarkdown =
         .join('\n\n');
 
 const completionVerdict =
-  failedRequiredLocalChecks.length > 0
+  corepackToolchainBlocked
+    ? 'The completion audit could not verify local gates because Corepack is unavailable on PATH. This is a toolchain blocker, not proof that individual roadmap/source gates failed; rerun in a Corepack-enabled environment before treating release-readiness as proven.'
+    : failedRequiredLocalChecks.length > 0
     ? `The completion audit found failing local verification gates: ${failedRequiredLocalChecks
         .map((step) => step.label)
         .join(', ')}.`

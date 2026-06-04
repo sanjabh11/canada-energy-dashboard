@@ -133,7 +133,57 @@ async function runCompletionAudit(sourceAnchorStatus: 'pass' | 'fail', liveParit
   }
 }
 
+async function runCompletionAuditWithoutCorepack() {
+  const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-completion-audit-no-corepack-'));
+  const planPath = path.join(tempDir, 'ceip-95-strategy-feature-gap.md');
+
+  writeFileSync(planPath, '# CEIP Plan\n\n95% Strategy-Direction Confidence\n');
+
+  try {
+    return await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
+      const child = spawn(process.execPath, [scriptPath, '--plan', planPath, '--include-checks', '--fail-on-local-checks'], {
+        cwd: process.cwd(),
+        env: {
+          ...process.env,
+          PATH: tempDir,
+        },
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      child.stdout.setEncoding('utf8');
+      child.stderr.setEncoding('utf8');
+      child.stdout.on('data', (chunk) => {
+        stdout += chunk;
+      });
+      child.stderr.on('data', (chunk) => {
+        stderr += chunk;
+      });
+      child.on('error', reject);
+      child.on('close', (status) => {
+        resolve({ status, stdout, stderr });
+      });
+    });
+  } finally {
+    rmSync(tempDir, { recursive: true, force: true });
+  }
+}
+
 describe('strategy completion audit', () => {
+  it('reports missing Corepack as a toolchain blocker with actionable command evidence', async () => {
+    const result = await runCompletionAuditWithoutCorepack();
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('The completion audit could not verify local gates because Corepack is unavailable on PATH.');
+    expect(result.stdout).toContain('This is a toolchain blocker, not proof that individual roadmap/source gates failed');
+    expect(result.stdout).toContain('Corepack executable was not found on PATH.');
+    expect(result.stdout).toContain('Strategy completion audit uses Corepack to honor the pinned packageManager pnpm version before treating local gate evidence as release-ready.');
+    expect(result.stdout).toContain('do not treat bare pnpm or a temporary local shim as release-readiness evidence.');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:strategy-roadmap-doc`');
+  });
+
   it('exits nonzero when a required local source gate fails', async () => {
     const result = await runCompletionAudit('fail');
 
