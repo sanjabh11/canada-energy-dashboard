@@ -107,6 +107,7 @@ function assertReport(markdown, options = {}) {
     'Launch Decision',
     'Gap Analysis',
     'Launch Blocker Action Queue',
+    'Source Provenance Resolution Queue',
     'Branch Canonical Head Decision Deficits',
     'Buyer Evidence Hard Gate Deficits',
     'Supabase Advisor Clearance Deficits',
@@ -147,6 +148,11 @@ function assertReport(markdown, options = {}) {
     'Report must keep buyer evidence action blocked while hard-gate deficits remain.',
   );
   assert(markdown.includes('corepack pnpm run check:post-deploy-live'), 'Report must include the post-deploy live proof command.');
+  assert(markdown.includes('## Source Provenance Resolution Queue'), 'Report must include the source provenance resolution queue table.');
+  assert(markdown.includes('Source provenance resolution queue'), 'Report must include structured source-provenance resolution evidence from the manifest.');
+  assert(markdown.includes('This queue is a decision aid only'), 'Report must preserve the source-provenance non-execution boundary.');
+  assert(markdown.includes('without explicit owner intent'), 'Report must preserve the source-provenance owner-intent stop gate.');
+  assert(markdown.includes('corepack pnpm run report:production-approval-packet -- --skip-release-readiness'), 'Report must include the source-provenance proof command.');
   assert(markdown.includes('## Branch Canonical Head Decision Deficits'), 'Report must include the branch canonical-head decision deficit table.');
   assert(markdown.includes('Canonical head decision ledger'), 'Report must include structured canonical-head decision evidence from the manifest.');
   assert(markdown.includes('This ledger is read-only'), 'Report must preserve the canonical-head decision non-execution boundary.');
@@ -207,6 +213,7 @@ function assertReport(markdown, options = {}) {
   const launchSection = extractSection(markdown, 'Launch Decision');
   const gapSection = extractSection(markdown, 'Gap Analysis');
   const actionQueueSection = extractSection(markdown, 'Launch Blocker Action Queue');
+  const sourceResolutionSection = extractSection(markdown, 'Source Provenance Resolution Queue');
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
@@ -217,6 +224,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(launchSection) === 5, 'Launch score table must include five dimensions.');
   assert(countDataRows(gapSection) >= 4, 'Gap analysis table must include current P0/P1 launch blockers.');
   assert(countDataRows(actionQueueSection) >= 6, 'Launch blocker action queue must include the launch execution phases.');
+  assert(countDataRows(sourceResolutionSection) >= 1, 'Source provenance resolution queue must include at least the clean/dirty boundary row.');
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
@@ -234,4 +242,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, canonical-head decision deficits, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

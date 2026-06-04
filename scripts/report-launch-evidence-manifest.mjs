@@ -768,6 +768,78 @@ function sourceProvenanceEvidence(status) {
   ].join(' ');
 }
 
+function sourceResolutionDecision(detail) {
+  if (!detail.tracked && detail.ignored_by_rule) {
+    return 'Confirm this ignored local artifact should remain outside launch evidence; remove local copy before deploy only with owner intent.';
+  }
+  if (!detail.tracked) {
+    return 'Decide whether this untracked non-ignored path is source evidence to commit, a local artifact to move out of repo, or a path needing an ignore rule.';
+  }
+  if (detail.staging_state === 'staged_only') {
+    return 'Decide whether the staged source change should be committed as intentional launch evidence, unstaged for later review, stashed, or reverted by the owner.';
+  }
+  if (detail.staging_state === 'unstaged_only') {
+    return 'Decide whether the unstaged source change should be committed, stashed, or reverted by the owner.';
+  }
+  if (detail.staging_state === 'staged_and_unstaged') {
+    return 'Decide separately on the index and worktree versions before any deploy approval request.';
+  }
+  return 'Decide whether this tracked source change should be committed, stashed, or reverted by the owner.';
+}
+
+function sourceResolutionStopGate(detail) {
+  const verbs = detail.tracked
+    ? 'commit, unstage, stash, revert, delete, rename, or move'
+    : 'add, ignore, delete, move, or commit';
+  return `Do not ${verbs} this path without explicit owner intent; this queue is a decision aid only.`;
+}
+
+function sourceProvenanceResolutionEvidence(queue) {
+  if (queue.status === 'pass') {
+    return 'Source provenance resolution queue: status=pass dirty_paths=0 owner_decisions=0 approval_gate=owner approval and release gates still apply before deploy';
+  }
+
+  const topBlocked = queue.items
+    .slice(0, 5)
+    .map((item) => `${item.file_path}:${item.staging_state}:${item.source_status}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Source provenance resolution queue:',
+    `status=${queue.status}`,
+    `dirty_paths=${queue.dirty_path_count}`,
+    `owner_decisions=${queue.blocked_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=no commit/unstage/stash/revert/delete/rename/move without explicit owner intent; no deploy request until clean worktree',
+  ].join(' ');
+}
+
+function buildSourceProvenanceResolutionQueue(status) {
+  const items = status.dirtyDetails.map((detail, index) => ({
+    rank: index + 1,
+    file_path: detail.file_path,
+    old_path: detail.old_path,
+    source_status: detail.status,
+    index_status: detail.index_status,
+    worktree_status: detail.worktree_status,
+    staging_state: detail.staging_state,
+    tracked: detail.tracked,
+    ignored_by_rule: detail.ignored_by_rule,
+    decision_required: sourceResolutionDecision(detail),
+    proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    stop_gate: sourceResolutionStopGate(detail),
+    status: 'blocked',
+  }));
+  const queue = {
+    status: status.isDirty ? 'blocked' : 'pass',
+    dirty_path_count: status.dirtyLines.length,
+    item_count: items.length,
+    blocked_count: items.length,
+    items,
+  };
+  return { ...queue, evidence: sourceProvenanceResolutionEvidence(queue) };
+}
+
 function branchFreshnessEvidence(rows) {
   if (rows.length === 0) {
     return 'Branch freshness review: no freshness rows were parsed from the branch readiness report.';
@@ -1785,6 +1857,7 @@ const launchActionQueue = buildLaunchActionQueue({
 const generatedAt = new Date().toISOString();
 
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
+const sourceProvenanceResolutionQueue = buildSourceProvenanceResolutionQueue(gitStatus);
 
 const buyerGapEvidence = [
   buyerProbe.reviewEvidence,
@@ -1836,6 +1909,7 @@ const manifest = {
     local: [
       'Local release readiness is verified separately with corepack pnpm run check:release-readiness; do not infer current deploy approval from this JSON alone.',
       dirtyEvidence,
+      sourceProvenanceResolutionQueue.evidence,
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
       branchProbe.evidence,
@@ -1957,6 +2031,7 @@ const manifest = {
     is_dirty: gitStatus.isDirty,
     dirty_path_count: gitStatus.dirtyLines.length,
     dirty_paths: gitStatus.dirtyDetails,
+    resolution_queue: sourceProvenanceResolutionQueue,
     evidence: dirtyEvidence,
     deploy_gate: gitStatus.isDirty
       ? 'blocked until dirty tracked/untracked paths are committed, stashed, removed, or otherwise intentionally resolved before deploy approval'
@@ -2087,9 +2162,10 @@ const manifest = {
           'git lfs version',
           'launch blocker action queue synthesis',
           'canonical head decision ledger synthesis',
+          'source provenance resolution queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, an ordered launch blocker action queue, and canonical-head branch decision deficits.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

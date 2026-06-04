@@ -136,6 +136,8 @@ function renderReport(manifest, validationText) {
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
+  const sourceResolutionQueue = manifest.source_provenance?.resolution_queue ?? {};
+  const sourceResolutionItems = Array.isArray(sourceResolutionQueue.items) ? sourceResolutionQueue.items : [];
   const branchCanonicalDecisions = manifest.branch_review?.canonical_head_decisions ?? {};
   const branchCanonicalDecisionItems = Array.isArray(branchCanonicalDecisions.items) ? branchCanonicalDecisions.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
@@ -204,6 +206,30 @@ ${launchActionItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'queue_missing', 'not available', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run report:launch-evidence-manifest', launchActionQueue.evidence ?? 'No launch action queue was captured.', launchActionQueue.status ?? 'unknown'])}
+
+## Source Provenance Resolution Queue
+
+Open source-provenance decisions: ${text(sourceResolutionQueue.blocked_count ?? 'unknown')}/${text(sourceResolutionQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance.
+
+| Rank | File Path | Old Path | Source Status | Index Status | Worktree Status | Staging State | Tracked | Ignored By Rule | Decision Required | Proof Command | Stop Gate | Resolution Status |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|
+${sourceResolutionItems.length > 0
+    ? sourceResolutionItems.map((item) => row([
+      item.rank,
+      item.file_path,
+      item.old_path ?? 'n/a',
+      item.source_status ?? 'unknown',
+      item.index_status,
+      item.worktree_status,
+      item.staging_state,
+      item.tracked ? 'yes' : 'no',
+      item.ignored_by_rule ? 'yes' : 'no',
+      item.decision_required,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'n/a', sourceResolutionQueue.status ?? 'unknown', 'n/a', 'n/a', 'clean', 'n/a', 'n/a', 'No dirty source paths were captured.', 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness', sourceResolutionQueue.evidence ?? 'No source provenance resolution queue was captured.', sourceResolutionQueue.status ?? 'unknown'])}
 
 ## Branch Canonical Head Decision Deficits
 

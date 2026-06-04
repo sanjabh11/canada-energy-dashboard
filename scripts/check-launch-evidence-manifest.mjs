@@ -175,6 +175,36 @@ try {
       assert(manifest.source_provenance.evidence.includes('index_status='), 'Manifest source provenance evidence must include index_status classification for dirty paths.');
       assert(manifest.source_provenance.evidence.includes('worktree_status='), 'Manifest source provenance evidence must include worktree_status classification for dirty paths.');
     }
+    assert(typeof manifest.source_provenance?.resolution_queue?.evidence === 'string', 'Manifest source_provenance.resolution_queue.evidence must be set.');
+    assert(manifest.source_provenance.resolution_queue.evidence.includes('Source provenance resolution queue'), 'Manifest source provenance resolution queue evidence must include a queue marker.');
+    assert(Number.isInteger(manifest.source_provenance.resolution_queue.dirty_path_count), 'Manifest source_provenance.resolution_queue.dirty_path_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.resolution_queue.item_count), 'Manifest source_provenance.resolution_queue.item_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.resolution_queue.blocked_count), 'Manifest source_provenance.resolution_queue.blocked_count must be an integer.');
+    assert(Array.isArray(manifest.source_provenance.resolution_queue.items), 'Manifest source_provenance.resolution_queue.items must be a list.');
+    assert(
+      manifest.source_provenance.resolution_queue.item_count === manifest.source_provenance.resolution_queue.items.length,
+      'Source provenance resolution queue item_count must match items length.',
+    );
+    assert(
+      manifest.source_provenance.resolution_queue.dirty_path_count === manifest.source_provenance.dirty_path_count,
+      'Source provenance resolution queue dirty_path_count must match source_provenance.dirty_path_count.',
+    );
+    for (const [index, item] of (manifest.source_provenance.resolution_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `source_provenance.resolution_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.file_path === 'string' && item.file_path.length > 0, `source_provenance.resolution_queue.items[${index}].file_path must be set.`);
+      assert(item.old_path === null || typeof item.old_path === 'string', `source_provenance.resolution_queue.items[${index}].old_path must be string or null.`);
+      assert(typeof item.source_status === 'string' && item.source_status.length > 0, `source_provenance.resolution_queue.items[${index}].source_status must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `source_provenance.resolution_queue.items[${index}].status must be set.`);
+      assert(typeof item.index_status === 'string' && item.index_status.length > 0, `source_provenance.resolution_queue.items[${index}].index_status must be set.`);
+      assert(typeof item.worktree_status === 'string' && item.worktree_status.length > 0, `source_provenance.resolution_queue.items[${index}].worktree_status must be set.`);
+      assert(typeof item.staging_state === 'string' && item.staging_state.length > 0, `source_provenance.resolution_queue.items[${index}].staging_state must be set.`);
+      assert(isBoolean(item.tracked), `source_provenance.resolution_queue.items[${index}].tracked must be boolean.`);
+      assert(isBoolean(item.ignored_by_rule), `source_provenance.resolution_queue.items[${index}].ignored_by_rule must be boolean.`);
+      assert(typeof item.decision_required === 'string' && /decide|confirm/i.test(item.decision_required), `source_provenance.resolution_queue.items[${index}].decision_required must describe the owner decision.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:production-approval-packet'), `source_provenance.resolution_queue.items[${index}].proof_command must point to the production approval packet.`);
+      assert(typeof item.stop_gate === 'string' && /without explicit owner intent/i.test(item.stop_gate), `source_provenance.resolution_queue.items[${index}].stop_gate must preserve owner-intent boundary.`);
+      assert(item.status !== 'pass', `source_provenance.resolution_queue.items[${index}].status must remain blocked until owner resolution clears the path.`);
+    }
     assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
     assert(typeof manifest.release_preflight?.evidence === 'string', 'Manifest must include release_preflight.evidence.');
     assert(manifest.release_preflight.evidence.includes('Release toolchain and approval deficit ledger'), 'Manifest release preflight evidence must include a ledger marker.');
@@ -425,4 +455,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

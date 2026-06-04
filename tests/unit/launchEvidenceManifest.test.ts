@@ -126,6 +126,18 @@ describe('launch evidence manifest report', () => {
       expect(manifest.source_provenance.evidence).toContain('staging_state=');
     }
     expect(manifest.source_provenance.deploy_gate).toContain('deploy');
+    expect(manifest.source_provenance.resolution_queue.status).toMatch(/blocked|pass/);
+    expect(manifest.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
+    expect(manifest.source_provenance.resolution_queue.dirty_path_count).toBe(manifest.source_provenance.dirty_path_count);
+    expect(manifest.source_provenance.resolution_queue.item_count).toBe(manifest.source_provenance.resolution_queue.items.length);
+    if (manifest.source_provenance.resolution_queue.items.length > 0) {
+      const firstSourceDecision = manifest.source_provenance.resolution_queue.items[0];
+      expect(firstSourceDecision.source_status).toBeTruthy();
+      expect(firstSourceDecision.decision_required).toMatch(/Decide|Confirm/i);
+      expect(firstSourceDecision.proof_command).toContain('report:production-approval-packet');
+      expect(firstSourceDecision.stop_gate).toContain('explicit owner intent');
+      expect(firstSourceDecision.status).toBe('blocked');
+    }
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.risk_counts.high).toBeNull();
     expect(manifest.branch_review.family_counts.local_only).toBeNull();
@@ -221,6 +233,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Launch Decision');
     expect(stdout).toContain('## Gap Analysis');
     expect(stdout).toContain('## Launch Blocker Action Queue');
+    expect(stdout).toContain('## Source Provenance Resolution Queue');
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
@@ -235,6 +248,10 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## ECC Ledger');
     expect(stdout).toContain('Source provenance:');
     expect(stdout).toContain('Launch blocker action queue');
+    expect(stdout).toContain('Source provenance resolution queue');
+    expect(stdout).toContain('This queue is a decision aid only');
+    expect(stdout).toContain('corepack pnpm run report:production-approval-packet -- --skip-release-readiness');
+    expect(stdout).toContain('explicit owner intent');
     expect(stdout).toContain('| source_provenance |');
     expect(stdout).toContain('| release_toolchain |');
     expect(stdout).toContain('| branch_review |');
