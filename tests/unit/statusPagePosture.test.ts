@@ -55,14 +55,16 @@ describe('status page release posture', () => {
     expect(sourcePosture).toBeTruthy();
     expect(sourcePosture?.status).toBe('watch');
     expect(sourcePosture?.evidence).toMatch(/local source can be ahead of origin or dirty/i);
+    expect(sourcePosture?.evidence).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(sourcePosture?.evidence).toMatch(/does not prove production deploy parity/i);
-    expect(sourcePosture?.nextAction).toMatch(/git status --porcelain=v1 --branch/);
+    expect(sourcePosture?.nextAction).toMatch(/report:production-approval-packet/);
     expect(sourceEvidence?.status).toBe('watch');
-    expect(sourceEvidence?.evidenceBoundary).toMatch(/local ahead-of-origin work must be checked separately/i);
+    expect(sourceEvidence?.evidenceBoundary).toMatch(/staged-only, or unstaged source blockers must be checked separately/i);
     expect(branchReviewPosture?.status).toBe('external_gate');
     expect(branchReviewPosture?.evidence).toMatch(/4 high-risk, 3 medium-risk, and 1 low-risk/i);
+    expect(branchReviewPosture?.evidence).toMatch(/three review-first branch packets/i);
     expect(branchReviewPosture?.evidence).toMatch(/do not create launch evidence/i);
-    expect(branchReviewPosture?.nextAction).toMatch(/report:unmerged-branch-readiness -- --branch <ref>/i);
+    expect(branchReviewPosture?.nextAction).toMatch(/review-first packets/i);
   });
 
   it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
@@ -88,9 +90,12 @@ describe('status page release posture', () => {
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
     expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
+    expect(sourceEvidence?.evidenceBoundary).toMatch(/staged-only, or unstaged source blockers/i);
     expect(branchReviewEvidence?.status).toBe('external_gate');
     expect(branchReviewEvidence?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchReviewEvidence?.command).toContain('report:launch-evidence-manifest');
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/does not create launch evidence/i);
+    expect(branchReviewEvidence?.evidenceBoundary).toMatch(/review-first packet evidence/i);
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/merges, checkouts, migrations, or deploys/i);
     expect(buyerEvidence?.status).toBe('external_gate');
     expect(buyerEvidence?.evidenceBoundary).toMatch(/no production buyer-evidence register/i);
@@ -157,11 +162,14 @@ describe('status page release posture', () => {
     expect(currentSourceParityGate?.nextAction).toMatch(/post-deploy live checks/i);
     expect(sourceGate?.status).toBe('watch');
     expect(sourceGate?.evidenceBoundary).toMatch(/does not prove production deploy parity/i);
-    expect(provenanceGate?.command).toContain('git status --porcelain=v1 --branch');
+    expect(provenanceGate?.command).toContain('report:production-approval-packet');
+    expect(provenanceGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
     expect(branchReviewGate?.status).toBe('external_gate');
     expect(branchReviewGate?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchReviewGate?.command).toContain('report:launch-evidence-manifest');
     expect(branchReviewGate?.evidenceBoundary).toMatch(/does not create launch evidence/i);
+    expect(branchReviewGate?.evidenceBoundary).toMatch(/review-first packet summaries/i);
     expect(buyerGate?.status).toBe('external_gate');
     expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
     expect(advisorGate?.status).toBe('needs_remediation');

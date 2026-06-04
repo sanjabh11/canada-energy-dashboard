@@ -45,18 +45,18 @@
       "label": "Source provenance and dirty-worktree gate",
       "status": "watch",
       "proofBucket": "local/source",
-      "command": "git status --porcelain=v1 --branch",
-      "evidenceBoundary": "Deploy requests require a clean main worktree; this public manifest does not prove current local cleanliness.",
-      "nextAction": "Resolve, commit, or explicitly approve unrelated local changes before any production deploy request."
+      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness",
+      "evidenceBoundary": "Deploy requests require clean main-branch source provenance. The local packet classifies dirty paths by staged-only, unstaged-only, mixed, untracked, or ignored state, but this public manifest does not prove current local cleanliness or production approval.",
+      "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
     },
     {
       "id": "unmerged_branch_review_queue",
       "label": "Unmerged branch review queue",
       "status": "external_gate",
       "proofBucket": "local/source",
-      "command": "pnpm run report:unmerged-branch-readiness",
-      "evidenceBoundary": "High-risk unmerged branches are review queues; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.",
-      "nextAction": "Run focused branch reports for high-risk refs, complete security and release checks, and merge only through normal release gates."
+      "command": "pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "High-risk unmerged branches are review queues; current launch evidence carries review-first packet summaries and canonical-head state, but this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.",
+      "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates."
     },
     {
       "id": "buyer_evidence_gate",

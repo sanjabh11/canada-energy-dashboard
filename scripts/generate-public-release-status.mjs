@@ -75,6 +75,16 @@ function validateManifest(manifest) {
     if (!ids.has(id)) failures.push(`missing required item: ${id}.`);
   }
 
+  const itemById = new Map((manifest.items ?? []).map((item) => [item.id, item]));
+  const sourceProvenance = itemById.get('source_provenance') ?? {};
+  if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
+    failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
+  }
+  const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
+  if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
+    failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+
   const serialized = JSON.stringify(manifest);
   for (const rule of forbiddenPatterns) {
     if (rule.pattern.test(serialized)) failures.push(`forbidden ${rule.name} found in manifest.`);
