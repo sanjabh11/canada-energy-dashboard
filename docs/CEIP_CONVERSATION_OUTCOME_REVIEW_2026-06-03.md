@@ -6,7 +6,7 @@
 
 ## Current Verdict
 
-The desk-research strategy, public proof-pack positioning, release hygiene, GitHub hygiene, local release readiness, production static parity, Supabase app-owned lint posture, and source-side claim boundaries are in strong shape. The repo is clean on `main`, current GitHub CI is green, and the approved production deploy passed post-deploy live checks.
+The desk-research strategy, public proof-pack positioning, release hygiene, GitHub hygiene, production static parity for the last approved deploy, Supabase app-owned lint posture, and source-side claim boundaries are in strong shape. This review is a dated snapshot: current local source state must be rechecked with `git status --short --branch`, the production approval packet, and Corepack-enabled release-readiness before using it as approval evidence. In the current continuation, local source may be ahead of `origin/main` or dirty, and that blocks deploy-source provenance until resolved.
 
 The full market-confidence goal is not complete. Buyer-proven 95% market confidence is still blocked because there is no real production buyer-evidence register, no accepted buyer proof packs, no real commercial commitment artifact, and Supabase MCP advisor access is still permission-denied for project `qnymbecjgeaoxsfphrti`.
 
@@ -20,17 +20,17 @@ pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv -
 
 | Area | Current state | Verification |
 |---|---|---|
-| Repo head | `main` matches `origin/main`; use the latest local SHA at review time, not a frozen document literal, as source truth | `git status --short --branch`, `git log --oneline -5` |
+| Repo head | Use the latest local SHA and worktree state at review time, not this dated snapshot, as source truth; ahead/dirty source blocks production provenance | `git status --short --branch`, `git log --oneline -5`, `pnpm run report:production-approval-packet -- --skip-release-readiness` |
 | GitHub CI | Latest CI for the current pushed source must be green before release work continues | `gh run list --repo sanjabh11/canada-energy-dashboard --limit 5`; watch the latest run with `gh run watch <run-id> --exit-status` |
 | Production deploy | Approved Netlify production deployment is live | `netlify deploy --prod --no-build --dir=dist` |
 | Post-deploy live gate | Remote metadata, exact static parity, and hosted proof-pack smoke pass | `pnpm run check:post-deploy-live` |
 | Live static parity | Hosted `/`, `/manifest.json`, and `/schema-webapp.jsonld` match built `dist` | `pnpm run check:live-static-parity` |
-| Local release readiness | Passes after claim, source-anchor, pilot-evidence, unit, browser, build, metadata, and bundle-budget gates | `pnpm run check:release-readiness` inside the approval packet |
+| Local release readiness | Requires Corepack-pinned `pnpm@10.23.0` via `check:corepack-toolchain` before claim, source-anchor, pilot-evidence, unit, browser, build, metadata, and bundle-budget gates count as current evidence | `pnpm run check:corepack-toolchain`; `pnpm run check:release-readiness` in a Corepack-enabled shell |
 | Buyer evidence | 0 production pilot evidence registers and 0 production outreach response logs | `pnpm run report:buyer-evidence-readiness` |
 | Supabase app-owned lint | 0 app-owned findings; 14 extension-owned lint rows remain visible but not app blockers | `pnpm run check:supabase-app-lint` |
 | Supabase connector advisors | Still permission denied for project `qnymbecjgeaoxsfphrti` | Supabase MCP `_get_project`, `_get_advisors` security/performance |
 | Supabase token hygiene | Current scanned source surfaces contain no JWT-like literals; guard now fails future committed token literals | `pnpm run check:client-env-safety` |
-| Git LFS | Installed and push path works | `git lfs version`; successful pushes on `main` |
+| Git LFS | Must be verified in the current shell before push; a local post-commit warning that `git-lfs` is missing means the push path is not current proof | `git lfs version`; successful pushes on `main` |
 
 Rating scale used below: 5 = strong and verified now, 4 = strong but needs buyer proof or post-deploy proof, 3 = implemented but secondary, 2 = partial/candidate, 1 = blocked or absent.
 
@@ -56,9 +56,9 @@ Rating scale used below: 5 = strong and verified now, 4 = strong but needs buyer
 | 95/100 desk-research strategy-direction confidence | 5 | Seven strategy pillars, top-10 proof packs, whitespace, loophole ledger, and source anchors are documented and guarded | Active roadmap plus `check:strategy-roadmap-doc`; official IESO, OEB, Alberta TIER, incumbent, NIST, OWASP, and Supabase sources |
 | Public app front door leads with proof packs | 5 | Landing flow now sells ten proof packs and pilot gates, not generic AI/dashboard surface area | Production site screenshots, `/solutions`, claim-boundary guard |
 | Live stale metadata and static parity fixed | 5 | Root, manifest, JSON-LD, and hosted proof-pack routes now match the built proof-pack artifact | `pnpm run check:post-deploy-live` |
-| Current source release readiness | 5 | Current pushed source passes release-readiness preflight, unit/browser/build/metadata/bundle gates | Production approval packet and latest GitHub CI for pushed `main` |
+| Current source release readiness | 4 | The release-readiness path is guarded, but current approval evidence requires a Corepack-enabled shell, clean source provenance, and fresh CI for the pushed head | `check:corepack-toolchain`, production approval packet, and latest GitHub CI for pushed `main` |
 | Deploy safety model | 5 | Deploy script requires clean `main`, local release readiness, exact owner phrase, no-build `dist` deploy, and post-deploy checks | `check:production-deploy-script`, `report:production-approval-packet` |
-| GitHub OSS hygiene | 5 | Description, MIT license, topics, repo hygiene, package identity, Git LFS push path, and CI are aligned | GitHub checks and latest CI |
+| GitHub OSS hygiene | 4 | Description, MIT license, topics, repo hygiene, package identity, and CI are aligned; Git LFS must still be verified in the current shell before push evidence is reused | GitHub checks, latest CI, and `git lfs version` at push time |
 | Supabase source hygiene | 5 | Committed Supabase JWT-like literals removed; client env safety scans source surfaces for JWT-like literals | `check:client-env-safety` |
 | Supabase app lint posture | 4 | App-owned lint findings are zero; extension-owned PostGIS/long-transaction findings stay visible | `check:supabase-app-lint` |
 | GA/ICI and BYO-CSV candidate wedges | 4 | Both became bounded route-level prototypes with retained-artifact support and guarded copy | Wedge route tests, source anchors, browser smoke |

@@ -118,6 +118,12 @@ const stalePostP1LiveParityPhrases = [
   'live metadata remains an external gate',
   'expected live metadata and static-parity failures remain external production gates',
 ];
+const staleCurrentStatePhrases = [
+  'The repo is clean on `main`',
+  '| Repo head | `main` matches `origin/main`',
+  '| Git LFS | Installed and push path works',
+  'Current pushed source passes release-readiness preflight',
+];
 const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
 const buyerEvidenceReadinessReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-readiness.mjs');
 const strategyRoadmapWhitespacePhrases = [
@@ -316,6 +322,11 @@ if (!existsSync(sourceDocPath)) {
           failures.push(`${docPath} contains stale pre-P1 live-parity wording: ${stalePhrase}`);
         }
       }
+      for (const stalePhrase of staleCurrentStatePhrases) {
+        if (activeDoc.includes(stalePhrase)) {
+          failures.push(`${docPath} contains stale current-state wording that must be refreshed from live repo evidence: ${stalePhrase}`);
+        }
+      }
     }
   }
 
@@ -475,6 +486,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:outreach-intake-plan-template')) {
     failures.push('check:release-readiness must include check:outreach-intake-plan-template so the action-plan path cannot drift.');
+  }
+
+  if (packageScripts['check:corepack-toolchain'] !== 'node scripts/check-corepack-toolchain.mjs') {
+    failures.push('package.json must keep check:corepack-toolchain wired to the pinned package-manager preflight.');
+  }
+
+  if (!String(packageScripts['check:release-readiness'] ?? '').startsWith('node scripts/check-corepack-toolchain.mjs && corepack pnpm run check:claim-boundaries')) {
+    failures.push('check:release-readiness must start with check:corepack-toolchain before running Corepack-pinned gates.');
   }
 
   if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:phase-f-minimum-intake-bundle')) {
