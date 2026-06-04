@@ -127,6 +127,8 @@ function assertReport(markdown) {
   assert(markdown.includes('Scaffolding, fixtures, and constructed demos do not count as buyer acceptance.'), 'Report must preserve the no-scaffolding-as-buyer-proof boundary.');
   assert(markdown.includes('Buyer evidence review'), 'Report must include structured buyer-evidence readiness from the manifest.');
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
+  assert(markdown.includes('Supabase advisor review'), 'Report must include structured Supabase advisor evidence from the manifest.');
+  assert(markdown.includes('Supabase security/performance advisor clearance remains unavailable'), 'Report must preserve the Supabase advisor clearance launch blocker.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
   assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
   assert(markdown.includes('High-risk, local/origin split, or stale/aging unmerged branches'), 'Report must preserve the branch-family and freshness launch blocker.');
@@ -161,4 +163,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, source provenance, branch families, branch freshness, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, and validation boundaries are present.');

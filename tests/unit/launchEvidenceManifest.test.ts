@@ -62,6 +62,13 @@ describe('launch evidence manifest report', () => {
     expect(manifest.buyer_evidence.phase_f_gate).toBe('unknown');
     expect(manifest.buyer_evidence.evidence).toContain('Buyer evidence review');
     expect(manifest.buyer_evidence.workspace_next_step).toContain('report:buyer-evidence-readiness');
+    expect(manifest.supabase_advisor.status).toBe('needs_remediation');
+    expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
+    expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
+    expect(manifest.supabase_advisor.security_performance_advisors_status).toBe('needs_remediation');
+    expect(manifest.supabase_advisor.connector_permission).toBe('permission_denied');
+    expect(manifest.supabase_advisor.evidence).toContain('Supabase advisor review');
+    expect(manifest.supabase_advisor.evidence_boundary).toMatch(/does not substitute|permission denied/i);
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -130,6 +137,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');
     expect(stdout).toContain('Batchable intake-packet outreach rows');
+    expect(stdout).toContain('Supabase advisor review');
+    expect(stdout).toContain('Supabase security/performance advisor clearance remains unavailable');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');

@@ -150,6 +150,14 @@ try {
       assert(typeof dirtyPath.action === 'string' && dirtyPath.action.length > 0, `source_provenance.dirty_paths[${index}].action must be set.`);
     }
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
+    assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
+    assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
+    assert(manifest.supabase_advisor.evidence.includes('Supabase advisor review'), 'Manifest supabase_advisor evidence must summarize advisor access.');
+    assert(typeof manifest.supabase_advisor?.project_ref === 'string' && manifest.supabase_advisor.project_ref.length > 0, 'Manifest supabase_advisor.project_ref must be set.');
+    assert(typeof manifest.supabase_advisor?.cli_app_lint_status === 'string' && manifest.supabase_advisor.cli_app_lint_status.length > 0, 'Manifest supabase_advisor.cli_app_lint_status must be set.');
+    assert(typeof manifest.supabase_advisor?.security_performance_advisors_status === 'string' && manifest.supabase_advisor.security_performance_advisors_status.length > 0, 'Manifest supabase_advisor.security_performance_advisors_status must be set.');
+    assert(typeof manifest.supabase_advisor?.connector_permission === 'string' && manifest.supabase_advisor.connector_permission.length > 0, 'Manifest supabase_advisor.connector_permission must be set.');
+    assert(typeof manifest.supabase_advisor?.evidence_boundary === 'string' && /does not substitute|advisor evidence|authorization/i.test(manifest.supabase_advisor.evidence_boundary), 'Manifest supabase_advisor.evidence_boundary must preserve the proof limitation.');
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
@@ -194,4 +202,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');

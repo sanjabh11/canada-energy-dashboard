@@ -95,10 +95,50 @@ function packageMetadata() {
   }
 }
 
+function readTextIfExists(filePath, fallback = '') {
+  try {
+    return existsSync(filePath) ? readFileSync(filePath, 'utf8') : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 function parseNumberLine(text, label) {
   const pattern = new RegExp(`^${label}:\\s*(\\d+)`, 'm');
   const match = text.match(pattern);
   return match ? Number.parseInt(match[1], 10) : null;
+}
+
+function extractConstBlock(source, marker, nextMarker) {
+  const start = source.indexOf(marker);
+  if (start < 0) return '';
+  const next = source.indexOf(nextMarker, start + marker.length);
+  return source.slice(start, next < 0 ? source.length : next);
+}
+
+function extractStringValue(source, key) {
+  const pattern = new RegExp(`${key}:\\s*'([^']+)'`);
+  const match = source.match(pattern);
+  return match ? match[1] : '';
+}
+
+function extractCheckStatus(source, checkId) {
+  const pattern = new RegExp(`id:\\s*'${checkId}'[\\s\\S]*?status:\\s*'([^']+)'`);
+  const match = source.match(pattern);
+  return match ? match[1] : '';
+}
+
+function supabaseAdvisorEvidence(advisor) {
+  return [
+    'Supabase advisor review:',
+    `project_ref=${advisor.projectRef}`,
+    `status=${advisor.status}`,
+    `cli_app_lint=${advisor.cliAppLintStatus}`,
+    `security_performance_advisors=${advisor.securityPerformanceAdvisorsStatus}`,
+    `connector_permission=${advisor.connectorPermission}`,
+    `proof_bucket=${advisor.proofBucket}`,
+    'advisor_clearance_claimed=no',
+  ].join(' ');
 }
 
 function parseGateLine(text, label) {
@@ -318,6 +358,45 @@ function branchFreshnessEvidence(rows) {
     staleBranches.length > 0 ? `stale_refs=${staleBranches.join(', ')}` : 'stale_refs=none',
     agingBranches.length > 0 ? `aging_refs=${agingBranches.join(', ')}` : 'aging_refs=none',
   ].join(' ');
+}
+
+function probeSupabaseAdvisorStatus() {
+  const releasePostureText = readTextIfExists(path.join(repoRoot, 'src/lib/releasePosture.ts'));
+  const conversationReviewText = readTextIfExists(path.join(repoRoot, 'docs/CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md'));
+  const cardBlock = extractConstBlock(
+    releasePostureText,
+    'export const SUPABASE_ADVISOR_STATUS_CARD',
+    'export const DEPLOYMENT_APPROVAL_CHECKLIST',
+  );
+
+  let publicAdvisorItem = {};
+  try {
+    const publicManifest = JSON.parse(readTextIfExists(path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json'), '{}'));
+    publicAdvisorItem = (publicManifest.items ?? []).find((item) => item.id === 'supabase_advisor_access') ?? {};
+  } catch {
+    publicAdvisorItem = {};
+  }
+
+  const advisor = {
+    status: publicAdvisorItem.status ?? (extractStringValue(cardBlock, 'status') || 'unknown'),
+    projectRef: extractStringValue(cardBlock, 'projectRef') || 'qnymbecjgeaoxsfphrti',
+    cliAppLintStatus: extractCheckStatus(cardBlock, 'cli_app_lint') || 'unknown',
+    securityPerformanceAdvisorsStatus: extractCheckStatus(cardBlock, 'security_performance_advisors') || publicAdvisorItem.status || 'unknown',
+    connectorPermission: /permission denied/i.test(`${publicAdvisorItem.evidenceBoundary ?? ''}\n${cardBlock}\n${conversationReviewText}`) ? 'permission_denied' : 'unknown',
+    proofBucket: publicAdvisorItem.proofBucket ?? 'external account',
+    command: publicAdvisorItem.command ?? 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+    evidenceBoundary: publicAdvisorItem.evidenceBoundary
+      ?? (extractStringValue(cardBlock, 'decisionBoundary')
+        || 'Supabase advisor evidence is account-authorization dependent and does not claim advisor clearance.'),
+    nextAction: publicAdvisorItem.nextAction
+      ?? 'Fix Supabase connector or project authorization, then rerun security and performance advisors.',
+    docsReference: extractStringValue(cardBlock, 'url') || 'https://supabase.com/docs/guides/database/database-advisors',
+  };
+
+  return {
+    ...advisor,
+    evidence: supabaseAdvisorEvidence(advisor),
+  };
 }
 
 function probeBuyerEvidence() {
@@ -663,6 +742,7 @@ const pkg = packageMetadata();
 const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
+const supabaseAdvisor = probeSupabaseAdvisorStatus();
 const generatedAt = new Date().toISOString();
 
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
@@ -716,6 +796,7 @@ const manifest = {
       branchProbe.evidence,
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
+      supabaseAdvisor.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -725,6 +806,8 @@ const manifest = {
       'scripts/report-buyer-evidence-readiness.mjs',
       'scripts/report-production-approval-packet.mjs',
       'scripts/report-unmerged-branch-readiness.mjs',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
     ],
     candidate_shadow: [
       '/utility-demand-forecast',
@@ -755,6 +838,19 @@ const manifest = {
     phase_f_gate: buyerProbe.phaseFGate,
     workspace_next_step: buyerProbe.workspaceNextStep,
     evidence: buyerProbe.reviewEvidence,
+  },
+  supabase_advisor: {
+    status: supabaseAdvisor.status,
+    project_ref: supabaseAdvisor.projectRef,
+    cli_app_lint_status: supabaseAdvisor.cliAppLintStatus,
+    security_performance_advisors_status: supabaseAdvisor.securityPerformanceAdvisorsStatus,
+    connector_permission: supabaseAdvisor.connectorPermission,
+    proof_bucket: supabaseAdvisor.proofBucket,
+    command: supabaseAdvisor.command,
+    docs_reference: supabaseAdvisor.docsReference,
+    evidence_boundary: supabaseAdvisor.evidenceBoundary,
+    next_action: supabaseAdvisor.nextAction,
+    evidence: supabaseAdvisor.evidence,
   },
   branch_review: {
     status: branchProbe.status,
@@ -826,13 +922,13 @@ const manifest = {
       status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
     },
     {
-      gap: 'Supabase security/performance advisor evidence is not embedded in this manifest.',
+      gap: 'Supabase security/performance advisor clearance remains unavailable while connector or dashboard advisor evidence is permission-gated.',
       severity: 'P1',
-      evidence: 'docs/CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md records Supabase advisor access as an owner-side permission gate.',
+      evidence: supabaseAdvisor.evidence,
       framework_mapping: ['Supabase RLS and service-role review', 'OWASP API security review'],
       buyer_impact: 'Utility security reviewers may ask for current database advisor evidence before sharing sensitive files.',
       fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
-      status: 'open',
+      status: supabaseAdvisor.status === 'verified' ? 'mitigated' : 'open',
     },
   ],
   pain_points: painPoints,
