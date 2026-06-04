@@ -145,6 +145,7 @@ pnpm run check:strategy-source-anchors
 pnpm run check:production-deploy-script
 pnpm run check:client-env-safety
 pnpm run check:supabase-app-lint
+pnpm run check:unmerged-branch-readiness-report
 pnpm run test:strategy-audit-slice
 pnpm run check:release-readiness
 ```
@@ -160,6 +161,7 @@ corepack pnpm run check:launch-evidence-manifest
 corepack pnpm run check:commercial-launch-readiness-report
 corepack pnpm run report:unmerged-branch-readiness
 corepack pnpm run report:unmerged-branch-readiness -- --branch <branch-ref>
+corepack pnpm run check:unmerged-branch-readiness-report
 ```
 
 After an explicitly approved production deploy, run:
@@ -182,7 +184,7 @@ If Corepack is not available in the current shell, `report:production-approval-p
 
 `report:launch-evidence-manifest` emits the current conservative commercial-launch evidence JSON for portfolio comparison and handoff. It uses the orchestrator schema shape, keeps `launch_decision` blocked while buyer evidence or source provenance blockers remain, separates hosted/live, local, repo-artifact, candidate/shadow, and roadmap proof buckets, and includes ten source-backed pain points plus ten target segments. Validate the JSON with `validate_launch_evidence.py` before using it in portfolio rollups. `report:commercial-launch-readiness` renders the validated manifest into the orchestrator Markdown table set: launch score, gap analysis, proof buckets, pain points, target segments, outreach plan, fix report, adversarial review, evidence validation, and ECC ledger. `check:launch-evidence-manifest` generates a fresh manifest, validates the schema, and asserts the conservative blocked proof-boundary shape as part of release readiness. `check:commercial-launch-readiness-report` generates the Markdown report and asserts the required table set, source URLs, proof buckets, blocked decision, schema-validation row, and no-buyer-proof boundaries as part of release readiness. A passing schema validation, Markdown report, or check means the manifest is structurally usable and boundary-consistent; it does not mean CEIP is commercial-ready or buyer-proven.
 
-`report:unmerged-branch-readiness` is a read-only non-merged branch review for the current `main` launch decision. It inventories local and `origin/*` branches not merged into `main`, classifies touched paths into production/deploy, Supabase/database, payment/entitlement, source-app, buyer-proof/commercial, docs, testing/tooling, detached Edge Function copy artifacts, and ML/training categories, then assigns review risk. Use `--branch <ref>` to narrow the output to one unmerged local or `origin/*` ref, print a category-specific focused review plan, and list changed `supabase/functions/*` entrypoints with local non-production review checks before any merge discussion. Detached `DEPLOY_*` or `*-FINAL` Edge Function copies are production-risk review artifacts and must not be manually deployed or pasted into hosted functions. High-risk branch findings are review queues, not launch evidence, not buyer proof, and not production approval; merge or deploy decisions still require focused review plus the normal release-readiness and approval gates.
+`report:unmerged-branch-readiness` is a read-only non-merged branch review for the current `main` launch decision. It inventories local and `origin/*` branches not merged into `main`, classifies touched paths into production/deploy, Supabase/database, payment/entitlement, source-app, buyer-proof/commercial, docs, testing/tooling, detached Edge Function copy artifacts, and ML/training categories, then assigns review risk. Use `--branch <ref>` to narrow the output to one unmerged local or `origin/*` ref, print a category-specific focused review plan, and list changed `supabase/functions/*` entrypoints with local non-production review checks before any merge discussion. `check:unmerged-branch-readiness-report` verifies that the report keeps its read-only boundary, focused-review plan, high-risk failure behavior, and no-buyer-proof/no-production-approval language intact as part of release readiness. Detached `DEPLOY_*` or `*-FINAL` Edge Function copies are production-risk review artifacts and must not be manually deployed or pasted into hosted functions. High-risk branch findings are review queues, not launch evidence, not buyer proof, and not production approval; merge or deploy decisions still require focused review plus the normal release-readiness and approval gates.
 
 `check:strategy-completion-audit` uses the hard source-anchor gate and exits nonzero if required local strategy/source checks fail. It marks current live parity complete only when live metadata and static parity checks pass; if those checks fail on a future production state, the failure remains a release gate, not buyer proof.
 

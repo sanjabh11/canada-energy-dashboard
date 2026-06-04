@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-unmerged-branch-readiness.mjs');
+const checkScriptPath = path.join(process.cwd(), 'scripts/check-unmerged-branch-readiness-report.mjs');
 const tempRoots: string[] = [];
 const gitBackedTestTimeoutMs = 60_000;
 
@@ -92,6 +93,24 @@ function runReport(root: string, args: string[] = []) {
   }
 }
 
+function runCheck(root: string, args: string[] = []) {
+  try {
+    const stdout = execFileSync(process.execPath, [checkScriptPath, '--repo-root', root, ...args], {
+      cwd: process.cwd(),
+      encoding: 'utf8',
+      env: process.env,
+    });
+    return { status: 0, stdout, stderr: '' };
+  } catch (error) {
+    const childError = error as { status?: number; stdout?: Buffer; stderr?: Buffer };
+    return {
+      status: childError.status ?? 1,
+      stdout: childError.stdout?.toString('utf8') ?? '',
+      stderr: childError.stderr?.toString('utf8') ?? '',
+    };
+  }
+}
+
 afterEach(() => {
   while (tempRoots.length > 0) {
     const root = tempRoots.pop();
@@ -156,6 +175,20 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('supabase functions serve stripe-webhook --env-file <local-non-production-env>');
     expect(result.stdout).toContain('payment/entitlement');
     expect(result.stdout).toContain('does not create buyer evidence or production approval');
+  }, gitBackedTestTimeoutMs);
+
+  it('release-gates the report boundary, focused plan, and high-risk failure semantics', () => {
+    const root = createRepo();
+    const result = runCheck(root);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Unmerged branch readiness report check passed:');
+    expect(result.stdout).toContain('local=2');
+    expect(result.stdout).toContain('origin=1');
+    expect(result.stdout).toContain('high=2');
+    expect(result.stdout).toContain('low=1');
+    expect(result.stdout).toContain('read-only boundary, focused review plan, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
   it('rejects a selected branch that is not in the unmerged review scope', () => {
