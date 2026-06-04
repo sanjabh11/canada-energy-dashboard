@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { DEPLOYMENT_APPROVAL_CHECKLIST, RELEASE_HEALTH_EVIDENCE, RELEASE_POSTURE } from '../../src/lib/releasePosture';
+import {
+  DEPLOYMENT_APPROVAL_CHECKLIST,
+  RELEASE_HEALTH_EVIDENCE,
+  RELEASE_POSTURE,
+  SUPABASE_ADVISOR_STATUS_CARD,
+} from '../../src/lib/releasePosture';
 import { PUBLIC_RELEASE_STATUS_MANIFEST } from '../../src/lib/publicReleaseStatusManifest';
 
 describe('status page release posture', () => {
@@ -20,8 +25,9 @@ describe('status page release posture', () => {
 
     expect(supabasePosture).toBeTruthy();
     expect(supabasePosture?.status).toBe('watch');
+    expect(supabasePosture?.evidence).toMatch(/last recorded/i);
     expect(supabasePosture?.evidence).toMatch(/zero app-owned lint findings/i);
-    expect(supabasePosture?.evidence).toMatch(/extension-owned/i);
+    expect(supabasePosture?.evidence).toMatch(/fresh run must complete/i);
     expect(supabasePosture?.nextAction).toMatch(/check:supabase-app-lint/);
   });
 
@@ -71,6 +77,24 @@ describe('status page release posture', () => {
     expect(buyerEvidence?.evidenceBoundary).toMatch(/no production buyer-evidence register/i);
     expect(supabaseAdvisorEvidence?.status).toBe('needs_remediation');
     expect(supabaseAdvisorEvidence?.evidenceBoundary).toMatch(/permission denied/i);
+    expect(RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase CLI app lint')?.evidenceBoundary).toMatch(/credential\/connectivity-gated/i);
+  });
+
+  it('defines a public-safe Supabase advisor status card that separates CLI lint from advisor clearance', () => {
+    const cliLint = SUPABASE_ADVISOR_STATUS_CARD.checks.find((check) => check.id === 'cli_app_lint');
+    const advisors = SUPABASE_ADVISOR_STATUS_CARD.checks.find((check) => check.id === 'security_performance_advisors');
+
+    expect(SUPABASE_ADVISOR_STATUS_CARD.status).toBe('needs_remediation');
+    expect(SUPABASE_ADVISOR_STATUS_CARD.projectRef).toBe('qnymbecjgeaoxsfphrti');
+    expect(SUPABASE_ADVISOR_STATUS_CARD.decisionBoundary).toMatch(/separates Supabase CLI database lint/i);
+    expect(SUPABASE_ADVISOR_STATUS_CARD.decisionBoundary).toMatch(/does not claim advisor clearance/i);
+    expect(SUPABASE_ADVISOR_STATUS_CARD.docsReference.url).toContain('database-advisors');
+    expect(SUPABASE_ADVISOR_STATUS_CARD.checks).toHaveLength(2);
+    expect(cliLint?.status).toBe('watch');
+    expect(cliLint?.evidenceBoundary).toMatch(/does not substitute/i);
+    expect(advisors?.status).toBe('needs_remediation');
+    expect(advisors?.evidenceBoundary).toMatch(/authorization is fixed/i);
+    expect(advisors?.nextAction).toMatch(/rerun security and performance advisors/i);
   });
 
   it('surfaces the deployment approval checklist without treating deployment as buyer proof', () => {

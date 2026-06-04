@@ -37,6 +37,7 @@ import {
   DEPLOYMENT_APPROVAL_CHECKLIST,
   RELEASE_HEALTH_EVIDENCE,
   RELEASE_POSTURE,
+  SUPABASE_ADVISOR_STATUS_CARD,
   type DeploymentApprovalChecklistItem,
   type ReleaseHealthEvidenceItem,
   type ReleasePostureItem,
@@ -298,6 +299,72 @@ const StatusPage: React.FC = () => {
                   </div>
                   <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
                     <span className="font-medium text-slate-900">Next action:</span> {item.nextAction}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section data-testid="supabase-advisor-status-card" className="mb-8">
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                <Database className="h-5 w-5 text-slate-500" />
+                {SUPABASE_ADVISOR_STATUS_CARD.title}
+              </h2>
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Project ref:{' '}
+                <code className="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-800">
+                  {SUPABASE_ADVISOR_STATUS_CARD.projectRef}
+                </code>
+              </p>
+            </div>
+            <span className={getPostureBadge(SUPABASE_ADVISOR_STATUS_CARD.status)}>
+              {SUPABASE_ADVISOR_STATUS_CARD.status.replace(/_/g, ' ').toUpperCase()}
+            </span>
+          </div>
+          <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+            <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm leading-6 text-slate-700">
+              {SUPABASE_ADVISOR_STATUS_CARD.decisionBoundary}{' '}
+              <a
+                href={SUPABASE_ADVISOR_STATUS_CARD.docsReference.url}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 font-medium text-emerald-700 hover:text-emerald-800"
+              >
+                {SUPABASE_ADVISOR_STATUS_CARD.docsReference.label}
+                <ExternalLink className="h-4 w-4" />
+              </a>
+            </div>
+            <div className="grid gap-4 p-4 md:grid-cols-2">
+              {SUPABASE_ADVISOR_STATUS_CARD.checks.map((check) => (
+                <article
+                  key={check.id}
+                  data-testid={`supabase-advisor-check-${check.id}`}
+                  className="rounded-xl border border-slate-200 bg-white p-4"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-3">
+                      {getPostureIcon(check.status)}
+                      <div>
+                        <h3 className="font-semibold text-slate-900">{check.label}</h3>
+                        <div className="mt-1 text-xs font-medium uppercase tracking-[0.16em] text-slate-500">
+                          {check.proofBucket}
+                        </div>
+                      </div>
+                    </div>
+                    <span className={getPostureBadge(check.status)}>{check.status.replace(/_/g, ' ').toUpperCase()}</span>
+                  </div>
+                  <p className="mt-4 text-sm leading-6 text-slate-600">
+                    <span className="font-medium text-slate-900">Source:</span> {check.source}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{check.evidenceBoundary}</p>
+                  <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs leading-5 text-slate-100">
+                    {check.command}
+                  </div>
+                  <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm leading-6 text-slate-700">
+                    <span className="font-medium text-slate-900">Next action:</span> {check.nextAction}
                   </div>
                 </article>
               ))}

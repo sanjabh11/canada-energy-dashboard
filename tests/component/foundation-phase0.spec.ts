@@ -30,6 +30,12 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(page.getByText('Public release status manifest')).toBeVisible();
     await expect(page.getByText('Source provenance and dirty-worktree gate')).toBeVisible();
     await expect(page.getByRole('link', { name: /Open JSON manifest/ })).toHaveAttribute('href', '/status/release-health.json');
+    await expect(page.getByTestId('supabase-advisor-status-card')).toBeVisible();
+    await expect(page.getByTestId('supabase-advisor-status-card')).toContainText('does not claim advisor clearance');
+    await expect(page.getByTestId('supabase-advisor-check-cli_app_lint')).toContainText('CLI app lint refresh');
+    await expect(page.getByTestId('supabase-advisor-check-cli_app_lint')).toContainText('does not substitute for Database Security or Performance Advisors');
+    await expect(page.getByTestId('supabase-advisor-check-security_performance_advisors')).toContainText('Security and Performance Advisors');
+    await expect(page.getByTestId('supabase-advisor-check-security_performance_advisors')).toContainText('NEEDS REMEDIATION');
     await expect(page.getByText('Pilot Readiness').first()).toBeVisible();
     await expect(page.getByText('Utility Forecast Pack').first()).toBeVisible();
   });

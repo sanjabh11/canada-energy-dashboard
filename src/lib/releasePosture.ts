@@ -24,6 +24,29 @@ export interface DeploymentApprovalChecklistItem {
   evidenceBoundary: string;
 }
 
+export interface SupabaseAdvisorStatusCheck {
+  id: 'cli_app_lint' | 'security_performance_advisors';
+  label: string;
+  source: string;
+  status: ReleasePostureItem['status'];
+  proofBucket: string;
+  command: string;
+  evidenceBoundary: string;
+  nextAction: string;
+}
+
+export interface SupabaseAdvisorStatusCard {
+  title: string;
+  status: ReleasePostureItem['status'];
+  projectRef: string;
+  decisionBoundary: string;
+  docsReference: {
+    label: string;
+    url: string;
+  };
+  checks: SupabaseAdvisorStatusCheck[];
+}
+
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
     title: 'Production deploy gate and live parity',
@@ -57,8 +80,8 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     title: 'Supabase database lint posture',
     status: 'watch',
     rating: '4.1/5',
-    evidence: '`pnpm run report:supabase-app-lint` reports zero app-owned lint findings on the linked project; remaining findings are extension-owned PostGIS/long-transaction functions.',
-    nextAction: 'Keep `check:supabase-app-lint` in the production preflight and review account-level Supabase dashboard advisors manually before stronger production-security claims.',
+    evidence: 'The last recorded `pnpm run report:supabase-app-lint` posture showed zero app-owned lint findings on the linked project; a fresh run must complete before stronger production-security claims because CLI access can fail before classification.',
+    nextAction: 'Keep `check:supabase-app-lint` in the production preflight, provide database credentials when required, and review account-level Supabase dashboard advisors manually before stronger production-security claims.',
   },
   {
     title: 'Supabase advisor connector access',
@@ -102,7 +125,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     label: 'Supabase CLI app lint',
     status: 'watch',
     command: 'pnpm run check:supabase-app-lint',
-    evidenceBoundary: 'CLI lint currently reports zero app-owned findings; extension-owned rows are not treated as app blockers.',
+    evidenceBoundary: 'Last recorded CLI lint evidence reports zero app-owned findings; if the lint command fails before classification, treat database lint proof as stale and credential/connectivity-gated until rerun.',
   },
   {
     label: 'Supabase MCP advisors',
@@ -111,6 +134,39 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Connector advisor calls return permission denied, so connector-backed security/performance advisor evidence is unavailable until project authorization is fixed.',
   },
 ];
+
+export const SUPABASE_ADVISOR_STATUS_CARD: SupabaseAdvisorStatusCard = {
+  title: 'Supabase advisor status',
+  status: 'needs_remediation',
+  projectRef: 'qnymbecjgeaoxsfphrti',
+  decisionBoundary: 'This public card separates Supabase CLI database lint from Supabase Database Security and Performance Advisors. It does not claim advisor clearance, production approval, or security review completion.',
+  docsReference: {
+    label: 'Supabase Database Advisors docs',
+    url: 'https://supabase.com/docs/guides/database/database-advisors',
+  },
+  checks: [
+    {
+      id: 'cli_app_lint',
+      label: 'CLI app lint refresh',
+      source: 'Supabase CLI database lint',
+      status: 'watch',
+      proofBucket: 'local/CLI',
+      command: 'pnpm run report:supabase-app-lint',
+      evidenceBoundary: 'Last recorded CLI app lint showed zero app-owned findings, but this check must rerun successfully before stronger security claims; CLI lint does not substitute for Database Security or Performance Advisors.',
+      nextAction: 'Set database credentials when required and rerun `report:supabase-app-lint` or `check:supabase-app-lint` before approval packets.',
+    },
+    {
+      id: 'security_performance_advisors',
+      label: 'Security and Performance Advisors',
+      source: 'Supabase MCP connector or Supabase dashboard',
+      status: 'needs_remediation',
+      proofBucket: 'external account',
+      command: 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+      evidenceBoundary: 'Connector advisor access is permission-dependent and currently unavailable, so advisor evidence remains blocked until project authorization is fixed and advisors are rerun.',
+      nextAction: 'Fix Supabase connector or project authorization, then rerun security and performance advisors before claiming connector-level Supabase review coverage.',
+    },
+  ],
+};
 
 export const DEPLOYMENT_APPROVAL_CHECKLIST: DeploymentApprovalChecklistItem[] = [
   {
