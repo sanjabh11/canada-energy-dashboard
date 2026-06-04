@@ -63,6 +63,10 @@ function hasOpenGap(manifest, severity, needle) {
     ));
 }
 
+function hasIntegerOrNull(value) {
+  return value === null || Number.isInteger(value);
+}
+
 const tempRoot = mkdtempSync(path.join(tmpdir(), 'ceip-launch-evidence-check-'));
 const manifestPath = path.join(tempRoot, 'launch-evidence.json');
 
@@ -108,6 +112,16 @@ try {
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
     );
     assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
+    assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
+    assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
+    assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
+    assert(hasIntegerOrNull(manifest.branch_review?.risk_counts?.high), 'Manifest branch_review risk_counts.high must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.stale), 'Manifest branch_review freshness_counts.stale must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.aging), 'Manifest branch_review freshness_counts.aging must be an integer or null.');
+    if (!skipProbes) {
+      assert(Number.isInteger(manifest.branch_review?.freshness_counts?.stale), 'Non-skipped manifest must include numeric stale branch count.');
+      assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
+    }
     assert(
       typeof manifest.outreach_plan?.email_script_boundary === 'string'
         && manifest.outreach_plan.email_script_boundary.includes('Do not claim buyer-proven 95% confidence'),
@@ -136,4 +150,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');

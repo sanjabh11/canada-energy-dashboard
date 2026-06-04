@@ -52,6 +52,11 @@ describe('launch evidence manifest report', () => {
       'roadmap',
     ]);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
+    expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
+    expect(manifest.branch_review.status).toBe('skipped');
+    expect(manifest.branch_review.risk_counts.high).toBeNull();
+    expect(manifest.branch_review.freshness_counts.stale).toBeNull();
+    expect(manifest.branch_review.evidence).toContain('Branch freshness review skipped');
     expect(manifest.pain_points).toHaveLength(10);
     expect(manifest.pain_points[0].source_evidence.every((source: string) => source.startsWith('https://'))).toBe(true);
     expect(manifest.target_customers).toHaveLength(10);
@@ -104,6 +109,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Evidence Validation');
     expect(stdout).toContain('## ECC Ledger');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
+    expect(stdout).toContain('Branch freshness review skipped');
+    expect(stdout).toContain('High-risk or stale/aging unmerged branches');
     expect(stdout).toContain('validate_launch_evidence.py');
     expect(stdout).toContain('VALID');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);

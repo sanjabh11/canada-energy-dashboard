@@ -102,6 +102,71 @@ function parseGateLine(text, label) {
   return match ? match[1].trim() : null;
 }
 
+function extractMarkdownSection(markdown, heading) {
+  const start = markdown.indexOf(`## ${heading}`);
+  if (start < 0) return '';
+  const next = markdown.indexOf('\n## ', start + 1);
+  return markdown.slice(start, next < 0 ? markdown.length : next);
+}
+
+function parseBranchFreshnessRows(markdown) {
+  const section = extractMarkdownSection(markdown, 'Branch Freshness Review');
+  if (!section) return [];
+
+  return section
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('| '))
+    .filter((line) => !line.startsWith('| Branch |') && !line.startsWith('|---'))
+    .map((line) => line
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim()))
+    .filter((cells) => cells.length >= 7)
+    .map(([branch, scope, risk, latestCommitDate, age, freshness, action]) => ({
+      branch,
+      scope,
+      risk,
+      latestCommitDate,
+      age,
+      freshness,
+      action,
+    }));
+}
+
+function countFreshnessRows(rows, freshness, risk = '') {
+  return rows.filter((row) => (
+    row.freshness === freshness
+    && (!risk || row.risk === risk)
+  )).length;
+}
+
+function branchFreshnessEvidence(rows) {
+  if (rows.length === 0) {
+    return 'Branch freshness review: no freshness rows were parsed from the branch readiness report.';
+  }
+
+  const staleBranches = rows
+    .filter((row) => row.freshness === 'stale')
+    .map((row) => row.branch)
+    .slice(0, 6);
+  const agingBranches = rows
+    .filter((row) => row.freshness === 'aging')
+    .map((row) => row.branch)
+    .slice(0, 6);
+
+  return [
+    'Branch freshness review:',
+    `stale=${countFreshnessRows(rows, 'stale')}`,
+    `aging=${countFreshnessRows(rows, 'aging')}`,
+    `fresh=${countFreshnessRows(rows, 'fresh')}`,
+    `unknown=${countFreshnessRows(rows, 'unknown')}`,
+    `stale_high=${countFreshnessRows(rows, 'stale', 'high')}`,
+    `aging_high=${countFreshnessRows(rows, 'aging', 'high')}`,
+    staleBranches.length > 0 ? `stale_refs=${staleBranches.join(', ')}` : 'stale_refs=none',
+    agingBranches.length > 0 ? `aging_refs=${agingBranches.join(', ')}` : 'aging_refs=none',
+  ].join(' ');
+}
+
 function probeBuyerEvidence() {
   if (skipProbes) {
     return {
@@ -133,16 +198,33 @@ function probeUnmergedBranches() {
       highRisk: null,
       mediumRisk: null,
       lowRisk: null,
+      freshnessRows: [],
+      staleCount: null,
+      agingCount: null,
+      freshCount: null,
+      unknownFreshnessCount: null,
+      staleHighRiskCount: null,
+      agingHighRiskCount: null,
+      freshnessEvidence: 'Branch freshness review skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for stale and aging branch queues.',
     };
   }
   const result = run(process.execPath, ['scripts/report-unmerged-branch-readiness.mjs', '--max-files', '6']);
   const output = `${result.stdout}\n${result.stderr}`.trim();
+  const freshnessRows = parseBranchFreshnessRows(output);
   return {
     status: result.status === 0 ? 'pass' : 'fail',
     evidence: output.split(/\r?\n/).slice(0, 18).join(' | '),
     highRisk: parseNumberLine(output, '- High-risk branches'),
     mediumRisk: parseNumberLine(output, '- Medium-risk branches'),
     lowRisk: parseNumberLine(output, '- Low-risk branches'),
+    freshnessRows,
+    staleCount: countFreshnessRows(freshnessRows, 'stale'),
+    agingCount: countFreshnessRows(freshnessRows, 'aging'),
+    freshCount: countFreshnessRows(freshnessRows, 'fresh'),
+    unknownFreshnessCount: countFreshnessRows(freshnessRows, 'unknown'),
+    staleHighRiskCount: countFreshnessRows(freshnessRows, 'stale', 'high'),
+    agingHighRiskCount: countFreshnessRows(freshnessRows, 'aging', 'high'),
+    freshnessEvidence: branchFreshnessEvidence(freshnessRows),
   };
 }
 
@@ -400,6 +482,11 @@ const buyerGapEvidence = [
   `Phase F 95% gate: ${buyerProbe.phaseFGate}`,
 ].join('; ');
 
+const branchReviewEvidence = [
+  `Unmerged branch probe high/medium/low risk counts: ${branchProbe.highRisk ?? 'unknown'}/${branchProbe.mediumRisk ?? 'unknown'}/${branchProbe.lowRisk ?? 'unknown'}.`,
+  branchProbe.freshnessEvidence,
+].join(' ');
+
 const manifest = {
   schema_version: 1,
   repo: {
@@ -429,6 +516,7 @@ const manifest = {
       'Local release readiness is verified separately with corepack pnpm run check:release-readiness; do not infer current deploy approval from this JSON alone.',
       buyerProbe.evidence,
       branchProbe.evidence,
+      branchProbe.freshnessEvidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -453,9 +541,26 @@ const manifest = {
     ],
     roadmap: [
       'Phase F buyer evidence workspace remains the required path to confidence movement.',
-      'High-risk unmerged branches remain review queues until focused checks and owner approvals clear.',
+      'High-risk or stale/aging unmerged branches remain review queues until focused checks, drift review, and owner approvals clear.',
       'Status/advisor automation remains future work until live credentials and connector permissions are available.',
     ],
+  },
+  branch_review: {
+    status: branchProbe.status,
+    risk_counts: {
+      high: branchProbe.highRisk,
+      medium: branchProbe.mediumRisk,
+      low: branchProbe.lowRisk,
+    },
+    freshness_counts: {
+      stale: branchProbe.staleCount,
+      aging: branchProbe.agingCount,
+      fresh: branchProbe.freshCount,
+      unknown: branchProbe.unknownFreshnessCount,
+      stale_high_risk: branchProbe.staleHighRiskCount,
+      aging_high_risk: branchProbe.agingHighRiskCount,
+    },
+    evidence: branchProbe.freshnessEvidence,
   },
   gaps: [
     {
@@ -477,13 +582,13 @@ const manifest = {
       status: gitStatus.isDirty ? 'open' : 'mitigated',
     },
     {
-      gap: 'High-risk unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
+      gap: 'High-risk or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
       severity: 'P1',
-      evidence: `Unmerged branch probe high/medium/low risk counts: ${branchProbe.highRisk ?? 'unknown'}/${branchProbe.mediumRisk ?? 'unknown'}/${branchProbe.lowRisk ?? 'unknown'}.`,
+      evidence: branchReviewEvidence,
       framework_mapping: ['NIST SSDF: change review', 'OWASP ASVS: secure deployment verification'],
       buyer_impact: 'Unreviewed branch changes can weaken launch gates, payment boundaries, database security, or claim discipline.',
-      fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, complete branch-specific checks, and merge only through normal release gates.',
-      status: (branchProbe.highRisk ?? 1) > 0 ? 'open' : 'mitigated',
+      fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
+      status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
     },
     {
       gap: 'Supabase security/performance advisor evidence is not embedded in this manifest.',
@@ -519,7 +624,7 @@ const manifest = {
     unresolved_blockers: [
       'Real buyer evidence and retained redacted artifacts are absent.',
       'Production deploy still requires clean source provenance and explicit owner approval.',
-      'High-risk unmerged branches remain review queues.',
+      'High-risk or stale/aging unmerged branches remain review queues.',
     ],
   },
   adversarial_reviews: [
@@ -535,8 +640,8 @@ const manifest = {
     },
     {
       lane: 'branch risk',
-      finding: 'Unmerged branches are not launch evidence; they can only become merge candidates after focused review and release gates.',
-      decision: 'Keep high-risk branches in review queue.',
+      finding: 'Unmerged branches are not launch evidence; stale or aging refs add drift risk and can only become merge candidates after focused review and release gates.',
+      decision: 'Keep high-risk and stale/aging branches in review queue.',
     },
   ],
   ecc_ledger: {
