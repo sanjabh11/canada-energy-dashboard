@@ -128,4 +128,32 @@ describe('unmerged branch readiness report', () => {
     expect(failing.status).toBe(1);
     expect(failing.stdout).toContain('- High-risk branches: 2');
   });
+
+  it('can focus a selected unmerged branch and print a category-specific review plan', () => {
+    const root = createRepo();
+    const result = runReport(root, ['--branch', 'export-risk', '--max-files', '10']);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Focused branch: export-risk');
+    expect(result.stdout).toContain('- Unmerged local branches: 1');
+    expect(result.stdout).toContain('- Unmerged origin branches: 0');
+    expect(result.stdout).toContain('| export-risk | local | high |');
+    expect(result.stdout).not.toContain('| docs-only | local |');
+    expect(result.stdout).not.toContain('origin/stripe-remote');
+    expect(result.stdout).toContain('## Focused Review Plan: export-risk');
+    expect(result.stdout).toContain('corepack pnpm run check:production-deploy-script');
+    expect(result.stdout).toContain('corepack pnpm run report:supabase-app-lint');
+    expect(result.stdout).toContain('payment/entitlement');
+    expect(result.stdout).toContain('does not create buyer evidence or production approval');
+  });
+
+  it('rejects a selected branch that is not in the unmerged review scope', () => {
+    const root = createRepo();
+    const result = runReport(root, ['--branch', 'missing-review-branch']);
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('Selected branch/ref is not an unmerged branch in the selected scope: missing-review-branch');
+  });
 });
