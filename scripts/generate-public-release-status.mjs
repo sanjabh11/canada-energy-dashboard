@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 5) {
-    failures.push('items must include deployed, source, provenance, buyer-evidence, and Supabase advisor records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 6) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, buyer-evidence, and Supabase advisor records.');
   }
 
   const ids = new Set();
@@ -64,6 +64,7 @@ function validateManifest(manifest) {
 
   const requiredIds = [
     'deployed_artifact_live_parity',
+    'current_source_live_parity',
     'current_source_release_gate',
     'source_provenance',
     'buyer_evidence_gate',

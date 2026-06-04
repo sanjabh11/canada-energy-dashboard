@@ -23,6 +23,15 @@
       "nextAction": "Rerun after every approved production deploy before calling live parity current."
     },
     {
+      "id": "current_source_live_parity",
+      "label": "Current source live parity",
+      "status": "external_gate",
+      "proofBucket": "hosted/live",
+      "command": "pnpm run report:production-approval-packet && pnpm run check:post-deploy-live",
+      "evidenceBoundary": "Current source does not prove production parity from local checks, CI, or the last approved artifact; it requires clean provenance, explicit owner approval, guarded deploy, and post-deploy live parity.",
+      "nextAction": "Clear source provenance, request explicit owner approval, deploy through the guarded production path, then rerun post-deploy live checks."
+    },
+    {
       "id": "current_source_release_gate",
       "label": "Current source release gate",
       "status": "watch",

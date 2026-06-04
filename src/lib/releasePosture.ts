@@ -49,11 +49,18 @@ export interface SupabaseAdvisorStatusCard {
 
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
-    title: 'Production deploy gate and live parity',
+    title: 'Last approved production artifact parity',
     status: 'verified',
     rating: '5.0/5',
-    evidence: 'Production live parity is verified for the deployed artifact: remote metadata passed, hosted `/`, `/manifest.json`, and `/schema-webapp.jsonld` match built `dist`, and hosted proof-pack smoke passed.',
-    nextAction: 'Rerun `pnpm run check:post-deploy-live` after every approved production deploy; do not treat a future source commit as live-proven until that gate passes again.',
+    evidence: 'The last approved production artifact passed remote metadata, hosted `/`, `/manifest.json`, `/schema-webapp.jsonld` static parity, and hosted proof-pack smoke for that deployed artifact only.',
+    nextAction: 'Preserve this as last-approved artifact evidence; do not treat a future source commit as live-proven until a new approved deploy passes `pnpm run check:post-deploy-live`.',
+  },
+  {
+    title: 'Current source live parity',
+    status: 'external_gate',
+    rating: '2.0/5',
+    evidence: 'Latest local/source changes are not live-proven by the last approved artifact, local build output, or source CI. Current source becomes live-proven only after clean source provenance, explicit owner approval, production deploy, and post-deploy live parity checks.',
+    nextAction: 'Run `pnpm run report:production-approval-packet`; after clean provenance and explicit owner approval, deploy through the guarded path and rerun `pnpm run check:post-deploy-live`.',
   },
   {
     title: 'GitHub release and cron gates',
@@ -104,10 +111,16 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     },
   },
   {
-    label: 'Current production parity gate',
+    label: 'Latest approved production parity',
     status: 'verified',
     command: 'pnpm run check:post-deploy-live',
-    evidenceBoundary: 'The approved production artifact passed live metadata, exact static dist parity, and hosted proof-pack route smoke; rerun this after future source changes and production deploys.',
+    evidenceBoundary: 'The approved production artifact passed live metadata, exact static dist parity, and hosted proof-pack route smoke for that artifact only; this does not prove future source commits are deployed.',
+  },
+  {
+    label: 'Current source live parity',
+    status: 'external_gate',
+    command: 'pnpm run report:production-approval-packet && pnpm run check:post-deploy-live',
+    evidenceBoundary: 'Current source is not live-proven until source provenance is clean, owner approval is explicit, the guarded production deploy runs, and post-deploy live parity passes.',
   },
   {
     label: 'Current source CI gate',

@@ -8,16 +8,21 @@ import {
 import { PUBLIC_RELEASE_STATUS_MANIFEST } from '../../src/lib/publicReleaseStatusManifest';
 
 describe('status page release posture', () => {
-  it('marks production live parity as verified only after post-deploy live checks pass', () => {
-    const deployPosture = RELEASE_POSTURE.find((item) => item.title.includes('live parity'));
+  it('separates last approved artifact parity from current source live parity', () => {
+    const deployPosture = RELEASE_POSTURE.find((item) => item.title === 'Last approved production artifact parity');
+    const currentSourceParity = RELEASE_POSTURE.find((item) => item.title === 'Current source live parity');
 
     expect(deployPosture).toBeTruthy();
     expect(deployPosture?.status).toBe('verified');
     expect(deployPosture?.rating).toBe('5.0/5');
-    expect(deployPosture?.evidence).toMatch(/Production live parity is verified/i);
-    expect(deployPosture?.evidence).toMatch(/hosted proof-pack smoke passed/i);
+    expect(deployPosture?.evidence).toMatch(/last approved production artifact/i);
+    expect(deployPosture?.evidence).toMatch(/hosted proof-pack smoke/i);
     expect(deployPosture?.nextAction).toMatch(/check:post-deploy-live/);
     expect(deployPosture?.nextAction).toMatch(/future source commit/i);
+    expect(currentSourceParity?.status).toBe('external_gate');
+    expect(currentSourceParity?.rating).toBe('2.0/5');
+    expect(currentSourceParity?.evidence).toMatch(/not live-proven/i);
+    expect(currentSourceParity?.evidence).toMatch(/explicit owner approval/i);
   });
 
   it('reports Supabase lint status without treating extension-owned findings as app-owned blockers', () => {
@@ -57,18 +62,22 @@ describe('status page release posture', () => {
 
   it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
     const deployEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Last verified production artifact');
-    const productionParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current production parity gate');
+    const latestApprovedParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Latest approved production parity');
+    const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(6);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(7);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
-    expect(productionParityEvidence?.status).toBe('verified');
-    expect(productionParityEvidence?.command).toContain('check:post-deploy-live');
-    expect(productionParityEvidence?.evidenceBoundary).toMatch(/exact static dist parity/i);
+    expect(latestApprovedParityEvidence?.status).toBe('verified');
+    expect(latestApprovedParityEvidence?.command).toContain('check:post-deploy-live');
+    expect(latestApprovedParityEvidence?.evidenceBoundary).toMatch(/does not prove future source commits/i);
+    expect(currentSourceParityEvidence?.status).toBe('external_gate');
+    expect(currentSourceParityEvidence?.command).toContain('report:production-approval-packet');
+    expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/owner approval is explicit/i);
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
@@ -112,6 +121,7 @@ describe('status page release posture', () => {
 
   it('defines a public-safe release status manifest for the status page', () => {
     const itemIds = PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => item.id);
+    const currentSourceParityGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_live_parity');
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
@@ -123,11 +133,16 @@ describe('status page release posture', () => {
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary).toMatch(/does not create buyer evidence/i);
     expect(itemIds).toEqual([
       'deployed_artifact_live_parity',
+      'current_source_live_parity',
       'current_source_release_gate',
       'source_provenance',
       'buyer_evidence_gate',
       'supabase_advisor_access',
     ]);
+    expect(currentSourceParityGate?.status).toBe('external_gate');
+    expect(currentSourceParityGate?.command).toContain('report:production-approval-packet');
+    expect(currentSourceParityGate?.evidenceBoundary).toMatch(/does not prove production parity/i);
+    expect(currentSourceParityGate?.nextAction).toMatch(/post-deploy live checks/i);
     expect(sourceGate?.status).toBe('watch');
     expect(sourceGate?.evidenceBoundary).toMatch(/does not prove production deploy parity/i);
     expect(provenanceGate?.command).toContain('git status --porcelain=v1 --branch');
