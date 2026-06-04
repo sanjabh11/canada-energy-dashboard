@@ -216,7 +216,7 @@ if (!existsSync(roadmapPath)) {
     'original-plan completion audit',
     'Release readiness could pass while the original 95% strategy-plan requirement map silently drifts.',
     'bounded source-anchor retry',
-    'The production deploy script could drift from the approval packet and skip the CEIP-specific readiness or post-deploy parity gates.',
+    'The production deploy script could drift from the approval packet and skip the CEIP-specific readiness, pinned package-manager, or post-deploy parity gates.',
     'dirty worktree blocker classification',
     'skipping exact static parity when `--skip-release-readiness` is used',
     'Passing local release-readiness evidence inside the production approval packet could quote nested completion-audit live failures',

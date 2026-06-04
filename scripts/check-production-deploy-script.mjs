@@ -34,6 +34,10 @@ function rejectText(text, label, needle, reason) {
   if (text.includes(needle)) failures.push(`${label} must not include \`${needle}\`; ${reason}.`);
 }
 
+function rejectPattern(text, label, pattern, description) {
+  if (pattern.test(text)) failures.push(`${label} must not ${description}.`);
+}
+
 function requireBefore(text, label, firstNeedle, secondNeedle, reason) {
   const firstIndex = text.indexOf(firstNeedle);
   const secondIndex = text.indexOf(secondNeedle);
@@ -58,12 +62,14 @@ if (packageJson) {
 
 if (deployScript) {
   const requiredFragments = [
-    'pnpm run check:release-readiness',
-    'pnpm run build:prod',
-    'pnpm run check:built-client-env',
+    'corepack pnpm --version',
+    'corepack pnpm run check:release-readiness',
+    'corepack pnpm audit --audit-level=high',
+    'corepack pnpm run build:prod',
+    'corepack pnpm run check:built-client-env',
     'DEPLOY CEIP PRODUCTION',
     'netlify deploy --prod --no-build --dir=dist',
-    'pnpm run check:post-deploy-live',
+    'corepack pnpm run check:post-deploy-live',
     'validate:pilot-evidence --require-95',
   ];
 
@@ -94,6 +100,12 @@ if (deployScript) {
     deployScriptRelativePath,
     'Continue anyway?',
     'production audit or lint failures must block deployment',
+  );
+  rejectPattern(
+    deployScript,
+    deployScriptRelativePath,
+    /(^|\n)\s*pnpm\s+(run|audit|exec|install)\b/,
+    'call bare pnpm commands; use Corepack so the pinned packageManager version is honored',
   );
 }
 

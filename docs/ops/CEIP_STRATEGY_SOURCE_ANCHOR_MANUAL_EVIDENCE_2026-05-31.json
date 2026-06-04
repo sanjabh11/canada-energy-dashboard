@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-06-01T00:14:00.000Z",
+  "generatedAt": "2026-06-04T10:48:00.000Z",
   "purpose": "Date-stamped manual web evidence for official CEIP strategy source anchors that were reachable through Exa/browser verification but unreachable, blocked, or not reliably text-matchable through the local automated Node fetch in this workspace.",
   "limitations": "This file records term-level source verification only. It does not replace live source review, buyer evidence, legal review, or production approval.",
   "anchors": [
@@ -79,6 +79,22 @@
       "verifiedAt": "2026-06-01T00:14:00.000Z",
       "matchedTerms": ["Annual Reporting Requirements", "audited financial statements", "reconciliation"],
       "evidenceNote": "Official AUC Rule 005 page content was fetched through Exa after local Node fetch returned an HTTP service page."
+    },
+    {
+      "label": "EnergyCAP utility management FAQ",
+      "url": "https://www.energycap.com/energycap-faqs/",
+      "retrievalTool": "web.search_query",
+      "verifiedAt": "2026-06-04T10:48:00.000Z",
+      "matchedTerms": ["EnergyCAP", "utility bill management", "bill management"],
+      "evidenceNote": "Official EnergyCAP FAQ page content was verified through web search after local Node fetch reached redirect/fetch behavior that did not reliably expose the page text."
+    },
+    {
+      "label": "EnergyCAP utility bill auditing",
+      "url": "https://www.energycap.com/product-features/utility-bill-auditing-software/",
+      "retrievalTool": "web.search_query",
+      "verifiedAt": "2026-06-04T10:48:00.000Z",
+      "matchedTerms": ["EnergyCAP", "utility bill auditing", "billing errors"],
+      "evidenceNote": "Official EnergyCAP utility bill auditing page content was verified through web search after local Node fetch reached redirect/fetch behavior that did not reliably expose the page text."
     },
     {
       "label": "Gneiting and Raftery proper scoring rules",

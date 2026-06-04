@@ -43,10 +43,19 @@ if [ "$NODE_VERSION" -lt 18 ]; then
 fi
 echo -e "${GREEN}✅ Node.js version: $(node -v)${NC}"
 
+# Check package manager path. The repo pins pnpm through packageManager, so use
+# Corepack instead of relying on a globally installed pnpm shim.
+if ! command -v corepack >/dev/null 2>&1; then
+  echo -e "${RED}❌ Corepack is required to run the pinned pnpm version${NC}"
+  exit 1
+fi
+PNPM_VERSION=$(corepack pnpm --version)
+echo -e "${GREEN}✅ pnpm via Corepack: $PNPM_VERSION${NC}"
+
 # Step 2: CEIP release-readiness gate
 echo ""
 echo "🧪 Step 2: Running CEIP release-readiness gate..."
-pnpm run check:release-readiness || {
+corepack pnpm run check:release-readiness || {
   echo -e "${RED}❌ CEIP release-readiness gate failed${NC}"
   exit 1
 }
@@ -55,7 +64,7 @@ echo -e "${GREEN}✅ CEIP release-readiness gate passed${NC}"
 # Step 3: Security audit
 echo ""
 echo "🔒 Step 3: Running security audit..."
-pnpm audit --audit-level=high || {
+corepack pnpm audit --audit-level=high || {
   echo -e "${YELLOW}⚠️  Security vulnerabilities found${NC}"
   echo "   Run: pnpm audit fix"
   exit 1
@@ -66,7 +75,7 @@ echo -e "${GREEN}✅ Security audit passed${NC}"
 echo ""
 echo "📝 Step 4: Running TypeScript type check..."
 TYPE_CHECK_RAN=false
-if pnpm run --if-present type-check; then
+if corepack pnpm run --if-present type-check; then
   TYPE_CHECK_RAN=true
 elif npm run --if-present type-check; then
   TYPE_CHECK_RAN=true
@@ -81,7 +90,7 @@ fi
 # Step 5: Linting
 echo ""
 echo "🔍 Step 5: Running ESLint..."
-pnpm run lint || npm run lint || {
+corepack pnpm run lint || npm run lint || {
   echo -e "${YELLOW}⚠️  Linting issues found${NC}"
   exit 1
 }
@@ -90,11 +99,11 @@ echo -e "${GREEN}✅ Linting passed${NC}"
 # Step 6: Build production bundle
 echo ""
 echo "🏗️  Step 6: Building production bundle..."
-pnpm run build:prod || {
+corepack pnpm run build:prod || {
   echo -e "${RED}❌ Build failed${NC}"
   exit 1
 }
-pnpm run check:built-client-env || {
+corepack pnpm run check:built-client-env || {
   echo -e "${RED}❌ Built client env check failed${NC}"
   exit 1
 }
@@ -182,7 +191,7 @@ fi
 # Step 11: Post-deployment verification
 echo ""
 echo "✅ Step 11: Post-deployment verification..."
-pnpm run check:post-deploy-live || {
+corepack pnpm run check:post-deploy-live || {
   echo -e "${RED}❌ Post-deploy live parity check failed${NC}"
   exit 1
 }
