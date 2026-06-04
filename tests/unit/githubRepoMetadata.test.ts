@@ -45,10 +45,22 @@ function writeMetadataFixture(metadata: unknown) {
   return filePath;
 }
 
-function runMetadataCheck(metadata: unknown) {
-  const fixturePath = writeMetadataFixture(metadata);
+function makeGithubHtmlFixture(topics = validMetadata.topics) {
+  return [
+    '<html><head>',
+    `<meta name="description" content="${validMetadata.description} - sanjabh11/canada-energy-dashboard">`,
+    '</head><body>',
+    '<a href="https://github.com/sanjabh11/canada-energy-dashboard">repo</a>',
+    `<a href="${validMetadata.homepage}">canada-energy.netlify.app</a>`,
+    '<span>MIT license</span>',
+    ...topics.map((topic) => `<a href="/topics/${topic}" title="Topic: ${topic}" class="topic-tag topic-tag-link">${topic}</a>`),
+    '</body></html>',
+  ].join('\n');
+}
+
+function runScript(args: string[]) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(process.execPath, [scriptPath, '--metadata-file', fixturePath], {
+    const child = spawn(process.execPath, [scriptPath, ...args], {
       cwd: process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -69,6 +81,26 @@ function runMetadataCheck(metadata: unknown) {
       resolve({ status, stdout, stderr });
     });
   });
+}
+
+function runMetadataCheck(metadata: unknown) {
+  const fixturePath = writeMetadataFixture(metadata);
+  return runScript(['--metadata-file', fixturePath]);
+}
+
+function runHtmlFallbackCheck(html: string, licenseText = 'MIT License') {
+  const root = makeTempRoot();
+  const htmlPath = path.join(root, 'github.html');
+  const licensePath = path.join(root, 'LICENSE');
+  writeFileSync(htmlPath, html, 'utf8');
+  writeFileSync(licensePath, licenseText, 'utf8');
+  return runScript([
+    '--force-html-fallback',
+    '--github-html-file',
+    htmlPath,
+    '--license-file',
+    licensePath,
+  ]);
 }
 
 afterEach(() => {
@@ -115,6 +147,24 @@ describe('GitHub repository metadata guard', () => {
 
     expect(result.status).toBe(1);
     expect(result.stderr).toContain('GitHub repository must remain public.');
+  });
+
+  it('passes through the public GitHub HTML fallback when REST metadata is rate-limited', async () => {
+    const result = await runHtmlFallbackCheck(makeGithubHtmlFixture());
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('GitHub repository metadata check passed');
+    expect(result.stdout).toContain('via public-html-fallback');
+  });
+
+  it('keeps public GitHub HTML fallback strict about missing topics', async () => {
+    const result = await runHtmlFallbackCheck(makeGithubHtmlFixture(['energy']));
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toBe('');
+    expect(result.stderr).toContain('GitHub repository metadata check failed:');
+    expect(result.stderr).toContain('topics missing: analytics, canada');
   });
 
   it('keeps package metadata aligned with the public GitHub About panel', () => {
