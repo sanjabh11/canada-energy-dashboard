@@ -74,6 +74,18 @@ describe('launch evidence manifest report', () => {
     expect(manifest.supabase_advisor.connector_permission).toBe('permission_denied');
     expect(manifest.supabase_advisor.evidence).toContain('Supabase advisor review');
     expect(manifest.supabase_advisor.evidence_boundary).toMatch(/does not substitute|permission denied/i);
+    expect(manifest.supabase_advisor.clearance_deficits.status).toBe('needs_remediation');
+    expect(manifest.supabase_advisor.clearance_deficits.open_count).toBeGreaterThanOrEqual(3);
+    expect(manifest.supabase_advisor.clearance_deficits.total_count).toBe(6);
+    expect(manifest.supabase_advisor.clearance_deficits.evidence).toContain('Supabase advisor clearance deficit ledger');
+    expect(manifest.supabase_advisor.clearance_deficits.items.map((item: { requirement: string }) => item.requirement)).toEqual([
+      'CLI app lint freshness',
+      'Connector project authorization',
+      'Security advisor evidence',
+      'Performance advisor evidence',
+      'Public-safe findings record',
+      'Advisor clearance claim',
+    ]);
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -176,6 +188,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Launch Decision');
     expect(stdout).toContain('## Gap Analysis');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
+    expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -192,6 +205,10 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.');
     expect(stdout).toContain('Supabase advisor review');
     expect(stdout).toContain('Supabase security/performance advisor clearance remains unavailable');
+    expect(stdout).toContain('Supabase advisor clearance deficit ledger');
+    expect(stdout).toContain('| Security advisor evidence |');
+    expect(stdout).toContain('| Performance advisor evidence |');
+    expect(stdout).toContain('| Advisor clearance claim |');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');

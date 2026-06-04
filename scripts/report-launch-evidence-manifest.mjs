@@ -141,6 +141,85 @@ function supabaseAdvisorEvidence(advisor) {
   ].join(' ');
 }
 
+function supabaseAdvisorClearanceDeficitEvidence(deficits) {
+  const topOpen = deficits.items
+    .filter((item) => item.status !== 'pass')
+    .slice(0, 4)
+    .map((item) => `${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Supabase advisor clearance deficit ledger:',
+    `open=${deficits.open_count}/${deficits.total_count}`,
+    `top_open=${topOpen}`,
+    'approval_gate=no Supabase advisor clearance claim until connector or dashboard advisors are rerun and public-safe findings are recorded',
+  ].join(' ');
+}
+
+function supabaseAdvisorClearanceDeficits(advisor) {
+  const connectorAuthorized = advisor.connectorPermission !== 'permission_denied';
+  const advisorVerified = advisor.securityPerformanceAdvisorsStatus === 'verified';
+  const cliVerified = advisor.cliAppLintStatus === 'verified';
+  const publicSafeFindingsRecorded = advisor.status === 'verified' && advisorVerified;
+
+  const items = [
+    {
+      requirement: 'CLI app lint freshness',
+      current: advisor.cliAppLintStatus,
+      needed: 'fresh check:supabase-app-lint or report:supabase-app-lint pass for the current source before stronger database-security claims',
+      status: cliVerified ? 'pass' : 'watch',
+      next_action: 'Run check:supabase-app-lint from a Supabase-authenticated workstation and keep failures credential/connectivity-gated rather than cleared.',
+    },
+    {
+      requirement: 'Connector project authorization',
+      current: advisor.connectorPermission,
+      needed: `authorized connector or dashboard access to project ${advisor.projectRef}`,
+      status: connectorAuthorized ? 'pass' : 'needs_remediation',
+      next_action: 'Fix Supabase connector or project authorization before rerunning security/performance advisors.',
+    },
+    {
+      requirement: 'Security advisor evidence',
+      current: advisor.securityPerformanceAdvisorsStatus,
+      needed: 'Supabase Database Security Advisor results reviewed for the current project and source posture',
+      status: advisorVerified ? 'pass' : 'needs_remediation',
+      next_action: 'Rerun Supabase security advisors after authorization is fixed and record public-safe findings or remediation blockers.',
+    },
+    {
+      requirement: 'Performance advisor evidence',
+      current: advisor.securityPerformanceAdvisorsStatus,
+      needed: 'Supabase Database Performance Advisor results reviewed for the current project and source posture',
+      status: advisorVerified ? 'pass' : 'needs_remediation',
+      next_action: 'Rerun Supabase performance advisors after authorization is fixed and record public-safe findings or remediation blockers.',
+    },
+    {
+      requirement: 'Public-safe findings record',
+      current: publicSafeFindingsRecorded ? 'recorded' : 'not recorded',
+      needed: 'redacted advisor summary with run date, project ref, unresolved findings, and no secrets',
+      status: publicSafeFindingsRecorded ? 'pass' : 'needs_remediation',
+      next_action: 'After advisors run, retain a public-safe summary that excludes credentials and direct account details.',
+    },
+    {
+      requirement: 'Advisor clearance claim',
+      current: 'no clearance claimed',
+      needed: 'clearance claim only after CLI lint, security advisor, performance advisor, and public-safe evidence rows pass',
+      status: cliVerified && connectorAuthorized && advisorVerified && publicSafeFindingsRecorded ? 'pass' : 'blocked',
+      next_action: 'Keep launch security wording at repo/local proof until all Supabase advisor clearance rows pass.',
+    },
+  ];
+
+  const deficits = {
+    status: items.every((item) => item.status === 'pass') ? 'pass' : 'needs_remediation',
+    open_count: items.filter((item) => item.status !== 'pass').length,
+    total_count: items.length,
+    items,
+  };
+
+  return {
+    ...deficits,
+    evidence: supabaseAdvisorClearanceDeficitEvidence(deficits),
+  };
+}
+
 function parseGateLine(text, label) {
   const pattern = new RegExp(`^${label}:\\s*(.+)$`, 'm');
   const match = text.match(pattern);
@@ -1007,9 +1086,11 @@ function probeSupabaseAdvisorStatus() {
       ?? 'Fix Supabase connector or project authorization, then rerun security and performance advisors.',
     docsReference: extractStringValue(cardBlock, 'url') || 'https://supabase.com/docs/guides/database/database-advisors',
   };
+  const clearanceDeficits = supabaseAdvisorClearanceDeficits(advisor);
 
   return {
     ...advisor,
+    clearanceDeficits,
     evidence: supabaseAdvisorEvidence(advisor),
   };
 }
@@ -1433,6 +1514,7 @@ const manifest = {
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
       supabaseAdvisor.evidence,
+      supabaseAdvisor.clearanceDeficits.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -1487,6 +1569,7 @@ const manifest = {
     docs_reference: supabaseAdvisor.docsReference,
     evidence_boundary: supabaseAdvisor.evidenceBoundary,
     next_action: supabaseAdvisor.nextAction,
+    clearance_deficits: supabaseAdvisor.clearanceDeficits,
     evidence: supabaseAdvisor.evidence,
   },
   branch_review: {
@@ -1571,7 +1654,7 @@ const manifest = {
     {
       gap: 'Supabase security/performance advisor clearance remains unavailable while connector or dashboard advisor evidence is permission-gated.',
       severity: 'P1',
-      evidence: supabaseAdvisor.evidence,
+      evidence: [supabaseAdvisor.evidence, supabaseAdvisor.clearanceDeficits.evidence].join('; '),
       framework_mapping: ['Supabase RLS and service-role review', 'OWASP API security review'],
       buyer_impact: 'Utility security reviewers may ask for current database advisor evidence before sharing sensitive files.',
       fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
@@ -1603,6 +1686,7 @@ const manifest = {
       'Real buyer evidence and retained redacted artifacts are absent.',
       'Production deploy still requires clean source provenance and explicit owner approval.',
       'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
+      'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
     ],
   },
   adversarial_reviews: [
@@ -1615,6 +1699,11 @@ const manifest = {
       lane: 'production approval',
       finding: 'A passing local release gate does not authorize deployment while source provenance is dirty or owner approval is missing.',
       decision: 'Keep deploy request blocked until provenance and approval gates clear.',
+    },
+    {
+      lane: 'Supabase advisor clearance',
+      finding: 'CLI database lint and repo security artifacts do not substitute for connector-backed or dashboard Supabase advisor clearance.',
+      decision: 'Keep Supabase advisor clearance blocked until authorization, security advisor evidence, performance advisor evidence, and public-safe findings records pass.',
     },
     {
       lane: 'branch risk',

@@ -130,6 +130,8 @@ function renderReport(manifest, validationText) {
   const openP1 = gaps.filter((gap) => gap?.severity === 'P1' && gap?.status === 'open').length;
   const buyerDeficits = manifest.buyer_evidence?.hard_gate_deficits ?? {};
   const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
+  const supabaseDeficits = manifest.supabase_advisor?.clearance_deficits ?? {};
+  const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -193,6 +195,22 @@ ${buyerDeficitItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Deficit ledger', 'not available', 'Run report:buyer-evidence-readiness', buyerDeficits.status ?? 'unknown', buyerDeficits.evidence ?? 'No deficit ledger was captured.'])}
+
+## Supabase Advisor Clearance Deficits
+
+Open Supabase advisor clearance deficits: ${text(supabaseDeficits.open_count ?? 'unknown')}/${text(supabaseDeficits.total_count ?? 'unknown')}. CLI app lint, repo security artifacts, and public status cards do not substitute for current Supabase Security and Performance Advisor clearance.
+
+| Requirement | Current | Needed | Status | Next Action |
+|---|---|---|---|---|
+${supabaseDeficitItems.length > 0
+    ? supabaseDeficitItems.map((item) => row([
+      item.requirement,
+      item.current,
+      item.needed,
+      item.status,
+      item.next_action,
+    ])).join('\n')
+    : row(['Deficit ledger', 'not available', 'Fix Supabase advisor access and rerun advisors', supabaseDeficits.status ?? 'unknown', supabaseDeficits.evidence ?? 'No Supabase advisor clearance deficit ledger was captured.'])}
 
 ## Proof Buckets
 

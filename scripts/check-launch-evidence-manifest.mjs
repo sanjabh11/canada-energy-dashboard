@@ -184,6 +184,30 @@ try {
     assert(typeof manifest.supabase_advisor?.security_performance_advisors_status === 'string' && manifest.supabase_advisor.security_performance_advisors_status.length > 0, 'Manifest supabase_advisor.security_performance_advisors_status must be set.');
     assert(typeof manifest.supabase_advisor?.connector_permission === 'string' && manifest.supabase_advisor.connector_permission.length > 0, 'Manifest supabase_advisor.connector_permission must be set.');
     assert(typeof manifest.supabase_advisor?.evidence_boundary === 'string' && /does not substitute|advisor evidence|authorization/i.test(manifest.supabase_advisor.evidence_boundary), 'Manifest supabase_advisor.evidence_boundary must preserve the proof limitation.');
+    assert(typeof manifest.supabase_advisor?.clearance_deficits?.evidence === 'string', 'Manifest supabase_advisor.clearance_deficits.evidence must be set.');
+    assert(manifest.supabase_advisor.clearance_deficits.evidence.includes('Supabase advisor clearance deficit ledger'), 'Manifest Supabase advisor clearance deficits evidence must include a ledger marker.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor?.clearance_deficits?.open_count), 'Manifest supabase_advisor.clearance_deficits.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor?.clearance_deficits?.total_count), 'Manifest supabase_advisor.clearance_deficits.total_count must be an integer or null.');
+    assert(Array.isArray(manifest.supabase_advisor?.clearance_deficits?.items), 'Manifest supabase_advisor.clearance_deficits.items must be a list.');
+    for (const [index, item] of (manifest.supabase_advisor.clearance_deficits.items ?? []).entries()) {
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `supabase_advisor.clearance_deficits.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `supabase_advisor.clearance_deficits.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `supabase_advisor.clearance_deficits.items[${index}].needed must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `supabase_advisor.clearance_deficits.items[${index}].status must be set.`);
+      assert(typeof item.next_action === 'string' && item.next_action.length > 0, `supabase_advisor.clearance_deficits.items[${index}].next_action must be set.`);
+    }
+    assert(
+      manifest.supabase_advisor.clearance_deficits.items.some((item) => item.requirement === 'Security advisor evidence'),
+      'Supabase advisor clearance deficits must include security advisor evidence.',
+    );
+    assert(
+      manifest.supabase_advisor.clearance_deficits.items.some((item) => item.requirement === 'Performance advisor evidence'),
+      'Supabase advisor clearance deficits must include performance advisor evidence.',
+    );
+    assert(
+      manifest.supabase_advisor.clearance_deficits.items.some((item) => item.requirement === 'Advisor clearance claim'),
+      'Supabase advisor clearance deficits must include the no-clearance-claim row.',
+    );
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
@@ -310,4 +334,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
