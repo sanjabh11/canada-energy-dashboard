@@ -39,7 +39,7 @@
     "build": "rm -rf node_modules/.vite-temp && tsc -b && vite build",
     "build:prod": "rm -rf node_modules/.vite-temp && tsc -b && BUILD_MODE=prod vite build",
     "check:claim-boundaries": "node scripts/check-claim-boundaries.mjs",
-    "check:commercial-source": "node scripts/check-commercial-source-docs.mjs && corepack pnpm run check:strategy-roadmap-doc",
+    "check:commercial-source": "node scripts/check-commercial-source-docs.mjs && pnpm run check:strategy-roadmap-doc",
     "check:strategy-roadmap-doc": "node scripts/check-strategy-roadmap-doc.mjs",
     "check:github-repo-metadata": "node scripts/check-github-repo-metadata.mjs",
     "check:ga-ici-public-actuals": "node scripts/check-ga-ici-public-actuals.mjs",

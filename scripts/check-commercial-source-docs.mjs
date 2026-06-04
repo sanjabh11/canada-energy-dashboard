@@ -252,6 +252,20 @@ if (!existsSync(sourceDocPath)) {
   if (!existsSync(packageJsonPath)) {
     failures.push('package.json is missing; cannot verify release-readiness scripts.');
   }
+
+  const commercialSourceScript = String(packageScripts['check:commercial-source'] ?? '');
+  if (!commercialSourceScript.includes('node scripts/check-commercial-source-docs.mjs')) {
+    failures.push('check:commercial-source must run scripts/check-commercial-source-docs.mjs before composing dependent source checks.');
+  }
+
+  if (!/(^|&&\s*)pnpm run check:strategy-roadmap-doc\b/.test(commercialSourceScript)) {
+    failures.push('check:commercial-source must call pnpm run check:strategy-roadmap-doc so the roadmap guard runs with the same resolved package manager.');
+  }
+
+  if (/corepack\s+pnpm\s+run\s+check:strategy-roadmap-doc\b/.test(commercialSourceScript)) {
+    failures.push('check:commercial-source must not require Corepack for its nested roadmap check; release-readiness and deploy scripts enforce Corepack at their top-level gates.');
+  }
+
   const activeCommercialSection = sectionBetween(
     sourceDoc,
     /^## Active Commercial Sources/m,
