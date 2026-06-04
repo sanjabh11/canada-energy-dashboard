@@ -360,6 +360,152 @@ function branchFreshnessEvidence(rows) {
   ].join(' ');
 }
 
+function refNamesFromFamilyRefs(refs) {
+  return String(refs ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .map((value) => {
+      const match = value.match(/^(?:local|remote):(.+?)@/);
+      return match?.[1] ?? '';
+    })
+    .filter(Boolean);
+}
+
+function canonicalBranchName(refName) {
+  return String(refName ?? '').startsWith('origin/')
+    ? String(refName).slice('origin/'.length)
+    : String(refName ?? '');
+}
+
+function queueRiskRank(risk) {
+  return { high: 0, medium: 1, low: 2 }[risk] ?? 3;
+}
+
+function queueFreshnessRank(freshness) {
+  return { stale: 0, aging: 1, unknown: 2, fresh: 3 }[freshness] ?? 4;
+}
+
+function queueStateRank(localOriginState) {
+  const key = familyStateKey(localOriginState);
+  return {
+    diverged: 0,
+    local_ahead: 1,
+    origin_ahead: 1,
+    local_only: 2,
+    origin_only: 2,
+    unknown: 3,
+    matching_heads: 4,
+  }[key] ?? 5;
+}
+
+function worstFreshnessForFamily(family, freshnessRows) {
+  const matches = freshnessRows
+    .filter((row) => canonicalBranchName(row.branch) === family)
+    .sort((a, b) => {
+      const freshnessDelta = queueFreshnessRank(a.freshness) - queueFreshnessRank(b.freshness);
+      if (freshnessDelta !== 0) return freshnessDelta;
+      const riskDelta = queueRiskRank(a.risk) - queueRiskRank(b.risk);
+      if (riskDelta !== 0) return riskDelta;
+      return a.branch.localeCompare(b.branch);
+    });
+
+  return matches[0] ?? {
+    branch: family,
+    scope: 'unknown',
+    risk: 'unknown',
+    latestCommitDate: 'unknown',
+    age: 'unknown',
+    freshness: 'unknown',
+    action: 'refresh branch metadata before review',
+  };
+}
+
+function reviewCommandForFamily(familyRow) {
+  const refs = refNamesFromFamilyRefs(familyRow.refs);
+  const preferredRef = refs.find((ref) => !ref.startsWith('origin/')) ?? refs[0] ?? familyRow.family;
+  return `corepack pnpm run report:unmerged-branch-readiness -- --branch ${preferredRef} --max-files 8`;
+}
+
+function priorityForBranchFamily(familyRow, freshness) {
+  const stateKey = familyStateKey(familyRow.localOriginState);
+  const isSplitOrSingleSided = stateKey !== 'matching_heads';
+  if (familyRow.highestRisk === 'high' && freshness.freshness === 'stale') return 'review_first_high_stale';
+  if (familyRow.highestRisk === 'high' && freshness.freshness === 'aging') return 'review_first_high_aging';
+  if (familyRow.highestRisk === 'high' && isSplitOrSingleSided) return 'review_first_high_split';
+  if (familyRow.highestRisk === 'high') return 'high_risk_review';
+  if (freshness.freshness === 'stale' || freshness.freshness === 'aging') return 'drift_review';
+  if (isSplitOrSingleSided) return 'canonical_head_review';
+  return 'standard_review';
+}
+
+function reasonForBranchFamily(familyRow, freshness) {
+  const reasons = [];
+  if (familyRow.highestRisk === 'high') reasons.push('high-risk launch surface');
+  if (familyRow.highestRisk === 'medium') reasons.push('medium-risk buyer-visible or source surface');
+  if (familyStateKey(familyRow.localOriginState) !== 'matching_heads') reasons.push(familyRow.localOriginState);
+  if (['stale', 'aging', 'unknown'].includes(freshness.freshness)) {
+    reasons.push(`${freshness.freshness} commit freshness (${freshness.age})`);
+  }
+  return reasons.length > 0 ? reasons.join('; ') : 'normal branch review queue item';
+}
+
+function branchReviewQueueForProbe(probe) {
+  if (probe.status === 'skipped') {
+    return {
+      status: 'skipped',
+      item_count: null,
+      review_first_count: null,
+      evidence: 'Branch review queue skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for the current review order.',
+      items: [],
+    };
+  }
+
+  const familyRows = Array.isArray(probe.familyRows) ? probe.familyRows : [];
+  const freshnessRows = Array.isArray(probe.freshnessRows) ? probe.freshnessRows : [];
+  const items = familyRows
+    .map((familyRow) => {
+      const freshness = worstFreshnessForFamily(familyRow.family, freshnessRows);
+      return {
+        family: familyRow.family,
+        priority: priorityForBranchFamily(familyRow, freshness),
+        highest_risk: familyRow.highestRisk,
+        local_origin_state: familyRow.localOriginState,
+        freshness: freshness.freshness,
+        age: freshness.age,
+        freshness_ref: freshness.branch,
+        reason: reasonForBranchFamily(familyRow, freshness),
+        review_command: reviewCommandForFamily(familyRow),
+        review_action: familyRow.reviewAction,
+        stop_gate: 'Read-only focused review first; no checkout, merge, deploy, migration, push, or production approval without explicit owner approval and release gates.',
+      };
+    })
+    .sort((a, b) => {
+      const riskDelta = queueRiskRank(a.highest_risk) - queueRiskRank(b.highest_risk);
+      if (riskDelta !== 0) return riskDelta;
+      const freshnessDelta = queueFreshnessRank(a.freshness) - queueFreshnessRank(b.freshness);
+      if (freshnessDelta !== 0) return freshnessDelta;
+      const stateDelta = queueStateRank(a.local_origin_state) - queueStateRank(b.local_origin_state);
+      if (stateDelta !== 0) return stateDelta;
+      return a.family.localeCompare(b.family);
+    });
+
+  const reviewFirstCount = items.filter((item) => item.priority.startsWith('review_first')).length;
+  const topFamilies = items.slice(0, 4).map((item) => `${item.family}:${item.priority}`);
+
+  return {
+    status: probe.status,
+    item_count: items.length,
+    review_first_count: reviewFirstCount,
+    evidence: [
+      'Branch review queue:',
+      `items=${items.length}`,
+      `review_first=${reviewFirstCount}`,
+      topFamilies.length > 0 ? `top=${topFamilies.join(', ')}` : 'top=none',
+    ].join(' '),
+    items: items.slice(0, 8),
+  };
+}
+
 function probeSupabaseAdvisorStatus() {
   const releasePostureText = readTextIfExists(path.join(repoRoot, 'src/lib/releasePosture.ts'));
   const conversationReviewText = readTextIfExists(path.join(repoRoot, 'docs/CEIP_CONVERSATION_OUTCOME_REVIEW_2026-06-03.md'));
@@ -742,6 +888,7 @@ const pkg = packageMetadata();
 const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
+const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
 const generatedAt = new Date().toISOString();
 
@@ -761,6 +908,7 @@ const branchReviewEvidence = [
   `Unmerged branch probe high/medium/low risk counts: ${branchProbe.highRisk ?? 'unknown'}/${branchProbe.mediumRisk ?? 'unknown'}/${branchProbe.lowRisk ?? 'unknown'}.`,
   branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
+  branchReviewQueue.evidence,
 ].join(' ');
 
 const manifest = {
@@ -796,6 +944,7 @@ const manifest = {
       branchProbe.evidence,
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
+      branchReviewQueue.evidence,
       supabaseAdvisor.evidence,
     ],
     repo_artifact: [
@@ -880,7 +1029,8 @@ const manifest = {
     },
     family_evidence: branchProbe.familyEvidence,
     freshness_evidence: branchProbe.freshnessEvidence,
-    evidence: [branchProbe.familyEvidence, branchProbe.freshnessEvidence].join(' '),
+    review_queue: branchReviewQueue,
+    evidence: [branchProbe.familyEvidence, branchProbe.freshnessEvidence, branchReviewQueue.evidence].join(' '),
   },
   source_provenance: {
     branch: gitStatus.branch,

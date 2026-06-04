@@ -161,6 +161,7 @@ try {
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
+    assert(manifest.branch_review.evidence.includes('Branch review queue'), 'Manifest branch_review evidence must summarize the actionable review queue.');
     assert(hasIntegerOrNull(manifest.branch_review?.risk_counts?.high), 'Manifest branch_review risk_counts.high must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.local_only), 'Manifest branch_review family_counts.local_only must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.origin_only), 'Manifest branch_review family_counts.origin_only must be an integer or null.');
@@ -168,11 +169,27 @@ try {
     assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.diverged), 'Manifest branch_review family_counts.diverged must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.stale), 'Manifest branch_review freshness_counts.stale must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.aging), 'Manifest branch_review freshness_counts.aging must be an integer or null.');
+    assert(typeof manifest.branch_review?.review_queue?.evidence === 'string', 'Manifest branch_review.review_queue.evidence must be set.');
+    assert(manifest.branch_review.review_queue.evidence.includes('Branch review queue'), 'Manifest branch_review.review_queue evidence must include a queue marker.');
+    assert(Array.isArray(manifest.branch_review?.review_queue?.items), 'Manifest branch_review.review_queue.items must be a list.');
+    assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.item_count), 'Manifest branch_review.review_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.review_first_count), 'Manifest branch_review.review_queue.review_first_count must be an integer or null.');
+    for (const [index, item] of (manifest.branch_review.review_queue.items ?? []).entries()) {
+      assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.review_queue.items[${index}].family must be set.`);
+      assert(typeof item.priority === 'string' && item.priority.length > 0, `branch_review.review_queue.items[${index}].priority must be set.`);
+      assert(typeof item.highest_risk === 'string' && item.highest_risk.length > 0, `branch_review.review_queue.items[${index}].highest_risk must be set.`);
+      assert(typeof item.local_origin_state === 'string' && item.local_origin_state.length > 0, `branch_review.review_queue.items[${index}].local_origin_state must be set.`);
+      assert(typeof item.freshness === 'string' && item.freshness.length > 0, `branch_review.review_queue.items[${index}].freshness must be set.`);
+      assert(typeof item.review_command === 'string' && item.review_command.includes('report:unmerged-branch-readiness'), `branch_review.review_queue.items[${index}].review_command must point to the focused branch report.`);
+      assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|owner approval/i.test(item.stop_gate), `branch_review.review_queue.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
+    }
     if (!skipProbes) {
       assert(Number.isInteger(manifest.branch_review?.family_counts?.local_only), 'Non-skipped manifest must include numeric local-only family count.');
       assert(Number.isInteger(manifest.branch_review?.family_counts?.origin_only), 'Non-skipped manifest must include numeric origin-only family count.');
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.stale), 'Non-skipped manifest must include numeric stale branch count.');
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
+      assert(Number.isInteger(manifest.branch_review?.review_queue?.item_count), 'Non-skipped manifest must include numeric branch review queue item count.');
+      assert(manifest.branch_review.review_queue.items.length > 0 || manifest.branch_review.review_queue.item_count === 0, 'Non-skipped manifest branch review queue must include items when queue count is positive.');
     }
     assert(
       typeof manifest.outreach_plan?.email_script_boundary === 'string'
@@ -202,4 +219,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, pain map, target map, buyer boundary, and schema validation are consistent.');

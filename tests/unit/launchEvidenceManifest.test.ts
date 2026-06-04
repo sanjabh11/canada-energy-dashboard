@@ -80,8 +80,14 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.family_evidence).toContain('Branch family review skipped');
     expect(manifest.branch_review.freshness_counts.stale).toBeNull();
     expect(manifest.branch_review.freshness_evidence).toContain('Branch freshness review skipped');
+    expect(manifest.branch_review.review_queue.status).toBe('skipped');
+    expect(manifest.branch_review.review_queue.item_count).toBeNull();
+    expect(manifest.branch_review.review_queue.review_first_count).toBeNull();
+    expect(manifest.branch_review.review_queue.evidence).toContain('Branch review queue skipped');
+    expect(manifest.branch_review.review_queue.items).toEqual([]);
     expect(manifest.branch_review.evidence).toContain('Branch family review skipped');
     expect(manifest.branch_review.evidence).toContain('Branch freshness review skipped');
+    expect(manifest.branch_review.evidence).toContain('Branch review queue skipped');
     expect(manifest.pain_points).toHaveLength(10);
     expect(manifest.pain_points[0].source_evidence.every((source: string) => source.startsWith('https://'))).toBe(true);
     expect(manifest.target_customers).toHaveLength(10);
@@ -141,6 +147,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Supabase security/performance advisor clearance remains unavailable');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
+    expect(stdout).toContain('Branch review queue skipped');
     expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');
     expect(stdout).toContain('validate_launch_evidence.py');
     expect(stdout).toContain('VALID');

@@ -94,14 +94,14 @@ try {
     } else {
       const fileText = readFileSync(reportPath, 'utf8');
       assert(report.stdout === fileText, 'Report stdout must match the --output Markdown file.');
-      assertReport(fileText);
+      assertReport(fileText, { skipProbes });
     }
   }
 } finally {
   rmSync(tempRoot, { recursive: true, force: true });
 }
 
-function assertReport(markdown) {
+function assertReport(markdown, options = {}) {
   const requiredSections = [
     'Launch Decision',
     'Gap Analysis',
@@ -133,6 +133,10 @@ function assertReport(markdown) {
   assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
   assert(markdown.includes('High-risk, local/origin split, or stale/aging unmerged branches'), 'Report must preserve the branch-family and freshness launch blocker.');
   assert(markdown.includes('Branch freshness review'), 'Report must include branch freshness evidence from the manifest.');
+  assert(markdown.includes('Branch review queue'), 'Report must include the actionable branch review queue evidence from the manifest.');
+  if (!options.skipProbes) {
+    assert(markdown.includes('review_first'), 'Report must surface review-first branch queue priority when branch probes run.');
+  }
   assert(markdown.includes('| validate_launch_evidence.py | pass | VALID |'), 'Report must include a passing launch evidence schema validation row.');
   assert(markdown.includes('Open P0='), 'Report must include P0/P1 blocker evidence.');
   assert(markdown.includes('commercial-ready'), 'Report must mention commercial-ready only as a blocked/do-not-claim boundary.');
@@ -163,4 +167,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, and validation boundaries are present.');
