@@ -133,6 +133,10 @@ function isDocsPath(filePath) {
   return /^(?:docs\/|README\.md$|.*\.md$|.*\.txt$)/i.test(filePath);
 }
 
+function isDetachedFunctionCopy(filePath) {
+  return /^(?:DEPLOY_.*|.*-FINAL)\.(?:ts|js)$/i.test(filePath);
+}
+
 function classifyFiles(files) {
   const categories = new Set();
 
@@ -141,9 +145,10 @@ function classifyFiles(files) {
     if (/^(?:src\/|public\/)/.test(filePath)) categories.add('source-app');
     if (/^(?:src\/components\/|src\/pages\/|src\/styles\/|src\/index\.css$)/.test(filePath)) categories.add('ui-surface');
     if (/^(?:tests\/|playwright\.config\.|vitest\.config\.|scripts\/check-|scripts\/report-)/.test(filePath)) categories.add('tests/tooling');
-    if (/^(?:scripts\/deploy-production\.sh|netlify\.toml|package\.json|pnpm-lock\.yaml|\.github\/workflows\/|scripts\/report-production-approval-packet|scripts\/check-production-deploy-script)/.test(filePath)) {
+    if (/^(?:scripts\/deploy-production\.sh|netlify\.toml|package\.json|pnpm-lock\.yaml|\.github\/workflows\/|scripts\/report-production-approval-packet|scripts\/check-production-deploy-script)/.test(filePath) || /deploy|go[-_]?live/i.test(filePath)) {
       categories.add('production/deploy');
     }
+    if (isDetachedFunctionCopy(filePath)) categories.add('edge-function-copy');
     if (/^(?:supabase\/|src\/lib\/supabase|scripts\/sql\/)/.test(filePath) || /migration|rls|database/i.test(filePath)) {
       categories.add('supabase/database');
     }
@@ -164,7 +169,7 @@ function classifyFiles(files) {
 }
 
 function riskForCategories(categories) {
-  if (categories.some((category) => ['payment/entitlement', 'production/deploy', 'supabase/database'].includes(category))) {
+  if (categories.some((category) => ['edge-function-copy', 'payment/entitlement', 'production/deploy', 'supabase/database'].includes(category))) {
     return 'high';
   }
   if (categories.some((category) => ['source-app', 'buyer-proof/commercial', 'ml/training'].includes(category))) {
@@ -187,7 +192,7 @@ function actionForBranch({ risk, categories }) {
 }
 
 function commandText(value) {
-  return /^(?:corepack |git |node |pnpm )/.test(value) ? `\`${value}\`` : value;
+  return /^(?:corepack |deno |git |node |pnpm |supabase )/.test(value) ? `\`${value}\`` : value;
 }
 
 function tableText(items) {
@@ -195,6 +200,15 @@ function tableText(items) {
 }
 
 const categoryReviewPlans = {
+  'edge-function-copy': {
+    reviewFocus: 'Detached function copies can drift from configured Supabase entrypoints or invite manual dashboard copy/paste deploys.',
+    checks: [
+      'compare detached copy files against the configured supabase/functions/<name>/index.ts entrypoint',
+      'review git diff --name-status output for detached DEPLOY_ or -FINAL files',
+      'corepack pnpm run check:production-deploy-script',
+    ],
+    gate: 'No manual dashboard copy/paste deploys from detached function copies; only deploy configured Supabase function entrypoints after explicit owner approval.',
+  },
   'production/deploy': {
     reviewFocus: 'Deploy scripts, CI, metadata, and release gates can change production behavior.',
     checks: [
@@ -288,7 +302,7 @@ const categoryReviewPlans = {
   unclassified: {
     reviewFocus: 'Unclassified files need manual ownership and blast-radius review.',
     checks: [
-      'git diff --name-status for the selected branch',
+      'review git diff --name-status output for the selected branch',
       'targeted tests chosen from the changed paths',
       'corepack pnpm run check:release-readiness',
     ],
@@ -326,6 +340,33 @@ function focusedReviewPlans(branch) {
   }
 
   return plans;
+}
+
+function changedSupabaseFunctionNames(files) {
+  const names = new Set();
+  for (const filePath of files) {
+    const match = filePath.match(/^supabase\/functions\/([^/]+)\//);
+    if (match?.[1]) names.add(match[1]);
+  }
+  return [...names].sort();
+}
+
+function changedPathsForFunction(files, functionName) {
+  return files.filter((filePath) => filePath.startsWith(`supabase/functions/${functionName}/`));
+}
+
+function focusedFunctionReviewRows(branch) {
+  return changedSupabaseFunctionNames(branch.files).map((functionName) => ({
+    functionName,
+    changedPaths: changedPathsForFunction(branch.files, functionName),
+    reviewFocus: 'Verify configured entrypoint, JWT/auth posture, secret handling, upstream idempotency, database writes, and log/metric observability before merge.',
+    checks: [
+      `git diff --name-status ${baseRef}...${branch.name} -- supabase/functions/${functionName}`,
+      `git diff ${baseRef}...${branch.name} -- supabase/functions/${functionName}/index.ts`,
+      `supabase functions serve ${functionName} --env-file <local-non-production-env>`,
+    ],
+    gate: 'No production function deploy, cron rewire, service-role use change, or live data write until local review passes and owner approval is explicit.',
+  }));
 }
 
 function markdownList(items) {
@@ -477,6 +518,18 @@ if (selectedBranch) {
   console.log('|---|---|---|---|');
   for (const plan of focusedReviewPlans(selectedBranch)) {
     console.log(`| ${plan.category} | ${plan.reviewFocus} | ${tableText(plan.checks)} | ${plan.gate} |`);
+  }
+
+  const functionRows = focusedFunctionReviewRows(selectedBranch);
+  if (functionRows.length > 0) {
+    console.log('');
+    console.log('## Changed Supabase Function Review Queue');
+    console.log('');
+    console.log('| Function | Changed paths | Review focus | Suggested checks | Stop/approval gate |');
+    console.log('|---|---|---|---|---|');
+    for (const row of functionRows) {
+      console.log(`| ${row.functionName} | ${compactFiles(row.changedPaths)} | ${row.reviewFocus} | ${tableText(row.checks)} | ${row.gate} |`);
+    }
   }
 }
 

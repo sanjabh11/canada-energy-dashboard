@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-unmerged-branch-readiness.mjs');
 const tempRoots: string[] = [];
+const gitBackedTestTimeoutMs = 60_000;
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-unmerged-branches-'));
@@ -56,6 +57,8 @@ function createRepo() {
 
   git(root, ['checkout', '-q', 'main']);
   git(root, ['checkout', '-q', '-b', 'export-risk']);
+  write(root, 'DEPLOY_THIS_EXPORT_FUNCTION.ts', 'export const deployCopy = true;\n');
+  write(root, 'stripe-webhook-FINAL.ts', 'export const finalCopy = true;\n');
   write(root, 'supabase/functions/stripe-webhook/index.ts', 'export const handler = () => null;\n');
   write(root, 'src/lib/exportJobsClient.ts', 'export const exportJob = true;\n');
   commitAll(root, 'export risk branch');
@@ -108,13 +111,15 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('- Unmerged local branches: 2');
     expect(result.stdout).toContain('- Unmerged origin branches: 1');
     expect(result.stdout).toContain('| export-risk | local | high |');
+    expect(result.stdout).toContain('edge-function-copy');
+    expect(result.stdout).toContain('production/deploy');
     expect(result.stdout).toContain('supabase/database');
     expect(result.stdout).toContain('payment/entitlement');
     expect(result.stdout).toContain('| docs-only | local | low |');
     expect(result.stdout).toContain('docs-only');
     expect(result.stdout).toContain('| origin/stripe-remote | remote | high |');
     expect(result.stdout).not.toContain('already-merged');
-  });
+  }, gitBackedTestTimeoutMs);
 
   it('can scope the report to local branches and fail on high-risk review queues', () => {
     const root = createRepo();
@@ -127,7 +132,7 @@ describe('unmerged branch readiness report', () => {
 
     expect(failing.status).toBe(1);
     expect(failing.stdout).toContain('- High-risk branches: 2');
-  });
+  }, gitBackedTestTimeoutMs);
 
   it('can focus a selected unmerged branch and print a category-specific review plan', () => {
     const root = createRepo();
@@ -144,9 +149,14 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('## Focused Review Plan: export-risk');
     expect(result.stdout).toContain('corepack pnpm run check:production-deploy-script');
     expect(result.stdout).toContain('corepack pnpm run report:supabase-app-lint');
+    expect(result.stdout).toContain('No manual dashboard copy/paste');
+    expect(result.stdout).toContain('## Changed Supabase Function Review Queue');
+    expect(result.stdout).toContain('| stripe-webhook | supabase/functions/stripe-webhook/index.ts |');
+    expect(result.stdout).toContain('git diff --name-status main...export-risk -- supabase/functions/stripe-webhook');
+    expect(result.stdout).toContain('supabase functions serve stripe-webhook --env-file <local-non-production-env>');
     expect(result.stdout).toContain('payment/entitlement');
     expect(result.stdout).toContain('does not create buyer evidence or production approval');
-  });
+  }, gitBackedTestTimeoutMs);
 
   it('rejects a selected branch that is not in the unmerged review scope', () => {
     const root = createRepo();
@@ -155,5 +165,5 @@ describe('unmerged branch readiness report', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toBe('');
     expect(result.stderr).toContain('Selected branch/ref is not an unmerged branch in the selected scope: missing-review-branch');
-  });
+  }, gitBackedTestTimeoutMs);
 });
