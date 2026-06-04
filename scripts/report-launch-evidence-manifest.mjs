@@ -421,9 +421,13 @@ function worstFreshnessForFamily(family, freshnessRows) {
 }
 
 function reviewCommandForFamily(familyRow) {
-  const refs = refNamesFromFamilyRefs(familyRow.refs);
-  const preferredRef = refs.find((ref) => !ref.startsWith('origin/')) ?? refs[0] ?? familyRow.family;
+  const preferredRef = reviewRefForFamily(familyRow);
   return `corepack pnpm run report:unmerged-branch-readiness -- --branch ${preferredRef} --max-files 8`;
+}
+
+function reviewRefForFamily(familyRow) {
+  const refs = refNamesFromFamilyRefs(familyRow.refs);
+  return refs.find((ref) => !ref.startsWith('origin/')) ?? refs[0] ?? familyRow.family;
 }
 
 function priorityForBranchFamily(familyRow, freshness) {
@@ -467,6 +471,7 @@ function branchReviewQueueForProbe(probe) {
       const freshness = worstFreshnessForFamily(familyRow.family, freshnessRows);
       return {
         family: familyRow.family,
+        review_ref: reviewRefForFamily(familyRow),
         priority: priorityForBranchFamily(familyRow, freshness),
         highest_risk: familyRow.highestRisk,
         local_origin_state: familyRow.localOriginState,
@@ -504,6 +509,142 @@ function branchReviewQueueForProbe(probe) {
     ].join(' '),
     items: items.slice(0, 8),
   };
+}
+
+function extractFocusedReviewLine(markdown, label) {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const match = markdown.match(new RegExp(`^- ${escapedLabel}:\\s*(.+)$`, 'm'));
+  return match?.[1]?.trim() ?? '';
+}
+
+function splitCommaList(value) {
+  return String(value ?? '')
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseChangedFunctionRows(markdown) {
+  const section = extractMarkdownSection(markdown, 'Changed Supabase Function Review Queue');
+  if (!section) return [];
+
+  return section
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('| '))
+    .filter((line) => !line.startsWith('| Function |') && !line.startsWith('|---'))
+    .map((line) => line
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim()))
+    .filter((cells) => cells.length >= 5)
+    .map(([functionName, changedPaths, reviewFocus, suggestedChecks, stopGate]) => ({
+      function_name: functionName,
+      changed_paths: changedPaths,
+      review_focus: reviewFocus,
+      suggested_checks: suggestedChecks,
+      stop_gate: stopGate,
+    }));
+}
+
+function parseFocusedBranchFreshness(markdown, branchRef) {
+  const rows = parseBranchFreshnessRows(markdown);
+  return rows.find((row) => row.branch === branchRef) ?? rows[0] ?? null;
+}
+
+function topBranchReviewPacketEvidence(packet) {
+  if (packet.status === 'skipped') {
+    return 'Top branch review packet skipped by --skip-probes; run the focused branch review command before selecting a canonical head. approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates';
+  }
+
+  if (packet.status === 'empty') {
+    return 'Top branch review packet: no branch review queue items are available.';
+  }
+
+  const functionRefs = packet.changed_supabase_functions.slice(0, 6).join(', ') || 'none';
+  return [
+    'Top branch review packet:',
+    `branch=${packet.branch}`,
+    `status=${packet.status}`,
+    `priority=${packet.priority}`,
+    `risk=${packet.risk}`,
+    `local_origin_state=${packet.local_origin_state}`,
+    `family_freshness=${packet.family_freshness}`,
+    `focused_freshness=${packet.focused_branch_freshness}`,
+    `categories=${packet.categories.join(',') || 'none'}`,
+    `supabase_functions=${packet.changed_supabase_function_count}`,
+    `function_refs=${functionRefs}`,
+    'approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates',
+  ].join(' ');
+}
+
+function probeTopBranchReviewPacket(reviewQueue) {
+  if (skipProbes) {
+    const packet = {
+      status: 'skipped',
+      branch: null,
+      priority: null,
+      risk: null,
+      local_origin_state: null,
+      family_freshness: null,
+      focused_branch_freshness: null,
+      categories: [],
+      changed_supabase_function_count: null,
+      changed_supabase_functions: [],
+      command: 'corepack pnpm run report:unmerged-branch-readiness -- --branch <top-review-ref> --max-files 12',
+      stop_gate: 'Read-only focused review first; no branch mutation or production action.',
+    };
+    return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
+  }
+
+  const topItem = Array.isArray(reviewQueue.items) ? reviewQueue.items[0] : null;
+  if (!topItem?.review_ref) {
+    const packet = {
+      status: 'empty',
+      branch: null,
+      priority: null,
+      risk: null,
+      local_origin_state: null,
+      family_freshness: null,
+      focused_branch_freshness: null,
+      categories: [],
+      changed_supabase_function_count: 0,
+      changed_supabase_functions: [],
+      command: 'corepack pnpm run report:unmerged-branch-readiness',
+      stop_gate: 'No branch review item available.',
+    };
+    return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
+  }
+
+  const result = run(process.execPath, [
+    'scripts/report-unmerged-branch-readiness.mjs',
+    '--branch',
+    topItem.review_ref,
+    '--max-files',
+    '12',
+  ]);
+  const output = `${result.stdout}\n${result.stderr}`.trim();
+  const categories = splitCommaList(extractFocusedReviewLine(output, 'Categories'));
+  const functionRows = parseChangedFunctionRows(output);
+  const focusedFreshness = parseFocusedBranchFreshness(output, topItem.review_ref);
+  const packet = {
+    status: result.status === 0 ? 'pass' : 'fail',
+    branch: topItem.review_ref,
+    family: topItem.family,
+    priority: topItem.priority,
+    risk: extractFocusedReviewLine(output, 'Risk') || topItem.highest_risk,
+    local_origin_state: topItem.local_origin_state,
+    family_freshness: topItem.freshness,
+    focused_branch_freshness: focusedFreshness?.freshness ?? 'unknown',
+    focused_branch_age: focusedFreshness?.age ?? 'unknown',
+    categories,
+    changed_supabase_function_count: functionRows.length,
+    changed_supabase_functions: functionRows.map((row) => row.function_name),
+    changed_supabase_function_rows: functionRows.slice(0, 12),
+    command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${topItem.review_ref} --max-files 12`,
+    stop_gate: topItem.stop_gate,
+    evidence_excerpt: output.split(/\r?\n/).slice(0, 24).join(' | '),
+  };
+  return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
 }
 
 function probeSupabaseAdvisorStatus() {
@@ -889,6 +1030,7 @@ const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
+const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
 const generatedAt = new Date().toISOString();
 
@@ -909,6 +1051,7 @@ const branchReviewEvidence = [
   branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
+  topBranchReviewPacket.evidence,
 ].join(' ');
 
 const manifest = {
@@ -945,6 +1088,7 @@ const manifest = {
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
+      topBranchReviewPacket.evidence,
       supabaseAdvisor.evidence,
     ],
     repo_artifact: [
@@ -1030,7 +1174,13 @@ const manifest = {
     family_evidence: branchProbe.familyEvidence,
     freshness_evidence: branchProbe.freshnessEvidence,
     review_queue: branchReviewQueue,
-    evidence: [branchProbe.familyEvidence, branchProbe.freshnessEvidence, branchReviewQueue.evidence].join(' '),
+    top_review_packet: topBranchReviewPacket,
+    evidence: [
+      branchProbe.familyEvidence,
+      branchProbe.freshnessEvidence,
+      branchReviewQueue.evidence,
+      topBranchReviewPacket.evidence,
+    ].join(' '),
   },
   source_provenance: {
     branch: gitStatus.branch,

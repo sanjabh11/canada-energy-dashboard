@@ -162,6 +162,7 @@ try {
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
     assert(manifest.branch_review.evidence.includes('Branch review queue'), 'Manifest branch_review evidence must summarize the actionable review queue.');
+    assert(manifest.branch_review.evidence.includes('Top branch review packet'), 'Manifest branch_review evidence must summarize the top focused branch packet.');
     assert(hasIntegerOrNull(manifest.branch_review?.risk_counts?.high), 'Manifest branch_review risk_counts.high must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.local_only), 'Manifest branch_review family_counts.local_only must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.origin_only), 'Manifest branch_review family_counts.origin_only must be an integer or null.');
@@ -176,6 +177,7 @@ try {
     assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.review_first_count), 'Manifest branch_review.review_queue.review_first_count must be an integer or null.');
     for (const [index, item] of (manifest.branch_review.review_queue.items ?? []).entries()) {
       assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.review_queue.items[${index}].family must be set.`);
+      assert(typeof item.review_ref === 'string' && item.review_ref.length > 0, `branch_review.review_queue.items[${index}].review_ref must be set.`);
       assert(typeof item.priority === 'string' && item.priority.length > 0, `branch_review.review_queue.items[${index}].priority must be set.`);
       assert(typeof item.highest_risk === 'string' && item.highest_risk.length > 0, `branch_review.review_queue.items[${index}].highest_risk must be set.`);
       assert(typeof item.local_origin_state === 'string' && item.local_origin_state.length > 0, `branch_review.review_queue.items[${index}].local_origin_state must be set.`);
@@ -183,6 +185,13 @@ try {
       assert(typeof item.review_command === 'string' && item.review_command.includes('report:unmerged-branch-readiness'), `branch_review.review_queue.items[${index}].review_command must point to the focused branch report.`);
       assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|owner approval/i.test(item.stop_gate), `branch_review.review_queue.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
     }
+    assert(typeof manifest.branch_review?.top_review_packet?.evidence === 'string', 'Manifest branch_review.top_review_packet.evidence must be set.');
+    assert(manifest.branch_review.top_review_packet.evidence.includes('Top branch review packet'), 'Manifest branch_review.top_review_packet evidence must include a packet marker.');
+    assert(Array.isArray(manifest.branch_review?.top_review_packet?.categories), 'Manifest branch_review.top_review_packet.categories must be a list.');
+    assert(Array.isArray(manifest.branch_review?.top_review_packet?.changed_supabase_functions), 'Manifest branch_review.top_review_packet.changed_supabase_functions must be a list.');
+    assert(hasIntegerOrNull(manifest.branch_review?.top_review_packet?.changed_supabase_function_count), 'Manifest branch_review.top_review_packet.changed_supabase_function_count must be an integer or null.');
+    assert(typeof manifest.branch_review?.top_review_packet?.command === 'string' && manifest.branch_review.top_review_packet.command.includes('report:unmerged-branch-readiness'), 'Manifest branch_review.top_review_packet.command must point to the focused branch report.');
+    assert(typeof manifest.branch_review?.top_review_packet?.stop_gate === 'string' && /no branch mutation|no checkout|no .*merge|owner approval/i.test(manifest.branch_review.top_review_packet.stop_gate), 'Manifest branch_review.top_review_packet.stop_gate must preserve the non-mutating approval boundary.');
     if (!skipProbes) {
       assert(Number.isInteger(manifest.branch_review?.family_counts?.local_only), 'Non-skipped manifest must include numeric local-only family count.');
       assert(Number.isInteger(manifest.branch_review?.family_counts?.origin_only), 'Non-skipped manifest must include numeric origin-only family count.');
@@ -190,6 +199,13 @@ try {
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
       assert(Number.isInteger(manifest.branch_review?.review_queue?.item_count), 'Non-skipped manifest must include numeric branch review queue item count.');
       assert(manifest.branch_review.review_queue.items.length > 0 || manifest.branch_review.review_queue.item_count === 0, 'Non-skipped manifest branch review queue must include items when queue count is positive.');
+      assert(manifest.branch_review?.top_review_packet?.status === 'pass' || manifest.branch_review?.review_queue?.item_count === 0, 'Non-skipped manifest top branch review packet must pass when queue items exist.');
+      assert(typeof manifest.branch_review?.top_review_packet?.branch === 'string' || manifest.branch_review?.review_queue?.item_count === 0, 'Non-skipped manifest top branch review packet must identify the focused branch when queue items exist.');
+      assert(Array.isArray(manifest.branch_review?.top_review_packet?.changed_supabase_function_rows), 'Non-skipped manifest top branch review packet must include changed Supabase function review rows.');
+      assert(
+        manifest.branch_review.top_review_packet.changed_supabase_functions.length === manifest.branch_review.top_review_packet.changed_supabase_function_count,
+        'Top branch review packet function names must match changed_supabase_function_count.',
+      );
     }
     assert(
       typeof manifest.outreach_plan?.email_script_boundary === 'string'
@@ -219,4 +235,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, pain map, target map, buyer boundary, and schema validation are consistent.');

@@ -134,6 +134,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('High-risk, local/origin split, or stale/aging unmerged branches'), 'Report must preserve the branch-family and freshness launch blocker.');
   assert(markdown.includes('Branch freshness review'), 'Report must include branch freshness evidence from the manifest.');
   assert(markdown.includes('Branch review queue'), 'Report must include the actionable branch review queue evidence from the manifest.');
+  assert(markdown.includes('Top branch review packet'), 'Report must include the focused top branch review packet evidence from the manifest.');
+  assert(markdown.includes('approval_gate=no checkout/merge/deploy/migration/push'), 'Report must preserve the top branch packet no-mutation approval gate.');
   if (!options.skipProbes) {
     assert(markdown.includes('review_first'), 'Report must surface review-first branch queue priority when branch probes run.');
   }
@@ -167,4 +169,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, Supabase advisor evidence, source provenance, branch families, branch freshness, branch review queue, top branch packet, and validation boundaries are present.');
