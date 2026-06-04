@@ -53,6 +53,15 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
+    expect(manifest.buyer_evidence.status).toBe('skipped');
+    expect(manifest.buyer_evidence.production_registers).toBeNull();
+    expect(manifest.buyer_evidence.outreach_logs).toBeNull();
+    expect(manifest.buyer_evidence.confidence_moving_rows).toBeNull();
+    expect(manifest.buyer_evidence.actionable_outreach_rows).toBeNull();
+    expect(manifest.buyer_evidence.batchable_intake_packet_rows).toBeNull();
+    expect(manifest.buyer_evidence.phase_f_gate).toBe('unknown');
+    expect(manifest.buyer_evidence.evidence).toContain('Buyer evidence review');
+    expect(manifest.buyer_evidence.workspace_next_step).toContain('report:buyer-evidence-readiness');
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -119,6 +128,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## ECC Ledger');
     expect(stdout).toContain('Source provenance:');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
+    expect(stdout).toContain('Buyer evidence review');
+    expect(stdout).toContain('Batchable intake-packet outreach rows');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');

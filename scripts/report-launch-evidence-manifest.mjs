@@ -107,6 +107,20 @@ function parseGateLine(text, label) {
   return match ? match[1].trim() : null;
 }
 
+function buyerEvidenceReviewEvidence(probe) {
+  return [
+    'Buyer evidence review:',
+    `production_registers=${probe.productionRegisters ?? 'unknown'}`,
+    `outreach_logs=${probe.outreachLogs ?? 'unknown'}`,
+    `confidence_rows=${probe.confidenceRows ?? 'unknown'}`,
+    `actionable_outreach_rows=${probe.actionableRows ?? 'unknown'}`,
+    `batchable_intake_rows=${probe.batchableIntakeRows ?? 'unknown'}`,
+    `phase_f_gate=${probe.phaseFGate}`,
+    `evidence_root=${probe.evidenceRoot ?? 'unknown'}`,
+    `workspace_next_step=${probe.workspaceNextStep}`,
+  ].join(' ');
+}
+
 function extractMarkdownSection(markdown, heading) {
   const start = markdown.indexOf(`## ${heading}`);
   if (start < 0) return '';
@@ -308,25 +322,37 @@ function branchFreshnessEvidence(rows) {
 
 function probeBuyerEvidence() {
   if (skipProbes) {
-    return {
+    const probe = {
       status: 'skipped',
       evidence: 'Probe skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for current evidence.',
       productionRegisters: null,
       outreachLogs: null,
       confidenceRows: null,
+      actionableRows: null,
+      batchableIntakeRows: null,
+      evidenceRoot: 'unknown',
       phaseFGate: 'unknown',
+      workspaceNextStep: 'run report:buyer-evidence-readiness before creating or claiming Phase F inputs',
     };
+    return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
   }
   const result = run(process.execPath, ['scripts/report-buyer-evidence-readiness.mjs']);
   const output = `${result.stdout}\n${result.stderr}`.trim();
-  return {
+  const probe = {
     status: result.status === 0 ? 'pass' : 'fail',
     evidence: output.split(/\r?\n/).slice(0, 12).join(' | '),
     productionRegisters: parseNumberLine(output, 'Production pilot evidence registers'),
     outreachLogs: parseNumberLine(output, 'Production outreach response logs'),
     confidenceRows: parseNumberLine(output, 'Confidence-moving register rows'),
+    actionableRows: parseNumberLine(output, 'Actionable outreach rows'),
+    batchableIntakeRows: parseNumberLine(output, 'Batchable intake-packet outreach rows'),
+    evidenceRoot: parseGateLine(output, 'Evidence root') ?? 'unknown',
     phaseFGate: parseGateLine(output, 'Phase F 95% gate') ?? 'unknown',
+    workspaceNextStep: output.includes('create:phase-f-evidence-workspace')
+      ? 'create:phase-f-evidence-workspace'
+      : 'inspect report:buyer-evidence-readiness next actions',
   };
+  return { ...probe, reviewEvidence: buyerEvidenceReviewEvidence(probe) };
 }
 
 function probeUnmergedBranches() {
@@ -642,9 +668,12 @@ const generatedAt = new Date().toISOString();
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
 
 const buyerGapEvidence = [
+  buyerProbe.reviewEvidence,
   `Production pilot evidence registers: ${buyerProbe.productionRegisters ?? 'unknown'}`,
   `Production outreach response logs: ${buyerProbe.outreachLogs ?? 'unknown'}`,
   `Confidence-moving register rows: ${buyerProbe.confidenceRows ?? 'unknown'}`,
+  `Actionable outreach rows: ${buyerProbe.actionableRows ?? 'unknown'}`,
+  `Batchable intake-packet outreach rows: ${buyerProbe.batchableIntakeRows ?? 'unknown'}`,
   `Phase F 95% gate: ${buyerProbe.phaseFGate}`,
 ].join('; ');
 
@@ -683,6 +712,7 @@ const manifest = {
       'Local release readiness is verified separately with corepack pnpm run check:release-readiness; do not infer current deploy approval from this JSON alone.',
       dirtyEvidence,
       buyerProbe.evidence,
+      buyerProbe.reviewEvidence,
       branchProbe.evidence,
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
@@ -713,6 +743,18 @@ const manifest = {
       'High-risk, local-only, origin-only, stale, or aging unmerged branch families remain review queues until focused checks, drift review, and owner approvals clear.',
       'Status/advisor automation remains future work until live credentials and connector permissions are available.',
     ],
+  },
+  buyer_evidence: {
+    status: buyerProbe.status,
+    production_registers: buyerProbe.productionRegisters,
+    outreach_logs: buyerProbe.outreachLogs,
+    confidence_moving_rows: buyerProbe.confidenceRows,
+    actionable_outreach_rows: buyerProbe.actionableRows,
+    batchable_intake_packet_rows: buyerProbe.batchableIntakeRows,
+    evidence_root: buyerProbe.evidenceRoot,
+    phase_f_gate: buyerProbe.phaseFGate,
+    workspace_next_step: buyerProbe.workspaceNextStep,
+    evidence: buyerProbe.reviewEvidence,
   },
   branch_review: {
     status: branchProbe.status,

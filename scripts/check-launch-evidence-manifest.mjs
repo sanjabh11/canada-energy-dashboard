@@ -116,6 +116,20 @@ try {
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
     );
     assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
+    assert(typeof manifest.buyer_evidence?.evidence === 'string', 'Manifest must include buyer_evidence.evidence.');
+    assert(manifest.buyer_evidence.evidence.includes('Buyer evidence review'), 'Manifest buyer_evidence evidence must summarize Phase F buyer evidence readiness.');
+    assert(typeof manifest.buyer_evidence?.phase_f_gate === 'string' && manifest.buyer_evidence.phase_f_gate.length > 0, 'Manifest buyer_evidence.phase_f_gate must be set.');
+    assert(typeof manifest.buyer_evidence?.workspace_next_step === 'string' && manifest.buyer_evidence.workspace_next_step.length > 0, 'Manifest buyer_evidence.workspace_next_step must be set.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.production_registers), 'Manifest buyer_evidence.production_registers must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.outreach_logs), 'Manifest buyer_evidence.outreach_logs must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.confidence_moving_rows), 'Manifest buyer_evidence.confidence_moving_rows must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.actionable_outreach_rows), 'Manifest buyer_evidence.actionable_outreach_rows must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.batchable_intake_packet_rows), 'Manifest buyer_evidence.batchable_intake_packet_rows must be an integer or null.');
+    if (!skipProbes) {
+      assert(Number.isInteger(manifest.buyer_evidence?.production_registers), 'Non-skipped manifest must include numeric buyer-evidence production register count.');
+      assert(Number.isInteger(manifest.buyer_evidence?.outreach_logs), 'Non-skipped manifest must include numeric buyer-evidence outreach log count.');
+      assert(Number.isInteger(manifest.buyer_evidence?.confidence_moving_rows), 'Non-skipped manifest must include numeric buyer-evidence confidence row count.');
+    }
     assert(typeof manifest.source_provenance?.evidence === 'string', 'Manifest must include source_provenance.evidence.');
     assert(manifest.source_provenance.evidence.includes('Source provenance:'), 'Manifest source provenance evidence must include a summary marker.');
     assert(typeof manifest.source_provenance?.branch === 'string' && manifest.source_provenance.branch.length > 0, 'Manifest source_provenance.branch must be set.');
@@ -180,4 +194,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
