@@ -381,6 +381,57 @@ try {
       manifest.launch_action_queue.items.some((item) => /no checkout|no .*merge|no .*push|no .*deploy/i.test(item.stop_gate)),
       'Manifest launch action queue must preserve branch/deploy no-mutation stop gates.',
     );
+    assert(typeof manifest.production_approval?.evidence === 'string', 'Manifest production_approval.evidence must be set.');
+    assert(manifest.production_approval.evidence.includes('Production approval prerequisite queue'), 'Manifest production approval evidence must include a queue marker.');
+    assert(manifest.production_approval.explicit_owner_approval === false, 'Manifest must not imply explicit owner production approval is granted.');
+    assert(typeof manifest.production_approval?.stop_gate === 'string' && /does not grant production approval|require explicit owner approval/i.test(manifest.production_approval.stop_gate), 'Manifest production approval stop gate must preserve the owner-approval boundary.');
+    assert(typeof manifest.production_approval?.prerequisite_queue?.evidence === 'string', 'Manifest production_approval.prerequisite_queue.evidence must be set.');
+    assert(manifest.production_approval.prerequisite_queue.evidence.includes('Production approval prerequisite queue'), 'Manifest production approval prerequisite queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.item_count), 'Manifest production approval prerequisite item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.blocked_count), 'Manifest production approval prerequisite blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.manual_stop_count), 'Manifest production approval prerequisite manual_stop_count must be an integer or null.');
+    assert(Array.isArray(manifest.production_approval.prerequisite_queue?.items), 'Manifest production approval prerequisite items must be a list.');
+    assert((manifest.production_approval.prerequisite_queue.items ?? []).length >= 7, 'Manifest production approval prerequisite queue must include all prerequisite, manual-stop, and post-deploy rows.');
+    assert(
+      manifest.production_approval.prerequisite_queue.item_count === manifest.production_approval.prerequisite_queue.items.length,
+      'Production approval prerequisite item_count must match items length.',
+    );
+    for (const [index, item] of (manifest.production_approval.prerequisite_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `production_approval.prerequisite_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.prerequisite === 'string' && item.prerequisite.length > 0, `production_approval.prerequisite_queue.items[${index}].prerequisite must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `production_approval.prerequisite_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `production_approval.prerequisite_queue.items[${index}].needed must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `production_approval.prerequisite_queue.items[${index}].owner must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `production_approval.prerequisite_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `production_approval.prerequisite_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `production_approval.prerequisite_queue.items[${index}].status must be set.`);
+    }
+    const productionPrerequisites = manifest.production_approval.prerequisite_queue.items.map((item) => item.prerequisite);
+    for (const prerequisite of [
+      'Clean source provenance',
+      'Corepack release-readiness',
+      'Canonical branch review',
+      'Supabase advisor clearance',
+      'Buyer evidence hard gate',
+      'Explicit owner production approval',
+      'Post-deploy live proof boundary',
+    ]) {
+      assert(
+        productionPrerequisites.includes(prerequisite),
+        `Manifest production approval prerequisite queue must include: ${prerequisite}.`,
+      );
+    }
+    const ownerApprovalItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Explicit owner production approval');
+    const liveProofItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Post-deploy live proof boundary');
+    assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
+    assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
+    assert(ownerApprovalItem?.proof_command === 'corepack pnpm run check:production-deploy-request', 'Production approval prerequisite queue must include the deploy-request proof command.');
+    assert(liveProofItem?.status === 'blocked', 'Production approval prerequisite queue must keep post-deploy live proof blocked before approved deploy.');
+    assert(liveProofItem?.proof_command === 'corepack pnpm run check:post-deploy-live', 'Production approval prerequisite queue must include the post-deploy live proof command.');
+    assert(
+      manifest.production_approval.prerequisite_queue.items.some((item) => /does not grant owner approval|claim production approval|claim post-deploy live parity/i.test(item.stop_gate)),
+      'Production approval prerequisite queue must preserve explicit non-approval and live-parity stop gates.',
+    );
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
@@ -619,4 +670,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, production approval prerequisite queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

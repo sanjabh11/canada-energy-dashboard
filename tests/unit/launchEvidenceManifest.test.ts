@@ -157,6 +157,26 @@ describe('launch evidence manifest report', () => {
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run check:post-deploy-live');
+    expect(manifest.production_approval.status).toBe('blocked');
+    expect(manifest.production_approval.explicit_owner_approval).toBe(false);
+    expect(manifest.production_approval.evidence).toContain('Production approval prerequisite queue');
+    expect(manifest.production_approval.stop_gate).toMatch(/does not grant production approval/i);
+    expect(manifest.production_approval.prerequisite_queue.status).toBe('blocked');
+    expect(manifest.production_approval.prerequisite_queue.evidence).toContain('Production approval prerequisite queue');
+    expect(manifest.production_approval.prerequisite_queue.item_count).toBe(7);
+    expect(manifest.production_approval.prerequisite_queue.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual([
+      'Clean source provenance',
+      'Corepack release-readiness',
+      'Canonical branch review',
+      'Supabase advisor clearance',
+      'Buyer evidence hard gate',
+      'Explicit owner production approval',
+      'Post-deploy live proof boundary',
+    ]);
+    expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').status).toBe('manual_stop');
+    expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
+    expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
+    expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -283,6 +303,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Supabase Advisor Remediation Queue');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
     expect(stdout).toContain('## Release Preflight Remediation Queue');
+    expect(stdout).toContain('## Production Approval Prerequisite Queue');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -334,6 +355,12 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('does not install tools');
     expect(stdout).toContain('corepack pnpm run check:release-readiness');
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
+    expect(stdout).toContain('Production approval prerequisite queue');
+    expect(stdout).toContain('does not grant owner approval');
+    expect(stdout).toContain('| Explicit owner production approval |');
+    expect(stdout).toContain('not granted by this manifest or report');
+    expect(stdout).toContain('| Post-deploy live proof boundary |');
+    expect(stdout).toContain('not eligible before explicit approved deploy');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');

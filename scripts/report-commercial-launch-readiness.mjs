@@ -140,6 +140,9 @@ function renderReport(manifest, validationText) {
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const releaseRemediationQueue = releasePreflight.remediation_queue ?? {};
   const releaseRemediationItems = Array.isArray(releaseRemediationQueue.items) ? releaseRemediationQueue.items : [];
+  const productionApproval = manifest.production_approval ?? {};
+  const productionApprovalQueue = productionApproval.prerequisite_queue ?? {};
+  const productionApprovalItems = Array.isArray(productionApprovalQueue.items) ? productionApprovalQueue.items : [];
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
   const sourceResolutionQueue = manifest.source_provenance?.resolution_queue ?? {};
@@ -369,6 +372,25 @@ ${releaseRemediationItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'all release preflight rows passed', 'owner approval and live proof still apply before deploy', releaseRemediationQueue.status ?? 'unknown', 'operator', 'Keep release evidence current before requesting approval.', 'corepack pnpm run report:launch-evidence-manifest', releaseRemediationQueue.evidence ?? 'No release preflight remediation queue was captured.', releaseRemediationQueue.status ?? 'unknown'])}
+
+## Production Approval Prerequisite Queue
+
+Open production-approval prerequisites: ${text(productionApprovalQueue.blocked_count ?? 'unknown')}/${text(productionApprovalQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not grant owner approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or claim post-deploy live parity.
+
+| Rank | Prerequisite | Current | Needed | Owner | Proof Command | Stop Gate | Status |
+|---:|---|---|---|---|---|---|---|
+${productionApprovalItems.length > 0
+    ? productionApprovalItems.map((item) => row([
+      item.rank,
+      item.prerequisite,
+      item.current,
+      item.needed,
+      item.owner,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'production approval queue missing', 'Regenerate the launch evidence manifest before requesting approval', 'operator', 'corepack pnpm run report:launch-evidence-manifest', productionApprovalQueue.evidence ?? productionApproval.stop_gate ?? 'No production approval prerequisite queue was captured.', productionApprovalQueue.status ?? 'unknown'])}
 
 ## Proof Buckets
 
