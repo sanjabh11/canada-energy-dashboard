@@ -42,6 +42,7 @@ const baseRef = values.get('base') ?? 'main';
 const selectedBranchName = values.get('branch') ?? '';
 const focusRisk = values.get('focus-risk') ?? '';
 const maxFiles = Number.parseInt(values.get('max-files') ?? '8', 10);
+const freshnessNowMs = Date.now();
 if (!Number.isInteger(maxFiles) || maxFiles < 1 || maxFiles > 50) {
   failures.push('--max-files must be an integer from 1 to 50.');
 }
@@ -188,6 +189,49 @@ function riskForCategories(categories) {
 
 function riskRank(risk) {
   return { high: 0, medium: 1, low: 2 }[risk] ?? 3;
+}
+
+function freshnessRank(freshness) {
+  return { unknown: 0, stale: 1, aging: 2, fresh: 3 }[freshness] ?? 4;
+}
+
+function ageDays(dateValue) {
+  const parsed = Date.parse(dateValue);
+  if (!Number.isFinite(parsed)) return null;
+  return Math.max(0, Math.floor((freshnessNowMs - parsed) / (24 * 60 * 60 * 1000)));
+}
+
+function freshnessForBranch(branch) {
+  const days = ageDays(branch.date);
+  if (days === null) {
+    return {
+      ageLabel: 'unknown',
+      status: 'unknown',
+      action: 'refresh Git metadata before review; do not merge a branch whose commit freshness cannot be established',
+    };
+  }
+
+  if (days > 90) {
+    return {
+      ageLabel: `${days}d`,
+      status: 'stale',
+      action: 'treat as stale review queue; rerun focused report, inspect drift against current main, and require full release-readiness after any rebase or cherry-pick',
+    };
+  }
+
+  if (days > 30) {
+    return {
+      ageLabel: `${days}d`,
+      status: 'aging',
+      action: 'refresh focused review before merge discussion; rerun changed-path checks against current main',
+    };
+  }
+
+  return {
+    ageLabel: `${days}d`,
+    status: 'fresh',
+    action: 'still requires focused branch checks and normal release gates before merge',
+  };
 }
 
 function actionForBranch({ risk, categories }) {
@@ -515,6 +559,21 @@ function branchFamilyRows(branchList) {
     });
 }
 
+function freshnessRows(branchList) {
+  return branchList
+    .map((branch) => ({
+      branch,
+      freshness: freshnessForBranch(branch),
+    }))
+    .sort((a, b) => {
+      const freshnessDelta = freshnessRank(a.freshness.status) - freshnessRank(b.freshness.status);
+      if (freshnessDelta !== 0) return freshnessDelta;
+      const riskDelta = riskRank(a.branch.risk) - riskRank(b.branch.risk);
+      if (riskDelta !== 0) return riskDelta;
+      return a.branch.name.localeCompare(b.branch.name);
+    });
+}
+
 if (selectedBranchName && !shellSafeRef(selectedBranchName)) {
   failures.push('--branch must be a safe Git ref containing only letters, numbers, "_", ".", "/", "@", ":", or "-".');
 }
@@ -635,6 +694,7 @@ if (branches.length === 0) {
 
 const familySourceBranches = selectedBranch ? allBranches.filter((branch) => canonicalBranchName(branch.name) === canonicalBranchName(selectedBranch.name)) : branches;
 const familyRows = branchFamilyRows(familySourceBranches);
+const branchFreshnessRows = freshnessRows(branches);
 
 console.log('');
 console.log('## Next Review Order');
@@ -654,6 +714,21 @@ if (familyRows.length === 0) {
   console.log('|---|---|---|---|---|');
   for (const family of familyRows) {
     console.log(`| ${family.canonicalName} | ${family.refs} | ${family.highestRisk} | ${family.state} | ${family.action} |`);
+  }
+}
+
+console.log('');
+console.log('## Branch Freshness Review');
+console.log('');
+if (branchFreshnessRows.length === 0) {
+  console.log('- None.');
+} else {
+  console.log('| Branch | Scope | Risk | Latest commit date | Age | Freshness | Stale-merge action |');
+  console.log('|---|---|---|---|---:|---|---|');
+  for (const row of branchFreshnessRows) {
+    console.log(
+      `| ${row.branch.name} | ${row.branch.scope} | ${row.branch.risk} | ${row.branch.date || 'unknown'} | ${row.freshness.ageLabel} | ${row.freshness.status} | ${row.freshness.action} |`,
+    );
   }
 }
 

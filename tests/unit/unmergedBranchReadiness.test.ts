@@ -15,7 +15,7 @@ function makeTempRoot() {
   return root;
 }
 
-function git(root: string, args: string[]) {
+function git(root: string, args: string[], extraEnv: Record<string, string> = {}) {
   return execFileSync('git', args, {
     cwd: root,
     encoding: 'utf8',
@@ -25,6 +25,7 @@ function git(root: string, args: string[]) {
       GIT_AUTHOR_EMAIL: 'ceip-test@example.test',
       GIT_COMMITTER_NAME: 'CEIP Test',
       GIT_COMMITTER_EMAIL: 'ceip-test@example.test',
+      ...extraEnv,
     },
   }).trim();
 }
@@ -35,9 +36,9 @@ function write(root: string, relativePath: string, text: string) {
   writeFileSync(filePath, text, 'utf8');
 }
 
-function commitAll(root: string, message: string) {
+function commitAll(root: string, message: string, extraEnv: Record<string, string> = {}) {
   git(root, ['add', '.']);
-  git(root, ['commit', '-m', message]);
+  git(root, ['commit', '-m', message], extraEnv);
 }
 
 function createRepo() {
@@ -63,10 +64,16 @@ function createRepo() {
   write(root, 'supabase/functions/_shared/exportEntitlement.ts', 'export const sharedEntitlement = true;\n');
   write(root, 'supabase/functions/stripe-webhook/index.ts', 'export const handler = () => null;\n');
   write(root, 'src/lib/exportJobsClient.ts', 'export const exportJob = true;\n');
-  commitAll(root, 'export risk branch');
+  commitAll(root, 'export risk branch', {
+    GIT_AUTHOR_DATE: '2025-01-02T00:00:00Z',
+    GIT_COMMITTER_DATE: '2025-01-02T00:00:00Z',
+  });
   git(root, ['update-ref', 'refs/remotes/origin/export-risk', 'HEAD']);
   write(root, 'src/lib/exportJobsLocalOnly.ts', 'export const localOnlyExportJob = true;\n');
-  commitAll(root, 'local export risk followup');
+  commitAll(root, 'local export risk followup', {
+    GIT_AUTHOR_DATE: '2025-01-03T00:00:00Z',
+    GIT_COMMITTER_DATE: '2025-01-03T00:00:00Z',
+  });
 
   git(root, ['checkout', '-q', 'main']);
   git(root, ['checkout', '-q', '-b', 'remote-payment']);
@@ -149,6 +156,12 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('choose the canonical local or origin head before focused review');
     expect(result.stdout).toContain('| stripe-remote | remote:origin/stripe-remote@');
     expect(result.stdout).toContain('origin-only branch');
+    expect(result.stdout).toContain('## Branch Freshness Review');
+    expect(result.stdout).toContain('| Branch | Scope | Risk | Latest commit date | Age | Freshness | Stale-merge action |');
+    expect(result.stdout).toContain('| export-risk | local | high | 2025-01-03T00:00:00Z |');
+    expect(result.stdout).toContain('| origin/export-risk | remote | high | 2025-01-02T00:00:00Z |');
+    expect(result.stdout).toContain('| stale | treat as stale review queue;');
+    expect(result.stdout).toContain('require full release-readiness after any rebase or cherry-pick');
     expect(result.stdout).not.toContain('already-merged');
   }, gitBackedTestTimeoutMs);
 
@@ -200,6 +213,7 @@ describe('unmerged branch readiness report', () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('## Focused Review Queue: high risk branches');
+    expect(result.stdout).toContain('## Branch Freshness Review');
     expect(result.stdout).toContain('### Focused Review Plan: export-risk');
     expect(result.stdout).toContain('### Focused Review Plan: origin/export-risk');
     expect(result.stdout).toContain('### Focused Review Plan: origin/stripe-remote');
@@ -222,7 +236,7 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('origin=2');
     expect(result.stdout).toContain('high=3');
     expect(result.stdout).toContain('low=1');
-    expect(result.stdout).toContain('read-only boundary, branch-family pairing, focused review packets, and high-risk failure semantics are intact');
+    expect(result.stdout).toContain('read-only boundary, branch-family pairing, branch freshness, focused review packets, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
   it('rejects a selected branch that is not in the unmerged review scope', () => {

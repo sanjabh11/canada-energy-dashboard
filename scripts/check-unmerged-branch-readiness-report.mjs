@@ -121,6 +121,11 @@ assertContains('Default report', report, 'Buyer-proven market confidence still r
 assertContains('Default report', report, '## Summary');
 assertContains('Default report', report, '## Next Review Order');
 assertContains('Default report', report, '## Local/Origin Branch Families');
+assertContains('Default report', report, '## Branch Freshness Review');
+assertContains('Default report', report, '| Branch | Scope | Risk | Latest commit date | Age | Freshness | Stale-merge action |');
+if (report.includes('| stale |')) {
+  assertContains('Default report', report, 'treat as stale review queue');
+}
 
 const localCount = summaryCount(report, 'Unmerged local branches');
 const remoteCount = summaryCount(report, 'Unmerged origin branches');
@@ -161,6 +166,7 @@ if (branchRows.length > 0) {
   assert(focusedResult.status === 0, `Focused report for ${focusedCandidate.branch} exited ${focusedResult.status}.`);
   assertContains('Focused report', focused, `Focused branch: ${focusedCandidate.branch}`);
   assertContains('Focused report', focused, '## Local/Origin Branch Families');
+  assertContains('Focused report', focused, '## Branch Freshness Review');
   assertContains('Focused report', focused, `## Focused Review Plan: ${focusedCandidate.branch}`);
   assertContains('Focused report', focused, `Review command: \`corepack pnpm run report:unmerged-branch-readiness -- --branch ${focusedCandidate.branch} --max-files ${maxFiles}\``);
   assertContains('Focused report', focused, '- Confidence boundary: this plan can make the branch reviewable, but it does not create buyer evidence or production approval.');
@@ -187,6 +193,7 @@ if (highCount > 0) {
   assert(focusedRiskResult.status === 0, `Focused high-risk queue exited ${focusedRiskResult.status}.`);
   assertContains('Focused high-risk queue', focusedRisk, '## Focused Review Queue: high risk branches');
   assertContains('Focused high-risk queue', focusedRisk, '## Local/Origin Branch Families');
+  assertContains('Focused high-risk queue', focusedRisk, '## Branch Freshness Review');
   assertContains('Focused high-risk queue', focusedRisk, '### Focused Review Plan:');
   assertContains('Focused high-risk queue', focusedRisk, 'Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch');
   assertContains('Focused high-risk queue', focusedRisk, 'Read-only review first; this report does not checkout, merge, deploy, or mutate branch state.');
@@ -226,6 +233,6 @@ console.log(
     `high=${highCount}`,
     `medium=${mediumCount}`,
     `low=${lowCount}`,
-    'read-only boundary, branch-family pairing, focused review packets, and high-risk failure semantics are intact.',
+    'read-only boundary, branch-family pairing, branch freshness, focused review packets, and high-risk failure semantics are intact.',
   ].join(' '),
 );
