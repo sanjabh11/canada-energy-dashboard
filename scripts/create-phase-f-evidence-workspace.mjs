@@ -42,7 +42,7 @@ for (let index = 0; index < args.length; index += 1) {
 
 function printUsage() {
   console.log(`Usage:
-  pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
+  corepack pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence
 
 Options:
   --output-dir <dir>                 Required. Destination for the evidence workspace.
@@ -76,6 +76,10 @@ function routeSlug(route) {
 
 function markdownList(items) {
   return items.map((item) => `- ${item}`).join('\n');
+}
+
+function pnpmRunCommand(scriptName, args = '') {
+  return `corepack pnpm run ${scriptName}${args ? ` ${args}` : ''}`;
 }
 
 function runScript(scriptName, scriptArgs) {
@@ -245,12 +249,12 @@ ${markdownList(phaseFGlobalGateChecks)}
 ## First Commands
 
 \`\`\`bash
-pnpm run validate:outreach-response-log -- ${displayPath(outreachLogPath)}
-pnpm run plan:outreach-intake -- ${displayPath(outreachLogPath)}
-pnpm run validate:pilot-evidence -- ${displayPath(bundleRegisterPath)}
-pnpm run report:buyer-evidence-readiness -- --root ${displayPath(outputDir)} --evidence-root ${displayPath(bundleDir)}
-pnpm run report:pilot-evidence-95 -- ${displayPath(bundleRegisterPath)} --evidence-root ${displayPath(bundleDir)}
-pnpm run validate:pilot-evidence -- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(bundleDir)}
+${pnpmRunCommand('validate:outreach-response-log', `-- ${displayPath(outreachLogPath)}`)}
+${pnpmRunCommand('plan:outreach-intake', `-- ${displayPath(outreachLogPath)}`)}
+${pnpmRunCommand('validate:pilot-evidence', `-- ${displayPath(bundleRegisterPath)}`)}
+${pnpmRunCommand('report:buyer-evidence-readiness', `-- --root ${displayPath(outputDir)} --evidence-root ${displayPath(bundleDir)}`)}
+${pnpmRunCommand('report:pilot-evidence-95', `-- ${displayPath(bundleRegisterPath)} --evidence-root ${displayPath(bundleDir)}`)}
+${pnpmRunCommand('validate:pilot-evidence', `-- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(bundleDir)}`)}
 \`\`\`
 
 The last two commands are expected to fail until real buyer-supplied retained artifacts, independent reviewer acceptance, complete feedback, day-14 proceed decisions, and at least one strong commercial commitment are attached.
@@ -264,7 +268,7 @@ Choose the updater command whose \`--artifact-root\` matches the same route and 
 ${routeSummaries.map(({ route, proof_pack_id: proofPackId, artifact_root: artifactRoot }) => `### ${route} (${proofPackId})
 
 \`\`\`bash
-pnpm run update:pilot-evidence-register-row -- \\
+${pnpmRunCommand('update:pilot-evidence-register-row', '--')} \\
   --register-file ${displayPath(bundleRegisterPath)} \\
   --evidence-root ${displayPath(bundleDir)} \\
   --artifact-root ${artifactRoot} \\
@@ -285,5 +289,5 @@ console.log('Confidence movement: none');
 console.log('Buyer proof created: no');
 console.log('');
 console.log('Next checks:');
-console.log(`pnpm run report:buyer-evidence-readiness -- --root ${displayPath(outputDir)} --evidence-root ${displayPath(bundleDir)}`);
-console.log(`pnpm run validate:pilot-evidence -- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(bundleDir)}`);
+console.log(pnpmRunCommand('report:buyer-evidence-readiness', `-- --root ${displayPath(outputDir)} --evidence-root ${displayPath(bundleDir)}`));
+console.log(pnpmRunCommand('validate:pilot-evidence', `-- ${displayPath(bundleRegisterPath)} --require-95 --evidence-root ${displayPath(bundleDir)}`));

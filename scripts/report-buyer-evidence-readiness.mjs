@@ -244,16 +244,20 @@ function routeWithProofPack(route) {
   return config ? `${route} (${config.proofPackId})` : route;
 }
 
+function pnpmRunCommand(scriptName, args = '') {
+  return `corepack pnpm run ${scriptName}${args ? ` ${args}` : ''}`;
+}
+
 function phaseFMinimumBundleCommand(outputDir = '/tmp/ceip-phase-f-minimum-intake') {
-  return `pnpm run create:phase-f-minimum-intake-bundle -- --output-dir ${outputDir}`;
+  return pnpmRunCommand('create:phase-f-minimum-intake-bundle', `-- --output-dir ${outputDir}`);
 }
 
 function phaseFEvidenceWorkspaceCommand(outputDir = '/tmp/ceip-phase-f-evidence') {
-  return `pnpm run create:phase-f-evidence-workspace -- --output-dir ${outputDir}`;
+  return pnpmRunCommand('create:phase-f-evidence-workspace', `-- --output-dir ${outputDir}`);
 }
 
 function phaseFEvidenceWorkspaceReportCommand(workspaceDir = '/tmp/ceip-phase-f-evidence') {
-  return `pnpm run report:phase-f-evidence-workspace -- --workspace-dir ${workspaceDir}`;
+  return pnpmRunCommand('report:phase-f-evidence-workspace', `-- --workspace-dir ${workspaceDir}`);
 }
 
 function phaseFEvidenceWorkspaceUpdatedRegisterReportCommand(
@@ -417,7 +421,7 @@ if (outreachLogs.length > 0) {
     console.log(`  Validation: ${log.validation.status === 0 ? 'pass' : 'fail'}.`);
     console.log(`  Action plan: ${log.actionPlan.status === 0 ? 'available' : 'blocked'}.`);
     if (log.batchableRows > 0 && log.validation.status === 0) {
-      console.log(`  Batch packet command: pnpm run create:outreach-intake-packets -- --log-file ${displayPath(log.path)} --output-dir /tmp/ceip-outreach-intake-packets`);
+      console.log(`  Batch packet command: ${pnpmRunCommand('create:outreach-intake-packets', `-- --log-file ${displayPath(log.path)} --output-dir /tmp/ceip-outreach-intake-packets`)}`);
     }
     if (log.actionableRows > 0 && log.actionPlan.status === 0) {
       console.log('  Action plan excerpt:');
@@ -434,11 +438,11 @@ if (!hasProductionEvidenceInputs) {
   console.log(`- Start the all-in-one Phase F evidence workspace with \`${phaseFEvidenceWorkspaceCommand()}\`.`);
   console.log(`- Run \`${phaseFEvidenceWorkspaceReportCommand()}\` before resuming collection; it validates the workspace, shows hard-gate blockers, and prints next operator commands.`);
   console.log(`- After \`update:pilot-evidence-register-row\` writes an updated candidate register inside the workspace, rerun \`${phaseFEvidenceWorkspaceUpdatedRegisterReportCommand()}\` so the selected register is validated and hard-gated.`);
-  console.log('- Append only real, anonymized buyer activity rows with `pnpm run append:outreach-response-log-row -- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...`.');
+  console.log(`- Append only real, anonymized buyer activity rows with \`${pnpmRunCommand('append:outreach-response-log-row', '-- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...')}\`.`);
   console.log('- Store retained redacted buyer artifacts outside templates/fixtures and rerun this report with `--root` and `--evidence-root`.');
 } else if (outreachLogs.length > 0 && totalActionableOutreachRows === 0 && pilotRegisters.length === 0) {
   console.log('- Record real buyer replies in the existing anonymized outreach response log; header-only, drafted, sent-no-reply, not-now, not-fit, and unsubscribe rows do not create evidence actions.');
-  console.log('- When a row becomes interested, requested_info, data_offered, or meeting_booked with a valid pilot_evidence_register_action, rerun `pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv`.');
+  console.log(`- When a row becomes interested, requested_info, data_offered, or meeting_booked with a valid pilot_evidence_register_action, rerun \`${pnpmRunCommand('plan:outreach-intake', '-- path/to/outreach-response-log.csv')}\`.`);
   console.log('- Keep Phase F blocked until an actionable row creates intake or retained-artifact work and a production pilot evidence register exists.');
 } else if (totalActionableOutreachRows > 0 && pilotRegisters.length === 0) {
   if (totalBatchableOutreachRows > 0) {

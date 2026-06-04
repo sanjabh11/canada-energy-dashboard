@@ -28,7 +28,7 @@ function markdownSection(markdown: string, heading: string) {
 async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = {}) {
   const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-approval-packet-'));
   const fakeNodePath = path.join(tempDir, 'node');
-  const fakePnpmPath = path.join(tempDir, 'pnpm');
+  const fakeCorepackPath = path.join(tempDir, 'corepack');
   const fakeGitPath = path.join(tempDir, 'git');
 
   writeExecutable(
@@ -62,11 +62,11 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
   );
 
   writeExecutable(
-    fakePnpmPath,
+    fakeCorepackPath,
     [
       '#!/bin/sh',
       'case "$*" in',
-      '  *check:release-readiness*)',
+      '  pnpm\\ run\\ check:release-readiness*)',
       '    echo "Commercial source-of-truth check passed for 9 active docs and 28 historical docs."',
       '    echo "Strategy roadmap document check passed for docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md."',
       '    echo "### Live public metadata"',
@@ -83,6 +83,10 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    echo "All proof-pack route bundle budgets passed."',
       '    exit 0',
       '    ;;',
+      'esac',
+      'case "$*" in',
+      '  pnpm\\ exec\\ playwright*) ;;',
+      '  *) echo "Unexpected corepack command: $*"; exit 2 ;;',
       'esac',
       'if [ "$CEIP_ASSERT_PLAYWRIGHT_TMP_OUTPUTS" = "1" ]; then',
       '  case "$PLAYWRIGHT_HTML_OUTPUT_DIR" in',

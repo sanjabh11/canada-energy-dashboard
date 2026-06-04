@@ -285,6 +285,14 @@ function shellQuote(value) {
   return `'${String(value).replaceAll("'", "'\\''")}'`;
 }
 
+function commandText(parts) {
+  return parts.map(shellQuote).join(' ');
+}
+
+function pnpmRunParts(scriptName, args = []) {
+  return ['corepack', 'pnpm', 'run', scriptName, ...args];
+}
+
 function slugify(value) {
   return String(value ?? '')
     .trim()
@@ -295,10 +303,7 @@ function slugify(value) {
 }
 
 function buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs) {
-  return [
-    'pnpm',
-    'run',
-    'prepare:pilot-evidence-artifact',
+  return commandText(pnpmRunParts('prepare:pilot-evidence-artifact', [
     '--',
     '--evidence-root',
     evidenceRoot,
@@ -333,7 +338,7 @@ function buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, co
     row.caveat_used,
     '--diagnostic',
     '<replace with route-specific buyer diagnostic evidence>',
-  ].map(shellQuote).join(' ');
+  ]));
 }
 
 function buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs) {
@@ -366,34 +371,25 @@ function buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile
   ];
 
   if (row.route === '/forecast-benchmarking') {
-    return [
-      'pnpm',
-      'run',
-      'prepare:forecast-trust-report-artifact',
+    return commandText(pnpmRunParts('prepare:forecast-trust-report-artifact', [
       '--',
       '--benchmark-pack-file',
       '<replace with redacted utility forecast benchmark-pack JSON>',
       ...commonOutcomeArgs,
-    ].map(shellQuote).join(' ');
+    ]));
   }
 
   if (row.route === '/byo-csv-proof') {
-    return [
-      'pnpm',
-      'run',
-      'prepare:byo-csv-proof-artifact',
+    return commandText(pnpmRunParts('prepare:byo-csv-proof-artifact', [
       '--',
       '--csv-file',
       '<replace with redacted local CSV path>',
       ...commonOutcomeArgs,
-    ].map(shellQuote).join(' ');
+    ]));
   }
 
   if (row.route === '/ga-ici-5cp') {
-    return [
-      'pnpm',
-      'run',
-      'prepare:ga-ici-5cp-artifact',
+    return commandText(pnpmRunParts('prepare:ga-ici-5cp-artifact', [
       '--',
       '--peak-tracker-file',
       '<replace with IESO Peak Tracker snapshot or export>',
@@ -406,7 +402,7 @@ function buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile
       '--base-period-end',
       '<replace with YYYY-MM-DD>',
       ...commonOutcomeArgs,
-    ].map(shellQuote).join(' ');
+    ]));
   }
 
   return null;
@@ -499,16 +495,13 @@ function printActionPlan(rows) {
     console.log(`  Reply status: ${row.reply_status}; commercial commitment: ${row.commercial_commitment_status}`);
 
     if (row.pilot_evidence_register_action === 'create_intake_packet') {
-      console.log(`  1. ${[
-        'pnpm',
-        'run',
-        'create:pilot-evidence-intake-packet',
+      console.log(`  1. ${commandText(pnpmRunParts('create:pilot-evidence-intake-packet', [
         '--',
         '--route',
         row.route,
         '--output-dir',
         packetDir,
-      ].map(shellQuote).join(' ')}`);
+      ]))}`);
       console.log('  2. Fill the generated starter register only after redacted buyer artifacts exist; starter rows keep confidence_delta=0.');
       continue;
     }
@@ -519,27 +512,24 @@ function printActionPlan(rows) {
         : [
           '--commercial-commitment-evidence',
           `<replace with retained ${row.commercial_commitment_status} evidence text>`,
-        ];
+      ];
       const specializedCommand = buildSpecializedRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs);
       if (specializedCommand) {
         console.log(`  1. ${specializedCommand}`);
         console.log('  2. Prefer the specialized helper above when its input files are available; it reduces hand-written diagnostic drift.');
         console.log(`  3. Fallback generic text-extract helper: ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
         console.log('  4. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
-        console.log('  5. Use `pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
+        console.log('  5. Use `corepack pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
       } else {
         console.log(`  1. ${buildGenericRetainedArtifactCommand(row, evidenceRoot, artifactFile, commercialCommitmentArgs)}`);
         console.log('  2. Replace every <...> placeholder with buyer-approved redacted evidence before running; do not infer reviewer acceptance or commitment evidence.');
-        console.log('  3. Use `pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
+        console.log('  3. Use `corepack pnpm run update:pilot-evidence-register-row` with the printed SHA-256 evidence reference; do not hand-edit confidence-moving CSV rows.');
       }
       continue;
     }
 
     if (row.pilot_evidence_register_action === 'update_register') {
-      console.log(`  1. ${[
-        'pnpm',
-        'run',
-        'update:pilot-evidence-register-row',
+      console.log(`  1. ${commandText(pnpmRunParts('update:pilot-evidence-register-row', [
         '--',
         '--register-file',
         'path/to/filled-pilot-evidence-register.csv',
@@ -551,15 +541,15 @@ function printActionPlan(rows) {
         '<replace with explicit 0..0.4 confidence movement, or 0 for staging>',
         '--output-file',
         'path/to/updated-pilot-evidence-register.csv',
-      ].map(shellQuote).join(' ')}`);
+      ]))}`);
       console.log('  2. The updater copies only fields supported by the retained artifact and runs the canonical register validator before writing output.');
-      console.log(`  3. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/updated-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
+      console.log(`  3. ${commandText(pnpmRunParts('validate:pilot-evidence', ['--', 'path/to/updated-pilot-evidence-register.csv', '--evidence-root', evidenceRoot]))}`);
       continue;
     }
 
     if (row.pilot_evidence_register_action === 'run_95_gate') {
-      console.log(`  1. pnpm run report:pilot-evidence-95 -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --evidence-root ${shellQuote(evidenceRoot)}`);
-      console.log(`  2. pnpm run validate:pilot-evidence -- ${shellQuote('path/to/filled-pilot-evidence-register.csv')} --require-95 --evidence-root ${shellQuote(evidenceRoot)}`);
+      console.log(`  1. ${commandText(pnpmRunParts('report:pilot-evidence-95', ['--', 'path/to/filled-pilot-evidence-register.csv', '--evidence-root', evidenceRoot]))}`);
+      console.log(`  2. ${commandText(pnpmRunParts('validate:pilot-evidence', ['--', 'path/to/filled-pilot-evidence-register.csv', '--require-95', '--evidence-root', evidenceRoot]))}`);
     }
 
     if (actionSlug.length === 0) console.log('  No command available for this action.');

@@ -32,7 +32,7 @@ for (let index = 0; index < args.length; index += 1) {
 
 function printUsage() {
   console.log(`Usage:
-  pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence
+  corepack pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence
 
 Options:
   --workspace-dir <dir>  Required. Phase F evidence workspace created by create:phase-f-evidence-workspace.
@@ -80,6 +80,10 @@ function shellQuote(value) {
 
 function printCommand(parts) {
   console.log(parts.map(shellQuote).join(' '));
+}
+
+function pnpmRunParts(scriptName, args = []) {
+  return ['corepack', 'pnpm', 'run', scriptName, ...args];
 }
 
 if (!values.has('workspace-dir')) failures.push('Missing required option: --workspace-dir');
@@ -240,10 +244,7 @@ if (!hardGateReady) {
 console.log('\n## Next Operator Commands');
 console.log('Append a real, anonymized buyer activity row only after completed outreach exists:');
 printCommand([
-  'pnpm',
-  'run',
-  'append:outreach-response-log-row',
-  '--',
+  ...pnpmRunParts('append:outreach-response-log-row', ['--']),
   '--log-file',
   outreachLogPath,
   '--activity-date',
@@ -275,12 +276,9 @@ printCommand([
 ]);
 
 console.log('\nThen plan and generate intake scaffolding for actionable rows:');
-printCommand(['pnpm', 'run', 'plan:outreach-intake', '--', outreachLogPath]);
+printCommand(pnpmRunParts('plan:outreach-intake', ['--', outreachLogPath]));
 printCommand([
-  'pnpm',
-  'run',
-  'create:outreach-intake-packets',
-  '--',
+  ...pnpmRunParts('create:outreach-intake-packets', ['--']),
   '--log-file',
   outreachLogPath,
   '--output-dir',
@@ -296,10 +294,7 @@ for (const route of selectedRoutes) {
     : path.join(evidenceRoot, String(route.route ?? '').replace(/^\//, ''), 'redacted-artifacts');
   console.log(`\n${route.route} (${route.proof_pack_id})`);
   printCommand([
-    'pnpm',
-    'run',
-    'update:pilot-evidence-register-row',
-    '--',
+    ...pnpmRunParts('update:pilot-evidence-register-row', ['--']),
     '--register-file',
     starterRegisterPath,
     '--evidence-root',
@@ -317,10 +312,7 @@ for (const route of selectedRoutes) {
 
 console.log('\nThen rerun this workspace report against the updated candidate register:');
 printCommand([
-  'pnpm',
-  'run',
-  'report:phase-f-evidence-workspace',
-  '--',
+  ...pnpmRunParts('report:phase-f-evidence-workspace', ['--']),
   '--workspace-dir',
   workspaceDir,
   '--register-file',
@@ -328,6 +320,6 @@ printCommand([
 ]);
 
 console.log('\nRun the hard gate only after accepted buyer rows and retained hashes exist:');
-printCommand(['pnpm', 'run', 'validate:pilot-evidence', '--', candidateRegisterPath, '--require-95', '--evidence-root', evidenceRoot]);
+printCommand(pnpmRunParts('validate:pilot-evidence', ['--', candidateRegisterPath, '--require-95', '--evidence-root', evidenceRoot]));
 
 console.log('\nBoundary: this report does not create buyer proof or raise market confidence.');

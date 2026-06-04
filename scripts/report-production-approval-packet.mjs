@@ -31,6 +31,14 @@ function commandText(command, commandArgs) {
   return [command, ...commandArgs].map(shellQuote).join(' ');
 }
 
+function pnpmRunArgs(scriptName) {
+  return ['pnpm', 'run', scriptName];
+}
+
+function pnpmExecArgs(commandName, commandArgs = []) {
+  return ['pnpm', 'exec', commandName, ...commandArgs];
+}
+
 function runStep(label, command, commandArgs, options = {}) {
   const startedAt = Date.now();
   const result = spawnSync(command, commandArgs, {
@@ -250,7 +258,7 @@ steps.push(sourceProvenanceStep());
 if (skipReleaseReadiness) {
   steps.push(skippedStep('Local release readiness', 'Skipped by --skip-release-readiness.'));
 } else {
-  steps.push(runStep('Local release readiness', 'pnpm', ['run', 'check:release-readiness']));
+  steps.push(runStep('Local release readiness', 'corepack', pnpmRunArgs('check:release-readiness')));
 }
 
 steps.push(runStep('Live metadata parity', 'node', ['scripts/check-public-metadata.mjs', '--base-url', baseUrl]));
@@ -258,7 +266,7 @@ if (skipReleaseReadiness) {
   steps.push(
     skippedStep(
       'Live static dist parity',
-      'Skipped because local release readiness was skipped; exact static parity requires a freshly built dist from `pnpm run check:release-readiness` or `pnpm run check:post-deploy-live`.',
+      'Skipped because local release readiness was skipped; exact static parity requires a freshly built dist from `corepack pnpm run check:release-readiness` or `corepack pnpm run check:post-deploy-live`.',
     ),
   );
 } else {
@@ -269,17 +277,15 @@ if (includeHostedSmoke) {
   steps.push(
     runStep(
       'Hosted proof-pack route smoke',
-      'pnpm',
-      [
-        'exec',
-        'playwright',
+      'corepack',
+      pnpmExecArgs('playwright', [
         'test',
         '--config=playwright.config.ts',
         'tests/component/phase6-browser-smoke.spec.ts',
         '--project=chromium',
         '--grep',
         hostedProofPackRouteGrep,
-      ],
+      ]),
       {
         env: {
           PLAYWRIGHT_SKIP_WEBSERVER: 'true',
@@ -359,13 +365,13 @@ const markdown = [
     : approvalReady
     ? 'Local and live gates are green. Live parity can be considered achieved, but this script itself is not production approval.'
     : blockedByLiveMetadata
-      ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production is still serving stale metadata; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
+      ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production is still serving stale metadata; deploy current source only after explicit owner approval, then rerun `corepack pnpm run check:post-deploy-live`.'
       : blockedByStaticParity
-        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production static files do not match built `dist`; deploy current source only after explicit owner approval, then rerun `pnpm run check:post-deploy-live`.'
+        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production static files do not match built `dist`; deploy current source only after explicit owner approval, then rerun `corepack pnpm run check:post-deploy-live`.'
       : staticParityNotRun
-        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Static parity was skipped because local release readiness did not provide a freshly built `dist`; run the full packet or `pnpm run check:post-deploy-live` before declaring live parity.'
+        ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Static parity was skipped because local release readiness did not provide a freshly built `dist`; run the full packet or `corepack pnpm run check:post-deploy-live` before declaring live parity.'
       : hostedSmokeNotRun
-        ? 'Metadata is green, but hosted proof-pack smoke was not run. Use `--include-hosted-smoke` or `pnpm run check:post-deploy-live` before declaring live parity.'
+        ? 'Metadata is green, but hosted proof-pack smoke was not run. Use `--include-hosted-smoke` or `corepack pnpm run check:post-deploy-live` before declaring live parity.'
       : 'Do not approve production release until failed or skipped required gates are resolved.',
   '',
   '## Operator Checklist',
@@ -374,7 +380,7 @@ const markdown = [
   '2. Confirm local release readiness is passing.',
   '3. Confirm the owner explicitly approves production deployment.',
   '4. Deploy current source using the guarded production deploy path only after approval.',
-  '5. Run `pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
+  '5. Run `corepack pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
   '6. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',
   '## Evidence',

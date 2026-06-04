@@ -78,7 +78,7 @@ try {
     assertContains('Workspace README', readme, 'This workspace is collection scaffolding only.');
     assertContains('Workspace README', readme, 'Confidence movement: none');
     assertContains('Workspace README', readme, 'Buyer proof created: no');
-    assertContains('Workspace README', readme, 'pnpm run validate:pilot-evidence');
+    assertContains('Workspace README', readme, 'corepack pnpm run validate:pilot-evidence');
     assertContains('Workspace README', readme, 'Choose the updater command whose `--artifact-root` matches the same route and proof-pack row as the retained artifact.');
     assertContains('Workspace README', readme, 'utility-demand-forecast/redacted-artifacts');
     assertContains('Workspace README', readme, 'roi-calculator/redacted-artifacts');
@@ -145,6 +145,10 @@ try {
     'Selected register:',
     'Starter register scaffold: present',
     'Selected register validation: pass',
+    'corepack pnpm run append:outreach-response-log-row',
+    'corepack pnpm run plan:outreach-intake',
+    'corepack pnpm run create:outreach-intake-packets',
+    'corepack pnpm run update:pilot-evidence-register-row',
     'Choose the command whose --artifact-root matches the retained artifact route/proof-pack row.',
     '/utility-demand-forecast (utility_forecast_planning_pack)',
     '/roi-calculator (tier_cfo_savings_pack)',
@@ -153,6 +157,8 @@ try {
     'roi-calculator/redacted-artifacts',
     'utility-security/redacted-artifacts',
     'Then rerun this workspace report against the updated candidate register',
+    'corepack pnpm run report:phase-f-evidence-workspace',
+    'corepack pnpm run validate:pilot-evidence',
     '--register-file',
   ]) {
     assertContains('Phase F workspace report', workspaceReport.stdout, expected);

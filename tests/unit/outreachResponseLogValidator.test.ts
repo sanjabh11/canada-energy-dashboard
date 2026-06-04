@@ -310,7 +310,7 @@ describe('outreach response log validator', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('CEIP Outreach Intake Action Plan');
     expect(result.stdout).toContain('Confidence movement: none');
-    expect(result.stdout).toContain('pnpm run create:pilot-evidence-intake-packet -- --route /ga-ici-5cp');
+    expect(result.stdout).toContain('corepack pnpm run create:pilot-evidence-intake-packet -- --route /ga-ici-5cp');
     expect(result.stdout).toContain('starter rows keep confidence_delta=0');
   });
 
@@ -343,10 +343,10 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('pnpm run prepare:forecast-trust-report-artifact');
+    expect(result.stdout).toContain('corepack pnpm run prepare:forecast-trust-report-artifact');
     expect(result.stdout).toContain('--benchmark-pack-file');
     expect(result.stdout).toContain('redacted utility forecast benchmark-pack JSON');
-    expect(result.stdout).toContain('Fallback generic text-extract helper: pnpm run prepare:pilot-evidence-artifact');
+    expect(result.stdout).toContain('Fallback generic text-extract helper: corepack pnpm run prepare:pilot-evidence-artifact');
     expect(result.stdout).toContain('--route /forecast-benchmarking');
     expect(result.stdout).toContain('--proof-pack-id forecast_benchmark_provenance');
     for (const requiredFlag of [
@@ -399,7 +399,7 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('pnpm run update:pilot-evidence-register-row');
+    expect(result.stdout).toContain('corepack pnpm run update:pilot-evidence-register-row');
     expect(result.stdout).toContain('--register-file path/to/filled-pilot-evidence-register.csv');
     expect(result.stdout).toContain('--evidence-file-reference');
     expect(result.stdout).toContain('<replace with retained-artifact.md#sha256=...>');
@@ -458,14 +458,14 @@ describe('outreach response log validator', () => {
 
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
-    expect(result.stdout).toContain('pnpm run prepare:ga-ici-5cp-artifact');
+    expect(result.stdout).toContain('corepack pnpm run prepare:ga-ici-5cp-artifact');
     expect(result.stdout).toContain('--historical-actuals-file public/data/ga_ici_5cp_public_historical_actuals.csv');
     expect(result.stdout).toContain('--customer-load-file');
     expect(result.stdout).toContain('redacted Ontario interval load CSV');
-    expect(result.stdout).toContain('pnpm run prepare:byo-csv-proof-artifact');
+    expect(result.stdout).toContain('corepack pnpm run prepare:byo-csv-proof-artifact');
     expect(result.stdout).toContain('--csv-file');
     expect(result.stdout).toContain('redacted local CSV path');
-    expect(result.stdout).toContain('Fallback generic text-extract helper: pnpm run prepare:pilot-evidence-artifact');
+    expect(result.stdout).toContain('Fallback generic text-extract helper: corepack pnpm run prepare:pilot-evidence-artifact');
   });
 
   it('rejects route/proof-pack mismatches', async () => {
