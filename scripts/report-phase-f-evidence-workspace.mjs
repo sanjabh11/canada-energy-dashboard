@@ -287,29 +287,33 @@ printCommand([
   path.join(workspaceDir, 'outreach-intake-packets'),
 ]);
 
-console.log('\nAfter real retained artifacts exist, update the top-level Phase F starter register through the updater:');
+console.log('\nAfter real retained artifacts exist, update the top-level Phase F starter register through the matching route updater:');
+console.log('Choose the command whose --artifact-root matches the retained artifact route/proof-pack row.');
 const updatedRegisterPath = path.join(workspaceDir, 'phase-f-minimum-register-updated.csv');
-const firstArtifactRoot = selectedRoutes[0]?.artifact_root
-  ? path.resolve(repoRoot, selectedRoutes[0].artifact_root)
-  : path.join(evidenceRoot, 'utility-demand-forecast', 'redacted-artifacts');
-printCommand([
-  'pnpm',
-  'run',
-  'update:pilot-evidence-register-row',
-  '--',
-  '--register-file',
-  starterRegisterPath,
-  '--evidence-root',
-  evidenceRoot,
-  '--artifact-root',
-  firstArtifactRoot,
-  '--evidence-file-reference',
-  '<retained-artifact.md#sha256=...>',
-  '--confidence-delta',
-  '<explicit 0..0.4, or 0 for staging>',
-  '--output-file',
-  updatedRegisterPath,
-]);
+for (const route of selectedRoutes) {
+  const artifactRoot = route.artifact_root
+    ? path.resolve(repoRoot, route.artifact_root)
+    : path.join(evidenceRoot, String(route.route ?? '').replace(/^\//, ''), 'redacted-artifacts');
+  console.log(`\n${route.route} (${route.proof_pack_id})`);
+  printCommand([
+    'pnpm',
+    'run',
+    'update:pilot-evidence-register-row',
+    '--',
+    '--register-file',
+    starterRegisterPath,
+    '--evidence-root',
+    evidenceRoot,
+    '--artifact-root',
+    artifactRoot,
+    '--evidence-file-reference',
+    '<retained-artifact.md#sha256=...>',
+    '--confidence-delta',
+    '<explicit 0..0.4, or 0 for staging>',
+    '--output-file',
+    updatedRegisterPath,
+  ]);
+}
 
 console.log('\nThen rerun this workspace report against the updated candidate register:');
 printCommand([

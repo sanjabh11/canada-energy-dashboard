@@ -257,17 +257,21 @@ The last two commands are expected to fail until real buyer-supplied retained ar
 
 ## Updating A Route Row
 
-After a retained artifact helper prints \`artifact.md#sha256=...\`, update the top-level register through the updater rather than editing CSV by hand:
+After a retained artifact helper prints \`artifact.md#sha256=...\`, update the top-level register through the updater rather than editing CSV by hand.
+
+Choose the updater command whose \`--artifact-root\` matches the same route and proof-pack row as the retained artifact.
+
+${routeSummaries.map(({ route, proof_pack_id: proofPackId, artifact_root: artifactRoot }) => `### ${route} (${proofPackId})
 
 \`\`\`bash
 pnpm run update:pilot-evidence-register-row -- \\
   --register-file ${displayPath(bundleRegisterPath)} \\
   --evidence-root ${displayPath(bundleDir)} \\
-  --artifact-root ${displayPath(path.join(bundleDir, routeSummaries[0].slug, 'redacted-artifacts'))} \\
+  --artifact-root ${artifactRoot} \\
   --evidence-file-reference retained-artifact.md#sha256=<hash-from-helper> \\
   --confidence-delta "<explicit 0..0.4, or 0 for staging>" \\
-  --output-file path/to/phase-f-minimum-register-updated.csv
-\`\`\`
+  --output-file ${displayPath(path.join(outputDir, 'phase-f-minimum-register-updated.csv'))}
+\`\`\``).join('\n\n')}
 `;
 
 writeFileSync(readmePath, readme, 'utf8');
