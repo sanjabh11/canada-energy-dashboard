@@ -89,9 +89,10 @@ function packageMetadata() {
       name: data.name ?? path.basename(repoRoot),
       description: data.description ?? '',
       homepage: data.homepage ?? '',
+      packageManager: data.packageManager ?? '',
     };
   } catch {
-    return { name: path.basename(repoRoot), description: '', homepage: '' };
+    return { name: path.basename(repoRoot), description: '', homepage: '', packageManager: '' };
   }
 }
 
@@ -217,6 +218,122 @@ function supabaseAdvisorClearanceDeficits(advisor) {
   return {
     ...deficits,
     evidence: supabaseAdvisorClearanceDeficitEvidence(deficits),
+  };
+}
+
+function compactCommandOutput(result) {
+  return `${result.stdout ?? ''}\n${result.stderr ?? ''}\n${result.error ?? ''}`
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 4)
+    .join(' | ') || 'no output captured';
+}
+
+function expectedPnpmVersion(packageManager) {
+  const match = String(packageManager ?? '').match(/^pnpm@(\d+\.\d+\.\d+)$/);
+  return match?.[1] ?? null;
+}
+
+function releasePreflightDeficitEvidence(deficits) {
+  const topOpen = deficits.items
+    .filter((item) => item.status !== 'pass')
+    .slice(0, 5)
+    .map((item) => `${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Release toolchain and approval deficit ledger:',
+    `open=${deficits.open_count}/${deficits.total_count}`,
+    `top_open=${topOpen}`,
+    'approval_gate=no deploy request or push-path proof until pinned Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current',
+  ].join(' ');
+}
+
+function probeReleasePreflight({ packageManager, gitStatus }) {
+  const expectedVersion = expectedPnpmVersion(packageManager);
+  const packageManagerPinned = Boolean(expectedVersion);
+  const corepackResult = skipProbes ? null : run('corepack', ['pnpm', '--version']);
+  const corepackOutput = corepackResult ? compactCommandOutput(corepackResult) : 'probe skipped by --skip-probes';
+  const resolvedPnpmVersion = corepackResult?.status === 0
+    ? String(corepackResult.stdout ?? '').trim().split(/\r?\n/).at(-1)?.trim() ?? ''
+    : '';
+  const corepackMatches = Boolean(expectedVersion && resolvedPnpmVersion === expectedVersion);
+  const gitLfsResult = skipProbes ? null : run('git', ['lfs', 'version']);
+  const gitLfsOutput = gitLfsResult ? compactCommandOutput(gitLfsResult) : 'probe skipped by --skip-probes';
+  const gitLfsAvailable = gitLfsResult?.status === 0;
+
+  const items = [
+    {
+      requirement: 'Pinned package manager',
+      current: packageManager || 'missing',
+      needed: 'exact packageManager pin in package.json such as pnpm@10.23.0',
+      status: packageManagerPinned ? 'pass' : 'blocked',
+      next_action: 'Keep package.json packageManager pinned to the exact pnpm version used by release-readiness.',
+    },
+    {
+      requirement: 'Corepack pnpm resolver',
+      current: skipProbes
+        ? 'skipped'
+        : corepackMatches
+          ? `pnpm ${resolvedPnpmVersion}`
+          : corepackOutput,
+      needed: expectedVersion ? `corepack pnpm --version resolves ${expectedVersion}` : 'valid packageManager pin before Corepack resolution',
+      status: skipProbes ? 'skipped' : corepackMatches ? 'pass' : 'blocked',
+      next_action: 'Run from a Corepack-enabled shell; bare pnpm or a local shim does not count as release-readiness evidence.',
+    },
+    {
+      requirement: 'Release-readiness execution',
+      current: 'not run by launch manifest',
+      needed: 'corepack pnpm run check:release-readiness passes after source provenance is clean',
+      status: 'blocked',
+      next_action: 'Run the full Corepack-pinned release-readiness chain before requesting production approval.',
+    },
+    {
+      requirement: 'Git LFS push-path proof',
+      current: skipProbes
+        ? 'skipped'
+        : gitLfsAvailable
+          ? gitLfsOutput
+          : gitLfsOutput,
+      needed: 'git lfs version succeeds in the shell used for commit/push evidence',
+      status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
+      next_action: gitLfsAvailable
+        ? 'Keep git-lfs on PATH for commit and push evidence; rerun git lfs version before treating a future push path as current.'
+        : 'Install or expose git-lfs on PATH, then rerun git lfs version before treating push-path evidence as current.',
+    },
+    {
+      requirement: 'Clean source provenance',
+      current: gitStatus.isDirty ? `${gitStatus.dirtyLines.length} dirty path(s)` : 'clean worktree',
+      needed: 'branch main with clean worktree before deploy approval request',
+      status: gitStatus.isDirty ? 'blocked' : 'pass',
+      next_action: gitStatus.isDirty
+        ? 'Resolve dirty tracked/untracked paths without touching unrelated user work, then rerun the production approval packet.'
+        : 'Keep source provenance clean through release-readiness and approval packet generation.',
+    },
+    {
+      requirement: 'Explicit owner production approval',
+      current: 'not granted by this report',
+      needed: 'explicit owner approval before any production deploy command',
+      status: 'manual_stop',
+      next_action: 'Ask for explicit production approval only after source provenance and release-readiness are clean.',
+    },
+  ];
+
+  const deficits = {
+    status: items.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
+    package_manager: packageManager || null,
+    expected_pnpm_version: expectedVersion,
+    corepack_probe: skipProbes ? 'skipped' : (corepackResult?.status === 0 ? 'pass' : 'fail'),
+    git_lfs_probe: skipProbes ? 'skipped' : (gitLfsAvailable ? 'pass' : 'fail'),
+    open_count: items.filter((item) => item.status !== 'pass').length,
+    total_count: items.length,
+    items,
+  };
+
+  return {
+    ...deficits,
+    evidence: releasePreflightDeficitEvidence(deficits),
   };
 }
 
@@ -1451,6 +1568,10 @@ const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
+const releasePreflight = probeReleasePreflight({
+  packageManager: pkg.packageManager,
+  gitStatus,
+});
 const generatedAt = new Date().toISOString();
 
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
@@ -1515,6 +1636,7 @@ const manifest = {
       topBranchReviewPacket.canonical_head_comparison?.evidence,
       supabaseAdvisor.evidence,
       supabaseAdvisor.clearanceDeficits.evidence,
+      releasePreflight.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -1526,6 +1648,8 @@ const manifest = {
       'scripts/report-unmerged-branch-readiness.mjs',
       'src/lib/releasePosture.ts',
       'src/lib/publicReleaseStatusManifest.json',
+      'scripts/check-corepack-toolchain.mjs',
+      'scripts/deploy-production.sh',
     ],
     candidate_shadow: [
       '/utility-demand-forecast',
@@ -1623,6 +1747,7 @@ const manifest = {
       ? 'blocked until dirty tracked/untracked paths are committed, stashed, removed, or otherwise intentionally resolved before deploy approval'
       : 'source worktree clean at manifest generation time; owner approval and release gates still apply before deploy',
   },
+  release_preflight: releasePreflight,
   gaps: [
     {
       gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
@@ -1660,6 +1785,15 @@ const manifest = {
       fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
       status: supabaseAdvisor.status === 'verified' ? 'mitigated' : 'open',
     },
+    {
+      gap: 'Release toolchain, Git LFS push-path proof, full release-readiness execution, and owner approval are not all current.',
+      severity: 'P1',
+      evidence: releasePreflight.evidence,
+      framework_mapping: ['NIST SSDF: release integrity', 'Supply-chain and deployment provenance review'],
+      buyer_impact: 'A buyer-facing remediation or production release request cannot be treated as approval-ready from local pnpm checks or stale push-path evidence.',
+      fix: 'Resolve source provenance, run Corepack-pinned release-readiness, verify git-lfs availability before push evidence, and request explicit owner approval before any deploy.',
+      status: releasePreflight.status === 'pass' ? 'mitigated' : 'open',
+    },
   ],
   pain_points: painPoints,
   target_customers: targetCustomers,
@@ -1687,6 +1821,7 @@ const manifest = {
       'Production deploy still requires clean source provenance and explicit owner approval.',
       'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
       'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
+      'Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.',
     ],
   },
   adversarial_reviews: [
@@ -1699,6 +1834,11 @@ const manifest = {
       lane: 'production approval',
       finding: 'A passing local release gate does not authorize deployment while source provenance is dirty or owner approval is missing.',
       decision: 'Keep deploy request blocked until provenance and approval gates clear.',
+    },
+    {
+      lane: 'release toolchain',
+      finding: 'Direct pnpm checks, a skipped production approval packet, or a commit with a Git LFS hook warning do not prove the guarded release path is ready.',
+      decision: 'Keep release approval blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, and owner approval are current.',
     },
     {
       lane: 'Supabase advisor clearance',
@@ -1724,9 +1864,11 @@ const manifest = {
           'git rev-parse --short HEAD',
           'node scripts/report-buyer-evidence-readiness.mjs',
           'node scripts/report-unmerged-branch-readiness.mjs --max-files 6',
+          'corepack pnpm --version',
+          'git lfs version',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision and explicit release preflight deficits.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence or deployment approval.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

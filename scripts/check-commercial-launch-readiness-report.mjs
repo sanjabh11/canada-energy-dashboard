@@ -108,6 +108,7 @@ function assertReport(markdown, options = {}) {
     'Gap Analysis',
     'Buyer Evidence Hard Gate Deficits',
     'Supabase Advisor Clearance Deficits',
+    'Release Toolchain And Approval Deficits',
     'Proof Buckets',
     'Top 10 Pain Points',
     'Top 10 Target Customers Or Segments',
@@ -146,6 +147,13 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| Security advisor evidence |'), 'Report must include the security advisor evidence deficit row.');
   assert(markdown.includes('| Performance advisor evidence |'), 'Report must include the performance advisor evidence deficit row.');
   assert(markdown.includes('| Advisor clearance claim |'), 'Report must include the no-clearance-claim deficit row.');
+  assert(markdown.includes('## Release Toolchain And Approval Deficits'), 'Report must include the release toolchain and approval deficit table.');
+  assert(markdown.includes('Release toolchain and approval deficit ledger'), 'Report must include structured release-preflight evidence from the manifest.');
+  assert(markdown.includes('Direct pnpm checks, skipped approval packets, and local commit hooks do not substitute'), 'Report must preserve the release-preflight substitution boundary.');
+  assert(markdown.includes('| Corepack pnpm resolver |'), 'Report must include the Corepack resolver deficit row.');
+  assert(markdown.includes('| Release-readiness execution |'), 'Report must include the release-readiness execution deficit row.');
+  assert(markdown.includes('| Git LFS push-path proof |'), 'Report must include the Git LFS push-path deficit row.');
+  assert(markdown.includes('| Explicit owner production approval |'), 'Report must include the explicit owner approval deficit row.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
   assert(markdown.includes('staging_state='), 'Report must include staged/unstaged source provenance classification from the manifest.');
   assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
@@ -175,6 +183,7 @@ function assertReport(markdown, options = {}) {
   const gapSection = extractSection(markdown, 'Gap Analysis');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
+  const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
   const eccSection = extractSection(markdown, 'ECC Ledger');
 
@@ -182,6 +191,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(gapSection) >= 4, 'Gap analysis table must include current P0/P1 launch blockers.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
+  assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');
@@ -195,4 +205,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

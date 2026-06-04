@@ -175,6 +175,39 @@ try {
       assert(manifest.source_provenance.evidence.includes('index_status='), 'Manifest source provenance evidence must include index_status classification for dirty paths.');
       assert(manifest.source_provenance.evidence.includes('worktree_status='), 'Manifest source provenance evidence must include worktree_status classification for dirty paths.');
     }
+    assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
+    assert(typeof manifest.release_preflight?.evidence === 'string', 'Manifest must include release_preflight.evidence.');
+    assert(manifest.release_preflight.evidence.includes('Release toolchain and approval deficit ledger'), 'Manifest release preflight evidence must include a ledger marker.');
+    assert(typeof manifest.release_preflight?.package_manager === 'string' && manifest.release_preflight.package_manager.length > 0, 'Manifest release_preflight.package_manager must be set.');
+    assert(typeof manifest.release_preflight?.expected_pnpm_version === 'string' && manifest.release_preflight.expected_pnpm_version.length > 0, 'Manifest release_preflight.expected_pnpm_version must be set.');
+    assert(typeof manifest.release_preflight?.corepack_probe === 'string' && manifest.release_preflight.corepack_probe.length > 0, 'Manifest release_preflight.corepack_probe must be set.');
+    assert(typeof manifest.release_preflight?.git_lfs_probe === 'string' && manifest.release_preflight.git_lfs_probe.length > 0, 'Manifest release_preflight.git_lfs_probe must be set.');
+    assert(hasIntegerOrNull(manifest.release_preflight?.open_count), 'Manifest release_preflight.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight?.total_count), 'Manifest release_preflight.total_count must be an integer or null.');
+    assert(Array.isArray(manifest.release_preflight?.items), 'Manifest release_preflight.items must be a list.');
+    for (const [index, item] of (manifest.release_preflight.items ?? []).entries()) {
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `release_preflight.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `release_preflight.items[${index}].needed must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.items[${index}].status must be set.`);
+      assert(typeof item.next_action === 'string' && item.next_action.length > 0, `release_preflight.items[${index}].next_action must be set.`);
+    }
+    assert(
+      manifest.release_preflight.items.some((item) => item.requirement === 'Corepack pnpm resolver'),
+      'Release preflight deficits must include Corepack pnpm resolver.',
+    );
+    assert(
+      manifest.release_preflight.items.some((item) => item.requirement === 'Release-readiness execution'),
+      'Release preflight deficits must include release-readiness execution.',
+    );
+    assert(
+      manifest.release_preflight.items.some((item) => item.requirement === 'Git LFS push-path proof'),
+      'Release preflight deficits must include Git LFS push-path proof.',
+    );
+    assert(
+      manifest.release_preflight.items.some((item) => item.requirement === 'Explicit owner production approval'),
+      'Release preflight deficits must include explicit owner approval.',
+    );
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
@@ -334,4 +367,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

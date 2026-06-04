@@ -132,6 +132,8 @@ function renderReport(manifest, validationText) {
   const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
   const supabaseDeficits = manifest.supabase_advisor?.clearance_deficits ?? {};
   const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
+  const releasePreflight = manifest.release_preflight ?? {};
+  const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -211,6 +213,22 @@ ${supabaseDeficitItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Deficit ledger', 'not available', 'Fix Supabase advisor access and rerun advisors', supabaseDeficits.status ?? 'unknown', supabaseDeficits.evidence ?? 'No Supabase advisor clearance deficit ledger was captured.'])}
+
+## Release Toolchain And Approval Deficits
+
+Open release preflight deficits: ${text(releasePreflight.open_count ?? 'unknown')}/${text(releasePreflight.total_count ?? 'unknown')}. Direct pnpm checks, skipped approval packets, and local commit hooks do not substitute for Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, and explicit owner approval.
+
+| Requirement | Current | Needed | Status | Next Action |
+|---|---|---|---|---|
+${releasePreflightItems.length > 0
+    ? releasePreflightItems.map((item) => row([
+      item.requirement,
+      item.current,
+      item.needed,
+      item.status,
+      item.next_action,
+    ])).join('\n')
+    : row(['Release preflight ledger', 'not available', 'Run report:launch-evidence-manifest', releasePreflight.status ?? 'unknown', releasePreflight.evidence ?? 'No release preflight deficit ledger was captured.'])}
 
 ## Proof Buckets
 

@@ -86,6 +86,20 @@ describe('launch evidence manifest report', () => {
       'Public-safe findings record',
       'Advisor clearance claim',
     ]);
+    expect(manifest.release_preflight.status).toBe('blocked');
+    expect(manifest.release_preflight.package_manager).toBe('pnpm@10.23.0');
+    expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');
+    expect(manifest.release_preflight.corepack_probe).toBe('skipped');
+    expect(manifest.release_preflight.git_lfs_probe).toBe('skipped');
+    expect(manifest.release_preflight.evidence).toContain('Release toolchain and approval deficit ledger');
+    expect(manifest.release_preflight.items.map((item: { requirement: string }) => item.requirement)).toEqual([
+      'Pinned package manager',
+      'Corepack pnpm resolver',
+      'Release-readiness execution',
+      'Git LFS push-path proof',
+      'Clean source provenance',
+      'Explicit owner production approval',
+    ]);
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -189,6 +203,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Gap Analysis');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
+    expect(stdout).toContain('## Release Toolchain And Approval Deficits');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -209,6 +224,11 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| Security advisor evidence |');
     expect(stdout).toContain('| Performance advisor evidence |');
     expect(stdout).toContain('| Advisor clearance claim |');
+    expect(stdout).toContain('Release toolchain and approval deficit ledger');
+    expect(stdout).toContain('| Corepack pnpm resolver |');
+    expect(stdout).toContain('| Release-readiness execution |');
+    expect(stdout).toContain('| Git LFS push-path proof |');
+    expect(stdout).toContain('| Explicit owner production approval |');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');
