@@ -138,6 +138,71 @@ function parseBranchFreshnessRows(markdown) {
     }));
 }
 
+function parseBranchFamilyRows(markdown) {
+  const section = extractMarkdownSection(markdown, 'Local/Origin Branch Families');
+  if (!section) return [];
+
+  return section
+    .split(/\r?\n/)
+    .filter((line) => line.startsWith('| '))
+    .filter((line) => !line.startsWith('| Family |') && !line.startsWith('|---'))
+    .map((line) => line
+      .split('|')
+      .slice(1, -1)
+      .map((cell) => cell.trim()))
+    .filter((cells) => cells.length >= 5)
+    .map(([family, refs, highestRisk, localOriginState, reviewAction]) => ({
+      family,
+      refs,
+      highestRisk,
+      localOriginState,
+      reviewAction,
+    }));
+}
+
+function familyStateKey(localOriginState) {
+  const state = String(localOriginState ?? '').toLowerCase();
+  if (state.includes('local-only')) return 'local_only';
+  if (state.includes('origin-only')) return 'origin_only';
+  if (state.includes('heads match')) return 'matching_heads';
+  if (state.includes('local ahead')) return 'local_ahead';
+  if (state.includes('origin ahead')) return 'origin_ahead';
+  if (state.includes('diverged')) return 'diverged';
+  return 'unknown';
+}
+
+function countFamilyRows(rows, key, risk = '') {
+  return rows.filter((row) => (
+    familyStateKey(row.localOriginState) === key
+    && (!risk || row.highestRisk === risk)
+  )).length;
+}
+
+function branchFamilyEvidence(rows) {
+  if (rows.length === 0) {
+    return 'Branch family review: no local/origin family rows were parsed from the branch readiness report.';
+  }
+
+  const highRiskFamilies = rows
+    .filter((row) => row.highestRisk === 'high')
+    .map((row) => row.family)
+    .slice(0, 6);
+
+  return [
+    'Branch family review:',
+    `families=${rows.length}`,
+    `local_only=${countFamilyRows(rows, 'local_only')}`,
+    `origin_only=${countFamilyRows(rows, 'origin_only')}`,
+    `matching_heads=${countFamilyRows(rows, 'matching_heads')}`,
+    `local_ahead=${countFamilyRows(rows, 'local_ahead')}`,
+    `origin_ahead=${countFamilyRows(rows, 'origin_ahead')}`,
+    `diverged=${countFamilyRows(rows, 'diverged')}`,
+    `unknown=${countFamilyRows(rows, 'unknown')}`,
+    `high_risk_families=${rows.filter((row) => row.highestRisk === 'high').length}`,
+    highRiskFamilies.length > 0 ? `high_family_refs=${highRiskFamilies.join(', ')}` : 'high_family_refs=none',
+  ].join(' ');
+}
+
 function countFreshnessRows(rows, freshness, risk = '') {
   return rows.filter((row) => (
     row.freshness === freshness
@@ -272,6 +337,18 @@ function probeUnmergedBranches() {
       highRisk: null,
       mediumRisk: null,
       lowRisk: null,
+      familyRows: [],
+      familyCounts: {
+        total: null,
+        localOnly: null,
+        originOnly: null,
+        matchingHeads: null,
+        localAhead: null,
+        originAhead: null,
+        diverged: null,
+        unknown: null,
+        highRiskFamilies: null,
+      },
       freshnessRows: [],
       staleCount: null,
       agingCount: null,
@@ -279,11 +356,13 @@ function probeUnmergedBranches() {
       unknownFreshnessCount: null,
       staleHighRiskCount: null,
       agingHighRiskCount: null,
+      familyEvidence: 'Branch family review skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for local/origin branch-family state.',
       freshnessEvidence: 'Branch freshness review skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for stale and aging branch queues.',
     };
   }
   const result = run(process.execPath, ['scripts/report-unmerged-branch-readiness.mjs', '--max-files', '6']);
   const output = `${result.stdout}\n${result.stderr}`.trim();
+  const familyRows = parseBranchFamilyRows(output);
   const freshnessRows = parseBranchFreshnessRows(output);
   return {
     status: result.status === 0 ? 'pass' : 'fail',
@@ -291,6 +370,18 @@ function probeUnmergedBranches() {
     highRisk: parseNumberLine(output, '- High-risk branches'),
     mediumRisk: parseNumberLine(output, '- Medium-risk branches'),
     lowRisk: parseNumberLine(output, '- Low-risk branches'),
+    familyRows,
+    familyCounts: {
+      total: familyRows.length,
+      localOnly: countFamilyRows(familyRows, 'local_only'),
+      originOnly: countFamilyRows(familyRows, 'origin_only'),
+      matchingHeads: countFamilyRows(familyRows, 'matching_heads'),
+      localAhead: countFamilyRows(familyRows, 'local_ahead'),
+      originAhead: countFamilyRows(familyRows, 'origin_ahead'),
+      diverged: countFamilyRows(familyRows, 'diverged'),
+      unknown: countFamilyRows(familyRows, 'unknown'),
+      highRiskFamilies: familyRows.filter((row) => row.highestRisk === 'high').length,
+    },
     freshnessRows,
     staleCount: countFreshnessRows(freshnessRows, 'stale'),
     agingCount: countFreshnessRows(freshnessRows, 'aging'),
@@ -298,6 +389,7 @@ function probeUnmergedBranches() {
     unknownFreshnessCount: countFreshnessRows(freshnessRows, 'unknown'),
     staleHighRiskCount: countFreshnessRows(freshnessRows, 'stale', 'high'),
     agingHighRiskCount: countFreshnessRows(freshnessRows, 'aging', 'high'),
+    familyEvidence: branchFamilyEvidence(familyRows),
     freshnessEvidence: branchFreshnessEvidence(freshnessRows),
   };
 }
@@ -558,6 +650,7 @@ const buyerGapEvidence = [
 
 const branchReviewEvidence = [
   `Unmerged branch probe high/medium/low risk counts: ${branchProbe.highRisk ?? 'unknown'}/${branchProbe.mediumRisk ?? 'unknown'}/${branchProbe.lowRisk ?? 'unknown'}.`,
+  branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
 ].join(' ');
 
@@ -591,6 +684,7 @@ const manifest = {
       dirtyEvidence,
       buyerProbe.evidence,
       branchProbe.evidence,
+      branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
     ],
     repo_artifact: [
@@ -616,7 +710,7 @@ const manifest = {
     ],
     roadmap: [
       'Phase F buyer evidence workspace remains the required path to confidence movement.',
-      'High-risk or stale/aging unmerged branches remain review queues until focused checks, drift review, and owner approvals clear.',
+      'High-risk, local-only, origin-only, stale, or aging unmerged branch families remain review queues until focused checks, drift review, and owner approvals clear.',
       'Status/advisor automation remains future work until live credentials and connector permissions are available.',
     ],
   },
@@ -627,6 +721,17 @@ const manifest = {
       medium: branchProbe.mediumRisk,
       low: branchProbe.lowRisk,
     },
+    family_counts: {
+      total: branchProbe.familyCounts.total,
+      local_only: branchProbe.familyCounts.localOnly,
+      origin_only: branchProbe.familyCounts.originOnly,
+      matching_heads: branchProbe.familyCounts.matchingHeads,
+      local_ahead: branchProbe.familyCounts.localAhead,
+      origin_ahead: branchProbe.familyCounts.originAhead,
+      diverged: branchProbe.familyCounts.diverged,
+      unknown: branchProbe.familyCounts.unknown,
+      high_risk_families: branchProbe.familyCounts.highRiskFamilies,
+    },
     freshness_counts: {
       stale: branchProbe.staleCount,
       aging: branchProbe.agingCount,
@@ -635,7 +740,9 @@ const manifest = {
       stale_high_risk: branchProbe.staleHighRiskCount,
       aging_high_risk: branchProbe.agingHighRiskCount,
     },
-    evidence: branchProbe.freshnessEvidence,
+    family_evidence: branchProbe.familyEvidence,
+    freshness_evidence: branchProbe.freshnessEvidence,
+    evidence: [branchProbe.familyEvidence, branchProbe.freshnessEvidence].join(' '),
   },
   source_provenance: {
     branch: gitStatus.branch,
@@ -668,12 +775,12 @@ const manifest = {
       status: gitStatus.isDirty ? 'open' : 'mitigated',
     },
     {
-      gap: 'High-risk or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
+      gap: 'High-risk, local/origin split, or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
       severity: 'P1',
       evidence: branchReviewEvidence,
       framework_mapping: ['NIST SSDF: change review', 'OWASP ASVS: secure deployment verification'],
       buyer_impact: 'Unreviewed branch changes can weaken launch gates, payment boundaries, database security, or claim discipline.',
-      fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
+      fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, choose the canonical local or origin head for split branch families, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
       status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
     },
     {
@@ -710,7 +817,7 @@ const manifest = {
     unresolved_blockers: [
       'Real buyer evidence and retained redacted artifacts are absent.',
       'Production deploy still requires clean source provenance and explicit owner approval.',
-      'High-risk or stale/aging unmerged branches remain review queues.',
+      'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
     ],
   },
   adversarial_reviews: [
@@ -726,8 +833,8 @@ const manifest = {
     },
     {
       lane: 'branch risk',
-      finding: 'Unmerged branches are not launch evidence; stale or aging refs add drift risk and can only become merge candidates after focused review and release gates.',
-      decision: 'Keep high-risk and stale/aging branches in review queue.',
+      finding: 'Unmerged branches are not launch evidence; local/origin split families and stale or aging refs add drift risk and can only become merge candidates after canonical-head selection, focused review, and release gates.',
+      decision: 'Keep high-risk, local/origin split, and stale/aging branches in review queue.',
     },
   ],
   ecc_ledger: {

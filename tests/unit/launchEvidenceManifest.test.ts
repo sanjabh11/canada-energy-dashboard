@@ -60,7 +60,11 @@ describe('launch evidence manifest report', () => {
     expect(manifest.source_provenance.deploy_gate).toContain('deploy');
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.risk_counts.high).toBeNull();
+    expect(manifest.branch_review.family_counts.local_only).toBeNull();
+    expect(manifest.branch_review.family_evidence).toContain('Branch family review skipped');
     expect(manifest.branch_review.freshness_counts.stale).toBeNull();
+    expect(manifest.branch_review.freshness_evidence).toContain('Branch freshness review skipped');
+    expect(manifest.branch_review.evidence).toContain('Branch family review skipped');
     expect(manifest.branch_review.evidence).toContain('Branch freshness review skipped');
     expect(manifest.pain_points).toHaveLength(10);
     expect(manifest.pain_points[0].source_evidence.every((source: string) => source.startsWith('https://'))).toBe(true);
@@ -115,8 +119,9 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## ECC Ledger');
     expect(stdout).toContain('Source provenance:');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
+    expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
-    expect(stdout).toContain('High-risk or stale/aging unmerged branches');
+    expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');
     expect(stdout).toContain('validate_launch_evidence.py');
     expect(stdout).toContain('VALID');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);

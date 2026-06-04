@@ -126,7 +126,8 @@ function assertReport(markdown) {
   assert(markdown.includes('Local verification only; not deploy approval or buyer proof.'), 'Report must preserve the local-proof boundary.');
   assert(markdown.includes('Scaffolding, fixtures, and constructed demos do not count as buyer acceptance.'), 'Report must preserve the no-scaffolding-as-buyer-proof boundary.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
-  assert(markdown.includes('High-risk or stale/aging unmerged branches'), 'Report must preserve the branch freshness launch blocker.');
+  assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
+  assert(markdown.includes('High-risk, local/origin split, or stale/aging unmerged branches'), 'Report must preserve the branch-family and freshness launch blocker.');
   assert(markdown.includes('Branch freshness review'), 'Report must include branch freshness evidence from the manifest.');
   assert(markdown.includes('| validate_launch_evidence.py | pass | VALID |'), 'Report must include a passing launch evidence schema validation row.');
   assert(markdown.includes('Open P0='), 'Report must include P0/P1 blocker evidence.');
@@ -158,4 +159,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, source provenance, branch freshness, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, source provenance, branch families, branch freshness, and validation boundaries are present.');

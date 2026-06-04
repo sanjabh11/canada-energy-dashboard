@@ -137,11 +137,18 @@ try {
     }
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
+    assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
     assert(hasIntegerOrNull(manifest.branch_review?.risk_counts?.high), 'Manifest branch_review risk_counts.high must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.local_only), 'Manifest branch_review family_counts.local_only must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.origin_only), 'Manifest branch_review family_counts.origin_only must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.local_ahead), 'Manifest branch_review family_counts.local_ahead must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.family_counts?.diverged), 'Manifest branch_review family_counts.diverged must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.stale), 'Manifest branch_review freshness_counts.stale must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.aging), 'Manifest branch_review freshness_counts.aging must be an integer or null.');
     if (!skipProbes) {
+      assert(Number.isInteger(manifest.branch_review?.family_counts?.local_only), 'Non-skipped manifest must include numeric local-only family count.');
+      assert(Number.isInteger(manifest.branch_review?.family_counts?.origin_only), 'Non-skipped manifest must include numeric origin-only family count.');
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.stale), 'Non-skipped manifest must include numeric stale branch count.');
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
     }
@@ -173,4 +180,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, source provenance, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, source provenance, branch families, branch freshness, pain map, target map, buyer boundary, and schema validation are consistent.');
