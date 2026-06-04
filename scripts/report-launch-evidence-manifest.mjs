@@ -681,19 +681,19 @@ function parseFocusedBranchFreshness(markdown, branchRef) {
   return rows.find((row) => row.branch === branchRef) ?? rows[0] ?? null;
 }
 
-function topBranchReviewPacketEvidence(packet) {
+function topBranchReviewPacketEvidence(packet, label = 'Top branch review packet') {
   if (packet.status === 'skipped') {
-    return 'Top branch review packet skipped by --skip-probes; run the focused branch review command before selecting a canonical head. approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates';
+    return `${label} skipped by --skip-probes; run the focused branch review command before selecting a canonical head. approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates`;
   }
 
   if (packet.status === 'empty') {
-    return 'Top branch review packet: no branch review queue items are available.';
+    return `${label}: no branch review queue items are available.`;
   }
 
   const functionRefs = packet.changed_supabase_functions.slice(0, 6).join(', ') || 'none';
   const comparison = packet.canonical_head_comparison ?? {};
   return [
-    'Top branch review packet:',
+    `${label}:`,
     `branch=${packet.branch}`,
     `status=${packet.status}`,
     `priority=${packet.priority}`,
@@ -711,7 +711,7 @@ function topBranchReviewPacketEvidence(packet) {
   ].join(' ');
 }
 
-function probeTopBranchReviewPacket(reviewQueue) {
+function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch review packet', maxFiles = '12' } = {}) {
   if (skipProbes) {
     const packet = {
       status: 'skipped',
@@ -725,14 +725,13 @@ function probeTopBranchReviewPacket(reviewQueue) {
       changed_supabase_function_count: null,
       changed_supabase_functions: [],
       canonical_head_comparison: compareCanonicalHeads(null),
-      command: 'corepack pnpm run report:unmerged-branch-readiness -- --branch <top-review-ref> --max-files 12',
+      command: `corepack pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files ${maxFiles}`,
       stop_gate: 'Read-only focused review first; no branch mutation or production action.',
     };
-    return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
+    return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
   }
 
-  const topItem = Array.isArray(reviewQueue.items) ? reviewQueue.items[0] : null;
-  if (!topItem?.review_ref) {
+  if (!queueItem?.review_ref) {
     const packet = {
       status: 'empty',
       branch: null,
@@ -748,29 +747,29 @@ function probeTopBranchReviewPacket(reviewQueue) {
       command: 'corepack pnpm run report:unmerged-branch-readiness',
       stop_gate: 'No branch review item available.',
     };
-    return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
+    return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
   }
 
   const result = run(process.execPath, [
     'scripts/report-unmerged-branch-readiness.mjs',
     '--branch',
-    topItem.review_ref,
+    queueItem.review_ref,
     '--max-files',
-    '12',
+    maxFiles,
   ]);
   const output = `${result.stdout}\n${result.stderr}`.trim();
   const categories = splitCommaList(extractFocusedReviewLine(output, 'Categories'));
   const functionRows = parseChangedFunctionRows(output);
-  const focusedFreshness = parseFocusedBranchFreshness(output, topItem.review_ref);
-  const canonicalHeadComparison = compareCanonicalHeads(topItem);
+  const focusedFreshness = parseFocusedBranchFreshness(output, queueItem.review_ref);
+  const canonicalHeadComparison = compareCanonicalHeads(queueItem);
   const packet = {
     status: result.status === 0 ? 'pass' : 'fail',
-    branch: topItem.review_ref,
-    family: topItem.family,
-    priority: topItem.priority,
-    risk: extractFocusedReviewLine(output, 'Risk') || topItem.highest_risk,
-    local_origin_state: topItem.local_origin_state,
-    family_freshness: topItem.freshness,
+    branch: queueItem.review_ref,
+    family: queueItem.family,
+    priority: queueItem.priority,
+    risk: extractFocusedReviewLine(output, 'Risk') || queueItem.highest_risk,
+    local_origin_state: queueItem.local_origin_state,
+    family_freshness: queueItem.freshness,
     focused_branch_freshness: focusedFreshness?.freshness ?? 'unknown',
     focused_branch_age: focusedFreshness?.age ?? 'unknown',
     categories,
@@ -778,11 +777,85 @@ function probeTopBranchReviewPacket(reviewQueue) {
     changed_supabase_functions: functionRows.map((row) => row.function_name),
     changed_supabase_function_rows: functionRows.slice(0, 12),
     canonical_head_comparison: canonicalHeadComparison,
-    command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${topItem.review_ref} --max-files 12`,
-    stop_gate: topItem.stop_gate,
+    command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${queueItem.review_ref} --max-files ${maxFiles}`,
+    stop_gate: queueItem.stop_gate,
     evidence_excerpt: output.split(/\r?\n/).slice(0, 24).join(' | '),
   };
-  return { ...packet, evidence: topBranchReviewPacketEvidence(packet) };
+  return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
+}
+
+function probeTopBranchReviewPacket(reviewQueue) {
+  const topItem = Array.isArray(reviewQueue.items) ? reviewQueue.items[0] : null;
+  return probeFocusedBranchReviewPacket(topItem, {
+    evidenceLabel: 'Top branch review packet',
+    maxFiles: '12',
+  });
+}
+
+function reviewFirstBranchPacketsEvidence(packetSet) {
+  if (packetSet.status === 'skipped') {
+    return 'Review-first branch packets skipped by --skip-probes; run the focused branch review queue before merge, push, deploy, or discard decisions.';
+  }
+
+  if (packetSet.item_count === 0) {
+    return 'Review-first branch packets: no review-first branch families are currently queued.';
+  }
+
+  const packets = Array.isArray(packetSet.packets) ? packetSet.packets : [];
+  const branchRefs = packets
+    .map((packet) => `${packet.branch}:${packet.status}:${packet.risk}:${packet.family_freshness}/${packet.focused_branch_freshness}`)
+    .join(', ') || 'none';
+  const canonicalStates = packets
+    .map((packet) => `${packet.branch}=${packet.canonical_head_comparison?.state ?? 'unknown'}`)
+    .join(', ') || 'none';
+  const totalSupabaseFunctions = packets.reduce((total, packet) => (
+    total + (Number.isInteger(packet.changed_supabase_function_count) ? packet.changed_supabase_function_count : 0)
+  ), 0);
+
+  return [
+    'Review-first branch packets:',
+    `count=${packetSet.item_count}`,
+    `queue_review_first=${packetSet.queue_review_first_count ?? 'unknown'}`,
+    `pass=${packetSet.pass_count}`,
+    `fail=${packetSet.fail_count}`,
+    `branches=${branchRefs}`,
+    `canonical_states=${canonicalStates}`,
+    `supabase_functions=${totalSupabaseFunctions}`,
+    'approval_gate=no checkout/merge/deploy/migration/push without explicit owner approval and release gates',
+  ].join(' ');
+}
+
+function probeReviewFirstBranchPackets(reviewQueue) {
+  if (skipProbes) {
+    const packetSet = {
+      status: 'skipped',
+      item_count: null,
+      queue_review_first_count: null,
+      pass_count: null,
+      fail_count: null,
+      packets: [],
+    };
+    return { ...packetSet, evidence: reviewFirstBranchPacketsEvidence(packetSet) };
+  }
+
+  const queueItems = Array.isArray(reviewQueue.items) ? reviewQueue.items : [];
+  const reviewFirstItems = queueItems
+    .filter((item) => String(item.priority ?? '').startsWith('review_first'))
+    .slice(0, 4);
+  const packets = reviewFirstItems.map((item) => probeFocusedBranchReviewPacket(item, {
+    evidenceLabel: 'Review-first branch packet',
+    maxFiles: '8',
+  }));
+  const failCount = packets.filter((packet) => packet.status !== 'pass').length;
+  const packetSet = {
+    status: failCount > 0 ? 'fail' : 'pass',
+    item_count: packets.length,
+    queue_review_first_count: reviewQueue.review_first_count,
+    pass_count: packets.filter((packet) => packet.status === 'pass').length,
+    fail_count: failCount,
+    packets,
+  };
+  return { ...packetSet, evidence: reviewFirstBranchPacketsEvidence(packetSet) };
 }
 
 function probeSupabaseAdvisorStatus() {
@@ -1169,6 +1242,7 @@ const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
+const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
 const generatedAt = new Date().toISOString();
 
@@ -1189,6 +1263,7 @@ const branchReviewEvidence = [
   branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
+  reviewFirstBranchPackets.evidence,
   topBranchReviewPacket.evidence,
   topBranchReviewPacket.canonical_head_comparison?.evidence,
 ].join(' ');
@@ -1227,6 +1302,7 @@ const manifest = {
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
+      reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
       supabaseAdvisor.evidence,
@@ -1314,11 +1390,13 @@ const manifest = {
     family_evidence: branchProbe.familyEvidence,
     freshness_evidence: branchProbe.freshnessEvidence,
     review_queue: branchReviewQueue,
+    review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
     evidence: [
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
+      reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
     ].join(' '),
