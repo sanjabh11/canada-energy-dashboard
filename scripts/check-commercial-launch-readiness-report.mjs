@@ -111,6 +111,7 @@ function assertReport(markdown, options = {}) {
     'Branch Canonical Head Decision Deficits',
     'Buyer Evidence Hard Gate Deficits',
     'Supabase Advisor Clearance Deficits',
+    'Supabase Advisor Remediation Queue',
     'Release Toolchain And Approval Deficits',
     'Release Preflight Remediation Queue',
     'Proof Buckets',
@@ -179,6 +180,12 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| Security advisor evidence |'), 'Report must include the security advisor evidence deficit row.');
   assert(markdown.includes('| Performance advisor evidence |'), 'Report must include the performance advisor evidence deficit row.');
   assert(markdown.includes('| Advisor clearance claim |'), 'Report must include the no-clearance-claim deficit row.');
+  assert(markdown.includes('## Supabase Advisor Remediation Queue'), 'Report must include the Supabase advisor remediation queue table.');
+  assert(markdown.includes('Supabase advisor remediation queue'), 'Report must include structured Supabase advisor remediation evidence from the manifest.');
+  assert(markdown.includes('does not authorize connectors'), 'Report must preserve the Supabase remediation no-authorization boundary.');
+  assert(markdown.includes('mutate the database'), 'Report must preserve the Supabase remediation no-database-mutation boundary.');
+  assert(markdown.includes('Supabase Dashboard > Database > Security Advisor'), 'Report must include the Security Advisor proof command.');
+  assert(markdown.includes('Supabase Dashboard > Database > Performance Advisor'), 'Report must include the Performance Advisor proof command.');
   assert(markdown.includes('## Release Toolchain And Approval Deficits'), 'Report must include the release toolchain and approval deficit table.');
   assert(markdown.includes('Release toolchain and approval deficit ledger'), 'Report must include structured release-preflight evidence from the manifest.');
   assert(markdown.includes('Direct pnpm checks, skipped approval packets, and local commit hooks do not substitute'), 'Report must preserve the release-preflight substitution boundary.');
@@ -224,6 +231,7 @@ function assertReport(markdown, options = {}) {
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
+  const supabaseRemediationSection = extractSection(markdown, 'Supabase Advisor Remediation Queue');
   const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
@@ -236,6 +244,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
+  assert(countDataRows(supabaseRemediationSection) >= 3, 'Supabase advisor remediation queue must include the key advisor remediation rows.');
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
@@ -251,4 +260,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, release preflight remediation queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

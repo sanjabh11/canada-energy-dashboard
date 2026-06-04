@@ -132,6 +132,8 @@ function renderReport(manifest, validationText) {
   const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
   const supabaseDeficits = manifest.supabase_advisor?.clearance_deficits ?? {};
   const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
+  const supabaseRemediationQueue = supabaseDeficits.remediation_queue ?? {};
+  const supabaseRemediationItems = Array.isArray(supabaseRemediationQueue.items) ? supabaseRemediationQueue.items : [];
   const releasePreflight = manifest.release_preflight ?? {};
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const releaseRemediationQueue = releasePreflight.remediation_queue ?? {};
@@ -286,6 +288,27 @@ ${supabaseDeficitItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Deficit ledger', 'not available', 'Fix Supabase advisor access and rerun advisors', supabaseDeficits.status ?? 'unknown', supabaseDeficits.evidence ?? 'No Supabase advisor clearance deficit ledger was captured.'])}
+
+## Supabase Advisor Remediation Queue
+
+Open Supabase advisor actions: ${text(supabaseRemediationQueue.blocked_count ?? 'unknown')}/${text(supabaseRemediationQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, record secrets, or claim advisor clearance.
+
+| Rank | Requirement | Current | Needed | Deficit Status | Owner | Action | Proof Command | Stop Gate | Resolution Status |
+|---:|---|---|---|---|---|---|---|---|---|
+${supabaseRemediationItems.length > 0
+    ? supabaseRemediationItems.map((item) => row([
+      item.rank,
+      item.requirement,
+      item.current,
+      item.needed,
+      item.deficit_status,
+      item.owner,
+      item.action,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'all Supabase advisor rows passed', 'owner approval and release gates still apply before deploy', supabaseRemediationQueue.status ?? 'unknown', 'account_admin', 'Keep advisor evidence current before requesting production approval.', manifest.supabase_advisor?.command ?? 'Supabase advisor review', supabaseRemediationQueue.evidence ?? 'No Supabase advisor remediation queue was captured.', supabaseRemediationQueue.status ?? 'unknown'])}
 
 ## Release Toolchain And Approval Deficits
 

@@ -362,6 +362,62 @@ try {
       manifest.supabase_advisor.clearance_deficits.items.some((item) => item.requirement === 'Advisor clearance claim'),
       'Supabase advisor clearance deficits must include the no-clearance-claim row.',
     );
+    assert(typeof manifest.supabase_advisor?.clearance_deficits?.remediation_queue?.evidence === 'string', 'Manifest supabase_advisor.clearance_deficits.remediation_queue.evidence must be set.');
+    assert(manifest.supabase_advisor.clearance_deficits.remediation_queue.evidence.includes('Supabase advisor remediation queue'), 'Manifest Supabase advisor remediation queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.clearance_deficits.remediation_queue?.open_count), 'Manifest supabase_advisor.clearance_deficits.remediation_queue.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.clearance_deficits.remediation_queue?.total_count), 'Manifest supabase_advisor.clearance_deficits.remediation_queue.total_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.clearance_deficits.remediation_queue?.item_count), 'Manifest supabase_advisor.clearance_deficits.remediation_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.clearance_deficits.remediation_queue?.blocked_count), 'Manifest supabase_advisor.clearance_deficits.remediation_queue.blocked_count must be an integer or null.');
+    assert(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.open_count === manifest.supabase_advisor.clearance_deficits.open_count,
+      'Supabase advisor remediation queue open_count must match clearance_deficits.open_count.',
+    );
+    assert(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.total_count === manifest.supabase_advisor.clearance_deficits.total_count,
+      'Supabase advisor remediation queue total_count must match clearance_deficits.total_count.',
+    );
+    assert(Array.isArray(manifest.supabase_advisor.clearance_deficits.remediation_queue.items), 'Manifest supabase_advisor.clearance_deficits.remediation_queue.items must be a list.');
+    assert(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.item_count === manifest.supabase_advisor.clearance_deficits.remediation_queue.items.length,
+      'Supabase advisor remediation queue item_count must match items length.',
+    );
+    for (const [index, item] of (manifest.supabase_advisor.clearance_deficits.remediation_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].needed must be set.`);
+      assert(typeof item.deficit_status === 'string' && item.deficit_status.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].deficit_status must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].owner must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].stop_gate must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].status must be set.`);
+      assert(item.status !== 'ready', `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].status must remain non-ready until the deficit row passes.`);
+    }
+    const supabaseQueueRequirements = (manifest.supabase_advisor.clearance_deficits.remediation_queue.items ?? []).map((item) => item.requirement);
+    const nonPassSupabaseRequirements = (manifest.supabase_advisor.clearance_deficits.items ?? [])
+      .filter((item) => item.status !== 'pass')
+      .map((item) => item.requirement);
+    assert(
+      JSON.stringify(supabaseQueueRequirements) === JSON.stringify(nonPassSupabaseRequirements),
+      'Supabase advisor remediation queue must include exactly the current non-pass Supabase advisor requirements.',
+    );
+    if (supabaseQueueRequirements.includes('Security advisor evidence')) {
+      assert(
+        manifest.supabase_advisor.clearance_deficits.remediation_queue.items.some((item) => /Security Advisor/.test(item.proof_command)),
+        'Supabase advisor remediation queue must include the Security Advisor proof command while security advisor evidence is unresolved.',
+      );
+    }
+    if (supabaseQueueRequirements.includes('Performance advisor evidence')) {
+      assert(
+        manifest.supabase_advisor.clearance_deficits.remediation_queue.items.some((item) => /Performance Advisor/.test(item.proof_command)),
+        'Supabase advisor remediation queue must include the Performance Advisor proof command while performance advisor evidence is unresolved.',
+      );
+    }
+    assert(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.items.some((item) => /Do not/.test(item.stop_gate)),
+      'Supabase advisor remediation queue must preserve explicit stop gates.',
+    );
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
@@ -511,4 +567,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

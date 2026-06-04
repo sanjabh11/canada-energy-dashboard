@@ -157,6 +157,133 @@ function supabaseAdvisorClearanceDeficitEvidence(deficits) {
   ].join(' ');
 }
 
+function supabaseAdvisorRemediationOwner(requirement) {
+  switch (requirement) {
+    case 'CLI app lint freshness':
+      return 'operator';
+    case 'Connector project authorization':
+    case 'Security advisor evidence':
+    case 'Performance advisor evidence':
+      return 'account_admin';
+    case 'Public-safe findings record':
+      return 'security_owner';
+    case 'Advisor clearance claim':
+      return 'owner';
+    default:
+      return 'operator';
+  }
+}
+
+function supabaseAdvisorRemediationAction(item, advisor) {
+  switch (item.requirement) {
+    case 'CLI app lint freshness':
+      return 'Run the repo-side Supabase app lint from a Supabase-authenticated workstation and keep any credential or connectivity failure open.';
+    case 'Connector project authorization':
+      return `Repair Supabase connector or dashboard authorization for project ${advisor.projectRef} before attempting advisor clearance.`;
+    case 'Security advisor evidence':
+      return 'Use an authorized Supabase dashboard or connector session to review or rerun the Database Security Advisor and retain public-safe outcomes.';
+    case 'Performance advisor evidence':
+      return 'Use an authorized Supabase dashboard or connector session to review or rerun the Database Performance Advisor and retain public-safe outcomes.';
+    case 'Public-safe findings record':
+      return 'Record a redacted advisor summary with run date, project ref, unresolved findings, remediation blockers, and no credentials.';
+    case 'Advisor clearance claim':
+      return 'Keep Supabase advisor clearance blocked until CLI lint, authorization, Security Advisor, Performance Advisor, and public-safe findings rows all pass.';
+    default:
+      return item.next_action;
+  }
+}
+
+function supabaseAdvisorRemediationProofCommand(requirement, advisor) {
+  switch (requirement) {
+    case 'CLI app lint freshness':
+      return 'corepack pnpm run check:supabase-app-lint';
+    case 'Connector project authorization':
+      return `Supabase dashboard or connector authorization check for project ${advisor.projectRef}`;
+    case 'Security advisor evidence':
+      return `Supabase Dashboard > Database > Security Advisor for project ${advisor.projectRef}`;
+    case 'Performance advisor evidence':
+      return `Supabase Dashboard > Database > Performance Advisor for project ${advisor.projectRef}`;
+    case 'Public-safe findings record':
+      return 'Record redacted Supabase advisor summary with run date, project ref, unresolved findings, and no secrets';
+    case 'Advisor clearance claim':
+      return 'corepack pnpm run report:launch-evidence-manifest';
+    default:
+      return advisor.command;
+  }
+}
+
+function supabaseAdvisorRemediationStopGate(requirement) {
+  switch (requirement) {
+    case 'CLI app lint freshness':
+      return 'Do not claim Supabase advisor clearance from CLI app lint alone or from a stale local lint result.';
+    case 'Connector project authorization':
+      return 'Do not bypass project authorization, expose credentials, or treat permission-denied connector output as clearance.';
+    case 'Security advisor evidence':
+      return 'Do not claim Security Advisor clearance until current authorized advisor evidence is reviewed and recorded.';
+    case 'Performance advisor evidence':
+      return 'Do not claim Performance Advisor clearance until current authorized advisor evidence is reviewed and recorded.';
+    case 'Public-safe findings record':
+      return 'Do not print or persist secrets, direct account details, tokens, connection strings, or private findings in public artifacts.';
+    case 'Advisor clearance claim':
+      return 'Do not claim Supabase advisor clearance until every remediation row is pass and the launch manifest is regenerated.';
+    default:
+      return 'Do not use this queue as Supabase advisor clearance evidence.';
+  }
+}
+
+function supabaseAdvisorRemediationStatus(status) {
+  if (status === 'pass') return 'ready';
+  if (status === 'watch') return 'watch';
+  if (status === 'needs_remediation') return 'needs_remediation';
+  return 'blocked';
+}
+
+function supabaseAdvisorRemediationEvidence(queue) {
+  if (queue.status === 'pass') {
+    return 'Supabase advisor remediation queue: status=pass open=0 approval_gate=owner approval and release gates still apply before production deploy';
+  }
+
+  const topBlocked = queue.items
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Supabase advisor remediation queue:',
+    `status=${queue.status}`,
+    `open=${queue.open_count}/${queue.total_count}`,
+    `items=${queue.item_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=queue does not authorize connectors, access dashboard, rerun advisors, mutate database, record secrets, or claim clearance',
+  ].join(' ');
+}
+
+function buildSupabaseAdvisorRemediationQueue(deficits, advisor) {
+  const items = deficits.items
+    .filter((item) => item.status !== 'pass')
+    .map((item, index) => ({
+      rank: index + 1,
+      requirement: item.requirement,
+      current: item.current,
+      needed: item.needed,
+      deficit_status: item.status,
+      owner: supabaseAdvisorRemediationOwner(item.requirement),
+      action: supabaseAdvisorRemediationAction(item, advisor),
+      proof_command: supabaseAdvisorRemediationProofCommand(item.requirement, advisor),
+      stop_gate: supabaseAdvisorRemediationStopGate(item.requirement),
+      status: supabaseAdvisorRemediationStatus(item.status),
+    }));
+  const queue = {
+    status: items.length === 0 ? 'pass' : 'needs_remediation',
+    open_count: deficits.open_count,
+    total_count: deficits.total_count,
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    items,
+  };
+  return { ...queue, evidence: supabaseAdvisorRemediationEvidence(queue) };
+}
+
 function supabaseAdvisorClearanceDeficits(advisor) {
   const connectorAuthorized = advisor.connectorPermission !== 'permission_denied';
   const advisorVerified = advisor.securityPerformanceAdvisorsStatus === 'verified';
@@ -217,6 +344,7 @@ function supabaseAdvisorClearanceDeficits(advisor) {
 
   return {
     ...deficits,
+    remediation_queue: buildSupabaseAdvisorRemediationQueue(deficits, advisor),
     evidence: supabaseAdvisorClearanceDeficitEvidence(deficits),
   };
 }
@@ -2036,6 +2164,7 @@ const manifest = {
       topBranchReviewPacket.canonical_head_comparison?.evidence,
       supabaseAdvisor.evidence,
       supabaseAdvisor.clearanceDeficits.evidence,
+      supabaseAdvisor.clearanceDeficits.remediation_queue.evidence,
       releasePreflight.evidence,
       releasePreflight.remediation_queue.evidence,
       launchActionQueue.evidence,
@@ -2279,9 +2408,10 @@ const manifest = {
           'canonical head decision ledger synthesis',
           'source provenance resolution queue synthesis',
           'release preflight remediation queue synthesis',
+          'Supabase advisor remediation queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, release remediation actions, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

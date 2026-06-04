@@ -86,6 +86,24 @@ describe('launch evidence manifest report', () => {
       'Public-safe findings record',
       'Advisor clearance claim',
     ]);
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.status).toMatch(/needs_remediation|pass/);
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.evidence).toContain('Supabase advisor remediation queue');
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.open_count).toBe(manifest.supabase_advisor.clearance_deficits.open_count);
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.total_count).toBe(manifest.supabase_advisor.clearance_deficits.total_count);
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.item_count).toBe(manifest.supabase_advisor.clearance_deficits.remediation_queue.items.length);
+    expect(manifest.supabase_advisor.clearance_deficits.remediation_queue.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      manifest.supabase_advisor.clearance_deficits.items
+        .filter((item: { status: string }) => item.status !== 'pass')
+        .map((item: { requirement: string }) => item.requirement),
+    );
+    if (manifest.supabase_advisor.clearance_deficits.remediation_queue.items.length > 0) {
+      const firstSupabaseAction = manifest.supabase_advisor.clearance_deficits.remediation_queue.items[0];
+      expect(firstSupabaseAction.owner).toBeTruthy();
+      expect(firstSupabaseAction.action).toBeTruthy();
+      expect(firstSupabaseAction.proof_command).toBeTruthy();
+      expect(firstSupabaseAction.stop_gate).toMatch(/Do not/i);
+      expect(firstSupabaseAction.status).not.toBe('ready');
+    }
     expect(manifest.release_preflight.status).toBe('blocked');
     expect(manifest.release_preflight.package_manager).toBe('pnpm@10.23.0');
     expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');
@@ -255,6 +273,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
+    expect(stdout).toContain('## Supabase Advisor Remediation Queue');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
     expect(stdout).toContain('## Release Preflight Remediation Queue');
     expect(stdout).toContain('## Proof Buckets');
@@ -291,6 +310,11 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| Security advisor evidence |');
     expect(stdout).toContain('| Performance advisor evidence |');
     expect(stdout).toContain('| Advisor clearance claim |');
+    expect(stdout).toContain('Supabase advisor remediation queue');
+    expect(stdout).toContain('does not authorize connectors');
+    expect(stdout).toContain('mutate the database');
+    expect(stdout).toContain('Supabase Dashboard > Database > Security Advisor');
+    expect(stdout).toContain('Supabase Dashboard > Database > Performance Advisor');
     expect(stdout).toContain('Release toolchain and approval deficit ledger');
     expect(stdout).toContain('| Corepack pnpm resolver |');
     expect(stdout).toContain('| Release-readiness execution |');
