@@ -432,6 +432,61 @@ try {
       manifest.production_approval.prerequisite_queue.items.some((item) => /does not grant owner approval|claim production approval|claim post-deploy live parity/i.test(item.stop_gate)),
       'Production approval prerequisite queue must preserve explicit non-approval and live-parity stop gates.',
     );
+    assert(typeof manifest.post_deploy_live_proof?.evidence === 'string', 'Manifest post_deploy_live_proof.evidence must be set.');
+    assert(manifest.post_deploy_live_proof.evidence.includes('Post-deploy live proof gate queue'), 'Manifest post-deploy live proof evidence must include a queue marker.');
+    assert(manifest.post_deploy_live_proof.current_source_live_proven === false, 'Manifest must not imply current source is live-proven.');
+    assert(typeof manifest.post_deploy_live_proof?.stop_gate === 'string' && /does not prove hosted\/live parity|requires an explicitly approved deploy/i.test(manifest.post_deploy_live_proof.stop_gate), 'Manifest post-deploy live proof stop gate must preserve the hosted/live parity boundary.');
+    assert(typeof manifest.post_deploy_live_proof?.gate_queue?.evidence === 'string', 'Manifest post_deploy_live_proof.gate_queue.evidence must be set.');
+    assert(manifest.post_deploy_live_proof.gate_queue.evidence.includes('Post-deploy live proof gate queue'), 'Manifest post-deploy live proof gate queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.gate_queue?.item_count), 'Manifest post-deploy live proof gate item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.gate_queue?.blocked_count), 'Manifest post-deploy live proof gate blocked_count must be an integer or null.');
+    assert(Array.isArray(manifest.post_deploy_live_proof.gate_queue?.items), 'Manifest post-deploy live proof gate items must be a list.');
+    assert((manifest.post_deploy_live_proof.gate_queue.items ?? []).length >= 6, 'Manifest post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
+    assert(
+      manifest.post_deploy_live_proof.gate_queue.item_count === manifest.post_deploy_live_proof.gate_queue.items.length,
+      'Post-deploy live proof gate item_count must match items length.',
+    );
+    for (const [index, item] of (manifest.post_deploy_live_proof.gate_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `post_deploy_live_proof.gate_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.gate === 'string' && item.gate.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].gate must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].needed must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].owner must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `post_deploy_live_proof.gate_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].status must be set.`);
+      assert(item.status !== 'ready', `post_deploy_live_proof.gate_queue.items[${index}].status must remain non-ready until the approved post-deploy gate passes.`);
+    }
+    const liveProofGates = manifest.post_deploy_live_proof.gate_queue.items.map((item) => item.gate);
+    for (const gate of [
+      'Production approval clearance',
+      'Guarded production deploy completion',
+      'Live public metadata',
+      'Live static dist parity',
+      'Hosted proof-pack route smoke',
+      'Current-source hosted parity claim',
+    ]) {
+      assert(
+        liveProofGates.includes(gate),
+        `Manifest post-deploy live proof gate queue must include: ${gate}.`,
+      );
+    }
+    assert(
+      manifest.post_deploy_live_proof.gate_queue.items.some((item) => item.proof_command === 'corepack pnpm run check:live-public-metadata'),
+      'Post-deploy live proof gate queue must include the live public metadata proof command.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.gate_queue.items.some((item) => item.proof_command === 'corepack pnpm run check:live-static-parity'),
+      'Post-deploy live proof gate queue must include the live static parity proof command.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.gate_queue.items.some((item) => item.proof_command === 'corepack pnpm run test:browser:hosted:proof-packs'),
+      'Post-deploy live proof gate queue must include the hosted proof-pack smoke proof command.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.gate_queue.items.some((item) => /does not deploy|Do not run deploy-production|Do not present hosted\/live parity/i.test(item.stop_gate)),
+      'Post-deploy live proof gate queue must preserve explicit no-deploy and no-live-parity stop gates.',
+    );
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
@@ -670,4 +725,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, production approval prerequisite queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

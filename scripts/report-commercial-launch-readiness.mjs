@@ -143,6 +143,9 @@ function renderReport(manifest, validationText) {
   const productionApproval = manifest.production_approval ?? {};
   const productionApprovalQueue = productionApproval.prerequisite_queue ?? {};
   const productionApprovalItems = Array.isArray(productionApprovalQueue.items) ? productionApprovalQueue.items : [];
+  const postDeployLiveProof = manifest.post_deploy_live_proof ?? {};
+  const postDeployLiveProofQueue = postDeployLiveProof.gate_queue ?? {};
+  const postDeployLiveProofItems = Array.isArray(postDeployLiveProofQueue.items) ? postDeployLiveProofQueue.items : [];
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
   const sourceResolutionQueue = manifest.source_provenance?.resolution_queue ?? {};
@@ -391,6 +394,25 @@ ${productionApprovalItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'production approval queue missing', 'Regenerate the launch evidence manifest before requesting approval', 'operator', 'corepack pnpm run report:launch-evidence-manifest', productionApprovalQueue.evidence ?? productionApproval.stop_gate ?? 'No production approval prerequisite queue was captured.', productionApprovalQueue.status ?? 'unknown'])}
+
+## Post-Deploy Live Proof Gate Queue
+
+Open post-deploy live-proof gates: ${text(postDeployLiveProofQueue.blocked_count ?? 'unknown')}/${text(postDeployLiveProofQueue.item_count ?? 'unknown')}. This queue is a decision aid only; it does not deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, or claim hosted/live parity before explicit approval and a successful post-deploy gate.
+
+| Rank | Gate | Current | Needed | Owner | Proof Command | Stop Gate | Status |
+|---:|---|---|---|---|---|---|---|
+${postDeployLiveProofItems.length > 0
+    ? postDeployLiveProofItems.map((item) => row([
+      item.rank,
+      item.gate,
+      item.current,
+      item.needed,
+      item.owner,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'post-deploy live proof queue missing', 'Regenerate the launch evidence manifest before making live parity claims', 'operator', 'corepack pnpm run check:post-deploy-live', postDeployLiveProofQueue.evidence ?? postDeployLiveProof.stop_gate ?? 'No post-deploy live proof gate queue was captured.', postDeployLiveProofQueue.status ?? 'unknown'])}
 
 ## Proof Buckets
 

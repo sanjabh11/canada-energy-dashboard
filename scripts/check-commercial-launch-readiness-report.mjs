@@ -116,6 +116,7 @@ function assertReport(markdown, options = {}) {
     'Release Toolchain And Approval Deficits',
     'Release Preflight Remediation Queue',
     'Production Approval Prerequisite Queue',
+    'Post-Deploy Live Proof Gate Queue',
     'Proof Buckets',
     'Top 10 Pain Points',
     'Top 10 Target Customers Or Segments',
@@ -216,6 +217,16 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
   assert(markdown.includes('not granted by this manifest or report'), 'Report must not imply owner approval is granted.');
   assert(markdown.includes('not eligible before explicit approved deploy'), 'Report must not imply post-deploy live proof is eligible before approval.');
+  assert(markdown.includes('## Post-Deploy Live Proof Gate Queue'), 'Report must include the post-deploy live proof gate queue table.');
+  assert(markdown.includes('Post-deploy live proof gate queue'), 'Report must include structured post-deploy live proof gate evidence from the manifest.');
+  assert(markdown.includes('does not deploy, push, rebuild, mutate Netlify'), 'Report must preserve the post-deploy no-live-mutation boundary.');
+  assert(markdown.includes('| Live public metadata |'), 'Report must include the live public metadata gate row.');
+  assert(markdown.includes('| Live static dist parity |'), 'Report must include the live static dist parity gate row.');
+  assert(markdown.includes('| Hosted proof-pack route smoke |'), 'Report must include the hosted proof-pack smoke gate row.');
+  assert(markdown.includes('| Current-source hosted parity claim |'), 'Report must include the hosted parity claim boundary row.');
+  assert(markdown.includes('corepack pnpm run check:live-public-metadata'), 'Report must include the live public metadata proof command.');
+  assert(markdown.includes('corepack pnpm run check:live-static-parity'), 'Report must include the live static parity proof command.');
+  assert(markdown.includes('corepack pnpm run test:browser:hosted:proof-packs'), 'Report must include the hosted proof-pack smoke proof command.');
   assert(markdown.includes('Source provenance:'), 'Report must include source provenance evidence from the manifest.');
   assert(markdown.includes('staging_state='), 'Report must include staged/unstaged source provenance classification from the manifest.');
   assert(markdown.includes('Branch family review'), 'Report must include branch-family evidence from the manifest.');
@@ -253,6 +264,7 @@ function assertReport(markdown, options = {}) {
   const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
+  const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
   const eccSection = extractSection(markdown, 'ECC Ledger');
 
@@ -268,6 +280,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(productionApprovalSection) >= 7, 'Production approval prerequisite queue must include the prerequisite, manual-stop, and post-deploy rows.');
+  assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');
@@ -281,4 +294,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, production approval prerequisite queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

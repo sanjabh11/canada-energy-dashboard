@@ -90,9 +90,10 @@ function packageMetadata() {
       description: data.description ?? '',
       homepage: data.homepage ?? '',
       packageManager: data.packageManager ?? '',
+      scripts: data.scripts ?? {},
     };
   } catch {
-    return { name: path.basename(repoRoot), description: '', homepage: '', packageManager: '' };
+    return { name: path.basename(repoRoot), description: '', homepage: '', packageManager: '', scripts: {} };
   }
 }
 
@@ -831,6 +832,110 @@ function buildProductionApprovalPrerequisiteQueue({
   return {
     ...queue,
     evidence: productionApprovalPrerequisiteEvidence(queue),
+  };
+}
+
+function packageScriptCommand(packageScripts, scriptName, fallback) {
+  const command = packageScripts?.[scriptName];
+  return command ? `corepack pnpm run ${scriptName}` : fallback;
+}
+
+function postDeployLiveProofGateEvidence(queue) {
+  const topOpen = queue.items
+    .filter((item) => item.status !== 'ready')
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.gate}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Post-deploy live proof gate queue:',
+    `status=${queue.status}`,
+    `open=${queue.blocked_count}/${queue.item_count}`,
+    `top_open=${topOpen}`,
+    'approval_gate=queue does not deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, or claim hosted/live parity before explicit approval and a successful post-deploy gate',
+  ].join(' ');
+}
+
+function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue, packageScripts }) {
+  const approvalReady = productionApprovalPrerequisiteQueue.status === 'ready';
+  const liveMetadataCommand = packageScriptCommand(packageScripts, 'check:live-public-metadata', 'corepack pnpm run check:live-public-metadata');
+  const liveStaticParityCommand = packageScriptCommand(packageScripts, 'check:live-static-parity', 'corepack pnpm run check:live-static-parity');
+  const hostedProofPackCommand = packageScriptCommand(packageScripts, 'test:browser:hosted:proof-packs', 'corepack pnpm run test:browser:hosted:proof-packs');
+  const postDeployCommand = packageScriptCommand(packageScripts, 'check:post-deploy-live', 'corepack pnpm run check:post-deploy-live');
+
+  const items = [
+    {
+      rank: 1,
+      gate: 'Production approval clearance',
+      current: approvalReady ? 'production approval prerequisites ready' : `${productionApprovalPrerequisiteQueue.blocked_count ?? 'unknown'} production-approval prerequisite(s) remain`,
+      needed: 'clean prerequisite queue and explicit owner approval before any deploy or live-proof attempt',
+      owner: 'owner',
+      proof_command: 'corepack pnpm run check:production-deploy-request',
+      stop_gate: 'Do not use post-deploy checks to bypass source provenance, release-readiness, branch review, buyer evidence, Supabase advisor, or explicit owner approval gates.',
+      status: approvalReady ? 'manual_stop' : 'blocked',
+    },
+    {
+      rank: 2,
+      gate: 'Guarded production deploy completion',
+      current: 'not run by this manifest',
+      needed: 'after explicit owner approval, deploy the already-built dist artifact through scripts/deploy-production.sh',
+      owner: 'operator',
+      proof_command: 'scripts/deploy-production.sh',
+      stop_gate: 'Do not run deploy-production.sh, netlify deploy, push, or mutate production from this queue or manifest.',
+      status: 'blocked',
+    },
+    {
+      rank: 3,
+      gate: 'Live public metadata',
+      current: 'not run by this manifest',
+      needed: 'live root metadata, manifest, and JSON-LD carry current proof-pack positioning after the approved deploy',
+      owner: 'operator',
+      proof_command: liveMetadataCommand,
+      stop_gate: 'Do not claim metadata parity before the approved deploy and the live public metadata check pass for the deployed artifact.',
+      status: 'blocked',
+    },
+    {
+      rank: 4,
+      gate: 'Live static dist parity',
+      current: 'not run by this manifest',
+      needed: 'hosted /, /manifest.json, and /schema-webapp.jsonld match the just-built dist artifact',
+      owner: 'operator',
+      proof_command: liveStaticParityCommand,
+      stop_gate: 'Do not rebuild dist inside the live parity claim or compare production to stale local artifacts.',
+      status: 'blocked',
+    },
+    {
+      rank: 5,
+      gate: 'Hosted proof-pack route smoke',
+      current: 'not run by this manifest',
+      needed: 'hosted proof-pack routes smoke successfully against production after the approved deploy',
+      owner: 'operator',
+      proof_command: hostedProofPackCommand,
+      stop_gate: 'Do not treat local browser smoke, constructed demos, or skipped hosted smoke as hosted proof-pack route evidence.',
+      status: 'blocked',
+    },
+    {
+      rank: 6,
+      gate: 'Current-source hosted parity claim',
+      current: 'not live-proven by this manifest',
+      needed: 'the full post-deploy live gate passes after the explicitly approved deploy',
+      owner: 'operator',
+      proof_command: postDeployCommand,
+      stop_gate: 'Do not present hosted/live parity for current source until live metadata, static parity, and hosted proof-pack smoke all pass after the approved deploy.',
+      status: 'blocked',
+    },
+  ];
+
+  const queue = {
+    status: 'blocked',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    items,
+  };
+
+  return {
+    ...queue,
+    evidence: postDeployLiveProofGateEvidence(queue),
   };
 }
 
@@ -2383,6 +2488,10 @@ const productionApprovalPrerequisiteQueue = buildProductionApprovalPrerequisiteQ
   releasePreflight,
   sourceProvenanceResolutionQueue,
 });
+const postDeployLiveProofGateQueue = buildPostDeployLiveProofGateQueue({
+  productionApprovalPrerequisiteQueue,
+  packageScripts: pkg.scripts,
+});
 
 const buyerGapEvidence = [
   buyerProbe.reviewEvidence,
@@ -2453,6 +2562,7 @@ const manifest = {
       releasePreflight.remediation_queue.evidence,
       launchActionQueue.evidence,
       productionApprovalPrerequisiteQueue.evidence,
+      postDeployLiveProofGateQueue.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -2575,6 +2685,13 @@ const manifest = {
     evidence: productionApprovalPrerequisiteQueue.evidence,
     stop_gate: 'This manifest does not grant production approval; deploy-production.sh, netlify deploy, push, or post-deploy live claims require explicit owner approval and current release gates.',
   },
+  post_deploy_live_proof: {
+    status: postDeployLiveProofGateQueue.status,
+    current_source_live_proven: false,
+    gate_queue: postDeployLiveProofGateQueue,
+    evidence: postDeployLiveProofGateQueue.evidence,
+    stop_gate: 'This manifest does not prove hosted/live parity for current source; live parity requires an explicitly approved deploy followed by check:post-deploy-live.',
+  },
   gaps: [
     {
       gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
@@ -2645,6 +2762,7 @@ const manifest = {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
       'production approval prerequisite queue synthesis',
+      'post-deploy live proof gate queue synthesis',
       'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
     ],
     unresolved_blockers: [
@@ -2654,6 +2772,7 @@ const manifest = {
       'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
       'Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.',
       'Production approval remains manual-stop until every prerequisite row is ready and the owner explicitly approves deployment.',
+      'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],
   },
   adversarial_reviews: [
@@ -2705,9 +2824,10 @@ const manifest = {
           'Supabase advisor remediation queue synthesis',
           'buyer evidence remediation queue synthesis',
           'production approval prerequisite queue synthesis',
+          'post-deploy live proof gate queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a production approval prerequisite queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, buyer contact state, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, or live proof.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a production approval prerequisite queue, a post-deploy live proof gate queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, buyer contact state, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, browser smoke state, production hosting, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

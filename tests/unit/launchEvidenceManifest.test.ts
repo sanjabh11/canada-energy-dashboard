@@ -177,6 +177,25 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
+    expect(manifest.post_deploy_live_proof.status).toBe('blocked');
+    expect(manifest.post_deploy_live_proof.current_source_live_proven).toBe(false);
+    expect(manifest.post_deploy_live_proof.evidence).toContain('Post-deploy live proof gate queue');
+    expect(manifest.post_deploy_live_proof.stop_gate).toMatch(/does not prove hosted\/live parity/i);
+    expect(manifest.post_deploy_live_proof.gate_queue.status).toBe('blocked');
+    expect(manifest.post_deploy_live_proof.gate_queue.evidence).toContain('Post-deploy live proof gate queue');
+    expect(manifest.post_deploy_live_proof.gate_queue.item_count).toBe(6);
+    expect(manifest.post_deploy_live_proof.gate_queue.items.map((item: { gate: string }) => item.gate)).toEqual([
+      'Production approval clearance',
+      'Guarded production deploy completion',
+      'Live public metadata',
+      'Live static dist parity',
+      'Hosted proof-pack route smoke',
+      'Current-source hosted parity claim',
+    ]);
+    expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Live public metadata').proof_command).toBe('corepack pnpm run check:live-public-metadata');
+    expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Live static dist parity').proof_command).toBe('corepack pnpm run check:live-static-parity');
+    expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Hosted proof-pack route smoke').proof_command).toBe('corepack pnpm run test:browser:hosted:proof-packs');
+    expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Current-source hosted parity claim').status).toBe('blocked');
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -304,6 +323,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
     expect(stdout).toContain('## Release Preflight Remediation Queue');
     expect(stdout).toContain('## Production Approval Prerequisite Queue');
+    expect(stdout).toContain('## Post-Deploy Live Proof Gate Queue');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
@@ -361,6 +381,15 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('not granted by this manifest or report');
     expect(stdout).toContain('| Post-deploy live proof boundary |');
     expect(stdout).toContain('not eligible before explicit approved deploy');
+    expect(stdout).toContain('Post-deploy live proof gate queue');
+    expect(stdout).toContain('does not deploy, push, rebuild, mutate Netlify');
+    expect(stdout).toContain('| Live public metadata |');
+    expect(stdout).toContain('| Live static dist parity |');
+    expect(stdout).toContain('| Hosted proof-pack route smoke |');
+    expect(stdout).toContain('| Current-source hosted parity claim |');
+    expect(stdout).toContain('corepack pnpm run check:live-public-metadata');
+    expect(stdout).toContain('corepack pnpm run check:live-static-parity');
+    expect(stdout).toContain('corepack pnpm run test:browser:hosted:proof-packs');
     expect(stdout).toContain('Branch family review skipped');
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');
