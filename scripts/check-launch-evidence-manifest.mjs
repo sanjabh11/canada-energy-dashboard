@@ -208,6 +208,41 @@ try {
       manifest.release_preflight.items.some((item) => item.requirement === 'Explicit owner production approval'),
       'Release preflight deficits must include explicit owner approval.',
     );
+    assert(typeof manifest.launch_action_queue?.evidence === 'string', 'Manifest launch_action_queue.evidence must be set.');
+    assert(manifest.launch_action_queue.evidence.includes('Launch blocker action queue'), 'Manifest launch action queue evidence must include a queue marker.');
+    assert(hasIntegerOrNull(manifest.launch_action_queue?.item_count), 'Manifest launch_action_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.launch_action_queue?.blocked_count), 'Manifest launch_action_queue.blocked_count must be an integer or null.');
+    assert(Array.isArray(manifest.launch_action_queue?.items), 'Manifest launch_action_queue.items must be a list.');
+    assert((manifest.launch_action_queue.items ?? []).length >= 6, 'Manifest launch action queue must include the launch blocker execution phases.');
+    for (const [index, item] of (manifest.launch_action_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `launch_action_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.phase === 'string' && item.phase.length > 0, `launch_action_queue.items[${index}].phase must be set.`);
+      assert(typeof item.blocker === 'string' && item.blocker.length > 0, `launch_action_queue.items[${index}].blocker must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `launch_action_queue.items[${index}].owner must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `launch_action_queue.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `launch_action_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `launch_action_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `launch_action_queue.items[${index}].status must be set.`);
+    }
+    for (const phase of ['source_provenance', 'release_toolchain', 'branch_review', 'supabase_advisor', 'buyer_evidence', 'production_approval', 'post_deploy_live_proof']) {
+      assert(
+        manifest.launch_action_queue.items.some((item) => item.phase === phase),
+        `Manifest launch action queue must include phase: ${phase}.`,
+      );
+    }
+    const buyerActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'buyer_evidence');
+    if (Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count) && manifest.buyer_evidence.hard_gate_deficits.open_count > 0) {
+      assert(manifest.buyer_evidence.hard_gate_deficits.status !== 'pass', 'Buyer hard-gate deficits status must not pass while open deficits remain.');
+      assert(buyerActionItem?.status !== 'ready', 'Buyer evidence launch action must not be ready while hard-gate deficits remain.');
+    }
+    assert(
+      manifest.launch_action_queue.items.some((item) => item.proof_command.includes('check:post-deploy-live')),
+      'Manifest launch action queue must include post-deploy live proof command.',
+    );
+    assert(
+      manifest.launch_action_queue.items.some((item) => /no checkout|no .*merge|no .*push|no .*deploy/i.test(item.stop_gate)),
+      'Manifest launch action queue must preserve branch/deploy no-mutation stop gates.',
+    );
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
@@ -367,4 +402,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, launch action queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

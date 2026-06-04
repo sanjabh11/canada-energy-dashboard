@@ -100,6 +100,21 @@ describe('launch evidence manifest report', () => {
       'Clean source provenance',
       'Explicit owner production approval',
     ]);
+    expect(manifest.launch_action_queue.status).toBe('blocked');
+    expect(manifest.launch_action_queue.evidence).toContain('Launch blocker action queue');
+    expect(manifest.launch_action_queue.items.map((item: { phase: string }) => item.phase)).toEqual([
+      'source_provenance',
+      'release_toolchain',
+      'branch_review',
+      'supabase_advisor',
+      'buyer_evidence',
+      'production_approval',
+      'post_deploy_live_proof',
+    ]);
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run check:post-deploy-live');
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -201,6 +216,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Decision: `blocked`');
     expect(stdout).toContain('## Launch Decision');
     expect(stdout).toContain('## Gap Analysis');
+    expect(stdout).toContain('## Launch Blocker Action Queue');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
@@ -213,6 +229,16 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Evidence Validation');
     expect(stdout).toContain('## ECC Ledger');
     expect(stdout).toContain('Source provenance:');
+    expect(stdout).toContain('Launch blocker action queue');
+    expect(stdout).toContain('| source_provenance |');
+    expect(stdout).toContain('| release_toolchain |');
+    expect(stdout).toContain('| branch_review |');
+    expect(stdout).toContain('| supabase_advisor |');
+    expect(stdout).toContain('| buyer_evidence |');
+    expect(stdout).toContain('| production_approval |');
+    expect(stdout).toContain('| post_deploy_live_proof |');
+    expect(stdout).toMatch(/\| 5 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
+    expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');
     expect(stdout).toContain('Batchable intake-packet outreach rows');

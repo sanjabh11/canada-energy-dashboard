@@ -337,6 +337,126 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
   };
 }
 
+function launchActionQueueEvidence(queue) {
+  const topBlocked = queue.items
+    .filter((item) => item.status !== 'ready')
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.phase}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Launch blocker action queue:',
+    `items=${queue.item_count}`,
+    `blocked=${queue.blocked_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=queue is an execution plan only; it does not deploy, merge, contact buyers, clear source provenance, or claim launch readiness',
+  ].join(' ');
+}
+
+function buildLaunchActionQueue({
+  buyerProbe,
+  branchReviewQueue,
+  supabaseAdvisor,
+  releasePreflight,
+  gitStatus,
+}) {
+  const dirtyPathSummary = gitStatus.isDirty
+    ? `${gitStatus.dirtyLines.length} dirty path(s); first=${gitStatus.dirtyDetails[0]?.file_path ?? 'unknown'}`
+    : 'clean worktree';
+  const branchReviewFirst = branchReviewQueue.review_first_count ?? null;
+  const branchTop = branchReviewQueue.items?.[0]?.review_ref ?? '<review-ref>';
+  const supabaseOpen = supabaseAdvisor.clearanceDeficits?.open_count ?? 'unknown';
+  const buyerOpenCount = buyerProbe.hardGateDeficits?.open_count;
+  const buyerOpen = buyerOpenCount ?? 'unknown';
+  const buyerDeficitsOpen = !Number.isInteger(buyerOpenCount) || buyerOpenCount > 0;
+  const releaseOpen = releasePreflight.open_count ?? 'unknown';
+
+  const items = [
+    {
+      rank: 1,
+      phase: 'source_provenance',
+      blocker: dirtyPathSummary,
+      owner: 'operator',
+      action: 'Resolve staged or unstaged source changes intentionally before any deploy approval request.',
+      proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      stop_gate: 'Do not commit, unstage, stash, revert, or delete unrelated user work without explicit owner intent.',
+      status: gitStatus.isDirty ? 'blocked' : 'ready',
+    },
+    {
+      rank: 2,
+      phase: 'release_toolchain',
+      blocker: `${releaseOpen} release-preflight deficit(s) remain`,
+      owner: 'operator',
+      action: 'Run the guarded release path only from a Corepack-enabled shell after source provenance is clean.',
+      proof_command: 'corepack pnpm run check:release-readiness',
+      stop_gate: 'Do not treat bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
+      status: releasePreflight.status === 'pass' ? 'ready' : 'blocked',
+    },
+    {
+      rank: 3,
+      phase: 'branch_review',
+      blocker: `${branchReviewFirst ?? 'unknown'} review-first branch family/families; top=${branchTop}`,
+      owner: 'operator',
+      action: 'Run focused read-only branch reviews and choose canonical heads before any merge, push, discard, migration, or deploy discussion.',
+      proof_command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${branchTop} --max-files 8`,
+      stop_gate: 'No checkout, merge, push, discard, migration, or production approval without explicit owner approval and release gates.',
+      status: (branchReviewFirst ?? 1) > 0 ? 'blocked' : 'ready',
+    },
+    {
+      rank: 4,
+      phase: 'supabase_advisor',
+      blocker: `${supabaseOpen} Supabase advisor clearance deficit(s) remain`,
+      owner: 'account_admin',
+      action: 'Repair Supabase connector or dashboard authorization, rerun security/performance advisors, and retain public-safe findings.',
+      proof_command: 'Supabase MCP or dashboard security/performance advisor review for qnymbecjgeaoxsfphrti',
+      stop_gate: 'Do not claim Supabase advisor clearance from CLI app lint, repo artifacts, or public status cards alone.',
+      status: supabaseAdvisor.clearanceDeficits?.status === 'pass' ? 'ready' : 'blocked',
+    },
+    {
+      rank: 5,
+      phase: 'buyer_evidence',
+      blocker: `${buyerOpen} buyer hard-gate deficit(s) remain`,
+      owner: 'buyer_operator',
+      action: 'Collect real anonymized accepted buyer rows and retained redacted artifacts for the minimum Phase F lanes.',
+      proof_command: 'corepack pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+      stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, or constructed demos as buyer acceptance.',
+      status: buyerDeficitsOpen ? 'blocked' : 'ready',
+    },
+    {
+      rank: 6,
+      phase: 'production_approval',
+      blocker: 'explicit owner production approval is not granted by this report',
+      owner: 'owner',
+      action: 'Request production deployment approval only after source provenance, release-readiness, branch review, and security/advisor gates are clean.',
+      proof_command: 'corepack pnpm run check:production-deploy-request',
+      stop_gate: 'Do not run deploy-production.sh or netlify deploy without explicit production approval.',
+      status: 'manual_stop',
+    },
+    {
+      rank: 7,
+      phase: 'post_deploy_live_proof',
+      blocker: 'current source is not live-proven by this manifest',
+      owner: 'operator',
+      action: 'After an explicitly approved deploy, prove live metadata, static parity, and hosted proof-pack route smoke.',
+      proof_command: 'corepack pnpm run check:post-deploy-live',
+      stop_gate: 'Do not present hosted/live parity for current source until the post-deploy live gate passes after the approved deploy.',
+      status: 'blocked',
+    },
+  ];
+
+  const queue = {
+    status: items.every((item) => item.status === 'ready') ? 'ready' : 'blocked',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    items,
+  };
+
+  return {
+    ...queue,
+    evidence: launchActionQueueEvidence(queue),
+  };
+}
+
 function parseGateLine(text, label) {
   const pattern = new RegExp(`^${label}:\\s*(.+)$`, 'm');
   const match = text.match(pattern);
@@ -412,10 +532,12 @@ function parseBuyerDeficitRows(markdown) {
       next_action: nextAction,
     }));
 
+  const openCount = countMatch ? Number.parseInt(countMatch[1], 10) : items.filter((item) => item.status !== 'pass').length;
+  const totalCount = countMatch ? Number.parseInt(countMatch[2], 10) : items.length;
   const deficits = {
-    status: 'pass',
-    open_count: countMatch ? Number.parseInt(countMatch[1], 10) : items.filter((item) => item.status !== 'pass').length,
-    total_count: countMatch ? Number.parseInt(countMatch[2], 10) : items.length,
+    status: openCount === 0 ? 'pass' : 'blocked',
+    open_count: openCount,
+    total_count: totalCount,
     items,
   };
   return { ...deficits, evidence: buyerDeficitEvidence(deficits) };
@@ -1572,6 +1694,13 @@ const releasePreflight = probeReleasePreflight({
   packageManager: pkg.packageManager,
   gitStatus,
 });
+const launchActionQueue = buildLaunchActionQueue({
+  buyerProbe,
+  branchReviewQueue,
+  supabaseAdvisor,
+  releasePreflight,
+  gitStatus,
+});
 const generatedAt = new Date().toISOString();
 
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
@@ -1637,6 +1766,7 @@ const manifest = {
       supabaseAdvisor.evidence,
       supabaseAdvisor.clearanceDeficits.evidence,
       releasePreflight.evidence,
+      launchActionQueue.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -1748,6 +1878,7 @@ const manifest = {
       : 'source worktree clean at manifest generation time; owner approval and release gates still apply before deploy',
   },
   release_preflight: releasePreflight,
+  launch_action_queue: launchActionQueue,
   gaps: [
     {
       gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
@@ -1814,6 +1945,8 @@ const manifest = {
       'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
       'corepack pnpm run check:release-readiness',
+      'corepack pnpm run check:production-deploy-request',
+      'corepack pnpm run check:post-deploy-live',
       'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
     ],
     unresolved_blockers: [
@@ -1866,9 +1999,10 @@ const manifest = {
           'node scripts/report-unmerged-branch-readiness.mjs --max-files 6',
           'corepack pnpm --version',
           'git lfs version',
+          'launch blocker action queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision and explicit release preflight deficits.',
-    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence or deployment approval.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit release preflight deficits, and an ordered launch blocker action queue.',
+    reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, deployment approval, branch state, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
   },

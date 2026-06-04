@@ -134,6 +134,8 @@ function renderReport(manifest, validationText) {
   const supabaseDeficitItems = Array.isArray(supabaseDeficits.items) ? supabaseDeficits.items : [];
   const releasePreflight = manifest.release_preflight ?? {};
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
+  const launchActionQueue = manifest.launch_action_queue ?? {};
+  const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -181,6 +183,25 @@ ${gaps.map((gap) => row([
     gap.fix,
     gap.status,
   ])).join('\n')}
+
+## Launch Blocker Action Queue
+
+Open action items: ${text(launchActionQueue.blocked_count ?? 'unknown')}/${text(launchActionQueue.item_count ?? 'unknown')}. This is a sequenced execution plan only; it does not deploy, merge, contact buyers, mutate branches, clear source provenance, or claim launch readiness.
+
+| Rank | Phase | Blocker | Owner | Action | Proof Command | Stop Gate | Status |
+|---:|---|---|---|---|---|---|---|
+${launchActionItems.length > 0
+    ? launchActionItems.map((item) => row([
+      item.rank,
+      item.phase,
+      item.blocker,
+      item.owner,
+      item.action,
+      item.proof_command,
+      item.stop_gate,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'queue_missing', 'not available', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run report:launch-evidence-manifest', launchActionQueue.evidence ?? 'No launch action queue was captured.', launchActionQueue.status ?? 'unknown'])}
 
 ## Buyer Evidence Hard Gate Deficits
 

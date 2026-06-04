@@ -106,6 +106,7 @@ function assertReport(markdown, options = {}) {
   const requiredSections = [
     'Launch Decision',
     'Gap Analysis',
+    'Launch Blocker Action Queue',
     'Buyer Evidence Hard Gate Deficits',
     'Supabase Advisor Clearance Deficits',
     'Release Toolchain And Approval Deficits',
@@ -130,6 +131,21 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Local verification only; not deploy approval or buyer proof.'), 'Report must preserve the local-proof boundary.');
   assert(markdown.includes('Scaffolding, fixtures, and constructed demos do not count as buyer acceptance.'), 'Report must preserve the no-scaffolding-as-buyer-proof boundary.');
   assert(markdown.includes('Buyer evidence review'), 'Report must include structured buyer-evidence readiness from the manifest.');
+  assert(markdown.includes('## Launch Blocker Action Queue'), 'Report must include the launch blocker action queue table.');
+  assert(markdown.includes('Launch blocker action queue'), 'Report must include structured launch action queue evidence from the manifest.');
+  assert(markdown.includes('This is a sequenced execution plan only'), 'Report must preserve the action-queue non-execution boundary.');
+  assert(markdown.includes('| source_provenance |'), 'Report must include the source provenance action phase.');
+  assert(markdown.includes('| release_toolchain |'), 'Report must include the release toolchain action phase.');
+  assert(markdown.includes('| branch_review |'), 'Report must include the branch review action phase.');
+  assert(markdown.includes('| supabase_advisor |'), 'Report must include the Supabase advisor action phase.');
+  assert(markdown.includes('| buyer_evidence |'), 'Report must include the buyer evidence action phase.');
+  assert(markdown.includes('| production_approval |'), 'Report must include the production approval action phase.');
+  assert(markdown.includes('| post_deploy_live_proof |'), 'Report must include the post-deploy live proof action phase.');
+  assert(
+    /\| 5 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/.test(markdown),
+    'Report must keep buyer evidence action blocked while hard-gate deficits remain.',
+  );
+  assert(markdown.includes('corepack pnpm run check:post-deploy-live'), 'Report must include the post-deploy live proof command.');
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
   assert(markdown.includes('## Buyer Evidence Hard Gate Deficits'), 'Report must include the buyer hard-gate deficit table.');
   assert(markdown.includes('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.'), 'Report must preserve the no-scaffolding buyer-deficit boundary.');
@@ -181,6 +197,7 @@ function assertReport(markdown, options = {}) {
   const targetSection = extractSection(markdown, 'Top 10 Target Customers Or Segments');
   const launchSection = extractSection(markdown, 'Launch Decision');
   const gapSection = extractSection(markdown, 'Gap Analysis');
+  const actionQueueSection = extractSection(markdown, 'Launch Blocker Action Queue');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
   const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
@@ -189,6 +206,7 @@ function assertReport(markdown, options = {}) {
 
   assert(countDataRows(launchSection) === 5, 'Launch score table must include five dimensions.');
   assert(countDataRows(gapSection) >= 4, 'Gap analysis table must include current P0/P1 launch blockers.');
+  assert(countDataRows(actionQueueSection) >= 6, 'Launch blocker action queue must include the launch execution phases.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
@@ -205,4 +223,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, buyer hard-gate deficits, Supabase advisor evidence, Supabase advisor clearance deficits, release preflight deficits, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
