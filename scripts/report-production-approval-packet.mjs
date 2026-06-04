@@ -31,6 +31,23 @@ function commandText(command, commandArgs) {
   return [command, ...commandArgs].map(shellQuote).join(' ');
 }
 
+function processErrorText(command, error) {
+  if (!error) return '';
+
+  const message = String(error.message ?? error);
+  const code = String(error.code ?? '');
+  if (command === 'corepack' && (code === 'ENOENT' || /ENOENT/i.test(message))) {
+    return [
+      'Corepack executable was not found on PATH.',
+      'Production deploy preflight uses Corepack to honor the pinned packageManager pnpm version.',
+      'Enable Corepack in this shell or run from a Corepack-enabled deploy environment; do not treat bare pnpm or a temporary local shim as production approval evidence.',
+      `Raw error: ${message}`,
+    ].join('\n');
+  }
+
+  return message;
+}
+
 function pnpmRunArgs(scriptName) {
   return ['pnpm', 'run', scriptName];
 }
@@ -60,7 +77,7 @@ function runStep(label, command, commandArgs, options = {}) {
     durationMs: Date.now() - startedAt,
     stdout: result.stdout ?? '',
     stderr: result.stderr ?? '',
-    error: result.error ? String(result.error.message ?? result.error) : '',
+    error: processErrorText(command, result.error),
   };
 }
 

@@ -30,6 +30,7 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
   const fakeNodePath = path.join(tempDir, 'node');
   const fakeCorepackPath = path.join(tempDir, 'corepack');
   const fakeGitPath = path.join(tempDir, 'git');
+  const corepackMissing = envOverrides.CEIP_FAKE_COREPACK_MISSING === '1';
 
   writeExecutable(
     fakeNodePath,
@@ -61,48 +62,50 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
     ].join('\n'),
   );
 
-  writeExecutable(
-    fakeCorepackPath,
-    [
-      '#!/bin/sh',
-      'case "$*" in',
-      '  pnpm\\ run\\ check:release-readiness*)',
-      '    echo "Commercial source-of-truth check passed for 9 active docs and 28 historical docs."',
-      '    echo "Strategy roadmap document check passed for docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md."',
-      '    echo "### Live public metadata"',
-      '    echo "- Status: fail"',
-      '    echo "Public metadata check failed:"',
-      '    echo "- https://example.test/: nested live metadata failure from completion-audit evidence"',
-      '    echo "### Live static dist parity"',
-      '    echo "- Status: fail"',
-      '    echo "Live static parity check failed:"',
-      '    echo "- /: remote static content does not match dist/index.html"',
-      '    echo "Pilot evidence fixture 95% gate check passed."',
-      '    echo "Public metadata check passed for local source metadata."',
-      '    echo "Public metadata check passed for built dist metadata."',
-      '    echo "All proof-pack route bundle budgets passed."',
-      '    exit 0',
-      '    ;;',
-      'esac',
-      'case "$*" in',
-      '  pnpm\\ exec\\ playwright*) ;;',
-      '  *) echo "Unexpected corepack command: $*"; exit 2 ;;',
-      'esac',
-      'if [ "$CEIP_ASSERT_PLAYWRIGHT_TMP_OUTPUTS" = "1" ]; then',
-      '  case "$PLAYWRIGHT_HTML_OUTPUT_DIR" in',
-      '    /tmp/ceip-*) ;;',
-      '    *) echo "Playwright HTML output must be under /tmp/ceip-*"; exit 2 ;;',
-      '  esac',
-      '  case "$PLAYWRIGHT_JSON_OUTPUT_FILE" in',
-      '    /tmp/ceip-*.json) ;;',
-      '    *) echo "Playwright JSON output must be under /tmp/ceip-*.json"; exit 2 ;;',
-      '  esac',
-      'fi',
-      'echo "Hosted proof-pack route smoke passed."',
-      'exit 0',
-      '',
-    ].join('\n'),
-  );
+  if (!corepackMissing) {
+    writeExecutable(
+      fakeCorepackPath,
+      [
+        '#!/bin/sh',
+        'case "$*" in',
+        '  pnpm\\ run\\ check:release-readiness*)',
+        '    echo "Commercial source-of-truth check passed for 9 active docs and 28 historical docs."',
+        '    echo "Strategy roadmap document check passed for docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md."',
+        '    echo "### Live public metadata"',
+        '    echo "- Status: fail"',
+        '    echo "Public metadata check failed:"',
+        '    echo "- https://example.test/: nested live metadata failure from completion-audit evidence"',
+        '    echo "### Live static dist parity"',
+        '    echo "- Status: fail"',
+        '    echo "Live static parity check failed:"',
+        '    echo "- /: remote static content does not match dist/index.html"',
+        '    echo "Pilot evidence fixture 95% gate check passed."',
+        '    echo "Public metadata check passed for local source metadata."',
+        '    echo "Public metadata check passed for built dist metadata."',
+        '    echo "All proof-pack route bundle budgets passed."',
+        '    exit 0',
+        '    ;;',
+        'esac',
+        'case "$*" in',
+        '  pnpm\\ exec\\ playwright*) ;;',
+        '  *) echo "Unexpected corepack command: $*"; exit 2 ;;',
+        'esac',
+        'if [ "$CEIP_ASSERT_PLAYWRIGHT_TMP_OUTPUTS" = "1" ]; then',
+        '  case "$PLAYWRIGHT_HTML_OUTPUT_DIR" in',
+        '    /tmp/ceip-*) ;;',
+        '    *) echo "Playwright HTML output must be under /tmp/ceip-*"; exit 2 ;;',
+        '  esac',
+        '  case "$PLAYWRIGHT_JSON_OUTPUT_FILE" in',
+        '    /tmp/ceip-*.json) ;;',
+        '    *) echo "Playwright JSON output must be under /tmp/ceip-*.json"; exit 2 ;;',
+        '  esac',
+        'fi',
+        'echo "Hosted proof-pack route smoke passed."',
+        'exit 0',
+        '',
+      ].join('\n'),
+    );
+  }
 
   writeExecutable(
     fakeGitPath,
@@ -143,7 +146,7 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
         env: {
           ...process.env,
           ...envOverrides,
-          PATH: `${tempDir}:${process.env.PATH ?? ''}`,
+          PATH: corepackMissing ? tempDir : `${tempDir}:${process.env.PATH ?? ''}`,
         },
         stdio: ['ignore', 'pipe', 'pipe'],
       });
@@ -206,6 +209,22 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
+  });
+
+  it('reports missing Corepack as a toolchain blocker without approving bare pnpm evidence', async () => {
+    const result = await runPacket(['--fail-on-predeploy-blocker'], {
+      CEIP_FAKE_COREPACK_MISSING: '1',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Source deploy provenance: pass.');
+    expect(result.stdout).toContain('- Local source approval state: fail.');
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
+    expect(result.stdout).toContain('Corepack executable was not found on PATH.');
+    expect(result.stdout).toContain('Production deploy preflight uses Corepack to honor the pinned packageManager pnpm version.');
+    expect(result.stdout).toContain('do not treat bare pnpm or a temporary local shim as production approval evidence.');
+    expect(result.stdout).toContain('- Command: `corepack pnpm run check:release-readiness`');
   });
 
   it('blocks production approval when source provenance is not deploy-script-ready', async () => {
