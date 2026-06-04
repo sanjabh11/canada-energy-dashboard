@@ -94,6 +94,12 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('/roi-calculator (tier_cfo_savings_pack) or /credit-banking (tier_credit_banking_audit_pack)');
     expect(result.stdout).toContain('/shadow-billing (shadow_billing_invoice_pack) or /utility-security (utility_security_procurement_pack)');
     expect(result.stdout).toContain('At least three distinct accepted buyer-supplied proof_pack_id values');
+    expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
+    expect(result.stdout).toContain('Open hard-gate deficits: 10/10');
+    expect(result.stdout).toContain('Generated scaffolding, outreach headers, and starter registers do not close any deficit.');
+    expect(result.stdout).toContain('| Utility forecast lane | 0 accepted diagnostic row(s) | >=1 buyer-supplied accepted utility forecast row with full diagnostics | blocked |');
+    expect(result.stdout).toContain('| Distinct accepted proof packs | 0/3 | >=3 distinct proof_pack_id values with day_14_decision=proceed | blocked |');
+    expect(result.stdout).toContain('| Retained-artifact 95% validation | not run | validate:pilot-evidence --require-95 passes with --evidence-root | blocked |');
     expect(result.stdout).toContain('corepack pnpm run create:phase-f-minimum-intake-bundle -- --output-dir /tmp/ceip-phase-f-minimum-intake');
     expect(result.stdout).toContain('All-in-one Phase F collection workspace for operators');
     expect(result.stdout).toContain('corepack pnpm run create:phase-f-evidence-workspace -- --output-dir /tmp/ceip-phase-f-evidence');
@@ -153,6 +159,8 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Use the batch packet command above for `create_intake_packet` rows');
     expect(result.stdout).toContain('Minimum Phase F 95% Evidence Map');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
+    expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
+    expect(result.stdout).toContain('Open hard-gate deficits: 10/10');
   });
 
   it('keeps a header-only production outreach log in collection mode, not evidence-ready mode', async () => {
@@ -197,6 +205,9 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Production pilot evidence registers: 1');
     expect(result.stdout).toContain('Base validation: pass');
     expect(result.stdout).toContain('95% retained-evidence gate: fail');
+    expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
+    expect(result.stdout).toContain('| Utility forecast lane | 0 accepted diagnostic row(s) | >=1 buyer-supplied accepted utility forecast row with full diagnostics | blocked |');
+    expect(result.stdout).toContain('| Retained-artifact 95% validation | 0 passing register(s) | validate:pilot-evidence --require-95 passes with --evidence-root | blocked |');
     expect(result.stdout).toContain('95% confidence gate requires accepted buyer-supplied utility demand forecast evidence');
   });
 
@@ -236,6 +247,8 @@ describe('buyer evidence readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Production pilot evidence registers: 1');
     expect(result.stdout).toContain('Confidence-moving register rows: 0');
+    expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
+    expect(result.stdout).toContain('Open hard-gate deficits: 10/10');
     expect(result.stdout).toContain('Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence');
     expect(result.stdout).toContain('Keep `confidence_delta=0` until buyer evidence includes reviewer acceptance');
     expect(result.stdout).not.toContain('Re-run with `--evidence-root path/to/redacted-artifacts` to test the retained-artifact 95% gate.');

@@ -267,6 +267,178 @@ function phaseFEvidenceWorkspaceUpdatedRegisterReportCommand(
   return `${phaseFEvidenceWorkspaceReportCommand(workspaceDir)} --register-file ${registerFile}`;
 }
 
+const acceptedReviewStatuses = new Set(['accepted', 'approved', 'signed']);
+const completeFeedbackStatuses = new Set(['accepted', 'approved', 'complete', 'signed']);
+const buyerSourceLabels = new Set(['buyer_supplied_anonymized', 'buyer_supplied_confidential']);
+const strongCommercialStatuses = new Set([
+  'design_partner_signed',
+  'paid_pilot',
+  'purchase_order',
+  'letter_of_intent',
+]);
+const forecastDiagnosticPatterns = [
+  /mae/i,
+  /mape/i,
+  /rmse/i,
+  /persistence/i,
+  /seasonal[- ]?naive/i,
+  /rolling[- ]?(?:origin|split)|rolling split/i,
+  /interval coverage|conformal/i,
+  /champion|challenger/i,
+];
+const hashReferencePattern = /\bsha256[:=]([a-f0-9]{64})\b/i;
+
+function normalizeText(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
+function numericValue(value) {
+  const parsed = Number(String(value ?? '').trim());
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatNumber(value) {
+  return Number.isInteger(value) ? `${value}` : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function isAcceptedConfidenceMovingBuyerRow(row) {
+  return numericValue(row.confidence_delta) > 0
+    && buyerSourceLabels.has(normalizeText(row.source_label))
+    && completeFeedbackStatuses.has(normalizeText(row.reviewer_feedback_status))
+    && acceptedReviewStatuses.has(normalizeText(row.reviewer_acceptance))
+    && normalizeText(row.day_14_decision) === 'proceed';
+}
+
+function hasForecastDiagnosticSet(row) {
+  return forecastDiagnosticPatterns.every((pattern) => pattern.test(String(row.benchmark_lift_or_diagnostic ?? '')));
+}
+
+function hashReference(row) {
+  return String(row.evidence_file_reference ?? '').match(hashReferencePattern)?.[1]?.toLowerCase() ?? '';
+}
+
+function statusText(condition) {
+  return condition ? 'pass' : 'blocked';
+}
+
+function hardGateDeficitRows(pilotRegisters, { gate95Ran, passing95Gates }) {
+  const registerRows = pilotRegisters.flatMap((register) => register.rowObjects);
+  const acceptedRows = registerRows.filter(isAcceptedConfidenceMovingBuyerRow);
+  const utilityForecastRows = acceptedRows.filter((row) => {
+    const route = normalizeText(row.route);
+    return (route === '/utility-demand-forecast' || route === '/forecast-benchmarking') && hasForecastDiagnosticSet(row);
+  });
+  const tierOrCreditRows = acceptedRows.filter((row) => {
+    const proofPackId = normalizeText(row.proof_pack_id);
+    return proofPackId === 'tier_cfo_savings_pack' || proofPackId === 'tier_credit_banking_audit_pack';
+  });
+  const billingOrSecurityRows = acceptedRows.filter((row) => {
+    const proofPackId = normalizeText(row.proof_pack_id);
+    return proofPackId === 'shadow_billing_invoice_pack' || proofPackId === 'utility_security_procurement_pack';
+  });
+  const acceptedProofPacks = new Set(acceptedRows.map((row) => normalizeText(row.proof_pack_id)).filter(Boolean));
+  const totalAcceptedConfidenceDelta = acceptedRows.reduce((total, row) => total + numericValue(row.confidence_delta), 0);
+  const hashReferences = acceptedRows.map(hashReference).filter(Boolean);
+  const distinctHashReferences = new Set(hashReferences);
+  const coverageFailures = acceptedRows.filter((row) => numericValue(row.buyer_data_coverage_pct) < 70);
+  const artifactHours = acceptedRows.map((row) => numericValue(row.time_to_artifact_hours));
+  const validArtifactHours = artifactHours.filter((hours) => Number.isFinite(hours) && hours > 0);
+  const hasFastArtifact = validArtifactHours.some((hours) => hours <= 48);
+  const hasOnlyTimelyArtifacts = acceptedRows.length > 0
+    && validArtifactHours.length === acceptedRows.length
+    && validArtifactHours.every((hours) => hours <= 120);
+  const hasCommercialSignal = acceptedRows.some((row) => strongCommercialStatuses.has(normalizeText(row.commercial_commitment_status)));
+
+  return [
+    {
+      requirement: 'Utility forecast lane',
+      current: `${utilityForecastRows.length} accepted diagnostic row(s)`,
+      needed: '>=1 buyer-supplied accepted utility forecast row with full diagnostics',
+      status: statusText(utilityForecastRows.length > 0),
+      nextAction: 'Attach accepted utility forecast or forecast-trust evidence with MAE, MAPE, RMSE, baselines, rolling-origin, interval coverage, and champion/challenger diagnostics.',
+    },
+    {
+      requirement: 'TIER or credit lane',
+      current: `${tierOrCreditRows.length} accepted row(s)`,
+      needed: '>=1 buyer-supplied accepted TIER CFO or credit-banking row',
+      status: statusText(tierOrCreditRows.length > 0),
+      nextAction: 'Collect accepted TIER CFO or credit-banking evidence with reviewer feedback and day-14 proceed status.',
+    },
+    {
+      requirement: 'Billing or security lane',
+      current: `${billingOrSecurityRows.length} accepted row(s)`,
+      needed: '>=1 buyer-supplied accepted shadow-billing or utility-security row',
+      status: statusText(billingOrSecurityRows.length > 0),
+      nextAction: 'Collect accepted shadow-billing or utility-security evidence with reviewer feedback and day-14 proceed status.',
+    },
+    {
+      requirement: 'Distinct accepted proof packs',
+      current: `${acceptedProofPacks.size}/3`,
+      needed: '>=3 distinct proof_pack_id values with day_14_decision=proceed',
+      status: statusText(acceptedProofPacks.size >= 3),
+      nextAction: 'Move at least three different proof packs through accepted buyer review; generated starter rows remain zero-evidence.',
+    },
+    {
+      requirement: 'Accepted confidence_delta',
+      current: `${formatNumber(totalAcceptedConfidenceDelta)}/0.9`,
+      needed: '>=0.9 total accepted buyer-supplied confidence_delta',
+      status: statusText(totalAcceptedConfidenceDelta >= 0.9 && acceptedRows.length > 0),
+      nextAction: 'Keep rehearsal rows at 0 and increase confidence only for accepted buyer-supplied rows.',
+    },
+    {
+      requirement: 'Retained SHA-256 references',
+      current: `${distinctHashReferences.size}/${acceptedRows.length} distinct hash reference(s)`,
+      needed: 'one distinct sha256 reference for every accepted confidence-moving row',
+      status: statusText(acceptedRows.length > 0 && distinctHashReferences.size === acceptedRows.length),
+      nextAction: 'Prepare retained redacted text artifacts and update register rows through update:pilot-evidence-register-row.',
+    },
+    {
+      requirement: 'Buyer data coverage',
+      current: acceptedRows.length > 0 ? `${coverageFailures.length} accepted row(s) below 70%` : '0 accepted row(s)',
+      needed: 'every accepted confidence-moving row has buyer_data_coverage_pct >= 70',
+      status: statusText(acceptedRows.length > 0 && coverageFailures.length === 0),
+      nextAction: 'Record buyer-data coverage for every accepted row and keep sub-70% rows from moving confidence.',
+    },
+    {
+      requirement: 'Artifact turnaround',
+      current: acceptedRows.length > 0 ? `fast<=48h=${hasFastArtifact ? 'yes' : 'no'}; all<=120h=${hasOnlyTimelyArtifacts ? 'yes' : 'no'}` : '0 accepted row(s)',
+      needed: 'at least one accepted row <=48h and every accepted row <=120h',
+      status: statusText(hasFastArtifact && hasOnlyTimelyArtifacts),
+      nextAction: 'Record time_to_artifact_hours for each accepted row and keep one accepted proof pack at or below 48 hours.',
+    },
+    {
+      requirement: 'Strong commercial signal',
+      current: hasCommercialSignal ? 'present' : 'missing',
+      needed: 'design partner, paid pilot, purchase order, or letter of intent',
+      status: statusText(hasCommercialSignal),
+      nextAction: 'Attach retained redacted text proving a strong commercial commitment; status-only labels do not count.',
+    },
+    {
+      requirement: 'Retained-artifact 95% validation',
+      current: gate95Ran ? `${passing95Gates} passing register(s)` : 'not run',
+      needed: 'validate:pilot-evidence --require-95 passes with --evidence-root',
+      status: statusText(passing95Gates > 0),
+      nextAction: gate95Ran
+        ? 'Fix retained-artifact gate failures before raising market-confidence claims.'
+        : 'Rerun with --evidence-root after accepted rows and retained artifacts exist.',
+    },
+  ];
+}
+
+function printHardGateDeficitLedger(pilotRegisters, options) {
+  const rows = hardGateDeficitRows(pilotRegisters, options);
+  const openCount = rows.filter((row) => row.status !== 'pass').length;
+
+  console.log('\n## Hard 95% Gate Deficit Ledger');
+  console.log(`Open hard-gate deficits: ${openCount}/${rows.length}. Generated scaffolding, outreach headers, and starter registers do not close any deficit.`);
+  console.log('');
+  console.log('| Requirement | Current | Needed | Status | Next action |');
+  console.log('|---|---|---|---|---|');
+  for (const row of rows) {
+    console.log(`| ${row.requirement} | ${row.current} | ${row.needed} | ${row.status} | ${row.nextAction} |`);
+  }
+}
+
 function printPhaseFMinimumEvidenceMap() {
   console.log('\n## Minimum Phase F 95% Evidence Map');
   console.log('The hard 95% gate is intentionally stricter than finding any one buyer reply or demo artifact. Minimum accepted buyer-evidence coverage:');
@@ -300,6 +472,7 @@ function summarizePilotRegister(filePath, rows) {
 
   return {
     path: filePath,
+    rowObjects,
     rows: rowObjects.length,
     confidenceRows: confidenceRows.length,
     acceptedRows: acceptedRows.length,
@@ -394,6 +567,10 @@ if (passing95Gates > 0) {
 }
 
 printPhaseFMinimumEvidenceMap();
+printHardGateDeficitLedger(pilotRegisters, {
+  gate95Ran: Boolean(evidenceRoot && pilotRegisters.length > 0),
+  passing95Gates,
+});
 
 if (pilotRegisters.length > 0) {
   console.log('\n## Pilot Evidence Registers');
