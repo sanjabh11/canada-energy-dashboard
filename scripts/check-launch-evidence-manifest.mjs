@@ -145,9 +145,17 @@ try {
     for (const [index, dirtyPath] of (manifest.source_provenance.dirty_paths ?? []).entries()) {
       assert(typeof dirtyPath.file_path === 'string' && dirtyPath.file_path.length > 0, `source_provenance.dirty_paths[${index}].file_path must be set.`);
       assert(typeof dirtyPath.status === 'string' && dirtyPath.status.length > 0, `source_provenance.dirty_paths[${index}].status must be set.`);
+      assert(typeof dirtyPath.index_status === 'string' && dirtyPath.index_status.length > 0, `source_provenance.dirty_paths[${index}].index_status must be set.`);
+      assert(typeof dirtyPath.worktree_status === 'string' && dirtyPath.worktree_status.length > 0, `source_provenance.dirty_paths[${index}].worktree_status must be set.`);
+      assert(typeof dirtyPath.staging_state === 'string' && dirtyPath.staging_state.length > 0, `source_provenance.dirty_paths[${index}].staging_state must be set.`);
       assert(isBoolean(dirtyPath.tracked), `source_provenance.dirty_paths[${index}].tracked must be boolean.`);
       assert(isBoolean(dirtyPath.ignored_by_rule), `source_provenance.dirty_paths[${index}].ignored_by_rule must be boolean.`);
       assert(typeof dirtyPath.action === 'string' && dirtyPath.action.length > 0, `source_provenance.dirty_paths[${index}].action must be set.`);
+    }
+    if (manifest.source_provenance.dirty_paths.length > 0) {
+      assert(manifest.source_provenance.evidence.includes('staging_state='), 'Manifest source provenance evidence must include staging_state classification for dirty paths.');
+      assert(manifest.source_provenance.evidence.includes('index_status='), 'Manifest source provenance evidence must include index_status classification for dirty paths.');
+      assert(manifest.source_provenance.evidence.includes('worktree_status='), 'Manifest source provenance evidence must include worktree_status classification for dirty paths.');
     }
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');

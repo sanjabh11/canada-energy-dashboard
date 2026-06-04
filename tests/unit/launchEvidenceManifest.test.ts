@@ -73,6 +73,12 @@ describe('launch evidence manifest report', () => {
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
     expect(manifest.source_provenance.evidence).toContain('Source provenance:');
+    if (manifest.source_provenance.dirty_paths.length > 0) {
+      expect(manifest.source_provenance.dirty_paths[0].index_status).toBeTruthy();
+      expect(manifest.source_provenance.dirty_paths[0].worktree_status).toBeTruthy();
+      expect(manifest.source_provenance.dirty_paths[0].staging_state).toBeTruthy();
+      expect(manifest.source_provenance.evidence).toContain('staging_state=');
+    }
     expect(manifest.source_provenance.deploy_gate).toContain('deploy');
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.risk_counts.high).toBeNull();

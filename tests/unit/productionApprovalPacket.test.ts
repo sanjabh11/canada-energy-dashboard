@@ -123,6 +123,8 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '  *status\\ --short*)',
       '    if [ "$CEIP_FAKE_GIT_DIRTY" = "1" ]; then',
       '      echo " M src/App.tsx"',
+      '    elif [ "$CEIP_FAKE_GIT_STAGED_RENAME" = "1" ]; then',
+      '      echo "R  .windsurf/workflows/master.md -> .devin/workflows/master.md"',
       '    fi',
       '    exit 0',
       '    ;;',
@@ -130,7 +132,14 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    echo "src/App.tsx"',
       '    exit 0',
       '    ;;',
+      '  *ls-files*.devin/workflows/master.md*)',
+      '    echo ".devin/workflows/master.md"',
+      '    exit 0',
+      '    ;;',
       '  *check-ignore*src/App.tsx*)',
+      '    exit 1',
+      '    ;;',
+      '  *check-ignore*.devin/workflows/master.md*)',
       '    exit 1',
       '    ;;',
       'esac',
@@ -239,8 +248,20 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocker: deploy script requires branch main; current branch is codex/ceip-proof-pack-hardening.');
     expect(result.stdout).toContain('Blocker: deploy script requires a clean worktree; 1 dirty path(s) detected.');
-    expect(result.stdout).toContain('Dirty detail: src/App.tsx | status=modified | tracked=yes | ignored_by_rule=no | action=tracked source change; commit, stash, or revert before deploy');
+    expect(result.stdout).toContain('Dirty detail: src/App.tsx | status=modified | index_status=clean | worktree_status=modified | staging_state=unstaged_only | tracked=yes | ignored_by_rule=no | action=unstaged source change; commit, stash, or revert before deploy');
     expect(result.stdout).toContain('Blocking pre-deploy gates: source deploy provenance is not deploy-script-ready.');
+  });
+
+  it('classifies staged-only renames as index blockers without implying they were resolved', async () => {
+    const result = await runPacket(['--skip-release-readiness'], {
+      CEIP_FAKE_GIT_STAGED_RENAME: '1',
+    });
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Source deploy provenance: fail.');
+    expect(result.stdout).toContain('Dirty: R  .windsurf/workflows/master.md -> .devin/workflows/master.md');
+    expect(result.stdout).toContain('Dirty detail: .devin/workflows/master.md | status=renamed | index_status=renamed | worktree_status=clean | staging_state=staged_only | old_path=.windsurf/workflows/master.md | tracked=yes | ignored_by_rule=no | action=staged source change; commit, unstage, stash, or revert before deploy');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: source deploy provenance is not deploy-script-ready; local release readiness is not passing.');
   });
 
   it('separates deploy request readiness from stale live parity', async () => {

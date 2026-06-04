@@ -267,8 +267,10 @@ function countFreshnessRows(rows, freshness, risk = '') {
 function parsePorcelainStatusLine(line) {
   const statusCode = line.slice(0, 2);
   const rawPath = line.slice(3).trim();
-  const filePath = rawPath.includes(' -> ') ? rawPath.split(' -> ').pop().trim() : rawPath;
-  return { statusCode, rawPath, filePath };
+  const renameParts = rawPath.includes(' -> ') ? rawPath.split(' -> ').map((item) => item.trim()) : [];
+  const filePath = renameParts.length > 0 ? renameParts.at(-1) : rawPath;
+  const oldPath = renameParts.length > 1 ? renameParts[0] : null;
+  return { statusCode, rawPath, filePath, oldPath };
 }
 
 function statusLabel(statusCode) {
@@ -281,9 +283,49 @@ function statusLabel(statusCode) {
   return statusCode.trim() || 'changed';
 }
 
-function dirtyPathAction({ tracked, ignoredByRule }) {
+function statusSlotLabel(code) {
+  return {
+    ' ': 'clean',
+    M: 'modified',
+    A: 'added',
+    D: 'deleted',
+    R: 'renamed',
+    C: 'copied',
+    U: 'unmerged',
+    T: 'type_changed',
+    '?': 'untracked',
+    '!': 'ignored',
+  }[code] ?? (code || 'unknown');
+}
+
+function stagingStateForStatus(statusCode) {
+  if (statusCode === '??') {
+    return { indexStatus: 'untracked', worktreeStatus: 'untracked', stagingState: 'untracked' };
+  }
+  if (statusCode === '!!') {
+    return { indexStatus: 'ignored', worktreeStatus: 'ignored', stagingState: 'ignored' };
+  }
+
+  const indexStatus = statusSlotLabel(statusCode[0] ?? ' ');
+  const worktreeStatus = statusSlotLabel(statusCode[1] ?? ' ');
+  const staged = indexStatus !== 'clean';
+  const unstaged = worktreeStatus !== 'clean';
+  return {
+    indexStatus,
+    worktreeStatus,
+    stagingState: staged && unstaged
+      ? 'staged_and_unstaged'
+      : staged
+        ? 'staged_only'
+        : unstaged
+          ? 'unstaged_only'
+          : 'clean',
+  };
+}
+
+function dirtyPathAction({ tracked, ignoredByRule, stagingState }) {
   if (tracked && ignoredByRule) {
-    return 'tracked generated-or-local artifact; restore or intentionally remove from index before deploy';
+    return 'tracked generated-or-local artifact; unstage, restore, or intentionally remove from index before deploy';
   }
   if (!tracked && ignoredByRule) {
     return 'ignored local artifact; remove local copy before deploy if it appears in status';
@@ -291,21 +333,35 @@ function dirtyPathAction({ tracked, ignoredByRule }) {
   if (!tracked) {
     return 'untracked non-ignored path; move outside repo, add an intentional ignore rule, or commit only if source evidence';
   }
+  if (stagingState === 'staged_only') {
+    return 'staged source change; commit, unstage, stash, or revert before deploy';
+  }
+  if (stagingState === 'unstaged_only') {
+    return 'unstaged source change; commit, stash, or revert before deploy';
+  }
+  if (stagingState === 'staged_and_unstaged') {
+    return 'staged and unstaged source changes; resolve both index and worktree before deploy';
+  }
   return 'tracked source change; commit, stash, or revert before deploy';
 }
 
 function classifyDirtyPath(statusLine) {
-  const { statusCode, rawPath, filePath } = parsePorcelainStatusLine(statusLine);
+  const { statusCode, rawPath, filePath, oldPath } = parsePorcelainStatusLine(statusLine);
   const tracked = gitPathCheck(['ls-files', '--error-unmatch', '--', filePath]);
   const ignoredByRule = gitPathCheck(['check-ignore', '--no-index', '-q', '--', filePath]);
+  const { indexStatus, worktreeStatus, stagingState } = stagingStateForStatus(statusCode);
   return {
     raw: statusLine,
     raw_path: rawPath,
     file_path: filePath,
+    old_path: oldPath,
     status: statusLabel(statusCode),
+    index_status: indexStatus,
+    worktree_status: worktreeStatus,
+    staging_state: stagingState,
     tracked,
     ignored_by_rule: ignoredByRule,
-    action: dirtyPathAction({ tracked, ignoredByRule }),
+    action: dirtyPathAction({ tracked, ignoredByRule, stagingState }),
   };
 }
 
@@ -326,10 +382,14 @@ function sourceProvenanceEvidence(status) {
     status.dirtyDetails.map((detail) => [
       `${detail.file_path}`,
       `status=${detail.status}`,
+      `index_status=${detail.index_status}`,
+      `worktree_status=${detail.worktree_status}`,
+      `staging_state=${detail.staging_state}`,
+      detail.old_path ? `old_path=${detail.old_path}` : null,
       `tracked=${detail.tracked ? 'yes' : 'no'}`,
       `ignored_by_rule=${detail.ignored_by_rule ? 'yes' : 'no'}`,
       `action=${detail.action}`,
-    ].join(' | ')).join('; '),
+    ].filter(Boolean).join(' | ')).join('; '),
   ].join(' ');
 }
 
