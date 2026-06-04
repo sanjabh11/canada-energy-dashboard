@@ -186,6 +186,10 @@ function riskForCategories(categories) {
   return 'low';
 }
 
+function riskRank(risk) {
+  return { high: 0, medium: 1, low: 2 }[risk] ?? 3;
+}
+
 function actionForBranch({ risk, categories }) {
   if (risk === 'high') {
     return 'manual review before merge; require focused security/release gates and explicit owner approval for deploy-sensitive changes';
@@ -438,6 +442,79 @@ function branchesForFocusedRisk(branchList) {
   return branchList.filter((branch) => branch.risk === focusRisk);
 }
 
+function canonicalBranchName(refName) {
+  return refName.startsWith('origin/') ? refName.slice('origin/'.length) : refName;
+}
+
+function branchFamilyRefs(branchesInFamily) {
+  return branchesInFamily.map((branch) => `${branch.scope}:${branch.name}@${branch.sha}`).join(', ');
+}
+
+function familyState(branchesInFamily) {
+  const local = branchesInFamily.find((branch) => branch.scope === 'local') ?? null;
+  const remote = branchesInFamily.find((branch) => branch.scope === 'remote') ?? null;
+
+  if (local && remote) {
+    if (local.sha === remote.sha) return 'local and origin heads match';
+    const localOnly = countRevisions(`${remote.name}..${local.name}`);
+    const remoteOnly = countRevisions(`${local.name}..${remote.name}`);
+    if (localOnly > 0 && remoteOnly > 0) return `diverged (${localOnly} local-only/${remoteOnly} origin-only commits)`;
+    if (localOnly > 0) return `local ahead of origin by ${localOnly} commit(s)`;
+    if (remoteOnly > 0) return `origin ahead of local by ${remoteOnly} commit(s)`;
+    return 'local and origin differ; inspect refs before review';
+  }
+
+  if (local) return 'local-only branch';
+  return 'origin-only branch';
+}
+
+function familyAction(branchesInFamily, state) {
+  const local = branchesInFamily.find((branch) => branch.scope === 'local') ?? null;
+  const remote = branchesInFamily.find((branch) => branch.scope === 'remote') ?? null;
+
+  if (local && remote) {
+    if (state === 'local and origin heads match') {
+      return `review once with ${commandText(focusedReviewCommand(local))} or ${commandText(focusedReviewCommand(remote))}; do not count the pair as two independent launch signals`;
+    }
+    return `choose the canonical local or origin head before focused review; inspect \`git log --left-right --cherry-pick --oneline ${local.name}...${remote.name}\` without merging or pushing`;
+  }
+
+  if (local) return `review local-only ref with ${commandText(focusedReviewCommand(local))} before deciding whether to push, merge, or discard`;
+  return `review origin-only ref with ${commandText(focusedReviewCommand(remote))} without creating a local checkout unless review needs it`;
+}
+
+function branchFamilyRows(branchList) {
+  const families = new Map();
+  for (const branch of branchList) {
+    const canonicalName = canonicalBranchName(branch.name);
+    const family = families.get(canonicalName) ?? [];
+    family.push(branch);
+    families.set(canonicalName, family);
+  }
+
+  return [...families.entries()]
+    .map(([canonicalName, branchesInFamily]) => {
+      branchesInFamily.sort((a, b) => {
+        if (a.scope !== b.scope) return a.scope === 'local' ? -1 : 1;
+        return a.name.localeCompare(b.name);
+      });
+      const highestRisk = branchesInFamily.map((branch) => branch.risk).sort((a, b) => riskRank(a) - riskRank(b))[0] ?? 'low';
+      const state = familyState(branchesInFamily);
+      return {
+        canonicalName,
+        refs: branchFamilyRefs(branchesInFamily),
+        highestRisk,
+        state,
+        action: familyAction(branchesInFamily, state),
+      };
+    })
+    .sort((a, b) => {
+      const riskDelta = riskRank(a.highestRisk) - riskRank(b.highestRisk);
+      if (riskDelta !== 0) return riskDelta;
+      return a.canonicalName.localeCompare(b.canonicalName);
+    });
+}
+
 if (selectedBranchName && !shellSafeRef(selectedBranchName)) {
   failures.push('--branch must be a safe Git ref containing only letters, numbers, "_", ".", "/", "@", ":", or "-".');
 }
@@ -494,12 +571,12 @@ for (const ref of refs) {
 }
 
 branches.sort((a, b) => {
-  const riskRank = { high: 0, medium: 1, low: 2 };
-  const riskDelta = riskRank[a.risk] - riskRank[b.risk];
+  const riskDelta = riskRank(a.risk) - riskRank(b.risk);
   if (riskDelta !== 0) return riskDelta;
   return a.name.localeCompare(b.name);
 });
 
+const allBranches = [...branches];
 let selectedBranch = null;
 if (selectedBranchName) {
   selectedBranch = branches.find((branch) => branch.name === selectedBranchName) ?? null;
@@ -556,6 +633,9 @@ if (branches.length === 0) {
   }
 }
 
+const familySourceBranches = selectedBranch ? allBranches.filter((branch) => canonicalBranchName(branch.name) === canonicalBranchName(selectedBranch.name)) : branches;
+const familyRows = branchFamilyRows(familySourceBranches);
+
 console.log('');
 console.log('## Next Review Order');
 console.log('');
@@ -563,6 +643,19 @@ for (const branch of branches.slice(0, 8)) {
   console.log(`- ${branch.risk.toUpperCase()}: ${branch.name} -> ${branch.action}`);
 }
 if (branches.length === 0) console.log('- None.');
+
+console.log('');
+console.log('## Local/Origin Branch Families');
+console.log('');
+if (familyRows.length === 0) {
+  console.log('- None.');
+} else {
+  console.log('| Family | Refs | Highest risk | Local/origin state | Review action |');
+  console.log('|---|---|---|---|---|');
+  for (const family of familyRows) {
+    console.log(`| ${family.canonicalName} | ${family.refs} | ${family.highestRisk} | ${family.state} | ${family.action} |`);
+  }
+}
 
 if (selectedBranch) {
   printFocusedReviewPlan(selectedBranch);

@@ -64,6 +64,9 @@ function createRepo() {
   write(root, 'supabase/functions/stripe-webhook/index.ts', 'export const handler = () => null;\n');
   write(root, 'src/lib/exportJobsClient.ts', 'export const exportJob = true;\n');
   commitAll(root, 'export risk branch');
+  git(root, ['update-ref', 'refs/remotes/origin/export-risk', 'HEAD']);
+  write(root, 'src/lib/exportJobsLocalOnly.ts', 'export const localOnlyExportJob = true;\n');
+  commitAll(root, 'local export risk followup');
 
   git(root, ['checkout', '-q', 'main']);
   git(root, ['checkout', '-q', '-b', 'remote-payment']);
@@ -129,7 +132,7 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('CEIP Unmerged Branch Readiness Report');
     expect(result.stdout).toContain('This report is read-only');
     expect(result.stdout).toContain('- Unmerged local branches: 2');
-    expect(result.stdout).toContain('- Unmerged origin branches: 1');
+    expect(result.stdout).toContain('- Unmerged origin branches: 2');
     expect(result.stdout).toContain('| export-risk | local | high |');
     expect(result.stdout).toContain('edge-function-copy');
     expect(result.stdout).toContain('production/deploy');
@@ -137,7 +140,15 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('payment/entitlement');
     expect(result.stdout).toContain('| docs-only | local | low |');
     expect(result.stdout).toContain('docs-only');
+    expect(result.stdout).toContain('| origin/export-risk | remote | high |');
     expect(result.stdout).toContain('| origin/stripe-remote | remote | high |');
+    expect(result.stdout).toContain('## Local/Origin Branch Families');
+    expect(result.stdout).toContain('| export-risk | local:export-risk@');
+    expect(result.stdout).toContain('remote:origin/export-risk@');
+    expect(result.stdout).toContain('local ahead of origin by 1 commit(s)');
+    expect(result.stdout).toContain('choose the canonical local or origin head before focused review');
+    expect(result.stdout).toContain('| stripe-remote | remote:origin/stripe-remote@');
+    expect(result.stdout).toContain('origin-only branch');
     expect(result.stdout).not.toContain('already-merged');
   }, gitBackedTestTimeoutMs);
 
@@ -151,7 +162,7 @@ describe('unmerged branch readiness report', () => {
     expect(localOnly.stdout).not.toContain('origin/stripe-remote');
 
     expect(failing.status).toBe(1);
-    expect(failing.stdout).toContain('- High-risk branches: 2');
+    expect(failing.stdout).toContain('- High-risk branches: 3');
   }, gitBackedTestTimeoutMs);
 
   it('can focus a selected unmerged branch and print a category-specific review plan', () => {
@@ -190,9 +201,11 @@ describe('unmerged branch readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('## Focused Review Queue: high risk branches');
     expect(result.stdout).toContain('### Focused Review Plan: export-risk');
+    expect(result.stdout).toContain('### Focused Review Plan: origin/export-risk');
     expect(result.stdout).toContain('### Focused Review Plan: origin/stripe-remote');
     expect(result.stdout).not.toContain('### Focused Review Plan: docs-only');
     expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 10`');
+    expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch origin/export-risk --max-files 10`');
     expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch origin/stripe-remote --max-files 10`');
     expect(result.stdout).toContain('Read-only review first; this report does not checkout, merge, deploy, or mutate branch state.');
     expect(result.stdout).toContain('does not create buyer evidence or production approval');
@@ -206,10 +219,10 @@ describe('unmerged branch readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Unmerged branch readiness report check passed:');
     expect(result.stdout).toContain('local=2');
-    expect(result.stdout).toContain('origin=1');
-    expect(result.stdout).toContain('high=2');
+    expect(result.stdout).toContain('origin=2');
+    expect(result.stdout).toContain('high=3');
     expect(result.stdout).toContain('low=1');
-    expect(result.stdout).toContain('read-only boundary, focused review packets, and high-risk failure semantics are intact');
+    expect(result.stdout).toContain('read-only boundary, branch-family pairing, focused review packets, and high-risk failure semantics are intact');
   }, gitBackedTestTimeoutMs);
 
   it('rejects a selected branch that is not in the unmerged review scope', () => {
