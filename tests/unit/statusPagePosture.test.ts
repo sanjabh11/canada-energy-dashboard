@@ -50,6 +50,7 @@ describe('status page release posture', () => {
   it('keeps current source CI as a watch gate rather than production proof', () => {
     const sourcePosture = RELEASE_POSTURE.find((item) => item.title.includes('GitHub release'));
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+    const branchReviewPosture = RELEASE_POSTURE.find((item) => item.title === 'Unmerged branch review queue');
 
     expect(sourcePosture).toBeTruthy();
     expect(sourcePosture?.status).toBe('watch');
@@ -58,6 +59,10 @@ describe('status page release posture', () => {
     expect(sourcePosture?.nextAction).toMatch(/git status --porcelain=v1 --branch/);
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.evidenceBoundary).toMatch(/local ahead-of-origin work must be checked separately/i);
+    expect(branchReviewPosture?.status).toBe('external_gate');
+    expect(branchReviewPosture?.evidence).toMatch(/4 high-risk, 3 medium-risk, and 1 low-risk/i);
+    expect(branchReviewPosture?.evidence).toMatch(/do not create launch evidence/i);
+    expect(branchReviewPosture?.nextAction).toMatch(/report:unmerged-branch-readiness -- --branch <ref>/i);
   });
 
   it('exposes public-safe release health evidence without turning source CI into production deploy proof', () => {
@@ -65,10 +70,11 @@ describe('status page release posture', () => {
     const latestApprovedParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Latest approved production parity');
     const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+    const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(7);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(8);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -82,6 +88,10 @@ describe('status page release posture', () => {
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
     expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
+    expect(branchReviewEvidence?.status).toBe('external_gate');
+    expect(branchReviewEvidence?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchReviewEvidence?.evidenceBoundary).toMatch(/does not create launch evidence/i);
+    expect(branchReviewEvidence?.evidenceBoundary).toMatch(/merges, checkouts, migrations, or deploys/i);
     expect(buyerEvidence?.status).toBe('external_gate');
     expect(buyerEvidence?.evidenceBoundary).toMatch(/no production buyer-evidence register/i);
     expect(supabaseAdvisorEvidence?.status).toBe('needs_remediation');
@@ -124,6 +134,7 @@ describe('status page release posture', () => {
     const currentSourceParityGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_live_parity');
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
+    const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
     const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
 
@@ -136,6 +147,7 @@ describe('status page release posture', () => {
       'current_source_live_parity',
       'current_source_release_gate',
       'source_provenance',
+      'unmerged_branch_review_queue',
       'buyer_evidence_gate',
       'supabase_advisor_access',
     ]);
@@ -147,6 +159,9 @@ describe('status page release posture', () => {
     expect(sourceGate?.evidenceBoundary).toMatch(/does not prove production deploy parity/i);
     expect(provenanceGate?.command).toContain('git status --porcelain=v1 --branch');
     expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(branchReviewGate?.status).toBe('external_gate');
+    expect(branchReviewGate?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchReviewGate?.evidenceBoundary).toMatch(/does not create launch evidence/i);
     expect(buyerGate?.status).toBe('external_gate');
     expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
     expect(advisorGate?.status).toBe('needs_remediation');

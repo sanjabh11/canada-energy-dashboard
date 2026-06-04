@@ -31,6 +31,8 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(page.getByText('Current source live parity').first()).toBeVisible();
     await expect(page.getByText('Current source does not prove production parity').first()).toBeVisible();
     await expect(page.getByText('Source provenance and dirty-worktree gate')).toBeVisible();
+    await expect(page.getByText('Unmerged branch review queue').first()).toBeVisible();
+    await expect(page.getByText('does not create launch evidence').first()).toBeVisible();
     await expect(page.getByRole('link', { name: /Open JSON manifest/ })).toHaveAttribute('href', '/status/release-health.json');
     await expect(page.getByTestId('supabase-advisor-status-card')).toBeVisible();
     await expect(page.getByTestId('supabase-advisor-status-card')).toContainText('does not claim advisor clearance');

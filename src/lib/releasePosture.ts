@@ -70,6 +70,13 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     nextAction: 'Refresh `git status --porcelain=v1 --branch` and GitHub Actions after every push; only a post-deploy live gate proves the hosted artifact.',
   },
   {
+    title: 'Unmerged branch review queue',
+    status: 'external_gate',
+    rating: '2.0/5',
+    evidence: 'The current unmerged-branch report finds 4 high-risk, 3 medium-risk, and 1 low-risk local/origin refs touching deploy, Supabase, payment, ML, source-app, UI, or claim surfaces. These branches are review queues only and do not create launch evidence, buyer proof, or production approval.',
+    nextAction: 'Run `pnpm run report:unmerged-branch-readiness -- --branch <ref>` for each high-risk branch, complete focused security/release checks, and merge only through normal release gates.',
+  },
+  {
     title: 'Supabase edge-function surface',
     status: 'watch',
     rating: '4.1/5',
@@ -127,6 +134,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     status: 'watch',
     command: 'gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',
     evidenceBoundary: 'GitHub CI must pass on the current pushed commit before source is considered release-ready; source CI still does not prove that production has been redeployed from that commit, and local ahead-of-origin work must be checked separately.',
+  },
+  {
+    label: 'Unmerged branch review queue',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness',
+    evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs; the report is read-only and does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
     label: 'Buyer evidence scan',
