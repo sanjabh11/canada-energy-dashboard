@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowRight, ClipboardCheck, FileSearch, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEOHead } from './SEOHead';
@@ -20,7 +20,14 @@ import {
   type PilotEvidenceReadinessMetric,
   type PilotEvidenceRegisterPreview,
 } from '../lib/pilotEvidenceRegisterPreview';
-import { computeRetainedArtifactHash, type RetainedArtifactHashResult } from '../lib/retainedArtifactHash';
+import {
+  computeRetainedArtifactHash,
+  type RetainedArtifactHashResult,
+} from '../lib/retainedArtifactHash';
+import type {
+  RetainedArtifactSupportCheck,
+  RetainedArtifactSupportPreview,
+} from '../lib/retainedArtifactSupportPreview';
 
 const MAX_REGISTER_PREVIEW_BYTES = 1024 * 1024;
 
@@ -32,6 +39,8 @@ export function PilotReadinessPage() {
   const [artifactHashResult, setArtifactHashResult] = useState<RetainedArtifactHashResult | null>(null);
   const [artifactHashError, setArtifactHashError] = useState('');
   const [artifactHashPending, setArtifactHashPending] = useState(false);
+  const [artifactSupportPreview, setArtifactSupportPreview] = useState<RetainedArtifactSupportPreview | null>(null);
+  const [artifactSupportPreviewError, setArtifactSupportPreviewError] = useState('');
   const [registerText, setRegisterText] = useState('');
   const [registerFileStatus, setRegisterFileStatus] = useState('');
   const [registerFileError, setRegisterFileError] = useState('');
@@ -107,6 +116,38 @@ export function PilotReadinessPage() {
     if (registerText.trim().length === 0) return null;
     return previewPilotEvidenceRegister(registerText);
   }, [registerText]);
+  useEffect(() => {
+    let active = true;
+    setArtifactSupportPreviewError('');
+
+    if (!selectedPlan || artifactText.trim().length === 0) {
+      setArtifactSupportPreview(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    void import('../lib/retainedArtifactSupportPreview')
+      .then(({ previewRetainedArtifactSupport }) => {
+        if (!active) return;
+        setArtifactSupportPreview(previewRetainedArtifactSupport({
+          fileName: artifactFileName,
+          text: artifactText,
+          route: selectedPlan.route,
+          proofPackId: selectedPlan.proofPackId,
+          artifactReference: artifactHashResult?.reference,
+        }));
+      })
+      .catch(() => {
+        if (!active) return;
+        setArtifactSupportPreview(null);
+        setArtifactSupportPreviewError('Unable to load retained-artifact support checks. Generate the SHA-256 reference, then run the CLI validator before updating a register row.');
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [artifactFileName, artifactHashResult?.reference, artifactText, selectedPlan]);
 
   async function handleRetainedArtifactHash(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -433,7 +474,10 @@ export function PilotReadinessPage() {
                   <input
                     id="retained-artifact-file-name"
                     value={artifactFileName}
-                    onChange={(event) => setArtifactFileName(event.target.value)}
+                    onChange={(event) => {
+                      setArtifactFileName(event.target.value);
+                      setArtifactHashResult(null);
+                    }}
                     className="mt-2 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
                     placeholder="redacted-utility-forecast-retained.md"
                   />
@@ -444,10 +488,26 @@ export function PilotReadinessPage() {
                   <textarea
                     id="retained-artifact-text"
                     value={artifactText}
-                    onChange={(event) => setArtifactText(event.target.value)}
+                    onChange={(event) => {
+                      setArtifactText(event.target.value);
+                      setArtifactHashResult(null);
+                    }}
                     className="mt-2 min-h-44 w-full rounded-2xl border border-cyan-200/20 bg-slate-950 px-4 py-3 text-sm leading-6 text-white outline-none transition focus:border-cyan-200 focus:ring-2 focus:ring-cyan-200/20"
                     placeholder="Paste only the retained extract: schema, completeness, reviewer notes, source labels, and no raw buyer values."
                   />
+
+                  {artifactSupportPreview && (
+                    <RetainedArtifactManager
+                      preview={artifactSupportPreview}
+                      onCopyCommand={() => handleCopy(artifactSupportPreview.updateCommand, 'Retained artifact update command')}
+                    />
+                  )}
+
+                  {artifactSupportPreviewError && (
+                    <div className="mt-4 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50">
+                      {artifactSupportPreviewError}
+                    </div>
+                  )}
 
                   <button
                     type="submit"
@@ -939,6 +999,80 @@ function CommandBlock({ label, command }: { label: string; command: string }) {
       <div className="text-xs uppercase tracking-[0.2em] text-emerald-100/70">{label}</div>
       <div className="mt-3 min-w-0 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
         <code className="whitespace-nowrap text-xs leading-6 text-emerald-100">{command}</code>
+      </div>
+    </div>
+  );
+}
+
+function RetainedArtifactManager({
+  preview,
+  onCopyCommand,
+}: {
+  preview: RetainedArtifactSupportPreview;
+  onCopyCommand: () => void;
+}) {
+  return (
+    <div data-testid="retained-artifact-manager" className="mt-5 rounded-2xl border border-cyan-200/15 bg-cyan-300/[0.06] p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div>
+          <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Retained artifact manager</div>
+          <p className="mt-2 text-sm leading-6 text-slate-300">
+            Browser-local preflight only. These checks make the extract easier for the CLI validator to inspect; they do
+            not upload files, approve buyer evidence, or move confidence.
+          </p>
+          <div className="mt-2 text-sm leading-6 text-slate-200">{preview.summary}</div>
+        </div>
+        <GateStatusPill status={preview.status} />
+      </div>
+
+      <RetainedArtifactCheckGrid title="Required support fields" checks={preview.supportChecks} testIdPrefix="retained-artifact-manager-check" />
+      <RetainedArtifactCheckGrid title="Route diagnostics" checks={preview.diagnosticChecks} testIdPrefix="retained-artifact-manager-diagnostic" />
+
+      <div className="mt-5 rounded-2xl border border-white/10 bg-slate-950/60 p-4">
+        <div className="text-xs uppercase tracking-[0.2em] text-cyan-100">Register-ready update command</div>
+        <p className="mt-2 text-sm leading-6 text-slate-300">
+          Use this only after the retained artifact is final and the SHA-256 reference has been generated from the final text.
+        </p>
+        <code className="mt-3 block overflow-x-auto whitespace-nowrap rounded-xl border border-white/10 bg-slate-950 p-3 text-xs leading-6 text-cyan-100">
+          {preview.updateCommand}
+        </code>
+        <CopyButton label="Copy update command" onClick={onCopyCommand} />
+      </div>
+    </div>
+  );
+}
+
+function RetainedArtifactCheckGrid({
+  title,
+  checks,
+  testIdPrefix,
+}: {
+  title: string;
+  checks: RetainedArtifactSupportCheck[];
+  testIdPrefix: string;
+}) {
+  if (checks.length === 0) return null;
+
+  return (
+    <div className="mt-5">
+      <div className="text-xs uppercase tracking-[0.18em] text-slate-400">{title}</div>
+      <div className="mt-3 grid gap-3 md:grid-cols-2">
+        {checks.map((check) => (
+          <div
+            key={check.id}
+            data-testid={`${testIdPrefix}-${check.id}`}
+            className="min-w-0 rounded-2xl border border-white/10 bg-slate-950/55 p-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="text-sm font-semibold text-slate-50">{check.label}</div>
+              <GateStatusPill status={check.status} />
+            </div>
+            <p className="mt-2 break-words text-sm leading-6 text-slate-300">{check.evidence}</p>
+            {check.status !== 'pass' && (
+              <p className="mt-2 text-sm leading-6 text-amber-100">{check.nextAction}</p>
+            )}
+          </div>
+        ))}
       </div>
     </div>
   );

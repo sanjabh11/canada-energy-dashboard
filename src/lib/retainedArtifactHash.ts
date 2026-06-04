@@ -13,10 +13,10 @@ export interface RetainedArtifactHashResult {
   warnings: string[];
 }
 
-const TEXT_INSPECTABLE_EXTENSIONS = new Set(['.csv', '.json', '.md', '.txt']);
+const TEXT_INSPECTABLE_EXTENSIONS = new Set(['.csv', '.html', '.htm', '.json', '.jsonl', '.md', '.tsv', '.txt', '.yaml', '.yml']);
 const DIRECT_IDENTIFIER_PATTERN =
   /\b(account(?:[_ -]?number)?|address|customer|email|meter(?:[_ -]?id|[_ -]?number)?|phone|postal(?:[_ -]?code)?|secret|token)\b/i;
-const SPREADSHEET_FORMULA_PATTERN = /(^|[\n\r,])\s*["']?[=+\-@](?!\d+(?:\.\d+)?(?:[\s,\n\r]|$))/;
+const SPREADSHEET_FORMULA_PATTERN = /(^|[\n\r,])\s*["']?(?:[=+@]|-(?![\d\s]))/;
 
 export function normalizeRetainedArtifactFileName(fileName: string): string {
   const cleaned = fileName

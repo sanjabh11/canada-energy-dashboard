@@ -78,21 +78,44 @@ test.describe('CEIP wedge prototype routes', () => {
     await expect(page.getByText('Retained artifact hash helper', { exact: true })).toBeVisible();
     await expect(page.getByText(/does not prove reviewer acceptance/)).toBeVisible();
 
-    await page.getByLabel('Retained artifact filename').fill('folder/redacted utility.md');
+    await page.getByLabel('Retained artifact filename').fill('folder/redacted security.md');
     await page.getByLabel('Redacted retained artifact text').fill([
       'record_date: 2026-06-02',
+      'route: /utility-security',
+      'proof_pack_id: utility_security_procurement_pack',
       'source_label: buyer_supplied_anonymized',
-      'reviewer_feedback_status: accepted',
+      'pii_screen_result: redacted',
+      'buyer_data_coverage_pct: 85',
+      'time_to_artifact_hours: 40',
+      'reviewer_role: utility security reviewer',
+      'reviewer_acceptance: accepted',
+      'reviewer_feedback_status: complete',
+      'day_14_decision: proceed',
+      'commercial_commitment_status: letter_of_intent',
+      'commercial_commitment_evidence: redacted letter of intent signed retained confirmation',
+      'claim_boundary: Buyer-supplied security review support only.',
+      'do_not_claim: Do not claim SOC certification or procurement approval.',
+      '## Diagnostic Summary',
+      '- Control matrix maps the questionnaire evidence boundary with SBOM and header notes, plus owner-supplied and deployed hosting subprocessor evidence split.',
     ].join('\n'));
+    const manager = page.getByTestId('retained-artifact-manager');
+    await expect(manager.getByText('Retained artifact manager')).toBeVisible();
+    await expect(manager).toContainText('do not upload files');
+    await expect(page.getByTestId('retained-artifact-manager-diagnostic-diagnostic-owner-deployed-split')).toContainText('Pass');
+    await expect(page.getByTestId('retained-artifact-manager-check-sha-reference')).toContainText('Review');
+
     const generateHashButton = page.getByRole('button', { name: /Generate SHA-256 reference/ });
     await generateHashButton.scrollIntoViewIfNeeded();
     await expect(generateHashButton).toBeVisible();
     await generateHashButton.click();
 
-    await expect(page.getByText(/redacted_utility\.md#sha256=[a-f0-9]{64}/)).toBeVisible();
+    await expect(page.locator('code').filter({ hasText: /^redacted_security\.md#sha256=[a-f0-9]{64}$/ })).toBeVisible();
     await expect(page.getByText('Bytes hashed')).toBeVisible();
     await expect(page.getByText('No retained-artifact warnings were detected.')).toBeVisible();
+    await expect(page.getByTestId('retained-artifact-manager-check-sha-reference')).toContainText('Pass');
+    await expect(manager).toContainText(/--evidence-file-reference utility-security\/redacted_security\.md#sha256=[a-f0-9]{64}/);
     await expect(page.getByRole('button', { name: 'Copy evidence reference' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Copy update command' })).toBeVisible();
   });
 
   test('previews a local pilot evidence register before the hard 95% gate', async ({ page }) => {
