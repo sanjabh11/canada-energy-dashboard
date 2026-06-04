@@ -36,6 +36,69 @@ export function PilotReadinessPage() {
     () => pilotIntakeRoutePlans.find((plan) => plan.route === selectedRoute) ?? pilotIntakeRoutePlans[0],
     [selectedRoute],
   );
+  const phaseFIntakeSteps = useMemo(() => {
+    if (!selectedPlan) return [];
+
+    const commandById = new Map(pilotOperatorCommands.map((command) => [command.id, command.command]));
+    return [
+      {
+        id: 'workspace',
+        label: 'Start evidence workspace',
+        status: 'Scaffold',
+        command: commandById.get('create-workspace') ?? '',
+        evidence: 'Creates outreach, starter-register, retained-artifact, and report folders with confidence_delta=0.',
+        gate: 'Not buyer proof; use only as the collection workspace.',
+      },
+      {
+        id: 'outreach',
+        label: 'Log real anonymized buyer reply',
+        status: 'Buyer action',
+        command: selectedPlan.outreachCommand,
+        evidence: `${selectedPlan.label}: ${selectedPlan.requiredInput}`,
+        gate: 'Only real anonymized replies can enter the response log; rehearsal, no-reply, and not-fit rows do not move confidence.',
+      },
+      {
+        id: 'intake-packet',
+        label: 'Create route intake packet',
+        status: 'Scaffold',
+        command: selectedPlan.intakePacketCommand,
+        evidence: `Creates packet scaffolding for ${selectedPlan.proofPackId}.`,
+        gate: 'Starter packet rows stay at confidence_delta=0 until retained artifacts and reviewer acceptance exist.',
+      },
+      {
+        id: 'retained-artifact',
+        label: 'Prepare retained artifact hash',
+        status: 'Local proof',
+        command: `Use the retained artifact hash helper below, then attach ${selectedPlan.route}/artifact.md#sha256=<64-hex>.`,
+        evidence: selectedPlan.artifactPromised,
+        gate: selectedPlan.doNotClaim,
+      },
+      {
+        id: 'register-update',
+        label: 'Update selected register row',
+        status: 'Candidate row',
+        command: selectedPlan.registerUpdateCommand,
+        evidence: selectedPlan.claimBoundary,
+        gate: 'Updater must validate the candidate register before writing output; do not hand-edit confidence-moving rows.',
+      },
+      {
+        id: 'workspace-report',
+        label: 'Report workspace blockers',
+        status: 'Read-only',
+        command: commandById.get('report-workspace') ?? '',
+        evidence: 'Summarizes which Phase F lane, hash, reviewer, fast-delivery, and commercial-signal gates remain blocked.',
+        gate: 'Report output does not create buyer evidence.',
+      },
+      {
+        id: 'hard-gate',
+        label: 'Run hard 95% gate',
+        status: 'Approval gate',
+        command: commandById.get('hard-gate') ?? pilotNinetyFiveGateCommand,
+        evidence: 'Requires all three minimum lanes, retained hashes, reviewer acceptance, day-14 proceed, and a real commercial signal.',
+        gate: 'Passing this gate is required before stronger market-confidence language; failing it keeps launch blocked.',
+      },
+    ];
+  }, [selectedPlan]);
   const registerPreview = useMemo<PilotEvidenceRegisterPreview | null>(() => {
     if (registerText.trim().length === 0) return null;
     return previewPilotEvidenceRegister(registerText);
@@ -222,6 +285,59 @@ export function PilotReadinessPage() {
                 </article>
               ))}
             </div>
+
+            {selectedPlan && (
+              <div data-testid="phase-f-intake-wizard" className="mt-10 rounded-[1.5rem] border border-cyan-200/15 bg-cyan-300/[0.06] p-6">
+                <div className="grid gap-8 lg:grid-cols-[0.75fr_1.25fr]">
+                  <div>
+                    <div className="text-sm uppercase tracking-[0.26em] text-cyan-100/80">
+                      Phase F intake wizard
+                    </div>
+                    <h2 className="mt-4 text-2xl font-semibold text-slate-50 md:text-3xl">
+                      Follow the buyer-evidence path without turning scaffolding into proof.
+                    </h2>
+                    <p className="mt-4 text-sm leading-6 text-slate-300">
+                      This sequence keeps {selectedPlan.label} tied to the minimum Phase F lane map. It separates
+                      collection setup, real buyer reply evidence, retained artifact hashing, register update, workspace
+                      reporting, and the hard 95% gate.
+                    </p>
+                    <div className="mt-5 rounded-2xl border border-amber-200/15 bg-amber-300/10 p-4 text-sm leading-6 text-amber-50">
+                      None of these steps raises market confidence until the filled register and retained artifacts pass
+                      the canonical validator with real buyer-supplied evidence.
+                    </div>
+                  </div>
+
+                  <div className="grid gap-4">
+                    {phaseFIntakeSteps.map((step, index) => (
+                      <article key={step.id} className="rounded-2xl border border-white/10 bg-slate-950/50 p-5">
+                        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                          <div>
+                            <div className="text-xs uppercase tracking-[0.18em] text-cyan-100/70">
+                              Step {index + 1}
+                            </div>
+                            <h3 className="mt-2 text-lg font-semibold text-slate-50">{step.label}</h3>
+                            <p className="mt-2 text-sm leading-6 text-slate-300">{step.evidence}</p>
+                          </div>
+                          <span className="inline-flex shrink-0 items-center justify-center rounded-full border border-cyan-200/25 bg-cyan-300/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-100">
+                            {step.status}
+                          </span>
+                        </div>
+                        <div className="mt-4 overflow-x-auto rounded-xl border border-white/10 bg-slate-950 p-3">
+                          <code className="whitespace-nowrap text-xs leading-6 text-cyan-100">{step.command}</code>
+                        </div>
+                        <div className="mt-3 rounded-xl border border-amber-200/10 bg-amber-300/[0.07] p-3 text-sm leading-6 text-amber-50">
+                          {step.gate}
+                        </div>
+                        <CopyButton
+                          label={`Copy step ${index + 1} command`}
+                          onClick={() => handleCopy(step.command, `Step ${index + 1} command`)}
+                        />
+                      </article>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {selectedPlan && (
               <div className="mt-10 rounded-[1.5rem] border border-emerald-200/15 bg-emerald-300/[0.06] p-6">

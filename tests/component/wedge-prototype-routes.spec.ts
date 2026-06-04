@@ -63,7 +63,19 @@ test.describe('CEIP wedge prototype routes', () => {
   test('generates a retained artifact hash reference on the pilot-readiness route', async ({ page }) => {
     await page.goto('/pilot-readiness', { waitUntil: 'domcontentloaded' });
 
-    await expect(page.getByText('Retained artifact hash helper')).toBeVisible();
+    const wizard = page.getByTestId('phase-f-intake-wizard');
+    await expect(wizard.getByText('Phase F intake wizard')).toBeVisible();
+    await expect(wizard.getByText('Start evidence workspace')).toBeVisible();
+    await expect(wizard.getByText('Log real anonymized buyer reply')).toBeVisible();
+    await expect(wizard.getByText('Run hard 95% gate')).toBeVisible();
+    await expect(wizard.getByText(/does not create buyer evidence/)).toBeVisible();
+
+    await page.getByLabel('Buyer proof-pack route').selectOption('/utility-security');
+    await expect(wizard).toContainText('/utility-security');
+    await expect(wizard).toContainText('utility_security_procurement_pack');
+    await expect(wizard).toContainText('Do not claim SOC certification');
+
+    await expect(page.getByText('Retained artifact hash helper', { exact: true })).toBeVisible();
     await expect(page.getByText(/does not prove reviewer acceptance/)).toBeVisible();
 
     await page.getByLabel('Retained artifact filename').fill('folder/redacted utility.md');
@@ -72,7 +84,10 @@ test.describe('CEIP wedge prototype routes', () => {
       'source_label: buyer_supplied_anonymized',
       'reviewer_feedback_status: accepted',
     ].join('\n'));
-    await page.getByRole('button', { name: /Generate SHA-256 reference/ }).click();
+    const generateHashButton = page.getByRole('button', { name: /Generate SHA-256 reference/ });
+    await generateHashButton.scrollIntoViewIfNeeded();
+    await expect(generateHashButton).toBeVisible();
+    await generateHashButton.click();
 
     await expect(page.getByText(/redacted_utility\.md#sha256=[a-f0-9]{64}/)).toBeVisible();
     await expect(page.getByText('Bytes hashed')).toBeVisible();
