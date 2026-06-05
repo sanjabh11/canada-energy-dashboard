@@ -154,6 +154,18 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs and review-first packet evidence; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
+    label: 'Canonical head decision queue',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The canonical head decision queue surfaces split, local-only, origin-only, stale, aging, and unknown branch-family decisions before merge review, but it does not checkout, merge, push, discard, deploy, or select a branch head. It does not create launch evidence or prove production approval.',
+  },
+  {
+    label: 'Review-first branch packet queue',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness -- --focus-risk high && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The review-first branch packet queue surfaces focused read-only branch packets, canonical-head state, changed Supabase function rows, and drift risk before any branch decision, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, or select a canonical head. It does not create buyer proof or create production approval.',
+  },
+  {
     label: 'Launch blocker action queue',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',

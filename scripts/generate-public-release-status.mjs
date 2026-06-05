@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 14) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 16) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
   }
 
   const ids = new Set();
@@ -73,6 +73,8 @@ function validateManifest(manifest) {
     'production_approval_prerequisite_queue',
     'post_deploy_live_proof_gate_queue',
     'unmerged_branch_review_queue',
+    'canonical_head_decision_queue',
+    'review_first_branch_packet_queue',
     'buyer_evidence_gate',
     'buyer_evidence_remediation_queue',
     'supabase_advisor_access',
@@ -104,6 +106,20 @@ function validateManifest(manifest) {
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+  const canonicalHeadQueue = itemById.get('canonical_head_decision_queue') ?? {};
+  if (!/split|local-only|origin-only|stale|aging|unknown/i.test(`${canonicalHeadQueue.evidenceBoundary ?? ''}\n${canonicalHeadQueue.nextAction ?? ''}`)) {
+    failures.push('canonical_head_decision_queue must describe canonical-head branch-family decisions.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select a branch head|does not.*prove production approval/i.test(canonicalHeadQueue.evidenceBoundary ?? '')) {
+    failures.push('canonical_head_decision_queue must preserve the no-mutation and no-approval boundary.');
+  }
+  const reviewFirstPacketQueue = itemById.get('review_first_branch_packet_queue') ?? {};
+  if (!/focused read-only branch packets|canonical-head state|changed Supabase function rows|drift risk/i.test(`${reviewFirstPacketQueue.evidenceBoundary ?? ''}\n${reviewFirstPacketQueue.nextAction ?? ''}`)) {
+    failures.push('review_first_branch_packet_queue must describe review-first focused branch packets.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*deploy|does not.*mutate Supabase|does not.*create production approval/i.test(reviewFirstPacketQueue.evidenceBoundary ?? '')) {
+    failures.push('review_first_branch_packet_queue must preserve the no-mutation and no-approval boundary.');
   }
   const launchQueue = itemById.get('launch_blocker_action_queue') ?? {};
   if (!/sequenced|source provenance|post-deploy/i.test(`${launchQueue.evidenceBoundary ?? ''}\n${launchQueue.nextAction ?? ''}`)) {

@@ -105,6 +105,24 @@
       "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates."
     },
     {
+      "id": "canonical_head_decision_queue",
+      "label": "Canonical head decision queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The canonical head decision queue surfaces split, local-only, origin-only, stale, aging, and unknown branch-family decisions before merge review, but it does not checkout, merge, push, discard, deploy, or select a branch head. It does not create launch evidence or prove production approval.",
+      "nextAction": "Use the ledger to choose canonical heads explicitly before any focused branch review, then rerun unmerged-branch readiness without checkout, merge, push, discard, migration, or deploy."
+    },
+    {
+      "id": "review_first_branch_packet_queue",
+      "label": "Review-first branch packet queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:unmerged-branch-readiness -- --focus-risk high && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The review-first branch packet queue surfaces focused read-only branch packets, canonical-head state, changed Supabase function rows, and drift risk before any branch decision, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, or select a canonical head. It does not create buyer proof or create production approval.",
+      "nextAction": "Run focused read-only packets for review-first families, inspect changed Supabase function rows, and keep every merge or deploy decision behind explicit owner approval and release gates."
+    },
+    {
       "id": "buyer_evidence_gate",
       "label": "Buyer evidence 95% gate",
       "status": "external_gate",
