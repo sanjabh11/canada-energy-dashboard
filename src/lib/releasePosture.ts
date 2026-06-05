@@ -220,6 +220,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim; it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.',
   },
   {
+    label: 'Buyer evidence acquisition matrix',
+    status: 'external_gate',
+    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The buyer evidence acquisition matrix maps outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, distinct proof-pack, accepted confidence, reviewer, retained artifact, and 95% validation rows, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.',
+  },
+  {
     label: 'Buyer evidence remediation queue',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',

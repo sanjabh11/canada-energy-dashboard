@@ -187,6 +187,15 @@
       "nextAction": "Collect real anonymized buyer evidence and keep rehearsal rows at confidence_delta=0."
     },
     {
+      "id": "buyer_evidence_acquisition_matrix",
+      "label": "Buyer evidence acquisition matrix",
+      "status": "external_gate",
+      "proofBucket": "buyer evidence",
+      "command": "pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The buyer evidence acquisition matrix maps outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, distinct proof-pack, accepted confidence, reviewer, retained artifact, and 95% validation rows, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.",
+      "nextAction": "Use the matrix to collect the missing buyer-supplied rows, reviewer notes, retained redacted artifacts, and 95% validation inputs before changing buyer confidence or launch claims."
+    },
+    {
       "id": "buyer_evidence_remediation_queue",
       "label": "Buyer evidence remediation queue",
       "status": "external_gate",

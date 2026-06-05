@@ -120,6 +120,7 @@ const publicStatusRequestPacketHandlePhrase = /production approval request packe
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchClearanceHandlePhrase = /branch clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}branch clearance matrix/i;
+const publicStatusBuyerAcquisitionHandlePhrase = /buyer evidence acquisition matrix[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,280}buyer evidence acquisition matrix/i;
 const stalePostP1LiveParityPhrases = [
   'live deploy and buyer evidence remain blockers',
   'live metadata remains an external gate',
@@ -589,6 +590,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusBranchClearanceHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the branch clearance matrix as a public-safe evidence handle.');
+  }
+
+  if (!publicStatusBuyerAcquisitionHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the buyer evidence acquisition matrix as a public-safe evidence handle.');
   }
 
   if (existsSync(strategyRoadmapPath)) {

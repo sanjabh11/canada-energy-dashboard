@@ -160,6 +160,16 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'buyer_evidence_acquisition_matrix',
+    releaseHealthLabel: 'Buyer evidence acquisition matrix',
+    boundaryPatterns: [
+      /outreach intake, production pilot register, utility forecast/i,
+      /accepted confidence, reviewer, retained artifact/i,
+      /does not contact buyers/i,
+      /does not create buyer proof/i,
+    ],
+  },
+  {
     publicId: 'supabase_advisor_access',
     releaseHealthLabel: 'Supabase MCP advisors',
     boundaryPatterns: [/advisor evidence/i, /authorization/i],
@@ -256,12 +266,13 @@ describe('status page release posture', () => {
     const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
     const productionApprovalRequestPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval request packet');
     const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
+    const buyerAcquisitionMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence acquisition matrix');
     const buyerRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence remediation queue');
     const supabaseRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor remediation queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(23);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(24);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -357,6 +368,11 @@ describe('status page release posture', () => {
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
+    expect(buyerAcquisitionMatrixEvidence?.status).toBe('external_gate');
+    expect(buyerAcquisitionMatrixEvidence?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
+    expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
+    expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
     expect(buyerRemediationQueueEvidence?.status).toBe('external_gate');
     expect(buyerRemediationQueueEvidence?.command).toContain('report:buyer-evidence-readiness');
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
@@ -426,6 +442,7 @@ describe('status page release posture', () => {
     const canonicalHeadQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_decision_queue');
     const reviewFirstPacketQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'review_first_branch_packet_queue');
     const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
+    const buyerAcquisitionMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_acquisition_matrix');
     const buyerRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_remediation_queue');
     const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
     const supabaseRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_remediation_queue');
@@ -463,6 +480,7 @@ describe('status page release posture', () => {
       'canonical_head_decision_queue',
       'review_first_branch_packet_queue',
       'buyer_evidence_gate',
+      'buyer_evidence_acquisition_matrix',
       'buyer_evidence_remediation_queue',
       'supabase_advisor_access',
       'supabase_advisor_remediation_queue',
@@ -552,6 +570,10 @@ describe('status page release posture', () => {
     expect(reviewFirstPacketQueueGate?.nextAction).toMatch(/explicit owner approval and release gates/i);
     expect(buyerGate?.status).toBe('external_gate');
     expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
+    expect(buyerAcquisitionMatrixGate?.status).toBe('external_gate');
+    expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
+    expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
+    expect(buyerAcquisitionMatrixGate?.nextAction).toMatch(/missing buyer-supplied rows/i);
     expect(buyerRemediationQueueGate?.status).toBe('external_gate');
     expect(buyerRemediationQueueGate?.command).toContain('report:buyer-evidence-readiness');
     expect(buyerRemediationQueueGate?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
