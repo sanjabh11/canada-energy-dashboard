@@ -124,6 +124,9 @@ const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,
 const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
+const focusedReleasePreflightReportPhrase = /report:release-preflight[\s\S]{0,260}focused release-preflight report|focused release-preflight report[\s\S]{0,260}report:release-preflight/i;
+const focusedReleasePreflightCheckerPhrase = /check:release-preflight-report[\s\S]{0,360}(?:validates|wrapper structure|--fail-on-blocker|does not.*production approval)/i;
+const publicStatusFocusedReleasePreflightHandlePhrase = /focused release preflight report\/check[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}focused release-preflight report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -485,6 +488,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:public-release-status wired to the public release-status sync validator.');
   }
 
+  if (packageScripts['report:release-preflight'] !== 'node scripts/report-release-preflight-readiness.mjs') {
+    failures.push('package.json must keep report:release-preflight wired to the focused release-preflight report.');
+  }
+
+  if (packageScripts['check:release-preflight-report'] !== 'node scripts/check-release-preflight-readiness-report.mjs') {
+    failures.push('package.json must keep check:release-preflight-report wired to the focused release-preflight report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -553,6 +564,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!unmergedBranchReadinessPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:unmerged-branch-readiness for current main-plus-unmerged-branch review.');
+  }
+
+  if (!focusedReleasePreflightReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:release-preflight as the focused release-preflight report.');
+  }
+
+  if (!focusedReleasePreflightCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:release-preflight-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedReleasePreflightHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused release preflight report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

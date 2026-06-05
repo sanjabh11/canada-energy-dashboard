@@ -2000,6 +2000,35 @@ try {
         && releasePreflightReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check)),
       'Release preflight focused report code optimization review must record focused release preflight report and check proof.',
     );
+    const releasePreflightSourceOfTruthDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES');
+    assert(releasePreflightSourceOfTruthDecision, 'Manifest must record the release preflight source-of-truth handle implementation decision.');
+    assert(
+      /source-of-truth docs|public release status|release posture handles/i.test(releasePreflightSourceOfTruthDecision?.decision ?? ''),
+      'Release preflight source-of-truth decision must name docs, public release status, and release posture handles.',
+    );
+    assert(
+      Array.isArray(releasePreflightSourceOfTruthDecision?.files_changed)
+        && releasePreflightSourceOfTruthDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && releasePreflightSourceOfTruthDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && releasePreflightSourceOfTruthDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && releasePreflightSourceOfTruthDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts'),
+      'Release preflight source-of-truth decision must record docs, public status, release posture, and status-page test files.',
+    );
+    assert(
+      /does not install Corepack|Git LFS|run full release-readiness|clear source provenance|push|deploy|hosted\/live parity/i.test(releasePreflightSourceOfTruthDecision?.proof_boundary ?? ''),
+      'Release preflight source-of-truth decision must preserve release non-execution boundaries.',
+    );
+    const releasePreflightSourceOfTruthReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES');
+    assert(releasePreflightSourceOfTruthReview, 'Manifest must record the release preflight source-of-truth handle code optimization review.');
+    assert(releasePreflightSourceOfTruthReview?.policy === 'strict', 'Release preflight source-of-truth code optimization review must use strict policy.');
+    assert(releasePreflightSourceOfTruthReview?.verdict === 'pass', 'Release preflight source-of-truth code optimization review must pass.');
+    assert(
+      Array.isArray(releasePreflightSourceOfTruthReview?.tests_or_checks)
+        && releasePreflightSourceOfTruthReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+        && releasePreflightSourceOfTruthReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && releasePreflightSourceOfTruthReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check)),
+      'Release preflight source-of-truth code optimization review must record source-doc, public-status, and focused release-preflight proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

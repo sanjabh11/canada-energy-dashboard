@@ -4378,10 +4378,25 @@ const releasePreflightReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releasePreflightSourceOfTruthHandleFilesChanged = [
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
   ...releasePreflightReportFilesChanged,
+  ...releasePreflightSourceOfTruthHandleFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4419,10 +4434,21 @@ const releasePreflightReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const releasePreflightSourceOfTruthHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:release-preflight-report',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
   ...releasePreflightReportTestsRun,
+  ...releasePreflightSourceOfTruthHandleTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4512,6 +4538,19 @@ const safeFixImplementationDecisions = [
     reason: 'The release toolchain blocker was only visible inside large commercial-launch artifacts; a focused report reduces operator ambiguity without installing tools, clearing provenance, running release-readiness, or granting approval.',
     proof_boundary: 'This record improves release-preflight evidence visibility only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused release-preflight report, check pass, JSON output, local Git LFS probe, skipped probes, or bare pnpm checks as release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    decision: 'Align source-of-truth docs, public release status, and release posture handles with the focused release-preflight report and checker.',
+    acceptance_check: 'Operators can discover report:release-preflight and check:release-preflight-report from COMMERCIAL_SOURCE_OF_TRUTH, /status/release-health.json, RELEASE_HEALTH_EVIDENCE, and public-status validation without weakening any release-readiness, source-provenance, approval, or hosted/live boundary.',
+    chosen_variant: 'minimal docs and public handle alignment',
+    repo_pattern_reused: 'Existing public release status manifest, RELEASE_HEALTH_EVIDENCE command handles, source-doc checker, public-status generator, and launch evidence code-optimization ledger.',
+    files_changed: releasePreflightSourceOfTruthHandleFilesChanged,
+    tests_run: releasePreflightSourceOfTruthHandleTestsRun,
+    proof: 'The existing focused report/check scripts were present, but the operator docs and public status handles still pointed release-preflight rows at broad commercial-launch artifacts; this patch routes release-specific handles to the focused commands while preserving blocker wording.',
+    reason: 'A focused release-preflight report loses operator value if source-of-truth docs and public-safe handles keep sending release operators through broad manifests only.',
+    proof_boundary: 'This record aligns documentation and public-safe command handles only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused release-preflight handles, public release-status validation, docs sync, generated /status JSON, or report-check success as release-readiness, production approval, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4621,6 +4660,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Automatic remediation would appear more convenient but would violate the release approval and tool-truth boundaries.',
     evidence: 'The commercial launch skill and existing check-corepack-toolchain gate require Corepack-pinned release evidence and forbid treating local shims or bare pnpm as release readiness.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    variant: 'Leave source-of-truth docs and public handles pointing only at broad launch manifest and commercial readiness reports.',
+    reason_rejected: 'Would keep operator-facing release-preflight handles stale after the focused report/check scripts were added.',
+    tradeoff: 'No-code defer avoids more validation edits but preserves documentation and public-status drift.',
+    evidence: 'COMMERCIAL_SOURCE_OF_TRUTH, RELEASE_HEALTH_EVIDENCE, and public release-status command rows did not name report:release-preflight or check:release-preflight-report for the release-preflight lane.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    variant: 'Update only COMMERCIAL_SOURCE_OF_TRUTH and leave public status/release posture commands unchanged.',
+    reason_rejected: 'Would fix a prose doc while leaving the machine-visible public status manifest and release health evidence on stale commands.',
+    tradeoff: 'Docs-only is narrower, but weaker because public/status and RELEASE_HEALTH_EVIDENCE remain the operator-facing evidence handles.',
+    evidence: 'scripts/generate-public-release-status.mjs treats command values as exact contracts, and tests/unit/statusPagePosture.test.ts asserts those handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    variant: 'Fold focused release-preflight report logic into release-readiness or production deploy scripts.',
+    reason_rejected: 'Would blur evidence visibility with release execution and risk making a report/check path look like approval or deploy readiness.',
+    tradeoff: 'A single release command looks simpler, but the current blocker is source-of-truth discoverability rather than execution.',
+    evidence: 'The release-preflight report/check are intentionally non-mutating wrappers over manifest data and must not run release-readiness, push, deploy, or grant approval.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4679,6 +4739,15 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change adds a thin Markdown/JSON wrapper and structural checker over existing manifest data, with no new dependency, no duplicated release probing, no deploy path, no live-service access, and no release-gate relaxation.',
     tests_or_checks: releasePreflightReportTestsRun,
+    remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, explicit owner approval, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates existing docs, public release-status command handles, release posture evidence, generator/checker contracts, and tests only, with no new dependency, no deploy path, no duplicated release probing, and no release-gate relaxation.',
+    tests_or_checks: releasePreflightSourceOfTruthHandleTestsRun,
     remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, explicit owner approval, and post-deploy live proof are current.',
   },
 ];

@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(5);
+    expect(manifest.implementation_decisions).toHaveLength(6);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(5);
+    expect(manifest.code_optimization_reviews).toHaveLength(6);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -764,6 +764,9 @@ describe('launch evidence manifest report', () => {
       'Leave release preflight only inside the large launch manifest and commercial launch report.',
       'Duplicate release preflight probing logic in a new standalone implementation.',
       'Make the focused checker pass the release gate or install Corepack/Git LFS automatically.',
+      'Leave source-of-truth docs and public handles pointing only at broad launch manifest and commercial readiness reports.',
+      'Update only COMMERCIAL_SOURCE_OF_TRUTH and leave public status/release posture commands unchanged.',
+      'Fold focused release-preflight report logic into release-readiness or production deploy scripts.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -826,6 +829,30 @@ describe('launch evidence manifest report', () => {
     expect(releasePreflightReview.policy).toBe('strict');
     expect(releasePreflightReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:release-preflight',
+      'pnpm run check:release-preflight-report',
+    ]));
+    const releasePreflightSourceOfTruthDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    );
+    expect(releasePreflightSourceOfTruthDecision).toBeTruthy();
+    expect(releasePreflightSourceOfTruthDecision.chosen_variant).toBe('minimal docs and public handle alignment');
+    expect(releasePreflightSourceOfTruthDecision.files_changed).toEqual(expect.arrayContaining([
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'src/lib/publicReleaseStatusManifest.json',
+      'src/lib/releasePosture.ts',
+      'scripts/generate-public-release-status.mjs',
+      'scripts/check-commercial-source-docs.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+    ]));
+    expect(releasePreflightSourceOfTruthDecision.proof_boundary).toMatch(/does not install Corepack|run full release-readiness|clear source provenance|deploy|hosted\/live parity/i);
+    const releasePreflightSourceOfTruthReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES',
+    );
+    expect(releasePreflightSourceOfTruthReview).toBeTruthy();
+    expect(releasePreflightSourceOfTruthReview.policy).toBe('strict');
+    expect(releasePreflightSourceOfTruthReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:commercial-source',
+      'pnpm run check:public-release-status',
       'pnpm run check:release-preflight-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');

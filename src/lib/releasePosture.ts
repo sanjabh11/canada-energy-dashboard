@@ -186,25 +186,25 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Release toolchain and approval deficit ledger',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
     evidenceBoundary: 'The release toolchain and approval deficit ledger maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval deficits, but it does not install tools, clear source provenance, run release-readiness, push, deploy, prove hosted/live parity, grant owner approval, or create launch readiness. It does not prove production approval.',
   },
   {
     label: 'Release preflight remediation queue',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
     evidenceBoundary: 'The release preflight remediation queue sequences Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, or deploy. It does not prove production approval.',
   },
   {
     label: 'Release preflight clearance matrix',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
     evidenceBoundary: 'The release preflight clearance matrix maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, deploy, or grant owner approval. It does not prove production approval or current hosted/live parity.',
   },
   {
     label: 'Release toolchain probe ledger',
     status: 'external_gate',
-    command: 'pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
     evidenceBoundary: 'The release toolchain probe ledger records current-shell Corepack pnpm resolver and Git LFS availability evidence, but it does not install tools, run release-readiness, push, deploy, clear source provenance, or grant production approval. It does not substitute for release-readiness or production approval.',
   },
   {
