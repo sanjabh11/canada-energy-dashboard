@@ -1647,6 +1647,11 @@ function parseBuyerDeficitRows(markdown) {
       needed,
       status,
       next_action: nextAction,
+      proof_type: buyerEvidenceRemediationProofType(requirement),
+      buyer_accepted_evidence_required: buyerEvidenceRemediationRequiresBuyerAcceptedEvidence(requirement),
+      retained_artifact_required: buyerEvidenceRemediationRequiresRetainedArtifact(requirement),
+      proof_boundary: buyerEvidenceRemediationProofBoundary(requirement),
+      stop_gate: buyerEvidenceRemediationStopGate(requirement),
     }));
 
   const openCount = countMatch ? Number.parseInt(countMatch[1], 10) : items.filter((item) => item.status !== 'pass').length;

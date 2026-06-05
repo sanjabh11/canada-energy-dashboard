@@ -522,6 +522,16 @@ describe('launch evidence manifest report', () => {
   it('classifies buyer evidence remediation proof rows with explicit boundaries', () => {
     const stdout = runManifest();
     const manifest = JSON.parse(stdout);
+    const buyerDeficitsByRequirement = new Map(
+      manifest.buyer_evidence.hard_gate_deficits.items.map((item: {
+        requirement: string;
+        proof_type?: string;
+        buyer_accepted_evidence_required?: boolean;
+        retained_artifact_required?: boolean;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => [item.requirement, item]),
+    );
     const buyerActionsByRequirement = new Map(
       manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.map((item: {
         requirement: string;
@@ -546,7 +556,14 @@ describe('launch evidence manifest report', () => {
     };
 
     for (const [requirement, proofType] of Object.entries(expectedProofTypes)) {
+      const deficit = buyerDeficitsByRequirement.get(requirement);
       const item = buyerActionsByRequirement.get(requirement);
+      expect(deficit).toBeTruthy();
+      expect(deficit?.proof_type).toBe(proofType);
+      expect(deficit?.buyer_accepted_evidence_required).toBe(true);
+      expect(deficit?.retained_artifact_required).toBe(true);
+      expect(deficit?.proof_boundary).toBeTruthy();
+      expect(deficit?.stop_gate).toMatch(/Do not/i);
       expect(item).toBeTruthy();
       expect(item?.proof_type).toBe(proofType);
       expect(item?.buyer_accepted_evidence_required).toBe(true);
@@ -556,6 +573,10 @@ describe('launch evidence manifest report', () => {
     expect(buyerActionsByRequirement.get('Utility forecast lane')?.proof_command).toContain('prepare:forecast-trust-report-artifact');
     expect(buyerActionsByRequirement.get('TIER or credit lane')?.proof_command).toContain('prepare:pilot-evidence-artifact');
     expect(buyerActionsByRequirement.get('Billing or security lane')?.proof_command).toContain('prepare:pilot-evidence-artifact');
+    expect(buyerDeficitsByRequirement.get('Strong commercial signal')?.proof_boundary).toMatch(/signed agreement|paid pilot|invoice|PO|LOI|status-only labels/i);
+    expect(buyerDeficitsByRequirement.get('Strong commercial signal')?.stop_gate).toMatch(/status labels|informal interest|unretained claims/i);
+    expect(buyerDeficitsByRequirement.get('Retained-artifact 95% validation')?.proof_boundary).toMatch(/validation does not create buyer acceptance/i);
+    expect(buyerDeficitsByRequirement.get('Retained-artifact 95% validation')?.stop_gate).toMatch(/validate:pilot-evidence --require-95/i);
     expect(buyerActionsByRequirement.get('Strong commercial signal')?.proof_boundary).toMatch(/status-only labels|informal interest|unretained claims/i);
     expect(buyerActionsByRequirement.get('Retained-artifact 95% validation')?.proof_boundary).toMatch(/validation does not create buyer acceptance/i);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);

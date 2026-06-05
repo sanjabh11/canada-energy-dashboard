@@ -145,12 +145,47 @@ try {
     assert(hasIntegerOrNull(manifest.buyer_evidence?.hard_gate_deficits?.open_count), 'Manifest buyer_evidence.hard_gate_deficits.open_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.hard_gate_deficits?.total_count), 'Manifest buyer_evidence.hard_gate_deficits.total_count must be an integer or null.');
     assert(Array.isArray(manifest.buyer_evidence?.hard_gate_deficits?.items), 'Manifest buyer_evidence.hard_gate_deficits.items must be a list.');
+    const buyerProofTypesByRequirement = {
+      'Utility forecast lane': 'forecast_trust_artifact_preparation',
+      'TIER or credit lane': 'retained_artifact_preparation',
+      'Billing or security lane': 'retained_artifact_preparation',
+      'Distinct accepted proof packs': 'buyer_acceptance_report',
+      'Accepted confidence_delta': 'register_update',
+      'Retained SHA-256 references': 'retained_artifact_and_register_update',
+      'Buyer data coverage': 'register_update',
+      'Artifact turnaround': 'register_update',
+      'Strong commercial signal': 'commercial_commitment_artifact',
+      'Retained-artifact 95% validation': 'retained_artifact_validation',
+    };
     for (const [index, item] of (manifest.buyer_evidence.hard_gate_deficits.items ?? []).entries()) {
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].requirement must be set.`);
       assert(typeof item.current === 'string' && item.current.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].current must be set.`);
       assert(typeof item.needed === 'string' && item.needed.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].needed must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].status must be set.`);
       assert(typeof item.next_action === 'string' && item.next_action.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].next_action must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].proof_type must be set.`);
+      assert(typeof item.buyer_accepted_evidence_required === 'boolean', `buyer_evidence.hard_gate_deficits.items[${index}].buyer_accepted_evidence_required must be boolean.`);
+      assert(typeof item.retained_artifact_required === 'boolean', `buyer_evidence.hard_gate_deficits.items[${index}].retained_artifact_required must be boolean.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `buyer_evidence.hard_gate_deficits.items[${index}].stop_gate must be set.`);
+      if (buyerProofTypesByRequirement[item.requirement]) {
+        assert(
+          item.proof_type === buyerProofTypesByRequirement[item.requirement],
+          `buyer_evidence.hard_gate_deficits.items[${index}] must classify ${item.requirement} as ${buyerProofTypesByRequirement[item.requirement]}.`,
+        );
+        assert(item.buyer_accepted_evidence_required === true, `buyer_evidence.hard_gate_deficits.items[${index}] must require accepted buyer evidence.`);
+        assert(item.retained_artifact_required === true, `buyer_evidence.hard_gate_deficits.items[${index}] must require retained redacted artifacts.`);
+        assert(/Requires|Runs validate:pilot-evidence/i.test(item.proof_boundary), `buyer_evidence.hard_gate_deficits.items[${index}].proof_boundary must describe the buyer proof required.`);
+        assert(/Do not/i.test(item.stop_gate), `buyer_evidence.hard_gate_deficits.items[${index}].stop_gate must preserve an explicit no-claim boundary.`);
+      }
+      if (item.requirement === 'Strong commercial signal') {
+        assert(/signed agreement|paid pilot|invoice|PO|LOI|status-only labels|informal interest/i.test(item.proof_boundary), 'Strong commercial signal deficit proof_boundary must require retained commercial commitment evidence and reject status-only labels.');
+        assert(/status labels|informal interest|unretained claims/i.test(item.stop_gate), 'Strong commercial signal deficit stop_gate must reject status labels, informal interest, and unretained claims.');
+      }
+      if (item.requirement === 'Retained-artifact 95% validation') {
+        assert(/validation does not create buyer acceptance|validate:pilot-evidence/i.test(item.proof_boundary), 'Retained-artifact validation deficit proof_boundary must not imply validation creates buyer acceptance.');
+        assert(/validate:pilot-evidence --require-95/i.test(item.stop_gate), 'Retained-artifact validation deficit stop_gate must require validate:pilot-evidence --require-95.');
+      }
     }
     assert(typeof manifest.buyer_evidence?.hard_gate_deficits?.remediation_queue?.evidence === 'string', 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.evidence must be set.');
     assert(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.evidence.includes('Buyer evidence remediation queue'), 'Manifest buyer evidence remediation queue evidence must include a queue marker.');
@@ -171,18 +206,6 @@ try {
       manifest.buyer_evidence.hard_gate_deficits.remediation_queue.item_count === manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.length,
       'Buyer evidence remediation queue item_count must match items length.',
     );
-    const buyerProofTypesByRequirement = {
-      'Utility forecast lane': 'forecast_trust_artifact_preparation',
-      'TIER or credit lane': 'retained_artifact_preparation',
-      'Billing or security lane': 'retained_artifact_preparation',
-      'Distinct accepted proof packs': 'buyer_acceptance_report',
-      'Accepted confidence_delta': 'register_update',
-      'Retained SHA-256 references': 'retained_artifact_and_register_update',
-      'Buyer data coverage': 'register_update',
-      'Artifact turnaround': 'register_update',
-      'Strong commercial signal': 'commercial_commitment_artifact',
-      'Retained-artifact 95% validation': 'retained_artifact_validation',
-    };
     for (const [index, item] of (manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].requirement must be set.`);
