@@ -186,6 +186,18 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     boundaryPatterns: [/advisor evidence/i, /authorization/i],
   },
   {
+    publicId: 'supabase_advisor_clearance_deficit_ledger',
+    releaseHealthLabel: 'Supabase advisor clearance deficit ledger',
+    boundaryPatterns: [
+      /CLI lint freshness, connector authorization/i,
+      /Security Advisor evidence, Performance Advisor evidence/i,
+      /public-safe findings/i,
+      /does not authorize connectors, access the dashboard/i,
+      /record secrets/i,
+      /does not grant production approval/i,
+    ],
+  },
+  {
     publicId: 'supabase_advisor_remediation_queue',
     releaseHealthLabel: 'Supabase advisor remediation queue',
     boundaryPatterns: [
@@ -280,11 +292,12 @@ describe('status page release posture', () => {
     const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
     const buyerAcquisitionMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence acquisition matrix');
     const buyerRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence remediation queue');
+    const supabaseClearanceDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor clearance deficit ledger');
     const supabaseRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor remediation queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(25);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(26);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -395,6 +408,13 @@ describe('status page release posture', () => {
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not create accepted evidence, move confidence/i);
+    expect(supabaseClearanceDeficitLedgerEvidence?.status).toBe('needs_remediation');
+    expect(supabaseClearanceDeficitLedgerEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/CLI lint freshness, connector authorization/i);
+    expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/Security Advisor evidence, Performance Advisor evidence/i);
+    expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/public-safe findings/i);
+    expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not authorize connectors, access the dashboard/i);
+    expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not grant production approval/i);
     expect(supabaseRemediationQueueEvidence?.status).toBe('needs_remediation');
     expect(supabaseRemediationQueueEvidence?.command).toContain('report:launch-evidence-manifest');
     expect(supabaseRemediationQueueEvidence?.evidenceBoundary).toMatch(/CLI lint freshness, connector authorization/i);
@@ -463,6 +483,7 @@ describe('status page release posture', () => {
     const buyerAcquisitionMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_acquisition_matrix');
     const buyerRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_remediation_queue');
     const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
+    const supabaseClearanceDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_clearance_deficit_ledger');
     const supabaseRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_remediation_queue');
 
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.schemaVersion).toBe('ceip.public-release-status.v1');
@@ -502,6 +523,7 @@ describe('status page release posture', () => {
       'buyer_evidence_acquisition_matrix',
       'buyer_evidence_remediation_queue',
       'supabase_advisor_access',
+      'supabase_advisor_clearance_deficit_ledger',
       'supabase_advisor_remediation_queue',
     ]);
     expect(currentSourceParityGate?.status).toBe('external_gate');
@@ -606,6 +628,13 @@ describe('status page release posture', () => {
     expect(buyerRemediationQueueGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
     expect(advisorGate?.status).toBe('needs_remediation');
     expect(advisorGate?.evidenceBoundary).toMatch(/does not substitute for connector-backed advisors/i);
+    expect(supabaseClearanceDeficitLedgerGate?.status).toBe('needs_remediation');
+    expect(supabaseClearanceDeficitLedgerGate?.command).toContain('report:launch-evidence-manifest');
+    expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/CLI lint freshness, connector authorization/i);
+    expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/Security Advisor evidence, Performance Advisor evidence/i);
+    expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/does not authorize connectors/i);
+    expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/does not grant production approval/i);
+    expect(supabaseClearanceDeficitLedgerGate?.nextAction).toMatch(/without secrets/i);
     expect(supabaseRemediationQueueGate?.status).toBe('needs_remediation');
     expect(supabaseRemediationQueueGate?.evidenceBoundary).toMatch(/Security Advisor evidence, Performance Advisor evidence/i);
     expect(supabaseRemediationQueueGate?.evidenceBoundary).toMatch(/does not authorize connectors/i);

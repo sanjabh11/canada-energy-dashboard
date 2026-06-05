@@ -157,6 +157,12 @@ const requiredItemContracts = [
     command: 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
   },
   {
+    id: 'supabase_advisor_clearance_deficit_ledger',
+    status: 'needs_remediation',
+    proofBucket: 'external account',
+    command: 'pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'supabase_advisor_remediation_queue',
     status: 'needs_remediation',
     proofBucket: 'external account',
@@ -361,6 +367,13 @@ function validateManifest(manifest) {
   }
   if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*validate 95|does not.*claim buyer acceptance/i.test(buyerRemediationQueue.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_remediation_queue must preserve the no-contact and no-buyer-proof boundary.');
+  }
+  const supabaseClearanceDeficitLedger = itemById.get('supabase_advisor_clearance_deficit_ledger') ?? {};
+  if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance claim/i.test(`${supabaseClearanceDeficitLedger.evidenceBoundary ?? ''}\n${supabaseClearanceDeficitLedger.nextAction ?? ''}`)) {
+    failures.push('supabase_advisor_clearance_deficit_ledger must describe Supabase advisor clearance deficits.');
+  }
+  if (!/does not.*authorize connectors|does not.*access the dashboard|does not.*rerun advisors|does not.*mutate the database|does not.*record secrets|does not.*clear advisor findings|does not.*claim advisor clearance|does not.*grant production approval|does not.*create launch readiness/i.test(supabaseClearanceDeficitLedger.evidenceBoundary ?? '')) {
+    failures.push('supabase_advisor_clearance_deficit_ledger must preserve the no-access, no-secret, no-clearance, and no-approval boundary.');
   }
   const supabaseRemediationQueue = itemById.get('supabase_advisor_remediation_queue') ?? {};
   if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance-claim/i.test(`${supabaseRemediationQueue.evidenceBoundary ?? ''}\n${supabaseRemediationQueue.nextAction ?? ''}`)) {
