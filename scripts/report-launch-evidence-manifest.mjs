@@ -548,6 +548,62 @@ function releaseRemediationStopGate(requirement) {
   }
 }
 
+function launchGapProofType(gap) {
+  if (gap.includes('Phase F evidence')) return 'buyer_evidence_hard_gate';
+  if (gap.includes('source deploy approval')) return 'source_provenance_approval_gate';
+  if (gap.includes('unmerged branches')) return 'branch_review_clearance_gap';
+  if (gap.includes('Supabase security/performance advisor clearance')) return 'external_advisor_clearance_gap';
+  if (gap.includes('Release toolchain')) return 'release_toolchain_approval_gap';
+  return 'launch_gap';
+}
+
+function launchGapProofBoundary(gap) {
+  if (gap.includes('Phase F evidence')) {
+    return 'Aggregates buyer-evidence readiness and hard-gate deficit evidence; it does not prove buyer acceptance, 95% confidence, retained artifacts, outreach permission, or commercial-ready status.';
+  }
+  if (gap.includes('source deploy approval')) {
+    return 'Summarizes current source provenance and owner-approval state; it does not commit, unstage, stash, revert, delete, clear source provenance, run release-readiness, deploy, or grant approval.';
+  }
+  if (gap.includes('unmerged branches')) {
+    return 'Summarizes read-only unmerged-branch, freshness, and canonical-head evidence; it does not checkout, merge, push, discard branches, run migrations, deploy, or approve canonical heads.';
+  }
+  if (gap.includes('Supabase security/performance advisor clearance')) {
+    return 'Summarizes repo-visible Supabase advisor and access deficits; it does not access dashboards, reauthorize connectors, clear advisor findings, run migrations, alter secrets, or prove RLS/performance clearance.';
+  }
+  if (gap.includes('Release toolchain')) {
+    return 'Summarizes release toolchain, preflight, and approval blockers; it does not resolve Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, prove live parity, or grant owner approval.';
+  }
+  return 'Summarizes a launch gap only; it does not prove launch readiness or grant production approval.';
+}
+
+function launchGapStopGate(gap) {
+  if (gap.includes('Phase F evidence')) {
+    return 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, or outreach permission from this gap summary.';
+  }
+  if (gap.includes('source deploy approval')) {
+    return 'Do not commit, unstage, stash, revert, delete, move, deploy, or request production approval until dirty source provenance is intentionally resolved by the owner.';
+  }
+  if (gap.includes('unmerged branches')) {
+    return 'Do not checkout, merge, push, discard branches, migrate, deploy, or select canonical heads without read-only review and explicit owner approval.';
+  }
+  if (gap.includes('Supabase security/performance advisor clearance')) {
+    return 'Do not claim Supabase advisor clearance, RLS/performance clearance, or production database readiness until connector or dashboard advisor evidence is rerun and recorded.';
+  }
+  if (gap.includes('Release toolchain')) {
+    return 'Do not treat local pnpm checks, package metadata, stale Git LFS evidence, or this gap row as release-readiness, push-path proof, deploy readiness, or owner approval.';
+  }
+  return 'Do not use this gap summary as production approval or commercial-ready evidence.';
+}
+
+function launchGap(row) {
+  return {
+    ...row,
+    proof_type: launchGapProofType(row.gap),
+    proof_boundary: launchGapProofBoundary(row.gap),
+    stop_gate: launchGapStopGate(row.gap),
+  };
+}
+
 function releaseRemediationStatus(status) {
   if (status === 'pass') return 'ready';
   if (status === 'manual_stop') return 'manual_stop';
@@ -3358,7 +3414,7 @@ const manifest = {
     stop_gate: 'This manifest does not prove hosted/live parity for current source; live parity requires an explicitly approved deploy followed by check:post-deploy-live.',
   },
   gaps: [
-    {
+    launchGap({
       gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
       severity: 'P0',
       evidence: buyerGapEvidence,
@@ -3366,8 +3422,8 @@ const manifest = {
       buyer_impact: 'Cannot claim buyer-proven 95% market confidence, accepted proof packs, or commercial-ready status.',
       fix: 'Collect real anonymized buyer rows, prepare retained redacted artifacts, update the pilot register, and run validate:pilot-evidence --require-95.',
       status: 'open',
-    },
-    {
+    }),
+    launchGap({
       gap: 'Current source deploy approval is blocked when the worktree is dirty or owner approval is absent.',
       severity: gitStatus.isDirty ? 'P0' : 'P1',
       evidence: dirtyEvidence,
@@ -3375,8 +3431,8 @@ const manifest = {
       buyer_impact: 'A buyer-facing production release request cannot proceed until source provenance is clean and explicitly approved.',
       fix: 'Commit, stash, or intentionally resolve dirty tracked paths, run release readiness, then request explicit owner approval before deploy.',
       status: gitStatus.isDirty ? 'open' : 'mitigated',
-    },
-    {
+    }),
+    launchGap({
       gap: 'High-risk, local/origin split, or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
       severity: 'P1',
       evidence: branchReviewEvidence,
@@ -3384,8 +3440,8 @@ const manifest = {
       buyer_impact: 'Unreviewed branch changes can weaken launch gates, payment boundaries, database security, or claim discipline.',
       fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, choose the canonical local or origin head for split branch families, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
       status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
-    },
-    {
+    }),
+    launchGap({
       gap: 'Supabase security/performance advisor clearance remains unavailable while connector or dashboard advisor evidence is permission-gated.',
       severity: 'P1',
       evidence: [supabaseAdvisor.evidence, supabaseAdvisor.clearanceDeficits.evidence].join('; '),
@@ -3393,8 +3449,8 @@ const manifest = {
       buyer_impact: 'Utility security reviewers may ask for current database advisor evidence before sharing sensitive files.',
       fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
       status: supabaseAdvisor.status === 'verified' ? 'mitigated' : 'open',
-    },
-    {
+    }),
+    launchGap({
       gap: 'Release toolchain, Git LFS push-path proof, full release-readiness execution, and owner approval are not all current.',
       severity: 'P1',
       evidence: [releasePreflight.evidence, productionApprovalPrerequisiteQueue.evidence].join('; '),
@@ -3402,7 +3458,7 @@ const manifest = {
       buyer_impact: 'A buyer-facing remediation or production release request cannot be treated as approval-ready from local pnpm checks or stale push-path evidence.',
       fix: 'Resolve source provenance, run Corepack-pinned release-readiness, verify git-lfs availability before push evidence, and request explicit owner approval before any deploy.',
       status: releasePreflight.status === 'pass' ? 'mitigated' : 'open',
-    },
+    }),
   ],
   pain_points: painPoints,
   target_customers: targetCustomers,

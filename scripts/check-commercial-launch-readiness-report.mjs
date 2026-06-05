@@ -285,6 +285,19 @@ function assertReport(markdown, options = {}) {
 
   assert(countDataRows(launchSection) === 5, 'Launch score table must include five dimensions.');
   assert(countDataRows(gapSection) >= 4, 'Gap analysis table must include current P0/P1 launch blockers.');
+  assert(gapSection.includes('Proof Type') && gapSection.includes('Proof Boundary') && gapSection.includes('Stop Gate'), 'Gap analysis table must expose proof type, proof boundary, and stop gate columns.');
+  for (const proofType of [
+    'buyer_evidence_hard_gate',
+    'source_provenance_approval_gate',
+    'branch_review_clearance_gap',
+    'external_advisor_clearance_gap',
+    'release_toolchain_approval_gap',
+  ]) {
+    assert(gapSection.includes(proofType), `Gap analysis table must include proof type ${proofType}.`);
+  }
+  assert(/does not prove buyer acceptance|Do not claim buyer-proven 95% confidence/i.test(gapSection), 'Gap analysis table must preserve buyer-evidence proof boundaries.');
+  assert(/does not checkout|Do not checkout/i.test(gapSection), 'Gap analysis table must preserve branch-review stop gates.');
+  assert(/does not resolve Corepack|Do not treat local pnpm checks/i.test(gapSection), 'Gap analysis table must preserve release-toolchain stop gates.');
   assert(countDataRows(actionQueueSection) >= 6, 'Launch blocker action queue must include the launch execution phases.');
   assert(countDataRows(sourceResolutionSection) >= 1, 'Source provenance resolution queue must include at least the clean/dirty boundary row.');
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');

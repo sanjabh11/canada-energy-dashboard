@@ -130,7 +130,49 @@ try {
       ['hosted_live', 'local', 'repo_artifact', 'candidate_shadow', 'roadmap'].every((bucket) => Object.hasOwn(manifest.proof_buckets ?? {}, bucket)),
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
     );
+    assert(Array.isArray(manifest.gaps), 'Manifest gaps must be a list.');
     assert(hasOpenGap(manifest, 'P0', 'Phase F evidence'), 'Manifest must keep the open P0 Phase F buyer-evidence gap.');
+    const gapProofExpectations = [
+      {
+        needle: 'Phase F evidence',
+        proofType: 'buyer_evidence_hard_gate',
+        boundary: /does not prove buyer acceptance|95% confidence|retained artifacts|commercial-ready status/i,
+        stopGate: /Do not claim buyer-proven 95% confidence|accepted proof packs|commercial-ready status|outreach permission/i,
+      },
+      {
+        needle: 'source deploy approval',
+        proofType: 'source_provenance_approval_gate',
+        boundary: /does not commit|unstage|stash|clear source provenance|run release-readiness|deploy|grant approval/i,
+        stopGate: /Do not commit|unstage|stash|revert|delete|move|deploy|production approval/i,
+      },
+      {
+        needle: 'unmerged branches',
+        proofType: 'branch_review_clearance_gap',
+        boundary: /read-only unmerged-branch|does not checkout|merge|push|discard branches|run migrations|deploy|approve canonical heads/i,
+        stopGate: /Do not checkout|merge|push|discard branches|migrate|deploy|canonical heads/i,
+      },
+      {
+        needle: 'Supabase security/performance advisor clearance',
+        proofType: 'external_advisor_clearance_gap',
+        boundary: /repo-visible Supabase advisor|does not access dashboards|reauthorize connectors|clear advisor findings|run migrations|alter secrets|prove RLS\/performance clearance/i,
+        stopGate: /Do not claim Supabase advisor clearance|RLS\/performance clearance|production database readiness|advisor evidence/i,
+      },
+      {
+        needle: 'Release toolchain',
+        proofType: 'release_toolchain_approval_gap',
+        boundary: /does not resolve Corepack|Git LFS|run full release-readiness|clear source provenance|push|deploy|prove live parity|grant owner approval/i,
+        stopGate: /Do not treat local pnpm checks|package metadata|stale Git LFS evidence|release-readiness|push-path proof|deploy readiness|owner approval/i,
+      },
+    ];
+    for (const expectation of gapProofExpectations) {
+      const gap = manifest.gaps.find((item) => typeof item?.gap === 'string' && item.gap.includes(expectation.needle));
+      assert(gap, `Manifest gaps must include ${expectation.needle}.`);
+      if (gap) {
+        assert(gap.proof_type === expectation.proofType, `Manifest gap "${expectation.needle}" must classify proof_type as ${expectation.proofType}.`);
+        assert(typeof gap.proof_boundary === 'string' && expectation.boundary.test(gap.proof_boundary), `Manifest gap "${expectation.needle}" must preserve its proof boundary.`);
+        assert(typeof gap.stop_gate === 'string' && expectation.stopGate.test(gap.stop_gate), `Manifest gap "${expectation.needle}" must preserve its stop gate.`);
+      }
+    }
     assert(typeof manifest.buyer_evidence?.evidence === 'string', 'Manifest must include buyer_evidence.evidence.');
     assert(manifest.buyer_evidence.evidence.includes('Buyer evidence review'), 'Manifest buyer_evidence evidence must summarize Phase F buyer evidence readiness.');
     assert(typeof manifest.buyer_evidence?.phase_f_gate === 'string' && manifest.buyer_evidence.phase_f_gate.length > 0, 'Manifest buyer_evidence.phase_f_gate must be set.');

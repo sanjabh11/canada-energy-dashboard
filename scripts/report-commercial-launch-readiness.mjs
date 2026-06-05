@@ -190,11 +190,14 @@ ${['security', 'readiness', 'sellability', 'evidence', 'overall'].map((dimension
 
 ## Gap Analysis
 
-| Gap | Severity | Evidence | Framework Mapping | Buyer Impact | Fix | Status |
-|---|---|---|---|---|---|---|
+| Gap | Severity | Proof Type | Proof Boundary | Stop Gate | Evidence | Framework Mapping | Buyer Impact | Fix | Status |
+|---|---|---|---|---|---|---|---|---|---|
 ${gaps.map((gap) => row([
     gap.gap,
     gap.severity,
+    gap.proof_type,
+    gap.proof_boundary,
+    gap.stop_gate,
     gap.evidence,
     gap.framework_mapping,
     gap.buyer_impact,

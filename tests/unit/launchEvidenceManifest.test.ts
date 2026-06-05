@@ -53,6 +53,30 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
+    const gapsByProofType = new Map(
+      manifest.gaps.map((gap: {
+        proof_type?: string;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => [gap.proof_type, gap]),
+    );
+    expect(Array.from(gapsByProofType.keys()).sort()).toEqual([
+      'branch_review_clearance_gap',
+      'buyer_evidence_hard_gate',
+      'external_advisor_clearance_gap',
+      'release_toolchain_approval_gap',
+      'source_provenance_approval_gate',
+    ]);
+    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.proof_boundary).toMatch(/does not prove buyer acceptance|95% confidence|commercial-ready status/i);
+    expect(gapsByProofType.get('buyer_evidence_hard_gate')?.stop_gate).toMatch(/Do not claim buyer-proven 95% confidence|accepted proof packs/i);
+    expect(gapsByProofType.get('source_provenance_approval_gate')?.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|deploy/i);
+    expect(gapsByProofType.get('source_provenance_approval_gate')?.stop_gate).toMatch(/Do not commit|production approval/i);
+    expect(gapsByProofType.get('branch_review_clearance_gap')?.proof_boundary).toMatch(/read-only unmerged-branch|does not checkout|merge|push/i);
+    expect(gapsByProofType.get('branch_review_clearance_gap')?.stop_gate).toMatch(/Do not checkout|canonical heads/i);
+    expect(gapsByProofType.get('external_advisor_clearance_gap')?.proof_boundary).toMatch(/repo-visible Supabase advisor|does not access dashboards|clear advisor findings/i);
+    expect(gapsByProofType.get('external_advisor_clearance_gap')?.stop_gate).toMatch(/Do not claim Supabase advisor clearance|RLS\/performance clearance/i);
+    expect(gapsByProofType.get('release_toolchain_approval_gap')?.proof_boundary).toMatch(/does not resolve Corepack|Git LFS|run full release-readiness|grant owner approval/i);
+    expect(gapsByProofType.get('release_toolchain_approval_gap')?.stop_gate).toMatch(/Do not treat local pnpm checks|release-readiness|owner approval/i);
     expect(manifest.buyer_evidence.status).toBe('skipped');
     expect(manifest.buyer_evidence.production_registers).toBeNull();
     expect(manifest.buyer_evidence.outreach_logs).toBeNull();
