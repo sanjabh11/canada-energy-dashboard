@@ -142,6 +142,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'GitHub CI must pass on the current pushed commit before source is considered release-ready; source CI still does not prove that production has been redeployed from that commit, and local ahead-of-origin, staged-only, or unstaged source blockers must be checked separately.',
   },
   {
+    label: 'Source provenance isolation ledger',
+    status: 'external_gate',
+    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The source provenance isolation ledger classifies dirty source paths by tracked, untracked, ignored, staged-only, unstaged-only, mixed, rename or move, and release-blocking state, but it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval. It does not prove current local cleanliness or production approval.',
+  },
+  {
     label: 'Source provenance resolution queue',
     status: 'external_gate',
     command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',

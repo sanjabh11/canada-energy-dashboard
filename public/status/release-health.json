@@ -52,6 +52,15 @@
       "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
     },
     {
+      "id": "source_provenance_isolation_ledger",
+      "label": "Source provenance isolation ledger",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The source provenance isolation ledger classifies dirty source paths by tracked, untracked, ignored, staged-only, unstaged-only, mixed, rename or move, and release-blocking state, but it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval. It does not prove current local cleanliness or production approval.",
+      "nextAction": "Use the ledger to isolate owner-decision rows, keep unrelated user work untouched, and rerun the approval packet plus launch manifest only after explicit owner intent resolves every release-blocking source row."
+    },
+    {
       "id": "launch_evidence_validation_gate",
       "label": "Launch evidence validation gate",
       "status": "external_gate",

@@ -24,6 +24,16 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     boundaryPatterns: [/does not prove production approval/i, /buyer acceptance/i, /current hosted\/live parity/i],
   },
   {
+    publicId: 'source_provenance_isolation_ledger',
+    releaseHealthLabel: 'Source provenance isolation ledger',
+    boundaryPatterns: [
+      /tracked, untracked, ignored, staged-only, unstaged-only, mixed/i,
+      /does not commit, unstage, stash, revert/i,
+      /clear source provenance/i,
+      /does not prove current local cleanliness/i,
+    ],
+  },
+  {
     publicId: 'source_provenance_resolution_queue',
     releaseHealthLabel: 'Source provenance resolution queue',
     boundaryPatterns: [
@@ -233,6 +243,7 @@ describe('status page release posture', () => {
     const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const launchEvidenceValidationEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch evidence validation gate');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+    const sourceIsolationLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance isolation ledger');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
     const releasePreflightQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight remediation queue');
     const releasePreflightClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight clearance matrix');
@@ -250,7 +261,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(22);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(23);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -273,6 +284,11 @@ describe('status page release posture', () => {
     expect(sourceEvidence?.publicReference).toBeUndefined();
     expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
     expect(sourceEvidence?.evidenceBoundary).toMatch(/staged-only, or unstaged source blockers/i);
+    expect(sourceIsolationLedgerEvidence?.status).toBe('external_gate');
+    expect(sourceIsolationLedgerEvidence?.command).toContain('report:production-approval-packet');
+    expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/tracked, untracked, ignored, staged-only/i);
+    expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
     expect(sourceResolutionQueueEvidence?.status).toBe('external_gate');
     expect(sourceResolutionQueueEvidence?.command).toContain('report:production-approval-packet');
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
@@ -396,6 +412,7 @@ describe('status page release posture', () => {
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const launchEvidenceValidationGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_evidence_validation_gate');
+    const sourceIsolationLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_isolation_ledger');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releasePreflightQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_remediation_queue');
     const releasePreflightClearanceMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_clearance_matrix');
@@ -431,6 +448,7 @@ describe('status page release posture', () => {
       'current_source_live_parity',
       'current_source_release_gate',
       'source_provenance',
+      'source_provenance_isolation_ledger',
       'launch_evidence_validation_gate',
       'source_provenance_resolution_queue',
       'release_preflight_remediation_queue',
@@ -459,6 +477,10 @@ describe('status page release posture', () => {
     expect(provenanceGate?.command).toContain('report:production-approval-packet');
     expect(provenanceGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceIsolationLedgerGate?.status).toBe('external_gate');
+    expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/tracked, untracked, ignored, staged-only/i);
+    expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceIsolationLedgerGate?.nextAction).toMatch(/explicit owner intent/i);
     expect(launchEvidenceValidationGate?.status).toBe('external_gate');
     expect(launchEvidenceValidationGate?.proofBucket).toBe('repo artifact');
     expect(launchEvidenceValidationGate?.command).toContain('check:launch-evidence-manifest');

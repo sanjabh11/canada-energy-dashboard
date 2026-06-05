@@ -43,6 +43,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:production-approval-packet -- --skip-release-readiness',
   },
   {
+    id: 'source_provenance_isolation_ledger',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'launch_evidence_validation_gate',
     status: 'external_gate',
     proofBucket: 'repo artifact',
@@ -227,6 +233,13 @@ function validateManifest(manifest) {
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
+  }
+  const sourceIsolationLedger = itemById.get('source_provenance_isolation_ledger') ?? {};
+  if (!/tracked|untracked|ignored|staged-only|unstaged-only|mixed|rename|release-blocking/i.test(`${sourceIsolationLedger.evidenceBoundary ?? ''}\n${sourceIsolationLedger.nextAction ?? ''}`)) {
+    failures.push('source_provenance_isolation_ledger must describe dirty source path isolation dimensions.');
+  }
+  if (!/does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*delete|does not.*rename|does not.*move|does not.*clear source provenance|does not.*run release-readiness|does not.*deploy|does not.*grant approval|does not.*prove current local cleanliness|does not.*production approval/i.test(sourceIsolationLedger.evidenceBoundary ?? '')) {
+    failures.push('source_provenance_isolation_ledger must preserve the no-mutation, no-release-execution, non-cleanliness, and no-approval boundary.');
   }
   const launchEvidenceValidationGate = itemById.get('launch_evidence_validation_gate') ?? {};
   if (!/manifest structure|proof-boundary consistency|check:launch-evidence-manifest/i.test(`${launchEvidenceValidationGate.evidenceBoundary ?? ''}\n${launchEvidenceValidationGate.nextAction ?? ''}`)) {
