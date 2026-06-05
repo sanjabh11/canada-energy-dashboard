@@ -1905,6 +1905,38 @@ function sourceResolutionStopGate(detail) {
   return `Do not ${verbs} this path without explicit owner intent; this queue is a decision aid only.`;
 }
 
+function sourceResolutionProofType(detail) {
+  if (detail.old_path) return 'source_rename_decision';
+  if (!detail.tracked && detail.ignored_by_rule) return 'ignored_local_artifact_decision';
+  if (!detail.tracked) return 'untracked_source_decision';
+  if (detail.staging_state === 'staged_only') return 'staged_source_decision';
+  if (detail.staging_state === 'unstaged_only') return 'unstaged_source_decision';
+  if (detail.staging_state === 'staged_and_unstaged') return 'split_index_worktree_decision';
+  return 'tracked_source_decision';
+}
+
+function sourceResolutionProofBoundary(detail) {
+  if (detail.old_path) {
+    return 'Requires explicit owner decision for the staged rename or move; this queue row does not rename, move, commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (!detail.tracked && detail.ignored_by_rule) {
+    return 'Requires owner confirmation that an ignored local artifact remains outside launch evidence; this queue row does not delete, move, commit, clear provenance, deploy, or grant approval.';
+  }
+  if (!detail.tracked) {
+    return 'Requires owner decision whether the untracked path is launch evidence, a local artifact, or should be ignored; this queue row does not add, ignore, move, delete, commit, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'staged_only') {
+    return 'Requires owner decision for the staged source change; this queue row does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'unstaged_only') {
+    return 'Requires owner decision for the unstaged source change; this queue row does not commit, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'staged_and_unstaged') {
+    return 'Requires separate owner decisions for index and worktree versions; this queue row does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  return 'Requires explicit owner decision for the tracked source change; this queue row does not mutate source, clear provenance, deploy, or grant approval.';
+}
+
 function sourceProvenanceResolutionEvidence(queue) {
   if (queue.status === 'pass') {
     return 'Source provenance resolution queue: status=pass dirty_paths=0 owner_decisions=0 approval_gate=owner approval and release gates still apply before deploy';
@@ -1938,6 +1970,9 @@ function buildSourceProvenanceResolutionQueue(status) {
     ignored_by_rule: detail.ignored_by_rule,
     decision_required: sourceResolutionDecision(detail),
     proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    proof_type: sourceResolutionProofType(detail),
+    owner_decision_required: true,
+    proof_boundary: sourceResolutionProofBoundary(detail),
     stop_gate: sourceResolutionStopGate(detail),
     status: 'blocked',
   }));

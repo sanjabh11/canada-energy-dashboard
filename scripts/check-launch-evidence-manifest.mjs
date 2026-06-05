@@ -358,8 +358,30 @@ try {
       assert(isBoolean(item.ignored_by_rule), `source_provenance.resolution_queue.items[${index}].ignored_by_rule must be boolean.`);
       assert(typeof item.decision_required === 'string' && /decide|confirm/i.test(item.decision_required), `source_provenance.resolution_queue.items[${index}].decision_required must describe the owner decision.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:production-approval-packet'), `source_provenance.resolution_queue.items[${index}].proof_command must point to the production approval packet.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `source_provenance.resolution_queue.items[${index}].proof_type must be set.`);
+      assert(item.owner_decision_required === true, `source_provenance.resolution_queue.items[${index}].owner_decision_required must be true.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `source_provenance.resolution_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && /without explicit owner intent/i.test(item.stop_gate), `source_provenance.resolution_queue.items[${index}].stop_gate must preserve owner-intent boundary.`);
       assert(item.status !== 'pass', `source_provenance.resolution_queue.items[${index}].status must remain blocked until owner resolution clears the path.`);
+      if (item.old_path) {
+        assert(item.proof_type === 'source_rename_decision', `source_provenance.resolution_queue.items[${index}] must classify rename/move rows as source_rename_decision.`);
+        assert(/staged rename or move|does not rename|does not.*commit|clear provenance|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve rename/move owner-decision semantics.`);
+      } else if (!item.tracked && item.ignored_by_rule) {
+        assert(item.proof_type === 'ignored_local_artifact_decision', `source_provenance.resolution_queue.items[${index}] must classify ignored local artifacts.`);
+        assert(/ignored local artifact|does not delete|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve ignored-artifact owner-decision semantics.`);
+      } else if (!item.tracked) {
+        assert(item.proof_type === 'untracked_source_decision', `source_provenance.resolution_queue.items[${index}] must classify untracked non-ignored paths.`);
+        assert(/untracked path|does not add|clear provenance|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve untracked-path owner-decision semantics.`);
+      } else if (item.staging_state === 'staged_only') {
+        assert(item.proof_type === 'staged_source_decision', `source_provenance.resolution_queue.items[${index}] must classify staged source changes.`);
+        assert(/staged source change|does not commit|clear provenance|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve staged owner-decision semantics.`);
+      } else if (item.staging_state === 'unstaged_only') {
+        assert(item.proof_type === 'unstaged_source_decision', `source_provenance.resolution_queue.items[${index}] must classify unstaged source changes.`);
+        assert(/unstaged source change|does not commit|clear provenance|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve unstaged owner-decision semantics.`);
+      } else if (item.staging_state === 'staged_and_unstaged') {
+        assert(item.proof_type === 'split_index_worktree_decision', `source_provenance.resolution_queue.items[${index}] must classify split index/worktree changes.`);
+        assert(/separate owner decisions|index and worktree|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve split index/worktree semantics.`);
+      }
     }
     assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
     assert(typeof manifest.release_preflight?.evidence === 'string', 'Manifest must include release_preflight.evidence.');

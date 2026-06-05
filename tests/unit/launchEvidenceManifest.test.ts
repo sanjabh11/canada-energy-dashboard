@@ -357,8 +357,15 @@ describe('launch evidence manifest report', () => {
       expect(firstSourceDecision.source_status).toBeTruthy();
       expect(firstSourceDecision.decision_required).toMatch(/Decide|Confirm/i);
       expect(firstSourceDecision.proof_command).toContain('report:production-approval-packet');
+      expect(firstSourceDecision.proof_type).toBeTruthy();
+      expect(firstSourceDecision.owner_decision_required).toBe(true);
+      expect(firstSourceDecision.proof_boundary).toMatch(/does not.*(commit|rename|add|delete|mutate)|grant approval|clear provenance/i);
       expect(firstSourceDecision.stop_gate).toContain('explicit owner intent');
       expect(firstSourceDecision.status).toBe('blocked');
+      if (firstSourceDecision.old_path) {
+        expect(firstSourceDecision.proof_type).toBe('source_rename_decision');
+        expect(firstSourceDecision.proof_boundary).toMatch(/staged rename or move|does not rename/i);
+      }
     }
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.probe_status).toBe('skipped');
