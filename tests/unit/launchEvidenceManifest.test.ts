@@ -438,11 +438,17 @@ describe('launch evidence manifest report', () => {
     );
     const firstReviewItem = manifest.branch_review.review_queue.items[0];
     const firstCanonicalHeadDecision = manifest.branch_review.canonical_head_decisions.items[0];
+    const firstReviewFirstPacket = manifest.branch_review.review_first_packets.packets[0];
+    const firstChangedFunctionRow = firstReviewFirstPacket?.changed_supabase_function_rows?.[0]
+      ?? manifest.branch_review.top_review_packet.changed_supabase_function_rows?.[0];
 
     expect(manifest.branch_review.probe_status).toBe('pass');
     expect(manifest.branch_review.evidence).toContain('Branch review clearance');
     expect(manifest.branch_review.evidence).toContain('probe_status=pass');
     expect(manifest.branch_review.evidence_boundary).toMatch(/read-only branch probe execution does not clear/i);
+    expect(manifest.branch_review.top_review_packet.read_only).toBe(true);
+    expect(manifest.branch_review.top_review_packet.proof_type).toBeTruthy();
+    expect(manifest.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
     expect(firstReviewItem).toBeTruthy();
     if (firstReviewItem) {
       expect(firstReviewItem.read_only).toBe(true);
@@ -467,6 +473,21 @@ describe('launch evidence manifest report', () => {
       if (firstCanonicalHeadDecision.state_key === 'origin_only') {
         expect(firstCanonicalHeadDecision.proof_type).toBe('origin_only_canonical_head_decision');
       }
+    }
+
+    if (firstReviewFirstPacket) {
+      expect(firstReviewFirstPacket.read_only).toBe(true);
+      expect(firstReviewFirstPacket.proof_type).toBeTruthy();
+      expect(firstReviewFirstPacket.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
+      if (firstReviewFirstPacket.risk === 'high') {
+        expect(firstReviewFirstPacket.proof_type).toBe('high_risk_read_only_branch_packet');
+      }
+    }
+
+    if (firstChangedFunctionRow) {
+      expect(firstChangedFunctionRow.read_only).toBe(true);
+      expect(firstChangedFunctionRow.proof_type).toBe('read_only_supabase_function_branch_review');
+      expect(firstChangedFunctionRow.proof_boundary).toMatch(/review-target evidence|does not deploy functions|run migrations|alter secrets/i);
     }
 
     if (reviewFirstOpen || canonicalHeadOpen) {

@@ -72,6 +72,20 @@ function isBoolean(value) {
   return value === true || value === false;
 }
 
+function assertChangedSupabaseFunctionReviewRow(row, pathLabel) {
+  assert(typeof row.function_name === 'string' && row.function_name.length > 0, `${pathLabel}.function_name must be set.`);
+  assert(typeof row.changed_paths === 'string' && row.changed_paths.length > 0, `${pathLabel}.changed_paths must be set.`);
+  assert(typeof row.review_focus === 'string' && row.review_focus.length > 0, `${pathLabel}.review_focus must be set.`);
+  assert(typeof row.suggested_checks === 'string' && row.suggested_checks.length > 0, `${pathLabel}.suggested_checks must be set.`);
+  assert(typeof row.stop_gate === 'string' && /no deploy|no .*migration|no .*secret|no .*production/i.test(row.stop_gate), `${pathLabel}.stop_gate must preserve the non-deploying Supabase function review boundary.`);
+  assert(row.proof_type === 'read_only_supabase_function_branch_review', `${pathLabel}.proof_type must classify parsed Supabase function rows as read-only branch-review targets.`);
+  assert(row.read_only === true, `${pathLabel}.read_only must be true.`);
+  assert(
+    typeof row.proof_boundary === 'string' && /review-target evidence|does not deploy functions|run migrations|alter secrets|clear advisor findings|production approval/i.test(row.proof_boundary),
+    `${pathLabel}.proof_boundary must say the row is review-target evidence only and does not deploy or clear advisor findings.`,
+  );
+}
+
 const tempRoot = mkdtempSync(path.join(tmpdir(), 'ceip-launch-evidence-check-'));
 const manifestPath = path.join(tempRoot, 'launch-evidence.json');
 
@@ -1034,6 +1048,22 @@ try {
       assert(hasIntegerOrNull(packet.changed_supabase_function_count), `branch_review.review_first_packets.packets[${index}].changed_supabase_function_count must be an integer or null.`);
       assert(typeof packet.command === 'string' && packet.command.includes('report:unmerged-branch-readiness'), `branch_review.review_first_packets.packets[${index}].command must point to the focused branch report.`);
       assert(typeof packet.stop_gate === 'string' && /no checkout|no .*merge|owner approval/i.test(packet.stop_gate), `branch_review.review_first_packets.packets[${index}].stop_gate must preserve the non-mutating approval boundary.`);
+      assert(typeof packet.proof_type === 'string' && packet.proof_type.length > 0, `branch_review.review_first_packets.packets[${index}].proof_type must be set.`);
+      assert(packet.read_only === true, `branch_review.review_first_packets.packets[${index}].read_only must be true.`);
+      assert(
+        typeof packet.proof_boundary === 'string' && /read-only branch evidence|does not checkout|merge|push|discard|migrate|deploy|production approval|canonical head/i.test(packet.proof_boundary),
+        `branch_review.review_first_packets.packets[${index}].proof_boundary must preserve the read-only packet evidence boundary.`,
+      );
+      if (packet.risk === 'high') {
+        assert(
+          packet.proof_type === 'high_risk_read_only_branch_packet',
+          `branch_review.review_first_packets.packets[${index}].proof_type must classify high-risk focused packets.`,
+        );
+      }
+      assert(Array.isArray(packet.changed_supabase_function_rows), `branch_review.review_first_packets.packets[${index}].changed_supabase_function_rows must be a list.`);
+      for (const [rowIndex, row] of (packet.changed_supabase_function_rows ?? []).entries()) {
+        assertChangedSupabaseFunctionReviewRow(row, `branch_review.review_first_packets.packets[${index}].changed_supabase_function_rows[${rowIndex}]`);
+      }
       assert(typeof packet.canonical_head_comparison?.evidence === 'string' && packet.canonical_head_comparison.evidence.includes('Canonical head comparison'), `branch_review.review_first_packets.packets[${index}].canonical_head_comparison evidence must be set.`);
     }
     assert(typeof manifest.branch_review?.top_review_packet?.evidence === 'string', 'Manifest branch_review.top_review_packet.evidence must be set.');
@@ -1041,6 +1071,13 @@ try {
     assert(Array.isArray(manifest.branch_review?.top_review_packet?.categories), 'Manifest branch_review.top_review_packet.categories must be a list.');
     assert(Array.isArray(manifest.branch_review?.top_review_packet?.changed_supabase_functions), 'Manifest branch_review.top_review_packet.changed_supabase_functions must be a list.');
     assert(hasIntegerOrNull(manifest.branch_review?.top_review_packet?.changed_supabase_function_count), 'Manifest branch_review.top_review_packet.changed_supabase_function_count must be an integer or null.');
+    assert(typeof manifest.branch_review?.top_review_packet?.proof_type === 'string' && manifest.branch_review.top_review_packet.proof_type.length > 0, 'Manifest branch_review.top_review_packet.proof_type must be set.');
+    assert(manifest.branch_review?.top_review_packet?.read_only === true, 'Manifest branch_review.top_review_packet.read_only must be true.');
+    assert(
+      typeof manifest.branch_review?.top_review_packet?.proof_boundary === 'string'
+        && /read-only branch evidence|does not checkout|merge|push|discard|migrate|deploy|production approval|canonical head/i.test(manifest.branch_review.top_review_packet.proof_boundary),
+      'Manifest branch_review.top_review_packet.proof_boundary must preserve the read-only focused packet boundary.',
+    );
     assert(typeof manifest.branch_review?.top_review_packet?.canonical_head_comparison?.evidence === 'string', 'Manifest branch_review.top_review_packet.canonical_head_comparison.evidence must be set.');
     assert(manifest.branch_review.top_review_packet.canonical_head_comparison.evidence.includes('Canonical head comparison'), 'Manifest canonical head comparison evidence must include a comparison marker.');
     assert(typeof manifest.branch_review?.top_review_packet?.canonical_head_comparison?.status === 'string', 'Manifest canonical head comparison status must be set.');
@@ -1051,6 +1088,9 @@ try {
     assert(Array.isArray(manifest.branch_review?.top_review_packet?.canonical_head_comparison?.origin_only_subjects), 'Manifest canonical head comparison origin_only_subjects must be a list.');
     assert(typeof manifest.branch_review?.top_review_packet?.command === 'string' && manifest.branch_review.top_review_packet.command.includes('report:unmerged-branch-readiness'), 'Manifest branch_review.top_review_packet.command must point to the focused branch report.');
     assert(typeof manifest.branch_review?.top_review_packet?.stop_gate === 'string' && /no branch mutation|no checkout|no .*merge|owner approval/i.test(manifest.branch_review.top_review_packet.stop_gate), 'Manifest branch_review.top_review_packet.stop_gate must preserve the non-mutating approval boundary.');
+    for (const [rowIndex, row] of (manifest.branch_review?.top_review_packet?.changed_supabase_function_rows ?? []).entries()) {
+      assertChangedSupabaseFunctionReviewRow(row, `branch_review.top_review_packet.changed_supabase_function_rows[${rowIndex}]`);
+    }
     if (!skipProbes) {
       assert(Number.isInteger(manifest.branch_review?.family_counts?.local_only), 'Non-skipped manifest must include numeric local-only family count.');
       assert(Number.isInteger(manifest.branch_review?.family_counts?.origin_only), 'Non-skipped manifest must include numeric origin-only family count.');

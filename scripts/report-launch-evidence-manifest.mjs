@@ -2447,6 +2447,9 @@ function parseChangedFunctionRows(markdown) {
       review_focus: reviewFocus,
       suggested_checks: suggestedChecks,
       stop_gate: stopGate,
+      proof_type: 'read_only_supabase_function_branch_review',
+      read_only: true,
+      proof_boundary: 'Changed Supabase function row is review-target evidence parsed from a focused branch report; it does not deploy functions, run migrations, alter secrets, change policies, contact Supabase, clear advisor findings, or grant production approval.',
     }));
 }
 
@@ -2485,9 +2488,30 @@ function topBranchReviewPacketEvidence(packet, label = 'Top branch review packet
   ].join(' ');
 }
 
+function branchReviewPacketProofType(packet) {
+  if (packet.status === 'skipped') return 'skipped_read_only_branch_packet_probe';
+  if (packet.status === 'empty') return 'empty_read_only_branch_packet_probe';
+  if (packet.risk === 'high') return 'high_risk_read_only_branch_packet';
+  if (String(packet.priority ?? '').startsWith('review_first')) return 'review_first_read_only_branch_packet';
+  return 'focused_read_only_branch_packet';
+}
+
+function branchReviewPacketProofBoundary() {
+  return 'Focused branch packet is read-only branch evidence; it does not checkout, merge, push, discard, migrate, deploy, run Supabase migrations, grant production approval, or select a canonical head.';
+}
+
+function withBranchReviewPacketProofFields(packet) {
+  return {
+    ...packet,
+    proof_type: branchReviewPacketProofType(packet),
+    read_only: true,
+    proof_boundary: branchReviewPacketProofBoundary(),
+  };
+}
+
 function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch review packet', maxFiles = '12' } = {}) {
   if (skipProbes) {
-    const packet = {
+    const packet = withBranchReviewPacketProofFields({
       status: 'skipped',
       branch: null,
       priority: null,
@@ -2501,12 +2525,12 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
       canonical_head_comparison: compareCanonicalHeads(null),
       command: `corepack pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files ${maxFiles}`,
       stop_gate: 'Read-only focused review first; no branch mutation or production action.',
-    };
+    });
     return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
   }
 
   if (!queueItem?.review_ref) {
-    const packet = {
+    const packet = withBranchReviewPacketProofFields({
       status: 'empty',
       branch: null,
       priority: null,
@@ -2517,10 +2541,10 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
       categories: [],
       changed_supabase_function_count: 0,
       changed_supabase_functions: [],
-      canonical_head_comparison: compareCanonicalHeads(topItem),
+      canonical_head_comparison: compareCanonicalHeads(null),
       command: 'corepack pnpm run report:unmerged-branch-readiness',
       stop_gate: 'No branch review item available.',
-    };
+    });
     return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
   }
 
@@ -2536,7 +2560,7 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
   const functionRows = parseChangedFunctionRows(output);
   const focusedFreshness = parseFocusedBranchFreshness(output, queueItem.review_ref);
   const canonicalHeadComparison = compareCanonicalHeads(queueItem);
-  const packet = {
+  const packet = withBranchReviewPacketProofFields({
     status: result.status === 0 ? 'pass' : 'fail',
     branch: queueItem.review_ref,
     family: queueItem.family,
@@ -2554,7 +2578,7 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
     command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${queueItem.review_ref} --max-files ${maxFiles}`,
     stop_gate: queueItem.stop_gate,
     evidence_excerpt: output.split(/\r?\n/).slice(0, 24).join(' | '),
-  };
+  });
   return { ...packet, evidence: topBranchReviewPacketEvidence(packet, evidenceLabel) };
 }
 
