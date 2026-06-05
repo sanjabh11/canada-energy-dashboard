@@ -1840,6 +1840,61 @@ try {
     assert(manifest.market_evidence_mode === 'mixed', 'Manifest market_evidence_mode must remain mixed while public source research and unvalidated buyer hypotheses are combined.');
     assert(Array.isArray(manifest.synthetic_data_points), 'Manifest synthetic_data_points must be a list for the current launch-evidence schema.');
     assert(manifest.synthetic_data_points.length === 0, 'Manifest must not invent synthetic market evidence data points for this audit.');
+    assert(typeof manifest.fix_report === 'object' && manifest.fix_report !== null, 'Manifest fix_report must be an object.');
+    assert(Array.isArray(manifest.fix_report.files_changed), 'Manifest fix_report.files_changed must be a list.');
+    assert(Array.isArray(manifest.fix_report.tests_run), 'Manifest fix_report.tests_run must be a list.');
+    assert(
+      manifest.fix_report.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Manifest fix_report.files_changed must record the launch manifest TypeScript gate test file.',
+    );
+    assert(
+      manifest.fix_report.tests_run.some((check) => /tsc -b --pretty false/.test(check)),
+      'Manifest fix_report.tests_run must record the TypeScript build gate.',
+    );
+    assert(
+      manifest.fix_report.tests_run.some((check) => /test:e2e:preview/.test(check)),
+      'Manifest fix_report.tests_run must record the production preview build gate.',
+    );
+    assert(Array.isArray(manifest.implementation_decisions), 'Manifest implementation_decisions must be a list.');
+    assert(Array.isArray(manifest.rejected_variants), 'Manifest rejected_variants must be a list.');
+    assert(Array.isArray(manifest.code_optimization_reviews), 'Manifest code_optimization_reviews must be a list.');
+    assert(manifest.implementation_decisions.length >= 1, 'Manifest must record at least one implementation decision when fix_report.files_changed is non-empty.');
+    assert(manifest.rejected_variants.length >= 1, 'Manifest must record rejected variants for the safe-fix code optimization gate.');
+    assert(manifest.code_optimization_reviews.length >= 1, 'Manifest must record at least one code optimization review when fix_report.files_changed is non-empty.');
+    const safeFixDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
+    assert(safeFixDecision, 'Manifest must record the preview manifest TypeScript safe-fix implementation decision.');
+    assert(
+      /preview-build TypeScript gate|launch evidence manifest/i.test(safeFixDecision?.decision ?? ''),
+      'Safe-fix implementation decision must name the preview TypeScript/launch evidence manifest gate.',
+    );
+    assert(
+      Array.isArray(safeFixDecision?.files_changed)
+        && safeFixDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && safeFixDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Safe-fix implementation decision must record the changed manifest script and launch manifest test file.',
+    );
+    assert(
+      Array.isArray(safeFixDecision?.tests_run)
+        && safeFixDecision.tests_run.some((check) => /test:strategy-audit-slice/.test(check)),
+      'Safe-fix implementation decision must record the broad strategy audit slice.',
+    );
+    assert(
+      /does not clear buyer evidence|production approval|hosted\/live parity/i.test(safeFixDecision?.proof_boundary ?? ''),
+      'Safe-fix implementation decision must preserve external launch gate boundaries.',
+    );
+    const safeFixReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
+    assert(safeFixReview, 'Manifest must record the preview manifest TypeScript safe-fix code optimization review.');
+    assert(safeFixReview?.policy === 'strict', 'Safe-fix code optimization review must use strict policy.');
+    assert(safeFixReview?.verdict === 'pass', 'Safe-fix code optimization review must pass.');
+    assert(
+      Number.isInteger(safeFixReview?.minimality_score) && safeFixReview.minimality_score >= 4,
+      'Safe-fix code optimization review must preserve a high minimality score.',
+    );
+    assert(
+      Array.isArray(safeFixReview?.tests_or_checks)
+        && safeFixReview.tests_or_checks.some((check) => /test:e2e:preview/.test(check)),
+      'Safe-fix code optimization review must record the preview build proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
@@ -1901,4 +1956,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, code optimization evidence, pain map, target map, buyer boundary, and schema validation are consistent.');

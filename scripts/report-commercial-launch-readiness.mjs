@@ -171,6 +171,9 @@ function renderReport(manifest, validationText) {
   const proofBuckets = manifest.proof_buckets ?? {};
   const outreach = manifest.outreach_plan ?? {};
   const fixReport = manifest.fix_report ?? {};
+  const implementationDecisions = Array.isArray(manifest.implementation_decisions) ? manifest.implementation_decisions : [];
+  const rejectedVariants = Array.isArray(manifest.rejected_variants) ? manifest.rejected_variants : [];
+  const codeOptimizationReviews = Array.isArray(manifest.code_optimization_reviews) ? manifest.code_optimization_reviews : [];
   const completionAudit = manifest.completion_audit ?? {};
   const completionAuditItems = Array.isArray(completionAudit.items) ? completionAudit.items : [];
   const reviews = Array.isArray(manifest.adversarial_reviews) ? manifest.adversarial_reviews : [];
@@ -732,6 +735,7 @@ ${row(['Is security approved?', 'Repo-backed security artifacts exist, but owner
 | Item | Files Changed | Tests Run | Status | Approval Gate |
 |---|---|---|---|---|
 ${row(['Manifest command boundary', fixReport.files_changed_by_manifest_command, fixReport.current_required_checks, 'read-only unless --output is used', fixReport.safe_fix_boundary])}
+${row(['Safe-fix files changed', fixReport.files_changed, fixReport.tests_run, 'repo-local safe fix recorded', 'Does not clear buyer, source, branch, Supabase, release, production, deploy, or hosted/live gates.'])}
 ${(fixReport.unresolved_blockers ?? []).map((blocker, index) => row([
     `Unresolved blocker ${index + 1}`,
     'n/a',
@@ -739,6 +743,49 @@ ${(fixReport.unresolved_blockers ?? []).map((blocker, index) => row([
     blocker,
     'Requires buyer evidence, clean provenance, branch review, or owner approval.',
   ])).join('\n')}
+
+## Code Optimization Report
+
+### Implementation Decisions
+
+| Decision | Acceptance Check | Chosen Variant | Files Changed | Tests Run | Proof | Reason | Proof Boundary | Stop Gate |
+|---|---|---|---|---|---|---|---|---|
+${implementationDecisions.length > 0 ? implementationDecisions.map((item) => row([
+    item.decision,
+    item.acceptance_check,
+    item.chosen_variant,
+    item.files_changed,
+    item.tests_run,
+    item.proof,
+    item.reason,
+    item.proof_boundary,
+    item.stop_gate,
+  ])).join('\n') : row(['none', 'n/a', 'n/a', 'none', 'none', 'No implementation decisions were recorded.', 'No repo-side safe fix recorded by this manifest.', 'No code-change proof boundary recorded.', 'Do not infer code-change proof from an empty table.'])}
+
+### Rejected Variants
+
+| Variant | Reason Rejected | Tradeoff | Evidence |
+|---|---|---|---|
+${rejectedVariants.length > 0 ? rejectedVariants.map((item) => row([
+    item.variant,
+    item.reason_rejected,
+    item.tradeoff,
+    item.evidence,
+  ])).join('\n') : row(['none', 'No rejected variants were recorded.', 'n/a', 'No code-optimization evidence recorded.'])}
+
+### Optimization Reviews
+
+| Target Task | Policy | Verdict | Minimality Score | Evidence | Tests Or Checks | Remaining Risk |
+|---|---|---|---:|---|---|---|
+${codeOptimizationReviews.length > 0 ? codeOptimizationReviews.map((item) => row([
+    item.target_task,
+    item.policy,
+    item.verdict,
+    item.minimality_score,
+    item.evidence,
+    item.tests_or_checks,
+    item.remaining_risk,
+  ])).join('\n') : row(['none', 'n/a', 'n/a', '0', 'No code optimization review was recorded.', 'none', 'No code-change review evidence recorded.'])}
 
 ## Objective Completion Audit
 

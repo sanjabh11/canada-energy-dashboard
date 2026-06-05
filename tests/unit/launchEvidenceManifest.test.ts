@@ -703,11 +703,45 @@ describe('launch evidence manifest report', () => {
     expect(manifest.target_customers[0].proof_boundary).toMatch(/Target segment ranking|does not prove named-account validation|outreach permission|commercial-ready status/i);
     expect(manifest.target_customers[0].stop_gate).toMatch(/Do not treat target ranking|permission to contact buyers|buyer-proven evidence/i);
     expect(manifest.outreach_plan.email_script_boundary).toContain('Do not claim buyer-proven 95% confidence');
-    expect(manifest.fix_report.files_changed).toEqual([]);
-    expect(manifest.fix_report.tests_run).toEqual([]);
-    expect(manifest.implementation_decisions).toEqual([]);
-    expect(manifest.rejected_variants).toEqual([]);
-    expect(manifest.code_optimization_reviews).toEqual([]);
+    expect(manifest.fix_report.files_changed).toContain('tests/unit/launchEvidenceManifest.test.ts');
+    expect(manifest.fix_report.tests_run).toEqual(expect.arrayContaining([
+      'pnpm exec tsc -b --pretty false',
+      'pnpm run test:e2e:preview',
+      'pnpm run test:strategy-audit-slice',
+    ]));
+    expect(manifest.implementation_decisions).toHaveLength(1);
+    expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
+    expect(manifest.code_optimization_reviews).toHaveLength(1);
+    const safeFixDecision = manifest.implementation_decisions[0];
+    expect(safeFixDecision.task_id).toBe('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
+    expect(safeFixDecision.chosen_variant).toBe('minimal manifest/report evidence patch');
+    expect(safeFixDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-commercial-launch-readiness.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(safeFixDecision.tests_run).toEqual(expect.arrayContaining([
+      'pnpm exec tsc -b --pretty false',
+      'pnpm run test:e2e:preview',
+      'pnpm run test:strategy-audit-slice',
+    ]));
+    expect(safeFixDecision.proof_boundary).toMatch(/does not clear buyer evidence|production approval|hosted\/live parity/i);
+    const safeFixReview = manifest.code_optimization_reviews[0];
+    expect(safeFixReview.target_task).toBe('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
+    expect(safeFixReview.policy).toBe('strict');
+    expect(safeFixReview.verdict).toBe('pass');
+    expect(safeFixReview.minimality_score).toBeGreaterThanOrEqual(4);
+    expect(safeFixReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run test:e2e:preview',
+      'pnpm run test:strategy-audit-slice',
+    ]));
+    expect(manifest.rejected_variants.map((item: { variant: string }) => item.variant)).toEqual(expect.arrayContaining([
+      'Leave implementation_decisions, rejected_variants, and code_optimization_reviews empty.',
+      'Reconstruct every historical safe-fix commit in the manifest.',
+      'Add a separate new proof artifact for the preview TypeScript gate fix.',
+    ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
     const tempRoot = makeTempRoot();

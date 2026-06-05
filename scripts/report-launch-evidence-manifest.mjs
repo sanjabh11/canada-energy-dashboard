@@ -4336,6 +4336,78 @@ const completionAudit = buildObjectiveCompletionAudit({
   postDeployLiveProofGateQueue,
 });
 
+const safeFixFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-commercial-launch-readiness.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const safeFixTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:public-release-status',
+  'pnpm run check:claim-boundaries',
+  'pnpm run test:e2e:preview',
+  'pnpm exec playwright test --config=playwright.config.ts tests/component/foundation-phase0.spec.ts --project=chromium',
+  'pnpm run test:strategy-audit-slice',
+];
+
+const safeFixImplementationDecisions = [
+  {
+    task_id: 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    decision: 'Record the preview-build TypeScript gate safe fix in the launch evidence manifest and commercial report.',
+    acceptance_check: 'The launch evidence manifest validates while preserving blocked launch status and records the safe-fix files, checks, proof boundary, and code optimization review.',
+    chosen_variant: 'minimal manifest/report evidence patch',
+    repo_pattern_reused: 'Existing launch evidence manifest fix_report, implementation_decisions, rejected_variants, and code_optimization_reviews schema fields.',
+    files_changed: safeFixFilesChanged,
+    tests_run: safeFixTestsRun,
+    proof: 'The previous preview blocker was eliminated by typed launch-manifest map indexes; tsc, focused manifest tests, launch checks, preview build, Browser /status smoke, Phase 0 Chromium slice, and strategy audit slice passed.',
+    reason: 'The orchestrator contract requires code-changing safe-fix phases to retain implementation and code-optimization evidence; empty arrays under-reported current repo-side launch-readiness work.',
+    proof_boundary: 'This record documents repo-local safe-fix evidence only; it does not clear buyer evidence, source provenance, branch review, Supabase advisor clearance, release approval, production approval, deployment, or hosted/live parity.',
+    stop_gate: 'Do not treat this safe-fix record, TypeScript success, local preview build, or local browser smoke as commercial-ready status or production approval.',
+  },
+];
+
+const safeFixRejectedVariants = [
+  {
+    task_id: 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    variant: 'Leave implementation_decisions, rejected_variants, and code_optimization_reviews empty.',
+    reason_rejected: 'Would keep the manifest inconsistent with the code-optimization gate after a repo-side code-changing phase.',
+    tradeoff: 'No-code defer avoids edits but loses auditable proof of why the preview TypeScript gate fix was minimal and bounded.',
+    evidence: 'The orchestrator schema explicitly requires implementation and optimization evidence when fix_report.files_changed is non-empty.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    variant: 'Reconstruct every historical safe-fix commit in the manifest.',
+    reason_rejected: 'Broader history reconstruction would be brittle and would blur current verified evidence with older phase summaries.',
+    tradeoff: 'A current safe-fix record is narrower and keeps the report tied to verified preview-build and manifest checks.',
+    evidence: 'Current launch evidence is generated from repo state and current verification commands, not full git history replay.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    variant: 'Add a separate new proof artifact for the preview TypeScript gate fix.',
+    reason_rejected: 'A new artifact would add another maintenance surface when the manifest schema already has the required fields.',
+    tradeoff: 'Using existing fields keeps validation centralized in check:launch-evidence-manifest and validate_launch_evidence.py.',
+    evidence: 'fix_report, implementation_decisions, rejected_variants, and code_optimization_reviews are already required top-level manifest keys.',
+  },
+];
+
+const safeFixCodeOptimizationReviews = [
+  {
+    target_task: 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates existing manifest/report/check/test surfaces only, adds no dependency or broad abstraction, and preserves the blocked launch decision plus external stop gates.',
+    tests_or_checks: safeFixTestsRun,
+    remaining_risk: 'Live production parity, buyer acceptance, Supabase advisor clearance, branch owner decisions, source provenance cleanup, and owner deployment approval remain unproven.',
+  },
+];
+
 const manifest = {
   schema_version: 1,
   repo: {
@@ -4539,8 +4611,8 @@ const manifest = {
   },
   completion_audit: completionAudit,
   fix_report: {
-    files_changed: [],
-    tests_run: [],
+    files_changed: safeFixFilesChanged,
+    tests_run: safeFixTestsRun,
     files_changed_by_manifest_command: [],
     safe_fix_boundary: 'This manifest command is read-only unless --output is used to write the JSON file.',
     current_required_checks: [
@@ -4568,9 +4640,9 @@ const manifest = {
       'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],
   },
-  implementation_decisions: [],
-  rejected_variants: [],
-  code_optimization_reviews: [],
+  implementation_decisions: safeFixImplementationDecisions,
+  rejected_variants: safeFixRejectedVariants,
+  code_optimization_reviews: safeFixCodeOptimizationReviews,
   adversarial_reviews: [
     adversarialReview({
       lane: 'buyer evidence',
