@@ -72,6 +72,8 @@ describe('status page release posture', () => {
     const latestApprovedParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Latest approved production parity');
     const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
+    const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
+    const releasePreflightQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight remediation queue');
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
     const launchQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch blocker action queue');
     const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
@@ -79,7 +81,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(11);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(13);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -94,6 +96,16 @@ describe('status page release posture', () => {
     expect(sourceEvidence?.publicReference).toBeUndefined();
     expect(sourceEvidence?.evidenceBoundary).toMatch(/does not prove that production has been redeployed/i);
     expect(sourceEvidence?.evidenceBoundary).toMatch(/staged-only, or unstaged source blockers/i);
+    expect(sourceResolutionQueueEvidence?.status).toBe('external_gate');
+    expect(sourceResolutionQueueEvidence?.command).toContain('report:production-approval-packet');
+    expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
+    expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/prove current local cleanliness/i);
+    expect(releasePreflightQueueEvidence?.status).toBe('external_gate');
+    expect(releasePreflightQueueEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver, release-readiness execution/i);
+    expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Git LFS push-path proof/i);
+    expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/does not install tools, clear source provenance, run release-readiness/i);
     expect(branchReviewEvidence?.status).toBe('external_gate');
     expect(branchReviewEvidence?.command).toContain('report:unmerged-branch-readiness');
     expect(branchReviewEvidence?.command).toContain('report:launch-evidence-manifest');
@@ -158,6 +170,8 @@ describe('status page release posture', () => {
     const currentSourceParityGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_live_parity');
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
+    const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
+    const releasePreflightQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_remediation_queue');
     const launchQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_blocker_action_queue');
     const productionApprovalQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_prerequisite_queue');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
@@ -174,6 +188,8 @@ describe('status page release posture', () => {
       'current_source_live_parity',
       'current_source_release_gate',
       'source_provenance',
+      'source_provenance_resolution_queue',
+      'release_preflight_remediation_queue',
       'launch_blocker_action_queue',
       'production_approval_prerequisite_queue',
       'post_deploy_live_proof_gate_queue',
@@ -190,6 +206,15 @@ describe('status page release posture', () => {
     expect(provenanceGate?.command).toContain('report:production-approval-packet');
     expect(provenanceGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceResolutionQueueGate?.status).toBe('external_gate');
+    expect(sourceResolutionQueueGate?.command).toContain('report:launch-evidence-manifest');
+    expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/renamed source decisions/i);
+    expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceResolutionQueueGate?.nextAction).toMatch(/explicit owner intent/i);
+    expect(releasePreflightQueueGate?.status).toBe('external_gate');
+    expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/Corepack pnpm resolver/i);
+    expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/does not install tools/i);
+    expect(releasePreflightQueueGate?.nextAction).toMatch(/guarded release-readiness path/i);
     expect(launchQueueGate?.status).toBe('external_gate');
     expect(launchQueueGate?.command).toContain('report:commercial-launch-readiness');
     expect(launchQueueGate?.command).toContain('report:launch-evidence-manifest');

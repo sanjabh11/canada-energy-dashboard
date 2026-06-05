@@ -51,6 +51,24 @@
       "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
     },
     {
+      "id": "source_provenance_resolution_queue",
+      "label": "Source provenance resolution queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.",
+      "nextAction": "Use the queue to identify owner decisions, keep unrelated user work untouched, and rerun the approval packet only after explicit owner intent resolves every source-provenance row."
+    },
+    {
+      "id": "release_preflight_remediation_queue",
+      "label": "Release preflight remediation queue",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The release preflight remediation queue sequences Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, or deploy. It does not prove production approval.",
+      "nextAction": "Expose Corepack and Git LFS in the release shell, clean source provenance through explicit owner decisions, then rerun the guarded release-readiness path before any deploy approval request."
+    },
+    {
       "id": "launch_blocker_action_queue",
       "label": "Launch blocker action queue",
       "status": "external_gate",

@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 10) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, and Supabase advisor records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 12) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, and Supabase advisor records.');
   }
 
   const ids = new Set();
@@ -67,6 +67,8 @@ function validateManifest(manifest) {
     'current_source_live_parity',
     'current_source_release_gate',
     'source_provenance',
+    'source_provenance_resolution_queue',
+    'release_preflight_remediation_queue',
     'launch_blocker_action_queue',
     'production_approval_prerequisite_queue',
     'post_deploy_live_proof_gate_queue',
@@ -82,6 +84,20 @@ function validateManifest(manifest) {
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
+  }
+  const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
+  if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {
+    failures.push('source_provenance_resolution_queue must describe staged, unstaged, mixed, or renamed source decisions.');
+  }
+  if (!/does not.*commit|does not.*unstage|does not.*clear source provenance|does not.*prove current local cleanliness/i.test(sourceResolutionQueue.evidenceBoundary ?? '')) {
+    failures.push('source_provenance_resolution_queue must preserve the non-mutation and non-cleanliness boundary.');
+  }
+  const releasePreflightQueue = itemById.get('release_preflight_remediation_queue') ?? {};
+  if (!/Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|explicit owner production approval/i.test(`${releasePreflightQueue.evidenceBoundary ?? ''}\n${releasePreflightQueue.nextAction ?? ''}`)) {
+    failures.push('release_preflight_remediation_queue must describe the release-preflight remediation sequence.');
+  }
+  if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
+    failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
   }
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
