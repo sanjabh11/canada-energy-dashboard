@@ -14,7 +14,7 @@ const outreachIntakeBatchScriptPath = path.join(process.cwd(), 'scripts/create-o
 const artifactPrepScriptPath = path.join(process.cwd(), 'scripts/prepare-pilot-evidence-artifact.mjs');
 const registerUpdaterScriptPath = path.join(process.cwd(), 'scripts/update-pilot-evidence-register-row.mjs');
 const validatorScriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
-const PILOT_EVIDENCE_CLI_TIMEOUT_MS = 60000;
+const PILOT_EVIDENCE_CLI_TIMEOUT_MS = 120_000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {

@@ -172,6 +172,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs and review-first packet evidence; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
+    label: 'Branch clearance matrix',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The branch clearance matrix maps read-only branch review rows, review-first families, canonical-head decisions, stale or aging drift review, and release-gate dependencies, but it does not checkout, merge, push, discard, select canonical heads, run migrations, deploy, grant production approval, or clear branch review. It does not create launch evidence or prove production approval.',
+  },
+  {
     label: 'Canonical head decision queue',
     status: 'external_gate',
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',

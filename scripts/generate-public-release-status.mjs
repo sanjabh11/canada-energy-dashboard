@@ -103,6 +103,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'branch_clearance_matrix',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'canonical_head_decision_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -260,6 +266,13 @@ function validateManifest(manifest) {
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+  const branchClearanceMatrix = itemById.get('branch_clearance_matrix') ?? {};
+  if (!/read-only branch review rows|review-first families|canonical-head decisions|stale or aging|release-gate/i.test(`${branchClearanceMatrix.evidenceBoundary ?? ''}\n${branchClearanceMatrix.nextAction ?? ''}`)) {
+    failures.push('branch_clearance_matrix must describe branch review rows, review-first families, canonical-head decisions, freshness drift, and release-gate dependencies.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select canonical heads|does not.*run migrations|does not.*deploy|does not.*grant production approval|does not.*clear branch review|does not.*prove production approval/i.test(branchClearanceMatrix.evidenceBoundary ?? '')) {
+    failures.push('branch_clearance_matrix must preserve the no-mutation, no-clearance, and no-approval boundary.');
   }
   const canonicalHeadQueue = itemById.get('canonical_head_decision_queue') ?? {};
   if (!/split|local-only|origin-only|stale|aging|unknown/i.test(`${canonicalHeadQueue.evidenceBoundary ?? ''}\n${canonicalHeadQueue.nextAction ?? ''}`)) {
