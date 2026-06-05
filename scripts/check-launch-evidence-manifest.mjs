@@ -581,6 +581,22 @@ try {
       manifest.post_deploy_live_proof.gate_queue.items.some((item) => /does not deploy|Do not run deploy-production|Do not present hosted\/live parity/i.test(item.stop_gate)),
       'Post-deploy live proof gate queue must preserve explicit no-deploy and no-live-parity stop gates.',
     );
+    const deployCompletionItem = manifest.post_deploy_live_proof.gate_queue.items.find((item) => item.gate === 'Guarded production deploy completion');
+    assert(deployCompletionItem, 'Post-deploy live proof gate queue must include the guarded deploy completion item.');
+    assert(deployCompletionItem.proof_command !== 'scripts/deploy-production.sh', 'Guarded deploy completion proof command must not be the bare production deploy script.');
+    assert(
+      deployCompletionItem.proof_command.includes('check:production-deploy-request')
+        && deployCompletionItem.proof_command.includes('scripts/deploy-production.sh'),
+      'Guarded deploy completion proof command must sequence the approval-request check before the deploy script.',
+    );
+    assert(deployCompletionItem.approval_required === true, 'Guarded deploy completion must carry approval_required=true.');
+    assert(deployCompletionItem.approval_command === 'corepack pnpm run check:production-deploy-request', 'Guarded deploy completion must name the production deploy request check.');
+    assert(deployCompletionItem.execution_command === 'scripts/deploy-production.sh', 'Guarded deploy completion must keep the deploy script as an explicit execution command.');
+    assert(deployCompletionItem.approval_phrase === 'DEPLOY CEIP PRODUCTION', 'Guarded deploy completion must preserve the exact typed approval phrase.');
+    assert(
+      deployCompletionItem.stop_gate.includes('DEPLOY CEIP PRODUCTION'),
+      'Guarded deploy completion stop gate must mention the exact typed approval phrase.',
+    );
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');

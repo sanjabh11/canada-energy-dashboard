@@ -226,6 +226,14 @@ describe('launch evidence manifest report', () => {
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Live public metadata').proof_command).toBe('corepack pnpm run check:live-public-metadata');
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Live static dist parity').proof_command).toBe('corepack pnpm run check:live-static-parity');
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Hosted proof-pack route smoke').proof_command).toBe('corepack pnpm run test:browser:hosted:proof-packs');
+    const deployCompletionGate = manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Guarded production deploy completion');
+    expect(deployCompletionGate.proof_command).toBe('corepack pnpm run check:production-deploy-request && scripts/deploy-production.sh');
+    expect(deployCompletionGate.proof_command).not.toBe('scripts/deploy-production.sh');
+    expect(deployCompletionGate.approval_required).toBe(true);
+    expect(deployCompletionGate.approval_command).toBe('corepack pnpm run check:production-deploy-request');
+    expect(deployCompletionGate.execution_command).toBe('scripts/deploy-production.sh');
+    expect(deployCompletionGate.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
+    expect(deployCompletionGate.stop_gate).toContain('DEPLOY CEIP PRODUCTION');
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Current-source hosted parity claim').status).toBe('blocked');
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
