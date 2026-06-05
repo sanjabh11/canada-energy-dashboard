@@ -1977,6 +1977,243 @@ function buildBuyerEvidenceRemediationQueue(deficits) {
   return { ...queue, evidence: buyerEvidenceRemediationEvidence(queue) };
 }
 
+function buyerEvidenceAcquisitionProofBoundary(lane) {
+  switch (lane) {
+    case 'Outreach response log intake':
+      return 'Requires anonymized buyer activity before intake work; response-log planning does not contact buyers, create acceptance, or prove willingness to pay.';
+    case 'Production pilot evidence register':
+      return 'Requires a production register outside templates, fixtures, archives, generated workspaces, and rehearsal files; starter rows do not prove buyer acceptance.';
+    case 'Utility forecast lane':
+      return buyerEvidenceRemediationProofBoundary('Utility forecast lane');
+    case 'TIER or credit lane':
+      return buyerEvidenceRemediationProofBoundary('TIER or credit lane');
+    case 'Billing or security lane':
+      return buyerEvidenceRemediationProofBoundary('Billing or security lane');
+    case 'Distinct accepted proof packs':
+      return buyerEvidenceRemediationProofBoundary('Distinct accepted proof packs');
+    case 'Retained redacted artifact set':
+      return buyerEvidenceRemediationProofBoundary('Retained SHA-256 references');
+    case 'Confidence movement and coverage':
+      return 'Requires accepted buyer-supplied rows with retained artifact support, confidence_delta, buyer_data_coverage_pct >= 70, and recorded turnaround; templates or constructed demos cannot move confidence.';
+    case 'Strong commercial commitment':
+      return buyerEvidenceRemediationProofBoundary('Strong commercial signal');
+    case 'Retained-artifact 95% validation':
+      return buyerEvidenceRemediationProofBoundary('Retained-artifact 95% validation');
+    default:
+      return 'Requires retained accepted buyer evidence; this acquisition matrix does not create buyer proof, commercial commitment, or 95% confidence by itself.';
+  }
+}
+
+function buyerEvidenceAcquisitionStopGate(lane) {
+  switch (lane) {
+    case 'Outreach response log intake':
+      return 'Do not contact buyers from this matrix, count no-reply or not-fit rows as proof, or create intake packets unless an actionable anonymized response row exists.';
+    case 'Production pilot evidence register':
+      return 'Do not count templates, fixtures, archives, generated workspaces, or starter registers as production buyer evidence.';
+    case 'Utility forecast lane':
+      return buyerEvidenceRemediationStopGate('Utility forecast lane');
+    case 'TIER or credit lane':
+      return buyerEvidenceRemediationStopGate('TIER or credit lane');
+    case 'Billing or security lane':
+      return buyerEvidenceRemediationStopGate('Billing or security lane');
+    case 'Distinct accepted proof packs':
+      return buyerEvidenceRemediationStopGate('Distinct accepted proof packs');
+    case 'Retained redacted artifact set':
+      return buyerEvidenceRemediationStopGate('Retained SHA-256 references');
+    case 'Confidence movement and coverage':
+      return 'Do not move confidence, buyer-data coverage, or turnaround fields from rehearsal rows, templates, no-reply outreach, not-fit rows, or constructed demos.';
+    case 'Strong commercial commitment':
+      return buyerEvidenceRemediationStopGate('Strong commercial signal');
+    case 'Retained-artifact 95% validation':
+      return buyerEvidenceRemediationStopGate('Retained-artifact 95% validation');
+    default:
+      return 'Do not claim buyer acceptance, 95% confidence, or commercial-ready status from acquisition planning alone.';
+  }
+}
+
+function buyerEvidenceAcquisitionDefinitions() {
+  return [
+    {
+      lane: 'Outreach response log intake',
+      source_requirement: 'actionable outreach response',
+      current_from_probe: (probe) => `${probe.actionableRows ?? 'unknown'} actionable outreach row(s); ${probe.batchableIntakeRows ?? 'unknown'} batchable intake row(s)`,
+      required_artifact: 'anonymized outreach response log row with interested, requested_info, data_offered, or meeting_booked status and a valid pilot evidence register action',
+      minimum_accepted_signal: 'actionable buyer response creates intake-packet or retained-artifact work; status-only outreach and no-reply rows remain non-proof',
+      evidence_root: 'docs/growth production CSV roots or /tmp/ceip-phase-f-evidence/outreach',
+      template_or_source_path: '/tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv',
+      validation_command: 'corepack pnpm run plan:outreach-intake -- path/to/outreach-response-log.csv',
+      proof_type: 'outreach_intake_acquisition',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Production pilot evidence register',
+      source_requirement: 'production register presence',
+      current_from_probe: (probe) => `${probe.productionRegisters ?? 'unknown'} production pilot evidence register(s)`,
+      required_artifact: 'production pilot evidence register outside templates, fixtures, archives, generated workspaces, and rehearsal files',
+      minimum_accepted_signal: 'register contains real anonymized buyer-supplied rows before any confidence movement is counted',
+      evidence_root: 'docs/growth production CSV roots',
+      template_or_source_path: 'docs/growth/path-to-filled-pilot-evidence-register.csv',
+      validation_command: 'corepack pnpm run report:buyer-evidence-readiness -- --root docs/growth --evidence-root path/to/redacted-artifacts',
+      proof_type: 'production_register_acquisition',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Utility forecast lane',
+      source_requirement: 'Utility forecast lane',
+      required_artifact: 'accepted forecast trust artifact for /utility-demand-forecast (utility_forecast_planning_pack)',
+      minimum_accepted_signal: 'buyer-supplied accepted utility forecast row with MAE, MAPE, RMSE, baselines, rolling-origin, interval coverage, and champion/challenger diagnostics',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: '/tmp/ceip-phase-f-evidence/minimum-intake/utility-demand-forecast',
+      validation_command: buyerEvidenceRemediationProofCommand('Utility forecast lane'),
+      proof_type: 'forecast_trust_artifact_preparation',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'TIER or credit lane',
+      source_requirement: 'TIER or credit lane',
+      required_artifact: 'accepted TIER CFO or credit-banking retained artifact for /roi-calculator or /credit-banking',
+      minimum_accepted_signal: 'buyer-supplied accepted Alberta compliance or credit-banking row with reviewer feedback and day_14_decision=proceed',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: '/tmp/ceip-phase-f-evidence/minimum-intake/roi-calculator or /tmp/ceip-phase-f-evidence/minimum-intake/credit-banking',
+      validation_command: buyerEvidenceRemediationProofCommand('TIER or credit lane'),
+      proof_type: 'retained_artifact_preparation',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Billing or security lane',
+      source_requirement: 'Billing or security lane',
+      required_artifact: 'accepted shadow-billing or utility-security retained artifact for /shadow-billing or /utility-security',
+      minimum_accepted_signal: 'buyer-supplied accepted billing or security procurement row with privacy screen, reviewer feedback, and day_14_decision=proceed',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: '/tmp/ceip-phase-f-evidence/minimum-intake/utility-security or /tmp/ceip-phase-f-evidence/minimum-intake/shadow-billing',
+      validation_command: buyerEvidenceRemediationProofCommand('Billing or security lane'),
+      proof_type: 'retained_artifact_preparation',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Distinct accepted proof packs',
+      source_requirement: 'Distinct accepted proof packs',
+      required_artifact: 'at least three distinct accepted buyer-supplied proof_pack_id values with day_14_decision=proceed',
+      minimum_accepted_signal: 'accepted utility forecast plus finance/compliance plus billing/security proof packs from real buyer evidence',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: 'path/to/filled-pilot-evidence-register.csv',
+      validation_command: buyerEvidenceRemediationProofCommand('Distinct accepted proof packs'),
+      proof_type: 'buyer_acceptance_report',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Retained redacted artifact set',
+      source_requirement: 'Retained SHA-256 references',
+      required_artifact: 'text-inspectable retained redacted artifacts with stable sha256 references for every accepted confidence-moving row',
+      minimum_accepted_signal: 'each accepted row references a retained artifact that supports the row fields without direct identifiers',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: 'path/to/redacted-artifacts/*.md',
+      validation_command: buyerEvidenceRemediationProofCommand('Retained SHA-256 references'),
+      proof_type: 'retained_artifact_and_register_update',
+      owner: 'evidence_operator',
+    },
+    {
+      lane: 'Confidence movement and coverage',
+      source_requirement: 'Accepted confidence_delta',
+      required_artifact: 'accepted buyer rows with confidence_delta, buyer_data_coverage_pct >= 70, and time_to_artifact_hours recorded',
+      minimum_accepted_signal: 'total accepted confidence_delta >= 0.9, every accepted row covers buyer data at threshold, every accepted row is <=120h, and at least one accepted row is <=48h',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: 'path/to/filled-pilot-evidence-register.csv',
+      validation_command: 'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --buyer-data-coverage-pct REPLACE_WITH_BUYER_DATA_COVERAGE_PCT_70_TO_100 --time-to-artifact-hours REPLACE_WITH_TIME_TO_ARTIFACT_HOURS_0_TO_120 --output-file path/to/filled-register.csv',
+      proof_type: 'register_update',
+      owner: 'buyer_operator',
+    },
+    {
+      lane: 'Strong commercial commitment',
+      source_requirement: 'Strong commercial signal',
+      required_artifact: 'retained redacted signed agreement, paid pilot, invoice, purchase order, or letter of intent evidence',
+      minimum_accepted_signal: 'non-status-only commercial commitment attached to an accepted buyer row and retained artifact',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: 'path/to/redacted-artifacts/commercial-commitment.md',
+      validation_command: buyerEvidenceRemediationProofCommand('Strong commercial signal'),
+      proof_type: 'commercial_commitment_artifact',
+      owner: 'commercial_owner',
+    },
+    {
+      lane: 'Retained-artifact 95% validation',
+      source_requirement: 'Retained-artifact 95% validation',
+      required_artifact: 'filled pilot evidence register plus retained redacted artifact root',
+      minimum_accepted_signal: 'validate:pilot-evidence --require-95 passes with accepted rows, retained artifacts, strong commercial signal, and hard-gate coverage',
+      evidence_root: 'path/to/redacted-artifacts',
+      template_or_source_path: 'path/to/filled-pilot-evidence-register.csv',
+      validation_command: buyerEvidenceRemediationProofCommand('Retained-artifact 95% validation'),
+      proof_type: 'retained_artifact_validation',
+      owner: 'evidence_operator',
+    },
+  ];
+}
+
+function buyerEvidenceAcquisitionStatus(definition, probe, deficitsByRequirement) {
+  if (definition.source_requirement === 'actionable outreach response') {
+    return Number.isInteger(probe.actionableRows) && probe.actionableRows > 0 ? 'ready' : 'blocked';
+  }
+  if (definition.source_requirement === 'production register presence') {
+    return Number.isInteger(probe.productionRegisters) && probe.productionRegisters > 0 ? 'ready' : 'blocked';
+  }
+  const deficit = deficitsByRequirement.get(definition.source_requirement);
+  return deficit?.status === 'pass' ? 'ready' : 'blocked';
+}
+
+function buyerEvidenceAcquisitionEvidence(matrix) {
+  const topBlocked = matrix.rows
+    .filter((item) => item.status !== 'ready')
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.lane}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Buyer evidence acquisition matrix:',
+    `status=${matrix.status}`,
+    `rows=${matrix.row_count}`,
+    `blocked=${matrix.blocked_count}`,
+    `source_deficits=${matrix.source_deficit_status}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=matrix does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance',
+  ].join(' ');
+}
+
+function buildBuyerEvidenceAcquisitionMatrix(probe) {
+  const deficits = probe.hardGateDeficits ?? {};
+  const deficitsByRequirement = new Map((deficits.items ?? []).map((item) => [item.requirement, item]));
+  const rows = buyerEvidenceAcquisitionDefinitions().map((definition, index) => {
+    const sourceDeficit = deficitsByRequirement.get(definition.source_requirement);
+    const status = buyerEvidenceAcquisitionStatus(definition, probe, deficitsByRequirement);
+    return {
+      rank: index + 1,
+      lane: definition.lane,
+      source_requirement: definition.source_requirement,
+      current: sourceDeficit?.current ?? definition.current_from_probe?.(probe) ?? `${deficits.status ?? 'unknown'} source deficit state`,
+      required_artifact: definition.required_artifact,
+      minimum_accepted_signal: definition.minimum_accepted_signal,
+      evidence_root: definition.evidence_root,
+      template_or_source_path: definition.template_or_source_path,
+      validation_command: definition.validation_command,
+      proof_type: definition.proof_type,
+      proof_boundary: buyerEvidenceAcquisitionProofBoundary(definition.lane),
+      stop_gate: buyerEvidenceAcquisitionStopGate(definition.lane),
+      owner: definition.owner,
+      status,
+      blocks_buyer_gate: status !== 'ready',
+    };
+  });
+  const matrix = {
+    status: rows.every((item) => item.status === 'ready') ? 'ready' : 'blocked',
+    proof_type: 'buyer_evidence_acquisition_matrix',
+    source_deficit_status: deficits.status ?? 'unknown',
+    row_count: rows.length,
+    blocked_count: rows.filter((item) => item.status !== 'ready').length,
+    proof_boundary: 'This matrix is acquisition planning and validation routing only; it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.',
+    stop_gate: 'Do not mark buyer evidence ready until production registers, retained redacted artifacts, strong commercial evidence, and validate:pilot-evidence --require-95 all pass with real anonymized buyer rows.',
+    rows,
+  };
+  return { ...matrix, evidence: buyerEvidenceAcquisitionEvidence(matrix) };
+}
+
 function extractMarkdownSection(markdown, heading) {
   const start = markdown.indexOf(`## ${heading}`);
   if (start < 0) return '';
@@ -3567,6 +3804,7 @@ const targetCustomers = [
 const pkg = packageMetadata();
 const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
+const buyerEvidenceAcquisitionMatrix = buildBuyerEvidenceAcquisitionMatrix(buyerProbe);
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const canonicalHeadDecisions = buildCanonicalHeadDecisionLedger(branchReviewQueue);
@@ -3614,6 +3852,7 @@ const postDeployLiveProofGateQueue = buildPostDeployLiveProofGateQueue({
 const buyerGapEvidence = [
   buyerProbe.reviewEvidence,
   buyerProbe.hardGateDeficits?.evidence,
+  buyerEvidenceAcquisitionMatrix.evidence,
   `Production pilot evidence registers: ${buyerProbe.productionRegisters ?? 'unknown'}`,
   `Production outreach response logs: ${buyerProbe.outreachLogs ?? 'unknown'}`,
   `Confidence-moving register rows: ${buyerProbe.confidenceRows ?? 'unknown'}`,
@@ -3734,6 +3973,7 @@ const manifest = {
       sourceProvenanceResolutionQueue.evidence,
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
+      buyerEvidenceAcquisitionMatrix.evidence,
       buyerProbe.hardGateDeficits.remediation_queue.evidence,
       branchProbe.evidence,
       branchProbe.familyEvidence,
@@ -3793,6 +4033,7 @@ const manifest = {
     evidence_root: buyerProbe.evidenceRoot,
     phase_f_gate: buyerProbe.phaseFGate,
     workspace_next_step: buyerProbe.workspaceNextStep,
+    acquisition_matrix: buyerEvidenceAcquisitionMatrix,
     hard_gate_deficits: buyerProbe.hardGateDeficits,
     evidence: buyerProbe.reviewEvidence,
   },

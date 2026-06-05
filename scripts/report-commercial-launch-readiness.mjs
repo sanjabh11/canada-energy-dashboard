@@ -130,6 +130,8 @@ function renderReport(manifest, validationText) {
   const openP1 = gaps.filter((gap) => gap?.severity === 'P1' && gap?.status === 'open').length;
   const buyerDeficits = manifest.buyer_evidence?.hard_gate_deficits ?? {};
   const buyerDeficitItems = Array.isArray(buyerDeficits.items) ? buyerDeficits.items : [];
+  const buyerAcquisitionMatrix = manifest.buyer_evidence?.acquisition_matrix ?? {};
+  const buyerAcquisitionRows = Array.isArray(buyerAcquisitionMatrix.rows) ? buyerAcquisitionMatrix.rows : [];
   const buyerRemediationQueue = buyerDeficits.remediation_queue ?? {};
   const buyerRemediationItems = Array.isArray(buyerRemediationQueue.items) ? buyerRemediationQueue.items : [];
   const supabaseDeficits = manifest.supabase_advisor?.clearance_deficits ?? {};
@@ -323,6 +325,34 @@ ${buyerDeficitItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Deficit ledger', 'not available', 'Run report:buyer-evidence-readiness', buyerDeficits.status ?? 'unknown', buyerDeficits.evidence ?? 'No deficit ledger was captured.'])}
+
+## Buyer Evidence Acquisition Matrix
+
+Open acquisition rows: ${text(buyerAcquisitionMatrix.blocked_count ?? 'unknown')}/${text(buyerAcquisitionMatrix.row_count ?? 'unknown')}. Proof Type: ${text(buyerAcquisitionMatrix.proof_type ?? 'buyer_evidence_acquisition_matrix')}. This matrix is acquisition planning only; it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.
+
+Proof Boundary: ${text(buyerAcquisitionMatrix.proof_boundary ?? 'Buyer evidence acquisition planning does not create buyer proof.')}
+
+Stop Gate: ${text(buyerAcquisitionMatrix.stop_gate ?? 'Do not mark buyer evidence ready until retained accepted buyer evidence and validate:pilot-evidence --require-95 pass.')}
+
+| Rank | Lane | Current | Required Artifact | Minimum Accepted Signal | Evidence Root | Template Or Source Path | Validation Command | Proof Type | Proof Boundary | Stop Gate | Owner | Status |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|
+${buyerAcquisitionRows.length > 0
+    ? buyerAcquisitionRows.map((item) => row([
+      item.rank,
+      item.lane,
+      item.current,
+      item.required_artifact,
+      item.minimum_accepted_signal,
+      item.evidence_root,
+      item.template_or_source_path,
+      item.validation_command,
+      item.proof_type,
+      item.proof_boundary,
+      item.stop_gate,
+      item.owner,
+      item.status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'no buyer acquisition rows available', 'Run report:launch-evidence-manifest before claiming buyer-evidence acquisition readiness', 'No acquisition signal was captured.', 'path/to/redacted-artifacts', 'path/to/filled-pilot-evidence-register.csv', 'corepack pnpm run report:buyer-evidence-readiness', buyerAcquisitionMatrix.proof_type ?? 'buyer_evidence_acquisition_matrix', buyerAcquisitionMatrix.proof_boundary ?? 'Buyer evidence acquisition planning does not create buyer proof.', buyerAcquisitionMatrix.stop_gate ?? 'Do not claim buyer evidence readiness from an empty acquisition matrix.', 'buyer_operator', buyerAcquisitionMatrix.status ?? 'unknown'])}
 
 ## Buyer Evidence Remediation Queue
 

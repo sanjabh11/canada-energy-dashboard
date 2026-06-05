@@ -271,6 +271,74 @@ try {
         assert(/validate:pilot-evidence --require-95/i.test(item.stop_gate), 'Retained-artifact validation deficit stop_gate must require validate:pilot-evidence --require-95.');
       }
     }
+    assert(typeof manifest.buyer_evidence?.acquisition_matrix?.evidence === 'string', 'Manifest buyer_evidence.acquisition_matrix.evidence must be set.');
+    assert(manifest.buyer_evidence.acquisition_matrix.evidence.includes('Buyer evidence acquisition matrix'), 'Manifest buyer evidence acquisition matrix evidence must include a matrix marker.');
+    assert(manifest.buyer_evidence.acquisition_matrix.proof_type === 'buyer_evidence_acquisition_matrix', 'Manifest buyer evidence acquisition matrix must classify proof_type as buyer_evidence_acquisition_matrix.');
+    assert(typeof manifest.buyer_evidence.acquisition_matrix.source_deficit_status === 'string', 'Manifest buyer_evidence.acquisition_matrix.source_deficit_status must be set.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.acquisition_matrix?.row_count), 'Manifest buyer_evidence.acquisition_matrix.row_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence.acquisition_matrix?.blocked_count), 'Manifest buyer_evidence.acquisition_matrix.blocked_count must be an integer or null.');
+    assert(Array.isArray(manifest.buyer_evidence.acquisition_matrix?.rows), 'Manifest buyer_evidence.acquisition_matrix.rows must be a list.');
+    assert(
+      manifest.buyer_evidence.acquisition_matrix.row_count === manifest.buyer_evidence.acquisition_matrix.rows.length,
+      'Buyer evidence acquisition matrix row_count must match rows length.',
+    );
+    assert((manifest.buyer_evidence.acquisition_matrix.rows ?? []).length >= 10, 'Buyer evidence acquisition matrix must include outreach, register, lane, artifact, confidence, commitment, and validation rows.');
+    assert(typeof manifest.buyer_evidence.acquisition_matrix.proof_boundary === 'string' && /does not contact buyers|create accepted evidence|move confidence|validate 95%|claim buyer acceptance/i.test(manifest.buyer_evidence.acquisition_matrix.proof_boundary), 'Buyer evidence acquisition matrix proof_boundary must preserve acquisition-only semantics.');
+    assert(typeof manifest.buyer_evidence.acquisition_matrix.stop_gate === 'string' && /Do not mark buyer evidence ready|validate:pilot-evidence --require-95|real anonymized buyer rows/i.test(manifest.buyer_evidence.acquisition_matrix.stop_gate), 'Buyer evidence acquisition matrix stop_gate must require real retained buyer evidence before readiness.');
+    const buyerAcquisitionProofTypesByLane = {
+      'Outreach response log intake': 'outreach_intake_acquisition',
+      'Production pilot evidence register': 'production_register_acquisition',
+      'Utility forecast lane': 'forecast_trust_artifact_preparation',
+      'TIER or credit lane': 'retained_artifact_preparation',
+      'Billing or security lane': 'retained_artifact_preparation',
+      'Distinct accepted proof packs': 'buyer_acceptance_report',
+      'Retained redacted artifact set': 'retained_artifact_and_register_update',
+      'Confidence movement and coverage': 'register_update',
+      'Strong commercial commitment': 'commercial_commitment_artifact',
+      'Retained-artifact 95% validation': 'retained_artifact_validation',
+    };
+    for (const [index, item] of (manifest.buyer_evidence.acquisition_matrix.rows ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `buyer_evidence.acquisition_matrix.rows[${index}].rank must be an integer.`);
+      assert(typeof item.lane === 'string' && item.lane.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].lane must be set.`);
+      assert(typeof item.source_requirement === 'string' && item.source_requirement.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].source_requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].current must be set.`);
+      assert(typeof item.required_artifact === 'string' && item.required_artifact.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].required_artifact must be set.`);
+      assert(typeof item.minimum_accepted_signal === 'string' && item.minimum_accepted_signal.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].minimum_accepted_signal must be set.`);
+      assert(typeof item.evidence_root === 'string' && item.evidence_root.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].evidence_root must be set.`);
+      assert(typeof item.template_or_source_path === 'string' && item.template_or_source_path.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].template_or_source_path must be set.`);
+      assert(typeof item.validation_command === 'string' && item.validation_command.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].validation_command must be set.`);
+      assert(!/[<>]/.test(item.validation_command), `buyer_evidence.acquisition_matrix.rows[${index}].validation_command must use shell-safe placeholders, not angle-bracket redirection placeholders.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && /Do not/i.test(item.stop_gate), `buyer_evidence.acquisition_matrix.rows[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].owner must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.acquisition_matrix.rows[${index}].status must be set.`);
+      assert(typeof item.blocks_buyer_gate === 'boolean', `buyer_evidence.acquisition_matrix.rows[${index}].blocks_buyer_gate must be boolean.`);
+      if (buyerAcquisitionProofTypesByLane[item.lane]) {
+        assert(
+          item.proof_type === buyerAcquisitionProofTypesByLane[item.lane],
+          `buyer_evidence.acquisition_matrix.rows[${index}] must classify ${item.lane} as ${buyerAcquisitionProofTypesByLane[item.lane]}.`,
+        );
+      }
+      if (item.lane === 'Outreach response log intake') {
+        assert(item.validation_command.includes('plan:outreach-intake'), 'Outreach acquisition row must point to the outreach intake action-plan command.');
+        assert(/does not contact buyers|create acceptance/i.test(item.proof_boundary), 'Outreach acquisition proof_boundary must not imply outreach execution or buyer acceptance.');
+      }
+      if (item.lane === 'Production pilot evidence register') {
+        assert(item.validation_command.includes('report:buyer-evidence-readiness'), 'Production register acquisition row must point to buyer evidence readiness validation.');
+        assert(/outside templates|starter rows/i.test(item.proof_boundary), 'Production register acquisition proof_boundary must reject templates and starter rows.');
+      }
+      if (item.lane === 'Retained-artifact 95% validation') {
+        assert(item.validation_command.includes('validate:pilot-evidence'), 'Retained-artifact validation acquisition row must point to validate:pilot-evidence.');
+        assert(/validation does not create buyer acceptance/i.test(item.proof_boundary), 'Retained-artifact validation acquisition row must not imply validation creates buyer acceptance.');
+      }
+    }
+    for (const lane of Object.keys(buyerAcquisitionProofTypesByLane)) {
+      assert(
+        manifest.buyer_evidence.acquisition_matrix.rows.some((item) => item.lane === lane),
+        `Buyer evidence acquisition matrix must include lane: ${lane}.`,
+      );
+    }
     assert(typeof manifest.buyer_evidence?.hard_gate_deficits?.remediation_queue?.evidence === 'string', 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.evidence must be set.');
     assert(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.evidence.includes('Buyer evidence remediation queue'), 'Manifest buyer evidence remediation queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.open_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.open_count must be an integer or null.');
@@ -1587,4 +1655,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

@@ -165,6 +165,27 @@ describe('launch evidence manifest report', () => {
     expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.total_count).toBeNull();
     expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.item_count).toBe(0);
     expect(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items).toEqual([]);
+    expect(manifest.buyer_evidence.acquisition_matrix.status).toBe('blocked');
+    expect(manifest.buyer_evidence.acquisition_matrix.proof_type).toBe('buyer_evidence_acquisition_matrix');
+    expect(manifest.buyer_evidence.acquisition_matrix.evidence).toContain('Buyer evidence acquisition matrix');
+    expect(manifest.buyer_evidence.acquisition_matrix.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|move confidence|claim buyer acceptance/i);
+    expect(manifest.buyer_evidence.acquisition_matrix.stop_gate).toMatch(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95/i);
+    expect(manifest.buyer_evidence.acquisition_matrix.row_count).toBeGreaterThanOrEqual(10);
+    expect(manifest.buyer_evidence.acquisition_matrix.blocked_count).toBe(manifest.buyer_evidence.acquisition_matrix.row_count);
+    const acquisitionRowsByLane = new Map(
+      manifest.buyer_evidence.acquisition_matrix.rows.map((item: {
+        lane: string;
+        proof_type?: string;
+        validation_command?: string;
+        blocks_buyer_gate?: boolean;
+      }) => [item.lane, item]),
+    );
+    expect(acquisitionRowsByLane.get('Outreach response log intake')?.proof_type).toBe('outreach_intake_acquisition');
+    expect(acquisitionRowsByLane.get('Outreach response log intake')?.validation_command).toContain('plan:outreach-intake');
+    expect(acquisitionRowsByLane.get('Production pilot evidence register')?.proof_type).toBe('production_register_acquisition');
+    expect(acquisitionRowsByLane.get('Utility forecast lane')?.validation_command).toContain('prepare:forecast-trust-report-artifact');
+    expect(acquisitionRowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
+    expect(acquisitionRowsByLane.get('Retained-artifact 95% validation')?.blocks_buyer_gate).toBe(true);
     expect(manifest.supabase_advisor.status).toBe('needs_remediation');
     expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
     expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
@@ -694,6 +715,44 @@ describe('launch evidence manifest report', () => {
     expect(strongSignalItem.stop_gate).toMatch(/status labels/i);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('keeps buyer evidence acquisition rows blocked and acquisition-only', () => {
+    const stdout = runManifest();
+    const manifest = JSON.parse(stdout);
+    const matrix = manifest.buyer_evidence.acquisition_matrix;
+    const rowsByLane = new Map(
+      matrix.rows.map((item: {
+        lane: string;
+        status: string;
+        current?: string;
+        proof_boundary?: string;
+        stop_gate?: string;
+        validation_command?: string;
+        proof_type?: string;
+      }) => [item.lane, item]),
+    );
+
+    expect(matrix.status).toBe('blocked');
+    expect(matrix.proof_type).toBe('buyer_evidence_acquisition_matrix');
+    expect(matrix.evidence).toContain('Buyer evidence acquisition matrix');
+    expect(matrix.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|move confidence|validate 95%|claim buyer acceptance/i);
+    expect(matrix.stop_gate).toMatch(/Do not mark buyer evidence ready|real anonymized buyer rows/i);
+    expect(matrix.row_count).toBeGreaterThanOrEqual(10);
+    expect(matrix.blocked_count).toBeGreaterThan(0);
+    expect(rowsByLane.get('Outreach response log intake')?.status).toBe('blocked');
+    expect(rowsByLane.get('Outreach response log intake')?.current).toMatch(/0 actionable outreach row/);
+    expect(rowsByLane.get('Outreach response log intake')?.proof_boundary).toMatch(/does not contact buyers|create acceptance/i);
+    expect(rowsByLane.get('Production pilot evidence register')?.status).toBe('blocked');
+    expect(rowsByLane.get('Production pilot evidence register')?.proof_boundary).toMatch(/outside templates|starter rows/i);
+    expect(rowsByLane.get('Utility forecast lane')?.proof_type).toBe('forecast_trust_artifact_preparation');
+    expect(rowsByLane.get('Utility forecast lane')?.validation_command).toContain('prepare:forecast-trust-report-artifact');
+    expect(rowsByLane.get('TIER or credit lane')?.validation_command).toContain('prepare:pilot-evidence-artifact');
+    expect(rowsByLane.get('Billing or security lane')?.validation_command).toContain('prepare:pilot-evidence-artifact');
+    expect(rowsByLane.get('Confidence movement and coverage')?.stop_gate).toMatch(/Do not move confidence/i);
+    expect(rowsByLane.get('Strong commercial commitment')?.proof_boundary).toMatch(/signed agreement|paid pilot|invoice|PO|LOI|status-only labels/i);
+    expect(rowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
+    expect(rowsByLane.get('Retained-artifact 95% validation')?.proof_boundary).toMatch(/validation does not create buyer acceptance/i);
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('classifies buyer evidence remediation proof rows with explicit boundaries', () => {
     const stdout = runManifest();
     const manifest = JSON.parse(stdout);
@@ -845,6 +904,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
     expect(stdout).toContain('## Branch Clearance Matrix');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
+    expect(stdout).toContain('## Buyer Evidence Acquisition Matrix');
     expect(stdout).toContain('## Buyer Evidence Remediation Queue');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
     expect(stdout).toContain('## Supabase Advisor Remediation Queue');
@@ -885,6 +945,12 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Batchable intake-packet outreach rows');
     expect(stdout).toContain('Buyer hard-gate deficit ledger skipped');
     expect(stdout).toContain('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.');
+    expect(stdout).toContain('Buyer evidence acquisition matrix');
+    expect(stdout).toContain('buyer_evidence_acquisition_matrix');
+    expect(stdout).toContain('| Outreach response log intake |');
+    expect(stdout).toContain('| Production pilot evidence register |');
+    expect(stdout).toContain('does not contact buyers, create accepted evidence, move confidence');
+    expect(stdout).toContain('Do not mark buyer evidence ready');
     expect(stdout).toContain('Buyer evidence remediation queue skipped');
     expect(stdout).toContain('does not contact buyers');
     expect(stdout).toContain('create accepted evidence, move confidence');

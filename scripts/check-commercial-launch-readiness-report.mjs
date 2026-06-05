@@ -112,6 +112,7 @@ function assertReport(markdown, options = {}) {
     'Branch Canonical Head Decision Deficits',
     'Branch Clearance Matrix',
     'Buyer Evidence Hard Gate Deficits',
+    'Buyer Evidence Acquisition Matrix',
     'Buyer Evidence Remediation Queue',
     'Supabase Advisor Clearance Deficits',
     'Supabase Advisor Remediation Queue',
@@ -183,6 +184,14 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
   assert(markdown.includes('## Buyer Evidence Hard Gate Deficits'), 'Report must include the buyer hard-gate deficit table.');
   assert(markdown.includes('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.'), 'Report must preserve the no-scaffolding buyer-deficit boundary.');
+  assert(markdown.includes('## Buyer Evidence Acquisition Matrix'), 'Report must include the buyer evidence acquisition matrix table.');
+  assert(markdown.includes('Buyer evidence acquisition matrix'), 'Report must include structured buyer evidence acquisition evidence from the manifest.');
+  assert(markdown.includes('buyer_evidence_acquisition_matrix'), 'Report must classify the buyer evidence acquisition matrix proof type.');
+  assert(markdown.includes('does not contact buyers, create accepted evidence, move confidence'), 'Report must preserve the buyer acquisition no-contact and no-fabrication boundary.');
+  assert(markdown.includes('Do not mark buyer evidence ready'), 'Report must preserve the buyer acquisition stop gate.');
+  assert(markdown.includes('| Outreach response log intake |'), 'Report must include the outreach response acquisition row.');
+  assert(markdown.includes('| Production pilot evidence register |'), 'Report must include the production register acquisition row.');
+  assert(markdown.includes('| Retained-artifact 95% validation |'), 'Report must include the retained-artifact validation acquisition row.');
   assert(markdown.includes('## Buyer Evidence Remediation Queue'), 'Report must include the buyer evidence remediation queue table.');
   assert(markdown.includes('Buyer evidence remediation queue'), 'Report must include structured buyer evidence remediation from the manifest.');
   assert(markdown.includes('does not contact buyers'), 'Report must preserve the buyer remediation no-contact boundary.');
@@ -295,6 +304,7 @@ function assertReport(markdown, options = {}) {
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
   const branchClearanceSection = extractSection(markdown, 'Branch Clearance Matrix');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
+  const buyerAcquisitionSection = extractSection(markdown, 'Buyer Evidence Acquisition Matrix');
   const buyerRemediationSection = extractSection(markdown, 'Buyer Evidence Remediation Queue');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
   const supabaseRemediationSection = extractSection(markdown, 'Supabase Advisor Remediation Queue');
@@ -331,6 +341,10 @@ function assertReport(markdown, options = {}) {
   assert(/read_only_branch_clearance_matrix|high_risk_branch_clearance_row|canonical_head_branch_clearance_row|drift_branch_clearance_row/i.test(branchClearanceSection), 'Branch clearance matrix must include read-only branch clearance proof types.');
   assert(/corepack pnpm run report:unmerged-branch-readiness|Run branch probes/i.test(branchClearanceSection), 'Branch clearance matrix must include focused branch proof commands.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
+  assert(countDataRows(buyerAcquisitionSection) >= 10, 'Buyer evidence acquisition matrix must include outreach, register, lane, artifact, confidence, commitment, and validation rows.');
+  assert(buyerAcquisitionSection.includes('Proof Type') && buyerAcquisitionSection.includes('Proof Boundary') && buyerAcquisitionSection.includes('Stop Gate'), 'Buyer evidence acquisition matrix must expose proof type, proof boundary, and stop gate columns.');
+  assert(/outreach_intake_acquisition|production_register_acquisition|retained_artifact_validation/i.test(buyerAcquisitionSection), 'Buyer evidence acquisition matrix must include acquisition and validation proof types.');
+  assert(/does not contact buyers|create accepted evidence|move confidence|validate 95%|claim buyer acceptance/i.test(buyerAcquisitionSection), 'Buyer evidence acquisition matrix must preserve acquisition-only proof boundaries.');
   assert(countDataRows(buyerRemediationSection) >= 1, 'Buyer evidence remediation queue must include at least one row or skipped boundary.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
   assert(countDataRows(supabaseRemediationSection) >= 3, 'Supabase advisor remediation queue must include the key advisor remediation rows.');
@@ -392,4 +406,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
