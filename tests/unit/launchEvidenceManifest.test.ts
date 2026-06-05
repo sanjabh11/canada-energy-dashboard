@@ -184,6 +184,27 @@ describe('launch evidence manifest report', () => {
       'Clean source provenance',
       'Explicit owner production approval',
     ]);
+    const releaseDeficitsByRequirement = new Map(
+      manifest.release_preflight.items.map((item: {
+        requirement: string;
+        proof_type?: string;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => [item.requirement, item]),
+    );
+    expect(releaseDeficitsByRequirement.get('Pinned package manager')?.proof_type).toBe('package_manager_pin');
+    expect(releaseDeficitsByRequirement.get('Pinned package manager')?.proof_boundary).toMatch(/does not prove Corepack resolution|release-readiness execution|Git LFS push-path availability/i);
+    expect(releaseDeficitsByRequirement.get('Pinned package manager')?.stop_gate).toMatch(/pin alone|Corepack resolution|deploy readiness/i);
+    expect(releaseDeficitsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
+    expect(releaseDeficitsByRequirement.get('Corepack pnpm resolver')?.proof_boundary).toMatch(/does not install tools/i);
+    expect(releaseDeficitsByRequirement.get('Git LFS push-path proof')?.proof_type).toBe('toolchain_probe');
+    expect(releaseDeficitsByRequirement.get('Git LFS push-path proof')?.proof_boundary).toMatch(/does not install Git LFS/i);
+    expect(releaseDeficitsByRequirement.get('Release-readiness execution')?.proof_type).toBe('gated_release_command');
+    expect(releaseDeficitsByRequirement.get('Release-readiness execution')?.proof_boundary).toMatch(/does not grant owner approval|hosted\/live parity/i);
+    expect(releaseDeficitsByRequirement.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(releaseDeficitsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    expect(releaseDeficitsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
+    expect(releaseDeficitsByRequirement.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve|deploy|live parity/i);
     expect(manifest.release_preflight.remediation_queue.status).toMatch(/blocked|pass/);
     expect(manifest.release_preflight.remediation_queue.evidence).toContain('Release preflight remediation queue');
     const releaseActionsByRequirement = new Map(

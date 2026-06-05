@@ -476,12 +476,49 @@ try {
     assert(hasIntegerOrNull(manifest.release_preflight?.open_count), 'Manifest release_preflight.open_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.release_preflight?.total_count), 'Manifest release_preflight.total_count must be an integer or null.');
     assert(Array.isArray(manifest.release_preflight?.items), 'Manifest release_preflight.items must be a list.');
+    const releaseProofTypesByRequirement = {
+      'Pinned package manager': 'package_manager_pin',
+      'Corepack pnpm resolver': 'toolchain_probe',
+      'Release-readiness execution': 'gated_release_command',
+      'Git LFS push-path proof': 'toolchain_probe',
+      'Clean source provenance': 'source_provenance_decision',
+      'Explicit owner production approval': 'manual_approval',
+    };
     for (const [index, item] of (manifest.release_preflight.items ?? []).entries()) {
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `release_preflight.items[${index}].requirement must be set.`);
       assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.items[${index}].current must be set.`);
       assert(typeof item.needed === 'string' && item.needed.length > 0, `release_preflight.items[${index}].needed must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.items[${index}].status must be set.`);
       assert(typeof item.next_action === 'string' && item.next_action.length > 0, `release_preflight.items[${index}].next_action must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `release_preflight.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `release_preflight.items[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `release_preflight.items[${index}].stop_gate must be set.`);
+      if (releaseProofTypesByRequirement[item.requirement]) {
+        assert(
+          item.proof_type === releaseProofTypesByRequirement[item.requirement],
+          `release_preflight.items[${index}] must classify ${item.requirement} as ${releaseProofTypesByRequirement[item.requirement]}.`,
+        );
+      }
+      if (item.requirement === 'Pinned package manager') {
+        assert(/package\.json declares|does not prove Corepack resolution|release-readiness execution|Git LFS push-path availability|production approval/i.test(item.proof_boundary), 'Pinned package manager proof_boundary must not imply toolchain, release-readiness, push-path, or approval proof.');
+        assert(/pin alone|Corepack resolution|release-readiness|push-path proof|deploy readiness|production approval/i.test(item.stop_gate), 'Pinned package manager stop_gate must reject pin-only release evidence.');
+      }
+      if (['Corepack pnpm resolver', 'Git LFS push-path proof'].includes(item.requirement)) {
+        assert(/does not install|does not.*push|does not.*deploy|grant approval/i.test(item.proof_boundary), `release_preflight.items[${index}] proof_boundary must preserve the toolchain-probe limitation.`);
+        assert(/Do not/i.test(item.stop_gate), `release_preflight.items[${index}] stop_gate must preserve an explicit no-claim boundary.`);
+      }
+      if (item.requirement === 'Release-readiness execution') {
+        assert(/does not grant owner approval|push|deploy|hosted\/live parity/i.test(item.proof_boundary), 'Release-readiness deficit proof_boundary must not imply approval, deploy, or hosted/live parity.');
+        assert(/source provenance is dirty|Corepack cannot resolve/i.test(item.stop_gate), 'Release-readiness deficit stop_gate must block dirty provenance or unresolved Corepack.');
+      }
+      if (item.requirement === 'Clean source provenance') {
+        assert(/owner decision|does not commit|unstage|stash|revert|delete|rename|move|clear provenance/i.test(item.proof_boundary), 'Clean source provenance deficit proof_boundary must preserve owner-decision semantics.');
+        assert(/Do not commit|unstage|stash|revert|delete|rename|move/i.test(item.stop_gate), 'Clean source provenance deficit stop_gate must prohibit source mutation without owner intent.');
+      }
+      if (item.requirement === 'Explicit owner production approval') {
+        assert(/does not approve|push|deploy|live parity/i.test(item.proof_boundary), 'Explicit owner approval deficit proof_boundary must not imply approval, deploy, or live parity.');
+        assert(/Do not run deploy-production|netlify deploy|push|claim production approval/i.test(item.stop_gate), 'Explicit owner approval deficit stop_gate must prohibit deploy, push, or approval claims.');
+      }
     }
     assert(
       manifest.release_preflight.items.some((item) => item.requirement === 'Corepack pnpm resolver'),

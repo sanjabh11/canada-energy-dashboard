@@ -494,6 +494,8 @@ function releaseRemediationProofCommand(requirement) {
 
 function releaseRemediationProofType(requirement) {
   switch (requirement) {
+    case 'Pinned package manager':
+      return 'package_manager_pin';
     case 'Corepack pnpm resolver':
     case 'Git LFS push-path proof':
       return 'toolchain_probe';
@@ -510,6 +512,8 @@ function releaseRemediationProofType(requirement) {
 
 function releaseRemediationProofBoundary(requirement) {
   switch (requirement) {
+    case 'Pinned package manager':
+      return 'Verifies package.json declares the expected packageManager pin; it does not prove Corepack resolution, release-readiness execution, Git LFS push-path availability, clean source provenance, deploy readiness, or production approval.';
     case 'Corepack pnpm resolver':
       return 'Verifies Corepack can resolve the packageManager-pinned pnpm version in the intended release shell; it does not install tools, run release-readiness, clear provenance, push, deploy, or grant approval.';
     case 'Release-readiness execution':
@@ -527,6 +531,8 @@ function releaseRemediationProofBoundary(requirement) {
 
 function releaseRemediationStopGate(requirement) {
   switch (requirement) {
+    case 'Pinned package manager':
+      return 'Do not treat a packageManager pin alone as Corepack resolution, release-readiness, push-path proof, deploy readiness, or production approval.';
     case 'Corepack pnpm resolver':
       return 'Do not treat bare pnpm, local shims, or skipped probes as Corepack-pinned release evidence.';
     case 'Release-readiness execution':
@@ -688,6 +694,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       needed: 'exact packageManager pin in package.json such as pnpm@10.23.0',
       status: packageManagerPinned ? 'pass' : 'blocked',
       next_action: 'Keep package.json packageManager pinned to the exact pnpm version used by release-readiness.',
+      proof_type: releaseRemediationProofType('Pinned package manager'),
+      proof_boundary: releaseRemediationProofBoundary('Pinned package manager'),
+      stop_gate: releaseRemediationStopGate('Pinned package manager'),
     },
     {
       requirement: 'Corepack pnpm resolver',
@@ -699,6 +708,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       needed: expectedVersion ? `corepack pnpm --version resolves ${expectedVersion}` : 'valid packageManager pin before Corepack resolution',
       status: skipProbes ? 'skipped' : corepackMatches ? 'pass' : 'blocked',
       next_action: 'Run from a Corepack-enabled shell; bare pnpm or a local shim does not count as release-readiness evidence.',
+      proof_type: releaseRemediationProofType('Corepack pnpm resolver'),
+      proof_boundary: releaseRemediationProofBoundary('Corepack pnpm resolver'),
+      stop_gate: releaseRemediationStopGate('Corepack pnpm resolver'),
     },
     {
       requirement: 'Release-readiness execution',
@@ -706,6 +718,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       needed: 'corepack pnpm run check:release-readiness passes after source provenance is clean',
       status: 'blocked',
       next_action: 'Run the full Corepack-pinned release-readiness chain before requesting production approval.',
+      proof_type: releaseRemediationProofType('Release-readiness execution'),
+      proof_boundary: releaseRemediationProofBoundary('Release-readiness execution'),
+      stop_gate: releaseRemediationStopGate('Release-readiness execution'),
     },
     {
       requirement: 'Git LFS push-path proof',
@@ -719,6 +734,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       next_action: gitLfsAvailable
         ? 'Keep git-lfs on PATH for commit and push evidence; rerun git lfs version before treating a future push path as current.'
         : 'Install or expose git-lfs on PATH, then rerun git lfs version before treating push-path evidence as current.',
+      proof_type: releaseRemediationProofType('Git LFS push-path proof'),
+      proof_boundary: releaseRemediationProofBoundary('Git LFS push-path proof'),
+      stop_gate: releaseRemediationStopGate('Git LFS push-path proof'),
     },
     {
       requirement: 'Clean source provenance',
@@ -728,6 +746,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       next_action: gitStatus.isDirty
         ? 'Resolve dirty tracked/untracked paths without touching unrelated user work, then rerun the production approval packet.'
         : 'Keep source provenance clean through release-readiness and approval packet generation.',
+      proof_type: releaseRemediationProofType('Clean source provenance'),
+      proof_boundary: releaseRemediationProofBoundary('Clean source provenance'),
+      stop_gate: releaseRemediationStopGate('Clean source provenance'),
     },
     {
       requirement: 'Explicit owner production approval',
@@ -735,6 +756,9 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       needed: 'explicit owner approval before any production deploy command',
       status: 'manual_stop',
       next_action: 'Ask for explicit production approval only after source provenance and release-readiness are clean.',
+      proof_type: releaseRemediationProofType('Explicit owner production approval'),
+      proof_boundary: releaseRemediationProofBoundary('Explicit owner production approval'),
+      stop_gate: releaseRemediationStopGate('Explicit owner production approval'),
     },
   ];
 
