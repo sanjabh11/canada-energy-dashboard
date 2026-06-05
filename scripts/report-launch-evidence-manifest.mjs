@@ -888,6 +888,52 @@ function statusForProductionPrerequisite(isReady, fallback = 'blocked') {
   return isReady ? 'ready' : fallback;
 }
 
+function productionApprovalPrerequisiteProofType(prerequisite) {
+  switch (prerequisite) {
+    case 'Clean source provenance':
+      return 'source_provenance_decision';
+    case 'Launch evidence validation':
+      return 'manifest_validation';
+    case 'Corepack release-readiness':
+      return 'gated_release_command';
+    case 'Canonical branch review':
+      return 'read_only_branch_review';
+    case 'Supabase advisor clearance':
+      return 'external_account_evidence';
+    case 'Buyer evidence hard gate':
+      return 'retained_buyer_evidence_validation';
+    case 'Explicit owner production approval':
+      return 'manual_approval';
+    case 'Post-deploy live proof boundary':
+      return 'post_deploy_live_proof_gate';
+    default:
+      return 'production_approval_prerequisite';
+  }
+}
+
+function productionApprovalPrerequisiteProofBoundary(prerequisite) {
+  switch (prerequisite) {
+    case 'Clean source provenance':
+      return 'Production approval packet evidence may expose unresolved source decisions; it does not commit, unstage, stash, revert, delete, rename, move, clear provenance, deploy, or grant owner approval.';
+    case 'Launch evidence validation':
+      return 'Manifest validation proves launch evidence structure only; it does not grant production approval, create buyer acceptance, deploy, or prove current hosted/live parity.';
+    case 'Corepack release-readiness':
+      return 'Corepack-pinned release-readiness is a guarded local release check after clean provenance and current toolchain probes; it does not grant owner approval, deploy, push, or prove hosted/live parity.';
+    case 'Canonical branch review':
+      return 'Branch review evidence must remain read-only; it does not checkout, merge, push, discard, migrate, deploy, resolve canonical-head ownership, or grant production approval.';
+    case 'Supabase advisor clearance':
+      return 'Requires authorized Supabase dashboard or connector advisor evidence and public-safe retained findings; CLI lint, repo artifacts, public status cards, and permission-denied connector output do not satisfy this prerequisite.';
+    case 'Buyer evidence hard gate':
+      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95; templates, rehearsal rows, outreach headers, constructed demos, and missing artifacts do not satisfy this prerequisite.';
+    case 'Explicit owner production approval':
+      return 'Requires explicit owner approval after every prerequisite is ready; this queue, manifest, report, schema validation, or deploy-request check does not approve, push, deploy, or prove live parity.';
+    case 'Post-deploy live proof boundary':
+      return 'Post-deploy live proof is only eligible after explicit approval and guarded deploy completion; this prerequisite row does not deploy, bypass approval, or create hosted/live parity evidence.';
+    default:
+      return 'Production approval requires explicit owner approval and current evidence; this row does not grant approval, deploy, or claim launch readiness by itself.';
+  }
+}
+
 function buildProductionApprovalPrerequisiteQueue({
   buyerProbe,
   branchReviewQueue,
@@ -918,6 +964,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'clean worktree and no unresolved staged, unstaged, untracked, ignored, or renamed source decisions before a deploy approval request',
       owner: 'operator',
       proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      proof_type: productionApprovalPrerequisiteProofType('Clean source provenance'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Clean source provenance'),
       stop_gate: 'Do not commit, unstage, stash, revert, delete, rename, move, or clear source provenance without explicit owner intent.',
       status: statusForProductionPrerequisite(sourceReady),
     },
@@ -928,6 +976,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'check:launch-evidence-manifest passes and the production approval packet records launch evidence manifest validation before any deploy request',
       owner: 'operator',
       proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+      proof_type: productionApprovalPrerequisiteProofType('Launch evidence validation'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Launch evidence validation'),
       stop_gate: 'Do not treat manifest generation, public release status, schema validation, or launch evidence validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
       status: 'blocked',
     },
@@ -940,6 +990,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'Corepack-pinned release-readiness, current Corepack/Git LFS probe ledger, Git LFS push-path proof, clean provenance, and owner-approval gate all current',
       owner: 'operator',
       proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      proof_type: productionApprovalPrerequisiteProofType('Corepack release-readiness'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Corepack release-readiness'),
       stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
       status: statusForProductionPrerequisite(releaseReady),
     },
@@ -952,6 +1004,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'no review-first branch families and no unresolved split, local-only, origin-only, stale, aging, or unknown canonical-head decisions',
       owner: 'operator',
       proof_command: 'corepack pnpm run report:unmerged-branch-readiness',
+      proof_type: productionApprovalPrerequisiteProofType('Canonical branch review'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Canonical branch review'),
       stop_gate: 'No checkout, merge, push, discard, migration, deploy, or production approval from branch review output without explicit owner approval and release gates.',
       status: statusForProductionPrerequisite(branchReady),
     },
@@ -964,6 +1018,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'authorized Security Advisor and Performance Advisor evidence plus public-safe findings record for the current project',
       owner: 'account_admin',
       proof_command: 'Supabase dashboard or connector Security and Performance Advisor review for qnymbecjgeaoxsfphrti',
+      proof_type: productionApprovalPrerequisiteProofType('Supabase advisor clearance'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Supabase advisor clearance'),
       stop_gate: 'Do not claim Supabase advisor clearance from CLI app lint, repo artifacts, public status cards, or permission-denied connector output.',
       status: statusForProductionPrerequisite(supabaseReady),
     },
@@ -976,6 +1032,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'real anonymized accepted buyer rows and retained redacted artifacts pass validate:pilot-evidence --require-95',
       owner: 'buyer_operator',
       proof_command: 'corepack pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+      proof_type: productionApprovalPrerequisiteProofType('Buyer evidence hard gate'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Buyer evidence hard gate'),
       stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, constructed demos, or missing artifacts as buyer acceptance.',
       status: statusForProductionPrerequisite(buyerReady),
     },
@@ -986,6 +1044,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'explicit owner approval after every prerequisite above is ready',
       owner: 'owner',
       proof_command: 'corepack pnpm run check:production-deploy-request',
+      proof_type: productionApprovalPrerequisiteProofType('Explicit owner production approval'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Explicit owner production approval'),
       stop_gate: 'Do not run deploy-production.sh, netlify deploy, push, or claim production approval from this queue, manifest, report, or schema validation.',
       status: 'manual_stop',
     },
@@ -996,6 +1056,8 @@ function buildProductionApprovalPrerequisiteQueue({
       needed: 'after approved deploy, live metadata, static parity, and hosted proof-pack route smoke pass',
       owner: 'operator',
       proof_command: 'corepack pnpm run check:post-deploy-live',
+      proof_type: productionApprovalPrerequisiteProofType('Post-deploy live proof boundary'),
+      proof_boundary: productionApprovalPrerequisiteProofBoundary('Post-deploy live proof boundary'),
       stop_gate: 'Do not present hosted/live parity for current source until post-deploy live checks pass after an explicitly approved deploy.',
       status: 'blocked',
     },

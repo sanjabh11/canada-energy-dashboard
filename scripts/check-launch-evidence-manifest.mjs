@@ -550,6 +550,16 @@ try {
       manifest.production_approval.prerequisite_queue.item_count === manifest.production_approval.prerequisite_queue.items.length,
       'Production approval prerequisite item_count must match items length.',
     );
+    const productionProofTypesByPrerequisite = {
+      'Clean source provenance': 'source_provenance_decision',
+      'Launch evidence validation': 'manifest_validation',
+      'Corepack release-readiness': 'gated_release_command',
+      'Canonical branch review': 'read_only_branch_review',
+      'Supabase advisor clearance': 'external_account_evidence',
+      'Buyer evidence hard gate': 'retained_buyer_evidence_validation',
+      'Explicit owner production approval': 'manual_approval',
+      'Post-deploy live proof boundary': 'post_deploy_live_proof_gate',
+    };
     for (const [index, item] of (manifest.production_approval.prerequisite_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `production_approval.prerequisite_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.prerequisite === 'string' && item.prerequisite.length > 0, `production_approval.prerequisite_queue.items[${index}].prerequisite must be set.`);
@@ -557,8 +567,40 @@ try {
       assert(typeof item.needed === 'string' && item.needed.length > 0, `production_approval.prerequisite_queue.items[${index}].needed must be set.`);
       assert(typeof item.owner === 'string' && item.owner.length > 0, `production_approval.prerequisite_queue.items[${index}].owner must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `production_approval.prerequisite_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `production_approval.prerequisite_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `production_approval.prerequisite_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `production_approval.prerequisite_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `production_approval.prerequisite_queue.items[${index}].status must be set.`);
+      if (productionProofTypesByPrerequisite[item.prerequisite]) {
+        assert(
+          item.proof_type === productionProofTypesByPrerequisite[item.prerequisite],
+          `production_approval.prerequisite_queue.items[${index}] must classify ${item.prerequisite} as ${productionProofTypesByPrerequisite[item.prerequisite]}.`,
+        );
+      }
+      if (item.prerequisite === 'Clean source provenance') {
+        assert(/does not commit|clear provenance|grant owner approval/i.test(item.proof_boundary), 'Clean source provenance proof_boundary must preserve owner-decision semantics.');
+      }
+      if (item.prerequisite === 'Launch evidence validation') {
+        assert(/structure only|does not grant production approval|create buyer acceptance|hosted\/live parity/i.test(item.proof_boundary), 'Launch evidence validation proof_boundary must not imply approval, buyer acceptance, or live parity.');
+      }
+      if (item.prerequisite === 'Corepack release-readiness') {
+        assert(/does not grant owner approval|deploy|push|hosted\/live parity/i.test(item.proof_boundary), 'Corepack release-readiness proof_boundary must not imply approval, deploy, push, or live parity.');
+      }
+      if (item.prerequisite === 'Canonical branch review') {
+        assert(/read-only|does not checkout|merge|push|discard|migrate|deploy/i.test(item.proof_boundary), 'Canonical branch review proof_boundary must preserve read-only no-mutation semantics.');
+      }
+      if (item.prerequisite === 'Supabase advisor clearance') {
+        assert(/authorized Supabase dashboard or connector|permission-denied connector output do not satisfy/i.test(item.proof_boundary), 'Supabase advisor clearance proof_boundary must require authorized external advisor evidence.');
+      }
+      if (item.prerequisite === 'Buyer evidence hard gate') {
+        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95/i.test(item.proof_boundary), 'Buyer evidence hard gate proof_boundary must require retained accepted buyer evidence.');
+      }
+      if (item.prerequisite === 'Explicit owner production approval') {
+        assert(/does not approve|push|deploy|prove live parity/i.test(item.proof_boundary), 'Explicit owner production approval proof_boundary must not imply approval, deploy, or live parity.');
+      }
+      if (item.prerequisite === 'Post-deploy live proof boundary') {
+        assert(/after explicit approval and guarded deploy completion|does not deploy|create hosted\/live parity evidence/i.test(item.proof_boundary), 'Post-deploy live proof boundary must require approved deploy completion before live proof.');
+      }
     }
     const productionPrerequisites = manifest.production_approval.prerequisite_queue.items.map((item) => item.prerequisite);
     for (const prerequisite of [

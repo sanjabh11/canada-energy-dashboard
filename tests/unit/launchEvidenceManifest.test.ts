@@ -245,6 +245,29 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
+    const productionPrerequisitesByName = new Map(
+      manifest.production_approval.prerequisite_queue.items.map((item: {
+        prerequisite: string;
+        proof_type?: string;
+        proof_boundary?: string;
+      }) => [item.prerequisite, item]),
+    );
+    expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    expect(productionPrerequisitesByName.get('Launch evidence validation')?.proof_type).toBe('manifest_validation');
+    expect(productionPrerequisitesByName.get('Launch evidence validation')?.proof_boundary).toMatch(/structure only|does not grant production approval/i);
+    expect(productionPrerequisitesByName.get('Corepack release-readiness')?.proof_type).toBe('gated_release_command');
+    expect(productionPrerequisitesByName.get('Corepack release-readiness')?.proof_boundary).toMatch(/does not grant owner approval|hosted\/live parity/i);
+    expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_type).toBe('read_only_branch_review');
+    expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_boundary).toMatch(/read-only|does not checkout/i);
+    expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_type).toBe('external_account_evidence');
+    expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
+    expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_type).toBe('retained_buyer_evidence_validation');
+    expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
+    expect(productionPrerequisitesByName.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
+    expect(productionPrerequisitesByName.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
+    expect(productionPrerequisitesByName.get('Post-deploy live proof boundary')?.proof_type).toBe('post_deploy_live_proof_gate');
+    expect(productionPrerequisitesByName.get('Post-deploy live proof boundary')?.proof_boundary).toMatch(/guarded deploy completion|does not deploy/i);
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.current_source_live_proven).toBe(false);
     expect(manifest.post_deploy_live_proof.evidence).toContain('Post-deploy live proof gate queue');
