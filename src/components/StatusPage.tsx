@@ -278,6 +278,24 @@ const StatusPage: React.FC = () => {
             <div className="p-4 bg-slate-50 border-b border-slate-200 text-sm leading-6 text-slate-700">
               {PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary}
             </div>
+            <div className="border-b border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-900">Required release refresh sequence</h3>
+              <div className="mt-3 grid gap-2 lg:grid-cols-2">
+                {PUBLIC_RELEASE_STATUS_MANIFEST.refreshCommands.map((command, index) => (
+                  <div
+                    key={command}
+                    className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                      {index + 1}
+                    </span>
+                    <code className="min-w-0 break-words font-mono text-xs leading-5 text-slate-800">
+                      {command}
+                    </code>
+                  </div>
+                ))}
+              </div>
+            </div>
             <div className="grid gap-4 p-4 lg:grid-cols-2">
               {PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => (
                 <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4">

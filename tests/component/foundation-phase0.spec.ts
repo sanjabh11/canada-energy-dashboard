@@ -25,11 +25,16 @@ test.describe('Phase 0 foundation gating', () => {
 
   test('status page shows tracked uptime monitors', async ({ page }) => {
     await page.goto('/status');
+    const publicReleaseStatus = page.getByTestId('public-release-status-manifest');
     await expect(page.getByRole('heading', { name: 'System Status' })).toBeVisible();
-    await expect(page.getByTestId('public-release-status-manifest')).toBeVisible();
-    await expect(page.getByText('Public release status manifest')).toBeVisible();
-    await expect(page.getByText('Current source live parity').first()).toBeVisible();
-    await expect(page.getByText('Current source does not prove production parity').first()).toBeVisible();
+    await expect(publicReleaseStatus).toBeVisible();
+    await expect(publicReleaseStatus.getByText('Public release status manifest')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('Current source live parity')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('Current source does not prove production parity')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('Required release refresh sequence')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('pnpm run check:launch-evidence-manifest').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('pnpm run check:production-deploy-request')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('pnpm run check:post-deploy-live').first()).toBeVisible();
     await expect(page.getByText('Source provenance and dirty-worktree gate')).toBeVisible();
     await expect(page.getByText('Unmerged branch review queue').first()).toBeVisible();
     await expect(page.getByText('does not create launch evidence').first()).toBeVisible();
