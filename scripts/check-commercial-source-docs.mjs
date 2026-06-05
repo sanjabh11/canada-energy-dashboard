@@ -117,6 +117,7 @@ const publicReleaseStatusCheckPhrase = /check:public-release-status/;
 const approvalPacketPublicStatusGatePhrase = /approval packet now runs[\s\S]*check:public-release-status|public release-status validation is a pre-deploy evidence gate/i;
 const approvalPacketRequestPacketGatePhrase = /production approval request packet is a pre-deploy evidence gate|production_approval\.request_packet|request packet is ineligible/i;
 const publicStatusObjectiveCompletionAuditHandlePhrase = /objective completion audit[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}objective completion audit/i;
+const publicStatusAdversarialReviewLedgerHandlePhrase = /adversarial review ledger[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}adversarial review ledger/i;
 const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
@@ -585,6 +586,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusObjectiveCompletionAuditHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes objective completion audit as a public-safe predeploy evidence handle.');
+  }
+
+  if (!publicStatusAdversarialReviewLedgerHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the adversarial review ledger as a public-safe predeploy evidence handle.');
   }
 
   if (!publicStatusRequestPacketHandlePhrase.test(sourceDoc)) {

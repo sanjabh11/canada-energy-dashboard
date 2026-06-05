@@ -61,6 +61,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
   },
   {
+    id: 'adversarial_review_ledger',
+    status: 'external_gate',
+    proofBucket: 'repo artifact',
+    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+  },
+  {
     id: 'source_provenance_resolution_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -302,6 +308,13 @@ function validateManifest(manifest) {
   }
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*commercial launch readiness|does not.*deployment|does not.*hosted\/live parity|does not.*Supabase clearance|does not.*branch approval|does not.*source readiness|does not.*permission to contact buyers/i.test(objectiveCompletionAudit.evidenceBoundary ?? '')) {
     failures.push('objective_completion_audit must preserve the no-readiness, no-buyer-proof, no-approval, no-live-proof, no-Supabase-clearance, no-branch-approval, no-source-readiness, and no-outreach-permission boundary.');
+  }
+  const adversarialReviewLedger = itemById.get('adversarial_review_ledger') ?? {};
+  if (!/buyer evidence|production approval|release toolchain|Supabase advisor clearance|branch-risk|challenge lanes|claim-refutation/i.test(`${adversarialReviewLedger.evidenceBoundary ?? ''}\n${adversarialReviewLedger.nextAction ?? ''}`)) {
+    failures.push('adversarial_review_ledger must describe the buyer, approval, release, Supabase, and branch challenge lanes.');
+  }
+  if (!/does not prove production approval|does not.*buyer acceptance|does not.*release readiness|does not.*Supabase clearance|does not.*branch approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(adversarialReviewLedger.evidenceBoundary ?? '')) {
+    failures.push('adversarial_review_ledger must preserve the no-approval, no-buyer-proof, no-release-readiness, no-Supabase-clearance, no-branch-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');
   }
   const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
   if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {

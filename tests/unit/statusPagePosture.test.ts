@@ -37,6 +37,17 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'adversarial_review_ledger',
+    releaseHealthLabel: 'Adversarial review ledger',
+    boundaryPatterns: [
+      /buyer evidence, production approval, release toolchain/i,
+      /Supabase advisor clearance/i,
+      /branch-risk challenge lanes/i,
+      /does not prove production approval/i,
+      /commercial launch readiness/i,
+    ],
+  },
+  {
     publicId: 'source_provenance_isolation_ledger',
     releaseHealthLabel: 'Source provenance isolation ledger',
     boundaryPatterns: [
@@ -335,6 +346,7 @@ describe('status page release posture', () => {
     const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const launchEvidenceValidationEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch evidence validation gate');
     const objectiveCompletionAuditEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Objective completion audit');
+    const adversarialReviewLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Adversarial review ledger');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const sourceIsolationLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance isolation ledger');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
@@ -361,7 +373,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(31);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(32);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -389,6 +401,14 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/Supabase clearance/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/permission to contact buyers/i);
+    expect(adversarialReviewLedgerEvidence?.status).toBe('external_gate');
+    expect(adversarialReviewLedgerEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(adversarialReviewLedgerEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/buyer evidence, production approval, release toolchain/i);
+    expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/Supabase advisor clearance/i);
+    expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/branch-risk challenge lanes/i);
+    expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
@@ -566,6 +586,7 @@ describe('status page release posture', () => {
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const launchEvidenceValidationGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_evidence_validation_gate');
     const objectiveCompletionAuditGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'objective_completion_audit');
+    const adversarialReviewLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'adversarial_review_ledger');
     const sourceIsolationLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_isolation_ledger');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releaseToolchainApprovalDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_approval_deficit_ledger');
@@ -612,6 +633,7 @@ describe('status page release posture', () => {
       'source_provenance_isolation_ledger',
       'launch_evidence_validation_gate',
       'objective_completion_audit',
+      'adversarial_review_ledger',
       'source_provenance_resolution_queue',
       'release_toolchain_approval_deficit_ledger',
       'release_preflight_remediation_queue',
@@ -666,6 +688,17 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/source readiness/i);
     expect(objectiveCompletionAuditGate?.nextAction).toMatch(/goal-completion blockers visible/i);
     expect(objectiveCompletionAuditGate?.nextAction).toMatch(/post-deploy live proof gates/i);
+    expect(adversarialReviewLedgerGate?.status).toBe('external_gate');
+    expect(adversarialReviewLedgerGate?.proofBucket).toBe('repo artifact');
+    expect(adversarialReviewLedgerGate?.command).toContain('report:launch-evidence-manifest');
+    expect(adversarialReviewLedgerGate?.command).toContain('report:commercial-launch-readiness');
+    expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/buyer evidence, production approval, release toolchain/i);
+    expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/Supabase advisor clearance/i);
+    expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/branch-risk challenge lanes/i);
+    expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/commercial launch readiness/i);
+    expect(adversarialReviewLedgerGate?.nextAction).toMatch(/claim-refutation lanes visible/i);
+    expect(adversarialReviewLedgerGate?.nextAction).toMatch(/post-deploy proof gate/i);
     expect(sourceResolutionQueueGate?.status).toBe('external_gate');
     expect(sourceResolutionQueueGate?.command).toContain('report:launch-evidence-manifest');
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/renamed source decisions/i);

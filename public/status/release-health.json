@@ -79,6 +79,15 @@
       "nextAction": "Use the audit to keep goal-completion blockers visible, then clear buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, and post-deploy live proof gates before any readiness or completion claim."
     },
     {
+      "id": "adversarial_review_ledger",
+      "label": "Adversarial review ledger",
+      "status": "external_gate",
+      "proofBucket": "repo artifact",
+      "command": "pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness",
+      "evidenceBoundary": "The adversarial review ledger maps buyer evidence, production approval, release toolchain, Supabase advisor clearance, and branch-risk challenge lanes, but it does not prove production approval, buyer acceptance, release readiness, Supabase clearance, branch approval, deployment, hosted/live parity, or commercial launch readiness.",
+      "nextAction": "Use the ledger to keep claim-refutation lanes visible, then clear each underlying buyer, source, branch, Supabase, release, production approval, and post-deploy proof gate before changing launch claims."
+    },
+    {
       "id": "source_provenance_resolution_queue",
       "label": "Source provenance resolution queue",
       "status": "external_gate",
