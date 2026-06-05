@@ -417,6 +417,10 @@ try {
       manifest.release_preflight.toolchain_probe_ledger.items.map((item) => item.id).join(',') === 'corepack_pnpm_resolver,git_lfs_push_path',
       'Release toolchain probe ledger must include Corepack and Git LFS probe rows in order.',
     );
+    const toolchainProbeProofTypesById = {
+      corepack_pnpm_resolver: 'corepack_pnpm_toolchain_probe',
+      git_lfs_push_path: 'git_lfs_push_path_probe',
+    };
     for (const [index, item] of (manifest.release_preflight.toolchain_probe_ledger.items ?? []).entries()) {
       assert(typeof item.id === 'string' && item.id.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].id must be set.`);
       assert(typeof item.label === 'string' && item.label.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].label must be set.`);
@@ -424,8 +428,27 @@ try {
       assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].current must be set.`);
       assert(typeof item.expected === 'string' && item.expected.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].expected must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].status must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].proof_boundary must be set.`);
       assert(typeof item.evidence_boundary === 'string' && /does not/i.test(item.evidence_boundary), `release_preflight.toolchain_probe_ledger.items[${index}].evidence_boundary must preserve a proof limitation.`);
+      assert(typeof item.stop_gate === 'string' && /do not/i.test(item.stop_gate), `release_preflight.toolchain_probe_ledger.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.next_action === 'string' && item.next_action.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].next_action must be set.`);
+      if (toolchainProbeProofTypesById[item.id]) {
+        assert(
+          item.proof_type === toolchainProbeProofTypesById[item.id],
+          `release_preflight.toolchain_probe_ledger.items[${index}] must classify ${item.id} as ${toolchainProbeProofTypesById[item.id]}.`,
+        );
+      }
+      if (item.id === 'corepack_pnpm_resolver') {
+        assert(item.command === 'corepack pnpm --version', 'Corepack probe command must remain corepack pnpm --version.');
+        assert(/Corepack pnpm resolver probe|release-shell evidence only|does not install tools|run release-readiness|push|deploy|production approval/i.test(item.proof_boundary), 'Corepack probe proof_boundary must not imply tool install, release-readiness, push, deploy, or approval.');
+        assert(/bare pnpm|local shims|skipped probes|Corepack-pinned release evidence/i.test(item.stop_gate), 'Corepack probe stop_gate must reject bare pnpm, local shims, and skipped probes as release evidence.');
+      }
+      if (item.id === 'git_lfs_push_path') {
+        assert(item.command === 'git lfs version', 'Git LFS probe command must remain git lfs version.');
+        assert(/Git LFS push-path probe|release-shell evidence only|does not install Git LFS|push|deploy|production approval/i.test(item.proof_boundary), 'Git LFS probe proof_boundary must not imply install, push, deploy, or approval.');
+        assert(/commit hook warnings|previous pushes|skipped probes|missing git-lfs binary|push-path proof/i.test(item.stop_gate), 'Git LFS probe stop_gate must reject hook warnings, old pushes, skipped probes, and missing binaries as push-path proof.');
+      }
     }
     assert(hasIntegerOrNull(manifest.release_preflight?.open_count), 'Manifest release_preflight.open_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.release_preflight?.total_count), 'Manifest release_preflight.total_count must be an integer or null.');

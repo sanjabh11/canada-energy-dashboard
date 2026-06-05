@@ -583,7 +583,10 @@ function buildReleaseToolchainProbeLedger({
           ? `pnpm ${resolvedPnpmVersion}`
           : corepackOutput,
       expected: expectedVersion ? `pnpm ${expectedVersion}` : 'valid packageManager pnpm pin',
+      proof_type: 'corepack_pnpm_toolchain_probe',
+      proof_boundary: 'Corepack pnpm resolver probe is release-shell evidence only; it does not install tools, run release-readiness, clear source provenance, push, deploy, prove hosted/live parity, or grant production approval.',
       evidence_boundary: 'This probe only verifies whether Corepack resolves the pinned pnpm version. It does not install tools, run release-readiness, clear source provenance, deploy, push, or grant production approval.',
+      stop_gate: 'Do not treat bare pnpm, local shims, skipped probes, or stale terminal output as Corepack-pinned release evidence.',
       next_action: corepackMatches
         ? 'Keep Corepack available in the release shell before running release-readiness.'
         : 'Expose Corepack in the release shell and rerun corepack pnpm --version before treating release-readiness as current.',
@@ -595,7 +598,10 @@ function buildReleaseToolchainProbeLedger({
       status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
       current: skipProbes ? 'skipped' : gitLfsOutput,
       expected: 'git-lfs available on PATH for the same shell used for commit and push evidence',
+      proof_type: 'git_lfs_push_path_probe',
+      proof_boundary: 'Git LFS push-path probe is release-shell evidence only; it does not install Git LFS, push, deploy, clear source provenance, prove hosted/live parity, or grant production approval.',
       evidence_boundary: 'This probe only verifies Git LFS availability in the current shell. It does not install tools, push, deploy, clear source provenance, or grant production approval.',
+      stop_gate: 'Do not treat commit hook warnings, previous pushes, skipped probes, or a missing git-lfs binary as current Git LFS push-path proof.',
       next_action: gitLfsAvailable
         ? 'Keep git-lfs on PATH for commit and push evidence; rerun git lfs version before treating future push evidence as current.'
         : 'Install or expose git-lfs on PATH for the same shell used for commit and push evidence, then rerun git lfs version.',

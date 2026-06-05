@@ -143,10 +143,16 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].command).toBe('corepack pnpm --version');
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].proof_type).toBe('corepack_pnpm_toolchain_probe');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].proof_boundary).toMatch(/release-shell evidence only|does not install tools|run release-readiness|push|deploy/i);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].evidence_boundary).toMatch(/does not install tools/i);
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].stop_gate).toMatch(/bare pnpm|local shims|skipped probes/i);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[1].command).toBe('git lfs version');
     expect(manifest.release_preflight.toolchain_probe_ledger.items[1].current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].proof_type).toBe('git_lfs_push_path_probe');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].proof_boundary).toMatch(/release-shell evidence only|does not install Git LFS|push|deploy/i);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[1].evidence_boundary).toMatch(/does not install tools/i);
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].stop_gate).toMatch(/commit hook warnings|previous pushes|skipped probes|missing git-lfs binary/i);
     expect(manifest.release_preflight.evidence).toContain('Release toolchain and approval deficit ledger');
     expect(manifest.release_preflight.items.map((item: { requirement: string }) => item.requirement)).toEqual([
       'Pinned package manager',
