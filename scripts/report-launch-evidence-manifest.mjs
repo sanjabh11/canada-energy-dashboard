@@ -892,6 +892,83 @@ function releasePreflightRemediationEvidence(queue) {
   ].join(' ');
 }
 
+function releasePreflightClearanceEvidence(matrix) {
+  if (matrix.status === 'pass') {
+    return 'Release preflight clearance matrix: status=pass release_blocking=0 approval_gate=owner approval and post-deploy live proof still apply before production deploy';
+  }
+
+  const topBlocked = matrix.rows
+    .filter((item) => item.blocks_release_gate)
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.requirement}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Release preflight clearance matrix:',
+    `status=${matrix.status}`,
+    `release_blocking=${matrix.blocked_count}/${matrix.row_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=matrix does not install tools, clear source provenance, run release-readiness, push, deploy, prove hosted/live parity, or grant owner approval',
+  ].join(' ');
+}
+
+function releasePreflightClearanceStatus(status) {
+  if (status === 'pass') return 'ready';
+  if (status === 'manual_stop') return 'manual_stop';
+  if (status === 'needs_remediation') return 'needs_remediation';
+  if (status === 'skipped') return 'blocked';
+  return 'blocked';
+}
+
+function releasePreflightClearanceImpact(requirement) {
+  switch (requirement) {
+    case 'Pinned package manager':
+      return 'Release shell cannot be treated as pinned until the packageManager row is present and the resolver row also proves Corepack-pinned pnpm.';
+    case 'Corepack pnpm resolver':
+      return 'Release-readiness evidence is not current until Corepack resolves the packageManager-pinned pnpm in the intended release shell.';
+    case 'Release-readiness execution':
+      return 'Production approval cannot be requested until the guarded release-readiness command passes after clean source provenance.';
+    case 'Git LFS push-path proof':
+      return 'Commit and push evidence cannot be treated as current until git-lfs is available on PATH for the release shell.';
+    case 'Clean source provenance':
+      return 'Deploy approval is blocked while dirty, staged, untracked, renamed, or otherwise unresolved source paths remain owner-decision items.';
+    case 'Explicit owner production approval':
+      return 'No production deploy, push, hosted-live claim, or commercial-ready claim is allowed without explicit owner approval after prerequisite gates pass.';
+    default:
+      return 'Release approval cannot rely on this row until its proof command and owner gate pass.';
+  }
+}
+
+function buildReleasePreflightClearanceMatrix(deficits) {
+  const rows = (deficits.items ?? []).map((item, index) => ({
+    rank: index + 1,
+    requirement: item.requirement,
+    current: item.current,
+    needed: item.needed,
+    status: releasePreflightClearanceStatus(item.status),
+    source_status: item.status,
+    owner: releaseRemediationOwner(item.requirement),
+    proof_command: releaseRemediationProofCommand(item.requirement),
+    proof_type: releaseRemediationProofType(item.requirement),
+    proof_boundary: releaseRemediationProofBoundary(item.requirement),
+    stop_gate: releaseRemediationStopGate(item.requirement),
+    release_impact: releasePreflightClearanceImpact(item.requirement),
+    blocks_release_gate: item.status !== 'pass',
+  }));
+  const matrix = {
+    status: rows.every((item) => !item.blocks_release_gate) ? 'pass' : 'blocked',
+    proof_type: 'release_preflight_clearance_matrix',
+    source_deficit_status: deficits.status,
+    row_count: rows.length,
+    blocked_count: rows.filter((item) => item.blocks_release_gate).length,
+    ready_count: rows.filter((item) => item.status === 'ready').length,
+    rows,
+    proof_boundary: 'Release preflight clearance planning maps release-gate proof requirements only; it does not install tools, run release-readiness, clear source provenance, push, deploy, prove hosted/live parity, or grant owner approval.',
+    stop_gate: 'Do not mark release approval ready until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, and explicit owner approval all pass in current evidence.',
+  };
+  return { ...matrix, evidence: releasePreflightClearanceEvidence(matrix) };
+}
+
 function releaseToolchainProbeEvidence(ledger) {
   if (ledger.status === 'skipped') {
     return 'Release toolchain probe ledger skipped by --skip-probes; run corepack pnpm run report:launch-evidence-manifest without --skip-probes for current Corepack and Git LFS command evidence.';
@@ -1101,6 +1178,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       gitLfsAvailable,
     }),
     remediation_queue: buildReleasePreflightRemediationQueue(deficits),
+    clearance_matrix: buildReleasePreflightClearanceMatrix(deficits),
     evidence: releasePreflightDeficitEvidence(deficits),
   };
 }
@@ -4077,6 +4155,7 @@ const manifest = {
       supabaseAdvisor.clearanceDeficits.evidence,
       supabaseAdvisor.clearanceDeficits.remediation_queue.evidence,
       releasePreflight.evidence,
+      releasePreflight.clearance_matrix.evidence,
       releasePreflight.remediation_queue.evidence,
       launchActionQueue.evidence,
       productionApprovalPrerequisiteQueue.evidence,

@@ -318,6 +318,38 @@ describe('launch evidence manifest report', () => {
     expect(releaseDeficitsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
     expect(releaseDeficitsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
     expect(releaseDeficitsByRequirement.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve|deploy|live parity/i);
+    expect(manifest.release_preflight.clearance_matrix.status).toBe('blocked');
+    expect(manifest.release_preflight.clearance_matrix.proof_type).toBe('release_preflight_clearance_matrix');
+    expect(manifest.release_preflight.clearance_matrix.evidence).toContain('Release preflight clearance matrix');
+    expect(manifest.release_preflight.clearance_matrix.proof_boundary).toMatch(/does not install tools|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|grant owner approval/i);
+    expect(manifest.release_preflight.clearance_matrix.stop_gate).toMatch(/Do not mark release approval ready|Corepack-pinned release-readiness|Git LFS push-path proof|owner approval/i);
+    expect(manifest.release_preflight.clearance_matrix.row_count).toBe(manifest.release_preflight.items.length);
+    expect(manifest.release_preflight.clearance_matrix.blocked_count).toBeGreaterThanOrEqual(1);
+    expect(manifest.release_preflight.clearance_matrix.rows.map((item: { requirement: string }) => item.requirement)).toEqual(
+      manifest.release_preflight.items.map((item: { requirement: string }) => item.requirement),
+    );
+    const releaseClearanceRowsByRequirement = new Map(
+      manifest.release_preflight.clearance_matrix.rows.map((item: {
+        requirement: string;
+        proof_type?: string;
+        proof_boundary?: string;
+        proof_command?: string;
+        release_impact?: string;
+        blocks_release_gate?: boolean;
+        status?: string;
+      }) => [item.requirement, item]),
+    );
+    expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
+    expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_command).toBe('corepack pnpm --version');
+    expect(releaseClearanceRowsByRequirement.get('Release-readiness execution')?.proof_type).toBe('gated_release_command');
+    expect(releaseClearanceRowsByRequirement.get('Release-readiness execution')?.proof_command).toBe('corepack pnpm run check:release-readiness');
+    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    expect(releaseClearanceRowsByRequirement.get('Clean source provenance')?.blocks_release_gate).toBe(true);
+    expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
+    expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.proof_command).toBe('corepack pnpm run check:production-deploy-request');
+    expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.release_impact).toMatch(/production deploy|hosted-live claim|owner approval/i);
     expect(manifest.release_preflight.remediation_queue.status).toMatch(/blocked|pass/);
     expect(manifest.release_preflight.remediation_queue.evidence).toContain('Release preflight remediation queue');
     const releaseActionsByRequirement = new Map(
@@ -999,6 +1031,12 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| Corepack pnpm resolver | corepack pnpm --version |');
     expect(stdout).toContain('| Git LFS push-path proof | git lfs version |');
     expect(stdout).toContain('does not install tools');
+    expect(stdout).toContain('Release Preflight Clearance Matrix');
+    expect(stdout).toContain('Release preflight clearance matrix');
+    expect(stdout).toContain('release_preflight_clearance_matrix');
+    expect(stdout).toContain('Open release clearance rows');
+    expect(stdout).toContain('Do not mark release approval ready');
+    expect(stdout).toContain('Blocks Release Gate');
     expect(stdout).toContain('| Explicit owner production approval |');
     expect(stdout).toContain('Release preflight remediation queue');
     expect(stdout).toContain('does not install tools');

@@ -142,6 +142,8 @@ function renderReport(manifest, validationText) {
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
   const releaseToolchainProbeLedger = releasePreflight.toolchain_probe_ledger ?? {};
   const releaseToolchainProbeItems = Array.isArray(releaseToolchainProbeLedger.items) ? releaseToolchainProbeLedger.items : [];
+  const releaseClearanceMatrix = releasePreflight.clearance_matrix ?? {};
+  const releaseClearanceRows = Array.isArray(releaseClearanceMatrix.rows) ? releaseClearanceMatrix.rows : [];
   const releaseRemediationQueue = releasePreflight.remediation_queue ?? {};
   const releaseRemediationItems = Array.isArray(releaseRemediationQueue.items) ? releaseRemediationQueue.items : [];
   const productionApproval = manifest.production_approval ?? {};
@@ -477,6 +479,34 @@ ${releaseToolchainProbeItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Release toolchain probe ledger', 'corepack pnpm --version; git lfs version', 'not available', 'Run report:launch-evidence-manifest without --skip-probes', releaseToolchainProbeLedger.status ?? 'unknown', releaseToolchainProbeLedger.evidence ?? 'No release toolchain probe ledger was captured.', 'Refresh toolchain probes before release-readiness evidence is claimed.'])}
+
+## Release Preflight Clearance Matrix
+
+Open release clearance rows: ${text(releaseClearanceMatrix.blocked_count ?? 'unknown')}/${text(releaseClearanceMatrix.row_count ?? 'unknown')}. Proof Type: ${text(releaseClearanceMatrix.proof_type ?? 'release_preflight_clearance_matrix')}. This matrix is release-gate mapping only; it does not install tools, run release-readiness, clear source provenance, push, deploy, prove hosted/live parity, or grant owner approval.
+
+Proof Boundary: ${text(releaseClearanceMatrix.proof_boundary ?? 'Release preflight clearance planning does not grant release approval.')}
+
+Stop Gate: ${text(releaseClearanceMatrix.stop_gate ?? 'Do not mark release approval ready until current Corepack, Git LFS, source provenance, release-readiness, and owner approval evidence pass.')}
+
+| Rank | Requirement | Current | Needed | Source Status | Clearance Status | Owner | Proof Command | Proof Type | Proof Boundary | Stop Gate | Release Impact | Blocks Release Gate |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|
+${releaseClearanceRows.length > 0
+    ? releaseClearanceRows.map((item) => row([
+      item.rank,
+      item.requirement,
+      item.current,
+      item.needed,
+      item.source_status,
+      item.status,
+      item.owner,
+      item.proof_command,
+      item.proof_type,
+      item.proof_boundary,
+      item.stop_gate,
+      item.release_impact,
+      item.blocks_release_gate ? 'yes' : 'no',
+    ])).join('\n')
+    : row(['n/a', 'none', 'no release clearance rows available', 'Run report:launch-evidence-manifest before claiming release approval readiness', releaseClearanceMatrix.source_deficit_status ?? 'unknown', releaseClearanceMatrix.status ?? 'unknown', 'operator', 'corepack pnpm run report:launch-evidence-manifest', releaseClearanceMatrix.proof_type ?? 'release_preflight_clearance_matrix', releaseClearanceMatrix.proof_boundary ?? 'Release preflight clearance planning does not grant release approval.', releaseClearanceMatrix.stop_gate ?? 'Do not claim release approval from an empty clearance matrix.', 'No release-gate impact was captured.', 'yes'])}
 
 ## Release Preflight Remediation Queue
 

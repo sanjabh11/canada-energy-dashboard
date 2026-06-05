@@ -760,6 +760,72 @@ try {
       manifest.release_preflight.items.some((item) => item.requirement === 'Explicit owner production approval'),
       'Release preflight deficits must include explicit owner approval.',
     );
+    assert(typeof manifest.release_preflight?.clearance_matrix?.evidence === 'string', 'Manifest release_preflight.clearance_matrix.evidence must be set.');
+    assert(manifest.release_preflight.clearance_matrix.evidence.includes('Release preflight clearance matrix'), 'Manifest release preflight clearance matrix evidence must include a matrix marker.');
+    assert(manifest.release_preflight.clearance_matrix.proof_type === 'release_preflight_clearance_matrix', 'Manifest release preflight clearance matrix must classify proof_type as release_preflight_clearance_matrix.');
+    assert(typeof manifest.release_preflight.clearance_matrix.source_deficit_status === 'string', 'Manifest release_preflight.clearance_matrix.source_deficit_status must be set.');
+    assert(hasIntegerOrNull(manifest.release_preflight.clearance_matrix?.row_count), 'Manifest release_preflight.clearance_matrix.row_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.clearance_matrix?.blocked_count), 'Manifest release_preflight.clearance_matrix.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.clearance_matrix?.ready_count), 'Manifest release_preflight.clearance_matrix.ready_count must be an integer or null.');
+    assert(Array.isArray(manifest.release_preflight.clearance_matrix?.rows), 'Manifest release_preflight.clearance_matrix.rows must be a list.');
+    assert(
+      manifest.release_preflight.clearance_matrix.row_count === manifest.release_preflight.clearance_matrix.rows.length,
+      'Release preflight clearance matrix row_count must match rows length.',
+    );
+    assert(
+      manifest.release_preflight.clearance_matrix.blocked_count === manifest.release_preflight.clearance_matrix.rows.filter((item) => item.blocks_release_gate).length,
+      'Release preflight clearance matrix blocked_count must match release-blocking rows.',
+    );
+    assert(typeof manifest.release_preflight.clearance_matrix.proof_boundary === 'string' && /does not install tools|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|grant owner approval/i.test(manifest.release_preflight.clearance_matrix.proof_boundary), 'Release preflight clearance matrix proof_boundary must preserve non-execution semantics.');
+    assert(typeof manifest.release_preflight.clearance_matrix.stop_gate === 'string' && /Do not mark release approval ready|Corepack-pinned release-readiness|Git LFS push-path proof|owner approval/i.test(manifest.release_preflight.clearance_matrix.stop_gate), 'Release preflight clearance matrix stop_gate must require current release evidence before approval.');
+    for (const [index, item] of (manifest.release_preflight.clearance_matrix.rows ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `release_preflight.clearance_matrix.rows[${index}].rank must be an integer.`);
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `release_preflight.clearance_matrix.rows[${index}].requirement must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.clearance_matrix.rows[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `release_preflight.clearance_matrix.rows[${index}].needed must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.clearance_matrix.rows[${index}].status must be set.`);
+      assert(typeof item.source_status === 'string' && item.source_status.length > 0, `release_preflight.clearance_matrix.rows[${index}].source_status must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `release_preflight.clearance_matrix.rows[${index}].owner must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `release_preflight.clearance_matrix.rows[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `release_preflight.clearance_matrix.rows[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `release_preflight.clearance_matrix.rows[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && /Do not/i.test(item.stop_gate), `release_preflight.clearance_matrix.rows[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.release_impact === 'string' && item.release_impact.length > 0, `release_preflight.clearance_matrix.rows[${index}].release_impact must be set.`);
+      assert(typeof item.blocks_release_gate === 'boolean', `release_preflight.clearance_matrix.rows[${index}].blocks_release_gate must be boolean.`);
+      if (releaseProofTypesByRequirement[item.requirement]) {
+        assert(
+          item.proof_type === releaseProofTypesByRequirement[item.requirement],
+          `release_preflight.clearance_matrix.rows[${index}] must classify ${item.requirement} as ${releaseProofTypesByRequirement[item.requirement]}.`,
+        );
+      }
+      if (['Corepack pnpm resolver', 'Git LFS push-path proof'].includes(item.requirement)) {
+        assert(/does not install|does not.*push|does not.*deploy|grant approval/i.test(item.proof_boundary), `release_preflight.clearance_matrix.rows[${index}] proof_boundary must preserve toolchain-probe limitations.`);
+      }
+      if (item.requirement === 'Clean source provenance') {
+        assert(/does not commit|clear provenance|rename|move/i.test(item.proof_boundary), 'Clean source provenance clearance row must preserve source owner-decision semantics.');
+        assert(item.blocks_release_gate === (item.source_status !== 'pass'), 'Clean source provenance clearance row must block exactly while source_status is non-pass.');
+      }
+      if (item.requirement === 'Explicit owner production approval') {
+        assert(/does not approve|push|deploy|live parity/i.test(item.proof_boundary), 'Explicit owner approval clearance row must not imply approval, deploy, or live parity.');
+        assert(item.status === 'manual_stop', 'Explicit owner approval clearance row must remain manual_stop until owner approval exists.');
+      }
+    }
+    assert(
+      JSON.stringify((manifest.release_preflight.clearance_matrix.rows ?? []).map((item) => item.requirement)) === JSON.stringify((manifest.release_preflight.items ?? []).map((item) => item.requirement)),
+      'Release preflight clearance matrix must include exactly the release preflight requirements in order.',
+    );
+    assert(
+      (manifest.release_preflight.clearance_matrix.rows ?? []).some((item) => item.proof_command === 'corepack pnpm run check:release-readiness'),
+      'Release preflight clearance matrix must include the release-readiness proof command.',
+    );
+    assert(
+      (manifest.release_preflight.clearance_matrix.rows ?? []).some((item) => item.proof_command === 'corepack pnpm run check:production-deploy-request'),
+      'Release preflight clearance matrix must include the production approval proof command.',
+    );
+    assert(
+      (manifest.release_preflight.clearance_matrix.rows ?? []).some((item) => item.blocks_release_gate === true),
+      'Release preflight clearance matrix must keep release-gate blockers visible while release preflight is blocked.',
+    );
     assert(typeof manifest.release_preflight?.remediation_queue?.evidence === 'string', 'Manifest release_preflight.remediation_queue.evidence must be set.');
     assert(manifest.release_preflight.remediation_queue.evidence.includes('Release preflight remediation queue'), 'Manifest release preflight remediation queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.release_preflight.remediation_queue?.open_count), 'Manifest release_preflight.remediation_queue.open_count must be an integer or null.');
@@ -1701,4 +1767,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
