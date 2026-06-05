@@ -154,6 +154,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The release preflight remediation queue sequences Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, or deploy. It does not prove production approval.',
   },
   {
+    label: 'Release preflight clearance matrix',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The release preflight clearance matrix maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, deploy, or grant owner approval. It does not prove production approval or current hosted/live parity.',
+  },
+  {
     label: 'Release toolchain probe ledger',
     status: 'external_gate',
     command: 'pnpm run report:launch-evidence-manifest',

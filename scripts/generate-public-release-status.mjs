@@ -61,6 +61,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'release_preflight_clearance_matrix',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'release_toolchain_probe_ledger',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -236,6 +242,13 @@ function validateManifest(manifest) {
   }
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
     failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
+  }
+  const releasePreflightClearanceMatrix = itemById.get('release_preflight_clearance_matrix') ?? {};
+  if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval/i.test(`${releasePreflightClearanceMatrix.evidenceBoundary ?? ''}\n${releasePreflightClearanceMatrix.nextAction ?? ''}`)) {
+    failures.push('release_preflight_clearance_matrix must describe every release preflight clearance row.');
+  }
+  if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval/i.test(releasePreflightClearanceMatrix.evidenceBoundary ?? '')) {
+    failures.push('release_preflight_clearance_matrix must preserve the non-execution, no-live-proof, and no-approval boundary.');
   }
   const releaseToolchainProbeLedger = itemById.get('release_toolchain_probe_ledger') ?? {};
   if (!/Corepack pnpm resolver|Git LFS availability|git lfs/i.test(`${releaseToolchainProbeLedger.evidenceBoundary ?? ''}\n${releaseToolchainProbeLedger.nextAction ?? ''}`)) {

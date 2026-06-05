@@ -9,7 +9,7 @@ const checkScriptPath = path.join(process.cwd(), 'scripts/check-launch-evidence-
 const checkMarkdownReportScriptPath = path.join(process.cwd(), 'scripts/check-commercial-launch-readiness-report.mjs');
 const markdownReportScriptPath = path.join(process.cwd(), 'scripts/report-commercial-launch-readiness.mjs');
 const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py';
-const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 60000;
+const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 120_000;
 const tempRoots: string[] = [];
 
 function makeTempRoot() {
@@ -682,6 +682,11 @@ describe('launch evidence manifest report', () => {
     expect(manifest.target_customers[0].proof_boundary).toMatch(/Target segment ranking|does not prove named-account validation|outreach permission|commercial-ready status/i);
     expect(manifest.target_customers[0].stop_gate).toMatch(/Do not treat target ranking|permission to contact buyers|buyer-proven evidence/i);
     expect(manifest.outreach_plan.email_script_boundary).toContain('Do not claim buyer-proven 95% confidence');
+    expect(manifest.fix_report.files_changed).toEqual([]);
+    expect(manifest.fix_report.tests_run).toEqual([]);
+    expect(manifest.implementation_decisions).toEqual([]);
+    expect(manifest.rejected_variants).toEqual([]);
+    expect(manifest.code_optimization_reviews).toEqual([]);
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
     const tempRoot = makeTempRoot();

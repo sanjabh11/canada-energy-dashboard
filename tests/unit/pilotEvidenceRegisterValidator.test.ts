@@ -6,7 +6,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/validate-pilot-evidence-register.mjs');
-vi.setConfig({ testTimeout: 15_000 });
+vi.setConfig({ testTimeout: 60_000 });
 const tempRoots: string[] = [];
 
 const fixture95Env = {

@@ -4539,6 +4539,8 @@ const manifest = {
   },
   completion_audit: completionAudit,
   fix_report: {
+    files_changed: [],
+    tests_run: [],
     files_changed_by_manifest_command: [],
     safe_fix_boundary: 'This manifest command is read-only unless --output is used to write the JSON file.',
     current_required_checks: [
@@ -4566,6 +4568,9 @@ const manifest = {
       'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],
   },
+  implementation_decisions: [],
+  rejected_variants: [],
+  code_optimization_reviews: [],
   adversarial_reviews: [
     adversarialReview({
       lane: 'buyer evidence',

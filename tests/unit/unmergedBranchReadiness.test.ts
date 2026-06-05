@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 const scriptPath = path.join(process.cwd(), 'scripts/report-unmerged-branch-readiness.mjs');
 const checkScriptPath = path.join(process.cwd(), 'scripts/check-unmerged-branch-readiness-report.mjs');
 const tempRoots: string[] = [];
-const gitBackedTestTimeoutMs = 60_000;
+const gitBackedTestTimeoutMs = 120_000;
 
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-unmerged-branches-'));

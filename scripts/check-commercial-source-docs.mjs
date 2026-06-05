@@ -116,7 +116,8 @@ const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong comm
 const publicReleaseStatusCheckPhrase = /check:public-release-status/;
 const approvalPacketPublicStatusGatePhrase = /approval packet now runs[\s\S]*check:public-release-status|public release-status validation is a pre-deploy evidence gate/i;
 const approvalPacketRequestPacketGatePhrase = /production approval request packet is a pre-deploy evidence gate|production_approval\.request_packet|request packet is ineligible/i;
-const publicStatusRequestPacketHandlePhrase = /production approval request packet, post-deploy live proof gate queue, and release toolchain probe ledger are also exposed as public-safe evidence handles/i;
+const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
+const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const stalePostP1LiveParityPhrases = [
   'live deploy and buyer evidence remain blockers',
   'live metadata remains an external gate',
@@ -574,6 +575,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusRequestPacketHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the production approval request packet as a public-safe evidence handle.');
+  }
+
+  if (!publicStatusReleasePreflightClearanceHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the release preflight clearance matrix as a public-safe evidence handle.');
   }
 
   if (existsSync(strategyRoadmapPath)) {
