@@ -74,6 +74,7 @@ describe('status page release posture', () => {
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
     const releasePreflightQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight remediation queue');
+    const releaseToolchainProbeEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release toolchain probe ledger');
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
     const canonicalHeadQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head decision queue');
     const reviewFirstPacketQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Review-first branch packet queue');
@@ -85,7 +86,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(17);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(18);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -110,6 +111,11 @@ describe('status page release posture', () => {
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver, release-readiness execution/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Git LFS push-path proof/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/does not install tools, clear source provenance, run release-readiness/i);
+    expect(releaseToolchainProbeEvidence?.status).toBe('external_gate');
+    expect(releaseToolchainProbeEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver and Git LFS availability/i);
+    expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/does not install tools, run release-readiness, push, deploy/i);
+    expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/does not substitute for release-readiness or production approval/i);
     expect(branchReviewEvidence?.status).toBe('external_gate');
     expect(branchReviewEvidence?.command).toContain('report:unmerged-branch-readiness');
     expect(branchReviewEvidence?.command).toContain('report:launch-evidence-manifest');
@@ -198,6 +204,7 @@ describe('status page release posture', () => {
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releasePreflightQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_remediation_queue');
+    const releaseToolchainProbeGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_probe_ledger');
     const launchQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_blocker_action_queue');
     const productionApprovalQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_prerequisite_queue');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
@@ -220,6 +227,7 @@ describe('status page release posture', () => {
       'source_provenance',
       'source_provenance_resolution_queue',
       'release_preflight_remediation_queue',
+      'release_toolchain_probe_ledger',
       'launch_blocker_action_queue',
       'production_approval_prerequisite_queue',
       'post_deploy_live_proof_gate_queue',
@@ -249,6 +257,12 @@ describe('status page release posture', () => {
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/Corepack pnpm resolver/i);
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releasePreflightQueueGate?.nextAction).toMatch(/guarded release-readiness path/i);
+    expect(releaseToolchainProbeGate?.status).toBe('external_gate');
+    expect(releaseToolchainProbeGate?.command).toContain('report:launch-evidence-manifest');
+    expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/Corepack pnpm resolver and Git LFS availability/i);
+    expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/does not install tools, run release-readiness, push, deploy/i);
+    expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/does not substitute for release-readiness or production approval/i);
+    expect(releaseToolchainProbeGate?.nextAction).toMatch(/without --skip-probes/i);
     expect(launchQueueGate?.status).toBe('external_gate');
     expect(launchQueueGate?.command).toContain('report:commercial-launch-readiness');
     expect(launchQueueGate?.command).toContain('report:launch-evidence-manifest');

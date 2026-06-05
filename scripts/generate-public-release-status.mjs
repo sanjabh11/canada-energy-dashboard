@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 16) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 17) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, release-toolchain probe ledger, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
   }
 
   const ids = new Set();
@@ -69,6 +69,7 @@ function validateManifest(manifest) {
     'source_provenance',
     'source_provenance_resolution_queue',
     'release_preflight_remediation_queue',
+    'release_toolchain_probe_ledger',
     'launch_blocker_action_queue',
     'production_approval_prerequisite_queue',
     'post_deploy_live_proof_gate_queue',
@@ -102,6 +103,13 @@ function validateManifest(manifest) {
   }
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
     failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
+  }
+  const releaseToolchainProbeLedger = itemById.get('release_toolchain_probe_ledger') ?? {};
+  if (!/Corepack pnpm resolver|Git LFS availability|git lfs/i.test(`${releaseToolchainProbeLedger.evidenceBoundary ?? ''}\n${releaseToolchainProbeLedger.nextAction ?? ''}`)) {
+    failures.push('release_toolchain_probe_ledger must describe the Corepack and Git LFS toolchain probes.');
+  }
+  if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*clear source provenance|does not.*grant production approval|does not substitute/i.test(releaseToolchainProbeLedger.evidenceBoundary ?? '')) {
+    failures.push('release_toolchain_probe_ledger must preserve the non-execution, non-substitution, and non-approval boundary.');
   }
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
