@@ -184,6 +184,16 @@ try {
         'Buyer evidence remediation queue must include validate:pilot-evidence while retained-artifact 95% validation is unresolved.',
       );
     }
+    if (buyerQueueRequirements.includes('Strong commercial signal')) {
+      const strongSignalItem = manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.find((item) => item.requirement === 'Strong commercial signal');
+      assert(
+        strongSignalItem?.proof_command.includes('prepare:pilot-evidence-artifact')
+          && strongSignalItem.proof_command.includes('--commercial-commitment-evidence')
+          && strongSignalItem.proof_command.includes('update:pilot-evidence-register-row')
+          && strongSignalItem.proof_command.includes('validate:pilot-evidence'),
+        'Buyer evidence remediation queue must require retained non-status-only commercial commitment evidence before strong commercial signal remediation can close.',
+      );
+    }
     if (buyerQueueRequirements.length > 0) {
       assert(
         manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.some((item) => /Do not/.test(item.stop_gate)),

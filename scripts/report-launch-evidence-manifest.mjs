@@ -1107,7 +1107,11 @@ function buyerEvidenceRemediationProofCommand(requirement) {
     case 'Artifact turnaround':
       return 'corepack pnpm run update:pilot-evidence-register-row -- --time-to-artifact-hours <0..120> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
     case 'Strong commercial signal':
-      return 'corepack pnpm run update:pilot-evidence-register-row -- --commercial-commitment-status <design_partner_signed|paid_pilot|purchase_order|letter_of_intent> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+      return [
+        'corepack pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file commercial-commitment.md --route <route> --proof-pack-id <proof_pack_id> --commercial-commitment-status <design_partner_signed|paid_pilot|purchase_order|letter_of_intent> --commercial-commitment-evidence "<redacted signed agreement, paid-pilot invoice, purchase-order, or LOI evidence>"',
+        'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference commercial-commitment.md#sha256=<hash-from-helper> --confidence-delta <0..0.4> --output-file path/to/filled-register.csv',
+        'corepack pnpm run validate:pilot-evidence -- path/to/filled-register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+      ].join(' && ');
     case 'Retained-artifact 95% validation':
       return 'corepack pnpm run validate:pilot-evidence -- path/to/filled-pilot-evidence-register.csv --require-95 --evidence-root path/to/redacted-artifacts';
     default:

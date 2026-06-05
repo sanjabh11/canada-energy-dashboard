@@ -308,6 +308,20 @@ describe('launch evidence manifest report', () => {
     expect(validation).toContain('VALID');
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('keeps buyer commercial-signal remediation tied to retained non-status-only evidence', () => {
+    const stdout = runManifest();
+    const manifest = JSON.parse(stdout);
+    const buyerQueue = manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items;
+    const strongSignalItem = buyerQueue.find((item: { requirement: string }) => item.requirement === 'Strong commercial signal');
+
+    expect(strongSignalItem).toBeTruthy();
+    expect(strongSignalItem.proof_command).toContain('prepare:pilot-evidence-artifact');
+    expect(strongSignalItem.proof_command).toContain('--commercial-commitment-evidence');
+    expect(strongSignalItem.proof_command).toContain('update:pilot-evidence-register-row');
+    expect(strongSignalItem.proof_command).toContain('validate:pilot-evidence');
+    expect(strongSignalItem.stop_gate).toMatch(/status labels/i);
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('keeps the release check wired to the blocked manifest contract', () => {
     const result = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),
