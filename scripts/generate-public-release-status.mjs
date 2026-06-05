@@ -17,6 +17,26 @@ const requiredRefreshCommands = [
   'pnpm run report:commercial-launch-readiness',
   'pnpm run report:buyer-evidence-readiness',
 ];
+const requiredItemIds = [
+  'deployed_artifact_live_parity',
+  'current_source_live_parity',
+  'current_source_release_gate',
+  'source_provenance',
+  'launch_evidence_validation_gate',
+  'source_provenance_resolution_queue',
+  'release_preflight_remediation_queue',
+  'release_toolchain_probe_ledger',
+  'launch_blocker_action_queue',
+  'production_approval_prerequisite_queue',
+  'post_deploy_live_proof_gate_queue',
+  'unmerged_branch_review_queue',
+  'canonical_head_decision_queue',
+  'review_first_branch_packet_queue',
+  'buyer_evidence_gate',
+  'buyer_evidence_remediation_queue',
+  'supabase_advisor_access',
+  'supabase_advisor_remediation_queue',
+];
 const forbiddenPatterns = [
   { name: 'direct email', pattern: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i },
   { name: 'JWT-like token', pattern: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/ },
@@ -56,8 +76,15 @@ function validateManifest(manifest) {
       `refreshCommands must exactly preserve the public release refresh sequence: ${requiredRefreshCommands.join(' -> ')}.`,
     );
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 18) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch-evidence validation, source-resolution queue, release-preflight queue, release-toolchain probe ledger, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
+  if (!Array.isArray(manifest.items)) {
+    failures.push('items must be an array of public release-status records.');
+  } else {
+    const actualItemIds = manifest.items.map((item) => item?.id ?? '(missing)');
+    if (JSON.stringify(actualItemIds) !== JSON.stringify(requiredItemIds)) {
+      failures.push(
+        `items must exactly preserve the public release-status gate sequence: ${requiredItemIds.join(' -> ')}.`,
+      );
+    }
   }
 
   const ids = new Set();
@@ -73,27 +100,7 @@ function validateManifest(manifest) {
     }
   }
 
-  const requiredIds = [
-    'deployed_artifact_live_parity',
-    'current_source_live_parity',
-    'current_source_release_gate',
-    'source_provenance',
-    'launch_evidence_validation_gate',
-    'source_provenance_resolution_queue',
-    'release_preflight_remediation_queue',
-    'release_toolchain_probe_ledger',
-    'launch_blocker_action_queue',
-    'production_approval_prerequisite_queue',
-    'post_deploy_live_proof_gate_queue',
-    'unmerged_branch_review_queue',
-    'canonical_head_decision_queue',
-    'review_first_branch_packet_queue',
-    'buyer_evidence_gate',
-    'buyer_evidence_remediation_queue',
-    'supabase_advisor_access',
-    'supabase_advisor_remediation_queue',
-  ];
-  for (const id of requiredIds) {
+  for (const id of requiredItemIds) {
     if (!ids.has(id)) failures.push(`missing required item: ${id}.`);
   }
 
