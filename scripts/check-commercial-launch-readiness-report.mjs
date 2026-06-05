@@ -143,6 +143,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Launch blocker action queue'), 'Report must include structured launch action queue evidence from the manifest.');
   assert(markdown.includes('This is a sequenced execution plan only'), 'Report must preserve the action-queue non-execution boundary.');
   assert(markdown.includes('| source_provenance |'), 'Report must include the source provenance action phase.');
+  assert(markdown.includes('| launch_evidence_validation |'), 'Report must include the launch evidence validation action phase.');
+  assert(markdown.includes('launch evidence validation must pass before a deploy approval request'), 'Report must include the launch evidence validation action blocker.');
   assert(markdown.includes('| release_toolchain |'), 'Report must include the release toolchain action phase.');
   assert(markdown.includes('release-toolchain probe(s) open'), 'Report must include release toolchain probe ledger state in the launch action queue.');
   assert(markdown.includes('Refresh the release toolchain probe ledger'), 'Report must include the release toolchain probe refresh action.');
@@ -152,7 +154,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| production_approval |'), 'Report must include the production approval action phase.');
   assert(markdown.includes('| post_deploy_live_proof |'), 'Report must include the post-deploy live proof action phase.');
   assert(
-    /\| 5 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/.test(markdown),
+    /\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/.test(markdown),
     'Report must keep buyer evidence action blocked while hard-gate deficits remain.',
   );
   assert(markdown.includes('corepack pnpm run check:post-deploy-live'), 'Report must include the post-deploy live proof command.');
@@ -222,6 +224,9 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Production approval prerequisite queue'), 'Report must include structured production approval prerequisite evidence from the manifest.');
   assert(markdown.includes('does not grant owner approval'), 'Report must preserve the production approval non-approval boundary.');
   assert(markdown.includes('does not grant owner approval, deploy, push, merge, mutate branches'), 'Report must preserve the production approval no-mutation boundary.');
+  assert(markdown.includes('| Launch evidence validation |'), 'Report must include the launch evidence validation prerequisite row.');
+  assert(markdown.includes('not run by this manifest; production approval packet must record pass'), 'Report must not imply launch evidence validation is self-certified by the manifest.');
+  assert(markdown.includes('corepack pnpm run check:launch-evidence-manifest'), 'Report must include the launch evidence validation proof command.');
   assert(markdown.includes('| Explicit owner production approval |'), 'Report must include the explicit owner approval prerequisite row.');
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
   assert(markdown.includes('not granted by this manifest or report'), 'Report must not imply owner approval is granted.');
@@ -290,7 +295,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
   assert(countDataRows(releaseToolchainProbeSection) >= 2, 'Release toolchain probe ledger must include Corepack and Git LFS probe rows.');
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
-  assert(countDataRows(productionApprovalSection) >= 7, 'Production approval prerequisite queue must include the prerequisite, manual-stop, and post-deploy rows.');
+  assert(countDataRows(productionApprovalSection) >= 8, 'Production approval prerequisite queue must include launch evidence validation plus the prerequisite, manual-stop, and post-deploy rows.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
@@ -305,4 +310,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

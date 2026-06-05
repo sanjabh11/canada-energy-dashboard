@@ -158,6 +158,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.launch_action_queue.evidence).toContain('Launch blocker action queue');
     expect(manifest.launch_action_queue.items.map((item: { phase: string }) => item.phase)).toEqual([
       'source_provenance',
+      'launch_evidence_validation',
       'release_toolchain',
       'branch_review',
       'supabase_advisor',
@@ -166,6 +167,9 @@ describe('launch evidence manifest report', () => {
       'post_deploy_live_proof',
     ]);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
+    const launchEvidenceValidationAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'launch_evidence_validation');
+    expect(launchEvidenceValidationAction.proof_command).toBe('corepack pnpm run check:launch-evidence-manifest && corepack pnpm run report:production-approval-packet');
+    expect(launchEvidenceValidationAction.stop_gate).toMatch(/production approval, buyer acceptance, deployment, or current hosted\/live parity/i);
     const releaseToolchainAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'release_toolchain');
     expect(releaseToolchainAction.blocker).toMatch(/release-toolchain probe/i);
     expect(releaseToolchainAction.action).toMatch(/Refresh the release toolchain probe ledger/i);
@@ -180,9 +184,10 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.stop_gate).toMatch(/does not grant production approval/i);
     expect(manifest.production_approval.prerequisite_queue.status).toBe('blocked');
     expect(manifest.production_approval.prerequisite_queue.evidence).toContain('Production approval prerequisite queue');
-    expect(manifest.production_approval.prerequisite_queue.item_count).toBe(7);
+    expect(manifest.production_approval.prerequisite_queue.item_count).toBe(8);
     expect(manifest.production_approval.prerequisite_queue.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual([
       'Clean source provenance',
+      'Launch evidence validation',
       'Corepack release-readiness',
       'Canonical branch review',
       'Supabase advisor clearance',
@@ -191,6 +196,10 @@ describe('launch evidence manifest report', () => {
       'Post-deploy live proof boundary',
     ]);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').status).toBe('manual_stop');
+    const launchEvidenceValidationPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Launch evidence validation');
+    expect(launchEvidenceValidationPrerequisite.current).toMatch(/not run by this manifest/i);
+    expect(launchEvidenceValidationPrerequisite.proof_command).toBe('corepack pnpm run check:launch-evidence-manifest');
+    expect(launchEvidenceValidationPrerequisite.stop_gate).toMatch(/production approval, buyer acceptance, deployment, or current hosted\/live parity/i);
     const releaseReadinessPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Corepack release-readiness');
     expect(releaseReadinessPrerequisite.current).toMatch(/release-toolchain probe/i);
     expect(releaseReadinessPrerequisite.needed).toMatch(/Corepack\/Git LFS probe ledger/i);
@@ -361,6 +370,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('corepack pnpm run report:production-approval-packet -- --skip-release-readiness');
     expect(stdout).toContain('explicit owner intent');
     expect(stdout).toContain('| source_provenance |');
+    expect(stdout).toContain('| launch_evidence_validation |');
     expect(stdout).toContain('| release_toolchain |');
     expect(stdout).toContain('| branch_review |');
     expect(stdout).toContain('| supabase_advisor |');
@@ -368,8 +378,9 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| production_approval |');
     expect(stdout).toContain('| post_deploy_live_proof |');
     expect(stdout).toContain('release-toolchain probe(s) open');
+    expect(stdout).toContain('launch evidence validation must pass before a deploy approval request');
     expect(stdout).toContain('Refresh the release toolchain probe ledger');
-    expect(stdout).toMatch(/\| 5 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
+    expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');
@@ -404,6 +415,9 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('corepack pnpm run check:release-readiness');
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('Production approval prerequisite queue');
+    expect(stdout).toContain('| Launch evidence validation |');
+    expect(stdout).toContain('not run by this manifest; production approval packet must record pass');
+    expect(stdout).toContain('corepack pnpm run check:launch-evidence-manifest');
     expect(stdout).toContain('does not grant owner approval');
     expect(stdout).toContain('Corepack/Git LFS probe ledger');
     expect(stdout).toContain('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');

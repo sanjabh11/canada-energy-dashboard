@@ -374,7 +374,7 @@ try {
     assert(hasIntegerOrNull(manifest.launch_action_queue?.item_count), 'Manifest launch_action_queue.item_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.launch_action_queue?.blocked_count), 'Manifest launch_action_queue.blocked_count must be an integer or null.');
     assert(Array.isArray(manifest.launch_action_queue?.items), 'Manifest launch_action_queue.items must be a list.');
-    assert((manifest.launch_action_queue.items ?? []).length >= 6, 'Manifest launch action queue must include the launch blocker execution phases.');
+    assert((manifest.launch_action_queue.items ?? []).length >= 8, 'Manifest launch action queue must include the launch blocker execution phases, including launch evidence validation.');
     for (const [index, item] of (manifest.launch_action_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `launch_action_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.phase === 'string' && item.phase.length > 0, `launch_action_queue.items[${index}].phase must be set.`);
@@ -385,12 +385,16 @@ try {
       assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `launch_action_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `launch_action_queue.items[${index}].status must be set.`);
     }
-    for (const phase of ['source_provenance', 'release_toolchain', 'branch_review', 'supabase_advisor', 'buyer_evidence', 'production_approval', 'post_deploy_live_proof']) {
+    for (const phase of ['source_provenance', 'launch_evidence_validation', 'release_toolchain', 'branch_review', 'supabase_advisor', 'buyer_evidence', 'production_approval', 'post_deploy_live_proof']) {
       assert(
         manifest.launch_action_queue.items.some((item) => item.phase === phase),
         `Manifest launch action queue must include phase: ${phase}.`,
       );
     }
+    const launchEvidenceActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'launch_evidence_validation');
+    assert(launchEvidenceActionItem, 'Launch action queue must include launch_evidence_validation.');
+    assert(launchEvidenceActionItem.proof_command.includes('check:launch-evidence-manifest') && launchEvidenceActionItem.proof_command.includes('report:production-approval-packet'), 'Launch evidence validation action must run the manifest check before the production approval packet.');
+    assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidenceActionItem.stop_gate), 'Launch evidence validation action must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     const buyerActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'buyer_evidence');
     if (Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count) && manifest.buyer_evidence.hard_gate_deficits.open_count > 0) {
       assert(manifest.buyer_evidence.hard_gate_deficits.status !== 'pass', 'Buyer hard-gate deficits status must not pass while open deficits remain.');
@@ -419,7 +423,7 @@ try {
     assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.blocked_count), 'Manifest production approval prerequisite blocked_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.production_approval.prerequisite_queue?.manual_stop_count), 'Manifest production approval prerequisite manual_stop_count must be an integer or null.');
     assert(Array.isArray(manifest.production_approval.prerequisite_queue?.items), 'Manifest production approval prerequisite items must be a list.');
-    assert((manifest.production_approval.prerequisite_queue.items ?? []).length >= 7, 'Manifest production approval prerequisite queue must include all prerequisite, manual-stop, and post-deploy rows.');
+    assert((manifest.production_approval.prerequisite_queue.items ?? []).length >= 8, 'Manifest production approval prerequisite queue must include launch evidence validation plus all prerequisite, manual-stop, and post-deploy rows.');
     assert(
       manifest.production_approval.prerequisite_queue.item_count === manifest.production_approval.prerequisite_queue.items.length,
       'Production approval prerequisite item_count must match items length.',
@@ -437,6 +441,7 @@ try {
     const productionPrerequisites = manifest.production_approval.prerequisite_queue.items.map((item) => item.prerequisite);
     for (const prerequisite of [
       'Clean source provenance',
+      'Launch evidence validation',
       'Corepack release-readiness',
       'Canonical branch review',
       'Supabase advisor clearance',
@@ -451,7 +456,11 @@ try {
     }
     const ownerApprovalItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Explicit owner production approval');
     const liveProofItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Post-deploy live proof boundary');
+    const launchEvidencePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Launch evidence validation');
     const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
+    assert(launchEvidencePrerequisiteItem, 'Production approval prerequisite queue must include launch evidence validation.');
+    assert(launchEvidencePrerequisiteItem.proof_command === 'corepack pnpm run check:launch-evidence-manifest', 'Launch evidence validation prerequisite must include the manifest validation proof command.');
+    assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidencePrerequisiteItem.stop_gate), 'Launch evidence validation prerequisite must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
     assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
     assert(/Corepack\/Git LFS probe ledger/i.test(releasePrerequisiteItem.needed), 'Corepack release-readiness prerequisite must require the current Corepack/Git LFS probe ledger.');
@@ -759,4 +768,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

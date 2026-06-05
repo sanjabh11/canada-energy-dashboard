@@ -703,6 +703,16 @@ function buildLaunchActionQueue({
     },
     {
       rank: 2,
+      phase: 'launch_evidence_validation',
+      blocker: 'launch evidence validation must pass before a deploy approval request',
+      owner: 'operator',
+      action: 'Run the launch evidence manifest check and production approval packet while keeping structure validation separate from approval, buyer proof, deployment, and live parity.',
+      proof_command: 'corepack pnpm run check:launch-evidence-manifest && corepack pnpm run report:production-approval-packet',
+      stop_gate: 'Do not treat launch evidence validation, generated manifests, public status JSON, or schema validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
+      status: 'blocked',
+    },
+    {
+      rank: 3,
       phase: 'release_toolchain',
       blocker: `${releaseOpen} release-preflight deficit(s), ${releaseProbeOpen} release-toolchain probe(s) open; probe_status=${releaseProbeStatus}`,
       owner: 'operator',
@@ -712,7 +722,7 @@ function buildLaunchActionQueue({
       status: releasePreflight.status === 'pass' ? 'ready' : 'blocked',
     },
     {
-      rank: 3,
+      rank: 4,
       phase: 'branch_review',
       blocker: `${branchReviewFirst ?? 'unknown'} review-first branch family/families; top=${branchTop}`,
       owner: 'operator',
@@ -722,7 +732,7 @@ function buildLaunchActionQueue({
       status: (branchReviewFirst ?? 1) > 0 ? 'blocked' : 'ready',
     },
     {
-      rank: 4,
+      rank: 5,
       phase: 'supabase_advisor',
       blocker: `${supabaseOpen} Supabase advisor clearance deficit(s) remain`,
       owner: 'account_admin',
@@ -732,7 +742,7 @@ function buildLaunchActionQueue({
       status: supabaseAdvisor.clearanceDeficits?.status === 'pass' ? 'ready' : 'blocked',
     },
     {
-      rank: 5,
+      rank: 6,
       phase: 'buyer_evidence',
       blocker: `${buyerOpen} buyer hard-gate deficit(s) remain`,
       owner: 'buyer_operator',
@@ -742,7 +752,7 @@ function buildLaunchActionQueue({
       status: buyerDeficitsOpen ? 'blocked' : 'ready',
     },
     {
-      rank: 6,
+      rank: 7,
       phase: 'production_approval',
       blocker: 'explicit owner production approval is not granted by this report',
       owner: 'owner',
@@ -752,7 +762,7 @@ function buildLaunchActionQueue({
       status: 'manual_stop',
     },
     {
-      rank: 7,
+      rank: 8,
       phase: 'post_deploy_live_proof',
       blocker: 'current source is not live-proven by this manifest',
       owner: 'operator',
@@ -832,6 +842,16 @@ function buildProductionApprovalPrerequisiteQueue({
     },
     {
       rank: 2,
+      prerequisite: 'Launch evidence validation',
+      current: 'not run by this manifest; production approval packet must record pass',
+      needed: 'check:launch-evidence-manifest passes and the production approval packet records launch evidence manifest validation before any deploy request',
+      owner: 'operator',
+      proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+      stop_gate: 'Do not treat manifest generation, public release status, schema validation, or launch evidence validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
+      status: 'blocked',
+    },
+    {
+      rank: 3,
       prerequisite: 'Corepack release-readiness',
       current: releaseReady
         ? 'release preflight passed'
@@ -843,7 +863,7 @@ function buildProductionApprovalPrerequisiteQueue({
       status: statusForProductionPrerequisite(releaseReady),
     },
     {
-      rank: 3,
+      rank: 4,
       prerequisite: 'Canonical branch review',
       current: branchReady
         ? 'branch review queue clear'
@@ -855,7 +875,7 @@ function buildProductionApprovalPrerequisiteQueue({
       status: statusForProductionPrerequisite(branchReady),
     },
     {
-      rank: 4,
+      rank: 5,
       prerequisite: 'Supabase advisor clearance',
       current: supabaseReady
         ? 'Supabase advisor clearance rows passed'
@@ -867,7 +887,7 @@ function buildProductionApprovalPrerequisiteQueue({
       status: statusForProductionPrerequisite(supabaseReady),
     },
     {
-      rank: 5,
+      rank: 6,
       prerequisite: 'Buyer evidence hard gate',
       current: buyerReady
         ? 'buyer evidence hard gate passed'
@@ -879,7 +899,7 @@ function buildProductionApprovalPrerequisiteQueue({
       status: statusForProductionPrerequisite(buyerReady),
     },
     {
-      rank: 6,
+      rank: 7,
       prerequisite: 'Explicit owner production approval',
       current: 'not granted by this manifest or report',
       needed: 'explicit owner approval after every prerequisite above is ready',
@@ -889,7 +909,7 @@ function buildProductionApprovalPrerequisiteQueue({
       status: 'manual_stop',
     },
     {
-      rank: 7,
+      rank: 8,
       prerequisite: 'Post-deploy live proof boundary',
       current: 'not eligible before explicit approved deploy',
       needed: 'after approved deploy, live metadata, static parity, and hosted proof-pack route smoke pass',
@@ -2837,6 +2857,7 @@ const manifest = {
       'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
       'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+      'corepack pnpm run check:launch-evidence-manifest',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
@@ -2850,6 +2871,7 @@ const manifest = {
       'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
       'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
       'Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.',
+      'Launch evidence validation must pass before any deploy request, but it does not prove production approval, buyer acceptance, deployment, or current hosted/live parity.',
       'Production approval remains manual-stop until every prerequisite row is ready and the owner explicitly approves deployment.',
       'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],
@@ -2862,8 +2884,8 @@ const manifest = {
     },
     {
       lane: 'production approval',
-      finding: 'A passing local release gate does not authorize deployment while source provenance is dirty or owner approval is missing.',
-      decision: 'Keep deploy request blocked until provenance and approval gates clear.',
+      finding: 'A passing local release gate or launch evidence validation does not authorize deployment while source provenance is dirty or owner approval is missing.',
+      decision: 'Keep deploy request blocked until provenance, launch evidence validation, and approval gates clear.',
     },
     {
       lane: 'release toolchain',
@@ -2905,7 +2927,7 @@ const manifest = {
           'production approval prerequisite queue synthesis',
           'post-deploy live proof gate queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a production approval prerequisite queue, a post-deploy live proof gate queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a launch-evidence validation prerequisite, a production approval prerequisite queue, a post-deploy live proof gate queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
     reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, buyer contact state, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, browser smoke state, production hosting, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
