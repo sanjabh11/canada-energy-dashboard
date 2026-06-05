@@ -1075,6 +1075,8 @@ try {
     const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
     assert(launchEvidencePrerequisiteItem, 'Production approval prerequisite queue must include launch evidence validation.');
     assert(launchEvidencePrerequisiteItem.proof_command === 'corepack pnpm run check:launch-evidence-manifest', 'Launch evidence validation prerequisite must include the manifest validation proof command.');
+    assert(launchEvidencePrerequisiteItem.status === 'ready', 'Launch evidence validation prerequisite must not be a circular self-blocker inside the request packet.');
+    assert(/external to manifest generation|attach passing check:launch-evidence-manifest output/i.test(launchEvidencePrerequisiteItem.current), 'Launch evidence validation prerequisite must say external check output is required.');
     assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidencePrerequisiteItem.stop_gate), 'Launch evidence validation prerequisite must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
     assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
@@ -1142,6 +1144,11 @@ try {
       }
       if (item.request_phase === 'pre_request') {
         assert(item.blocks_request === (item.source_status !== 'ready'), `production_approval.request_packet.items[${index}] must block exactly while its pre-request source status is non-ready.`);
+      }
+      if (item.prerequisite === 'Launch evidence validation') {
+        assert(item.source_status === 'ready', 'Launch evidence validation request row must inherit ready status from the externally validated prerequisite.');
+        assert(item.blocks_request === false, 'Launch evidence validation request row must not circularly block the packet after external validation is attached.');
+        assert(/does not grant approval|buyer acceptance|deployment|live parity/i.test(item.request_impact), 'Launch evidence validation request impact must preserve the no-approval and no-live-parity boundary.');
       }
       if (item.prerequisite === 'Explicit owner production approval') {
         assert(item.request_phase === 'owner_decision', 'Explicit owner production approval request row must be owner_decision.');
@@ -1894,6 +1901,25 @@ try {
       Array.isArray(safeFixReview?.tests_or_checks)
         && safeFixReview.tests_or_checks.some((check) => /test:e2e:preview/.test(check)),
       'Safe-fix code optimization review must record the preview build proof.',
+    );
+    const approvalCircularityDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY');
+    assert(approvalCircularityDecision, 'Manifest must record the production approval validation circularity implementation decision.');
+    assert(
+      /self-blocking launch evidence validation|external validation proof/i.test(approvalCircularityDecision?.decision ?? ''),
+      'Production approval circularity decision must name the launch evidence validation blocker and external proof.',
+    );
+    assert(
+      /does not clear source provenance|release-readiness|branch review|Supabase advisor|buyer evidence|owner approval|deployment|hosted\/live parity/i.test(approvalCircularityDecision?.proof_boundary ?? ''),
+      'Production approval circularity decision must preserve external launch gate boundaries.',
+    );
+    const approvalCircularityReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY');
+    assert(approvalCircularityReview, 'Manifest must record the production approval validation circularity code optimization review.');
+    assert(approvalCircularityReview?.policy === 'strict', 'Production approval circularity code optimization review must use strict policy.');
+    assert(approvalCircularityReview?.verdict === 'pass', 'Production approval circularity code optimization review must pass.');
+    assert(
+      Array.isArray(approvalCircularityReview?.tests_or_checks)
+        && approvalCircularityReview.tests_or_checks.some((check) => /report:production-approval-packet/.test(check)),
+      'Production approval circularity code optimization review must record the production approval packet proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

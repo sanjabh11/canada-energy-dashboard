@@ -266,7 +266,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('does not grant owner approval'), 'Report must preserve the production approval non-approval boundary.');
   assert(markdown.includes('does not grant owner approval, deploy, push, merge, mutate branches'), 'Report must preserve the production approval no-mutation boundary.');
   assert(markdown.includes('| Launch evidence validation |'), 'Report must include the launch evidence validation prerequisite row.');
-  assert(markdown.includes('not run by this manifest; production approval packet must record pass'), 'Report must not imply launch evidence validation is self-certified by the manifest.');
+  assert(markdown.includes('validation command is external to manifest generation; production approval packet must attach passing check:launch-evidence-manifest output'), 'Report must not imply launch evidence validation is self-certified by the manifest.');
   assert(markdown.includes('corepack pnpm run check:launch-evidence-manifest'), 'Report must include the launch evidence validation proof command.');
   assert(markdown.includes('| Explicit owner production approval |'), 'Report must include the explicit owner approval prerequisite row.');
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
@@ -407,13 +407,16 @@ function assertReport(markdown, options = {}) {
   const codeOptimizationSection = extractSection(markdown, 'Code Optimization Report');
   assert(countDataRows(codeOptimizationSection) >= 3, 'Code optimization report must include implementation, rejected variant, and optimization review rows.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES'), 'Code optimization report must include the preview manifest TypeScript safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY'), 'Code optimization report must include the production approval validation circularity safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal manifest/report evidence patch'), 'Code optimization report must record the selected minimal manifest/report evidence patch.');
+  assert(codeOptimizationSection.includes('minimal prerequisite status and evidence-text patch'), 'Code optimization report must record the selected minimal production approval circularity patch.');
   assert(codeOptimizationSection.includes('tests/unit/launchEvidenceManifest.test.ts'), 'Code optimization report must record the launch manifest test file change.');
   assert(codeOptimizationSection.includes('pnpm exec tsc -b --pretty false'), 'Code optimization report must record the TypeScript build gate.');
   assert(codeOptimizationSection.includes('pnpm run test:e2e:preview'), 'Code optimization report must record the production preview build gate.');
   assert(codeOptimizationSection.includes('test:strategy-audit-slice'), 'Code optimization report must record the broad strategy audit slice.');
   assert(codeOptimizationSection.includes('strict') && codeOptimizationSection.includes('pass'), 'Code optimization report must include a strict passing optimization review.');
   assert(/does not clear buyer evidence|production approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve external launch gate boundaries.');
+  assert(/does not clear source provenance|owner approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve approval circularity external gate boundaries.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
   for (const proofType of [

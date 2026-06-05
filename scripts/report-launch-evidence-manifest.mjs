@@ -1483,14 +1483,14 @@ function buildProductionApprovalPrerequisiteQueue({
     {
       rank: 2,
       prerequisite: 'Launch evidence validation',
-      current: 'not run by this manifest; production approval packet must record pass',
-      needed: 'check:launch-evidence-manifest passes and the production approval packet records launch evidence manifest validation before any deploy request',
+      current: 'validation command is external to manifest generation; production approval packet must attach passing check:launch-evidence-manifest output',
+      needed: 'check:launch-evidence-manifest passes before any production approval request uses this packet',
       owner: 'operator',
       proof_command: 'corepack pnpm run check:launch-evidence-manifest',
       proof_type: productionApprovalPrerequisiteProofType('Launch evidence validation'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Launch evidence validation'),
       stop_gate: 'Do not treat manifest generation, public release status, schema validation, or launch evidence validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
-      status: 'blocked',
+      status: 'ready',
     },
     {
       rank: 3,
@@ -1640,7 +1640,7 @@ function productionApprovalRequestImpact(prerequisite) {
     case 'Clean source provenance':
       return 'Approval request is blocked while source ownership or dirty-path provenance is unresolved.';
     case 'Launch evidence validation':
-      return 'Approval request is blocked until the launch evidence manifest and approval-packet structure are validated.';
+      return 'Approval request must attach passing launch evidence validation; this row does not grant approval, buyer acceptance, deployment, or live parity.';
     case 'Corepack release-readiness':
       return 'Approval request is blocked until the intended release shell proves the guarded release path.';
     case 'Canonical branch review':
@@ -4347,8 +4347,10 @@ const safeFixFilesChanged = [
 const safeFixTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/productionApprovalPacket.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run report:production-approval-packet -- --skip-release-readiness',
   'pnpm run check:public-release-status',
   'pnpm run check:claim-boundaries',
   'pnpm run test:e2e:preview',
@@ -4369,6 +4371,30 @@ const safeFixImplementationDecisions = [
     reason: 'The orchestrator contract requires code-changing safe-fix phases to retain implementation and code-optimization evidence; empty arrays under-reported current repo-side launch-readiness work.',
     proof_boundary: 'This record documents repo-local safe-fix evidence only; it does not clear buyer evidence, source provenance, branch review, Supabase advisor clearance, release approval, production approval, deployment, or hosted/live parity.',
     stop_gate: 'Do not treat this safe-fix record, TypeScript success, local preview build, or local browser smoke as commercial-ready status or production approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    decision: 'Remove the self-blocking launch evidence validation row from the production approval request packet while preserving external validation proof.',
+    acceptance_check: 'The manifest request packet no longer counts Launch evidence validation as a pre-request blocker, check:launch-evidence-manifest still proves the row externally, and production approval remains blocked by real source, release, branch, Supabase, buyer, owner, and live-proof gates.',
+    chosen_variant: 'minimal prerequisite status and evidence-text patch',
+    repo_pattern_reused: 'Existing production_approval.prerequisite_queue and request_packet rows, with check:launch-evidence-manifest as the external validator.',
+    files_changed: [
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ],
+    tests_run: [
+      'pnpm exec tsc -b --pretty false',
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/productionApprovalPacket.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    ],
+    proof: 'The production approval packet already runs check-launch-evidence-manifest before reading the manifest; this patch lets the request packet reflect that external gate without self-validating the manifest or clearing any independent launch blocker.',
+    reason: 'A hard-coded blocked status made request eligibility unreachable even after the external manifest validation check passed.',
+    proof_boundary: 'This record only resolves a repo-local evidence-packet circularity; it does not clear source provenance, release-readiness, branch review, Supabase advisor, buyer evidence, owner approval, deployment, or hosted/live parity.',
+    stop_gate: 'Do not treat the ready Launch evidence validation row, manifest check pass, or production approval packet generation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
   },
 ];
 
@@ -4394,6 +4420,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Using existing fields keeps validation centralized in check:launch-evidence-manifest and validate_launch_evidence.py.',
     evidence: 'fix_report, implementation_decisions, rejected_variants, and code_optimization_reviews are already required top-level manifest keys.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    variant: 'Leave Launch evidence validation blocked inside the request packet.',
+    reason_rejected: 'The production approval packet already runs the validation command first, so the manifest row created a circular blocker that could never clear in the real request flow.',
+    tradeoff: 'No-code defer preserves conservative output but keeps operator evidence internally inconsistent.',
+    evidence: 'report-production-approval-packet shows Launch evidence manifest validation passing while production_approval.request_packet lists the same row as a blocking pre-request gate.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    variant: 'Run check-launch-evidence-manifest from report-launch-evidence-manifest.',
+    reason_rejected: 'The check command invokes the manifest generator, so calling it from the generator would introduce recursion and risk non-termination.',
+    tradeoff: 'Embedding validation would look self-contained but would make the generator unsafe and harder to reason about.',
+    evidence: 'scripts/check-launch-evidence-manifest.mjs consumes the JSON emitted by scripts/report-launch-evidence-manifest.mjs.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    variant: 'Patch report-production-approval-packet to hide or rewrite the manifest request rows after validation.',
+    reason_rejected: 'A report-only override would leave the structured manifest inconsistent with the operator-facing packet and with downstream report checks.',
+    tradeoff: 'Synthesis-only patch is narrower at runtime but weaker as source-of-truth evidence.',
+    evidence: 'The commercial launch report and manifest validator both read production_approval.request_packet directly.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4405,6 +4452,21 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates existing manifest/report/check/test surfaces only, adds no dependency or broad abstraction, and preserves the blocked launch decision plus external stop gates.',
     tests_or_checks: safeFixTestsRun,
     remaining_risk: 'Live production parity, buyer acceptance, Supabase advisor clearance, branch owner decisions, source provenance cleanup, and owner deployment approval remain unproven.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adjusts one prerequisite row and its request impact, reuses existing packet/check/report surfaces, and adds no dependency, deploy path, external account call, or broad abstraction.',
+    tests_or_checks: [
+      'pnpm exec tsc -b --pretty false',
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/productionApprovalPacket.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    ],
+    remaining_risk: 'The request packet remains ineligible until source provenance, release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof are current.',
   },
 ];
 
@@ -4635,7 +4697,6 @@ const manifest = {
       'High-risk, local/origin split, or stale/aging unmerged branches remain review queues.',
       'Supabase advisor clearance remains blocked until connector or dashboard advisor evidence is authorized, rerun, and recorded.',
       'Release toolchain and push-path proof remain blocked until Corepack release-readiness, Git LFS, clean source provenance, and owner approval are current.',
-      'Launch evidence validation must pass before any deploy request, but it does not prove production approval, buyer acceptance, deployment, or current hosted/live parity.',
       'Production approval remains manual-stop until every prerequisite row is ready and the owner explicitly approves deployment.',
       'Post-deploy live proof remains blocked until an explicitly approved deploy runs and live metadata, static parity, and hosted proof-pack smoke all pass.',
     ],

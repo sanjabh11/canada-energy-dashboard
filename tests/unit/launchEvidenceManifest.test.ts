@@ -469,7 +469,8 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').status).toBe('manual_stop');
     const launchEvidenceValidationPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Launch evidence validation');
-    expect(launchEvidenceValidationPrerequisite.current).toMatch(/not run by this manifest/i);
+    expect(launchEvidenceValidationPrerequisite.current).toMatch(/external to manifest generation|attach passing check:launch-evidence-manifest output/i);
+    expect(launchEvidenceValidationPrerequisite.status).toBe('ready');
     expect(launchEvidenceValidationPrerequisite.proof_command).toBe('corepack pnpm run check:launch-evidence-manifest');
     expect(launchEvidenceValidationPrerequisite.stop_gate).toMatch(/production approval, buyer acceptance, deployment, or current hosted\/live parity/i);
     const releaseReadinessPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Corepack release-readiness');
@@ -521,13 +522,15 @@ describe('launch evidence manifest report', () => {
         evidence_to_attach?: string;
         blocks_request?: boolean;
         status?: string;
+        source_status?: string;
       }) => item.prerequisite,
     );
     expect(productionRequestPacket.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual(
       manifest.production_approval.prerequisite_queue.items.map((item: { prerequisite: string }) => item.prerequisite),
     );
     expect(productionRequestRowsByName.get('Launch evidence validation')?.request_phase).toBe('pre_request');
-    expect(productionRequestRowsByName.get('Launch evidence validation')?.blocks_request).toBe(true);
+    expect(productionRequestRowsByName.get('Launch evidence validation')?.source_status).toBe('ready');
+    expect(productionRequestRowsByName.get('Launch evidence validation')?.blocks_request).toBe(false);
     expect(productionRequestRowsByName.get('Explicit owner production approval')?.request_phase).toBe('owner_decision');
     expect(productionRequestRowsByName.get('Explicit owner production approval')?.blocks_request).toBe(false);
     expect(productionRequestRowsByName.get('Explicit owner production approval')?.status).toBe('manual_stop');
@@ -709,10 +712,13 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(1);
+    expect(manifest.implementation_decisions).toHaveLength(2);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(1);
-    const safeFixDecision = manifest.implementation_decisions[0];
+    expect(manifest.code_optimization_reviews).toHaveLength(2);
+    const safeFixDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    );
+    expect(safeFixDecision).toBeTruthy();
     expect(safeFixDecision.task_id).toBe('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
     expect(safeFixDecision.chosen_variant).toBe('minimal manifest/report evidence patch');
     expect(safeFixDecision.files_changed).toEqual(expect.arrayContaining([
@@ -728,7 +734,10 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:strategy-audit-slice',
     ]));
     expect(safeFixDecision.proof_boundary).toMatch(/does not clear buyer evidence|production approval|hosted\/live parity/i);
-    const safeFixReview = manifest.code_optimization_reviews[0];
+    const safeFixReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
+    );
+    expect(safeFixReview).toBeTruthy();
     expect(safeFixReview.target_task).toBe('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES');
     expect(safeFixReview.policy).toBe('strict');
     expect(safeFixReview.verdict).toBe('pass');
@@ -741,6 +750,23 @@ describe('launch evidence manifest report', () => {
       'Leave implementation_decisions, rejected_variants, and code_optimization_reviews empty.',
       'Reconstruct every historical safe-fix commit in the manifest.',
       'Add a separate new proof artifact for the preview TypeScript gate fix.',
+      'Leave Launch evidence validation blocked inside the request packet.',
+      'Run check-launch-evidence-manifest from report-launch-evidence-manifest.',
+      'Patch report-production-approval-packet to hide or rewrite the manifest request rows after validation.',
+    ]));
+    const approvalCircularityDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    );
+    expect(approvalCircularityDecision).toBeTruthy();
+    expect(approvalCircularityDecision.chosen_variant).toBe('minimal prerequisite status and evidence-text patch');
+    expect(approvalCircularityDecision.proof_boundary).toMatch(/does not clear source provenance|owner approval|hosted\/live parity/i);
+    const approvalCircularityReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
+    );
+    expect(approvalCircularityReview).toBeTruthy();
+    expect(approvalCircularityReview.policy).toBe('strict');
+    expect(approvalCircularityReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:production-approval-packet -- --skip-release-readiness',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
@@ -1164,7 +1190,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('Production approval prerequisite queue');
     expect(stdout).toContain('| Launch evidence validation |');
-    expect(stdout).toContain('not run by this manifest; production approval packet must record pass');
+    expect(stdout).toContain('validation command is external to manifest generation; production approval packet must attach passing check:launch-evidence-manifest output');
     expect(stdout).toContain('corepack pnpm run check:launch-evidence-manifest');
     expect(stdout).toContain('does not grant owner approval');
     expect(stdout).toContain('Corepack/Git LFS probe ledger');
