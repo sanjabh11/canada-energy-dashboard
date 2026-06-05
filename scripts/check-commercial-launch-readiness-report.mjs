@@ -114,6 +114,7 @@ function assertReport(markdown, options = {}) {
     'Supabase Advisor Clearance Deficits',
     'Supabase Advisor Remediation Queue',
     'Release Toolchain And Approval Deficits',
+    'Release Toolchain Probe Ledger',
     'Release Preflight Remediation Queue',
     'Production Approval Prerequisite Queue',
     'Post-Deploy Live Proof Gate Queue',
@@ -199,6 +200,11 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('## Release Toolchain And Approval Deficits'), 'Report must include the release toolchain and approval deficit table.');
   assert(markdown.includes('Release toolchain and approval deficit ledger'), 'Report must include structured release-preflight evidence from the manifest.');
   assert(markdown.includes('Direct pnpm checks, skipped approval packets, and local commit hooks do not substitute'), 'Report must preserve the release-preflight substitution boundary.');
+  assert(markdown.includes('## Release Toolchain Probe Ledger'), 'Report must include the release toolchain probe ledger table.');
+  assert(markdown.includes('Release Toolchain Probe Ledger'), 'Report must include structured release toolchain probe evidence from the manifest.');
+  assert(markdown.includes('| Corepack pnpm resolver | corepack pnpm --version |'), 'Report must include the Corepack toolchain probe command.');
+  assert(markdown.includes('| Git LFS push-path proof | git lfs version |'), 'Report must include the Git LFS push-path probe command.');
+  assert(markdown.includes('does not install tools, run release-readiness'), 'Report must preserve the release toolchain probe non-execution boundary.');
   assert(markdown.includes('| Corepack pnpm resolver |'), 'Report must include the Corepack resolver deficit row.');
   assert(markdown.includes('| Release-readiness execution |'), 'Report must include the release-readiness execution deficit row.');
   assert(markdown.includes('| Git LFS push-path proof |'), 'Report must include the Git LFS push-path deficit row.');

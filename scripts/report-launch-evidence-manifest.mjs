@@ -466,6 +466,71 @@ function releasePreflightRemediationEvidence(queue) {
   ].join(' ');
 }
 
+function releaseToolchainProbeEvidence(ledger) {
+  if (ledger.status === 'skipped') {
+    return 'Release toolchain probe ledger skipped by --skip-probes; run corepack pnpm run report:launch-evidence-manifest without --skip-probes for current Corepack and Git LFS command evidence.';
+  }
+
+  const summary = ledger.items
+    .map((item) => `${item.id}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Release toolchain probe ledger:',
+    `status=${ledger.status}`,
+    `open=${ledger.open_count}/${ledger.item_count}`,
+    `probes=${summary}`,
+    'approval_gate=probes do not install tools, run release-readiness, push, deploy, clear source provenance, or grant production approval',
+  ].join(' ');
+}
+
+function buildReleaseToolchainProbeLedger({
+  expectedVersion,
+  corepackOutput,
+  corepackMatches,
+  resolvedPnpmVersion,
+  gitLfsOutput,
+  gitLfsAvailable,
+}) {
+  const items = [
+    {
+      id: 'corepack_pnpm_resolver',
+      label: 'Corepack pnpm resolver',
+      command: 'corepack pnpm --version',
+      status: skipProbes ? 'skipped' : corepackMatches ? 'pass' : 'blocked',
+      current: skipProbes
+        ? 'skipped'
+        : corepackMatches
+          ? `pnpm ${resolvedPnpmVersion}`
+          : corepackOutput,
+      expected: expectedVersion ? `pnpm ${expectedVersion}` : 'valid packageManager pnpm pin',
+      evidence_boundary: 'This probe only verifies whether Corepack resolves the pinned pnpm version. It does not install tools, run release-readiness, clear source provenance, deploy, push, or grant production approval.',
+      next_action: corepackMatches
+        ? 'Keep Corepack available in the release shell before running release-readiness.'
+        : 'Expose Corepack in the release shell and rerun corepack pnpm --version before treating release-readiness as current.',
+    },
+    {
+      id: 'git_lfs_push_path',
+      label: 'Git LFS push-path proof',
+      command: 'git lfs version',
+      status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
+      current: skipProbes ? 'skipped' : gitLfsOutput,
+      expected: 'git-lfs available on PATH for the same shell used for commit and push evidence',
+      evidence_boundary: 'This probe only verifies Git LFS availability in the current shell. It does not install tools, push, deploy, clear source provenance, or grant production approval.',
+      next_action: gitLfsAvailable
+        ? 'Keep git-lfs on PATH for commit and push evidence; rerun git lfs version before treating future push evidence as current.'
+        : 'Install or expose git-lfs on PATH for the same shell used for commit and push evidence, then rerun git lfs version.',
+    },
+  ];
+  const ledger = {
+    status: skipProbes ? 'skipped' : items.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
+    item_count: items.length,
+    open_count: items.filter((item) => item.status !== 'pass').length,
+    items,
+  };
+  return { ...ledger, evidence: releaseToolchainProbeEvidence(ledger) };
+}
+
 function buildReleasePreflightRemediationQueue(deficits) {
   const items = deficits.items
     .filter((item) => item.status !== 'pass')
@@ -575,6 +640,14 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
 
   return {
     ...deficits,
+    toolchain_probe_ledger: buildReleaseToolchainProbeLedger({
+      expectedVersion,
+      corepackOutput,
+      corepackMatches,
+      resolvedPnpmVersion,
+      gitLfsOutput,
+      gitLfsAvailable,
+    }),
     remediation_queue: buildReleasePreflightRemediationQueue(deficits),
     evidence: releasePreflightDeficitEvidence(deficits),
   };

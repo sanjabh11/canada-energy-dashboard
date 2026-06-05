@@ -138,6 +138,8 @@ function renderReport(manifest, validationText) {
   const supabaseRemediationItems = Array.isArray(supabaseRemediationQueue.items) ? supabaseRemediationQueue.items : [];
   const releasePreflight = manifest.release_preflight ?? {};
   const releasePreflightItems = Array.isArray(releasePreflight.items) ? releasePreflight.items : [];
+  const releaseToolchainProbeLedger = releasePreflight.toolchain_probe_ledger ?? {};
+  const releaseToolchainProbeItems = Array.isArray(releaseToolchainProbeLedger.items) ? releaseToolchainProbeLedger.items : [];
   const releaseRemediationQueue = releasePreflight.remediation_queue ?? {};
   const releaseRemediationItems = Array.isArray(releaseRemediationQueue.items) ? releaseRemediationQueue.items : [];
   const productionApproval = manifest.production_approval ?? {};
@@ -354,6 +356,24 @@ ${releasePreflightItems.length > 0
       item.next_action,
     ])).join('\n')
     : row(['Release preflight ledger', 'not available', 'Run report:launch-evidence-manifest', releasePreflight.status ?? 'unknown', releasePreflight.evidence ?? 'No release preflight deficit ledger was captured.'])}
+
+## Release Toolchain Probe Ledger
+
+Open release-toolchain probes: ${text(releaseToolchainProbeLedger.open_count ?? 'unknown')}/${text(releaseToolchainProbeLedger.item_count ?? 'unknown')}. This ledger is proof collection only; it does not install tools, run release-readiness, push, deploy, clear source provenance, or grant production approval.
+
+| Probe | Command | Current | Expected | Status | Evidence Boundary | Next Action |
+|---|---|---|---|---|---|---|
+${releaseToolchainProbeItems.length > 0
+    ? releaseToolchainProbeItems.map((item) => row([
+      item.label,
+      item.command,
+      item.current,
+      item.expected,
+      item.status,
+      item.evidence_boundary,
+      item.next_action,
+    ])).join('\n')
+    : row(['Release toolchain probe ledger', 'corepack pnpm --version; git lfs version', 'not available', 'Run report:launch-evidence-manifest without --skip-probes', releaseToolchainProbeLedger.status ?? 'unknown', releaseToolchainProbeLedger.evidence ?? 'No release toolchain probe ledger was captured.', 'Refresh toolchain probes before release-readiness evidence is claimed.'])}
 
 ## Release Preflight Remediation Queue
 

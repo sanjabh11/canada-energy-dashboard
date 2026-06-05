@@ -264,6 +264,29 @@ try {
     assert(typeof manifest.release_preflight?.expected_pnpm_version === 'string' && manifest.release_preflight.expected_pnpm_version.length > 0, 'Manifest release_preflight.expected_pnpm_version must be set.');
     assert(typeof manifest.release_preflight?.corepack_probe === 'string' && manifest.release_preflight.corepack_probe.length > 0, 'Manifest release_preflight.corepack_probe must be set.');
     assert(typeof manifest.release_preflight?.git_lfs_probe === 'string' && manifest.release_preflight.git_lfs_probe.length > 0, 'Manifest release_preflight.git_lfs_probe must be set.');
+    assert(typeof manifest.release_preflight?.toolchain_probe_ledger?.evidence === 'string', 'Manifest release_preflight.toolchain_probe_ledger.evidence must be set.');
+    assert(manifest.release_preflight.toolchain_probe_ledger.evidence.includes('Release toolchain probe ledger'), 'Manifest release toolchain probe ledger evidence must include a ledger marker.');
+    assert(hasIntegerOrNull(manifest.release_preflight.toolchain_probe_ledger?.open_count), 'Manifest release_preflight.toolchain_probe_ledger.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.toolchain_probe_ledger?.item_count), 'Manifest release_preflight.toolchain_probe_ledger.item_count must be an integer or null.');
+    assert(Array.isArray(manifest.release_preflight.toolchain_probe_ledger?.items), 'Manifest release_preflight.toolchain_probe_ledger.items must be a list.');
+    assert(
+      manifest.release_preflight.toolchain_probe_ledger.item_count === manifest.release_preflight.toolchain_probe_ledger.items.length,
+      'Release toolchain probe ledger item_count must match items length.',
+    );
+    assert(
+      manifest.release_preflight.toolchain_probe_ledger.items.map((item) => item.id).join(',') === 'corepack_pnpm_resolver,git_lfs_push_path',
+      'Release toolchain probe ledger must include Corepack and Git LFS probe rows in order.',
+    );
+    for (const [index, item] of (manifest.release_preflight.toolchain_probe_ledger.items ?? []).entries()) {
+      assert(typeof item.id === 'string' && item.id.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].id must be set.`);
+      assert(typeof item.label === 'string' && item.label.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].label must be set.`);
+      assert(typeof item.command === 'string' && item.command.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].command must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].current must be set.`);
+      assert(typeof item.expected === 'string' && item.expected.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].expected must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].status must be set.`);
+      assert(typeof item.evidence_boundary === 'string' && /does not/i.test(item.evidence_boundary), `release_preflight.toolchain_probe_ledger.items[${index}].evidence_boundary must preserve a proof limitation.`);
+      assert(typeof item.next_action === 'string' && item.next_action.length > 0, `release_preflight.toolchain_probe_ledger.items[${index}].next_action must be set.`);
+    }
     assert(hasIntegerOrNull(manifest.release_preflight?.open_count), 'Manifest release_preflight.open_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.release_preflight?.total_count), 'Manifest release_preflight.total_count must be an integer or null.');
     assert(Array.isArray(manifest.release_preflight?.items), 'Manifest release_preflight.items must be a list.');

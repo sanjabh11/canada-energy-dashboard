@@ -115,6 +115,18 @@ describe('launch evidence manifest report', () => {
     expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');
     expect(manifest.release_preflight.corepack_probe).toBe('skipped');
     expect(manifest.release_preflight.git_lfs_probe).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.status).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.evidence).toContain('Release toolchain probe ledger skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items.map((item: { id: string }) => item.id)).toEqual([
+      'corepack_pnpm_resolver',
+      'git_lfs_push_path',
+    ]);
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].command).toBe('corepack pnpm --version');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].evidence_boundary).toMatch(/does not install tools/i);
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].command).toBe('git lfs version');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[1].evidence_boundary).toMatch(/does not install tools/i);
     expect(manifest.release_preflight.evidence).toContain('Release toolchain and approval deficit ledger');
     expect(manifest.release_preflight.items.map((item: { requirement: string }) => item.requirement)).toEqual([
       'Pinned package manager',
@@ -370,6 +382,10 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| Corepack pnpm resolver |');
     expect(stdout).toContain('| Release-readiness execution |');
     expect(stdout).toContain('| Git LFS push-path proof |');
+    expect(stdout).toContain('Release Toolchain Probe Ledger');
+    expect(stdout).toContain('| Corepack pnpm resolver | corepack pnpm --version |');
+    expect(stdout).toContain('| Git LFS push-path proof | git lfs version |');
+    expect(stdout).toContain('does not install tools');
     expect(stdout).toContain('| Explicit owner production approval |');
     expect(stdout).toContain('Release preflight remediation queue');
     expect(stdout).toContain('does not install tools');
