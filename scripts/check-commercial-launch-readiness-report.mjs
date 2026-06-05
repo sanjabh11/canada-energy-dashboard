@@ -110,6 +110,7 @@ function assertReport(markdown, options = {}) {
     'Launch Blocker Action Queue',
     'Source Provenance Resolution Queue',
     'Branch Canonical Head Decision Deficits',
+    'Branch Clearance Matrix',
     'Buyer Evidence Hard Gate Deficits',
     'Buyer Evidence Remediation Queue',
     'Supabase Advisor Clearance Deficits',
@@ -173,6 +174,12 @@ function assertReport(markdown, options = {}) {
     'Report must preserve the canonical-head no-mutation stop gate.',
   );
   assert(markdown.includes('corepack pnpm run report:unmerged-branch-readiness'), 'Report must include focused branch review proof commands.');
+  assert(markdown.includes('## Branch Clearance Matrix'), 'Report must include the branch clearance matrix table.');
+  assert(markdown.includes('read_only_branch_clearance_matrix'), 'Report must classify the branch clearance matrix as read-only branch evidence.');
+  assert(markdown.includes('Branch clearance matrix'), 'Report must include structured branch clearance matrix evidence from the manifest.');
+  assert(markdown.includes('does not checkout, merge, push, discard, select canonical heads'), 'Report must preserve the branch clearance matrix no-mutation proof boundary.');
+  assert(markdown.includes('Do not mark branch review clear'), 'Report must preserve the branch clearance matrix no-clearance stop gate.');
+  assert(markdown.includes('probe_skipped') || markdown.includes('review_first') || markdown.includes('drift_review'), 'Report must include branch clearance blocker classes.');
   assert(markdown.includes('Batchable intake-packet outreach rows'), 'Report must include buyer-evidence actionability counts from the manifest.');
   assert(markdown.includes('## Buyer Evidence Hard Gate Deficits'), 'Report must include the buyer hard-gate deficit table.');
   assert(markdown.includes('Generated scaffolding, outreach headers, and starter registers do not count as buyer proof.'), 'Report must preserve the no-scaffolding buyer-deficit boundary.');
@@ -286,6 +293,7 @@ function assertReport(markdown, options = {}) {
   const actionQueueSection = extractSection(markdown, 'Launch Blocker Action Queue');
   const sourceResolutionSection = extractSection(markdown, 'Source Provenance Resolution Queue');
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
+  const branchClearanceSection = extractSection(markdown, 'Branch Clearance Matrix');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
   const buyerRemediationSection = extractSection(markdown, 'Buyer Evidence Remediation Queue');
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
@@ -318,6 +326,10 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(actionQueueSection) >= 6, 'Launch blocker action queue must include the launch execution phases.');
   assert(countDataRows(sourceResolutionSection) >= 1, 'Source provenance resolution queue must include at least the clean/dirty boundary row.');
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');
+  assert(countDataRows(branchClearanceSection) >= 1, 'Branch clearance matrix must include at least the skipped boundary row or current branch-family rows.');
+  assert(branchClearanceSection.includes('Proof Type') && branchClearanceSection.includes('Stop Gate') && branchClearanceSection.includes('Clearance Status'), 'Branch clearance matrix table must expose proof type, stop gate, and clearance status columns.');
+  assert(/read_only_branch_clearance_matrix|high_risk_branch_clearance_row|canonical_head_branch_clearance_row|drift_branch_clearance_row/i.test(branchClearanceSection), 'Branch clearance matrix must include read-only branch clearance proof types.');
+  assert(/corepack pnpm run report:unmerged-branch-readiness|Run branch probes/i.test(branchClearanceSection), 'Branch clearance matrix must include focused branch proof commands.');
   assert(countDataRows(buyerDeficitSection) >= 1, 'Buyer evidence hard-gate deficit table must include at least one row.');
   assert(countDataRows(buyerRemediationSection) >= 1, 'Buyer evidence remediation queue must include at least one row or skipped boundary.');
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');

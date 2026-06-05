@@ -2710,6 +2710,105 @@ function branchReviewClearanceStatus({ branchProbe, branchReviewQueue, canonical
   return 'pass';
 }
 
+function branchClearanceBlockerClass(item) {
+  if (item.priority?.startsWith('review_first')) return 'review_first';
+  if (familyStateKey(item.local_origin_state) !== 'matching_heads') return 'canonical_head_decision';
+  if (['stale', 'aging', 'unknown'].includes(item.freshness)) return 'drift_review';
+  return 'focused_review';
+}
+
+function branchClearanceProofType(item) {
+  if (item.highest_risk === 'high') return 'high_risk_branch_clearance_row';
+  if (familyStateKey(item.local_origin_state) !== 'matching_heads') return 'canonical_head_branch_clearance_row';
+  if (['stale', 'aging', 'unknown'].includes(item.freshness)) return 'drift_branch_clearance_row';
+  return 'branch_clearance_row';
+}
+
+function branchClearanceProofBoundary() {
+  return 'Branch clearance matrix row is read-only branch-review evidence only; it does not checkout, merge, push, discard, select canonical heads, run migrations, deploy, grant production approval, or clear branch review by itself.';
+}
+
+function branchClearanceMatrixEvidence(matrix) {
+  if (matrix.status === 'skipped') {
+    return 'Branch clearance matrix skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness to populate non-merged branch clearance rows.';
+  }
+
+  const topBlocked = matrix.rows
+    .filter((row) => row.clearance_status !== 'pass')
+    .slice(0, 5)
+    .map((row) => `${row.family}:${row.blocker_class}:${row.clearance_status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Branch clearance matrix:',
+    `status=${matrix.status}`,
+    `families=${matrix.family_count}`,
+    `review_first=${matrix.review_first_count}`,
+    `canonical_open=${matrix.canonical_open_count}`,
+    `stale_or_aging=${matrix.stale_or_aging_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=no checkout/merge/push/discard/deploy until every row has focused review evidence, canonical-head owner decisions, and release gates',
+  ].join(' ');
+}
+
+function buildBranchClearanceMatrix({ branchReviewStatus, branchReviewQueue, canonicalHeadDecisions }) {
+  if (branchReviewQueue.status === 'skipped') {
+    const matrix = {
+      status: 'skipped',
+      proof_type: 'read_only_branch_clearance_matrix',
+      family_count: null,
+      review_first_count: null,
+      canonical_open_count: null,
+      stale_or_aging_count: null,
+      rows: [],
+      proof_boundary: branchClearanceProofBoundary(),
+      stop_gate: 'Do not mark branch review clear from skipped probes; run the read-only unmerged-branch report first.',
+    };
+    return { ...matrix, evidence: branchClearanceMatrixEvidence(matrix) };
+  }
+
+  const canonicalByFamily = new Map((canonicalHeadDecisions.items ?? []).map((item) => [item.family, item]));
+  const rows = (branchReviewQueue.items ?? []).map((item, index) => {
+    const canonical = canonicalByFamily.get(item.family);
+    const blockerClass = branchClearanceBlockerClass(item);
+    const clearanceStatus = blockerClass === 'focused_review' ? 'review_required' : 'blocked';
+    return {
+      rank: index + 1,
+      family: item.family,
+      review_ref: item.review_ref,
+      local_ref: item.local_ref,
+      origin_ref: item.origin_ref,
+      highest_risk: item.highest_risk,
+      priority: item.priority,
+      blocker_class: blockerClass,
+      local_origin_state: item.local_origin_state,
+      freshness: item.freshness,
+      age: item.age,
+      canonical_decision_needed: canonical?.decision_needed ?? 'Canonical heads match; complete focused risk review before any merge discussion.',
+      required_proof_command: item.review_command,
+      proof_type: branchClearanceProofType(item),
+      read_only: true,
+      proof_boundary: branchClearanceProofBoundary(),
+      stop_gate: 'Do not checkout, merge, push, discard, deploy, migrate, select a canonical head, or request production approval from this matrix row.',
+      clearance_status: clearanceStatus,
+      blocks_launch_clearance: true,
+    };
+  });
+
+  const matrix = {
+    status: branchReviewStatus,
+    proof_type: 'read_only_branch_clearance_matrix',
+    family_count: rows.length,
+    review_first_count: rows.filter((row) => row.blocker_class === 'review_first').length,
+    canonical_open_count: canonicalHeadDecisions.open_count,
+    stale_or_aging_count: rows.filter((row) => ['stale', 'aging'].includes(row.freshness)).length,
+    rows,
+    proof_boundary: branchClearanceProofBoundary(),
+    stop_gate: 'Do not mark branch review clear until every matrix row has read-only focused review evidence, required canonical-head owner decisions, clean release gates, and explicit owner approval.',
+  };
+  return { ...matrix, evidence: branchClearanceMatrixEvidence(matrix) };
+}
+
 function canonicalHeadComparisonEvidence(comparison) {
   if (comparison.status === 'skipped') {
     return 'Canonical head comparison skipped by --skip-probes.';
@@ -3476,6 +3575,11 @@ const branchReviewStatus = branchReviewClearanceStatus({
   branchReviewQueue,
   canonicalHeadDecisions,
 });
+const branchClearanceMatrix = buildBranchClearanceMatrix({
+  branchReviewStatus,
+  branchReviewQueue,
+  canonicalHeadDecisions,
+});
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
@@ -3525,6 +3629,7 @@ const branchReviewEvidence = [
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
   canonicalHeadDecisions.evidence,
+  branchClearanceMatrix.evidence,
   reviewFirstBranchPackets.evidence,
   topBranchReviewPacket.evidence,
   topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -3737,6 +3842,7 @@ const manifest = {
     freshness_evidence: branchProbe.freshnessEvidence,
     review_queue: branchReviewQueue,
     canonical_head_decisions: canonicalHeadDecisions,
+    clearance_matrix: branchClearanceMatrix,
     review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
     evidence: [
@@ -3745,6 +3851,7 @@ const manifest = {
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
       canonicalHeadDecisions.evidence,
+      branchClearanceMatrix.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,

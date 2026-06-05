@@ -113,6 +113,11 @@ describe('launch evidence manifest report', () => {
     expect(completionItemsByRequirement.get('Release toolchain approval gate')?.proof_type).toBe('release_toolchain_approval');
     expect(completionItemsByRequirement.get('Production approval and live proof gate')?.status).toBe('manual_stop');
     expect(completionItemsByRequirement.get('Production approval and live proof gate')?.proof_boundary).toMatch(/does not run deploys|prove live parity|mutate Netlify/i);
+    expect(manifest.branch_review.clearance_matrix.status).toBe('skipped');
+    expect(manifest.branch_review.clearance_matrix.proof_type).toBe('read_only_branch_clearance_matrix');
+    expect(manifest.branch_review.clearance_matrix.evidence).toContain('Branch clearance matrix skipped');
+    expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
+    expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(1);
     expect(manifest.progress_updates[0].phase).toBe('objective completion audit');
     expect(manifest.progress_updates[0].target_matrix).toContain('structured evidence manifest');
@@ -593,6 +598,8 @@ describe('launch evidence manifest report', () => {
     );
     const firstReviewItem = manifest.branch_review.review_queue.items[0];
     const firstCanonicalHeadDecision = manifest.branch_review.canonical_head_decisions.items[0];
+    const branchClearanceMatrix = manifest.branch_review.clearance_matrix;
+    const firstClearanceRow = branchClearanceMatrix.rows[0];
     const firstReviewFirstPacket = manifest.branch_review.review_first_packets.packets[0];
     const firstChangedFunctionRow = firstReviewFirstPacket?.changed_supabase_function_rows?.[0]
       ?? manifest.branch_review.top_review_packet.changed_supabase_function_rows?.[0];
@@ -604,6 +611,25 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.top_review_packet.read_only).toBe(true);
     expect(manifest.branch_review.top_review_packet.proof_type).toBeTruthy();
     expect(manifest.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
+    expect(branchClearanceMatrix.status).toBe(manifest.branch_review.status);
+    expect(branchClearanceMatrix.proof_type).toBe('read_only_branch_clearance_matrix');
+    expect(branchClearanceMatrix.family_count).toBe(manifest.branch_review.review_queue.item_count);
+    expect(branchClearanceMatrix.rows).toHaveLength(manifest.branch_review.review_queue.item_count);
+    expect(branchClearanceMatrix.evidence).toContain('Branch clearance matrix');
+    expect(branchClearanceMatrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
+    expect(firstClearanceRow).toBeTruthy();
+    if (firstClearanceRow) {
+      expect(firstClearanceRow.read_only).toBe(true);
+      expect(firstClearanceRow.blocks_launch_clearance).toBe(true);
+      expect(firstClearanceRow.required_proof_command).toContain('report:unmerged-branch-readiness');
+      expect(firstClearanceRow.proof_type).toBeTruthy();
+      expect(firstClearanceRow.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
+      expect(firstClearanceRow.stop_gate).toMatch(/Do not checkout, merge, push/i);
+      expect(['blocked', 'review_required']).toContain(firstClearanceRow.clearance_status);
+      if (firstClearanceRow.highest_risk === 'high') {
+        expect(firstClearanceRow.proof_type).toBe('high_risk_branch_clearance_row');
+      }
+    }
     expect(firstReviewItem).toBeTruthy();
     if (firstReviewItem) {
       expect(firstReviewItem.read_only).toBe(true);
@@ -817,6 +843,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Launch Blocker Action Queue');
     expect(stdout).toContain('## Source Provenance Resolution Queue');
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
+    expect(stdout).toContain('## Branch Clearance Matrix');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Buyer Evidence Remediation Queue');
     expect(stdout).toContain('## Supabase Advisor Clearance Deficits');
@@ -911,6 +938,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Canonical head decision ledger skipped');
     expect(stdout).toContain('This ledger is read-only');
     expect(stdout).toContain('corepack pnpm run report:unmerged-branch-readiness');
+    expect(stdout).toContain('Branch clearance matrix skipped');
+    expect(stdout).toContain('read_only_branch_clearance_matrix');
     expect(stdout).toContain('Review-first branch packets skipped');
     expect(stdout).toContain('Top branch review packet skipped');
     expect(stdout).toContain('Canonical head comparison skipped');

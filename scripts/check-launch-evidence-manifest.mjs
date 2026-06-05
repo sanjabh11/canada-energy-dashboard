@@ -1252,6 +1252,50 @@ try {
       }
       assert(item.status !== 'pass', `branch_review.canonical_head_decisions.items[${index}].status must remain blocked until owner review clears the decision.`);
     }
+    assert(typeof manifest.branch_review?.clearance_matrix === 'object' && manifest.branch_review.clearance_matrix !== null, 'Manifest branch_review.clearance_matrix must be an object.');
+    assert(typeof manifest.branch_review.clearance_matrix.evidence === 'string' && manifest.branch_review.clearance_matrix.evidence.includes('Branch clearance matrix'), 'Manifest branch clearance matrix evidence must include a matrix marker.');
+    assert(manifest.branch_review.clearance_matrix.proof_type === 'read_only_branch_clearance_matrix', 'Manifest branch clearance matrix must classify proof as read-only branch clearance evidence.');
+    assert(
+      typeof manifest.branch_review.clearance_matrix.proof_boundary === 'string'
+        && /read-only branch-review evidence only|does not checkout|merge|push|discard|select canonical heads|deploy|clear branch review/i.test(manifest.branch_review.clearance_matrix.proof_boundary),
+      'Manifest branch clearance matrix proof boundary must preserve no-mutation and no-clearance semantics.',
+    );
+    assert(
+      typeof manifest.branch_review.clearance_matrix.stop_gate === 'string'
+        && /Do not mark branch review clear|read-only focused review|owner approval|skipped probes/i.test(manifest.branch_review.clearance_matrix.stop_gate),
+      'Manifest branch clearance matrix stop gate must block branch clearance claims.',
+    );
+    assert(Array.isArray(manifest.branch_review.clearance_matrix.rows), 'Manifest branch clearance matrix rows must be a list.');
+    assert(hasIntegerOrNull(manifest.branch_review.clearance_matrix.family_count), 'Manifest branch clearance matrix family_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.clearance_matrix.review_first_count), 'Manifest branch clearance matrix review_first_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.clearance_matrix.canonical_open_count), 'Manifest branch clearance matrix canonical_open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.clearance_matrix.stale_or_aging_count), 'Manifest branch clearance matrix stale_or_aging_count must be an integer or null.');
+    for (const [index, row] of (manifest.branch_review.clearance_matrix.rows ?? []).entries()) {
+      assert(Number.isInteger(row.rank), `branch_review.clearance_matrix.rows[${index}].rank must be an integer.`);
+      assert(typeof row.family === 'string' && row.family.length > 0, `branch_review.clearance_matrix.rows[${index}].family must be set.`);
+      assert(typeof row.review_ref === 'string' && row.review_ref.length > 0, `branch_review.clearance_matrix.rows[${index}].review_ref must be set.`);
+      assert(row.local_ref === null || typeof row.local_ref === 'string', `branch_review.clearance_matrix.rows[${index}].local_ref must be string or null.`);
+      assert(row.origin_ref === null || typeof row.origin_ref === 'string', `branch_review.clearance_matrix.rows[${index}].origin_ref must be string or null.`);
+      assert(typeof row.highest_risk === 'string' && row.highest_risk.length > 0, `branch_review.clearance_matrix.rows[${index}].highest_risk must be set.`);
+      assert(typeof row.priority === 'string' && row.priority.length > 0, `branch_review.clearance_matrix.rows[${index}].priority must be set.`);
+      assert(['review_first', 'canonical_head_decision', 'drift_review', 'focused_review'].includes(row.blocker_class), `branch_review.clearance_matrix.rows[${index}].blocker_class must classify the branch blocker.`);
+      assert(typeof row.local_origin_state === 'string' && row.local_origin_state.length > 0, `branch_review.clearance_matrix.rows[${index}].local_origin_state must be set.`);
+      assert(typeof row.freshness === 'string' && row.freshness.length > 0, `branch_review.clearance_matrix.rows[${index}].freshness must be set.`);
+      assert(typeof row.canonical_decision_needed === 'string' && row.canonical_decision_needed.length > 0, `branch_review.clearance_matrix.rows[${index}].canonical_decision_needed must be set.`);
+      assert(typeof row.required_proof_command === 'string' && row.required_proof_command.includes('report:unmerged-branch-readiness'), `branch_review.clearance_matrix.rows[${index}].required_proof_command must point to the focused branch report.`);
+      assert(typeof row.proof_type === 'string' && row.proof_type.length > 0, `branch_review.clearance_matrix.rows[${index}].proof_type must be set.`);
+      assert(row.read_only === true, `branch_review.clearance_matrix.rows[${index}].read_only must be true.`);
+      assert(row.blocks_launch_clearance === true, `branch_review.clearance_matrix.rows[${index}].blocks_launch_clearance must be true until review clears.`);
+      assert(
+        typeof row.proof_boundary === 'string' && /read-only branch-review evidence only|does not checkout|merge|push|discard|select canonical heads|deploy|clear branch review/i.test(row.proof_boundary),
+        `branch_review.clearance_matrix.rows[${index}].proof_boundary must preserve no-mutation and no-clearance semantics.`,
+      );
+      assert(typeof row.stop_gate === 'string' && /Do not checkout|merge|push|discard|deploy|production approval/i.test(row.stop_gate), `branch_review.clearance_matrix.rows[${index}].stop_gate must preserve no-mutation branch boundaries.`);
+      assert(['blocked', 'review_required'].includes(row.clearance_status), `branch_review.clearance_matrix.rows[${index}].clearance_status must stay blocked or review_required.`);
+      if (row.highest_risk === 'high') {
+        assert(row.proof_type === 'high_risk_branch_clearance_row', `branch_review.clearance_matrix.rows[${index}].proof_type must classify high-risk clearance rows.`);
+      }
+    }
     assert(typeof manifest.branch_review?.review_first_packets?.evidence === 'string', 'Manifest branch_review.review_first_packets.evidence must be set.');
     assert(manifest.branch_review.review_first_packets.evidence.includes('Review-first branch packets'), 'Manifest branch_review.review_first_packets evidence must include a packet-set marker.');
     assert(hasIntegerOrNull(manifest.branch_review?.review_first_packets?.item_count), 'Manifest branch_review.review_first_packets.item_count must be an integer or null.');
@@ -1323,6 +1367,9 @@ try {
       assert(Number.isInteger(manifest.branch_review?.freshness_counts?.aging), 'Non-skipped manifest must include numeric aging branch count.');
       assert(Number.isInteger(manifest.branch_review?.review_queue?.item_count), 'Non-skipped manifest must include numeric branch review queue item count.');
       assert(manifest.branch_review.review_queue.items.length > 0 || manifest.branch_review.review_queue.item_count === 0, 'Non-skipped manifest branch review queue must include items when queue count is positive.');
+      assert(manifest.branch_review.clearance_matrix.status === manifest.branch_review.status, 'Non-skipped branch clearance matrix status must match branch review clearance status.');
+      assert(manifest.branch_review.clearance_matrix.family_count === manifest.branch_review.review_queue.item_count, 'Branch clearance matrix family_count must match review queue item_count.');
+      assert(manifest.branch_review.clearance_matrix.rows.length === manifest.branch_review.review_queue.item_count, 'Branch clearance matrix row count must match review queue item_count.');
       assert(Number.isInteger(manifest.branch_review?.canonical_head_decisions?.open_count), 'Non-skipped manifest must include numeric canonical-head decision open count.');
       assert(manifest.branch_review.canonical_head_decisions.items.length === manifest.branch_review.canonical_head_decisions.open_count, 'Canonical-head decision item count must match open_count.');
       assert(manifest.branch_review.canonical_head_decisions.evidence.includes('approval_gate=no checkout/merge/push/discard/deploy'), 'Canonical-head decision ledger must preserve the no-mutation approval gate.');

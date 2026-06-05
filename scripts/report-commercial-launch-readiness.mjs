@@ -154,6 +154,8 @@ function renderReport(manifest, validationText) {
   const sourceResolutionItems = Array.isArray(sourceResolutionQueue.items) ? sourceResolutionQueue.items : [];
   const branchCanonicalDecisions = manifest.branch_review?.canonical_head_decisions ?? {};
   const branchCanonicalDecisionItems = Array.isArray(branchCanonicalDecisions.items) ? branchCanonicalDecisions.items : [];
+  const branchClearanceMatrix = manifest.branch_review?.clearance_matrix ?? {};
+  const branchClearanceRows = Array.isArray(branchClearanceMatrix.rows) ? branchClearanceMatrix.rows : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
   const targetCustomers = Array.isArray(manifest.target_customers) ? manifest.target_customers : [];
   const proofBuckets = manifest.proof_buckets ?? {};
@@ -271,6 +273,40 @@ ${branchCanonicalDecisionItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'n/a', 'n/a', branchCanonicalDecisions.status ?? 'unknown', 'n/a', 'n/a', 'No canonical-head decision rows were captured.', 'corepack pnpm run report:unmerged-branch-readiness', branchCanonicalDecisions.evidence ?? 'No canonical head decision ledger was captured.', branchCanonicalDecisions.status ?? 'unknown'])}
+
+## Branch Clearance Matrix
+
+Status: \`${text(branchClearanceMatrix.status)}\`
+
+Proof Type: ${text(branchClearanceMatrix.proof_type)}
+
+Evidence: ${text(branchClearanceMatrix.evidence)}
+
+Proof Boundary: ${text(branchClearanceMatrix.proof_boundary)}
+
+Stop Gate: ${text(branchClearanceMatrix.stop_gate)}
+
+| Rank | Family | Review Ref | Local Ref | Origin Ref | Risk | Priority | Blocker Class | State | Freshness | Canonical Decision Needed | Required Proof Command | Proof Type | Stop Gate | Clearance Status |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+${branchClearanceRows.length > 0
+    ? branchClearanceRows.map((item) => row([
+      item.rank,
+      item.family,
+      item.review_ref,
+      item.local_ref ?? 'n/a',
+      item.origin_ref ?? 'n/a',
+      item.highest_risk,
+      item.priority,
+      item.blocker_class,
+      item.local_origin_state,
+      item.freshness,
+      item.canonical_decision_needed,
+      item.required_proof_command,
+      item.proof_type,
+      item.stop_gate,
+      item.clearance_status,
+    ])).join('\n')
+    : row(['n/a', 'none', 'n/a', 'n/a', 'n/a', 'n/a', 'n/a', 'probe_skipped', 'n/a', 'n/a', 'No branch clearance rows were captured.', 'corepack pnpm run report:unmerged-branch-readiness', branchClearanceMatrix.proof_type ?? 'read_only_branch_clearance_matrix', branchClearanceMatrix.stop_gate ?? 'Run branch probes before clearance review.', branchClearanceMatrix.status ?? 'unknown'])}
 
 ## Buyer Evidence Hard Gate Deficits
 
