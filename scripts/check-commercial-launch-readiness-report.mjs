@@ -148,6 +148,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Local verification only; not deploy approval or buyer proof.'), 'Report must preserve the local-proof boundary.');
   assert(markdown.includes('Scaffolding, fixtures, and constructed demos do not count as buyer acceptance.'), 'Report must preserve the no-scaffolding-as-buyer-proof boundary.');
   assert(markdown.includes('Buyer evidence review'), 'Report must include structured buyer-evidence readiness from the manifest.');
+  assert(markdown.includes('starter_only_registers='), 'Report must surface starter-only register counts from the manifest.');
   assert(markdown.includes('## Launch Blocker Action Queue'), 'Report must include the launch blocker action queue table.');
   assert(markdown.includes('Launch blocker action queue'), 'Report must include structured launch action queue evidence from the manifest.');
   assert(markdown.includes('This is a sequenced execution plan only'), 'Report must preserve the action-queue non-execution boundary.');
@@ -411,9 +412,12 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES'), 'Code optimization report must include the preview manifest TypeScript safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY'), 'Code optimization report must include the production approval validation circularity safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS'), 'Code optimization report must include the branch review queue status safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY'), 'Code optimization report must include the buyer evidence starter-register boundary safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal manifest/report evidence patch'), 'Code optimization report must record the selected minimal manifest/report evidence patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite status and evidence-text patch'), 'Code optimization report must record the selected minimal production approval circularity patch.');
   assert(codeOptimizationSection.includes('minimal branch review queue status patch'), 'Code optimization report must record the selected minimal branch review queue status patch.');
+  assert(codeOptimizationSection.includes('minimal starter-register classification patch'), 'Code optimization report must record the selected minimal starter-register classification patch.');
+  assert(codeOptimizationSection.includes('tests/unit/buyerEvidenceReadiness.test.ts'), 'Code optimization report must record the buyer evidence readiness test file change.');
   assert(codeOptimizationSection.includes('tests/unit/launchEvidenceManifest.test.ts'), 'Code optimization report must record the launch manifest test file change.');
   assert(codeOptimizationSection.includes('pnpm exec tsc -b --pretty false'), 'Code optimization report must record the TypeScript build gate.');
   assert(codeOptimizationSection.includes('pnpm run test:e2e:preview'), 'Code optimization report must record the production preview build gate.');
@@ -422,6 +426,7 @@ function assertReport(markdown, options = {}) {
   assert(/does not clear buyer evidence|production approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve external launch gate boundaries.');
   assert(/does not clear source provenance|owner approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve approval circularity external gate boundaries.');
   assert(/does not checkout|merge|push|select canonical heads|deploy|grant production approval/i.test(codeOptimizationSection), 'Code optimization report must preserve branch review read-only boundaries.');
+  assert(/does not contact buyers|create accepted evidence|move confidence|validate 95%|commercial-ready status/i.test(codeOptimizationSection), 'Code optimization report must preserve buyer evidence hard-gate boundaries.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
   for (const proofType of [

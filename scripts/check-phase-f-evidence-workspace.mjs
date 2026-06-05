@@ -98,6 +98,7 @@ try {
   }
   for (const expected of [
     'Production pilot evidence registers:',
+    'Starter-only pilot evidence registers:',
     'Production outreach response logs: 1',
     'Confidence-moving register rows: 0',
     'Phase F 95% gate: not ready',

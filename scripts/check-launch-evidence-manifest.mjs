@@ -217,9 +217,11 @@ try {
     }
     assert(typeof manifest.buyer_evidence?.evidence === 'string', 'Manifest must include buyer_evidence.evidence.');
     assert(manifest.buyer_evidence.evidence.includes('Buyer evidence review'), 'Manifest buyer_evidence evidence must summarize Phase F buyer evidence readiness.');
+    assert(manifest.buyer_evidence.evidence.includes('starter_only_registers='), 'Manifest buyer_evidence evidence must include starter-only register count.');
     assert(typeof manifest.buyer_evidence?.phase_f_gate === 'string' && manifest.buyer_evidence.phase_f_gate.length > 0, 'Manifest buyer_evidence.phase_f_gate must be set.');
     assert(typeof manifest.buyer_evidence?.workspace_next_step === 'string' && manifest.buyer_evidence.workspace_next_step.length > 0, 'Manifest buyer_evidence.workspace_next_step must be set.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.production_registers), 'Manifest buyer_evidence.production_registers must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.buyer_evidence?.starter_only_registers), 'Manifest buyer_evidence.starter_only_registers must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.outreach_logs), 'Manifest buyer_evidence.outreach_logs must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.confidence_moving_rows), 'Manifest buyer_evidence.confidence_moving_rows must be an integer or null.');
     assert(hasIntegerOrNull(manifest.buyer_evidence?.actionable_outreach_rows), 'Manifest buyer_evidence.actionable_outreach_rows must be an integer or null.');
@@ -1951,6 +1953,25 @@ try {
       Array.isArray(branchQueueReview?.tests_or_checks)
         && branchQueueReview.tests_or_checks.some((check) => /report:unmerged-branch-readiness/.test(check)),
       'Branch review queue status code optimization review must record the unmerged branch report proof.',
+    );
+    const buyerStarterDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY');
+    assert(buyerStarterDecision, 'Manifest must record the buyer evidence starter-register boundary implementation decision.');
+    assert(
+      /starter-only pilot evidence registers|production buyer-evidence inputs/i.test(buyerStarterDecision?.decision ?? ''),
+      'Buyer evidence starter-register decision must name starter-only registers and buyer-evidence inputs.',
+    );
+    assert(
+      /does not contact buyers|create accepted evidence|move confidence|validate 95%|commercial-ready status/i.test(buyerStarterDecision?.proof_boundary ?? ''),
+      'Buyer evidence starter-register decision must preserve buyer hard-gate boundaries.',
+    );
+    const buyerStarterReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY');
+    assert(buyerStarterReview, 'Manifest must record the buyer evidence starter-register code optimization review.');
+    assert(buyerStarterReview?.policy === 'strict', 'Buyer evidence starter-register code optimization review must use strict policy.');
+    assert(buyerStarterReview?.verdict === 'pass', 'Buyer evidence starter-register code optimization review must pass.');
+    assert(
+      Array.isArray(buyerStarterReview?.tests_or_checks)
+        && buyerStarterReview.tests_or_checks.some((check) => /check:phase-f-evidence-workspace/.test(check)),
+      'Buyer evidence starter-register code optimization review must record the Phase F workspace proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

@@ -1871,6 +1871,7 @@ function buyerEvidenceReviewEvidence(probe) {
   return [
     'Buyer evidence review:',
     `production_registers=${probe.productionRegisters ?? 'unknown'}`,
+    `starter_only_registers=${probe.starterOnlyRegisters ?? 'unknown'}`,
     `outreach_logs=${probe.outreachLogs ?? 'unknown'}`,
     `confidence_rows=${probe.confidenceRows ?? 'unknown'}`,
     `actionable_outreach_rows=${probe.actionableRows ?? 'unknown'}`,
@@ -2241,7 +2242,7 @@ function buyerEvidenceAcquisitionDefinitions() {
     {
       lane: 'Production pilot evidence register',
       source_requirement: 'production register presence',
-      current_from_probe: (probe) => `${probe.productionRegisters ?? 'unknown'} production pilot evidence register(s)`,
+      current_from_probe: (probe) => `${probe.productionRegisters ?? 'unknown'} production pilot evidence register(s); ${probe.starterOnlyRegisters ?? 'unknown'} starter-only register(s)`,
       required_artifact: 'production pilot evidence register outside templates, fixtures, archives, generated workspaces, and rehearsal files',
       minimum_accepted_signal: 'register contains real anonymized buyer-supplied rows before any confidence movement is counted',
       evidence_root: 'docs/growth production CSV roots',
@@ -2346,7 +2347,12 @@ function buyerEvidenceAcquisitionStatus(definition, probe, deficitsByRequirement
     return Number.isInteger(probe.actionableRows) && probe.actionableRows > 0 ? 'ready' : 'blocked';
   }
   if (definition.source_requirement === 'production register presence') {
-    return Number.isInteger(probe.productionRegisters) && probe.productionRegisters > 0 ? 'ready' : 'blocked';
+    const productionRegisters = probe.productionRegisters;
+    const starterOnlyRegisters = probe.starterOnlyRegisters;
+    const nonStarterRegisters = Number.isInteger(productionRegisters) && Number.isInteger(starterOnlyRegisters)
+      ? productionRegisters - starterOnlyRegisters
+      : null;
+    return Number.isInteger(nonStarterRegisters) && nonStarterRegisters > 0 ? 'ready' : 'blocked';
   }
   const deficit = deficitsByRequirement.get(definition.source_requirement);
   return deficit?.status === 'pass' ? 'ready' : 'blocked';
@@ -3850,6 +3856,7 @@ function probeBuyerEvidence() {
       status: 'skipped',
       evidence: 'Probe skipped by --skip-probes; run corepack pnpm run report:buyer-evidence-readiness for current evidence.',
       productionRegisters: null,
+      starterOnlyRegisters: null,
       outreachLogs: null,
       confidenceRows: null,
       actionableRows: null,
@@ -3872,6 +3879,7 @@ function probeBuyerEvidence() {
     status: result.status === 0 ? 'pass' : 'fail',
     evidence: output.split(/\r?\n/).slice(0, 12).join(' | '),
     productionRegisters: parseNumberLine(output, 'Production pilot evidence registers'),
+    starterOnlyRegisters: parseNumberLine(output, 'Starter-only pilot evidence registers'),
     outreachLogs: parseNumberLine(output, 'Production outreach response logs'),
     confidenceRows: parseNumberLine(output, 'Confidence-moving register rows'),
     actionableRows: parseNumberLine(output, 'Actionable outreach rows'),
@@ -4246,6 +4254,7 @@ const buyerGapEvidence = [
   buyerProbe.hardGateDeficits?.evidence,
   buyerEvidenceAcquisitionMatrix.evidence,
   `Production pilot evidence registers: ${buyerProbe.productionRegisters ?? 'unknown'}`,
+  `Starter-only pilot evidence registers: ${buyerProbe.starterOnlyRegisters ?? 'unknown'}`,
   `Production outreach response logs: ${buyerProbe.outreachLogs ?? 'unknown'}`,
   `Confidence-moving register rows: ${buyerProbe.confidenceRows ?? 'unknown'}`,
   `Actionable outreach rows: ${buyerProbe.actionableRows ?? 'unknown'}`,
@@ -4349,6 +4358,20 @@ const safeFixFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const buyerEvidenceStarterBoundaryFilesChanged = [
+  'scripts/report-buyer-evidence-readiness.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/buyerEvidenceReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const currentSafeFixFilesChanged = Array.from(new Set([
+  ...safeFixFilesChanged,
+  ...buyerEvidenceStarterBoundaryFilesChanged,
+]));
+
 const safeFixTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -4364,6 +4387,20 @@ const safeFixTestsRun = [
   'pnpm exec playwright test --config=playwright.config.ts tests/component/foundation-phase0.spec.ts --project=chromium',
   'pnpm run test:strategy-audit-slice',
 ];
+
+const buyerEvidenceStarterBoundaryTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/buyerEvidenceReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:phase-f-evidence-workspace',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run report:buyer-evidence-readiness -- --root /tmp/ceip-phase-f-evidence-codex --evidence-root /tmp/ceip-phase-f-evidence-codex/phase-f-minimum-intake',
+];
+
+const currentSafeFixTestsRun = Array.from(new Set([
+  ...safeFixTestsRun,
+  ...buyerEvidenceStarterBoundaryTestsRun,
+]));
 
 const safeFixImplementationDecisions = [
   {
@@ -4426,6 +4463,19 @@ const safeFixImplementationDecisions = [
     reason: 'A queue with open review-first blockers should not report pass while the surrounding branch clearance and production approval gates are blocked.',
     proof_boundary: 'This record improves branch-review evidence semantics only; it does not checkout, merge, push, discard, select canonical heads, run migrations, clear release-readiness, deploy, or grant production approval.',
     stop_gate: 'Do not treat a blocked branch review queue, focused branch packet, or branch report as branch clearance, canonical-head owner decision, merge approval, deployment, or buyer evidence.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    decision: 'Separate starter-only pilot evidence registers from non-starter production buyer-evidence inputs.',
+    acceptance_check: 'Buyer evidence readiness reports starter_only_registers, the launch manifest exposes starter_only_registers, and the production-register acquisition row stays blocked when every discovered register is starter-only.',
+    chosen_variant: 'minimal starter-register classification patch',
+    repo_pattern_reused: 'Existing buyer evidence readiness report, launch manifest buyer_evidence object, buyer acquisition matrix, and manifest/report validators.',
+    files_changed: buyerEvidenceStarterBoundaryFilesChanged,
+    tests_run: buyerEvidenceStarterBoundaryTestsRun,
+    proof: 'Generated Phase F workspaces can contain validator-compatible starter registers with confidence_delta=0; this patch makes those registers visible as starter-only scaffolding so they cannot be mistaken for buyer evidence.',
+    reason: 'Counting starter CSVs only as production registers could make acquisition status and operator summaries look more complete than the hard 95% gate allows.',
+    proof_boundary: 'This record improves buyer-evidence classification only; it does not contact buyers, create accepted evidence, move confidence, attach retained artifacts, validate 95%, clear buyer hard gates, or grant commercial-ready status.',
+    stop_gate: 'Do not treat starter-only register counts, workspace creation, report generation, or base validation as buyer acceptance, confidence movement, retained-artifact validation, or permission to contact buyers.',
   },
 ];
 
@@ -4493,6 +4543,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A new artifact would add maintenance surface without improving the source-of-truth manifest contract.',
     evidence: 'scripts/report-commercial-launch-readiness.mjs renders branch_review.review_queue directly from the manifest.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    variant: 'Leave starter registers counted only as production pilot evidence registers.',
+    reason_rejected: 'Would preserve a confusing summary where generated zero-confidence starter CSVs look like production buyer evidence inputs.',
+    tradeoff: 'No-code defer avoids edits but keeps a weak proof boundary in the buyer-evidence handoff.',
+    evidence: 'The Phase F workspace smoke creates starter registers that pass base validation while the hard 95% gate remains blocked.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    variant: 'Ignore all starter registers during readiness scanning.',
+    reason_rejected: 'Would hide useful operator scaffolding and make workspace reports less actionable after collection begins.',
+    tradeoff: 'Ignoring starter files is more conservative but loses visibility into whether the Phase F intake workspace exists.',
+    evidence: 'report:phase-f-evidence-workspace needs to show selected starter registers while still reporting buyer proof created=no.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    variant: 'Treat any base-valid register as ready acquisition evidence.',
+    reason_rejected: 'Base validation only proves CSV shape and claim-boundary fields; it does not prove accepted buyer rows or retained artifacts.',
+    tradeoff: 'Would simplify acquisition status but would violate the hard buyer-evidence gate.',
+    evidence: 'validate:pilot-evidence --require-95 fails for starter registers until real buyer-supplied retained artifacts and accepted rows exist.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4534,6 +4605,15 @@ const safeFixCodeOptimizationReviews = [
       'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
     ],
     remaining_risk: 'Branch review remains blocked until focused review, canonical-head owner decisions, clean release gates, and explicit owner approval are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds one starter-only count to the existing readiness report and manifest contract, then uses that count in the existing acquisition matrix without new dependencies, new artifacts, buyer contact, or hard-gate relaxation.',
+    tests_or_checks: buyerEvidenceStarterBoundaryTestsRun,
+    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current.',
   },
 ];
 
@@ -4619,6 +4699,7 @@ const manifest = {
   buyer_evidence: {
     status: buyerProbe.status,
     production_registers: buyerProbe.productionRegisters,
+    starter_only_registers: buyerProbe.starterOnlyRegisters,
     outreach_logs: buyerProbe.outreachLogs,
     confidence_moving_rows: buyerProbe.confidenceRows,
     actionable_outreach_rows: buyerProbe.actionableRows,
@@ -4740,8 +4821,8 @@ const manifest = {
   },
   completion_audit: completionAudit,
   fix_report: {
-    files_changed: safeFixFilesChanged,
-    tests_run: safeFixTestsRun,
+    files_changed: currentSafeFixFilesChanged,
+    tests_run: currentSafeFixTestsRun,
     files_changed_by_manifest_command: [],
     safe_fix_boundary: 'This manifest command is read-only unless --output is used to write the JSON file.',
     current_required_checks: [

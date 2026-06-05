@@ -86,6 +86,7 @@ describe('buyer evidence readiness report', () => {
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('CEIP Buyer Evidence Readiness Report');
     expect(result.stdout).toContain('Production pilot evidence registers: 0');
+    expect(result.stdout).toContain('Starter-only pilot evidence registers: 0');
     expect(result.stdout).toContain('Production outreach response logs: 0');
     expect(result.stdout).toContain('Phase F 95% gate: not ready');
     expect(result.stdout).toContain('Batchable intake-packet outreach rows: 0');
@@ -203,7 +204,9 @@ describe('buyer evidence readiness report', () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Production pilot evidence registers: 1');
+    expect(result.stdout).toContain('Starter-only pilot evidence registers: 1');
     expect(result.stdout).toContain('Base validation: pass');
+    expect(result.stdout).toContain('starter-only: yes');
     expect(result.stdout).toContain('95% retained-evidence gate: fail');
     expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
     expect(result.stdout).toContain('| Utility forecast lane | 0 accepted diagnostic row(s) | >=1 buyer-supplied accepted utility forecast row with full diagnostics | blocked |');
@@ -246,7 +249,9 @@ describe('buyer evidence readiness report', () => {
     expect(result.status).toBe(0);
     expect(result.stderr).toBe('');
     expect(result.stdout).toContain('Production pilot evidence registers: 1');
+    expect(result.stdout).toContain('Starter-only pilot evidence registers: 1');
     expect(result.stdout).toContain('Confidence-moving register rows: 0');
+    expect(result.stdout).toContain('starter-only: yes');
     expect(result.stdout).toContain('Hard 95% Gate Deficit Ledger');
     expect(result.stdout).toContain('Open hard-gate deficits: 10/10');
     expect(result.stdout).toContain('Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence');

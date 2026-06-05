@@ -158,6 +158,7 @@ describe('launch evidence manifest report', () => {
     expect(adversarialReviewsByLane.get('branch risk')?.proof_boundary).toMatch(/does not checkout|merge|push|select canonical heads|deploy/i);
     expect(manifest.buyer_evidence.status).toBe('skipped');
     expect(manifest.buyer_evidence.production_registers).toBeNull();
+    expect(manifest.buyer_evidence.starter_only_registers).toBeNull();
     expect(manifest.buyer_evidence.outreach_logs).toBeNull();
     expect(manifest.buyer_evidence.confidence_moving_rows).toBeNull();
     expect(manifest.buyer_evidence.actionable_outreach_rows).toBeNull();
@@ -713,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(3);
+    expect(manifest.implementation_decisions).toHaveLength(4);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(3);
+    expect(manifest.code_optimization_reviews).toHaveLength(4);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -757,6 +758,9 @@ describe('launch evidence manifest report', () => {
       'Leave branch_review.review_queue.status as pass while review_first_count is nonzero.',
       'Attempt to retire, merge, delete, checkout, or push branch heads to clear the blocker.',
       'Add a separate branch-review artifact for queue status.',
+      'Leave starter registers counted only as production pilot evidence registers.',
+      'Ignore all starter registers during readiness scanning.',
+      'Treat any base-valid register as ready acquisition evidence.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -785,6 +789,20 @@ describe('launch evidence manifest report', () => {
     expect(branchQueueReview.policy).toBe('strict');
     expect(branchQueueReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+    ]));
+    const starterBoundaryDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    );
+    expect(starterBoundaryDecision).toBeTruthy();
+    expect(starterBoundaryDecision.chosen_variant).toBe('minimal starter-register classification patch');
+    expect(starterBoundaryDecision.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|move confidence|validate 95%/i);
+    const starterBoundaryReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY',
+    );
+    expect(starterBoundaryReview).toBeTruthy();
+    expect(starterBoundaryReview.policy).toBe('strict');
+    expect(starterBoundaryReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:phase-f-evidence-workspace',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
@@ -959,6 +977,7 @@ describe('launch evidence manifest report', () => {
     expect(rowsByLane.get('Outreach response log intake')?.current).toMatch(/0 actionable outreach row/);
     expect(rowsByLane.get('Outreach response log intake')?.proof_boundary).toMatch(/does not contact buyers|create acceptance/i);
     expect(rowsByLane.get('Production pilot evidence register')?.status).toBe('blocked');
+    expect(rowsByLane.get('Production pilot evidence register')?.current).toMatch(/starter-only register/);
     expect(rowsByLane.get('Production pilot evidence register')?.proof_boundary).toMatch(/outside templates|starter rows/i);
     expect(rowsByLane.get('Utility forecast lane')?.proof_type).toBe('forecast_trust_artifact_preparation');
     expect(rowsByLane.get('Utility forecast lane')?.validation_command).toContain('prepare:forecast-trust-report-artifact');

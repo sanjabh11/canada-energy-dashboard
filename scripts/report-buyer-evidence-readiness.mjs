@@ -465,6 +465,15 @@ function summarizePilotRegister(filePath, rows) {
   const acceptedRows = rowObjects.filter((row) => /^(accepted|approved|signed)$/i.test(String(row.reviewer_acceptance ?? '').trim()));
   const hashedRows = rowObjects.filter((row) => /\bsha256[:=][a-f0-9]{64}\b/i.test(row.evidence_file_reference ?? ''));
   const strongCommercialRows = rowObjects.filter((row) => /^(design_partner_signed|paid_pilot|purchase_order|letter_of_intent)$/i.test(String(row.commercial_commitment_status ?? '').trim()));
+  const starterRows = rowObjects.filter((row) => /starter row|starter register|starter .*not buyer proof|not buyer proof|not market-confidence evidence/i.test([
+    row.notes,
+    row.follow_up_action,
+    row.evidence_file_reference,
+  ].join(' ')));
+  const starterOnly = rowObjects.length > 0
+    && confidenceRows.length === 0
+    && acceptedRows.length === 0
+    && starterRows.length === rowObjects.length;
   const validation = runNodeScript(path.join(repoRoot, 'scripts/validate-pilot-evidence-register.mjs'), [filePath]);
   const gateArgs = [filePath, '--require-95', '--report-95'];
   if (evidenceRoot) gateArgs.push('--evidence-root', evidenceRoot);
@@ -478,6 +487,7 @@ function summarizePilotRegister(filePath, rows) {
     acceptedRows: acceptedRows.length,
     hashedRows: hashedRows.length,
     strongCommercialRows: strongCommercialRows.length,
+    starterOnly,
     validation,
     gate95,
   };
@@ -540,6 +550,7 @@ for (const root of roots) {
 const totalActionableOutreachRows = outreachLogs.reduce((sum, log) => sum + log.actionableRows, 0);
 const totalBatchableOutreachRows = outreachLogs.reduce((sum, log) => sum + log.batchableRows, 0);
 const totalConfidenceRows = pilotRegisters.reduce((sum, register) => sum + register.confidenceRows, 0);
+const starterOnlyRegisters = pilotRegisters.filter((register) => register.starterOnly).length;
 const passing95Gates = pilotRegisters.filter((register) => register.gate95?.status === 0).length;
 const allValid = [...pilotRegisters, ...outreachLogs].every((item) => item.validation.status === 0);
 const hasProductionEvidenceInputs = pilotRegisters.length > 0 || outreachLogs.length > 0;
@@ -550,6 +561,7 @@ console.log(`Roots: ${roots.map(displayPath).join(', ')}`);
 console.log(`CSV files scanned: ${csvFilesSeen}`);
 console.log(`Ignored template/fixture/generated paths: ${ignoredCsvFiles}`);
 console.log(`Production pilot evidence registers: ${pilotRegisters.length}`);
+console.log(`Starter-only pilot evidence registers: ${starterOnlyRegisters}`);
 console.log(`Production outreach response logs: ${outreachLogs.length}`);
 console.log(`Confidence-moving register rows: ${totalConfidenceRows}`);
 console.log(`Actionable outreach rows: ${totalActionableOutreachRows}`);
@@ -576,7 +588,7 @@ if (pilotRegisters.length > 0) {
   console.log('\n## Pilot Evidence Registers');
   for (const register of pilotRegisters) {
     console.log(`- ${displayPath(register.path)}`);
-    console.log(`  Rows: ${register.rows}; confidence-moving: ${register.confidenceRows}; accepted: ${register.acceptedRows}; hashed: ${register.hashedRows}; strong commercial: ${register.strongCommercialRows}.`);
+    console.log(`  Rows: ${register.rows}; confidence-moving: ${register.confidenceRows}; accepted: ${register.acceptedRows}; hashed: ${register.hashedRows}; strong commercial: ${register.strongCommercialRows}; starter-only: ${register.starterOnly ? 'yes' : 'no'}.`);
     console.log(`  Base validation: ${register.validation.status === 0 ? 'pass' : 'fail'}.`);
     if (register.validation.status !== 0) {
       for (const line of firstOutputLines(`${register.validation.stderr}\n${register.validation.stdout}`)) console.log(`    ${line}`);
