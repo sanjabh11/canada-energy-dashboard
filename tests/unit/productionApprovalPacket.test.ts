@@ -352,6 +352,18 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Live parity achieved: no.');
   });
 
+  it('keeps all-green live gates framed as observed parity rather than deploy approval', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-blocker']);
+
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('- Deployment request readiness: ready for explicit owner approval.');
+    expect(result.stdout).toContain('- Live parity achieved: yes.');
+    expect(result.stdout).toContain('Treat this as observed live parity for the currently checked artifact');
+    expect(result.stdout).toContain('it is not production approval');
+    expect(result.stdout).toContain('not proof of a new deployment unless this packet was run after an explicitly approved deploy');
+    expect(result.stdout).toContain('Production approval: still requires an explicit owner approval before any deploy command.');
+  });
+
   it('blocks deploy request readiness when launch evidence manifest validation fails', async () => {
     const result = await runPacket(['--include-hosted-smoke', '--fail-on-predeploy-blocker'], {
       CEIP_FAKE_LAUNCH_EVIDENCE_FAIL: '1',

@@ -400,7 +400,7 @@ const liveStaticParityGreen = liveStaticParity?.status === 'pass';
 const hostedSmokeGreen = hostedSmoke?.status === 'pass';
 const deploymentRequestReady = sourceDeployable && launchEvidenceManifestClean && publicReleaseStatusClean && localPreflightClean;
 const liveParityAchieved = deploymentRequestReady && liveMetadataGreen && liveStaticParityGreen && hostedSmokeGreen;
-const approvalReady = liveParityAchieved;
+const fullLiveGateGreen = liveParityAchieved;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
 const blockedByStaticParity = liveStaticParity?.status === 'fail';
 const staticParityNotRun = liveStaticParity?.status === 'skipped';
@@ -456,8 +456,8 @@ const markdown = [
   '',
   preDeployBlockers.length > 0
     ? `Do not request production deploy approval. Blocking pre-deploy gates: ${preDeployBlockers.join('; ')}.`
-    : approvalReady
-    ? 'Local and live gates are green. Live parity can be considered achieved, but this script itself is not production approval.'
+    : fullLiveGateGreen
+    ? 'Local and live gates are green. Treat this as observed live parity for the currently checked artifact; it is not production approval and it is not proof of a new deployment unless this packet was run after an explicitly approved deploy.'
     : blockedByLiveMetadata
       ? 'Local source is ready to request explicit production remediation approval, but live parity is not achieved. Production is still serving stale metadata; deploy current source only after explicit owner approval, then rerun `corepack pnpm run check:post-deploy-live`.'
       : blockedByStaticParity
@@ -497,7 +497,7 @@ if (outPath) {
   console.log(markdown);
 }
 
-if (failOnBlocker && !approvalReady) {
+if (failOnBlocker && !fullLiveGateGreen) {
   process.exit(1);
 }
 
