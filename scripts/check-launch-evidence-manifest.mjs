@@ -497,6 +497,16 @@ try {
     assert(hasIntegerOrNull(manifest.launch_action_queue?.blocked_count), 'Manifest launch_action_queue.blocked_count must be an integer or null.');
     assert(Array.isArray(manifest.launch_action_queue?.items), 'Manifest launch_action_queue.items must be a list.');
     assert((manifest.launch_action_queue.items ?? []).length >= 8, 'Manifest launch action queue must include the launch blocker execution phases, including launch evidence validation.');
+    const launchProofTypesByPhase = {
+      source_provenance: 'source_provenance_decision',
+      launch_evidence_validation: 'manifest_validation_and_approval_packet',
+      release_toolchain: 'release_toolchain_and_gated_release',
+      branch_review: 'read_only_branch_review',
+      supabase_advisor: 'external_account_evidence',
+      buyer_evidence: 'retained_buyer_evidence_validation',
+      production_approval: 'manual_approval_gate',
+      post_deploy_live_proof: 'post_deploy_live_proof_gate',
+    };
     for (const [index, item] of (manifest.launch_action_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `launch_action_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.phase === 'string' && item.phase.length > 0, `launch_action_queue.items[${index}].phase must be set.`);
@@ -504,8 +514,40 @@ try {
       assert(typeof item.owner === 'string' && item.owner.length > 0, `launch_action_queue.items[${index}].owner must be set.`);
       assert(typeof item.action === 'string' && item.action.length > 0, `launch_action_queue.items[${index}].action must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `launch_action_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `launch_action_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `launch_action_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `launch_action_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `launch_action_queue.items[${index}].status must be set.`);
+      if (launchProofTypesByPhase[item.phase]) {
+        assert(
+          item.proof_type === launchProofTypesByPhase[item.phase],
+          `launch_action_queue.items[${index}] must classify ${item.phase} as ${launchProofTypesByPhase[item.phase]}.`,
+        );
+      }
+      if (item.phase === 'source_provenance') {
+        assert(/does not commit|clear provenance|deploy|grant approval/i.test(item.proof_boundary), 'Source provenance launch action proof_boundary must preserve owner-decision semantics.');
+      }
+      if (item.phase === 'launch_evidence_validation') {
+        assert(/structure and readiness reporting only|does not grant production approval|create buyer acceptance|hosted\/live parity/i.test(item.proof_boundary), 'Launch evidence validation action proof_boundary must not imply approval, buyer acceptance, or live parity.');
+      }
+      if (item.phase === 'release_toolchain') {
+        assert(/local release-shell checks|does not grant owner approval|push|deploy|hosted\/live parity/i.test(item.proof_boundary), 'Release toolchain action proof_boundary must not imply approval, push, deploy, or live parity.');
+      }
+      if (item.phase === 'branch_review') {
+        assert(/read-only|does not checkout|merge|push|discard|migrate|deploy/i.test(item.proof_boundary), 'Branch review launch action proof_boundary must preserve read-only no-mutation semantics.');
+      }
+      if (item.phase === 'supabase_advisor') {
+        assert(/authorized Supabase dashboard or connector|permission-denied output do not satisfy/i.test(item.proof_boundary), 'Supabase advisor launch action proof_boundary must require authorized external advisor evidence.');
+      }
+      if (item.phase === 'buyer_evidence') {
+        assert(/real anonymized accepted buyer rows|retained redacted artifacts|validate:pilot-evidence --require-95/i.test(item.proof_boundary), 'Buyer evidence launch action proof_boundary must require retained accepted buyer evidence.');
+      }
+      if (item.phase === 'production_approval') {
+        assert(/does not approve|push|deploy|prove live parity/i.test(item.proof_boundary), 'Production approval launch action proof_boundary must not imply approval, deploy, or live parity.');
+      }
+      if (item.phase === 'post_deploy_live_proof') {
+        assert(/after explicit approval and guarded deploy completion|does not deploy|create hosted\/live parity evidence/i.test(item.proof_boundary), 'Post-deploy live proof launch action proof_boundary must require approved deploy completion before live proof.');
+      }
     }
     for (const phase of ['source_provenance', 'launch_evidence_validation', 'release_toolchain', 'branch_review', 'supabase_advisor', 'buyer_evidence', 'production_approval', 'post_deploy_live_proof']) {
       assert(

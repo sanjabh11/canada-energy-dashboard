@@ -203,6 +203,29 @@ describe('launch evidence manifest report', () => {
       'production_approval',
       'post_deploy_live_proof',
     ]);
+    const launchActionsByPhase = new Map(
+      manifest.launch_action_queue.items.map((item: {
+        phase: string;
+        proof_type?: string;
+        proof_boundary?: string;
+      }) => [item.phase, item]),
+    );
+    expect(launchActionsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(launchActionsByPhase.get('source_provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    expect(launchActionsByPhase.get('launch_evidence_validation')?.proof_type).toBe('manifest_validation_and_approval_packet');
+    expect(launchActionsByPhase.get('launch_evidence_validation')?.proof_boundary).toMatch(/structure and readiness reporting only|does not grant production approval/i);
+    expect(launchActionsByPhase.get('release_toolchain')?.proof_type).toBe('release_toolchain_and_gated_release');
+    expect(launchActionsByPhase.get('release_toolchain')?.proof_boundary).toMatch(/local release-shell checks|hosted\/live parity/i);
+    expect(launchActionsByPhase.get('branch_review')?.proof_type).toBe('read_only_branch_review');
+    expect(launchActionsByPhase.get('branch_review')?.proof_boundary).toMatch(/read-only|does not checkout/i);
+    expect(launchActionsByPhase.get('supabase_advisor')?.proof_type).toBe('external_account_evidence');
+    expect(launchActionsByPhase.get('supabase_advisor')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
+    expect(launchActionsByPhase.get('buyer_evidence')?.proof_type).toBe('retained_buyer_evidence_validation');
+    expect(launchActionsByPhase.get('buyer_evidence')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
+    expect(launchActionsByPhase.get('production_approval')?.proof_type).toBe('manual_approval_gate');
+    expect(launchActionsByPhase.get('production_approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
+    expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
+    expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_boundary).toMatch(/guarded deploy completion|does not deploy/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
     const launchEvidenceValidationAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'launch_evidence_validation');
     expect(launchEvidenceValidationAction.proof_command).toBe('corepack pnpm run check:launch-evidence-manifest && corepack pnpm run report:production-approval-packet');

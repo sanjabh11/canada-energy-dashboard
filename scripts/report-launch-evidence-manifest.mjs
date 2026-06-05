@@ -750,6 +750,52 @@ function launchActionQueueEvidence(queue) {
   ].join(' ');
 }
 
+function launchActionProofType(phase) {
+  switch (phase) {
+    case 'source_provenance':
+      return 'source_provenance_decision';
+    case 'launch_evidence_validation':
+      return 'manifest_validation_and_approval_packet';
+    case 'release_toolchain':
+      return 'release_toolchain_and_gated_release';
+    case 'branch_review':
+      return 'read_only_branch_review';
+    case 'supabase_advisor':
+      return 'external_account_evidence';
+    case 'buyer_evidence':
+      return 'retained_buyer_evidence_validation';
+    case 'production_approval':
+      return 'manual_approval_gate';
+    case 'post_deploy_live_proof':
+      return 'post_deploy_live_proof_gate';
+    default:
+      return 'launch_blocker_action';
+  }
+}
+
+function launchActionProofBoundary(phase) {
+  switch (phase) {
+    case 'source_provenance':
+      return 'Production approval packet evidence may identify unresolved source decisions; it does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+    case 'launch_evidence_validation':
+      return 'Launch evidence validation and approval-packet generation prove structure and readiness reporting only; they do not grant production approval, create buyer acceptance, deploy, or prove hosted/live parity.';
+    case 'release_toolchain':
+      return 'Release toolchain and guarded release-readiness evidence are local release-shell checks; they do not grant owner approval, push, deploy, or prove hosted/live parity.';
+    case 'branch_review':
+      return 'Branch review evidence must remain read-only; it does not checkout, merge, push, discard, migrate, deploy, or resolve canonical ownership without explicit owner approval.';
+    case 'supabase_advisor':
+      return 'Requires authorized Supabase dashboard or connector advisor evidence plus retained public-safe findings; CLI lint, repo artifacts, public status cards, and permission-denied output do not satisfy clearance.';
+    case 'buyer_evidence':
+      return 'Requires real anonymized accepted buyer rows and retained redacted artifacts passing validate:pilot-evidence --require-95; templates, generated workspaces, rehearsals, outreach headers, and constructed demos do not satisfy buyer acceptance.';
+    case 'production_approval':
+      return 'Requires explicit owner approval after prerequisite gates are ready; this action, manifest, report, or deploy-request check does not approve, push, deploy, or prove live parity.';
+    case 'post_deploy_live_proof':
+      return 'Post-deploy live proof is only valid after explicit approval and guarded deploy completion; this action does not deploy or create hosted/live parity evidence by itself.';
+    default:
+      return 'Launch action evidence is an execution plan only; it does not deploy, contact buyers, mutate branches, grant approval, or claim launch readiness by itself.';
+  }
+}
+
 function buildLaunchActionQueue({
   buyerProbe,
   branchReviewQueue,
@@ -779,6 +825,8 @@ function buildLaunchActionQueue({
       owner: 'operator',
       action: 'Resolve staged or unstaged source changes intentionally before any deploy approval request.',
       proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      proof_type: launchActionProofType('source_provenance'),
+      proof_boundary: launchActionProofBoundary('source_provenance'),
       stop_gate: 'Do not commit, unstage, stash, revert, or delete unrelated user work without explicit owner intent.',
       status: gitStatus.isDirty ? 'blocked' : 'ready',
     },
@@ -789,6 +837,8 @@ function buildLaunchActionQueue({
       owner: 'operator',
       action: 'Run the launch evidence manifest check and production approval packet while keeping structure validation separate from approval, buyer proof, deployment, and live parity.',
       proof_command: 'corepack pnpm run check:launch-evidence-manifest && corepack pnpm run report:production-approval-packet',
+      proof_type: launchActionProofType('launch_evidence_validation'),
+      proof_boundary: launchActionProofBoundary('launch_evidence_validation'),
       stop_gate: 'Do not treat launch evidence validation, generated manifests, public status JSON, or schema validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
       status: 'blocked',
     },
@@ -799,6 +849,8 @@ function buildLaunchActionQueue({
       owner: 'operator',
       action: 'Refresh the release toolchain probe ledger from the intended release shell, then run the guarded release path only after source provenance is clean.',
       proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      proof_type: launchActionProofType('release_toolchain'),
+      proof_boundary: launchActionProofBoundary('release_toolchain'),
       stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
       status: releasePreflight.status === 'pass' ? 'ready' : 'blocked',
     },
@@ -809,6 +861,8 @@ function buildLaunchActionQueue({
       owner: 'operator',
       action: 'Run focused read-only branch reviews and choose canonical heads before any merge, push, discard, migration, or deploy discussion.',
       proof_command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${branchTop} --max-files 8`,
+      proof_type: launchActionProofType('branch_review'),
+      proof_boundary: launchActionProofBoundary('branch_review'),
       stop_gate: 'No checkout, merge, push, discard, migration, or production approval without explicit owner approval and release gates.',
       status: (branchReviewFirst ?? 1) > 0 ? 'blocked' : 'ready',
     },
@@ -819,6 +873,8 @@ function buildLaunchActionQueue({
       owner: 'account_admin',
       action: 'Repair Supabase connector or dashboard authorization, rerun security/performance advisors, and retain public-safe findings.',
       proof_command: 'Supabase MCP or dashboard security/performance advisor review for qnymbecjgeaoxsfphrti',
+      proof_type: launchActionProofType('supabase_advisor'),
+      proof_boundary: launchActionProofBoundary('supabase_advisor'),
       stop_gate: 'Do not claim Supabase advisor clearance from CLI app lint, repo artifacts, or public status cards alone.',
       status: supabaseAdvisor.clearanceDeficits?.status === 'pass' ? 'ready' : 'blocked',
     },
@@ -829,6 +885,8 @@ function buildLaunchActionQueue({
       owner: 'buyer_operator',
       action: 'Collect real anonymized accepted buyer rows and retained redacted artifacts for the minimum Phase F lanes.',
       proof_command: 'corepack pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+      proof_type: launchActionProofType('buyer_evidence'),
+      proof_boundary: launchActionProofBoundary('buyer_evidence'),
       stop_gate: 'Do not count templates, generated workspaces, rehearsal rows, outreach headers, or constructed demos as buyer acceptance.',
       status: buyerDeficitsOpen ? 'blocked' : 'ready',
     },
@@ -839,6 +897,8 @@ function buildLaunchActionQueue({
       owner: 'owner',
       action: 'Request production deployment approval only after source provenance, release-readiness, branch review, and security/advisor gates are clean.',
       proof_command: 'corepack pnpm run check:production-deploy-request',
+      proof_type: launchActionProofType('production_approval'),
+      proof_boundary: launchActionProofBoundary('production_approval'),
       stop_gate: 'Do not run deploy-production.sh or netlify deploy without explicit production approval.',
       status: 'manual_stop',
     },
@@ -849,6 +909,8 @@ function buildLaunchActionQueue({
       owner: 'operator',
       action: 'After an explicitly approved deploy, prove live metadata, static parity, and hosted proof-pack route smoke.',
       proof_command: 'corepack pnpm run check:post-deploy-live',
+      proof_type: launchActionProofType('post_deploy_live_proof'),
+      proof_boundary: launchActionProofBoundary('post_deploy_live_proof'),
       stop_gate: 'Do not present hosted/live parity for current source until the post-deploy live gate passes after the approved deploy.',
       status: 'blocked',
     },
