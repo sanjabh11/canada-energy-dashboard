@@ -485,6 +485,36 @@ describe('launch evidence manifest report', () => {
     expect(productionPrerequisitesByName.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
     expect(productionPrerequisitesByName.get('Post-deploy live proof boundary')?.proof_type).toBe('post_deploy_live_proof_gate');
     expect(productionPrerequisitesByName.get('Post-deploy live proof boundary')?.proof_boundary).toMatch(/guarded deploy completion|does not deploy/i);
+    const productionRequestPacket = manifest.production_approval.request_packet;
+    expect(productionRequestPacket.status).toBe('blocked');
+    expect(productionRequestPacket.proof_type).toBe('production_approval_request_packet');
+    expect(productionRequestPacket.evidence).toContain('Production approval request packet');
+    expect(productionRequestPacket.request_eligible).toBe(false);
+    expect(productionRequestPacket.item_count).toBe(manifest.production_approval.prerequisite_queue.items.length);
+    expect(productionRequestPacket.request_blocking_count).toBeGreaterThanOrEqual(1);
+    expect(productionRequestPacket.proof_boundary).toMatch(/organizes evidence for owner review only|does not grant owner approval|run deploys|hosted\/live parity/i);
+    expect(productionRequestPacket.stop_gate).toMatch(/Do not request or claim production approval|deploy-production|netlify deploy/i);
+    const productionRequestRowsByName = new Map(
+      productionRequestPacket.items.map((item: {
+        prerequisite: string;
+        request_phase?: string;
+        evidence_to_attach?: string;
+        blocks_request?: boolean;
+        status?: string;
+      }) => [item.prerequisite, item]),
+    );
+    expect(productionRequestPacket.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual(
+      manifest.production_approval.prerequisite_queue.items.map((item: { prerequisite: string }) => item.prerequisite),
+    );
+    expect(productionRequestRowsByName.get('Launch evidence validation')?.request_phase).toBe('pre_request');
+    expect(productionRequestRowsByName.get('Launch evidence validation')?.blocks_request).toBe(true);
+    expect(productionRequestRowsByName.get('Explicit owner production approval')?.request_phase).toBe('owner_decision');
+    expect(productionRequestRowsByName.get('Explicit owner production approval')?.blocks_request).toBe(false);
+    expect(productionRequestRowsByName.get('Explicit owner production approval')?.status).toBe('manual_stop');
+    expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.request_phase).toBe('post_deploy_boundary');
+    expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.blocks_request).toBe(false);
+    expect(productionRequestRowsByName.get('Clean source provenance')?.evidence_to_attach).toMatch(/source-provenance/i);
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/validate:pilot-evidence/i);
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.current_source_live_proven).toBe(false);
     expect(manifest.post_deploy_live_proof.evidence).toContain('Post-deploy live proof gate queue');
@@ -990,6 +1020,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Release Toolchain And Approval Deficits');
     expect(stdout).toContain('## Release Preflight Remediation Queue');
     expect(stdout).toContain('## Production Approval Prerequisite Queue');
+    expect(stdout).toContain('## Production Approval Request Packet');
     expect(stdout).toContain('## Post-Deploy Live Proof Gate Queue');
     expect(stdout).toContain('## Proof Buckets');
     expect(stdout).toContain('## Top 10 Pain Points');
@@ -1079,6 +1110,13 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('not granted by this manifest or report');
     expect(stdout).toContain('| Post-deploy live proof boundary |');
     expect(stdout).toContain('not eligible before explicit approved deploy');
+    expect(stdout).toContain('Production approval request packet');
+    expect(stdout).toContain('production_approval_request_packet');
+    expect(stdout).toContain('Request eligible: `no`');
+    expect(stdout).toContain('Evidence To Attach');
+    expect(stdout).toContain('Blocks Request');
+    expect(stdout).toContain('organizes request evidence only');
+    expect(stdout).toContain('Do not request or claim production approval');
     expect(stdout).toContain('Post-deploy live proof gate queue');
     expect(stdout).toContain('does not deploy, push, rebuild, mutate Netlify');
     expect(stdout).toContain('| Live public metadata |');

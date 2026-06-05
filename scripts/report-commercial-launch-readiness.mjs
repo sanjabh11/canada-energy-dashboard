@@ -149,6 +149,8 @@ function renderReport(manifest, validationText) {
   const productionApproval = manifest.production_approval ?? {};
   const productionApprovalQueue = productionApproval.prerequisite_queue ?? {};
   const productionApprovalItems = Array.isArray(productionApprovalQueue.items) ? productionApprovalQueue.items : [];
+  const productionApprovalRequestPacket = productionApproval.request_packet ?? {};
+  const productionApprovalRequestItems = Array.isArray(productionApprovalRequestPacket.items) ? productionApprovalRequestPacket.items : [];
   const postDeployLiveProof = manifest.post_deploy_live_proof ?? {};
   const postDeployLiveProofQueue = postDeployLiveProof.gate_queue ?? {};
   const postDeployLiveProofItems = Array.isArray(postDeployLiveProofQueue.items) ? postDeployLiveProofQueue.items : [];
@@ -581,6 +583,36 @@ ${productionApprovalItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'production approval queue missing', 'Regenerate the launch evidence manifest before requesting approval', 'operator', 'corepack pnpm run report:launch-evidence-manifest', productionApprovalQueue.evidence ?? productionApproval.stop_gate ?? 'No production approval prerequisite queue was captured.', productionApprovalQueue.status ?? 'unknown'])}
+
+## Production Approval Request Packet
+
+Request eligible: ${productionApprovalRequestPacket.request_eligible === true ? '`yes`' : '`no`'}. Open pre-request blockers: ${text(productionApprovalRequestPacket.request_blocking_count ?? 'unknown')}/${text(productionApprovalRequestPacket.item_count ?? 'unknown')}. Proof Type: ${text(productionApprovalRequestPacket.proof_type ?? 'production_approval_request_packet')}. This packet organizes request evidence only; it does not grant owner approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.
+
+Proof Boundary: ${text(productionApprovalRequestPacket.proof_boundary ?? 'Production approval request packet does not grant production approval.')}
+
+Stop Gate: ${text(productionApprovalRequestPacket.stop_gate ?? 'Do not request or claim production approval until every pre-request row is ready.')}
+
+| Rank | Prerequisite | Phase | Current | Needed | Owner | Evidence To Attach | Proof Command | Proof Type | Proof Boundary | Stop Gate | Request Impact | Source Status | Packet Status | Blocks Request |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+${productionApprovalRequestItems.length > 0
+    ? productionApprovalRequestItems.map((item) => row([
+      item.rank,
+      item.prerequisite,
+      item.request_phase,
+      item.current,
+      item.needed,
+      item.owner,
+      item.evidence_to_attach,
+      item.proof_command,
+      item.proof_type,
+      item.proof_boundary,
+      item.stop_gate,
+      item.request_impact,
+      item.source_status,
+      item.status,
+      item.blocks_request ? 'yes' : 'no',
+    ])).join('\n')
+    : row(['n/a', 'none', productionApprovalRequestPacket.status ?? 'unknown', 'production approval request packet missing', 'Regenerate the launch evidence manifest before requesting approval', 'operator', 'No request evidence attachments were captured.', 'corepack pnpm run report:launch-evidence-manifest', productionApprovalRequestPacket.proof_type ?? 'production_approval_request_packet', productionApprovalRequestPacket.proof_boundary ?? 'Production approval request packet does not grant production approval.', productionApprovalRequestPacket.stop_gate ?? 'Do not claim production approval from an empty request packet.', 'No request impact was captured.', productionApprovalRequestPacket.source_prerequisite_status ?? 'unknown', productionApprovalRequestPacket.status ?? 'unknown', 'yes'])}
 
 ## Post-Deploy Live Proof Gate Queue
 

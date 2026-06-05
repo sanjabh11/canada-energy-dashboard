@@ -1090,6 +1090,75 @@ try {
       manifest.production_approval.prerequisite_queue.items.some((item) => /does not grant owner approval|claim production approval|claim post-deploy live parity/i.test(item.stop_gate)),
       'Production approval prerequisite queue must preserve explicit non-approval and live-parity stop gates.',
     );
+    const productionApprovalRequestPacket = manifest.production_approval.request_packet;
+    assert(typeof productionApprovalRequestPacket?.evidence === 'string', 'Manifest production_approval.request_packet.evidence must be set.');
+    assert(productionApprovalRequestPacket.evidence.includes('Production approval request packet'), 'Manifest production approval request packet evidence must include a packet marker.');
+    assert(productionApprovalRequestPacket.proof_type === 'production_approval_request_packet', 'Manifest production approval request packet must classify proof_type as production_approval_request_packet.');
+    assert(typeof productionApprovalRequestPacket.source_prerequisite_status === 'string' && productionApprovalRequestPacket.source_prerequisite_status.length > 0, 'Manifest production approval request packet source_prerequisite_status must be set.');
+    assert(
+      productionApprovalRequestPacket.source_prerequisite_status === manifest.production_approval.prerequisite_queue.status,
+      'Production approval request packet source_prerequisite_status must match prerequisite_queue.status.',
+    );
+    assert(typeof productionApprovalRequestPacket.request_eligible === 'boolean', 'Manifest production approval request packet request_eligible must be boolean.');
+    assert(hasIntegerOrNull(productionApprovalRequestPacket.item_count), 'Manifest production approval request packet item_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalRequestPacket.request_blocking_count), 'Manifest production approval request packet request_blocking_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalRequestPacket.manual_stop_count), 'Manifest production approval request packet manual_stop_count must be an integer or null.');
+    assert(Array.isArray(productionApprovalRequestPacket.items), 'Manifest production approval request packet items must be a list.');
+    assert(
+      productionApprovalRequestPacket.item_count === productionApprovalRequestPacket.items.length,
+      'Production approval request packet item_count must match items length.',
+    );
+    assert(
+      productionApprovalRequestPacket.request_blocking_count === productionApprovalRequestPacket.items.filter((item) => item.blocks_request).length,
+      'Production approval request packet request_blocking_count must match request-blocking rows.',
+    );
+    assert(
+      productionApprovalRequestPacket.request_eligible === (productionApprovalRequestPacket.request_blocking_count === 0),
+      'Production approval request packet request_eligible must reflect whether pre-request blockers remain.',
+    );
+    assert(typeof productionApprovalRequestPacket.proof_boundary === 'string' && /organizes evidence for owner review only|does not grant owner approval|run deploys|push|mutate branches|contact buyers|access Supabase|clear source provenance|hosted\/live parity/i.test(productionApprovalRequestPacket.proof_boundary), 'Production approval request packet proof_boundary must preserve request-only, no-approval, no-mutation, and no-live-proof semantics.');
+    assert(typeof productionApprovalRequestPacket.stop_gate === 'string' && /Do not request or claim production approval|pre-request row|deploy-production|netlify deploy|hosted\/live claims/i.test(productionApprovalRequestPacket.stop_gate), 'Production approval request packet stop_gate must block approval requests and deploy/live claims until prerequisites are ready.');
+    for (const [index, item] of (productionApprovalRequestPacket.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `production_approval.request_packet.items[${index}].rank must be an integer.`);
+      assert(typeof item.prerequisite === 'string' && item.prerequisite.length > 0, `production_approval.request_packet.items[${index}].prerequisite must be set.`);
+      assert(['pre_request', 'owner_decision', 'post_deploy_boundary'].includes(item.request_phase), `production_approval.request_packet.items[${index}].request_phase must be a known phase.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `production_approval.request_packet.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `production_approval.request_packet.items[${index}].needed must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `production_approval.request_packet.items[${index}].owner must be set.`);
+      assert(typeof item.evidence_to_attach === 'string' && item.evidence_to_attach.length > 0, `production_approval.request_packet.items[${index}].evidence_to_attach must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `production_approval.request_packet.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `production_approval.request_packet.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `production_approval.request_packet.items[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `production_approval.request_packet.items[${index}].stop_gate must be set.`);
+      assert(typeof item.request_impact === 'string' && item.request_impact.length > 0, `production_approval.request_packet.items[${index}].request_impact must be set.`);
+      assert(typeof item.source_status === 'string' && item.source_status.length > 0, `production_approval.request_packet.items[${index}].source_status must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `production_approval.request_packet.items[${index}].status must be set.`);
+      assert(typeof item.blocks_request === 'boolean', `production_approval.request_packet.items[${index}].blocks_request must be boolean.`);
+      if (productionProofTypesByPrerequisite[item.prerequisite]) {
+        assert(
+          item.proof_type === productionProofTypesByPrerequisite[item.prerequisite],
+          `production_approval.request_packet.items[${index}] must classify ${item.prerequisite} as ${productionProofTypesByPrerequisite[item.prerequisite]}.`,
+        );
+      }
+      if (item.request_phase === 'pre_request') {
+        assert(item.blocks_request === (item.source_status !== 'ready'), `production_approval.request_packet.items[${index}] must block exactly while its pre-request source status is non-ready.`);
+      }
+      if (item.prerequisite === 'Explicit owner production approval') {
+        assert(item.request_phase === 'owner_decision', 'Explicit owner production approval request row must be owner_decision.');
+        assert(item.blocks_request === false, 'Explicit owner production approval request row must not be counted as a pre-request blocker.');
+        assert(item.status === 'manual_stop', 'Explicit owner production approval request row must remain manual_stop.');
+        assert(/does not create that approval/i.test(item.evidence_to_attach), 'Explicit owner production approval request row must not claim the packet creates approval.');
+      }
+      if (item.prerequisite === 'Post-deploy live proof boundary') {
+        assert(item.request_phase === 'post_deploy_boundary', 'Post-deploy live proof request row must be post_deploy_boundary.');
+        assert(item.blocks_request === false, 'Post-deploy live proof request row must not be counted as a pre-request blocker.');
+        assert(/downstream|post-deploy/i.test(item.request_impact), 'Post-deploy live proof request row must be framed as downstream of approval and deploy completion.');
+      }
+    }
+    assert(
+      JSON.stringify((productionApprovalRequestPacket.items ?? []).map((item) => item.prerequisite)) === JSON.stringify((manifest.production_approval.prerequisite_queue.items ?? []).map((item) => item.prerequisite)),
+      'Production approval request packet must include exactly the prerequisite queue rows in order.',
+    );
     assert(typeof manifest.post_deploy_live_proof?.evidence === 'string', 'Manifest post_deploy_live_proof.evidence must be set.');
     assert(manifest.post_deploy_live_proof.evidence.includes('Post-deploy live proof gate queue'), 'Manifest post-deploy live proof evidence must include a queue marker.');
     assert(manifest.post_deploy_live_proof.current_source_live_proven === false, 'Manifest must not imply current source is live-proven.');
@@ -1832,4 +1901,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

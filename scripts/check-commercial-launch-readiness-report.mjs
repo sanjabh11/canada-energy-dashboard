@@ -123,6 +123,7 @@ function assertReport(markdown, options = {}) {
     'Release Preflight Clearance Matrix',
     'Release Preflight Remediation Queue',
     'Production Approval Prerequisite Queue',
+    'Production Approval Request Packet',
     'Post-Deploy Live Proof Gate Queue',
     'Proof Buckets',
     'Top 10 Pain Points',
@@ -268,6 +269,13 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('corepack pnpm run check:launch-evidence-manifest'), 'Report must include the launch evidence validation proof command.');
   assert(markdown.includes('| Explicit owner production approval |'), 'Report must include the explicit owner approval prerequisite row.');
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
+  assert(markdown.includes('## Production Approval Request Packet'), 'Report must include the production approval request packet table.');
+  assert(markdown.includes('Production approval request packet'), 'Report must include structured production approval request packet evidence from the manifest.');
+  assert(markdown.includes('production_approval_request_packet'), 'Report must classify the production approval request packet proof type.');
+  assert(markdown.includes('Request eligible: `no`'), 'Report must keep production approval request ineligible while pre-request blockers remain.');
+  assert(markdown.includes('organizes request evidence only'), 'Report must preserve request-packet evidence-only semantics.');
+  assert(markdown.includes('does not grant owner approval, run deploys, push, merge, mutate branches'), 'Report must preserve request-packet no-approval and no-mutation boundaries.');
+  assert(markdown.includes('Do not request or claim production approval'), 'Report must preserve the request-packet stop gate.');
   assert(markdown.includes('not granted by this manifest or report'), 'Report must not imply owner approval is granted.');
   assert(markdown.includes('not eligible before explicit approved deploy'), 'Report must not imply post-deploy live proof is eligible before approval.');
   assert(markdown.includes('## Objective Completion Audit'), 'Report must include the objective completion audit table.');
@@ -336,6 +344,7 @@ function assertReport(markdown, options = {}) {
   const releaseClearanceSection = extractSection(markdown, 'Release Preflight Clearance Matrix');
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
+  const productionApprovalRequestSection = extractSection(markdown, 'Production Approval Request Packet');
   const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
   const completionAuditSection = extractSection(markdown, 'Objective Completion Audit');
   const adversarialSection = extractSection(markdown, 'Adversarial Review');
@@ -389,6 +398,10 @@ function assertReport(markdown, options = {}) {
   assert(/does not install tools|clear source provenance|push|deploy|hosted\/live parity|grant owner approval/i.test(releaseClearanceSection), 'Release preflight clearance matrix must preserve no-execution and no-approval boundaries.');
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(productionApprovalSection) >= 8, 'Production approval prerequisite queue must include launch evidence validation plus the prerequisite, manual-stop, and post-deploy rows.');
+  assert(countDataRows(productionApprovalRequestSection) >= 8, 'Production approval request packet must include all prerequisite rows with request phases.');
+  assert(productionApprovalRequestSection.includes('Evidence To Attach') && productionApprovalRequestSection.includes('Blocks Request') && productionApprovalRequestSection.includes('Request Impact'), 'Production approval request packet must expose request evidence, blocking, and impact columns.');
+  assert(/pre_request|owner_decision|post_deploy_boundary/i.test(productionApprovalRequestSection), 'Production approval request packet must separate pre-request, owner-decision, and post-deploy phases.');
+  assert(/does not grant owner approval|run deploys|mutate branches|hosted\/live parity/i.test(productionApprovalRequestSection), 'Production approval request packet must preserve no-approval and no-live-proof boundaries.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
@@ -443,4 +456,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, production approval prerequisite queue, production approval request packet, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

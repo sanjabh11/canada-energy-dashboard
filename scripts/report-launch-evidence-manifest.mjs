@@ -1588,6 +1588,121 @@ function buildProductionApprovalPrerequisiteQueue({
   };
 }
 
+function productionApprovalRequestPacketEvidence(packet) {
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_request)
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.prerequisite}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Production approval request packet:',
+    `status=${packet.status}`,
+    `request_eligible=${packet.request_eligible ? 'yes' : 'no'}`,
+    `request_blocking=${packet.request_blocking_count}/${packet.item_count}`,
+    `manual_stop=${packet.manual_stop_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=packet organizes request evidence only; it does not grant owner approval, run deploys, push, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity',
+  ].join(' ');
+}
+
+function productionApprovalRequestPhase(prerequisite) {
+  if (prerequisite === 'Explicit owner production approval') return 'owner_decision';
+  if (prerequisite === 'Post-deploy live proof boundary') return 'post_deploy_boundary';
+  return 'pre_request';
+}
+
+function productionApprovalRequestAttachment(prerequisite) {
+  switch (prerequisite) {
+    case 'Clean source provenance':
+      return 'Attach the production approval packet source-provenance section showing no unresolved staged, unstaged, untracked, ignored, or renamed source decisions.';
+    case 'Launch evidence validation':
+      return 'Attach check:launch-evidence-manifest output plus the production approval packet validation section.';
+    case 'Corepack release-readiness':
+      return 'Attach Corepack-pinned release-readiness output plus current Corepack and Git LFS probe evidence.';
+    case 'Canonical branch review':
+      return 'Attach read-only unmerged-branch readiness output plus canonical-head owner decisions for review-first branch families.';
+    case 'Supabase advisor clearance':
+      return 'Attach authorized Supabase Security and Performance Advisor results plus a public-safe findings summary.';
+    case 'Buyer evidence hard gate':
+      return 'Attach the validated buyer evidence register, accepted anonymized buyer rows, and retained redacted artifacts that pass validate:pilot-evidence --require-95.';
+    case 'Explicit owner production approval':
+      return 'Attach the explicit owner approval record only after every pre-request blocker is ready; this packet does not create that approval.';
+    case 'Post-deploy live proof boundary':
+      return 'Attach post-deploy live metadata, static parity, and hosted proof-pack smoke only after an explicitly approved deploy.';
+    default:
+      return 'Attach current proof for this prerequisite before requesting production approval.';
+  }
+}
+
+function productionApprovalRequestImpact(prerequisite) {
+  switch (prerequisite) {
+    case 'Clean source provenance':
+      return 'Approval request is blocked while source ownership or dirty-path provenance is unresolved.';
+    case 'Launch evidence validation':
+      return 'Approval request is blocked until the launch evidence manifest and approval-packet structure are validated.';
+    case 'Corepack release-readiness':
+      return 'Approval request is blocked until the intended release shell proves the guarded release path.';
+    case 'Canonical branch review':
+      return 'Approval request is blocked until unmerged branch risk and canonical-head decisions are read-only reviewed.';
+    case 'Supabase advisor clearance':
+      return 'Approval request is blocked until authorized database advisor evidence is reviewed and safely recorded.';
+    case 'Buyer evidence hard gate':
+      return 'Approval request is blocked while commercial evidence lacks accepted buyer rows and retained artifacts.';
+    case 'Explicit owner production approval':
+      return 'Owner approval is the manual decision target, not evidence this packet can self-satisfy.';
+    case 'Post-deploy live proof boundary':
+      return 'Post-deploy proof is a downstream claim boundary after approval and deploy completion, not a pre-request clearance row.';
+    default:
+      return 'Approval request depends on this prerequisite evidence being current.';
+  }
+}
+
+function productionApprovalRequestStatus(item) {
+  if (item.status === 'ready') return 'ready';
+  if (item.status === 'manual_stop') return 'manual_stop';
+  return 'blocked';
+}
+
+function buildProductionApprovalRequestPacket(prerequisiteQueue) {
+  const items = (prerequisiteQueue.items ?? []).map((item, index) => {
+    const requestPhase = productionApprovalRequestPhase(item.prerequisite);
+    const blocksRequest = requestPhase === 'pre_request' && item.status !== 'ready';
+    return {
+      rank: index + 1,
+      prerequisite: item.prerequisite,
+      request_phase: requestPhase,
+      current: item.current,
+      needed: item.needed,
+      owner: item.owner,
+      evidence_to_attach: productionApprovalRequestAttachment(item.prerequisite),
+      proof_command: item.proof_command,
+      proof_type: item.proof_type,
+      proof_boundary: item.proof_boundary,
+      stop_gate: item.stop_gate,
+      request_impact: productionApprovalRequestImpact(item.prerequisite),
+      source_status: item.status,
+      status: productionApprovalRequestStatus(item),
+      blocks_request: blocksRequest,
+    };
+  });
+  const requestBlockingCount = items.filter((item) => item.blocks_request).length;
+  const manualStopCount = items.filter((item) => item.status === 'manual_stop').length;
+  const packet = {
+    status: requestBlockingCount === 0 ? 'ready_to_request' : 'blocked',
+    proof_type: 'production_approval_request_packet',
+    source_prerequisite_status: prerequisiteQueue.status,
+    request_eligible: requestBlockingCount === 0,
+    item_count: items.length,
+    request_blocking_count: requestBlockingCount,
+    manual_stop_count: manualStopCount,
+    items,
+    proof_boundary: 'Production approval request packet organizes evidence for owner review only; it does not grant owner approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.',
+    stop_gate: 'Do not request or claim production approval until every pre-request row is ready; do not run deploy-production.sh, netlify deploy, push, or hosted/live claims from this packet.',
+  };
+  return { ...packet, evidence: productionApprovalRequestPacketEvidence(packet) };
+}
+
 function packageScriptCommand(packageScripts, scriptName, fallback) {
   const command = packageScripts?.[scriptName];
   return command ? `corepack pnpm run ${scriptName}` : fallback;
@@ -4115,6 +4230,7 @@ const productionApprovalPrerequisiteQueue = buildProductionApprovalPrerequisiteQ
   releasePreflight,
   sourceProvenanceResolutionQueue,
 });
+const productionApprovalRequestPacket = buildProductionApprovalRequestPacket(productionApprovalPrerequisiteQueue);
 const postDeployLiveProofGateQueue = buildPostDeployLiveProofGateQueue({
   productionApprovalPrerequisiteQueue,
   packageScripts: pkg.scripts,
@@ -4265,6 +4381,7 @@ const manifest = {
       releasePreflight.remediation_queue.evidence,
       launchActionQueue.evidence,
       productionApprovalPrerequisiteQueue.evidence,
+      productionApprovalRequestPacket.evidence,
       postDeployLiveProofGateQueue.evidence,
     ],
     repo_artifact: [
@@ -4394,7 +4511,11 @@ const manifest = {
     status: productionApprovalPrerequisiteQueue.status,
     explicit_owner_approval: false,
     prerequisite_queue: productionApprovalPrerequisiteQueue,
-    evidence: productionApprovalPrerequisiteQueue.evidence,
+    request_packet: productionApprovalRequestPacket,
+    evidence: [
+      productionApprovalPrerequisiteQueue.evidence,
+      productionApprovalRequestPacket.evidence,
+    ].join(' '),
     stop_gate: 'This manifest does not grant production approval; deploy-production.sh, netlify deploy, push, or post-deploy live claims require explicit owner approval and current release gates.',
   },
   post_deploy_live_proof: {
@@ -4430,6 +4551,7 @@ const manifest = {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
       'production approval prerequisite queue synthesis',
+      'production approval request packet synthesis',
       'post-deploy live proof gate queue synthesis',
       'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
     ],
@@ -4532,7 +4654,7 @@ const manifest = {
           'production approval prerequisite queue synthesis',
           'post-deploy live proof gate queue synthesis',
         ],
-    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a launch-evidence validation prerequisite, a production approval prerequisite queue, a post-deploy live proof gate queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
+    delta: 'Generated a schema-shaped launch evidence manifest with conservative blocked decision, explicit buyer-evidence remediation actions, release preflight deficits, release remediation actions, Supabase advisor remediation actions, an ordered launch blocker action queue, a launch-evidence validation prerequisite, a production approval prerequisite queue, a production approval request packet, a post-deploy live proof gate queue, canonical-head branch decision deficits, and source-provenance resolution decisions.',
     reflection: 'The manifest improves handoff and portfolio comparability without changing buyer confidence, buyer contact state, deployment approval, branch state, canonical-head ownership, source ownership, release tool installation, Supabase authorization, database state, browser smoke state, production hosting, or live proof.',
     decision: 'blocked',
     next_adjustment: 'Resolve source provenance or collect real Phase F buyer evidence; do not raise launch status from repo artifacts alone.',
