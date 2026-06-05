@@ -474,8 +474,8 @@ ${painPoints.map((item) => row([
 
 ## Top 10 Target Customers Or Segments
 
-| Rank | Account/Segment | Pain | Trigger | Decision Maker | Outreach Angle | Proof To Show | Confidence |
-|---:|---|---|---|---|---|---|---:|
+| Rank | Account/Segment | Pain | Trigger | Decision Maker | Outreach Angle | Proof To Show | Proof Type | Proof Boundary | Stop Gate | Confidence |
+|---:|---|---|---|---|---|---|---|---|---|---:|
 ${targetCustomers.map((item) => row([
     item.rank,
     item.account_or_segment,
@@ -484,6 +484,9 @@ ${targetCustomers.map((item) => row([
     item.decision_maker,
     item.outreach_angle,
     item.proof_to_show,
+    item.proof_type,
+    item.proof_boundary,
+    item.stop_gate,
     item.confidence,
   ])).join('\n')}
 

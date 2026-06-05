@@ -513,6 +513,9 @@ describe('launch evidence manifest report', () => {
     expect(manifest.pain_points[0].proof_boundary).toMatch(/source-backed market pain hypothesis|does not prove buyer acceptance|commercial-ready status/i);
     expect(manifest.pain_points[0].stop_gate).toMatch(/Do not treat source links|buyer proof|permission to contact buyers/i);
     expect(manifest.target_customers).toHaveLength(10);
+    expect(manifest.target_customers.every((item: { proof_type?: string }) => item.proof_type === 'target_segment_ranking_hypothesis')).toBe(true);
+    expect(manifest.target_customers[0].proof_boundary).toMatch(/Target segment ranking|does not prove named-account validation|outreach permission|commercial-ready status/i);
+    expect(manifest.target_customers[0].stop_gate).toMatch(/Do not treat target ranking|permission to contact buyers|buyer-proven evidence/i);
     expect(manifest.outreach_plan.email_script_boundary).toContain('Do not claim buyer-proven 95% confidence');
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

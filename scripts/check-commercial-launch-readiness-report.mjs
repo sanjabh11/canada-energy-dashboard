@@ -328,6 +328,9 @@ function assertReport(markdown, options = {}) {
   assert((painSection.match(/market_pain_source_research/g) ?? []).length === 10, 'Pain point table must classify all ten rows as market_pain_source_research.');
   assert(/does not prove buyer acceptance|account-level willingness to pay|Do not treat source links|permission to contact buyers/i.test(painSection), 'Pain point table must preserve source-research and no-buyer-proof boundaries.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
+  assert(targetSection.includes('Proof Type') && targetSection.includes('Proof Boundary') && targetSection.includes('Stop Gate'), 'Target customer table must expose proof type, proof boundary, and stop gate columns.');
+  assert((targetSection.match(/target_segment_ranking_hypothesis/g) ?? []).length === 10, 'Target customer table must classify all ten rows as target_segment_ranking_hypothesis.');
+  assert(/does not prove named-account validation|outreach permission|Do not treat target ranking|permission to contact buyers/i.test(targetSection), 'Target customer table must preserve segment-ranking and no-outreach-permission boundaries.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');
   assert(countDataRows(eccSection) >= 9, 'ECC ledger must include the route, mode, checks, decision, and next adjustment fields.');
   assert((painSection.match(/https?:\/\//g) ?? []).length >= 10, 'Pain point table must include current source URLs.');

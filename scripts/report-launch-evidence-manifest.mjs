@@ -673,6 +673,15 @@ function marketPainPoint(row) {
   };
 }
 
+function targetCustomerSegment(row) {
+  return {
+    ...row,
+    proof_type: 'target_segment_ranking_hypothesis',
+    proof_boundary: 'Target segment ranking based on buyer pain, trigger, decision-maker hypothesis, outreach angle, proof-to-show mapping, and confidence; it does not prove named-account validation, buyer acceptance, outreach permission, procurement approval, live customer adoption, or commercial-ready status.',
+    stop_gate: 'Do not treat target ranking, outreach angle, proof-to-show routes, or confidence scores as permission to contact buyers, customer commitment, procurement approval, live utility adoption, or buyer-proven evidence.',
+  };
+}
+
 function releaseRemediationStatus(status) {
   if (status === 'pass') return 'ready';
   if (status === 'manual_stop') return 'manual_stop';
@@ -3135,7 +3144,7 @@ const painPoints = [
 ];
 
 const targetCustomers = [
-  {
+  targetCustomerSegment({
     rank: 1,
     account_or_segment: 'Small and mid-size Ontario electricity distributors',
     pain: 'Need defensible demand planning, filing evidence, and privacy-safe pilot packaging.',
@@ -3144,8 +3153,8 @@ const targetCustomers = [
     outreach_angle: 'One forecast planning pack with benchmark appendix and no unsupported live-utility claim.',
     proof_to_show: '/utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, and /utility-security.',
     confidence: 4,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 2,
     account_or_segment: 'Ontario Class A industrial energy managers',
     pain: 'Need bounded 5CP exposure support without curtailment or guaranteed savings claims.',
@@ -3154,8 +3163,8 @@ const targetCustomers = [
     outreach_angle: 'Source-dated 5CP decision-support pack with explicit no-settlement/no-curtailment boundary.',
     proof_to_show: '/ga-ici-5cp and /forecast-benchmarking.',
     confidence: 4,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 3,
     account_or_segment: 'Alberta industrial TIER compliance teams',
     pain: 'Need CFO-readable pathway comparison across fund, credits, offsets, and direct investment.',
@@ -3164,8 +3173,8 @@ const targetCustomers = [
     outreach_angle: 'Source-dated compliance memo with no legal, tax, broker, or registry-certification claim.',
     proof_to_show: '/roi-calculator and /credit-banking.',
     confidence: 4,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 4,
     account_or_segment: 'Rural Electrification Associations and municipal utilities',
     pain: 'Need planning, filing, and asset evidence without large enterprise software procurement.',
@@ -3174,8 +3183,8 @@ const targetCustomers = [
     outreach_angle: 'CSV-first asset and filing proof pack for one service territory or fleet subset.',
     proof_to_show: '/asset-health, /regulatory-filing, and /utility-demand-forecast.',
     confidence: 3,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 5,
     account_or_segment: 'Utility planning consultants',
     pain: 'Need repeatable artifacts for forecast, filing, benchmark, and security-review conversations.',
@@ -3184,8 +3193,8 @@ const targetCustomers = [
     outreach_angle: 'White-label style proof-pack workflow that reduces manual appendix creation.',
     proof_to_show: '/solutions, /forecast-benchmarking, /regulatory-filing, and export helpers.',
     confidence: 4,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 6,
     account_or_segment: 'Utility privacy and security reviewers',
     pain: 'Need assurance that buyer files, secrets, and service-role access are bounded before pilot approval.',
@@ -3194,8 +3203,8 @@ const targetCustomers = [
     outreach_angle: 'Repo-backed security procurement pack plus BYO-CSV retained-extract workflow.',
     proof_to_show: '/utility-security and /byo-csv-proof.',
     confidence: 3,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 7,
     account_or_segment: 'Municipal and public-sector energy managers',
     pain: 'Need field-map and invoice-delta evidence before investing in shadow billing or audit work.',
@@ -3204,8 +3213,8 @@ const targetCustomers = [
     outreach_angle: 'One uploaded-bill comparison proof with energy-supply-only savings caveats.',
     proof_to_show: '/shadow-billing and /byo-csv-proof.',
     confidence: 3,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 8,
     account_or_segment: 'Alberta compliance advisors and EPCs',
     pain: 'Need source-dated planning packs to support industrial compliance conversations.',
@@ -3214,8 +3223,8 @@ const targetCustomers = [
     outreach_angle: 'Faster client-facing TIER and credit-banking memo generation with clear boundaries.',
     proof_to_show: '/roi-calculator, /credit-banking, and source-anchor report.',
     confidence: 3,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 9,
     account_or_segment: 'Large-load and data-centre planning advisors',
     pain: 'Need planning narrative and load-assumption discipline before engineering-grade interconnection work.',
@@ -3224,8 +3233,8 @@ const targetCustomers = [
     outreach_angle: 'Keep this as a support overlay behind the forecast pack, not a standalone engineering approval claim.',
     proof_to_show: '/ai-datacentres and /utility-demand-forecast.',
     confidence: 2,
-  },
-  {
+  }),
+  targetCustomerSegment({
     rank: 10,
     account_or_segment: 'Indigenous/community energy project teams with funder reporting needs',
     pain: 'Need repeatable funder reporting artifacts with governance and owner-supplied review boundaries.',
@@ -3234,7 +3243,7 @@ const targetCustomers = [
     outreach_angle: 'Constructed-proof reporting workflow only until a community-reviewed real portfolio exists.',
     proof_to_show: '/funder-reporting and /aicei-reporting support surfaces.',
     confidence: 2,
-  },
+  }),
 ];
 
 const pkg = packageMetadata();

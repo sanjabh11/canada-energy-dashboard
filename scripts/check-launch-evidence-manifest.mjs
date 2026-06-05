@@ -147,6 +147,27 @@ try {
       );
     }
     assert(Array.isArray(manifest.target_customers) && manifest.target_customers.length === 10, 'Manifest must include exactly ten target customers or segments.');
+    for (const [index, target] of (manifest.target_customers ?? []).entries()) {
+      assert(Number.isInteger(target.rank), `target_customers[${index}].rank must be an integer.`);
+      assert(typeof target.account_or_segment === 'string' && target.account_or_segment.length > 0, `target_customers[${index}].account_or_segment must be set.`);
+      assert(typeof target.pain === 'string' && target.pain.length > 0, `target_customers[${index}].pain must be set.`);
+      assert(typeof target.trigger === 'string' && target.trigger.length > 0, `target_customers[${index}].trigger must be set.`);
+      assert(typeof target.decision_maker === 'string' && target.decision_maker.length > 0, `target_customers[${index}].decision_maker must be set.`);
+      assert(typeof target.outreach_angle === 'string' && target.outreach_angle.length > 0, `target_customers[${index}].outreach_angle must be set.`);
+      assert(typeof target.proof_to_show === 'string' && target.proof_to_show.length > 0, `target_customers[${index}].proof_to_show must be set.`);
+      assert(Number.isInteger(target.confidence) && target.confidence >= 1 && target.confidence <= 5, `target_customers[${index}].confidence must be 1-5.`);
+      assert(target.proof_type === 'target_segment_ranking_hypothesis', `target_customers[${index}].proof_type must classify target segment ranking hypotheses.`);
+      assert(
+        typeof target.proof_boundary === 'string'
+          && /Target segment ranking|does not prove named-account validation|buyer acceptance|outreach permission|procurement approval|live customer adoption|commercial-ready status/i.test(target.proof_boundary),
+        `target_customers[${index}].proof_boundary must prevent target-ranking overclaims.`,
+      );
+      assert(
+        typeof target.stop_gate === 'string'
+          && /Do not treat target ranking|outreach angle|proof-to-show routes|confidence scores as permission to contact buyers|customer commitment|procurement approval|live utility adoption|buyer-proven evidence/i.test(target.stop_gate),
+        `target_customers[${index}].stop_gate must block outreach, adoption, and buyer-proof overclaims.`,
+      );
+    }
     assert(
       ['hosted_live', 'local', 'repo_artifact', 'candidate_shadow', 'roadmap'].every((bucket) => Object.hasOwn(manifest.proof_buckets ?? {}, bucket)),
       'Manifest must keep the five proof buckets: hosted_live, local, repo_artifact, candidate_shadow, and roadmap.',
