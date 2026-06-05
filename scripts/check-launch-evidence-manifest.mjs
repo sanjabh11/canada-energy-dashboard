@@ -125,6 +125,27 @@ try {
     assert(manifest.scores?.overall === 2, 'Manifest overall score must stay at the conservative blocked value of 2.');
     assert(manifest.scores?.evidence === 1, 'Manifest evidence score must stay at 1 while buyer evidence is absent.');
     assert(Array.isArray(manifest.pain_points) && manifest.pain_points.length === 10, 'Manifest must include exactly ten pain points.');
+    for (const [index, painPoint] of (manifest.pain_points ?? []).entries()) {
+      assert(Number.isInteger(painPoint.rank), `pain_points[${index}].rank must be an integer.`);
+      assert(typeof painPoint.pain_point === 'string' && painPoint.pain_point.length > 0, `pain_points[${index}].pain_point must be set.`);
+      assert(typeof painPoint.affected_buyer === 'string' && painPoint.affected_buyer.length > 0, `pain_points[${index}].affected_buyer must be set.`);
+      assert(Array.isArray(painPoint.source_evidence) && painPoint.source_evidence.length > 0, `pain_points[${index}].source_evidence must include source URLs.`);
+      assert(painPoint.source_evidence.every((source) => typeof source === 'string' && source.startsWith('https://')), `pain_points[${index}].source_evidence must use HTTPS URLs.`);
+      assert(typeof painPoint.willingness_to_pay_signal === 'string' && painPoint.willingness_to_pay_signal.length > 0, `pain_points[${index}].willingness_to_pay_signal must be set.`);
+      assert(typeof painPoint.repo_proof_fit === 'string' && painPoint.repo_proof_fit.length > 0, `pain_points[${index}].repo_proof_fit must be set.`);
+      assert(Number.isInteger(painPoint.confidence) && painPoint.confidence >= 1 && painPoint.confidence <= 5, `pain_points[${index}].confidence must be 1-5.`);
+      assert(painPoint.proof_type === 'market_pain_source_research', `pain_points[${index}].proof_type must classify source-backed market pain research.`);
+      assert(
+        typeof painPoint.proof_boundary === 'string'
+          && /source-backed market pain hypothesis|does not prove buyer acceptance|retained buyer artifacts|account-level willingness to pay|live customer adoption|commercial-ready status/i.test(painPoint.proof_boundary),
+        `pain_points[${index}].proof_boundary must prevent market-source overclaims.`,
+      );
+      assert(
+        typeof painPoint.stop_gate === 'string'
+          && /Do not treat source links|willingness-to-pay signals|confidence scores|repo proof-fit routes as buyer proof|customer commitment|live utility adoption|permission to contact buyers/i.test(painPoint.stop_gate),
+        `pain_points[${index}].stop_gate must block buyer-proof and outreach overclaims.`,
+      );
+    }
     assert(Array.isArray(manifest.target_customers) && manifest.target_customers.length === 10, 'Manifest must include exactly ten target customers or segments.');
     assert(
       ['hosted_live', 'local', 'repo_artifact', 'candidate_shadow', 'roadmap'].every((bucket) => Object.hasOwn(manifest.proof_buckets ?? {}, bucket)),

@@ -324,6 +324,9 @@ function assertReport(markdown, options = {}) {
   }
   assert(/does not create buyer acceptance|does not grant production approval|does not checkout/i.test(adversarialSection), 'Adversarial review table must preserve no-proof and no-mutation boundaries.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
+  assert(painSection.includes('Proof Type') && painSection.includes('Proof Boundary') && painSection.includes('Stop Gate'), 'Pain point table must expose proof type, proof boundary, and stop gate columns.');
+  assert((painSection.match(/market_pain_source_research/g) ?? []).length === 10, 'Pain point table must classify all ten rows as market_pain_source_research.');
+  assert(/does not prove buyer acceptance|account-level willingness to pay|Do not treat source links|permission to contact buyers/i.test(painSection), 'Pain point table must preserve source-research and no-buyer-proof boundaries.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');
   assert(countDataRows(eccSection) >= 9, 'ECC ledger must include the route, mode, checks, decision, and next adjustment fields.');

@@ -664,6 +664,15 @@ function adversarialReview(row) {
   };
 }
 
+function marketPainPoint(row) {
+  return {
+    ...row,
+    proof_type: 'market_pain_source_research',
+    proof_boundary: 'Source-backed market pain hypothesis with repo proof-fit mapping; it does not prove buyer acceptance, outreach permission, retained buyer artifacts, account-level willingness to pay, live customer adoption, or commercial-ready status.',
+    stop_gate: 'Do not treat source links, willingness-to-pay signals, confidence scores, or repo proof-fit routes as buyer proof, customer commitment, live utility adoption, or permission to contact buyers.',
+  };
+}
+
 function releaseRemediationStatus(status) {
   if (status === 'pass') return 'ready';
   if (status === 'manual_stop') return 'manual_stop';
@@ -3003,7 +3012,7 @@ function gitStatusSummary() {
 }
 
 const painPoints = [
-  {
+  marketPainPoint({
     rank: 1,
     pain_point: 'Utilities need scenario-ready demand forecasts tied to planning assumptions, benchmark diagnostics, and regulator-readable exports.',
     affected_buyer: 'Utilities, REAs, planning consultants, and large-load advisors',
@@ -3014,8 +3023,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Planning and consultant budgets already fund load-growth, DER, and grid-planning work.',
     repo_proof_fit: '/utility-demand-forecast and /forecast-benchmarking proof-pack routes exist with release-gated tests.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 2,
     pain_point: 'Regulatory filing teams still convert forecasts, asset evidence, and reliability narratives into filing-ready schedules manually.',
     affected_buyer: 'OEB/AUC utility regulatory affairs, engineering managers, and utility consultants',
@@ -3026,8 +3035,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Filing-prep work is mandatory, recurring, and commonly supported by consultants.',
     repo_proof_fit: '/regulatory-filing and related proof helpers generate bounded filing-prep artifacts.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 3,
     pain_point: 'Forecast reviewers need to see when simple baselines beat model output before trusting planning claims.',
     affected_buyer: 'Forecast reviewers, utility consultants, regulatory analysts, and planning directors',
@@ -3038,8 +3047,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Buyers pay for defensible planning outputs only when accuracy and uncertainty claims are inspectable.',
     repo_proof_fit: '/forecast-benchmarking, forecast trust helpers, and baseline tests exist.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 4,
     pain_point: 'Ontario Class A participants need bounded 5CP risk support without confusing decision support for curtailment instructions or settlement advice.',
     affected_buyer: 'Ontario Class A industrials, energy managers, and peak-response advisors',
@@ -3050,8 +3059,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Global Adjustment exposure is cash-sensitive and Ontario-specific.',
     repo_proof_fit: '/ga-ici-5cp has public actuals, source-date checks, and no-savings/no-curtailment guardrails.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 5,
     pain_point: 'Prospects hesitate to share utility files before seeing privacy, identifier, formula, and retained-artifact boundaries.',
     affected_buyer: 'Utility privacy, security, procurement, and planning reviewers',
@@ -3062,8 +3071,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Privacy and security review can block even small pilots unless data-handling proof is clear.',
     repo_proof_fit: '/byo-csv-proof and retained-artifact helpers keep raw values out of repo evidence.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 6,
     pain_point: 'Alberta industrial emitters need source-dated TIER compliance pathway comparisons before finance approves a compliance strategy.',
     affected_buyer: 'Alberta industrial emitters, CFOs, compliance leads, and EPC advisors',
@@ -3074,8 +3083,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Annual compliance decisions have direct cash impact and advisory budgets.',
     repo_proof_fit: '/roi-calculator and /credit-banking provide bounded compliance planning packs.',
     confidence: 4,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 7,
     pain_point: 'Credit holders need allocation, expiry, and liability evidence without the tool implying broker execution or registry certification.',
     affected_buyer: 'Carbon compliance teams, CFOs, and Alberta credit portfolio owners',
@@ -3086,8 +3095,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Credit position and expiry decisions affect compliance-year cash planning.',
     repo_proof_fit: '/credit-banking keeps allocation and expiry work bounded to audit support.',
     confidence: 3,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 8,
     pain_point: 'Smaller utilities need asset-condition evidence before approving replacements, deferments, and reliability investments.',
     affected_buyer: 'Utilities, REAs, municipal utilities, and engineering advisors',
@@ -3098,8 +3107,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Capital planning and reliability reviews already fund asset evidence work.',
     repo_proof_fit: '/asset-health includes CBRM-lite proof-pack workflow and executive export coverage.',
     confidence: 3,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 9,
     pain_point: 'Utility procurement and security teams need structured diligence evidence before load-history sharing or pilot approval.',
     affected_buyer: 'Utility security, privacy, procurement, and integration reviewers',
@@ -3110,8 +3119,8 @@ const painPoints = [
     willingness_to_pay_signal: 'Security review is a frequent procurement blocker for data-backed utility pilots.',
     repo_proof_fit: '/utility-security and Supabase/client-env guards document repo-backed versus owner-supplied boundaries.',
     confidence: 3,
-  },
-  {
+  }),
+  marketPainPoint({
     rank: 10,
     pain_point: 'Public-sector and commercial energy teams need invoice-delta evidence before trusting bill-audit or switching recommendations.',
     affected_buyer: 'Municipal/public-sector energy managers, commercial operators, and consultants',
@@ -3122,7 +3131,7 @@ const painPoints = [
     willingness_to_pay_signal: 'Invoice errors and tariff mismatch checks can produce concrete savings findings.',
     repo_proof_fit: '/shadow-billing provides uploaded-bill mode, field map, delta CSV, and savings caveats.',
     confidence: 3,
-  },
+  }),
 ];
 
 const targetCustomers = [

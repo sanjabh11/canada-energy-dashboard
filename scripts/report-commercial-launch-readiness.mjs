@@ -457,8 +457,8 @@ ${Object.entries(proofBuckets).map(([bucket, evidence]) => row([
 
 ## Top 10 Pain Points
 
-| Rank | Pain Point | Affected Buyer | Source Evidence | Willingness-To-Pay Signal | Repo Proof Fit | Confidence |
-|---:|---|---|---|---|---|---:|
+| Rank | Pain Point | Affected Buyer | Source Evidence | Willingness-To-Pay Signal | Repo Proof Fit | Proof Type | Proof Boundary | Stop Gate | Confidence |
+|---:|---|---|---|---|---|---|---|---|---:|
 ${painPoints.map((item) => row([
     item.rank,
     item.pain_point,
@@ -466,6 +466,9 @@ ${painPoints.map((item) => row([
     sourceList(item.source_evidence),
     item.willingness_to_pay_signal,
     item.repo_proof_fit,
+    item.proof_type,
+    item.proof_boundary,
+    item.stop_gate,
     item.confidence,
   ])).join('\n')}
 

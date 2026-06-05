@@ -503,6 +503,15 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.evidence).toContain('Canonical head comparison skipped');
     expect(manifest.pain_points).toHaveLength(10);
     expect(manifest.pain_points[0].source_evidence.every((source: string) => source.startsWith('https://'))).toBe(true);
+    expect(manifest.pain_points.every((item: {
+      source_evidence: string[];
+      proof_type?: string;
+      proof_boundary?: string;
+      stop_gate?: string;
+    }) => item.source_evidence.every((source) => source.startsWith('https://')))).toBe(true);
+    expect(manifest.pain_points.every((item: { proof_type?: string }) => item.proof_type === 'market_pain_source_research')).toBe(true);
+    expect(manifest.pain_points[0].proof_boundary).toMatch(/source-backed market pain hypothesis|does not prove buyer acceptance|commercial-ready status/i);
+    expect(manifest.pain_points[0].stop_gate).toMatch(/Do not treat source links|buyer proof|permission to contact buyers/i);
     expect(manifest.target_customers).toHaveLength(10);
     expect(manifest.outreach_plan.email_script_boundary).toContain('Do not claim buyer-proven 95% confidence');
     expect(manifest.ecc_ledger.decision).toBe('blocked');
