@@ -344,6 +344,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: 'fresh check:supabase-app-lint or report:supabase-app-lint pass for the current source before stronger database-security claims',
       status: cliVerified ? 'pass' : 'watch',
       next_action: 'Run check:supabase-app-lint from a Supabase-authenticated workstation and keep failures credential/connectivity-gated rather than cleared.',
+      proof_type: supabaseAdvisorRemediationProofType('CLI app lint freshness'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('CLI app lint freshness'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('CLI app lint freshness'),
+      stop_gate: supabaseAdvisorRemediationStopGate('CLI app lint freshness'),
     },
     {
       requirement: 'Connector project authorization',
@@ -351,6 +355,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: `authorized connector or dashboard access to project ${advisor.projectRef}`,
       status: connectorAuthorized ? 'pass' : 'needs_remediation',
       next_action: 'Fix Supabase connector or project authorization before rerunning security/performance advisors.',
+      proof_type: supabaseAdvisorRemediationProofType('Connector project authorization'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('Connector project authorization'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('Connector project authorization'),
+      stop_gate: supabaseAdvisorRemediationStopGate('Connector project authorization'),
     },
     {
       requirement: 'Security advisor evidence',
@@ -358,6 +366,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: 'Supabase Database Security Advisor results reviewed for the current project and source posture',
       status: advisorVerified ? 'pass' : 'needs_remediation',
       next_action: 'Rerun Supabase security advisors after authorization is fixed and record public-safe findings or remediation blockers.',
+      proof_type: supabaseAdvisorRemediationProofType('Security advisor evidence'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('Security advisor evidence'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('Security advisor evidence'),
+      stop_gate: supabaseAdvisorRemediationStopGate('Security advisor evidence'),
     },
     {
       requirement: 'Performance advisor evidence',
@@ -365,6 +377,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: 'Supabase Database Performance Advisor results reviewed for the current project and source posture',
       status: advisorVerified ? 'pass' : 'needs_remediation',
       next_action: 'Rerun Supabase performance advisors after authorization is fixed and record public-safe findings or remediation blockers.',
+      proof_type: supabaseAdvisorRemediationProofType('Performance advisor evidence'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('Performance advisor evidence'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('Performance advisor evidence'),
+      stop_gate: supabaseAdvisorRemediationStopGate('Performance advisor evidence'),
     },
     {
       requirement: 'Public-safe findings record',
@@ -372,6 +388,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: 'redacted advisor summary with run date, project ref, unresolved findings, and no secrets',
       status: publicSafeFindingsRecorded ? 'pass' : 'needs_remediation',
       next_action: 'After advisors run, retain a public-safe summary that excludes credentials and direct account details.',
+      proof_type: supabaseAdvisorRemediationProofType('Public-safe findings record'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('Public-safe findings record'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('Public-safe findings record'),
+      stop_gate: supabaseAdvisorRemediationStopGate('Public-safe findings record'),
     },
     {
       requirement: 'Advisor clearance claim',
@@ -379,6 +399,10 @@ function supabaseAdvisorClearanceDeficits(advisor) {
       needed: 'clearance claim only after CLI lint, security advisor, performance advisor, and public-safe evidence rows pass',
       status: cliVerified && connectorAuthorized && advisorVerified && publicSafeFindingsRecorded ? 'pass' : 'blocked',
       next_action: 'Keep launch security wording at repo/local proof until all Supabase advisor clearance rows pass.',
+      proof_type: supabaseAdvisorRemediationProofType('Advisor clearance claim'),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount('Advisor clearance claim'),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary('Advisor clearance claim'),
+      stop_gate: supabaseAdvisorRemediationStopGate('Advisor clearance claim'),
     },
   ];
 

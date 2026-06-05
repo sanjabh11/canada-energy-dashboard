@@ -882,12 +882,44 @@ try {
     assert(hasIntegerOrNull(manifest.supabase_advisor?.clearance_deficits?.open_count), 'Manifest supabase_advisor.clearance_deficits.open_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.supabase_advisor?.clearance_deficits?.total_count), 'Manifest supabase_advisor.clearance_deficits.total_count must be an integer or null.');
     assert(Array.isArray(manifest.supabase_advisor?.clearance_deficits?.items), 'Manifest supabase_advisor.clearance_deficits.items must be a list.');
+    const supabaseAdvisorProofTypesByRequirement = {
+      'CLI app lint freshness': 'repo_command',
+      'Connector project authorization': 'external_account_evidence',
+      'Security advisor evidence': 'external_account_evidence',
+      'Performance advisor evidence': 'external_account_evidence',
+      'Public-safe findings record': 'retained_redacted_record',
+      'Advisor clearance claim': 'repo_command',
+    };
     for (const [index, item] of (manifest.supabase_advisor.clearance_deficits.items ?? []).entries()) {
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `supabase_advisor.clearance_deficits.items[${index}].requirement must be set.`);
       assert(typeof item.current === 'string' && item.current.length > 0, `supabase_advisor.clearance_deficits.items[${index}].current must be set.`);
       assert(typeof item.needed === 'string' && item.needed.length > 0, `supabase_advisor.clearance_deficits.items[${index}].needed must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `supabase_advisor.clearance_deficits.items[${index}].status must be set.`);
       assert(typeof item.next_action === 'string' && item.next_action.length > 0, `supabase_advisor.clearance_deficits.items[${index}].next_action must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `supabase_advisor.clearance_deficits.items[${index}].proof_type must be set.`);
+      assert(typeof item.external_account_required === 'boolean', `supabase_advisor.clearance_deficits.items[${index}].external_account_required must be boolean.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `supabase_advisor.clearance_deficits.items[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `supabase_advisor.clearance_deficits.items[${index}].stop_gate must be set.`);
+      if (supabaseAdvisorProofTypesByRequirement[item.requirement]) {
+        assert(
+          item.proof_type === supabaseAdvisorProofTypesByRequirement[item.requirement],
+          `supabase_advisor.clearance_deficits.items[${index}] must classify ${item.requirement} as ${supabaseAdvisorProofTypesByRequirement[item.requirement]}.`,
+        );
+      }
+      if (['Connector project authorization', 'Security advisor evidence', 'Performance advisor evidence'].includes(item.requirement)) {
+        assert(item.external_account_required === true, `supabase_advisor.clearance_deficits.items[${index}] must require external account access for dashboard/connector advisor work.`);
+        assert(/authorized|dashboard|connector|Advisor/i.test(item.proof_boundary), `supabase_advisor.clearance_deficits.items[${index}] proof_boundary must preserve the authorized external-evidence boundary.`);
+        assert(/Do not|permission-denied|advisor evidence/i.test(item.stop_gate), `supabase_advisor.clearance_deficits.items[${index}].stop_gate must reject unauthorized or stale advisor evidence.`);
+      }
+      if (['CLI app lint freshness', 'Advisor clearance claim'].includes(item.requirement)) {
+        assert(item.external_account_required === false, `supabase_advisor.clearance_deficits.items[${index}] must not require external account access for repo-local proof rows.`);
+        assert(/does not authorize|does not claim|only after every/i.test(item.proof_boundary), `supabase_advisor.clearance_deficits.items[${index}].proof_boundary must not imply advisor clearance.`);
+      }
+      if (item.requirement === 'Public-safe findings record') {
+        assert(item.external_account_required === false, 'Supabase advisor public-safe findings deficit must not be marked as direct external-account execution.');
+        assert(/retained redacted advisor summary|no secrets|credentials/i.test(item.proof_boundary), 'Supabase advisor public-safe findings deficit must require retained redacted no-secret evidence.');
+        assert(/Do not print or persist secrets|tokens|private findings/i.test(item.stop_gate), 'Supabase advisor public-safe findings deficit stop gate must prohibit secrets and private findings in public artifacts.');
+      }
     }
     assert(
       manifest.supabase_advisor.clearance_deficits.items.some((item) => item.requirement === 'Security advisor evidence'),
