@@ -4367,9 +4367,21 @@ const buyerEvidenceStarterBoundaryFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releasePreflightReportFilesChanged = [
+  'package.json',
+  'scripts/report-release-preflight-readiness.mjs',
+  'scripts/check-release-preflight-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
+  ...releasePreflightReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4397,9 +4409,20 @@ const buyerEvidenceStarterBoundaryTestsRun = [
   'pnpm run report:buyer-evidence-readiness -- --root /tmp/ceip-phase-f-evidence-codex --evidence-root /tmp/ceip-phase-f-evidence-codex/phase-f-minimum-intake',
 ];
 
+const releasePreflightReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:release-preflight',
+  'pnpm run report:release-preflight -- --skip-probes',
+  'pnpm run check:release-preflight-report',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
+  ...releasePreflightReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4476,6 +4499,19 @@ const safeFixImplementationDecisions = [
     reason: 'Counting starter CSVs only as production registers could make acquisition status and operator summaries look more complete than the hard 95% gate allows.',
     proof_boundary: 'This record improves buyer-evidence classification only; it does not contact buyers, create accepted evidence, move confidence, attach retained artifacts, validate 95%, clear buyer hard gates, or grant commercial-ready status.',
     stop_gate: 'Do not treat starter-only register counts, workspace creation, report generation, or base validation as buyer acceptance, confidence movement, retained-artifact validation, or permission to contact buyers.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    decision: 'Expose the launch manifest release_preflight section through a focused release-preflight report and structural checker.',
+    acceptance_check: 'Operators can run report:release-preflight and check:release-preflight-report to inspect Corepack, Git LFS, source provenance, clearance matrix, remediation queue, and production-approval boundaries without running unrelated buyer, branch, Supabase, or deploy flows.',
+    chosen_variant: 'minimal focused manifest wrapper',
+    repo_pattern_reused: 'Existing release_preflight, toolchain_probe_ledger, clearance_matrix, remediation_queue, source_provenance, production_approval.request_packet, and package script conventions.',
+    files_changed: releasePreflightReportFilesChanged,
+    tests_run: releasePreflightReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders a focused Markdown/JSON report, while the checker asserts the release probe ledger, preflight deficit rows, clearance matrix, remediation queue, source provenance, production approval request packet, and no-execution boundaries.',
+    reason: 'The release toolchain blocker was only visible inside large commercial-launch artifacts; a focused report reduces operator ambiguity without installing tools, clearing provenance, running release-readiness, or granting approval.',
+    proof_boundary: 'This record improves release-preflight evidence visibility only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused release-preflight report, check pass, JSON output, local Git LFS probe, skipped probes, or bare pnpm checks as release-readiness, production approval, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4564,6 +4600,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Would simplify acquisition status but would violate the hard buyer-evidence gate.',
     evidence: 'validate:pilot-evidence --require-95 fails for starter registers until real buyer-supplied retained artifacts and accepted rows exist.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    variant: 'Leave release preflight only inside the large launch manifest and commercial launch report.',
+    reason_rejected: 'Would keep the current Corepack, Git LFS, source provenance, and approval rows harder to inspect during release-specific blocker work.',
+    tradeoff: 'No-code defer avoids a wrapper but increases operator load and makes release-specific proof refreshes less precise.',
+    evidence: 'The launch action queue asks operators to refresh the release toolchain probe ledger, but no focused package script exposed that lane directly.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    variant: 'Duplicate release preflight probing logic in a new standalone implementation.',
+    reason_rejected: 'Duplicating Corepack, Git LFS, source provenance, and approval-packet logic would create drift risk from the source-of-truth manifest.',
+    tradeoff: 'A standalone probe could be narrower at runtime, but it would require another launch-readiness contract to maintain.',
+    evidence: 'report-launch-evidence-manifest already emits release_preflight, toolchain_probe_ledger, clearance_matrix, remediation_queue, source_provenance, and production_approval.request_packet.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    variant: 'Make the focused checker pass the release gate or install Corepack/Git LFS automatically.',
+    reason_rejected: 'A report/check wrapper must not mutate the operator environment or turn blocker visibility into release approval.',
+    tradeoff: 'Automatic remediation would appear more convenient but would violate the release approval and tool-truth boundaries.',
+    evidence: 'The commercial launch skill and existing check-corepack-toolchain gate require Corepack-pinned release evidence and forbid treating local shims or bare pnpm as release readiness.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4614,6 +4671,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one starter-only count to the existing readiness report and manifest contract, then uses that count in the existing acquisition matrix without new dependencies, new artifacts, buyer contact, or hard-gate relaxation.',
     tests_or_checks: buyerEvidenceStarterBoundaryTestsRun,
     remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin Markdown/JSON wrapper and structural checker over existing manifest data, with no new dependency, no duplicated release probing, no deploy path, no live-service access, and no release-gate relaxation.',
+    tests_or_checks: releasePreflightReportTestsRun,
+    remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, explicit owner approval, and post-deploy live proof are current.',
   },
 ];
 

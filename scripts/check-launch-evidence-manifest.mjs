@@ -1973,6 +1973,33 @@ try {
         && buyerStarterReview.tests_or_checks.some((check) => /check:phase-f-evidence-workspace/.test(check)),
       'Buyer evidence starter-register code optimization review must record the Phase F workspace proof.',
     );
+    const releasePreflightDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT');
+    assert(releasePreflightDecision, 'Manifest must record the release preflight focused report implementation decision.');
+    assert(
+      /release_preflight section|focused release-preflight report/i.test(releasePreflightDecision?.decision ?? ''),
+      'Release preflight focused report decision must name the release_preflight wrapper.',
+    );
+    assert(
+      Array.isArray(releasePreflightDecision?.files_changed)
+        && releasePreflightDecision.files_changed.includes('scripts/report-release-preflight-readiness.mjs')
+        && releasePreflightDecision.files_changed.includes('scripts/check-release-preflight-readiness-report.mjs')
+        && releasePreflightDecision.files_changed.includes('tests/unit/releasePreflightReadiness.test.ts'),
+      'Release preflight focused report decision must record the report, checker, and test file.',
+    );
+    assert(
+      /does not install Corepack|Git LFS|run full release-readiness|clear source provenance|push|deploy|hosted\/live parity/i.test(releasePreflightDecision?.proof_boundary ?? ''),
+      'Release preflight focused report decision must preserve release non-execution boundaries.',
+    );
+    const releasePreflightReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT');
+    assert(releasePreflightReview, 'Manifest must record the release preflight focused report code optimization review.');
+    assert(releasePreflightReview?.policy === 'strict', 'Release preflight focused report code optimization review must use strict policy.');
+    assert(releasePreflightReview?.verdict === 'pass', 'Release preflight focused report code optimization review must pass.');
+    assert(
+      Array.isArray(releasePreflightReview?.tests_or_checks)
+        && releasePreflightReview.tests_or_checks.some((check) => /report:release-preflight/.test(check))
+        && releasePreflightReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check)),
+      'Release preflight focused report code optimization review must record focused release preflight report and check proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

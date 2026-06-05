@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(4);
+    expect(manifest.implementation_decisions).toHaveLength(5);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(4);
+    expect(manifest.code_optimization_reviews).toHaveLength(5);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -761,6 +761,9 @@ describe('launch evidence manifest report', () => {
       'Leave starter registers counted only as production pilot evidence registers.',
       'Ignore all starter registers during readiness scanning.',
       'Treat any base-valid register as ready acquisition evidence.',
+      'Leave release preflight only inside the large launch manifest and commercial launch report.',
+      'Duplicate release preflight probing logic in a new standalone implementation.',
+      'Make the focused checker pass the release gate or install Corepack/Git LFS automatically.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -803,6 +806,27 @@ describe('launch evidence manifest report', () => {
     expect(starterBoundaryReview.policy).toBe('strict');
     expect(starterBoundaryReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run check:phase-f-evidence-workspace',
+    ]));
+    const releasePreflightDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    );
+    expect(releasePreflightDecision).toBeTruthy();
+    expect(releasePreflightDecision.chosen_variant).toBe('minimal focused manifest wrapper');
+    expect(releasePreflightDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-release-preflight-readiness.mjs',
+      'scripts/check-release-preflight-readiness-report.mjs',
+      'tests/unit/releasePreflightReadiness.test.ts',
+      'package.json',
+    ]));
+    expect(releasePreflightDecision.proof_boundary).toMatch(/does not install Corepack|run full release-readiness|clear source provenance|deploy|hosted\/live parity/i);
+    const releasePreflightReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
+    );
+    expect(releasePreflightReview).toBeTruthy();
+    expect(releasePreflightReview.policy).toBe('strict');
+    expect(releasePreflightReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:release-preflight',
+      'pnpm run check:release-preflight-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
