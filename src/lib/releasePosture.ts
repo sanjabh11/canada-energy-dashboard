@@ -190,6 +190,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The canonical head decision queue surfaces split, local-only, origin-only, stale, aging, and unknown branch-family decisions before merge review, but it does not checkout, merge, push, discard, deploy, or select a branch head. It does not create launch evidence or prove production approval.',
   },
   {
+    label: 'Canonical head resolution queue',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The canonical head resolution queue maps owner-decision actions for split, local-only, origin-only, stale, aging, and unknown branch-family states, but it does not checkout, merge, push, discard, delete, select canonical heads, migrate, deploy, grant production approval, or clear branch review. It does not create launch evidence or prove production approval.',
+  },
+  {
     label: 'Review-first branch packet queue',
     status: 'external_gate',
     command: 'pnpm run report:unmerged-branch-readiness -- --focus-risk high && pnpm run report:launch-evidence-manifest',

@@ -141,6 +141,17 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'canonical_head_resolution_queue',
+    releaseHealthLabel: 'Canonical head resolution queue',
+    boundaryPatterns: [
+      /owner-decision actions/i,
+      /split, local-only, origin-only/i,
+      /does not checkout, merge, push, discard, delete/i,
+      /select canonical heads/i,
+      /prove production approval/i,
+    ],
+  },
+  {
     publicId: 'review_first_branch_packet_queue',
     releaseHealthLabel: 'Review-first branch packet queue',
     boundaryPatterns: [
@@ -261,6 +272,7 @@ describe('status page release posture', () => {
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
     const branchClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch clearance matrix');
     const canonicalHeadQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head decision queue');
+    const canonicalHeadResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head resolution queue');
     const reviewFirstPacketQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Review-first branch packet queue');
     const launchQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch blocker action queue');
     const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
@@ -272,7 +284,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(24);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(25);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -338,6 +350,11 @@ describe('status page release posture', () => {
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/split, local-only, origin-only, stale, aging, and unknown/i);
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/select a branch head/i);
+    expect(canonicalHeadResolutionQueueEvidence?.status).toBe('external_gate');
+    expect(canonicalHeadResolutionQueueEvidence?.command).toContain('report:unmerged-branch-readiness');
+    expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/owner-decision actions/i);
+    expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
+    expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/prove production approval/i);
     expect(reviewFirstPacketQueueEvidence?.status).toBe('external_gate');
     expect(reviewFirstPacketQueueEvidence?.command).toContain('--focus-risk high');
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/focused read-only branch packets/i);
@@ -440,6 +457,7 @@ describe('status page release posture', () => {
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const branchClearanceMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_clearance_matrix');
     const canonicalHeadQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_decision_queue');
+    const canonicalHeadResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_resolution_queue');
     const reviewFirstPacketQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'review_first_branch_packet_queue');
     const buyerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_gate');
     const buyerAcquisitionMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_acquisition_matrix');
@@ -478,6 +496,7 @@ describe('status page release posture', () => {
       'unmerged_branch_review_queue',
       'branch_clearance_matrix',
       'canonical_head_decision_queue',
+      'canonical_head_resolution_queue',
       'review_first_branch_packet_queue',
       'buyer_evidence_gate',
       'buyer_evidence_acquisition_matrix',
@@ -563,6 +582,12 @@ describe('status page release posture', () => {
     expect(canonicalHeadQueueGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(canonicalHeadQueueGate?.evidenceBoundary).toMatch(/prove production approval/i);
     expect(canonicalHeadQueueGate?.nextAction).toMatch(/choose canonical heads explicitly/i);
+    expect(canonicalHeadResolutionQueueGate?.status).toBe('external_gate');
+    expect(canonicalHeadResolutionQueueGate?.command).toContain('report:unmerged-branch-readiness');
+    expect(canonicalHeadResolutionQueueGate?.evidenceBoundary).toMatch(/owner-decision actions/i);
+    expect(canonicalHeadResolutionQueueGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
+    expect(canonicalHeadResolutionQueueGate?.evidenceBoundary).toMatch(/prove production approval/i);
+    expect(canonicalHeadResolutionQueueGate?.nextAction).toMatch(/record explicit owner decisions/i);
     expect(reviewFirstPacketQueueGate?.status).toBe('external_gate');
     expect(reviewFirstPacketQueueGate?.command).toContain('--focus-risk high');
     expect(reviewFirstPacketQueueGate?.evidenceBoundary).toMatch(/focused read-only branch packets/i);

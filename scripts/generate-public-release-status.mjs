@@ -121,6 +121,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'canonical_head_resolution_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'review_first_branch_packet_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -299,6 +305,13 @@ function validateManifest(manifest) {
   }
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select a branch head|does not.*prove production approval/i.test(canonicalHeadQueue.evidenceBoundary ?? '')) {
     failures.push('canonical_head_decision_queue must preserve the no-mutation and no-approval boundary.');
+  }
+  const canonicalHeadResolutionQueue = itemById.get('canonical_head_resolution_queue') ?? {};
+  if (!/owner-decision actions|split|local-only|origin-only|stale|aging|unknown|branch-family/i.test(`${canonicalHeadResolutionQueue.evidenceBoundary ?? ''}\n${canonicalHeadResolutionQueue.nextAction ?? ''}`)) {
+    failures.push('canonical_head_resolution_queue must describe canonical-head owner-decision actions.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*delete|does not.*select canonical heads|does not.*migrate|does not.*deploy|does not.*grant production approval|does not.*clear branch review|does not.*prove production approval/i.test(canonicalHeadResolutionQueue.evidenceBoundary ?? '')) {
+    failures.push('canonical_head_resolution_queue must preserve the no-mutation, no-clearance, and no-approval boundary.');
   }
   const reviewFirstPacketQueue = itemById.get('review_first_branch_packet_queue') ?? {};
   if (!/focused read-only branch packets|canonical-head state|changed Supabase function rows|drift risk/i.test(`${reviewFirstPacketQueue.evidenceBoundary ?? ''}\n${reviewFirstPacketQueue.nextAction ?? ''}`)) {
