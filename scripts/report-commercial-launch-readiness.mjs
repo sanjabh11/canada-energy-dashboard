@@ -160,6 +160,8 @@ function renderReport(manifest, validationText) {
   const sourceIsolationRows = Array.isArray(sourceIsolationLedger.rows) ? sourceIsolationLedger.rows : [];
   const branchCanonicalDecisions = manifest.branch_review?.canonical_head_decisions ?? {};
   const branchCanonicalDecisionItems = Array.isArray(branchCanonicalDecisions.items) ? branchCanonicalDecisions.items : [];
+  const branchCanonicalResolutionQueue = manifest.branch_review?.canonical_head_resolution_queue ?? {};
+  const branchCanonicalResolutionItems = Array.isArray(branchCanonicalResolutionQueue.items) ? branchCanonicalResolutionQueue.items : [];
   const branchClearanceMatrix = manifest.branch_review?.clearance_matrix ?? {};
   const branchClearanceRows = Array.isArray(branchClearanceMatrix.rows) ? branchClearanceMatrix.rows : [];
   const painPoints = Array.isArray(manifest.pain_points) ? manifest.pain_points : [];
@@ -309,6 +311,38 @@ ${branchCanonicalDecisionItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'n/a', 'n/a', branchCanonicalDecisions.status ?? 'unknown', 'n/a', 'n/a', 'No canonical-head decision rows were captured.', 'corepack pnpm run report:unmerged-branch-readiness', branchCanonicalDecisions.evidence ?? 'No canonical head decision ledger was captured.', branchCanonicalDecisions.status ?? 'unknown'])}
+
+## Branch Canonical Head Resolution Queue
+
+Open canonical-head resolution actions: ${text(branchCanonicalResolutionQueue.blocked_count ?? 'unknown')}/${text(branchCanonicalResolutionQueue.item_count ?? 'unknown')}. Proof Type: ${text(branchCanonicalResolutionQueue.proof_type ?? 'canonical_head_resolution_queue')}. This queue is owner-decision planning only; it does not checkout, merge, push, discard, delete, select canonical heads, migrate, deploy, grant production approval, or clear branch review by itself.
+
+Proof Boundary: ${text(branchCanonicalResolutionQueue.proof_boundary ?? 'Canonical-head resolution queue does not mutate branch state or select a canonical head.')}
+
+Stop Gate: ${text(branchCanonicalResolutionQueue.stop_gate ?? 'Do not mark branch review clear until every canonical-head owner decision is explicit and release gates are clean.')}
+
+| Rank | Family | Local Ref | Origin Ref | State | Risk | Freshness | Current | Needed | Owner | Action | Proof Command | Proof Type | Proof Boundary | Stop Gate | Status | Blocks Branch Gate |
+|---:|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+${branchCanonicalResolutionItems.length > 0
+    ? branchCanonicalResolutionItems.map((item) => row([
+      item.rank,
+      item.family,
+      item.local_ref ?? 'n/a',
+      item.origin_ref ?? 'n/a',
+      item.local_origin_state,
+      item.highest_risk,
+      item.freshness,
+      item.current,
+      item.needed,
+      item.owner,
+      item.action,
+      item.proof_command,
+      item.proof_type,
+      item.proof_boundary,
+      item.stop_gate,
+      item.status,
+      item.blocks_branch_gate ? 'yes' : 'no',
+    ])).join('\n')
+    : row(['n/a', 'none', 'n/a', 'n/a', branchCanonicalResolutionQueue.source_decision_status ?? 'unknown', 'n/a', 'n/a', 'No canonical-head resolution actions were captured.', 'Run the read-only branch report before selecting a canonical head.', 'owner', 'Regenerate branch readiness evidence before branch owner decisions.', 'corepack pnpm run report:unmerged-branch-readiness', branchCanonicalResolutionQueue.proof_type ?? 'canonical_head_resolution_queue', branchCanonicalResolutionQueue.proof_boundary ?? 'Canonical-head resolution queue does not mutate branch state or select a canonical head.', branchCanonicalResolutionQueue.stop_gate ?? 'Do not claim branch review clearance from an empty resolution queue.', branchCanonicalResolutionQueue.status ?? 'unknown', 'yes'])}
 
 ## Branch Clearance Matrix
 

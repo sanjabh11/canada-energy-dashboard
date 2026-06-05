@@ -1432,6 +1432,63 @@ try {
       }
       assert(item.status !== 'pass', `branch_review.canonical_head_decisions.items[${index}].status must remain blocked until owner review clears the decision.`);
     }
+    assert(typeof manifest.branch_review?.canonical_head_resolution_queue?.evidence === 'string', 'Manifest branch_review.canonical_head_resolution_queue.evidence must be set.');
+    assert(manifest.branch_review.canonical_head_resolution_queue.evidence.includes('Canonical head resolution queue'), 'Manifest branch_review.canonical_head_resolution_queue evidence must include a queue marker.');
+    assert(manifest.branch_review.canonical_head_resolution_queue.proof_type === 'canonical_head_resolution_queue', 'Manifest branch_review.canonical_head_resolution_queue proof_type must classify the canonical resolution queue.');
+    assert(typeof manifest.branch_review.canonical_head_resolution_queue.source_decision_status === 'string', 'Manifest branch_review.canonical_head_resolution_queue.source_decision_status must be set.');
+    assert(hasIntegerOrNull(manifest.branch_review.canonical_head_resolution_queue?.open_count), 'Manifest branch_review.canonical_head_resolution_queue.open_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.canonical_head_resolution_queue?.total_count), 'Manifest branch_review.canonical_head_resolution_queue.total_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.canonical_head_resolution_queue?.item_count), 'Manifest branch_review.canonical_head_resolution_queue.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.canonical_head_resolution_queue?.blocked_count), 'Manifest branch_review.canonical_head_resolution_queue.blocked_count must be an integer or null.');
+    assert(Array.isArray(manifest.branch_review.canonical_head_resolution_queue?.items), 'Manifest branch_review.canonical_head_resolution_queue.items must be a list.');
+    assert(
+      manifest.branch_review.canonical_head_resolution_queue.item_count === manifest.branch_review.canonical_head_resolution_queue.items.length,
+      'Canonical-head resolution queue item_count must match items length.',
+    );
+    assert(
+      manifest.branch_review.canonical_head_resolution_queue.blocked_count === manifest.branch_review.canonical_head_resolution_queue.items.filter((item) => item.blocks_branch_gate).length,
+      'Canonical-head resolution queue blocked_count must match branch-blocking items.',
+    );
+    assert(
+      typeof manifest.branch_review.canonical_head_resolution_queue.proof_boundary === 'string'
+        && /owner-decision action list only|does not checkout|merge|push|discard|delete|select canonical heads|migrate|deploy|grant production approval|clear branch review/i.test(manifest.branch_review.canonical_head_resolution_queue.proof_boundary),
+      'Manifest branch canonical-head resolution queue proof boundary must preserve owner-decision-only non-mutating semantics.',
+    );
+    assert(
+      typeof manifest.branch_review.canonical_head_resolution_queue.stop_gate === 'string'
+        && /Do not.*branch review clear|owner decision|read-only focused review|release gates|skipped probes/i.test(manifest.branch_review.canonical_head_resolution_queue.stop_gate),
+      'Manifest branch canonical-head resolution queue stop_gate must preserve no-clearance semantics.',
+    );
+    for (const [index, item] of (manifest.branch_review.canonical_head_resolution_queue.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `branch_review.canonical_head_resolution_queue.items[${index}].rank must be an integer.`);
+      assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].family must be set.`);
+      assert(item.local_ref === null || typeof item.local_ref === 'string', `branch_review.canonical_head_resolution_queue.items[${index}].local_ref must be string or null.`);
+      assert(item.origin_ref === null || typeof item.origin_ref === 'string', `branch_review.canonical_head_resolution_queue.items[${index}].origin_ref must be string or null.`);
+      assert(typeof item.review_ref === 'string' && item.review_ref.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].review_ref must be set.`);
+      assert(typeof item.local_origin_state === 'string' && item.local_origin_state.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].local_origin_state must be set.`);
+      assert(typeof item.state_key === 'string' && item.state_key.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].state_key must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && /choose|decide|refresh/i.test(item.needed), `branch_review.canonical_head_resolution_queue.items[${index}].needed must describe the owner decision.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].owner must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_review.canonical_head_resolution_queue.items[${index}].proof_command must point to the focused branch report.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.decision_status === 'string' && item.decision_status.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].decision_status must be set.`);
+      assert(item.read_only === true, `branch_review.canonical_head_resolution_queue.items[${index}].read_only must be true.`);
+      assert(item.owner_decision_required === true, `branch_review.canonical_head_resolution_queue.items[${index}].owner_decision_required must be true.`);
+      assert(
+        typeof item.proof_boundary === 'string' && /owner-decision action list only|does not checkout|merge|push|discard|delete|select canonical heads|migrate|deploy|grant production approval|clear branch review/i.test(item.proof_boundary),
+        `branch_review.canonical_head_resolution_queue.items[${index}].proof_boundary must preserve owner-decision-only non-mutating semantics.`,
+      );
+      assert(typeof item.stop_gate === 'string' && /Do not checkout|select a canonical head|production approval|owner decision/i.test(item.stop_gate), `branch_review.canonical_head_resolution_queue.items[${index}].stop_gate must preserve canonical-head stop gates.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `branch_review.canonical_head_resolution_queue.items[${index}].status must be set.`);
+      assert(typeof item.blocks_branch_gate === 'boolean', `branch_review.canonical_head_resolution_queue.items[${index}].blocks_branch_gate must be boolean.`);
+      assert(item.status !== 'ready', `branch_review.canonical_head_resolution_queue.items[${index}].status must stay non-ready until owner decision passes.`);
+    }
+    assert(
+      JSON.stringify((manifest.branch_review.canonical_head_resolution_queue.items ?? []).map((item) => item.family)) === JSON.stringify((manifest.branch_review.canonical_head_decisions.items ?? []).map((item) => item.family)),
+      'Canonical-head resolution queue must include exactly the canonical decision families in order.',
+    );
     assert(typeof manifest.branch_review?.clearance_matrix === 'object' && manifest.branch_review.clearance_matrix !== null, 'Manifest branch_review.clearance_matrix must be an object.');
     assert(typeof manifest.branch_review.clearance_matrix.evidence === 'string' && manifest.branch_review.clearance_matrix.evidence.includes('Branch clearance matrix'), 'Manifest branch clearance matrix evidence must include a matrix marker.');
     assert(manifest.branch_review.clearance_matrix.proof_type === 'read_only_branch_clearance_matrix', 'Manifest branch clearance matrix must classify proof as read-only branch clearance evidence.');
@@ -1553,6 +1610,14 @@ try {
       assert(Number.isInteger(manifest.branch_review?.canonical_head_decisions?.open_count), 'Non-skipped manifest must include numeric canonical-head decision open count.');
       assert(manifest.branch_review.canonical_head_decisions.items.length === manifest.branch_review.canonical_head_decisions.open_count, 'Canonical-head decision item count must match open_count.');
       assert(manifest.branch_review.canonical_head_decisions.evidence.includes('approval_gate=no checkout/merge/push/discard/deploy'), 'Canonical-head decision ledger must preserve the no-mutation approval gate.');
+      assert(manifest.branch_review.canonical_head_resolution_queue.source_decision_status === manifest.branch_review.canonical_head_decisions.status, 'Canonical-head resolution queue source status must match canonical-head decision status.');
+      assert(manifest.branch_review.canonical_head_resolution_queue.item_count === manifest.branch_review.canonical_head_decisions.items.length, 'Canonical-head resolution queue item_count must match canonical-head decision items.');
+      assert(manifest.branch_review.canonical_head_resolution_queue.blocked_count === manifest.branch_review.canonical_head_decisions.open_count, 'Canonical-head resolution queue blocked_count must match open canonical-head decisions.');
+      if (manifest.branch_review.canonical_head_resolution_queue.status === 'blocked') {
+        assert(manifest.branch_review.canonical_head_resolution_queue.evidence.includes('approval_gate=queue does not checkout'), 'Canonical-head resolution queue must preserve the no-mutation approval gate while blocked.');
+      } else {
+        assert(manifest.branch_review.canonical_head_resolution_queue.evidence.includes('status=pass'), 'Canonical-head resolution queue pass evidence must report pass status.');
+      }
       const reviewFirstOpen = (manifest.branch_review.review_queue.review_first_count ?? 0) > 0;
       const canonicalHeadOpen = (manifest.branch_review.canonical_head_decisions.open_count ?? 0) > 0;
       assert(
@@ -1767,4 +1832,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

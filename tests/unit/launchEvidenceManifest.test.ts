@@ -606,6 +606,11 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.canonical_head_decisions.open_count).toBeNull();
     expect(manifest.branch_review.canonical_head_decisions.items).toEqual([]);
     expect(manifest.branch_review.canonical_head_decisions.evidence).toContain('Canonical head decision ledger skipped');
+    expect(manifest.branch_review.canonical_head_resolution_queue.status).toBe('skipped');
+    expect(manifest.branch_review.canonical_head_resolution_queue.proof_type).toBe('canonical_head_resolution_queue');
+    expect(manifest.branch_review.canonical_head_resolution_queue.evidence).toContain('Canonical head resolution queue skipped');
+    expect(manifest.branch_review.canonical_head_resolution_queue.proof_boundary).toMatch(/owner-decision action list only|does not checkout|select canonical heads/i);
+    expect(manifest.branch_review.canonical_head_resolution_queue.items).toEqual([]);
     expect(manifest.branch_review.review_first_packets.status).toBe('skipped');
     expect(manifest.branch_review.review_first_packets.item_count).toBeNull();
     expect(manifest.branch_review.review_first_packets.queue_review_first_count).toBeNull();
@@ -672,6 +677,8 @@ describe('launch evidence manifest report', () => {
     );
     const firstReviewItem = manifest.branch_review.review_queue.items[0];
     const firstCanonicalHeadDecision = manifest.branch_review.canonical_head_decisions.items[0];
+    const branchCanonicalResolutionQueue = manifest.branch_review.canonical_head_resolution_queue;
+    const firstCanonicalHeadResolution = branchCanonicalResolutionQueue.items[0];
     const branchClearanceMatrix = manifest.branch_review.clearance_matrix;
     const firstClearanceRow = branchClearanceMatrix.rows[0];
     const firstReviewFirstPacket = manifest.branch_review.review_first_packets.packets[0];
@@ -728,6 +735,24 @@ describe('launch evidence manifest report', () => {
       if (firstCanonicalHeadDecision.state_key === 'origin_only') {
         expect(firstCanonicalHeadDecision.proof_type).toBe('origin_only_canonical_head_decision');
       }
+    }
+
+    expect(branchCanonicalResolutionQueue.source_decision_status).toBe(manifest.branch_review.canonical_head_decisions.status);
+    expect(branchCanonicalResolutionQueue.item_count).toBe(manifest.branch_review.canonical_head_decisions.items.length);
+    expect(branchCanonicalResolutionQueue.blocked_count).toBe(manifest.branch_review.canonical_head_decisions.open_count);
+    expect(branchCanonicalResolutionQueue.proof_type).toBe('canonical_head_resolution_queue');
+    expect(branchCanonicalResolutionQueue.evidence).toContain('Canonical head resolution queue');
+    expect(branchCanonicalResolutionQueue.proof_boundary).toMatch(/owner-decision action list only|does not checkout|select canonical heads/i);
+    if (firstCanonicalHeadResolution) {
+      expect(firstCanonicalHeadResolution.read_only).toBe(true);
+      expect(firstCanonicalHeadResolution.owner_decision_required).toBe(true);
+      expect(firstCanonicalHeadResolution.owner).toBe('owner');
+      expect(firstCanonicalHeadResolution.proof_command).toContain('report:unmerged-branch-readiness');
+      expect(firstCanonicalHeadResolution.proof_boundary).toMatch(/owner-decision action list only|does not checkout|select canonical heads/i);
+      expect(firstCanonicalHeadResolution.stop_gate).toMatch(/Do not checkout|select a canonical head|production approval/i);
+      expect(firstCanonicalHeadResolution.blocks_branch_gate).toBe(true);
+      expect(firstCanonicalHeadResolution.status).toBe('blocked');
+      expect(firstCanonicalHeadResolution.family).toBe(firstCanonicalHeadDecision?.family);
     }
 
     if (firstReviewFirstPacket) {
@@ -955,6 +980,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Launch Blocker Action Queue');
     expect(stdout).toContain('## Source Provenance Resolution Queue');
     expect(stdout).toContain('## Branch Canonical Head Decision Deficits');
+    expect(stdout).toContain('## Branch Canonical Head Resolution Queue');
     expect(stdout).toContain('## Branch Clearance Matrix');
     expect(stdout).toContain('## Buyer Evidence Hard Gate Deficits');
     expect(stdout).toContain('## Buyer Evidence Acquisition Matrix');
@@ -1066,6 +1092,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Branch freshness review skipped');
     expect(stdout).toContain('Branch review queue skipped');
     expect(stdout).toContain('Canonical head decision ledger skipped');
+    expect(stdout).toContain('Canonical head resolution queue skipped');
+    expect(stdout).toContain('canonical_head_resolution_queue');
     expect(stdout).toContain('This ledger is read-only');
     expect(stdout).toContain('corepack pnpm run report:unmerged-branch-readiness');
     expect(stdout).toContain('Branch clearance matrix skipped');

@@ -3054,6 +3054,109 @@ function canonicalHeadDecisionProofBoundary() {
   return 'Canonical-head ledger row is an owner decision record only; focused report output does not checkout, merge, push, discard, delete, migrate, deploy, grant production approval, or select a canonical head by itself.';
 }
 
+function canonicalHeadResolutionEvidence(queue) {
+  if (queue.status === 'skipped') {
+    return 'Canonical head resolution queue skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness to populate owner decision actions.';
+  }
+
+  if (queue.status === 'pass') {
+    return 'Canonical head resolution queue: status=pass open=0 approval_gate=owner approval and release gates still apply before merge or deploy.';
+  }
+
+  const topBlocked = queue.items
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.family}:${item.state_key}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Canonical head resolution queue:',
+    `status=${queue.status}`,
+    `open=${queue.blocked_count}/${queue.item_count}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=queue does not checkout, merge, push, discard, delete, select canonical heads, migrate, deploy, or grant production approval',
+  ].join(' ');
+}
+
+function canonicalHeadResolutionAction(decision) {
+  switch (decision.state_key) {
+    case 'local_ahead':
+      return 'Review the local-only commits against origin and record whether the local branch head is the canonical review target.';
+    case 'origin_ahead':
+      return 'Review the origin-only commits against the local branch and record whether the origin branch head is the canonical review target.';
+    case 'diverged':
+      return 'Run bidirectional read-only commit comparison and record whether local, origin, or neither head should remain the canonical review target.';
+    case 'local_only':
+      return 'Decide whether the local-only branch remains a launch review candidate or should be explicitly retired after owner review.';
+    case 'origin_only':
+      return 'Decide whether the origin-only branch remains a launch review candidate or should be explicitly retired after owner review.';
+    case 'unknown':
+      return 'Refresh refs and rerun the read-only branch report before choosing a canonical head.';
+    default:
+      return 'Record the owner canonical-head decision after read-only branch review.';
+  }
+}
+
+function canonicalHeadResolutionProofBoundary() {
+  return 'Canonical-head resolution queue is an owner-decision action list only; it does not checkout, merge, push, discard, delete, select canonical heads, migrate, deploy, grant production approval, or clear branch review by itself.';
+}
+
+function buildCanonicalHeadResolutionQueue(decisions) {
+  if (decisions.status === 'skipped') {
+    const queue = {
+      status: 'skipped',
+      proof_type: 'canonical_head_resolution_queue',
+      source_decision_status: decisions.status,
+      open_count: null,
+      total_count: null,
+      item_count: 0,
+      blocked_count: 0,
+      items: [],
+      proof_boundary: canonicalHeadResolutionProofBoundary(),
+      stop_gate: 'Do not choose, checkout, merge, push, discard, delete, or deploy branch heads from skipped probes; run the read-only branch report first.',
+    };
+    return { ...queue, evidence: canonicalHeadResolutionEvidence(queue) };
+  }
+
+  const items = (decisions.items ?? []).map((decision, index) => ({
+    rank: index + 1,
+    family: decision.family,
+    local_ref: decision.local_ref,
+    origin_ref: decision.origin_ref,
+    review_ref: decision.review_ref,
+    local_origin_state: decision.local_origin_state,
+    state_key: decision.state_key,
+    highest_risk: decision.highest_risk,
+    freshness: decision.freshness,
+    current: `${decision.local_origin_state}; risk=${decision.highest_risk}; freshness=${decision.freshness}`,
+    needed: decision.decision_needed,
+    owner: 'owner',
+    action: canonicalHeadResolutionAction(decision),
+    proof_command: decision.proof_command,
+    proof_type: decision.proof_type,
+    decision_status: decision.status,
+    read_only: true,
+    owner_decision_required: true,
+    proof_boundary: canonicalHeadResolutionProofBoundary(),
+    stop_gate: 'Do not checkout, merge, push, discard, delete, select a canonical head, migrate, deploy, or request production approval until this owner decision is explicit and release gates are clean.',
+    status: decision.status === 'pass' ? 'ready' : 'blocked',
+    blocks_branch_gate: decision.status !== 'pass',
+  }));
+
+  const queue = {
+    status: items.some((item) => item.blocks_branch_gate) ? 'blocked' : 'pass',
+    proof_type: 'canonical_head_resolution_queue',
+    source_decision_status: decisions.status,
+    open_count: decisions.open_count,
+    total_count: decisions.total_count,
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_branch_gate).length,
+    items,
+    proof_boundary: canonicalHeadResolutionProofBoundary(),
+    stop_gate: 'Do not mark branch review clear until every canonical-head owner decision is explicit, read-only focused review evidence exists, and release gates are clean.',
+  };
+  return { ...queue, evidence: canonicalHeadResolutionEvidence(queue) };
+}
+
 function buildCanonicalHeadDecisionLedger(reviewQueue) {
   if (reviewQueue.status === 'skipped') {
     const decisions = {
@@ -3974,6 +4077,7 @@ const buyerEvidenceAcquisitionMatrix = buildBuyerEvidenceAcquisitionMatrix(buyer
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const canonicalHeadDecisions = buildCanonicalHeadDecisionLedger(branchReviewQueue);
+const canonicalHeadResolutionQueue = buildCanonicalHeadResolutionQueue(canonicalHeadDecisions);
 const branchReviewStatus = branchReviewClearanceStatus({
   branchProbe,
   branchReviewQueue,
@@ -4035,6 +4139,7 @@ const branchReviewEvidence = [
   branchProbe.freshnessEvidence,
   branchReviewQueue.evidence,
   canonicalHeadDecisions.evidence,
+  canonicalHeadResolutionQueue.evidence,
   branchClearanceMatrix.evidence,
   reviewFirstBranchPackets.evidence,
   topBranchReviewPacket.evidence,
@@ -4148,6 +4253,7 @@ const manifest = {
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
       canonicalHeadDecisions.evidence,
+      canonicalHeadResolutionQueue.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -4252,6 +4358,7 @@ const manifest = {
     freshness_evidence: branchProbe.freshnessEvidence,
     review_queue: branchReviewQueue,
     canonical_head_decisions: canonicalHeadDecisions,
+    canonical_head_resolution_queue: canonicalHeadResolutionQueue,
     clearance_matrix: branchClearanceMatrix,
     review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
@@ -4261,6 +4368,7 @@ const manifest = {
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,
       canonicalHeadDecisions.evidence,
+      canonicalHeadResolutionQueue.evidence,
       branchClearanceMatrix.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
