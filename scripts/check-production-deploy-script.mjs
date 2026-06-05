@@ -121,6 +121,8 @@ if (deployScript) {
 if (packageJson) {
   requireText(packageJson, packageRelativePath, '"check:production-deploy-script"');
   requireText(packageJson, packageRelativePath, '"check:corepack-toolchain"');
+  requireText(packageJson, packageRelativePath, '"generate:public-release-status"');
+  requireText(packageJson, packageRelativePath, '"check:public-release-status"');
   requirePattern(
     packageJson,
     packageRelativePath,
@@ -146,6 +148,16 @@ if (packageJson) {
   if (!releaseReadinessScript.startsWith('node scripts/check-corepack-toolchain.mjs && corepack pnpm run check:claim-boundaries')) {
     failures.push(`${packageRelativePath} check:release-readiness must start with the Corepack toolchain preflight before running Corepack-pinned gates.`);
   }
+  if (!releaseReadinessScript.includes('check:public-release-status')) {
+    failures.push(`${packageRelativePath} check:release-readiness must include check:public-release-status so /status/release-health.json cannot drift before production approval.`);
+  }
+  requireBefore(
+    releaseReadinessScript,
+    `${packageRelativePath} check:release-readiness`,
+    'check:public-release-status',
+    'check:public-metadata',
+    'the public release status manifest must be checked before public metadata and build-output gates are treated as release-ready evidence',
+  );
 
   const e2ePreviewScript = String(packageConfig.scripts?.['test:e2e:preview'] ?? '');
   if (!e2ePreviewScript.includes('PLAYWRIGHT_DIST_DIR:-/tmp/ceip-playwright-dist')) {

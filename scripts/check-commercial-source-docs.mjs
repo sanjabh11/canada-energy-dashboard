@@ -113,6 +113,7 @@ const forecastTrustArtifactHelperPhrase = /prepare:forecast-trust-report-artifac
 const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
 const byoCsvArtifactHelperPhrase = /prepare:byo-csv-proof-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
+const publicReleaseStatusCheckPhrase = /check:public-release-status/;
 const stalePostP1LiveParityPhrases = [
   'live deploy and buyer evidence remain blockers',
   'live metadata remains an external gate',
@@ -458,6 +459,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep report:unmerged-branch-readiness wired to the non-merged branch launch-readiness report.');
   }
 
+  if (packageScripts['generate:public-release-status'] !== 'node scripts/generate-public-release-status.mjs') {
+    failures.push('package.json must keep generate:public-release-status wired to the public release-status generator.');
+  }
+
+  if (packageScripts['check:public-release-status'] !== 'node scripts/generate-public-release-status.mjs --check') {
+    failures.push('package.json must keep check:public-release-status wired to the public release-status sync validator.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -486,6 +495,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:outreach-intake-plan-template')) {
     failures.push('check:release-readiness must include check:outreach-intake-plan-template so the action-plan path cannot drift.');
+  }
+
+  if (!String(packageScripts['check:release-readiness'] ?? '').includes('check:public-release-status')) {
+    failures.push('check:release-readiness must include check:public-release-status so the public release-status manifest cannot drift before production approval.');
   }
 
   if (packageScripts['check:corepack-toolchain'] !== 'node scripts/check-corepack-toolchain.mjs') {
@@ -542,6 +555,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!nonStatusCommercialCommitmentEvidencePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must require strong commercial commitment evidence beyond status-only text.');
+  }
+
+  if (!publicReleaseStatusCheckPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:public-release-status for the public release-status sync guard.');
   }
 
   if (existsSync(strategyRoadmapPath)) {
