@@ -184,6 +184,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs and review-first packet evidence; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
+    label: 'Top branch review packet',
+    status: 'external_gate',
+    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files 12',
+    evidenceBoundary: 'The top branch review packet surfaces the current highest-priority focused read-only branch packet, local/origin state, branch freshness, changed categories, changed Supabase function rows, and canonical-head comparison, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, select a canonical head, or clear branch review. It does not create launch evidence or prove production approval.',
+  },
+  {
     label: 'Branch clearance matrix',
     status: 'external_gate',
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',

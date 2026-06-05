@@ -115,6 +115,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'top_branch_review_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files 12',
+  },
+  {
     id: 'branch_clearance_matrix',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -316,6 +322,13 @@ function validateManifest(manifest) {
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+  const topBranchReviewPacket = itemById.get('top_branch_review_packet') ?? {};
+  if (!/highest-priority|focused read-only branch packet|local\/origin state|branch freshness|changed categories|changed Supabase function rows|canonical-head comparison/i.test(`${topBranchReviewPacket.evidenceBoundary ?? ''}\n${topBranchReviewPacket.nextAction ?? ''}`)) {
+    failures.push('top_branch_review_packet must describe the focused top branch packet dimensions.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*migrate|does not.*deploy|does not.*mutate Supabase|does not.*select a canonical head|does not.*clear branch review|does not.*create launch evidence|does not.*prove production approval/i.test(topBranchReviewPacket.evidenceBoundary ?? '')) {
+    failures.push('top_branch_review_packet must preserve the no-mutation, no-clearance, no-launch-evidence, and no-approval boundary.');
   }
   const branchClearanceMatrix = itemById.get('branch_clearance_matrix') ?? {};
   if (!/read-only branch review rows|review-first families|canonical-head decisions|stale or aging|release-gate/i.test(`${branchClearanceMatrix.evidenceBoundary ?? ''}\n${branchClearanceMatrix.nextAction ?? ''}`)) {

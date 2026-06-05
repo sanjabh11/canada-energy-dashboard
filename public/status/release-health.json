@@ -160,6 +160,15 @@
       "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates."
     },
     {
+      "id": "top_branch_review_packet",
+      "label": "Top branch review packet",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:launch-evidence-manifest && pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files 12",
+      "evidenceBoundary": "The top branch review packet surfaces the current highest-priority focused read-only branch packet, local/origin state, branch freshness, changed categories, changed Supabase function rows, and canonical-head comparison, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, select a canonical head, or clear branch review. It does not create launch evidence or prove production approval.",
+      "nextAction": "Use the launch evidence manifest to identify the current top review ref, run the focused read-only packet, inspect changed Supabase function rows and canonical-head comparison, then keep every merge, push, discard, migration, deploy, or production approval decision behind explicit owner approval and release gates."
+    },
+    {
       "id": "branch_clearance_matrix",
       "label": "Branch clearance matrix",
       "status": "external_gate",

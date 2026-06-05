@@ -120,6 +120,7 @@ const publicStatusRequestPacketHandlePhrase = /production approval request packe
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
+const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
 const publicStatusBranchClearanceHandlePhrase = /branch clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}branch clearance matrix/i;
 const publicStatusCanonicalResolutionHandlePhrase = /canonical-head resolution queue[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,300}canonical-head resolution queue/i;
 const publicStatusBuyerHardGateDeficitsHandlePhrase = /buyer evidence hard-gate deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}buyer evidence hard-gate deficits/i;
@@ -594,6 +595,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusReleasePreflightClearanceHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the release preflight clearance matrix as a public-safe evidence handle.');
+  }
+
+  if (!publicStatusTopBranchPacketHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the top branch review packet as a public-safe evidence handle.');
   }
 
   if (!publicStatusBranchClearanceHandlePhrase.test(sourceDoc)) {
