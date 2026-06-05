@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 17) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, release-toolchain probe ledger, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 18) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, launch-evidence validation, source-resolution queue, release-preflight queue, release-toolchain probe ledger, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
   }
 
   const ids = new Set();
@@ -67,6 +67,7 @@ function validateManifest(manifest) {
     'current_source_live_parity',
     'current_source_release_gate',
     'source_provenance',
+    'launch_evidence_validation_gate',
     'source_provenance_resolution_queue',
     'release_preflight_remediation_queue',
     'release_toolchain_probe_ledger',
@@ -89,6 +90,13 @@ function validateManifest(manifest) {
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
+  }
+  const launchEvidenceValidationGate = itemById.get('launch_evidence_validation_gate') ?? {};
+  if (!/manifest structure|proof-boundary consistency|check:launch-evidence-manifest/i.test(`${launchEvidenceValidationGate.evidenceBoundary ?? ''}\n${launchEvidenceValidationGate.nextAction ?? ''}`)) {
+    failures.push('launch_evidence_validation_gate must describe the launch evidence manifest structure and proof-boundary check.');
+  }
+  if (!/does not prove production approval|does not.*buyer acceptance|does not.*deployment|current hosted\/live parity/i.test(launchEvidenceValidationGate.evidenceBoundary ?? '')) {
+    failures.push('launch_evidence_validation_gate must preserve the no-approval, no-buyer-proof, no-deploy, and no-live-parity boundary.');
   }
   const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
   if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {

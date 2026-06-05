@@ -8,6 +8,7 @@
   "refreshCommands": [
     "git status --porcelain=v1 --branch",
     "pnpm run check:release-readiness",
+    "pnpm run check:launch-evidence-manifest",
     "pnpm run check:production-deploy-request",
     "pnpm run check:post-deploy-live",
     "pnpm run report:commercial-launch-readiness",
@@ -29,8 +30,8 @@
       "status": "external_gate",
       "proofBucket": "hosted/live",
       "command": "pnpm run report:production-approval-packet && pnpm run check:post-deploy-live",
-      "evidenceBoundary": "Current source does not prove production parity from local checks, CI, or the last approved artifact; it requires clean provenance, explicit owner approval, guarded deploy, and post-deploy live parity.",
-      "nextAction": "Clear source provenance, request explicit owner approval, deploy through the guarded production path, then rerun post-deploy live checks."
+      "evidenceBoundary": "Current source does not prove production parity from local checks, CI, launch evidence validation, or the last approved artifact; it requires clean provenance, launch evidence validation, explicit owner approval, guarded deploy, and post-deploy live parity.",
+      "nextAction": "Clear source provenance, keep launch evidence validation passing, request explicit owner approval, deploy through the guarded production path, then rerun post-deploy live checks."
     },
     {
       "id": "current_source_release_gate",
@@ -38,8 +39,8 @@
       "status": "watch",
       "proofBucket": "local/source",
       "command": "pnpm run check:release-readiness && gh run list --repo sanjabh11/canada-energy-dashboard --limit 5",
-      "evidenceBoundary": "Local and CI checks must be refreshed for the current SHA; a source check does not prove production deploy parity.",
-      "nextAction": "Run source and CI checks before any approval packet or release request."
+      "evidenceBoundary": "Local, launch-evidence, and CI checks must be refreshed for the current SHA; a source check does not prove production deploy parity.",
+      "nextAction": "Run source, launch-evidence, and CI checks before any approval packet or release request."
     },
     {
       "id": "source_provenance",
@@ -49,6 +50,15 @@
       "command": "pnpm run report:production-approval-packet -- --skip-release-readiness",
       "evidenceBoundary": "Deploy requests require clean main-branch source provenance. The local packet classifies dirty paths by staged-only, unstaged-only, mixed, untracked, or ignored state, but this public manifest does not prove current local cleanliness or production approval.",
       "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
+    },
+    {
+      "id": "launch_evidence_validation_gate",
+      "label": "Launch evidence validation gate",
+      "status": "external_gate",
+      "proofBucket": "repo artifact",
+      "command": "pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet",
+      "evidenceBoundary": "Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.",
+      "nextAction": "Keep check:launch-evidence-manifest passing before any deploy request, then use the production approval packet to verify source provenance, release readiness, and owner approval gates."
     },
     {
       "id": "source_provenance_resolution_queue",

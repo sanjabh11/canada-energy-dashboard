@@ -190,6 +190,8 @@ If Corepack is not available in the current shell, `check:corepack-toolchain`, `
 
 The public release status also exposes the source provenance resolution queue and release preflight remediation queue as public-safe handles. These handles are blocker maps only: they do not commit, unstage, stash, revert, install tools, run release-readiness, clear source provenance, grant production approval, deploy, mutate live services, prove current hosted/live parity, or create launch readiness.
 
+The public release status now also exposes launch evidence validation as a public-safe predeploy handle. This handle checks manifest structure and proof-boundary consistency only; it does not grant production approval, prove buyer acceptance, deploy, mutate live services, prove current hosted/live parity, or create launch readiness.
+
 The public release status also exposes buyer evidence remediation and Supabase advisor remediation as public-safe handles. These handles are execution maps only: they do not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, authorize Supabase connectors, access dashboards, rerun advisors, mutate databases, record secrets, claim advisor clearance, or claim buyer acceptance.
 
 The public release status also exposes canonical-head decisions and review-first branch packets as public-safe handles. These handles are read-only branch review maps only: they do not checkout, merge, push, discard, migrate, deploy, mutate Supabase, select a branch head, create launch evidence, create buyer proof, or prove production approval.

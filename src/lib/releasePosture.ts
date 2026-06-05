@@ -59,8 +59,8 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
     title: 'Current source live parity',
     status: 'external_gate',
     rating: '2.0/5',
-    evidence: 'Latest local/source changes are not live-proven by the last approved artifact, local build output, or source CI. Current source becomes live-proven only after clean source provenance, explicit owner approval, production deploy, and post-deploy live parity checks.',
-    nextAction: 'Run `pnpm run report:production-approval-packet`; after clean provenance and explicit owner approval, deploy through the guarded path and rerun `pnpm run check:post-deploy-live`.',
+    evidence: 'Latest local/source changes are not live-proven by the last approved artifact, local build output, source CI, or launch evidence validation. Current source becomes live-proven only after clean source provenance, launch evidence validation, explicit owner approval, production deploy, and post-deploy live parity checks.',
+    nextAction: 'Run `pnpm run report:production-approval-packet` with launch evidence validation passing; after clean provenance and explicit owner approval, deploy through the guarded path and rerun `pnpm run check:post-deploy-live`.',
   },
   {
     title: 'GitHub release and cron gates',
@@ -127,7 +127,13 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     label: 'Current source live parity',
     status: 'external_gate',
     command: 'pnpm run report:production-approval-packet && pnpm run check:post-deploy-live',
-    evidenceBoundary: 'Current source is not live-proven until source provenance is clean, owner approval is explicit, the guarded production deploy runs, and post-deploy live parity passes.',
+    evidenceBoundary: 'Current source is not live-proven until source provenance is clean, launch evidence validation passes, owner approval is explicit, the guarded production deploy runs, and post-deploy live parity passes.',
+  },
+  {
+    label: 'Launch evidence validation gate',
+    status: 'external_gate',
+    command: 'pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet',
+    evidenceBoundary: 'Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.',
   },
   {
     label: 'Current source CI gate',
@@ -259,7 +265,7 @@ export const DEPLOYMENT_APPROVAL_CHECKLIST: DeploymentApprovalChecklistItem[] = 
     gate: 'Pre-deploy source and release gate',
     status: 'predeploy_ready',
     command: 'pnpm run check:production-deploy-request',
-    evidenceBoundary: 'Proves clean main-branch source, local release readiness, and whether production is ready for an approved remediation deploy request.',
+    evidenceBoundary: 'Proves clean main-branch source, launch evidence validation, local release readiness, and whether production is ready for an approved remediation deploy request.',
   },
   {
     gate: 'Owner production approval',
