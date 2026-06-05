@@ -159,6 +159,8 @@ function renderReport(manifest, validationText) {
   const proofBuckets = manifest.proof_buckets ?? {};
   const outreach = manifest.outreach_plan ?? {};
   const fixReport = manifest.fix_report ?? {};
+  const completionAudit = manifest.completion_audit ?? {};
+  const completionAuditItems = Array.isArray(completionAudit.items) ? completionAudit.items : [];
   const reviews = Array.isArray(manifest.adversarial_reviews) ? manifest.adversarial_reviews : [];
   const ecc = manifest.ecc_ledger ?? {};
   const hasTenPainSources = painPoints.length >= 10 && painPoints.every((item) => (
@@ -542,6 +544,31 @@ ${(fixReport.unresolved_blockers ?? []).map((blocker, index) => row([
     'See launch evidence manifest and production approval packet.',
     blocker,
     'Requires buyer evidence, clean provenance, branch review, or owner approval.',
+  ])).join('\n')}
+
+## Objective Completion Audit
+
+Status: \`${text(completionAudit.status)}\`
+
+Proof Type: ${text(completionAudit.proof_type)}
+
+Evidence: ${text(completionAudit.evidence)}
+
+Proof Boundary: ${text(completionAudit.proof_boundary)}
+
+Stop Gate: ${text(completionAudit.stop_gate)}
+
+| Requirement | Status | Blocks Goal Completion | Evidence | Proof Type | Proof Boundary | Stop Gate | Next Proof Command |
+|---|---|---:|---|---|---|---|---|
+${completionAuditItems.map((item) => row([
+    item.requirement,
+    item.status,
+    item.blocks_goal_completion === true ? 'yes' : 'no',
+    item.evidence,
+    item.proof_type,
+    item.proof_boundary,
+    item.stop_gate,
+    item.next_proof_command,
   ])).join('\n')}
 
 ## Adversarial Review

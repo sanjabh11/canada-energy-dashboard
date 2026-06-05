@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "ceip-objective-completion-audit",
+  "goal": "CEIP commercial launch readiness objective completion audit: map the commercial-launch-readiness-orchestrator required deliverables to current manifest/report evidence, expose remaining blockers explicitly, and harden repo checks without deploys, worker execution, external account access, branch mutation, or touching unrelated staged changes",
+  "repoRoot": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "mode": "manual",
+  "maxConcurrency": 4,
+  "maxAgents": 64,
+  "tokenWarning": {
+    "risk": "low",
+    "estimatedAgentRuns": 4,
+    "estimatedReviewRuns": 2,
+    "estimatedTotalRuns": 6,
+    "warning": "Scoped run; still verify before exporting worker plans."
+  },
+  "createdAt": "2026-06-05T05:13:45.795Z",
+  "updatedAt": "2026-06-05T05:13:45.802Z"
+}

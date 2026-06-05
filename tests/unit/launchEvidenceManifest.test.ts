@@ -77,6 +77,50 @@ describe('launch evidence manifest report', () => {
     expect(gapsByProofType.get('external_advisor_clearance_gap')?.stop_gate).toMatch(/Do not claim Supabase advisor clearance|RLS\/performance clearance/i);
     expect(gapsByProofType.get('release_toolchain_approval_gap')?.proof_boundary).toMatch(/does not resolve Corepack|Git LFS|run full release-readiness|grant owner approval/i);
     expect(gapsByProofType.get('release_toolchain_approval_gap')?.stop_gate).toMatch(/Do not treat local pnpm checks|release-readiness|owner approval/i);
+    expect(manifest.completion_audit.status).toBe('blocked');
+    expect(manifest.completion_audit.proof_type).toBe('completion_audit_current_state');
+    expect(manifest.completion_audit.total_count).toBeGreaterThanOrEqual(15);
+    expect(manifest.completion_audit.completed_count).toBeGreaterThanOrEqual(8);
+    expect(manifest.completion_audit.blocked_count).toBeGreaterThanOrEqual(4);
+    expect(manifest.completion_audit.manual_stop_count).toBeGreaterThanOrEqual(1);
+    expect(manifest.completion_audit.goal_completion_blocked_count).toBe(
+      manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
+    );
+    expect(manifest.completion_audit.proof_boundary).toMatch(/maps current manifest\/report evidence only|does not prove commercial-ready status|buyer acceptance|production approval|hosted\/live parity/i);
+    expect(manifest.completion_audit.stop_gate).toMatch(/Do not mark the launch goal complete|P0\/P1 blockers|post-deploy live proof/i);
+    const completionItemsByRequirement = new Map(
+      manifest.completion_audit.items.map((item: {
+        requirement: string;
+        status: string;
+        proof_type?: string;
+        proof_boundary?: string;
+        stop_gate?: string;
+        blocks_goal_completion?: boolean;
+      }) => [item.requirement, item]),
+    );
+    expect(completionItemsByRequirement.get('Launch score table')?.proof_type).toBe('required_score_table');
+    expect(completionItemsByRequirement.get('Gap analysis')?.proof_type).toBe('required_gap_analysis_table');
+    expect(completionItemsByRequirement.get('Launch blocker action queue')?.proof_type).toBe('sequenced_launch_action_queue');
+    expect(completionItemsByRequirement.get('Market pain research table')?.proof_type).toBe('market_pain_source_table');
+    expect(completionItemsByRequirement.get('Target customer table')?.proof_type).toBe('target_segment_table');
+    expect(completionItemsByRequirement.get('Structured evidence manifest')?.proof_type).toBe('schema_validation');
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.status).toBe('blocked');
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion).toBe(true);
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate).toMatch(/validate:pilot-evidence --require-95|retained artifacts/i);
+    expect(completionItemsByRequirement.get('Source provenance release gate')?.proof_type).toBe('source_provenance_approval_gate');
+    expect(completionItemsByRequirement.get('Branch canonical review gate')?.proof_type).toBe('read_only_branch_review');
+    expect(completionItemsByRequirement.get('Supabase advisor clearance gate')?.status).toBe('blocked');
+    expect(completionItemsByRequirement.get('Release toolchain approval gate')?.proof_type).toBe('release_toolchain_approval');
+    expect(completionItemsByRequirement.get('Production approval and live proof gate')?.status).toBe('manual_stop');
+    expect(completionItemsByRequirement.get('Production approval and live proof gate')?.proof_boundary).toMatch(/does not run deploys|prove live parity|mutate Netlify/i);
+    expect(manifest.progress_updates).toHaveLength(1);
+    expect(manifest.progress_updates[0].phase).toBe('objective completion audit');
+    expect(manifest.progress_updates[0].target_matrix).toContain('structured evidence manifest');
+    expect(manifest.progress_updates[0].bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
+    expect(manifest.bottleneck_log[0].root_cause).toBe('evidence gap');
+    expect(manifest.bottleneck_log[0].top_unblock_options).toHaveLength(3);
+    expect(manifest.market_evidence_mode).toBe('mixed');
+    expect(manifest.synthetic_data_points).toEqual([]);
     const adversarialReviewsByLane = new Map(
       manifest.adversarial_reviews.map((review: {
         lane: string;
@@ -786,6 +830,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('## Top 10 Target Customers Or Segments');
     expect(stdout).toContain('## Outreach Plan');
     expect(stdout).toContain('## Fix Report');
+    expect(stdout).toContain('## Objective Completion Audit');
     expect(stdout).toContain('## Adversarial Review');
     expect(stdout).toContain('## Evidence Validation');
     expect(stdout).toContain('## ECC Ledger');
@@ -871,6 +916,11 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Canonical head comparison skipped');
     expect(stdout).toContain('approval_gate=no checkout/merge/deploy/migration/push');
     expect(stdout).toContain('High-risk, local/origin split, or stale/aging unmerged branches');
+    expect(stdout).toContain('completion_audit_current_state');
+    expect(stdout).toContain('| Buyer evidence hard gate | blocked | yes |');
+    expect(stdout).toContain('| Production approval and live proof gate | manual_stop | yes |');
+    expect(stdout).toContain('This audit maps current manifest/report evidence only');
+    expect(stdout).toContain('Do not mark the launch goal complete or claim readiness');
     expect(stdout).toContain('validate_launch_evidence.py');
     expect(stdout).toContain('VALID');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);

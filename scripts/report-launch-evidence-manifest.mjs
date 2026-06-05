@@ -664,6 +664,189 @@ function adversarialReview(row) {
   };
 }
 
+function objectiveCompletionItem(row) {
+  return {
+    blocks_goal_completion: row.status !== 'present',
+    ...row,
+  };
+}
+
+function buildObjectiveCompletionAudit({
+  launchDecision,
+  scores,
+  gaps,
+  painPoints,
+  targetCustomers,
+  launchActionQueue,
+  buyerProbe,
+  sourceProvenanceResolutionQueue,
+  branchReviewStatus,
+  branchReviewQueue,
+  canonicalHeadDecisions,
+  supabaseAdvisor,
+  releasePreflight,
+  productionApprovalPrerequisiteQueue,
+  postDeployLiveProofGateQueue,
+}) {
+  const openGaps = gaps.filter((gap) => gap.status === 'open');
+  const openP0 = openGaps.filter((gap) => gap.severity === 'P0').length;
+  const openP1 = openGaps.filter((gap) => gap.severity === 'P1').length;
+  const items = [
+    objectiveCompletionItem({
+      requirement: 'Launch score table',
+      status: 'present',
+      evidence: `Scores present for security=${scores.security}, readiness=${scores.readiness}, sellability=${scores.sellability}, evidence=${scores.evidence}, overall=${scores.overall}; launch_decision=${launchDecision}.`,
+      proof_type: 'required_score_table',
+      proof_boundary: 'Score rows summarize current proof posture only; they do not prove buyer acceptance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+      stop_gate: 'Do not raise scores or launch decision from score-table presence while P0/P1 blockers remain open.',
+      next_proof_command: 'corepack pnpm run report:commercial-launch-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Gap analysis',
+      status: 'present',
+      evidence: `Gap table present with open_p0=${openP0}, open_p1=${openP1}, total_gaps=${gaps.length}.`,
+      proof_type: 'required_gap_analysis_table',
+      proof_boundary: 'Gap analysis is blocker classification evidence only; it does not resolve the blockers it lists.',
+      stop_gate: 'Do not treat a complete gap table as gap closure, production approval, buyer proof, or release approval.',
+      next_proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Launch blocker action queue',
+      status: 'present',
+      evidence: `${launchActionQueue.evidence}; items=${launchActionQueue.item_count ?? 'unknown'}.`,
+      proof_type: 'sequenced_launch_action_queue',
+      proof_boundary: 'The queue is a sequenced execution plan only; it does not execute fixes, contact buyers, mutate branches, run migrations, deploy, or grant owner approval.',
+      stop_gate: 'Do not mark launch actions complete until their proof commands have been run under owner-approved gates.',
+      next_proof_command: 'corepack pnpm run report:commercial-launch-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Market pain research table',
+      status: 'present',
+      evidence: `Top pain research rows present=${painPoints.length}; all rows remain source-research hypotheses.`,
+      proof_type: 'market_pain_source_table',
+      proof_boundary: 'Market pain rows are source-backed hypotheses; this table does not prove account-level willingness to pay, buyer acceptance, live adoption, or outreach permission.',
+      stop_gate: 'Do not use pain ranking as buyer proof or permission to contact buyers.',
+      next_proof_command: 'corepack pnpm run report:commercial-launch-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Target customer table',
+      status: 'present',
+      evidence: `Target customer or segment rows present=${targetCustomers.length}; all rows remain ranking hypotheses.`,
+      proof_type: 'target_segment_table',
+      proof_boundary: 'Target rows map likely buyers and proof-to-show surfaces; this table does not prove named-account validation, procurement approval, buyer acceptance, live adoption, or outreach permission.',
+      stop_gate: 'Do not contact buyers or claim customer validation from target-ranking rows alone.',
+      next_proof_command: 'corepack pnpm run report:commercial-launch-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Outreach plan',
+      status: 'present',
+      evidence: '30/60/90 plan, email boundary, LinkedIn boundary, demo narrative, and objection handling are present.',
+      proof_type: 'outreach_plan_boundary',
+      proof_boundary: 'Outreach copy is a bounded script and workflow only; it does not contact buyers, create accepted evidence, move confidence, or grant permission to make sales claims.',
+      stop_gate: 'Do not send outreach or claim buyer-proven confidence until buyer evidence and owner approval gates are satisfied.',
+      next_proof_command: 'corepack pnpm run report:buyer-evidence-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Fix report',
+      status: 'present',
+      evidence: 'Fix report present with unresolved blocker mapping and a safe read-only manifest boundary.',
+      proof_type: 'fix_report_blocker_map',
+      proof_boundary: 'The fix report maps required checks and unresolved blockers; it does not apply fixes, clear source provenance, approve deployment, or prove buyer evidence.',
+      stop_gate: 'Do not treat the fix report as remediation completion while unresolved blockers remain listed.',
+      next_proof_command: 'corepack pnpm run check:commercial-launch-readiness-report',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Structured evidence manifest',
+      status: 'present',
+      evidence: 'JSON manifest is generated by scripts/report-launch-evidence-manifest.mjs and validated by the launch evidence schema check.',
+      proof_type: 'schema_validation',
+      proof_boundary: 'Schema validation proves shape and conservative boundaries only; it does not prove production approval, buyer acceptance, deployment, or hosted/live parity.',
+      stop_gate: 'Do not mark the objective complete from schema validity alone.',
+      next_proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+    }),
+    objectiveCompletionItem({
+      requirement: 'ECC phase ledger',
+      status: 'present',
+      evidence: 'ECC ledger records route, tier, mode, baseline, checks, delta, reflection, decision, and next adjustment.',
+      proof_type: 'ecc_phase_ledger',
+      proof_boundary: 'The ledger records process evidence only; it does not prove external buyer proof, owner approval, deploy authorization, branch approval, or Supabase advisor clearance.',
+      stop_gate: 'Do not use process-ledger presence to override open evidence gates.',
+      next_proof_command: 'corepack pnpm run report:commercial-launch-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Buyer evidence hard gate',
+      status: buyerProbe.phaseFGate === 'pass' ? 'present' : 'blocked',
+      evidence: buyerProbe.hardGateDeficits?.evidence ?? buyerProbe.reviewEvidence,
+      proof_type: 'buyer_evidence_hard_gate',
+      proof_boundary: 'Buyer evidence gate requires real retained redacted artifacts and accepted register rows; generated scaffolding, outreach headers, demos, and this audit do not prove buyer acceptance.',
+      stop_gate: 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, or permission to contact buyers until validate:pilot-evidence --require-95 passes against retained artifacts.',
+      next_proof_command: 'corepack pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Source provenance release gate',
+      status: sourceProvenanceResolutionQueue.status === 'pass' ? 'present' : 'blocked',
+      evidence: sourceProvenanceResolutionQueue.evidence,
+      proof_type: 'source_provenance_approval_gate',
+      proof_boundary: 'Source provenance rows classify dirty paths and owner decisions only; they do not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant production approval.',
+      stop_gate: 'Do not request deploy approval until source provenance is intentionally resolved and release gates pass.',
+      next_proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Branch canonical review gate',
+      status: branchReviewStatus === 'pass' ? 'present' : 'blocked',
+      evidence: `branch_status=${branchReviewStatus}; ${branchReviewQueue.evidence}; ${canonicalHeadDecisions.evidence}`,
+      proof_type: 'read_only_branch_review',
+      proof_boundary: 'Branch review evidence is read-only; it does not checkout, merge, push, discard branches, select canonical heads, run migrations, deploy, or grant approval.',
+      stop_gate: 'Do not merge, checkout, deploy, or select canonical heads without focused branch review and explicit owner approval.',
+      next_proof_command: 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Supabase advisor clearance gate',
+      status: supabaseAdvisor.status === 'verified' ? 'present' : 'blocked',
+      evidence: `${supabaseAdvisor.evidence}; ${supabaseAdvisor.clearanceDeficits.evidence}`,
+      proof_type: 'external_advisor_clearance',
+      proof_boundary: 'Supabase advisor clearance requires authorized connector or dashboard advisor evidence; repo CLI lint and this audit do not access dashboards, clear advisor findings, run migrations, alter secrets, or prove RLS/performance clearance.',
+      stop_gate: 'Do not claim Supabase advisor, RLS, or performance clearance until authorized advisor evidence is rerun and recorded.',
+      next_proof_command: 'Supabase Dashboard > Database > Security Advisor and Performance Advisor',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Release toolchain approval gate',
+      status: releasePreflight.status === 'pass' ? 'present' : 'blocked',
+      evidence: releasePreflight.evidence,
+      proof_type: 'release_toolchain_approval',
+      proof_boundary: 'Release preflight rows summarize Corepack, Git LFS, release-readiness, source provenance, and owner approval state; this audit does not install tools, run full release-readiness, push, deploy, or grant approval.',
+      stop_gate: 'Do not treat local pnpm checks, package metadata, skipped approval packets, or hook warnings as release-readiness, push-path proof, deploy readiness, or owner approval.',
+      next_proof_command: 'corepack pnpm run check:release-readiness',
+    }),
+    objectiveCompletionItem({
+      requirement: 'Production approval and live proof gate',
+      status: 'manual_stop',
+      evidence: `${productionApprovalPrerequisiteQueue.evidence}; ${postDeployLiveProofGateQueue.evidence}`,
+      proof_type: 'production_approval_and_live_proof_gate',
+      proof_boundary: 'Production approval and hosted/live proof require explicit owner approval, guarded deploy execution, live metadata, static parity, and hosted smoke; this audit does not run deploys, mutate Netlify, push, or prove live parity.',
+      stop_gate: 'Do not run deploy-production.sh, netlify deploy, push, or present hosted/live parity until owner approval and post-deploy live gates pass.',
+      next_proof_command: 'corepack pnpm run check:production-deploy-request && corepack pnpm run check:post-deploy-live',
+    }),
+  ];
+  const completedCount = items.filter((item) => item.status === 'present').length;
+  const blockedCount = items.filter((item) => item.status === 'blocked').length;
+  const manualStopCount = items.filter((item) => item.status === 'manual_stop').length;
+  const goalCompletionBlockedCount = items.filter((item) => item.blocks_goal_completion).length;
+  return {
+    status: goalCompletionBlockedCount > 0 ? 'blocked' : 'present',
+    proof_type: 'completion_audit_current_state',
+    completed_count: completedCount,
+    blocked_count: blockedCount,
+    manual_stop_count: manualStopCount,
+    total_count: items.length,
+    goal_completion_blocked_count: goalCompletionBlockedCount,
+    evidence: `Objective completion audit: deliverables_present=${completedCount}; blockers=${blockedCount}; manual_stop=${manualStopCount}; open_p0=${openP0}; open_p1=${openP1}; launch_decision=${launchDecision}.`,
+    proof_boundary: 'This audit maps current manifest/report evidence only; it does not prove commercial-ready status, buyer acceptance, production approval, deployment, hosted/live parity, Supabase clearance, branch approval, or permission to contact buyers.',
+    stop_gate: 'Do not mark the launch goal complete or claim readiness while P0/P1 blockers, buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, or post-deploy live proof gates remain open.',
+    items,
+  };
+}
+
 function marketPainPoint(row) {
   return {
     ...row,
@@ -3347,6 +3530,80 @@ const branchReviewEvidence = [
   topBranchReviewPacket.canonical_head_comparison?.evidence,
 ].join(' ');
 
+const launchScores = {
+  security: 3,
+  readiness: gitStatus.isDirty ? 3 : 4,
+  sellability: 4,
+  evidence: 1,
+  overall: 2,
+};
+
+const launchGaps = [
+  launchGap({
+    gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
+    severity: 'P0',
+    evidence: buyerGapEvidence,
+    framework_mapping: ['Commercial Launch Evidence Schema: hard buyer evidence gate'],
+    buyer_impact: 'Cannot claim buyer-proven 95% market confidence, accepted proof packs, or commercial-ready status.',
+    fix: 'Collect real anonymized buyer rows, prepare retained redacted artifacts, update the pilot register, and run validate:pilot-evidence --require-95.',
+    status: 'open',
+  }),
+  launchGap({
+    gap: 'Current source deploy approval is blocked when the worktree is dirty or owner approval is absent.',
+    severity: gitStatus.isDirty ? 'P0' : 'P1',
+    evidence: dirtyEvidence,
+    framework_mapping: ['Release readiness: source deploy provenance', 'NIST SSDF: release integrity'],
+    buyer_impact: 'A buyer-facing production release request cannot proceed until source provenance is clean and explicitly approved.',
+    fix: 'Commit, stash, or intentionally resolve dirty tracked paths, run release readiness, then request explicit owner approval before deploy.',
+    status: gitStatus.isDirty ? 'open' : 'mitigated',
+  }),
+  launchGap({
+    gap: 'High-risk, local/origin split, or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
+    severity: 'P1',
+    evidence: branchReviewEvidence,
+    framework_mapping: ['NIST SSDF: change review', 'OWASP ASVS: secure deployment verification'],
+    buyer_impact: 'Unreviewed branch changes can weaken launch gates, payment boundaries, database security, or claim discipline.',
+    fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, choose the canonical local or origin head for split branch families, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
+    status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
+  }),
+  launchGap({
+    gap: 'Supabase security/performance advisor clearance remains unavailable while connector or dashboard advisor evidence is permission-gated.',
+    severity: 'P1',
+    evidence: [supabaseAdvisor.evidence, supabaseAdvisor.clearanceDeficits.evidence].join('; '),
+    framework_mapping: ['Supabase RLS and service-role review', 'OWASP API security review'],
+    buyer_impact: 'Utility security reviewers may ask for current database advisor evidence before sharing sensitive files.',
+    fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
+    status: supabaseAdvisor.status === 'verified' ? 'mitigated' : 'open',
+  }),
+  launchGap({
+    gap: 'Release toolchain, Git LFS push-path proof, full release-readiness execution, and owner approval are not all current.',
+    severity: 'P1',
+    evidence: [releasePreflight.evidence, productionApprovalPrerequisiteQueue.evidence].join('; '),
+    framework_mapping: ['NIST SSDF: release integrity', 'Supply-chain and deployment provenance review'],
+    buyer_impact: 'A buyer-facing remediation or production release request cannot be treated as approval-ready from local pnpm checks or stale push-path evidence.',
+    fix: 'Resolve source provenance, run Corepack-pinned release-readiness, verify git-lfs availability before push evidence, and request explicit owner approval before any deploy.',
+    status: releasePreflight.status === 'pass' ? 'mitigated' : 'open',
+  }),
+];
+
+const completionAudit = buildObjectiveCompletionAudit({
+  launchDecision: 'blocked',
+  scores: launchScores,
+  gaps: launchGaps,
+  painPoints,
+  targetCustomers,
+  launchActionQueue,
+  buyerProbe,
+  sourceProvenanceResolutionQueue,
+  branchReviewStatus,
+  branchReviewQueue,
+  canonicalHeadDecisions,
+  supabaseAdvisor,
+  releasePreflight,
+  productionApprovalPrerequisiteQueue,
+  postDeployLiveProofGateQueue,
+});
+
 const manifest = {
   schema_version: 1,
   repo: {
@@ -3363,13 +3620,7 @@ const manifest = {
     generated_at: generatedAt,
   },
   launch_decision: 'blocked',
-  scores: {
-    security: 3,
-    readiness: gitStatus.isDirty ? 3 : 4,
-    sellability: 4,
-    evidence: 1,
-    overall: 2,
-  },
+  scores: launchScores,
   proof_buckets: {
     hosted_live: [],
     local: [
@@ -3527,53 +3778,7 @@ const manifest = {
     evidence: postDeployLiveProofGateQueue.evidence,
     stop_gate: 'This manifest does not prove hosted/live parity for current source; live parity requires an explicitly approved deploy followed by check:post-deploy-live.',
   },
-  gaps: [
-    launchGap({
-      gap: 'No buyer-proven Phase F evidence register or retained redacted buyer artifacts are available in production evidence roots.',
-      severity: 'P0',
-      evidence: buyerGapEvidence,
-      framework_mapping: ['Commercial Launch Evidence Schema: hard buyer evidence gate'],
-      buyer_impact: 'Cannot claim buyer-proven 95% market confidence, accepted proof packs, or commercial-ready status.',
-      fix: 'Collect real anonymized buyer rows, prepare retained redacted artifacts, update the pilot register, and run validate:pilot-evidence --require-95.',
-      status: 'open',
-    }),
-    launchGap({
-      gap: 'Current source deploy approval is blocked when the worktree is dirty or owner approval is absent.',
-      severity: gitStatus.isDirty ? 'P0' : 'P1',
-      evidence: dirtyEvidence,
-      framework_mapping: ['Release readiness: source deploy provenance', 'NIST SSDF: release integrity'],
-      buyer_impact: 'A buyer-facing production release request cannot proceed until source provenance is clean and explicitly approved.',
-      fix: 'Commit, stash, or intentionally resolve dirty tracked paths, run release readiness, then request explicit owner approval before deploy.',
-      status: gitStatus.isDirty ? 'open' : 'mitigated',
-    }),
-    launchGap({
-      gap: 'High-risk, local/origin split, or stale/aging unmerged branches can affect Supabase, payment, deploy, or buyer-facing surfaces.',
-      severity: 'P1',
-      evidence: branchReviewEvidence,
-      framework_mapping: ['NIST SSDF: change review', 'OWASP ASVS: secure deployment verification'],
-      buyer_impact: 'Unreviewed branch changes can weaken launch gates, payment boundaries, database security, or claim discipline.',
-      fix: 'Run report:unmerged-branch-readiness -- --branch <ref>, choose the canonical local or origin head for split branch families, complete branch-specific checks, treat stale or aging refs as drift-review queues, and merge only through normal release gates.',
-      status: ((branchProbe.highRisk ?? 1) > 0 || (branchProbe.staleCount ?? 1) > 0 || (branchProbe.agingCount ?? 1) > 0) ? 'open' : 'mitigated',
-    }),
-    launchGap({
-      gap: 'Supabase security/performance advisor clearance remains unavailable while connector or dashboard advisor evidence is permission-gated.',
-      severity: 'P1',
-      evidence: [supabaseAdvisor.evidence, supabaseAdvisor.clearanceDeficits.evidence].join('; '),
-      framework_mapping: ['Supabase RLS and service-role review', 'OWASP API security review'],
-      buyer_impact: 'Utility security reviewers may ask for current database advisor evidence before sharing sensitive files.',
-      fix: 'Reauthorize or repair Supabase advisor access, run security/performance advisor review, and record public-safe findings.',
-      status: supabaseAdvisor.status === 'verified' ? 'mitigated' : 'open',
-    }),
-    launchGap({
-      gap: 'Release toolchain, Git LFS push-path proof, full release-readiness execution, and owner approval are not all current.',
-      severity: 'P1',
-      evidence: [releasePreflight.evidence, productionApprovalPrerequisiteQueue.evidence].join('; '),
-      framework_mapping: ['NIST SSDF: release integrity', 'Supply-chain and deployment provenance review'],
-      buyer_impact: 'A buyer-facing remediation or production release request cannot be treated as approval-ready from local pnpm checks or stale push-path evidence.',
-      fix: 'Resolve source provenance, run Corepack-pinned release-readiness, verify git-lfs availability before push evidence, and request explicit owner approval before any deploy.',
-      status: releasePreflight.status === 'pass' ? 'mitigated' : 'open',
-    }),
-  ],
+  gaps: launchGaps,
   pain_points: painPoints,
   target_customers: targetCustomers,
   outreach_plan: {
@@ -3585,6 +3790,7 @@ const manifest = {
     demo_narrative: 'Show repo-backed proof packs, blocked claims, and retained-artifact workflow before asking for buyer data.',
     objection_handling: 'If asked for proof, distinguish hosted/live parity, local release readiness, repo artifacts, constructed demos, and missing buyer evidence.',
   },
+  completion_audit: completionAudit,
   fix_report: {
     files_changed_by_manifest_command: [],
     safe_fix_boundary: 'This manifest command is read-only unless --output is used to write the JSON file.',
@@ -3639,6 +3845,43 @@ const manifest = {
       decision: 'Keep high-risk, local/origin split, and stale/aging branches in review queue.',
     }),
   ],
+  progress_updates: [
+    {
+      phase: 'objective completion audit',
+      accomplished: 'Mapped required commercial launch deliverables to current manifest/report evidence, explicit proof boundaries, unresolved blocker gates, and next proof commands.',
+      target_matrix: [
+        'launch score',
+        'gap analysis',
+        'market pain map',
+        'target customer ranking',
+        'outreach plan',
+        'fix report',
+        'structured evidence manifest',
+        'ECC ledger',
+        'buyer evidence gate',
+        'production/live proof gate',
+      ],
+      pending: 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.',
+      bottleneck: 'Current blockers require retained buyer artifacts, owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof outside this read-only manifest run.',
+      created_at: generatedAt,
+    },
+  ],
+  bottleneck_log: [
+    {
+      phase: 'commercial launch readiness',
+      task_or_subtask: 'clear objective completion blockers',
+      elapsed_minutes: 0,
+      last_update: generatedAt,
+      root_cause: 'evidence gap',
+      top_unblock_options: [
+        'Collect real anonymized buyer rows and retained redacted artifacts, then run validate:pilot-evidence --require-95.',
+        'Resolve source provenance intentionally and run the guarded release-readiness and production-approval checks.',
+        'Complete read-only branch review plus authorized Supabase advisor review before any deploy approval request.',
+      ],
+    },
+  ],
+  market_evidence_mode: 'mixed',
+  synthetic_data_points: [],
   ecc_ledger: {
     route: 'commercial-launch-readiness-orchestrator',
     tier: 1,

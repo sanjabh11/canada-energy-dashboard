@@ -1369,6 +1369,116 @@ try {
         && manifest.outreach_plan.email_script_boundary.includes('Do not claim buyer-proven 95% confidence'),
       'Manifest outreach plan must preserve the buyer-proof boundary.',
     );
+    assert(typeof manifest.completion_audit === 'object' && manifest.completion_audit !== null, 'Manifest completion_audit must be an object.');
+    assert(manifest.completion_audit.status === 'blocked', 'Manifest completion_audit.status must remain blocked while launch gates remain open.');
+    assert(manifest.completion_audit.proof_type === 'completion_audit_current_state', 'Manifest completion_audit must classify proof as current-state completion evidence.');
+    assert(Number.isInteger(manifest.completion_audit.completed_count), 'Manifest completion_audit.completed_count must be an integer.');
+    assert(Number.isInteger(manifest.completion_audit.blocked_count), 'Manifest completion_audit.blocked_count must be an integer.');
+    assert(Number.isInteger(manifest.completion_audit.manual_stop_count), 'Manifest completion_audit.manual_stop_count must be an integer.');
+    assert(Number.isInteger(manifest.completion_audit.total_count), 'Manifest completion_audit.total_count must be an integer.');
+    assert(Number.isInteger(manifest.completion_audit.goal_completion_blocked_count), 'Manifest completion_audit.goal_completion_blocked_count must be an integer.');
+    assert(manifest.completion_audit.total_count >= 15, 'Manifest completion_audit must include every required deliverable and launch gate.');
+    assert(manifest.completion_audit.completed_count >= 8, 'Manifest completion_audit must count present orchestrator deliverables.');
+    assert(manifest.completion_audit.blocked_count >= 4, 'Manifest completion_audit must count unresolved blocker rows.');
+    assert(manifest.completion_audit.manual_stop_count >= 1, 'Manifest completion_audit must count production/live proof manual-stop rows.');
+    assert(
+      manifest.completion_audit.goal_completion_blocked_count === manifest.completion_audit.blocked_count + manifest.completion_audit.manual_stop_count,
+      'Manifest completion_audit goal-completion blockers must equal blocked plus manual-stop rows.',
+    );
+    assert(
+      typeof manifest.completion_audit.evidence === 'string' && /Objective completion audit:.*launch_decision=blocked/i.test(manifest.completion_audit.evidence),
+      'Manifest completion_audit.evidence must summarize counts and the blocked launch decision.',
+    );
+    assert(
+      typeof manifest.completion_audit.proof_boundary === 'string'
+        && /maps current manifest\/report evidence only|does not prove commercial-ready status|buyer acceptance|production approval|hosted\/live parity/i.test(manifest.completion_audit.proof_boundary),
+      'Manifest completion_audit.proof_boundary must prevent treating the audit as readiness proof.',
+    );
+    assert(
+      typeof manifest.completion_audit.stop_gate === 'string'
+        && /Do not mark the launch goal complete|P0\/P1 blockers|production approval|post-deploy live proof/i.test(manifest.completion_audit.stop_gate),
+      'Manifest completion_audit.stop_gate must preserve the no-completion rule.',
+    );
+    assert(Array.isArray(manifest.completion_audit.items), 'Manifest completion_audit.items must be a list.');
+    const completionItemsByRequirement = new Map(manifest.completion_audit.items.map((item) => [item.requirement, item]));
+    for (const requirement of [
+      'Launch score table',
+      'Gap analysis',
+      'Launch blocker action queue',
+      'Market pain research table',
+      'Target customer table',
+      'Outreach plan',
+      'Fix report',
+      'Structured evidence manifest',
+      'ECC phase ledger',
+      'Buyer evidence hard gate',
+      'Source provenance release gate',
+      'Branch canonical review gate',
+      'Supabase advisor clearance gate',
+      'Release toolchain approval gate',
+      'Production approval and live proof gate',
+    ]) {
+      assert(completionItemsByRequirement.has(requirement), `Manifest completion_audit must include requirement: ${requirement}.`);
+    }
+    const completionProofTypesByRequirement = {
+      'Launch score table': 'required_score_table',
+      'Gap analysis': 'required_gap_analysis_table',
+      'Launch blocker action queue': 'sequenced_launch_action_queue',
+      'Market pain research table': 'market_pain_source_table',
+      'Target customer table': 'target_segment_table',
+      'Outreach plan': 'outreach_plan_boundary',
+      'Fix report': 'fix_report_blocker_map',
+      'Structured evidence manifest': 'schema_validation',
+      'ECC phase ledger': 'ecc_phase_ledger',
+      'Buyer evidence hard gate': 'buyer_evidence_hard_gate',
+      'Source provenance release gate': 'source_provenance_approval_gate',
+      'Branch canonical review gate': 'read_only_branch_review',
+      'Supabase advisor clearance gate': 'external_advisor_clearance',
+      'Release toolchain approval gate': 'release_toolchain_approval',
+      'Production approval and live proof gate': 'production_approval_and_live_proof_gate',
+    };
+    for (const [index, item] of manifest.completion_audit.items.entries()) {
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `completion_audit.items[${index}].requirement must be set.`);
+      assert(['present', 'blocked', 'manual_stop'].includes(item.status), `completion_audit.items[${index}].status must be present, blocked, or manual_stop.`);
+      assert(typeof item.evidence === 'string' && item.evidence.length > 0, `completion_audit.items[${index}].evidence must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `completion_audit.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && /does not|only|read-only|requires/i.test(item.proof_boundary), `completion_audit.items[${index}].proof_boundary must preserve a proof boundary.`);
+      assert(typeof item.stop_gate === 'string' && /Do not/i.test(item.stop_gate), `completion_audit.items[${index}].stop_gate must preserve an explicit stop gate.`);
+      assert(typeof item.next_proof_command === 'string' && item.next_proof_command.length > 0, `completion_audit.items[${index}].next_proof_command must be set.`);
+      assert(isBoolean(item.blocks_goal_completion), `completion_audit.items[${index}].blocks_goal_completion must be boolean.`);
+      assert(item.blocks_goal_completion === (item.status !== 'present'), `completion_audit.items[${index}].blocks_goal_completion must match item status.`);
+      if (completionProofTypesByRequirement[item.requirement]) {
+        assert(item.proof_type === completionProofTypesByRequirement[item.requirement], `completion_audit.items[${index}] must classify ${item.requirement} as ${completionProofTypesByRequirement[item.requirement]}.`);
+      }
+    }
+    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.status === 'blocked', 'Completion audit must keep buyer evidence hard gate blocked.');
+    assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion === true, 'Completion audit buyer evidence row must block goal completion.');
+    assert(/validate:pilot-evidence --require-95|retained artifacts/i.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate ?? ''), 'Completion audit buyer evidence row must require retained 95% buyer evidence.');
+    assert(completionItemsByRequirement.get('Production approval and live proof gate')?.status === 'manual_stop', 'Completion audit must keep production/live proof as manual_stop.');
+    assert(completionItemsByRequirement.get('Production approval and live proof gate')?.blocks_goal_completion === true, 'Completion audit production/live proof row must block goal completion.');
+    assert(/does not run deploys|prove live parity|mutate Netlify/i.test(completionItemsByRequirement.get('Production approval and live proof gate')?.proof_boundary ?? ''), 'Completion audit production/live proof boundary must not imply deploy or live parity.');
+    assert(completionItemsByRequirement.get('Supabase advisor clearance gate')?.status === 'blocked', 'Completion audit must keep Supabase advisor clearance blocked.');
+    assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
+    assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
+    assert(manifest.progress_updates.length >= 1, 'Manifest progress_updates must record the objective-completion audit phase.');
+    assert(manifest.progress_updates.some((item) => (
+      item
+      && item.phase === 'objective completion audit'
+      && Array.isArray(item.target_matrix)
+      && item.target_matrix.includes('structured evidence manifest')
+      && typeof item.bottleneck === 'string'
+      && item.bottleneck.includes('retained buyer artifacts')
+    )), 'Manifest progress_updates must describe the objective-completion audit and remaining evidence gates.');
+    assert(Array.isArray(manifest.bottleneck_log), 'Manifest bottleneck_log must be a list for the current launch-evidence schema.');
+    assert(manifest.bottleneck_log.some((item) => (
+      item
+      && item.root_cause === 'evidence gap'
+      && Array.isArray(item.top_unblock_options)
+      && item.top_unblock_options.length >= 3
+    )), 'Manifest bottleneck_log must record the launch evidence gap and at least three unblock options.');
+    assert(manifest.market_evidence_mode === 'mixed', 'Manifest market_evidence_mode must remain mixed while public source research and unvalidated buyer hypotheses are combined.');
+    assert(Array.isArray(manifest.synthetic_data_points), 'Manifest synthetic_data_points must be a list for the current launch-evidence schema.');
+    assert(manifest.synthetic_data_points.length === 0, 'Manifest must not invent synthetic market evidence data points for this audit.');
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

@@ -64,16 +64,17 @@ function countDataRows(section) {
     .filter((line) => (
       line.startsWith('| ')
       && !line.includes('---')
-      && !line.startsWith('| Rank ')
-      && !line.startsWith('| Dimension ')
-      && !line.startsWith('| Gap ')
-      && !line.startsWith('| Bucket ')
-      && !line.startsWith('| Window ')
-      && !line.startsWith('| Objection ')
-      && !line.startsWith('| Item ')
-      && !line.startsWith('| Lane ')
-      && !line.startsWith('| Check ')
-      && !line.startsWith('| Field ')
+      && !line.startsWith('| Rank |')
+      && !line.startsWith('| Dimension |')
+      && !line.startsWith('| Gap |')
+      && !line.startsWith('| Bucket |')
+      && !line.startsWith('| Window |')
+      && !line.startsWith('| Objection |')
+      && !line.startsWith('| Item |')
+      && !line.startsWith('| Requirement |')
+      && !line.startsWith('| Lane |')
+      && !line.startsWith('| Check |')
+      && !line.startsWith('| Field |')
     ))
     .length;
 }
@@ -123,6 +124,7 @@ function assertReport(markdown, options = {}) {
     'Top 10 Target Customers Or Segments',
     'Outreach Plan',
     'Fix Report',
+    'Objective Completion Audit',
     'Adversarial Review',
     'Evidence Validation',
     'ECC Ledger',
@@ -231,6 +233,19 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
   assert(markdown.includes('not granted by this manifest or report'), 'Report must not imply owner approval is granted.');
   assert(markdown.includes('not eligible before explicit approved deploy'), 'Report must not imply post-deploy live proof is eligible before approval.');
+  assert(markdown.includes('## Objective Completion Audit'), 'Report must include the objective completion audit table.');
+  assert(markdown.includes('completion_audit_current_state'), 'Report must classify the completion audit as current-state evidence.');
+  assert(markdown.includes('Objective completion audit:'), 'Report must include objective completion audit evidence counts.');
+  assert(markdown.includes('This audit maps current manifest/report evidence only'), 'Report must preserve the completion-audit proof boundary.');
+  assert(markdown.includes('Do not mark the launch goal complete or claim readiness'), 'Report must preserve the completion-audit no-completion stop gate.');
+  assert(markdown.includes('| Buyer evidence hard gate | blocked | yes |'), 'Completion audit must keep buyer evidence blocked.');
+  assert(markdown.includes('| Production approval and live proof gate | manual_stop | yes |'), 'Completion audit must keep production/live proof as a manual stop.');
+  assert(markdown.includes('| Supabase advisor clearance gate | blocked | yes |'), 'Completion audit must keep Supabase advisor clearance blocked.');
+  assert(markdown.includes('| Branch canonical review gate | blocked | yes |'), 'Completion audit must keep branch canonical review blocked.');
+  assert(/\| Source provenance release gate \| (?:blocked|present) \| (?:yes|no) \|/.test(markdown), 'Completion audit must include the source provenance release gate.');
+  assert(/\| Release toolchain approval gate \| (?:blocked|present) \| (?:yes|no) \|/.test(markdown), 'Completion audit must include the release toolchain approval gate.');
+  assert(markdown.includes('Schema validation proves shape and conservative boundaries only'), 'Completion audit must not imply schema validation proves readiness.');
+  assert(markdown.includes('does not run deploys, mutate Netlify, push, or prove live parity'), 'Completion audit must preserve the production/live proof boundary.');
   assert(markdown.includes('## Post-Deploy Live Proof Gate Queue'), 'Report must include the post-deploy live proof gate queue table.');
   assert(markdown.includes('Post-deploy live proof gate queue'), 'Report must include structured post-deploy live proof gate evidence from the manifest.');
   assert(markdown.includes('does not deploy, push, rebuild, mutate Netlify'), 'Report must preserve the post-deploy no-live-mutation boundary.');
@@ -280,6 +295,7 @@ function assertReport(markdown, options = {}) {
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
   const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
+  const completionAuditSection = extractSection(markdown, 'Objective Completion Audit');
   const adversarialSection = extractSection(markdown, 'Adversarial Review');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
   const eccSection = extractSection(markdown, 'ECC Ledger');
@@ -311,6 +327,28 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(productionApprovalSection) >= 8, 'Production approval prerequisite queue must include launch evidence validation plus the prerequisite, manual-stop, and post-deploy rows.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
+  assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
+  assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
+  for (const proofType of [
+    'required_score_table',
+    'required_gap_analysis_table',
+    'sequenced_launch_action_queue',
+    'market_pain_source_table',
+    'target_segment_table',
+    'outreach_plan_boundary',
+    'fix_report_blocker_map',
+    'schema_validation',
+    'ecc_phase_ledger',
+    'buyer_evidence_hard_gate',
+    'source_provenance_approval_gate',
+    'read_only_branch_review',
+    'external_advisor_clearance',
+    'release_toolchain_approval',
+    'production_approval_and_live_proof_gate',
+  ]) {
+    assert(completionAuditSection.includes(proofType), `Objective completion audit table must include proof type ${proofType}.`);
+  }
+  assert(/does not prove commercial-ready status|Do not mark the launch goal complete/i.test(completionAuditSection), 'Objective completion audit section must preserve no-readiness and no-completion boundaries.');
   assert(countDataRows(adversarialSection) >= 5, 'Adversarial review table must include the core launch review lanes.');
   assert(adversarialSection.includes('Proof Type') && adversarialSection.includes('Proof Boundary') && adversarialSection.includes('Stop Gate'), 'Adversarial review table must expose proof type, proof boundary, and stop gate columns.');
   for (const proofType of [
