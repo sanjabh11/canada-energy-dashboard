@@ -303,6 +303,10 @@ function relevantLines(step) {
     return lines.slice(0, 100);
   }
 
+  if (step.label === 'Public release status manifest validation') {
+    return lines.slice(0, 100);
+  }
+
   const important = lines.filter((line) =>
     /passed|failed|PASS|FAIL|Test Files|Tests|Public metadata check|Claim-boundary|Commercial source|Pilot evidence|bundle budgets|built in/i.test(
       line,
@@ -333,6 +337,7 @@ const steps = [];
 
 steps.push(sourceProvenanceStep());
 steps.push(runStep('Launch evidence manifest validation', 'node', ['scripts/check-launch-evidence-manifest.mjs']));
+steps.push(runStep('Public release status manifest validation', 'node', ['scripts/generate-public-release-status.mjs', '--check']));
 
 if (skipReleaseReadiness) {
   steps.push(skippedStep('Local release readiness', 'Skipped by --skip-release-readiness.'));
@@ -381,17 +386,19 @@ if (includeHostedSmoke) {
 
 const localReadiness = steps.find((step) => step.label === 'Local release readiness');
 const launchEvidenceManifest = steps.find((step) => step.label === 'Launch evidence manifest validation');
+const publicReleaseStatus = steps.find((step) => step.label === 'Public release status manifest validation');
 const sourceProvenance = steps.find((step) => step.label === 'Source deploy provenance');
 const liveMetadata = steps.find((step) => step.label === 'Live metadata parity');
 const liveStaticParity = steps.find((step) => step.label === 'Live static dist parity');
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
 const sourceDeployable = sourceProvenance?.status === 'pass';
 const launchEvidenceManifestClean = launchEvidenceManifest?.status === 'pass';
+const publicReleaseStatusClean = publicReleaseStatus?.status === 'pass';
 const localPreflightClean = localReadiness?.status === 'pass';
 const liveMetadataGreen = liveMetadata?.status === 'pass';
 const liveStaticParityGreen = liveStaticParity?.status === 'pass';
 const hostedSmokeGreen = hostedSmoke?.status === 'pass';
-const deploymentRequestReady = sourceDeployable && launchEvidenceManifestClean && localPreflightClean;
+const deploymentRequestReady = sourceDeployable && launchEvidenceManifestClean && publicReleaseStatusClean && localPreflightClean;
 const liveParityAchieved = deploymentRequestReady && liveMetadataGreen && liveStaticParityGreen && hostedSmokeGreen;
 const approvalReady = liveParityAchieved;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
@@ -401,6 +408,7 @@ const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
 const preDeployBlockers = [
   !sourceDeployable ? 'source deploy provenance is not deploy-script-ready' : null,
   !launchEvidenceManifestClean ? 'launch evidence manifest validation is not passing' : null,
+  !publicReleaseStatusClean ? 'public release status manifest validation is not passing' : null,
   !localPreflightClean ? 'local release readiness is not passing' : null,
 ].filter(Boolean);
 const liveParityBlockers = [
@@ -425,6 +433,7 @@ const markdown = [
   '',
   `- Source deploy provenance: ${sourceProvenance?.status}.`,
   `- Launch evidence manifest validation: ${launchEvidenceManifest?.status}.`,
+  `- Public release status manifest validation: ${publicReleaseStatus?.status}.`,
   `- Local source approval state: ${localReadiness?.status === 'pass' ? 'preflight-clean' : localReadiness?.status}.`,
   `- Live metadata parity: ${liveMetadata?.status}.`,
   `- Live static dist parity: ${liveStaticParity?.status}.`,
@@ -434,6 +443,7 @@ const markdown = [
   '- Production deployment: not performed by this report.',
   '- Production approval: still requires an explicit owner approval before any deploy command.',
   '- Commercial launch boundary: launch evidence manifest validation checks structure and proof boundaries only; it does not prove commercial-ready status, production approval, or buyer acceptance.',
+  '- Public status boundary: public release-status validation checks `/status/release-health.json` sync only; it does not prove production approval, deployment, buyer acceptance, or current hosted/live parity.',
   '- Buyer-confidence boundary: this report does not raise buyer-proven 95% market confidence; that still requires `validate:pilot-evidence --require-95 --evidence-root ...` against redacted buyer artifacts.',
   '',
   '## Gate Summary',
@@ -462,11 +472,12 @@ const markdown = [
   '',
   '1. Review this packet and confirm source deploy provenance is on `main` with a clean worktree.',
   '2. Confirm launch evidence manifest validation is passing while the commercial launch decision remains proof-bound.',
-  '3. Confirm local release readiness is passing.',
-  '4. Confirm the owner explicitly approves production deployment.',
-  '5. Deploy current source using the guarded production deploy path only after approval.',
-  '6. Run `corepack pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
-  '7. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
+  '3. Confirm public release-status validation is passing so `/status/release-health.json` is synced before any approval request.',
+  '4. Confirm local release readiness is passing.',
+  '5. Confirm the owner explicitly approves production deployment.',
+  '6. Deploy current source using the guarded production deploy path only after approval.',
+  '7. Run `corepack pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
+  '8. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',
   '## Evidence',
   '',

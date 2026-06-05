@@ -65,6 +65,15 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    echo "Launch evidence manifest check passed: blocked decision, release toolchain probe ledger, production approval prerequisite queue, buyer boundary, and schema validation are consistent."',
       '    exit 0',
       '    ;;',
+      '  *scripts/generate-public-release-status.mjs*)',
+      '    if [ "$CEIP_FAKE_PUBLIC_RELEASE_STATUS_FAIL" = "1" ]; then',
+      '      echo "Public release status manifest validation failed:"',
+      '      echo "- Generated public manifest is out of sync. Run: pnpm run generate:public-release-status"',
+      '      exit 1',
+      '    fi',
+      '    echo "Public release status manifest check passed."',
+      '    exit 0',
+      '    ;;',
       'esac',
       `exec ${shellSingleQuote(process.execPath)} "$@"`,
       '',
@@ -197,6 +206,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: skipped.');
     expect(result.stdout).toContain('- Live metadata parity: pass.');
     expect(result.stdout).toContain('- Live static dist parity: skipped.');
@@ -204,6 +214,7 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('- Commercial launch boundary: launch evidence manifest validation checks structure and proof boundaries only; it does not prove commercial-ready status, production approval, or buyer acceptance.');
+    expect(result.stdout).toContain('- Public status boundary: public release-status validation checks `/status/release-health.json` sync only; it does not prove production approval, deployment, buyer acceptance, or current hosted/live parity.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
     expect(result.stdout).toContain('Skipped because local release readiness was skipped; exact static parity requires a freshly built dist');
     expect(result.stdout).toContain(
@@ -239,6 +250,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: fail.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: local release readiness is not passing.');
@@ -257,6 +269,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: fail.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('- Live parity achieved: no.');
     expect(result.stdout).toContain('Blocker: deploy script requires branch main; current branch is codex/ceip-proof-pack-hardening.');
@@ -273,6 +286,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: fail.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('Dirty: R  .windsurf/workflows/master.md -> .devin/workflows/master.md');
     expect(result.stdout).toContain('Dirty detail: .devin/workflows/master.md | status=renamed | index_status=renamed | worktree_status=clean | staging_state=staged_only | old_path=.windsurf/workflows/master.md | tracked=yes | ignored_by_rule=no | action=staged source change; commit, unstage, stash, or revert before deploy');
     expect(result.stdout).toContain('Blocking pre-deploy gates: source deploy provenance is not deploy-script-ready; local release readiness is not passing.');
@@ -286,6 +300,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
     expect(result.stdout).toContain('- Live metadata parity: fail.');
     expect(result.stdout).toContain('- Deployment request readiness: ready for explicit owner approval.');
@@ -307,6 +322,7 @@ describe('production approval packet', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(localReadinessSection).toContain('Local release readiness passed; live parity is reported by the dedicated live metadata');
     expect(localReadinessSection).toContain('Public metadata check passed for local source metadata.');
     expect(localReadinessSection).not.toContain('Public metadata check failed:');
@@ -344,11 +360,28 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: fail.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('Blocking pre-deploy gates: launch evidence manifest validation is not passing.');
     expect(result.stdout).toContain('Launch evidence manifest check failed:');
     expect(result.stdout).toContain('release toolchain probe ledger missing from approval queue');
+  });
+
+  it('blocks deploy request readiness when public release status manifest validation fails', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-predeploy-blocker'], {
+      CEIP_FAKE_PUBLIC_RELEASE_STATUS_FAIL: '1',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Source deploy provenance: pass.');
+    expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Public release status manifest validation: fail.');
+    expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: public release status manifest validation is not passing.');
+    expect(result.stdout).toContain('Public release status manifest validation failed:');
+    expect(result.stdout).toContain('Generated public manifest is out of sync.');
   });
 
   it('keeps full blocker gates failing when live parity is stale', async () => {

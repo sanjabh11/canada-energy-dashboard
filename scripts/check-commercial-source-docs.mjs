@@ -114,6 +114,7 @@ const gaIciArtifactHelperPhrase = /prepare:ga-ici-5cp-artifact/;
 const byoCsvArtifactHelperPhrase = /prepare:byo-csv-proof-artifact/;
 const nonStatusCommercialCommitmentEvidencePhrase = /non-status-only strong commercial commitment evidence|beyond repeating the status|beyond status-only text/i;
 const publicReleaseStatusCheckPhrase = /check:public-release-status/;
+const approvalPacketPublicStatusGatePhrase = /approval packet now runs[\s\S]*check:public-release-status|public release-status validation is a pre-deploy evidence gate/i;
 const stalePostP1LiveParityPhrases = [
   'live deploy and buyer evidence remain blockers',
   'live metadata remains an external gate',
@@ -559,6 +560,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicReleaseStatusCheckPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:public-release-status for the public release-status sync guard.');
+  }
+
+  if (!approvalPacketPublicStatusGatePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say the production approval packet runs check:public-release-status as a pre-deploy evidence gate.');
   }
 
   if (existsSync(strategyRoadmapPath)) {
