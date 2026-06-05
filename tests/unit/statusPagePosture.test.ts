@@ -7,6 +7,134 @@ import {
 } from '../../src/lib/releasePosture';
 import { PUBLIC_RELEASE_STATUS_MANIFEST } from '../../src/lib/publicReleaseStatusManifest';
 
+const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
+  {
+    publicId: 'deployed_artifact_live_parity',
+    releaseHealthLabel: 'Latest approved production parity',
+    boundaryPatterns: [/future source commits/i],
+  },
+  {
+    publicId: 'current_source_live_parity',
+    releaseHealthLabel: 'Current source live parity',
+    boundaryPatterns: [/launch evidence validation/i, /owner approval/i, /post-deploy live parity/i],
+  },
+  {
+    publicId: 'launch_evidence_validation_gate',
+    releaseHealthLabel: 'Launch evidence validation gate',
+    boundaryPatterns: [/does not prove production approval/i, /buyer acceptance/i, /current hosted\/live parity/i],
+  },
+  {
+    publicId: 'source_provenance_resolution_queue',
+    releaseHealthLabel: 'Source provenance resolution queue',
+    boundaryPatterns: [
+      /staged-only, unstaged-only, mixed/i,
+      /does not commit, unstage, stash, revert/i,
+      /does not prove current local cleanliness/i,
+    ],
+  },
+  {
+    publicId: 'release_preflight_remediation_queue',
+    releaseHealthLabel: 'Release preflight remediation queue',
+    boundaryPatterns: [
+      /Corepack pnpm resolver/i,
+      /Git LFS push-path proof/i,
+      /does not install tools/i,
+      /does not prove production approval/i,
+    ],
+  },
+  {
+    publicId: 'release_toolchain_probe_ledger',
+    releaseHealthLabel: 'Release toolchain probe ledger',
+    boundaryPatterns: [
+      /Corepack pnpm resolver and Git LFS availability/i,
+      /does not install tools, run release-readiness, push, deploy/i,
+      /does not substitute for release-readiness or production approval/i,
+    ],
+  },
+  {
+    publicId: 'launch_blocker_action_queue',
+    releaseHealthLabel: 'Launch blocker action queue',
+    boundaryPatterns: [
+      /source provenance, launch evidence validation, release toolchain, branch review/i,
+      /does not deploy, merge, contact buyers/i,
+      /prove launch evidence validation/i,
+      /create launch readiness/i,
+    ],
+  },
+  {
+    publicId: 'production_approval_prerequisite_queue',
+    releaseHealthLabel: 'Production approval prerequisite queue',
+    boundaryPatterns: [
+      /clean source provenance, launch evidence validation, Corepack release-readiness/i,
+      /does not prove production approval/i,
+      /prove launch evidence validation/i,
+      /post-deploy live parity/i,
+    ],
+  },
+  {
+    publicId: 'post_deploy_live_proof_gate_queue',
+    releaseHealthLabel: 'Post-deploy live proof gate queue',
+    boundaryPatterns: [
+      /live public metadata, live static dist parity, hosted proof-pack route smoke/i,
+      /does not prove current hosted\/live parity/i,
+      /mutate Netlify/i,
+    ],
+  },
+  {
+    publicId: 'unmerged_branch_review_queue',
+    releaseHealthLabel: 'Unmerged branch review queue',
+    boundaryPatterns: [
+      /review-first packet/i,
+      /does not create launch evidence/i,
+      /merges, checkouts, migrations, or deploys/i,
+    ],
+  },
+  {
+    publicId: 'canonical_head_decision_queue',
+    releaseHealthLabel: 'Canonical head decision queue',
+    boundaryPatterns: [
+      /does not checkout, merge, push, discard/i,
+      /select a branch head/i,
+      /does not create launch evidence/i,
+      /prove production approval/i,
+    ],
+  },
+  {
+    publicId: 'review_first_branch_packet_queue',
+    releaseHealthLabel: 'Review-first branch packet queue',
+    boundaryPatterns: [
+      /focused read-only branch packets/i,
+      /changed Supabase function rows/i,
+      /does not checkout, merge, push, discard/i,
+      /mutate Supabase/i,
+    ],
+  },
+  {
+    publicId: 'buyer_evidence_remediation_queue',
+    releaseHealthLabel: 'Buyer evidence remediation queue',
+    boundaryPatterns: [
+      /accepted buyer evidence, reviewer evidence, commercial signal/i,
+      /does not contact buyers/i,
+      /does not create accepted evidence/i,
+    ],
+  },
+  {
+    publicId: 'supabase_advisor_access',
+    releaseHealthLabel: 'Supabase MCP advisors',
+    boundaryPatterns: [/advisor evidence/i, /authorization/i],
+  },
+  {
+    publicId: 'supabase_advisor_remediation_queue',
+    releaseHealthLabel: 'Supabase advisor remediation queue',
+    boundaryPatterns: [
+      /CLI lint freshness, connector authorization/i,
+      /does not authorize connectors, access the dashboard/i,
+      /record secrets/i,
+      /does not create or claim advisor clearance/i,
+    ],
+  },
+] as const;
+
 describe('status page release posture', () => {
   it('separates last approved artifact parity from current source live parity', () => {
     const deployPosture = RELEASE_POSTURE.find((item) => item.title === 'Last approved production artifact parity');
@@ -339,5 +467,31 @@ describe('status page release posture', () => {
     expect(supabaseRemediationQueueGate?.evidenceBoundary).toMatch(/Security Advisor evidence, Performance Advisor evidence/i);
     expect(supabaseRemediationQueueGate?.evidenceBoundary).toMatch(/does not authorize connectors/i);
     expect(supabaseRemediationQueueGate?.nextAction).toMatch(/without secrets/i);
+  });
+
+  it('keeps shared public release-status gates aligned with release health evidence handles', () => {
+    for (const contract of SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS) {
+      const publicGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === contract.publicId);
+      const releaseHealthEvidence = RELEASE_HEALTH_EVIDENCE.find(
+        (item) => item.label === contract.releaseHealthLabel,
+      );
+
+      expect(publicGate, `${contract.publicId} public release-status gate must exist`).toBeTruthy();
+      expect(releaseHealthEvidence, `${contract.releaseHealthLabel} release health evidence must exist`).toBeTruthy();
+      expect(publicGate?.status, `${contract.publicId} status must match release health evidence`).toBe(
+        releaseHealthEvidence?.status,
+      );
+      expect(publicGate?.command, `${contract.publicId} proof command must match release health evidence`).toBe(
+        releaseHealthEvidence?.command,
+      );
+
+      for (const boundaryPattern of contract.boundaryPatterns) {
+        expect(publicGate?.evidenceBoundary, `${contract.publicId} public boundary drifted`).toMatch(boundaryPattern);
+        expect(
+          releaseHealthEvidence?.evidenceBoundary,
+          `${contract.releaseHealthLabel} evidence boundary drifted`,
+        ).toMatch(boundaryPattern);
+      }
+    }
   });
 });
