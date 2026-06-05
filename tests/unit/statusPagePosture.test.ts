@@ -24,6 +24,19 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     boundaryPatterns: [/does not prove production approval/i, /buyer acceptance/i, /current hosted\/live parity/i],
   },
   {
+    publicId: 'objective_completion_audit',
+    releaseHealthLabel: 'Objective completion audit',
+    boundaryPatterns: [
+      /required launch deliverables/i,
+      /blocked P0\/P1 gates/i,
+      /manual-stop rows/i,
+      /does not prove production approval/i,
+      /commercial launch readiness/i,
+      /Supabase clearance/i,
+      /permission to contact buyers/i,
+    ],
+  },
+  {
     publicId: 'source_provenance_isolation_ledger',
     releaseHealthLabel: 'Source provenance isolation ledger',
     boundaryPatterns: [
@@ -321,6 +334,7 @@ describe('status page release posture', () => {
     const latestApprovedParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Latest approved production parity');
     const currentSourceParityEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source live parity');
     const launchEvidenceValidationEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch evidence validation gate');
+    const objectiveCompletionAuditEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Objective completion audit');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const sourceIsolationLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance isolation ledger');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
@@ -347,7 +361,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(30);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(31);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -365,6 +379,16 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/buyer acceptance/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
+    expect(objectiveCompletionAuditEvidence?.status).toBe('external_gate');
+    expect(objectiveCompletionAuditEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(objectiveCompletionAuditEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/required launch deliverables/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/blocked P0\/P1 gates/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/manual-stop rows/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/Supabase clearance/i);
+    expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/permission to contact buyers/i);
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
@@ -541,6 +565,7 @@ describe('status page release posture', () => {
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
     const launchEvidenceValidationGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_evidence_validation_gate');
+    const objectiveCompletionAuditGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'objective_completion_audit');
     const sourceIsolationLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_isolation_ledger');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releaseToolchainApprovalDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_approval_deficit_ledger');
@@ -586,6 +611,7 @@ describe('status page release posture', () => {
       'source_provenance',
       'source_provenance_isolation_ledger',
       'launch_evidence_validation_gate',
+      'objective_completion_audit',
       'source_provenance_resolution_queue',
       'release_toolchain_approval_deficit_ledger',
       'release_preflight_remediation_queue',
@@ -630,6 +656,16 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/manifest structure and proof-boundary consistency/i);
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationGate?.nextAction).toMatch(/before any deploy request/i);
+    expect(objectiveCompletionAuditGate?.status).toBe('external_gate');
+    expect(objectiveCompletionAuditGate?.proofBucket).toBe('repo artifact');
+    expect(objectiveCompletionAuditGate?.command).toContain('report:launch-evidence-manifest');
+    expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/required launch deliverables/i);
+    expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/blocked P0\/P1 gates/i);
+    expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/commercial launch readiness/i);
+    expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/source readiness/i);
+    expect(objectiveCompletionAuditGate?.nextAction).toMatch(/goal-completion blockers visible/i);
+    expect(objectiveCompletionAuditGate?.nextAction).toMatch(/post-deploy live proof gates/i);
     expect(sourceResolutionQueueGate?.status).toBe('external_gate');
     expect(sourceResolutionQueueGate?.command).toContain('report:launch-evidence-manifest');
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/renamed source decisions/i);

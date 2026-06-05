@@ -136,6 +136,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.',
   },
   {
+    label: 'Objective completion audit',
+    status: 'external_gate',
+    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+    evidenceBoundary: 'The objective completion audit maps required launch deliverables, present report tables, blocked P0/P1 gates, manual-stop rows, and next proof commands, but it does not prove production approval, buyer acceptance, commercial launch readiness, deployment, hosted/live parity, Supabase clearance, branch approval, source readiness, or permission to contact buyers.',
+  },
+  {
     label: 'Current source CI gate',
     status: 'watch',
     command: 'gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',

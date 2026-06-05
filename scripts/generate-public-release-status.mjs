@@ -55,6 +55,12 @@ const requiredItemContracts = [
     command: 'pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet',
   },
   {
+    id: 'objective_completion_audit',
+    status: 'external_gate',
+    proofBucket: 'repo artifact',
+    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+  },
+  {
     id: 'source_provenance_resolution_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -289,6 +295,13 @@ function validateManifest(manifest) {
   }
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*deployment|current hosted\/live parity/i.test(launchEvidenceValidationGate.evidenceBoundary ?? '')) {
     failures.push('launch_evidence_validation_gate must preserve the no-approval, no-buyer-proof, no-deploy, and no-live-parity boundary.');
+  }
+  const objectiveCompletionAudit = itemById.get('objective_completion_audit') ?? {};
+  if (!/required launch deliverables|present report tables|blocked P0\/P1 gates|manual-stop rows|next proof commands|goal-completion blockers/i.test(`${objectiveCompletionAudit.evidenceBoundary ?? ''}\n${objectiveCompletionAudit.nextAction ?? ''}`)) {
+    failures.push('objective_completion_audit must describe required launch deliverables, blocked gates, manual stops, next proof commands, and goal-completion blockers.');
+  }
+  if (!/does not prove production approval|does not.*buyer acceptance|does not.*commercial launch readiness|does not.*deployment|does not.*hosted\/live parity|does not.*Supabase clearance|does not.*branch approval|does not.*source readiness|does not.*permission to contact buyers/i.test(objectiveCompletionAudit.evidenceBoundary ?? '')) {
+    failures.push('objective_completion_audit must preserve the no-readiness, no-buyer-proof, no-approval, no-live-proof, no-Supabase-clearance, no-branch-approval, no-source-readiness, and no-outreach-permission boundary.');
   }
   const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
   if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {
