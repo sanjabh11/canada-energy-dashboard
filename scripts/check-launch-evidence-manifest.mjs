@@ -446,6 +446,32 @@ try {
       assert(isBoolean(dirtyPath.tracked), `source_provenance.dirty_paths[${index}].tracked must be boolean.`);
       assert(isBoolean(dirtyPath.ignored_by_rule), `source_provenance.dirty_paths[${index}].ignored_by_rule must be boolean.`);
       assert(typeof dirtyPath.action === 'string' && dirtyPath.action.length > 0, `source_provenance.dirty_paths[${index}].action must be set.`);
+      assert(typeof dirtyPath.proof_type === 'string' && dirtyPath.proof_type.length > 0, `source_provenance.dirty_paths[${index}].proof_type must be set.`);
+      assert(dirtyPath.owner_decision_required === true, `source_provenance.dirty_paths[${index}].owner_decision_required must be true.`);
+      assert(
+        typeof dirtyPath.proof_boundary === 'string'
+          && /Raw source-provenance classification|does not.*commit|clear provenance|deploy|grant approval/i.test(dirtyPath.proof_boundary),
+        `source_provenance.dirty_paths[${index}].proof_boundary must preserve the raw no-mutation boundary.`,
+      );
+      assert(
+        typeof dirtyPath.stop_gate === 'string'
+          && /without explicit owner intent|classification evidence only|not source-provenance clearance|production approval/i.test(dirtyPath.stop_gate),
+        `source_provenance.dirty_paths[${index}].stop_gate must preserve the owner-intent and no-approval boundary.`,
+      );
+      if (dirtyPath.old_path) {
+        assert(dirtyPath.proof_type === 'source_rename_decision', `source_provenance.dirty_paths[${index}] must classify rename/move rows as source_rename_decision.`);
+        assert(/staged rename or move|does not rename|does not.*commit|clear provenance|grant approval/i.test(dirtyPath.proof_boundary), `source_provenance.dirty_paths[${index}] proof_boundary must preserve rename/move raw classification semantics.`);
+      } else if (!dirtyPath.tracked && dirtyPath.ignored_by_rule) {
+        assert(dirtyPath.proof_type === 'ignored_local_artifact_decision', `source_provenance.dirty_paths[${index}] must classify ignored local artifacts.`);
+      } else if (!dirtyPath.tracked) {
+        assert(dirtyPath.proof_type === 'untracked_source_decision', `source_provenance.dirty_paths[${index}] must classify untracked non-ignored paths.`);
+      } else if (dirtyPath.staging_state === 'staged_only') {
+        assert(dirtyPath.proof_type === 'staged_source_decision', `source_provenance.dirty_paths[${index}] must classify staged source changes.`);
+      } else if (dirtyPath.staging_state === 'unstaged_only') {
+        assert(dirtyPath.proof_type === 'unstaged_source_decision', `source_provenance.dirty_paths[${index}] must classify unstaged source changes.`);
+      } else if (dirtyPath.staging_state === 'staged_and_unstaged') {
+        assert(dirtyPath.proof_type === 'split_index_worktree_decision', `source_provenance.dirty_paths[${index}] must classify split index/worktree changes.`);
+      }
     }
     if (manifest.source_provenance.dirty_paths.length > 0) {
       assert(manifest.source_provenance.evidence.includes('staging_state='), 'Manifest source provenance evidence must include staging_state classification for dirty paths.');

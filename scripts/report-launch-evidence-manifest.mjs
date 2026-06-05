@@ -2029,7 +2029,7 @@ function classifyDirtyPath(statusLine) {
   const tracked = gitPathCheck(['ls-files', '--error-unmatch', '--', filePath]);
   const ignoredByRule = gitPathCheck(['check-ignore', '--no-index', '-q', '--', filePath]);
   const { indexStatus, worktreeStatus, stagingState } = stagingStateForStatus(statusCode);
-  return {
+  const detail = {
     raw: statusLine,
     raw_path: rawPath,
     file_path: filePath,
@@ -2041,6 +2041,13 @@ function classifyDirtyPath(statusLine) {
     tracked,
     ignored_by_rule: ignoredByRule,
     action: dirtyPathAction({ tracked, ignoredByRule, stagingState }),
+  };
+  return {
+    ...detail,
+    proof_type: sourceResolutionProofType(detail),
+    owner_decision_required: true,
+    proof_boundary: dirtyPathProofBoundary(detail),
+    stop_gate: dirtyPathStopGate(detail),
   };
 }
 
@@ -2128,6 +2135,35 @@ function sourceResolutionProofBoundary(detail) {
     return 'Requires separate owner decisions for index and worktree versions; this queue row does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
   }
   return 'Requires explicit owner decision for the tracked source change; this queue row does not mutate source, clear provenance, deploy, or grant approval.';
+}
+
+function dirtyPathProofBoundary(detail) {
+  if (detail.old_path) {
+    return 'Raw source-provenance classification for a staged rename or move; it does not rename, move, commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (!detail.tracked && detail.ignored_by_rule) {
+    return 'Raw source-provenance classification for an ignored local artifact; it does not delete, move, commit, clear provenance, deploy, or grant approval.';
+  }
+  if (!detail.tracked) {
+    return 'Raw source-provenance classification for an untracked path; it does not add, ignore, move, delete, commit, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'staged_only') {
+    return 'Raw source-provenance classification for a staged source change; it does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'unstaged_only') {
+    return 'Raw source-provenance classification for an unstaged source change; it does not commit, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  if (detail.staging_state === 'staged_and_unstaged') {
+    return 'Raw source-provenance classification for split index and worktree changes; it does not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant approval.';
+  }
+  return 'Raw source-provenance classification for a tracked source change; it does not mutate source, clear provenance, deploy, or grant approval.';
+}
+
+function dirtyPathStopGate(detail) {
+  const verbs = detail.tracked
+    ? 'commit, unstage, stash, revert, delete, rename, or move'
+    : 'add, ignore, delete, move, or commit';
+  return `Do not ${verbs} this path without explicit owner intent; raw dirty-path detail is classification evidence only, not source-provenance clearance or production approval.`;
 }
 
 function sourceProvenanceResolutionEvidence(queue) {

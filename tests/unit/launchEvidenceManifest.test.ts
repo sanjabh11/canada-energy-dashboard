@@ -437,6 +437,13 @@ describe('launch evidence manifest report', () => {
       expect(manifest.source_provenance.dirty_paths[0].index_status).toBeTruthy();
       expect(manifest.source_provenance.dirty_paths[0].worktree_status).toBeTruthy();
       expect(manifest.source_provenance.dirty_paths[0].staging_state).toBeTruthy();
+      expect(manifest.source_provenance.dirty_paths[0].proof_type).toBeTruthy();
+      expect(manifest.source_provenance.dirty_paths[0].owner_decision_required).toBe(true);
+      expect(manifest.source_provenance.dirty_paths[0].proof_boundary).toMatch(/Raw source-provenance classification|does not.*commit|clear provenance|deploy|grant approval/i);
+      expect(manifest.source_provenance.dirty_paths[0].stop_gate).toMatch(/explicit owner intent|classification evidence only|production approval/i);
+      if (manifest.source_provenance.dirty_paths[0].old_path) {
+        expect(manifest.source_provenance.dirty_paths[0].proof_type).toBe('source_rename_decision');
+      }
       expect(manifest.source_provenance.evidence).toContain('staging_state=');
     }
     expect(manifest.source_provenance.deploy_gate).toContain('deploy');
