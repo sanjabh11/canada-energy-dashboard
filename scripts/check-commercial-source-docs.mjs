@@ -119,6 +119,8 @@ const approvalPacketRequestPacketGatePhrase = /production approval request packe
 const publicStatusObjectiveCompletionAuditHandlePhrase = /objective completion audit[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}objective completion audit/i;
 const publicStatusAdversarialReviewLedgerHandlePhrase = /adversarial review ledger[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}adversarial review ledger/i;
 const publicStatusFixReportBlockerMapHandlePhrase = /fix report blocker map[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}fix report blocker map/i;
+const publicStatusProgressDigestHandlePhrase = /progress update digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}progress update digest/i;
+const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}bottleneck log digest/i;
 const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
@@ -595,6 +597,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFixReportBlockerMapHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the fix report blocker map as a public-safe predeploy evidence handle.');
+  }
+
+  if (!publicStatusProgressDigestHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the progress update digest as a public-safe predeploy evidence handle.');
+  }
+
+  if (!publicStatusBottleneckDigestHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the bottleneck log digest as a public-safe predeploy evidence handle.');
   }
 
   if (!publicStatusRequestPacketHandlePhrase.test(sourceDoc)) {

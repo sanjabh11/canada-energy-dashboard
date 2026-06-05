@@ -73,6 +73,18 @@ const requiredItemContracts = [
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'progress_update_digest',
+    status: 'external_gate',
+    proofBucket: 'repo artifact',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'bottleneck_log_digest',
+    status: 'external_gate',
+    proofBucket: 'repo artifact',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'source_provenance_resolution_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -328,6 +340,20 @@ function validateManifest(manifest) {
   }
   if (!/does not.*modify files|does not.*run missing checks|does not.*clear buyer evidence|does not.*source provenance|does not.*branch review|does not.*Supabase advisor clearance|does not.*release toolchain|does not.*production approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(fixReportBlockerMap.evidenceBoundary ?? '')) {
     failures.push('fix_report_blocker_map must preserve the no-mutation, no-check-execution, no-clearance, no-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');
+  }
+  const progressUpdateDigest = itemById.get('progress_update_digest') ?? {};
+  if (!/accomplished work|target matrix|pending work|current bottleneck|phase progress|progress visible/i.test(`${progressUpdateDigest.evidenceBoundary ?? ''}\n${progressUpdateDigest.nextAction ?? ''}`)) {
+    failures.push('progress_update_digest must describe accomplished work, target matrix, pending work, current bottleneck, and phase progress.');
+  }
+  if (!/does not.*complete pending work|does not.*clear blockers|does not.*run checks|does not.*contact buyers|does not.*approve branches|does not.*deploy|does not.*hosted\/live parity|does not.*commercial launch readiness|does not prove production approval/i.test(progressUpdateDigest.evidenceBoundary ?? '')) {
+    failures.push('progress_update_digest must preserve the no-completion, no-check-execution, no-buyer-contact, no-branch-approval, no-deploy, no-live-proof, no-launch-readiness, and no-approval boundary.');
+  }
+  const bottleneckLogDigest = itemById.get('bottleneck_log_digest') ?? {};
+  if (!/blocked task or subtask|elapsed time|last update|root cause|top unblock options|evidence gaps/i.test(`${bottleneckLogDigest.evidenceBoundary ?? ''}\n${bottleneckLogDigest.nextAction ?? ''}`)) {
+    failures.push('bottleneck_log_digest must describe the blocked task/subtask, elapsed time, last update, root cause, top unblock options, and evidence-gap context.');
+  }
+  if (!/does not.*resolve evidence gaps|does not.*collect buyer artifacts|does not.*authorize Supabase advisors|does not.*choose branch heads|does not.*approve deploys|does not.*mutate live services|does not.*hosted\/live parity|does not.*commercial launch readiness|does not prove production approval/i.test(bottleneckLogDigest.evidenceBoundary ?? '')) {
+    failures.push('bottleneck_log_digest must preserve the no-resolution, no-buyer-proof, no-Supabase-authorization, no-branch-selection, no-deploy-approval, no-live-mutation, no-live-proof, no-launch-readiness, and no-approval boundary.');
   }
   const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
   if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {

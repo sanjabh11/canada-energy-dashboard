@@ -59,6 +59,28 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'progress_update_digest',
+    releaseHealthLabel: 'Progress update digest',
+    boundaryPatterns: [
+      /accomplished work, target matrix, pending work/i,
+      /current bottleneck, and phase progress/i,
+      /does not complete pending work/i,
+      /contact buyers/i,
+      /does not prove production approval/i,
+    ],
+  },
+  {
+    publicId: 'bottleneck_log_digest',
+    releaseHealthLabel: 'Bottleneck log digest',
+    boundaryPatterns: [
+      /blocked task or subtask, elapsed time, last update/i,
+      /root cause, and top unblock options/i,
+      /does not resolve evidence gaps/i,
+      /authorize Supabase advisors/i,
+      /does not prove production approval/i,
+    ],
+  },
+  {
     publicId: 'source_provenance_isolation_ledger',
     releaseHealthLabel: 'Source provenance isolation ledger',
     boundaryPatterns: [
@@ -359,6 +381,8 @@ describe('status page release posture', () => {
     const objectiveCompletionAuditEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Objective completion audit');
     const adversarialReviewLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Adversarial review ledger');
     const fixReportBlockerMapEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Fix report blocker map');
+    const progressUpdateDigestEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Progress update digest');
+    const bottleneckLogDigestEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Bottleneck log digest');
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const sourceIsolationLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance isolation ledger');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
@@ -385,7 +409,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(33);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(35);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -429,6 +453,20 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/run missing checks/i);
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
+    expect(progressUpdateDigestEvidence?.status).toBe('external_gate');
+    expect(progressUpdateDigestEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/accomplished work, target matrix, pending work/i);
+    expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/current bottleneck, and phase progress/i);
+    expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not complete pending work/i);
+    expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/contact buyers/i);
+    expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(bottleneckLogDigestEvidence?.status).toBe('external_gate');
+    expect(bottleneckLogDigestEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/blocked task or subtask, elapsed time, last update/i);
+    expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/root cause, and top unblock options/i);
+    expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/does not resolve evidence gaps/i);
+    expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/authorize Supabase advisors/i);
+    expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
@@ -608,6 +646,8 @@ describe('status page release posture', () => {
     const objectiveCompletionAuditGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'objective_completion_audit');
     const adversarialReviewLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'adversarial_review_ledger');
     const fixReportBlockerMapGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'fix_report_blocker_map');
+    const progressUpdateDigestGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'progress_update_digest');
+    const bottleneckLogDigestGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'bottleneck_log_digest');
     const sourceIsolationLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_isolation_ledger');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releaseToolchainApprovalDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_approval_deficit_ledger');
@@ -656,6 +696,8 @@ describe('status page release posture', () => {
       'objective_completion_audit',
       'adversarial_review_ledger',
       'fix_report_blocker_map',
+      'progress_update_digest',
+      'bottleneck_log_digest',
       'source_provenance_resolution_queue',
       'release_toolchain_approval_deficit_ledger',
       'release_preflight_remediation_queue',
@@ -733,6 +775,25 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapGate?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(fixReportBlockerMapGate?.nextAction).toMatch(/prioritize remaining blockers/i);
     expect(fixReportBlockerMapGate?.nextAction).toMatch(/owner-side gate/i);
+    expect(progressUpdateDigestGate?.status).toBe('external_gate');
+    expect(progressUpdateDigestGate?.proofBucket).toBe('repo artifact');
+    expect(progressUpdateDigestGate?.command).toContain('report:commercial-launch-readiness');
+    expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/accomplished work, target matrix, pending work/i);
+    expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/current bottleneck, and phase progress/i);
+    expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/does not complete pending work/i);
+    expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(progressUpdateDigestGate?.nextAction).toMatch(/phase progress visible/i);
+    expect(progressUpdateDigestGate?.nextAction).toMatch(/post-deploy proof gates/i);
+    expect(bottleneckLogDigestGate?.status).toBe('external_gate');
+    expect(bottleneckLogDigestGate?.proofBucket).toBe('repo artifact');
+    expect(bottleneckLogDigestGate?.command).toContain('report:launch-evidence-manifest');
+    expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/blocked task or subtask, elapsed time, last update/i);
+    expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/root cause, and top unblock options/i);
+    expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/does not resolve evidence gaps/i);
+    expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/authorize Supabase advisors/i);
+    expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(bottleneckLogDigestGate?.nextAction).toMatch(/next safe unblock path/i);
+    expect(bottleneckLogDigestGate?.nextAction).toMatch(/specific required proof commands/i);
     expect(sourceResolutionQueueGate?.status).toBe('external_gate');
     expect(sourceResolutionQueueGate?.command).toContain('report:launch-evidence-manifest');
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/renamed source decisions/i);

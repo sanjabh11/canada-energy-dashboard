@@ -97,6 +97,24 @@
       "nextAction": "Use the map to prioritize remaining blockers, then run and clear each underlying required check and owner-side gate before changing readiness, approval, or launch claims."
     },
     {
+      "id": "progress_update_digest",
+      "label": "Progress update digest",
+      "status": "external_gate",
+      "proofBucket": "repo artifact",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The progress update digest summarizes accomplished work, target matrix, pending work, current bottleneck, and phase progress from the launch evidence manifest, but it does not complete pending work, clear blockers, run checks, contact buyers, approve branches, deploy, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.",
+      "nextAction": "Use the digest to keep phase progress visible, then clear the pending buyer evidence, source provenance, branch review, Supabase advisor, release, production approval, and post-deploy proof gates before changing readiness claims."
+    },
+    {
+      "id": "bottleneck_log_digest",
+      "label": "Bottleneck log digest",
+      "status": "external_gate",
+      "proofBucket": "repo artifact",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The bottleneck log digest summarizes the blocked task or subtask, elapsed time, last update, root cause, and top unblock options from the launch evidence manifest, but it does not resolve evidence gaps, collect buyer artifacts, authorize Supabase advisors, choose branch heads, approve deploys, mutate live services, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.",
+      "nextAction": "Use the digest to choose the next safe unblock path, then collect owner-side evidence or run the specific required proof commands before changing approval, live parity, or launch claims."
+    },
+    {
       "id": "source_provenance_resolution_queue",
       "label": "Source provenance resolution queue",
       "status": "external_gate",
