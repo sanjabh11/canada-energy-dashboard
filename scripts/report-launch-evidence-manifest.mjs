@@ -1900,6 +1900,14 @@ function buildCanonicalHeadDecisionLedger(reviewQueue) {
   return { ...decisions, evidence: canonicalHeadDecisionEvidence(decisions) };
 }
 
+function branchReviewClearanceStatus({ branchProbe, branchReviewQueue, canonicalHeadDecisions }) {
+  if (branchProbe.status === 'skipped') return 'skipped';
+  if (branchProbe.status !== 'pass') return 'fail';
+  if ((branchReviewQueue.review_first_count ?? 0) > 0) return 'blocked';
+  if ((canonicalHeadDecisions.open_count ?? 0) > 0) return 'blocked';
+  return 'pass';
+}
+
 function canonicalHeadComparisonEvidence(comparison) {
   if (comparison.status === 'skipped') {
     return 'Canonical head comparison skipped by --skip-probes.';
@@ -2637,6 +2645,11 @@ const buyerProbe = probeBuyerEvidence();
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const canonicalHeadDecisions = buildCanonicalHeadDecisionLedger(branchReviewQueue);
+const branchReviewStatus = branchReviewClearanceStatus({
+  branchProbe,
+  branchReviewQueue,
+  canonicalHeadDecisions,
+});
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
@@ -2680,6 +2693,7 @@ const buyerGapEvidence = [
 ].join('; ');
 
 const branchReviewEvidence = [
+  `Branch review clearance: status=${branchReviewStatus}; probe_status=${branchProbe.status}; review_first=${branchReviewQueue.review_first_count ?? 'unknown'}; canonical_open=${canonicalHeadDecisions.open_count ?? 'unknown'}; boundary=read-only probe execution does not clear review-first branch families, canonical-head decisions, merge approval, production approval, or deploy readiness.`,
   `Unmerged branch probe high/medium/low risk counts: ${branchProbe.highRisk ?? 'unknown'}/${branchProbe.mediumRisk ?? 'unknown'}/${branchProbe.lowRisk ?? 'unknown'}.`,
   branchProbe.familyEvidence,
   branchProbe.freshnessEvidence,
@@ -2798,7 +2812,9 @@ const manifest = {
     evidence: supabaseAdvisor.evidence,
   },
   branch_review: {
-    status: branchProbe.status,
+    status: branchReviewStatus,
+    probe_status: branchProbe.status,
+    evidence_boundary: 'Read-only branch probe execution does not clear review-first branch families, canonical-head decisions, merge approval, production approval, or deploy readiness.',
     risk_counts: {
       high: branchProbe.highRisk,
       medium: branchProbe.mediumRisk,
@@ -2830,6 +2846,7 @@ const manifest = {
     review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
     evidence: [
+      `Branch review clearance: status=${branchReviewStatus}; probe_status=${branchProbe.status}; review_first=${branchReviewQueue.review_first_count ?? 'unknown'}; canonical_open=${canonicalHeadDecisions.open_count ?? 'unknown'}; boundary=read-only probe execution does not clear review-first branch families, canonical-head decisions, merge approval, production approval, or deploy readiness.`,
       branchProbe.familyEvidence,
       branchProbe.freshnessEvidence,
       branchReviewQueue.evidence,

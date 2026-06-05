@@ -671,6 +671,18 @@ try {
       'Supabase advisor remediation queue must preserve explicit stop gates.',
     );
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
+    assert(typeof manifest.branch_review?.status === 'string', 'Manifest branch_review.status must be set.');
+    assert(typeof manifest.branch_review?.probe_status === 'string', 'Manifest branch_review.probe_status must be set.');
+    assert(typeof manifest.branch_review?.evidence_boundary === 'string', 'Manifest branch_review.evidence_boundary must be set.');
+    assert(
+      manifest.branch_review.evidence.includes('Branch review clearance')
+        && manifest.branch_review.evidence.includes('probe_status='),
+      'Manifest branch_review evidence must separate clearance status from read-only probe execution status.',
+    );
+    assert(
+      /does not clear review-first branch families/i.test(manifest.branch_review.evidence_boundary),
+      'Manifest branch_review.evidence_boundary must say the read-only probe does not clear branch-review decisions.',
+    );
     assert(manifest.branch_review.evidence.includes('Branch family review'), 'Manifest branch_review evidence must summarize local/origin branch families.');
     assert(manifest.branch_review.evidence.includes('Branch freshness review'), 'Manifest branch_review evidence must summarize freshness.');
     assert(manifest.branch_review.evidence.includes('Branch review queue'), 'Manifest branch_review evidence must summarize the actionable review queue.');
@@ -769,6 +781,22 @@ try {
       assert(Number.isInteger(manifest.branch_review?.canonical_head_decisions?.open_count), 'Non-skipped manifest must include numeric canonical-head decision open count.');
       assert(manifest.branch_review.canonical_head_decisions.items.length === manifest.branch_review.canonical_head_decisions.open_count, 'Canonical-head decision item count must match open_count.');
       assert(manifest.branch_review.canonical_head_decisions.evidence.includes('approval_gate=no checkout/merge/push/discard/deploy'), 'Canonical-head decision ledger must preserve the no-mutation approval gate.');
+      const reviewFirstOpen = (manifest.branch_review.review_queue.review_first_count ?? 0) > 0;
+      const canonicalHeadOpen = (manifest.branch_review.canonical_head_decisions.open_count ?? 0) > 0;
+      assert(
+        ['pass', 'fail', 'blocked'].includes(manifest.branch_review.probe_status),
+        'Non-skipped manifest branch_review.probe_status must report read-only probe execution only.',
+      );
+      if (reviewFirstOpen || canonicalHeadOpen) {
+        assert(
+          manifest.branch_review.status === 'blocked',
+          'Manifest branch_review.status must stay blocked while review-first branch families or canonical-head decisions remain open.',
+        );
+      }
+      if (manifest.branch_review.status === 'pass') {
+        assert(!reviewFirstOpen, 'Manifest branch_review.status cannot pass while review-first branch families remain.');
+        assert(!canonicalHeadOpen, 'Manifest branch_review.status cannot pass while canonical-head decisions remain.');
+      }
       assert(Number.isInteger(manifest.branch_review?.review_first_packets?.item_count), 'Non-skipped manifest must include numeric review-first packet count.');
       assert(manifest.branch_review.review_first_packets.item_count === manifest.branch_review.review_first_packets.packets.length, 'Review-first packet count must match packet list length.');
       assert(

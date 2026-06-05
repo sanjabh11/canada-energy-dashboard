@@ -251,6 +251,8 @@ describe('launch evidence manifest report', () => {
       expect(firstSourceDecision.status).toBe('blocked');
     }
     expect(manifest.branch_review.status).toBe('skipped');
+    expect(manifest.branch_review.probe_status).toBe('skipped');
+    expect(manifest.branch_review.evidence_boundary).toMatch(/does not clear review-first branch families/i);
     expect(manifest.branch_review.risk_counts.high).toBeNull();
     expect(manifest.branch_review.family_counts.local_only).toBeNull();
     expect(manifest.branch_review.family_evidence).toContain('Branch family review skipped');
@@ -306,6 +308,30 @@ describe('launch evidence manifest report', () => {
       env: process.env,
     });
     expect(validation).toContain('VALID');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
+  it('separates branch review clearance from read-only probe execution', () => {
+    const stdout = runManifest();
+    const manifest = JSON.parse(stdout);
+    const reviewFirstOpen = (manifest.branch_review.review_queue.review_first_count ?? 0) > 0;
+    const canonicalHeadOpen = (manifest.branch_review.canonical_head_decisions.open_count ?? 0) > 0;
+    const branchAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review');
+    const branchPrerequisite = manifest.production_approval.prerequisite_queue.items.find(
+      (item: { prerequisite: string }) => item.prerequisite === 'Canonical branch review',
+    );
+
+    expect(manifest.branch_review.probe_status).toBe('pass');
+    expect(manifest.branch_review.evidence).toContain('Branch review clearance');
+    expect(manifest.branch_review.evidence).toContain('probe_status=pass');
+    expect(manifest.branch_review.evidence_boundary).toMatch(/read-only branch probe execution does not clear/i);
+
+    if (reviewFirstOpen || canonicalHeadOpen) {
+      expect(manifest.branch_review.status).toBe('blocked');
+      expect(branchAction.status).toBe('blocked');
+      expect(branchPrerequisite.status).toBe('blocked');
+    } else {
+      expect(manifest.branch_review.status).toBe('pass');
+    }
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('keeps buyer commercial-signal remediation tied to retained non-status-only evidence', () => {
