@@ -17,26 +17,117 @@ const requiredRefreshCommands = [
   'pnpm run report:commercial-launch-readiness',
   'pnpm run report:buyer-evidence-readiness',
 ];
-const requiredItemIds = [
-  'deployed_artifact_live_parity',
-  'current_source_live_parity',
-  'current_source_release_gate',
-  'source_provenance',
-  'launch_evidence_validation_gate',
-  'source_provenance_resolution_queue',
-  'release_preflight_remediation_queue',
-  'release_toolchain_probe_ledger',
-  'launch_blocker_action_queue',
-  'production_approval_prerequisite_queue',
-  'post_deploy_live_proof_gate_queue',
-  'unmerged_branch_review_queue',
-  'canonical_head_decision_queue',
-  'review_first_branch_packet_queue',
-  'buyer_evidence_gate',
-  'buyer_evidence_remediation_queue',
-  'supabase_advisor_access',
-  'supabase_advisor_remediation_queue',
+const requiredItemContracts = [
+  {
+    id: 'deployed_artifact_live_parity',
+    status: 'verified',
+    proofBucket: 'hosted/live',
+    command: 'pnpm run check:post-deploy-live',
+  },
+  {
+    id: 'current_source_live_parity',
+    status: 'external_gate',
+    proofBucket: 'hosted/live',
+    command: 'pnpm run report:production-approval-packet && pnpm run check:post-deploy-live',
+  },
+  {
+    id: 'current_source_release_gate',
+    status: 'watch',
+    proofBucket: 'local/source',
+    command: 'pnpm run check:release-readiness && gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',
+  },
+  {
+    id: 'source_provenance',
+    status: 'watch',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness',
+  },
+  {
+    id: 'launch_evidence_validation_gate',
+    status: 'external_gate',
+    proofBucket: 'repo artifact',
+    command: 'pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet',
+  },
+  {
+    id: 'source_provenance_resolution_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'release_preflight_remediation_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'release_toolchain_probe_ledger',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'launch_blocker_action_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'production_approval_prerequisite_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'post_deploy_live_proof_gate_queue',
+    status: 'external_gate',
+    proofBucket: 'hosted/live',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'unmerged_branch_review_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'canonical_head_decision_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'review_first_branch_packet_queue',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness -- --focus-risk high && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'buyer_evidence_gate',
+    status: 'external_gate',
+    proofBucket: 'buyer evidence',
+    command: 'pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+  },
+  {
+    id: 'buyer_evidence_remediation_queue',
+    status: 'external_gate',
+    proofBucket: 'buyer evidence',
+    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
+    id: 'supabase_advisor_access',
+    status: 'needs_remediation',
+    proofBucket: 'external account',
+    command: 'Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti',
+  },
+  {
+    id: 'supabase_advisor_remediation_queue',
+    status: 'needs_remediation',
+    proofBucket: 'external account',
+    command: 'pnpm run report:launch-evidence-manifest',
+  },
 ];
+const requiredItemIds = requiredItemContracts.map((item) => item.id);
 const forbiddenPatterns = [
   { name: 'direct email', pattern: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i },
   { name: 'JWT-like token', pattern: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/ },
@@ -105,6 +196,16 @@ function validateManifest(manifest) {
   }
 
   const itemById = new Map((manifest.items ?? []).map((item) => [item.id, item]));
+  for (const expected of requiredItemContracts) {
+    const item = itemById.get(expected.id);
+    if (!item) continue;
+    for (const key of ['status', 'proofBucket', 'command']) {
+      if (item[key] !== expected[key]) {
+        failures.push(`${expected.id}: ${key} must remain ${expected[key]}.`);
+      }
+    }
+  }
+
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
