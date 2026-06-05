@@ -184,6 +184,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'Current branch inventory shows high-risk unmerged refs and review-first packet evidence; this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.',
   },
   {
+    label: 'Branch family freshness rollup',
+    status: 'external_gate',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The branch family freshness rollup surfaces local-only, origin-only, matching, local-ahead, origin-ahead, diverged, stale, aging, fresh, high-risk, and review-first branch-family counts from read-only branch evidence, but it does not checkout, merge, push, discard, select canonical heads, migrate, deploy, or clear branch review. It does not create launch evidence, prove current source readiness, or prove production approval.',
+  },
+  {
     label: 'Top branch review packet',
     status: 'external_gate',
     command: 'pnpm run report:launch-evidence-manifest && pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files 12',

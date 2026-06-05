@@ -115,6 +115,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'branch_family_freshness_rollup',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'top_branch_review_packet',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -322,6 +328,13 @@ function validateManifest(manifest) {
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
+  }
+  const branchFamilyFreshnessRollup = itemById.get('branch_family_freshness_rollup') ?? {};
+  if (!/local-only|origin-only|matching|local-ahead|origin-ahead|diverged|stale|aging|fresh|high-risk|review-first|branch-family counts/i.test(`${branchFamilyFreshnessRollup.evidenceBoundary ?? ''}\n${branchFamilyFreshnessRollup.nextAction ?? ''}`)) {
+    failures.push('branch_family_freshness_rollup must describe branch family state, freshness, high-risk, and review-first counts.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select canonical heads|does not.*migrate|does not.*deploy|does not.*clear branch review|does not.*create launch evidence|does not.*prove current source readiness|does not.*prove production approval/i.test(branchFamilyFreshnessRollup.evidenceBoundary ?? '')) {
+    failures.push('branch_family_freshness_rollup must preserve the no-mutation, no-clearance, no-launch-evidence, no-source-readiness, and no-approval boundary.');
   }
   const topBranchReviewPacket = itemById.get('top_branch_review_packet') ?? {};
   if (!/highest-priority|focused read-only branch packet|local\/origin state|branch freshness|changed categories|changed Supabase function rows|canonical-head comparison/i.test(`${topBranchReviewPacket.evidenceBoundary ?? ''}\n${topBranchReviewPacket.nextAction ?? ''}`)) {

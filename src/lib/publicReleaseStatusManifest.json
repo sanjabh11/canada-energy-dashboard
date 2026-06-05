@@ -160,6 +160,15 @@
       "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates."
     },
     {
+      "id": "branch_family_freshness_rollup",
+      "label": "Branch family freshness rollup",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:unmerged-branch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The branch family freshness rollup surfaces local-only, origin-only, matching, local-ahead, origin-ahead, diverged, stale, aging, fresh, high-risk, and review-first branch-family counts from read-only branch evidence, but it does not checkout, merge, push, discard, select canonical heads, migrate, deploy, or clear branch review. It does not create launch evidence, prove current source readiness, or prove production approval.",
+      "nextAction": "Use the rollup to prioritize stale or aging high-risk branch families for focused read-only packets and explicit canonical-head owner decisions before any merge, push, discard, migration, deploy, or production approval discussion."
+    },
+    {
       "id": "top_branch_review_packet",
       "label": "Top branch review packet",
       "status": "external_gate",

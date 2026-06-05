@@ -131,6 +131,18 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'branch_family_freshness_rollup',
+    releaseHealthLabel: 'Branch family freshness rollup',
+    boundaryPatterns: [
+      /local-only, origin-only, matching, local-ahead/i,
+      /stale, aging, fresh, high-risk/i,
+      /review-first branch-family counts/i,
+      /does not checkout, merge, push, discard/i,
+      /clear branch review/i,
+      /prove production approval/i,
+    ],
+  },
+  {
     publicId: 'top_branch_review_packet',
     releaseHealthLabel: 'Top branch review packet',
     boundaryPatterns: [
@@ -317,6 +329,7 @@ describe('status page release posture', () => {
     const releasePreflightClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight clearance matrix');
     const releaseToolchainProbeEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release toolchain probe ledger');
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
+    const branchFamilyFreshnessRollupEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch family freshness rollup');
     const topBranchReviewPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Top branch review packet');
     const branchClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch clearance matrix');
     const canonicalHeadQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head decision queue');
@@ -334,7 +347,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(29);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(30);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -396,6 +409,13 @@ describe('status page release posture', () => {
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/does not create launch evidence/i);
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/review-first packet evidence/i);
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/merges, checkouts, migrations, or deploys/i);
+    expect(branchFamilyFreshnessRollupEvidence?.status).toBe('external_gate');
+    expect(branchFamilyFreshnessRollupEvidence?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/local-only, origin-only, matching, local-ahead/i);
+    expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/stale, aging, fresh, high-risk/i);
+    expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/review-first branch-family counts/i);
+    expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
+    expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/prove production approval/i);
     expect(topBranchReviewPacketEvidence?.status).toBe('external_gate');
     expect(topBranchReviewPacketEvidence?.command).toContain('--branch <review-ref>');
     expect(topBranchReviewPacketEvidence?.evidenceBoundary).toMatch(/highest-priority focused read-only branch packet/i);
@@ -532,6 +552,7 @@ describe('status page release posture', () => {
     const productionApprovalRequestPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_request_packet');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
+    const branchFamilyFreshnessRollupGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_family_freshness_rollup');
     const topBranchReviewPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'top_branch_review_packet');
     const branchClearanceMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_clearance_matrix');
     const canonicalHeadQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_decision_queue');
@@ -575,6 +596,7 @@ describe('status page release posture', () => {
       'production_approval_request_packet',
       'post_deploy_live_proof_gate_queue',
       'unmerged_branch_review_queue',
+      'branch_family_freshness_rollup',
       'top_branch_review_packet',
       'branch_clearance_matrix',
       'canonical_head_decision_queue',
@@ -663,6 +685,15 @@ describe('status page release posture', () => {
     expect(branchReviewGate?.command).toContain('report:launch-evidence-manifest');
     expect(branchReviewGate?.evidenceBoundary).toMatch(/does not create launch evidence/i);
     expect(branchReviewGate?.evidenceBoundary).toMatch(/review-first packet summaries/i);
+    expect(branchFamilyFreshnessRollupGate?.status).toBe('external_gate');
+    expect(branchFamilyFreshnessRollupGate?.command).toContain('report:unmerged-branch-readiness');
+    expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/local-only, origin-only, matching, local-ahead/i);
+    expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/stale, aging, fresh, high-risk/i);
+    expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/review-first branch-family counts/i);
+    expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
+    expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/prove current source readiness/i);
+    expect(branchFamilyFreshnessRollupGate?.nextAction).toMatch(/stale or aging high-risk branch families/i);
+    expect(branchFamilyFreshnessRollupGate?.nextAction).toMatch(/explicit canonical-head owner decisions/i);
     expect(topBranchReviewPacketGate?.status).toBe('external_gate');
     expect(topBranchReviewPacketGate?.command).toContain('--branch <review-ref>');
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/highest-priority focused read-only branch packet/i);
