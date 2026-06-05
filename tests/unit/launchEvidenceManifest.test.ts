@@ -12,6 +12,14 @@ const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-
 const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 180_000;
 const tempRoots: string[] = [];
 
+function mapBy<Value, Key>(items: readonly Value[], keyFor: (value: Value) => Key): Map<Key, Value> {
+  const result = new Map<Key, Value>();
+  for (const item of items) {
+    result.set(keyFor(item), item);
+  }
+  return result;
+}
+
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-launch-evidence-'));
   tempRoots.push(root);
@@ -53,12 +61,13 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P0' && gap.gap.includes('Phase F evidence'))).toBe(true);
     expect(manifest.gaps.some((gap: { severity: string; gap: string }) => gap.severity === 'P1' && gap.gap.includes('stale/aging unmerged branches'))).toBe(true);
-    const gapsByProofType = new Map(
-      manifest.gaps.map((gap: {
+    const gapsByProofType = mapBy(
+      manifest.gaps,
+      (gap: {
         proof_type?: string;
         proof_boundary?: string;
         stop_gate?: string;
-      }) => [gap.proof_type, gap]),
+      }) => gap.proof_type,
     );
     expect(Array.from(gapsByProofType.keys()).sort()).toEqual([
       'branch_review_clearance_gap',
@@ -88,15 +97,16 @@ describe('launch evidence manifest report', () => {
     );
     expect(manifest.completion_audit.proof_boundary).toMatch(/maps current manifest\/report evidence only|does not prove commercial-ready status|buyer acceptance|production approval|hosted\/live parity/i);
     expect(manifest.completion_audit.stop_gate).toMatch(/Do not mark the launch goal complete|P0\/P1 blockers|post-deploy live proof/i);
-    const completionItemsByRequirement = new Map(
-      manifest.completion_audit.items.map((item: {
+    const completionItemsByRequirement = mapBy(
+      manifest.completion_audit.items,
+      (item: {
         requirement: string;
         status: string;
         proof_type?: string;
         proof_boundary?: string;
         stop_gate?: string;
         blocks_goal_completion?: boolean;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     expect(completionItemsByRequirement.get('Launch score table')?.proof_type).toBe('required_score_table');
     expect(completionItemsByRequirement.get('Gap analysis')?.proof_type).toBe('required_gap_analysis_table');
@@ -126,13 +136,14 @@ describe('launch evidence manifest report', () => {
     expect(manifest.bottleneck_log[0].top_unblock_options).toHaveLength(3);
     expect(manifest.market_evidence_mode).toBe('mixed');
     expect(manifest.synthetic_data_points).toEqual([]);
-    const adversarialReviewsByLane = new Map(
-      manifest.adversarial_reviews.map((review: {
+    const adversarialReviewsByLane = mapBy(
+      manifest.adversarial_reviews,
+      (review: {
         lane: string;
         proof_type?: string;
         proof_boundary?: string;
         stop_gate?: string;
-      }) => [review.lane, review]),
+      }) => review.lane,
     );
     expect(adversarialReviewsByLane.get('buyer evidence')?.proof_type).toBe('buyer_evidence_adversarial_review');
     expect(adversarialReviewsByLane.get('buyer evidence')?.proof_boundary).toMatch(/does not create buyer acceptance|95% confidence|commercial-ready status/i);
@@ -172,13 +183,14 @@ describe('launch evidence manifest report', () => {
     expect(manifest.buyer_evidence.acquisition_matrix.stop_gate).toMatch(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95/i);
     expect(manifest.buyer_evidence.acquisition_matrix.row_count).toBeGreaterThanOrEqual(10);
     expect(manifest.buyer_evidence.acquisition_matrix.blocked_count).toBe(manifest.buyer_evidence.acquisition_matrix.row_count);
-    const acquisitionRowsByLane = new Map(
-      manifest.buyer_evidence.acquisition_matrix.rows.map((item: {
+    const acquisitionRowsByLane = mapBy(
+      manifest.buyer_evidence.acquisition_matrix.rows,
+      (item: {
         lane: string;
         proof_type?: string;
         validation_command?: string;
         blocks_buyer_gate?: boolean;
-      }) => [item.lane, item]),
+      }) => item.lane,
     );
     expect(acquisitionRowsByLane.get('Outreach response log intake')?.proof_type).toBe('outreach_intake_acquisition');
     expect(acquisitionRowsByLane.get('Outreach response log intake')?.validation_command).toContain('plan:outreach-intake');
@@ -223,22 +235,24 @@ describe('launch evidence manifest report', () => {
       expect(firstSupabaseAction.stop_gate).toMatch(/Do not/i);
       expect(firstSupabaseAction.status).not.toBe('ready');
     }
-    const supabaseDeficitsByRequirement = new Map(
-      manifest.supabase_advisor.clearance_deficits.items.map((item: {
+    const supabaseDeficitsByRequirement = mapBy(
+      manifest.supabase_advisor.clearance_deficits.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         external_account_required?: boolean;
         proof_boundary?: string;
         stop_gate?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
-    const supabaseActionsByRequirement = new Map(
-      manifest.supabase_advisor.clearance_deficits.remediation_queue.items.map((item: {
+    const supabaseActionsByRequirement = mapBy(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         external_account_required?: boolean;
         proof_boundary?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     expect(supabaseDeficitsByRequirement.get('CLI app lint freshness')?.proof_type).toBe('repo_command');
     expect(supabaseDeficitsByRequirement.get('CLI app lint freshness')?.external_account_required).toBe(false);
@@ -297,13 +311,14 @@ describe('launch evidence manifest report', () => {
       'Clean source provenance',
       'Explicit owner production approval',
     ]);
-    const releaseDeficitsByRequirement = new Map(
-      manifest.release_preflight.items.map((item: {
+    const releaseDeficitsByRequirement = mapBy(
+      manifest.release_preflight.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         proof_boundary?: string;
         stop_gate?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     expect(releaseDeficitsByRequirement.get('Pinned package manager')?.proof_type).toBe('package_manager_pin');
     expect(releaseDeficitsByRequirement.get('Pinned package manager')?.proof_boundary).toMatch(/does not prove Corepack resolution|release-readiness execution|Git LFS push-path availability/i);
@@ -328,8 +343,9 @@ describe('launch evidence manifest report', () => {
     expect(manifest.release_preflight.clearance_matrix.rows.map((item: { requirement: string }) => item.requirement)).toEqual(
       manifest.release_preflight.items.map((item: { requirement: string }) => item.requirement),
     );
-    const releaseClearanceRowsByRequirement = new Map(
-      manifest.release_preflight.clearance_matrix.rows.map((item: {
+    const releaseClearanceRowsByRequirement = mapBy(
+      manifest.release_preflight.clearance_matrix.rows,
+      (item: {
         requirement: string;
         proof_type?: string;
         proof_boundary?: string;
@@ -337,7 +353,7 @@ describe('launch evidence manifest report', () => {
         release_impact?: string;
         blocks_release_gate?: boolean;
         status?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
     expect(releaseClearanceRowsByRequirement.get('Corepack pnpm resolver')?.proof_command).toBe('corepack pnpm --version');
@@ -352,12 +368,13 @@ describe('launch evidence manifest report', () => {
     expect(releaseClearanceRowsByRequirement.get('Explicit owner production approval')?.release_impact).toMatch(/production deploy|hosted-live claim|owner approval/i);
     expect(manifest.release_preflight.remediation_queue.status).toMatch(/blocked|pass/);
     expect(manifest.release_preflight.remediation_queue.evidence).toContain('Release preflight remediation queue');
-    const releaseActionsByRequirement = new Map(
-      manifest.release_preflight.remediation_queue.items.map((item: {
+    const releaseActionsByRequirement = mapBy(
+      manifest.release_preflight.remediation_queue.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         proof_boundary?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     expect(releaseActionsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
     expect(releaseActionsByRequirement.get('Corepack pnpm resolver')?.proof_boundary).toMatch(/does not install tools/i);
@@ -397,12 +414,13 @@ describe('launch evidence manifest report', () => {
       'production_approval',
       'post_deploy_live_proof',
     ]);
-    const launchActionsByPhase = new Map(
-      manifest.launch_action_queue.items.map((item: {
+    const launchActionsByPhase = mapBy(
+      manifest.launch_action_queue.items,
+      (item: {
         phase: string;
         proof_type?: string;
         proof_boundary?: string;
-      }) => [item.phase, item]),
+      }) => item.phase,
     );
     expect(launchActionsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
     expect(launchActionsByPhase.get('source_provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
@@ -462,12 +480,13 @@ describe('launch evidence manifest report', () => {
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
-    const productionPrerequisitesByName = new Map(
-      manifest.production_approval.prerequisite_queue.items.map((item: {
+    const productionPrerequisitesByName = mapBy(
+      manifest.production_approval.prerequisite_queue.items,
+      (item: {
         prerequisite: string;
         proof_type?: string;
         proof_boundary?: string;
-      }) => [item.prerequisite, item]),
+      }) => item.prerequisite,
     );
     expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
     expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
@@ -494,14 +513,15 @@ describe('launch evidence manifest report', () => {
     expect(productionRequestPacket.request_blocking_count).toBeGreaterThanOrEqual(1);
     expect(productionRequestPacket.proof_boundary).toMatch(/organizes evidence for owner review only|does not grant owner approval|run deploys|hosted\/live parity/i);
     expect(productionRequestPacket.stop_gate).toMatch(/Do not request or claim production approval|deploy-production|netlify deploy/i);
-    const productionRequestRowsByName = new Map(
-      productionRequestPacket.items.map((item: {
+    const productionRequestRowsByName = mapBy(
+      productionRequestPacket.items,
+      (item: {
         prerequisite: string;
         request_phase?: string;
         evidence_to_attach?: string;
         blocks_request?: boolean;
         status?: string;
-      }) => [item.prerequisite, item]),
+      }) => item.prerequisite,
     );
     expect(productionRequestPacket.items.map((item: { prerequisite: string }) => item.prerequisite)).toEqual(
       manifest.production_approval.prerequisite_queue.items.map((item: { prerequisite: string }) => item.prerequisite),
@@ -542,12 +562,13 @@ describe('launch evidence manifest report', () => {
     expect(deployCompletionGate.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
     expect(deployCompletionGate.stop_gate).toContain('DEPLOY CEIP PRODUCTION');
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Current-source hosted parity claim').status).toBe('blocked');
-    const postDeployProofTypesByGate = new Map(
-      manifest.post_deploy_live_proof.gate_queue.items.map((item: {
+    const postDeployProofTypesByGate = mapBy(
+      manifest.post_deploy_live_proof.gate_queue.items,
+      (item: {
         gate: string;
         proof_type?: string;
         proof_boundary?: string;
-      }) => [item.gate, item]),
+      }) => item.gate,
     );
     expect(postDeployProofTypesByGate.get('Production approval clearance')?.proof_type).toBe('manual_approval_gate');
     expect(postDeployProofTypesByGate.get('Production approval clearance')?.proof_boundary).toMatch(/does not grant owner approval|does not.*deploy/i);
@@ -832,8 +853,9 @@ describe('launch evidence manifest report', () => {
     const stdout = runManifest();
     const manifest = JSON.parse(stdout);
     const matrix = manifest.buyer_evidence.acquisition_matrix;
-    const rowsByLane = new Map(
-      matrix.rows.map((item: {
+    const rowsByLane = mapBy(
+      matrix.rows,
+      (item: {
         lane: string;
         status: string;
         current?: string;
@@ -841,7 +863,7 @@ describe('launch evidence manifest report', () => {
         stop_gate?: string;
         validation_command?: string;
         proof_type?: string;
-      }) => [item.lane, item]),
+      }) => item.lane,
     );
 
     expect(matrix.status).toBe('blocked');
@@ -869,25 +891,27 @@ describe('launch evidence manifest report', () => {
   it('classifies buyer evidence remediation proof rows with explicit boundaries', () => {
     const stdout = runManifest();
     const manifest = JSON.parse(stdout);
-    const buyerDeficitsByRequirement = new Map(
-      manifest.buyer_evidence.hard_gate_deficits.items.map((item: {
+    const buyerDeficitsByRequirement = mapBy(
+      manifest.buyer_evidence.hard_gate_deficits.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         buyer_accepted_evidence_required?: boolean;
         retained_artifact_required?: boolean;
         proof_boundary?: string;
         stop_gate?: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
-    const buyerActionsByRequirement = new Map(
-      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.map((item: {
+    const buyerActionsByRequirement = mapBy(
+      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items,
+      (item: {
         requirement: string;
         proof_type?: string;
         buyer_accepted_evidence_required?: boolean;
         retained_artifact_required?: boolean;
         proof_boundary?: string;
         proof_command: string;
-      }) => [item.requirement, item]),
+      }) => item.requirement,
     );
     const expectedProofTypes: Record<string, string> = {
       'Utility forecast lane': 'forecast_trust_artifact_preparation',
