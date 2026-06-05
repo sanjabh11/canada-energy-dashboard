@@ -154,6 +154,8 @@ function renderReport(manifest, validationText) {
   const launchActionItems = Array.isArray(launchActionQueue.items) ? launchActionQueue.items : [];
   const sourceResolutionQueue = manifest.source_provenance?.resolution_queue ?? {};
   const sourceResolutionItems = Array.isArray(sourceResolutionQueue.items) ? sourceResolutionQueue.items : [];
+  const sourceIsolationLedger = manifest.source_provenance?.isolation_ledger ?? {};
+  const sourceIsolationRows = Array.isArray(sourceIsolationLedger.rows) ? sourceIsolationLedger.rows : [];
   const branchCanonicalDecisions = manifest.branch_review?.canonical_head_decisions ?? {};
   const branchCanonicalDecisionItems = Array.isArray(branchCanonicalDecisions.items) ? branchCanonicalDecisions.items : [];
   const branchClearanceMatrix = manifest.branch_review?.clearance_matrix ?? {};
@@ -253,6 +255,36 @@ ${sourceResolutionItems.length > 0
       item.status,
     ])).join('\n')
     : row(['n/a', 'none', 'n/a', sourceResolutionQueue.status ?? 'unknown', 'n/a', 'n/a', 'clean', 'n/a', 'n/a', 'No dirty source paths were captured.', 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness', sourceResolutionQueue.evidence ?? 'No source provenance resolution queue was captured.', sourceResolutionQueue.status ?? 'unknown'])}
+
+## Source Provenance Isolation Ledger
+
+Status: \`${text(sourceIsolationLedger.status)}\`
+
+Proof Type: ${text(sourceIsolationLedger.proof_type ?? 'source_provenance_isolation_ledger')}
+
+Evidence: ${text(sourceIsolationLedger.evidence)}
+
+Proof Boundary: ${text(sourceIsolationLedger.proof_boundary ?? 'This ledger isolates dirty-source release impact only; it does not mutate source or clear provenance.')}
+
+Stop Gate: ${text(sourceIsolationLedger.stop_gate ?? 'Do not request deploy approval until every release-blocking source path is intentionally resolved.')}
+
+| Rank | File Path | Old Path | Source Status | Staging State | Release Impact | Isolation Status | Proof Command | Proof Type | Stop Gate | Blocks Release Source Gate |
+|---:|---|---|---|---|---|---|---|---|---|---:|
+${sourceIsolationRows.length > 0
+    ? sourceIsolationRows.map((item) => row([
+      item.rank,
+      item.file_path,
+      item.old_path ?? 'n/a',
+      item.source_status,
+      item.staging_state,
+      item.release_impact,
+      item.isolation_status,
+      item.proof_command,
+      item.proof_type,
+      item.stop_gate,
+      item.blocks_release_source_gate === true ? 'yes' : 'no',
+    ])).join('\n')
+    : row(['n/a', 'none', 'n/a', sourceIsolationLedger.status ?? 'unknown', 'clean', 'No dirty source path blocks release provenance at manifest generation time.', 'not_required', 'git status --porcelain=v1', sourceIsolationLedger.proof_type ?? 'source_provenance_isolation_ledger', sourceIsolationLedger.stop_gate ?? 'Owner approval and release gates still apply before deploy.', 'no'])}
 
 ## Branch Canonical Head Decision Deficits
 

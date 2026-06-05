@@ -517,6 +517,27 @@ describe('launch evidence manifest report', () => {
       expect(manifest.source_provenance.evidence).toContain('staging_state=');
     }
     expect(manifest.source_provenance.deploy_gate).toContain('deploy');
+    expect(manifest.source_provenance.isolation_ledger.status).toMatch(/blocked|pass/);
+    expect(manifest.source_provenance.isolation_ledger.proof_type).toBe('source_provenance_isolation_ledger');
+    expect(manifest.source_provenance.isolation_ledger.evidence).toContain('Source provenance isolation ledger');
+    expect(manifest.source_provenance.isolation_ledger.proof_boundary).toMatch(/dirty-source release impact only|does not mutate source|clear provenance|deploy|grant production approval/i);
+    expect(manifest.source_provenance.isolation_ledger.stop_gate).toMatch(/Do not request deploy approval|clean source provenance/i);
+    expect(manifest.source_provenance.isolation_ledger.dirty_path_count).toBe(manifest.source_provenance.dirty_path_count);
+    expect(manifest.source_provenance.isolation_ledger.rows.length).toBe(manifest.source_provenance.dirty_paths.length);
+    if (manifest.source_provenance.isolation_ledger.rows.length > 0) {
+      const firstIsolationRow = manifest.source_provenance.isolation_ledger.rows[0];
+      expect(firstIsolationRow.release_impact).toMatch(/blocks clean source provenance|does not enter source by default|blocks release provenance/i);
+      expect(firstIsolationRow.isolation_status).toBe('owner_decision_required');
+      expect(firstIsolationRow.proof_command).toContain('git status --porcelain=v1');
+      expect(firstIsolationRow.proof_command).toContain('report:production-approval-packet');
+      expect(firstIsolationRow.proof_boundary).toMatch(/release-impact classification only|does not clear source provenance/i);
+      expect(firstIsolationRow.stop_gate).toMatch(/explicit owner intent|release-readiness|production approval/i);
+      expect(firstIsolationRow.blocks_release_source_gate).toBe(true);
+      if (firstIsolationRow.old_path) {
+        expect(firstIsolationRow.proof_type).toBe('source_rename_decision');
+        expect(firstIsolationRow.release_impact).toMatch(/staged rename or move|owner decides/i);
+      }
+    }
     expect(manifest.source_provenance.resolution_queue.status).toMatch(/blocked|pass/);
     expect(manifest.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
     expect(manifest.source_provenance.resolution_queue.dirty_path_count).toBe(manifest.source_provenance.dirty_path_count);
@@ -924,6 +945,11 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('Source provenance:');
     expect(stdout).toContain('Launch blocker action queue');
     expect(stdout).toContain('Source provenance resolution queue');
+    expect(stdout).toContain('Source provenance isolation ledger');
+    expect(stdout).toContain('source_provenance_isolation_ledger');
+    expect(stdout).toContain('dirty-source release impact only');
+    expect(stdout).toContain('git status --porcelain=v1');
+    expect(stdout).toContain('Do not request deploy approval');
     expect(stdout).toContain('This queue is a decision aid only');
     expect(stdout).toContain('corepack pnpm run report:production-approval-packet -- --skip-release-readiness');
     expect(stdout).toContain('explicit owner intent');

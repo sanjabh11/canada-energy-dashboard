@@ -109,6 +109,7 @@ function assertReport(markdown, options = {}) {
     'Gap Analysis',
     'Launch Blocker Action Queue',
     'Source Provenance Resolution Queue',
+    'Source Provenance Isolation Ledger',
     'Branch Canonical Head Decision Deficits',
     'Branch Clearance Matrix',
     'Buyer Evidence Hard Gate Deficits',
@@ -167,6 +168,12 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('This queue is a decision aid only'), 'Report must preserve the source-provenance non-execution boundary.');
   assert(markdown.includes('without explicit owner intent'), 'Report must preserve the source-provenance owner-intent stop gate.');
   assert(markdown.includes('corepack pnpm run report:production-approval-packet -- --skip-release-readiness'), 'Report must include the source-provenance proof command.');
+  assert(markdown.includes('## Source Provenance Isolation Ledger'), 'Report must include the source provenance isolation ledger table.');
+  assert(markdown.includes('source_provenance_isolation_ledger'), 'Report must classify the source provenance isolation ledger proof type.');
+  assert(markdown.includes('Source provenance isolation ledger'), 'Report must include structured source provenance isolation evidence from the manifest.');
+  assert(markdown.includes('dirty-source release impact only'), 'Report must preserve the source isolation proof boundary.');
+  assert(markdown.includes('Do not request deploy approval'), 'Report must preserve the source isolation stop gate.');
+  assert(markdown.includes('git status --porcelain=v1'), 'Report must include the source isolation proof command.');
   assert(markdown.includes('## Branch Canonical Head Decision Deficits'), 'Report must include the branch canonical-head decision deficit table.');
   assert(markdown.includes('Canonical head decision ledger'), 'Report must include structured canonical-head decision evidence from the manifest.');
   assert(markdown.includes('This ledger is read-only'), 'Report must preserve the canonical-head decision non-execution boundary.');
@@ -301,6 +308,7 @@ function assertReport(markdown, options = {}) {
   const gapSection = extractSection(markdown, 'Gap Analysis');
   const actionQueueSection = extractSection(markdown, 'Launch Blocker Action Queue');
   const sourceResolutionSection = extractSection(markdown, 'Source Provenance Resolution Queue');
+  const sourceIsolationSection = extractSection(markdown, 'Source Provenance Isolation Ledger');
   const branchCanonicalDecisionSection = extractSection(markdown, 'Branch Canonical Head Decision Deficits');
   const branchClearanceSection = extractSection(markdown, 'Branch Clearance Matrix');
   const buyerDeficitSection = extractSection(markdown, 'Buyer Evidence Hard Gate Deficits');
@@ -335,6 +343,10 @@ function assertReport(markdown, options = {}) {
   assert(/does not resolve Corepack|Do not treat local pnpm checks/i.test(gapSection), 'Gap analysis table must preserve release-toolchain stop gates.');
   assert(countDataRows(actionQueueSection) >= 6, 'Launch blocker action queue must include the launch execution phases.');
   assert(countDataRows(sourceResolutionSection) >= 1, 'Source provenance resolution queue must include at least the clean/dirty boundary row.');
+  assert(countDataRows(sourceIsolationSection) >= 1, 'Source provenance isolation ledger must include at least the clean/dirty boundary row.');
+  assert(sourceIsolationSection.includes('Proof Type') && sourceIsolationSection.includes('Stop Gate') && sourceIsolationSection.includes('Blocks Release Source Gate'), 'Source provenance isolation ledger must expose proof type, stop gate, and release-source blocking columns.');
+  assert(/source_provenance_isolation_ledger|source_rename_decision|staged_source_decision|untracked_source_decision/i.test(sourceIsolationSection), 'Source provenance isolation ledger must include isolation or dirty-path proof types.');
+  assert(/does not mutate source|clear source provenance|release-readiness|production approval/i.test(sourceIsolationSection), 'Source provenance isolation ledger must preserve no-mutation and no-approval boundaries.');
   assert(countDataRows(branchCanonicalDecisionSection) >= 1, 'Branch canonical-head decision table must include at least the skipped/empty boundary row.');
   assert(countDataRows(branchClearanceSection) >= 1, 'Branch clearance matrix must include at least the skipped boundary row or current branch-family rows.');
   assert(branchClearanceSection.includes('Proof Type') && branchClearanceSection.includes('Stop Gate') && branchClearanceSection.includes('Clearance Status'), 'Branch clearance matrix table must expose proof type, stop gate, and clearance status columns.');
@@ -406,4 +418,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, launch evidence validation prerequisite, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

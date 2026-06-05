@@ -546,6 +546,52 @@ try {
       assert(manifest.source_provenance.evidence.includes('index_status='), 'Manifest source provenance evidence must include index_status classification for dirty paths.');
       assert(manifest.source_provenance.evidence.includes('worktree_status='), 'Manifest source provenance evidence must include worktree_status classification for dirty paths.');
     }
+    assert(typeof manifest.source_provenance?.isolation_ledger?.evidence === 'string', 'Manifest source_provenance.isolation_ledger.evidence must be set.');
+    assert(manifest.source_provenance.isolation_ledger.evidence.includes('Source provenance isolation ledger'), 'Manifest source provenance isolation ledger evidence must include a ledger marker.');
+    assert(manifest.source_provenance.isolation_ledger.proof_type === 'source_provenance_isolation_ledger', 'Manifest source provenance isolation ledger must classify proof_type as source_provenance_isolation_ledger.');
+    assert(typeof manifest.source_provenance.isolation_ledger.status === 'string' && manifest.source_provenance.isolation_ledger.status.length > 0, 'Manifest source_provenance.isolation_ledger.status must be set.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.dirty_path_count), 'Manifest source_provenance.isolation_ledger.dirty_path_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.release_blocking_path_count), 'Manifest source_provenance.isolation_ledger.release_blocking_path_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.owner_decision_count), 'Manifest source_provenance.isolation_ledger.owner_decision_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.rename_or_move_count), 'Manifest source_provenance.isolation_ledger.rename_or_move_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.staged_only_count), 'Manifest source_provenance.isolation_ledger.staged_only_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.unstaged_only_count), 'Manifest source_provenance.isolation_ledger.unstaged_only_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.staged_and_unstaged_count), 'Manifest source_provenance.isolation_ledger.staged_and_unstaged_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.untracked_count), 'Manifest source_provenance.isolation_ledger.untracked_count must be an integer.');
+    assert(Number.isInteger(manifest.source_provenance.isolation_ledger.ignored_local_count), 'Manifest source_provenance.isolation_ledger.ignored_local_count must be an integer.');
+    assert(Array.isArray(manifest.source_provenance.isolation_ledger.rows), 'Manifest source_provenance.isolation_ledger.rows must be a list.');
+    assert(
+      manifest.source_provenance.isolation_ledger.dirty_path_count === manifest.source_provenance.dirty_path_count,
+      'Source provenance isolation ledger dirty_path_count must match source_provenance.dirty_path_count.',
+    );
+    assert(
+      manifest.source_provenance.isolation_ledger.rows.length === manifest.source_provenance.dirty_paths.length,
+      'Source provenance isolation ledger rows must match the emitted dirty_paths list.',
+    );
+    assert(typeof manifest.source_provenance.isolation_ledger.proof_boundary === 'string' && /dirty-source release impact only|does not mutate source|clear provenance|run release-readiness|deploy|grant production approval/i.test(manifest.source_provenance.isolation_ledger.proof_boundary), 'Source provenance isolation ledger proof_boundary must preserve classification-only semantics.');
+    assert(typeof manifest.source_provenance.isolation_ledger.stop_gate === 'string' && /Do not request deploy approval|release-readiness|clean source provenance/i.test(manifest.source_provenance.isolation_ledger.stop_gate), 'Source provenance isolation ledger stop_gate must block deploy approval until clean provenance.');
+    for (const [index, item] of (manifest.source_provenance.isolation_ledger.rows ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `source_provenance.isolation_ledger.rows[${index}].rank must be an integer.`);
+      assert(typeof item.file_path === 'string' && item.file_path.length > 0, `source_provenance.isolation_ledger.rows[${index}].file_path must be set.`);
+      assert(item.old_path === null || typeof item.old_path === 'string', `source_provenance.isolation_ledger.rows[${index}].old_path must be string or null.`);
+      assert(typeof item.source_status === 'string' && item.source_status.length > 0, `source_provenance.isolation_ledger.rows[${index}].source_status must be set.`);
+      assert(typeof item.staging_state === 'string' && item.staging_state.length > 0, `source_provenance.isolation_ledger.rows[${index}].staging_state must be set.`);
+      assert(typeof item.index_status === 'string' && item.index_status.length > 0, `source_provenance.isolation_ledger.rows[${index}].index_status must be set.`);
+      assert(typeof item.worktree_status === 'string' && item.worktree_status.length > 0, `source_provenance.isolation_ledger.rows[${index}].worktree_status must be set.`);
+      assert(isBoolean(item.tracked), `source_provenance.isolation_ledger.rows[${index}].tracked must be boolean.`);
+      assert(isBoolean(item.ignored_by_rule), `source_provenance.isolation_ledger.rows[${index}].ignored_by_rule must be boolean.`);
+      assert(typeof item.release_impact === 'string' && /blocks clean source provenance|does not enter source by default|blocks release provenance/i.test(item.release_impact), `source_provenance.isolation_ledger.rows[${index}].release_impact must describe release impact.`);
+      assert(item.isolation_status === 'owner_decision_required', `source_provenance.isolation_ledger.rows[${index}].isolation_status must require owner decision.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('git status --porcelain=v1') && item.proof_command.includes('report:production-approval-packet'), `source_provenance.isolation_ledger.rows[${index}].proof_command must include git status and production approval packet.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `source_provenance.isolation_ledger.rows[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && /release-impact classification only|does not clear source provenance|release-readiness/i.test(item.proof_boundary), `source_provenance.isolation_ledger.rows[${index}].proof_boundary must preserve isolation-only semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not.*without explicit owner intent|clean-source|release-readiness|production approval/i.test(item.stop_gate), `source_provenance.isolation_ledger.rows[${index}].stop_gate must preserve owner-intent and no-approval boundaries.`);
+      assert(item.blocks_release_source_gate === true, `source_provenance.isolation_ledger.rows[${index}].blocks_release_source_gate must be true for dirty paths.`);
+      if (item.old_path) {
+        assert(item.proof_type === 'source_rename_decision', `source_provenance.isolation_ledger.rows[${index}] must classify rename/move rows as source_rename_decision.`);
+        assert(/staged rename or move|owner decides/i.test(item.release_impact), `source_provenance.isolation_ledger.rows[${index}].release_impact must identify staged rename/move owner decision.`);
+      }
+    }
     assert(typeof manifest.source_provenance?.resolution_queue?.evidence === 'string', 'Manifest source_provenance.resolution_queue.evidence must be set.');
     assert(manifest.source_provenance.resolution_queue.evidence.includes('Source provenance resolution queue'), 'Manifest source provenance resolution queue evidence must include a queue marker.');
     assert(Number.isInteger(manifest.source_provenance.resolution_queue.dirty_path_count), 'Manifest source_provenance.resolution_queue.dirty_path_count must be an integer.');
@@ -1655,4 +1701,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

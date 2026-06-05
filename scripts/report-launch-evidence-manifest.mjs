@@ -2635,6 +2635,94 @@ function buildSourceProvenanceResolutionQueue(status) {
   return { ...queue, evidence: sourceProvenanceResolutionEvidence(queue) };
 }
 
+function sourceProvenanceIsolationReleaseImpact(detail) {
+  if (!detail) {
+    return 'no dirty source path blocks release provenance at manifest generation time';
+  }
+  if (detail.old_path) {
+    return 'staged rename or move blocks clean source provenance until the owner decides whether it should be committed, unstaged, or otherwise resolved';
+  }
+  if (!detail.tracked && detail.ignored_by_rule) {
+    return 'ignored local artifact does not enter source by default, but must remain outside launch evidence unless owner decides otherwise';
+  }
+  if (!detail.tracked) {
+    return 'untracked non-ignored path blocks clean source provenance until the owner decides whether it is source evidence, a local artifact, or ignore-rule material';
+  }
+  if (detail.staging_state === 'staged_only') {
+    return 'staged source change blocks clean source provenance until owner commit, unstage, stash, or revert decision is made';
+  }
+  if (detail.staging_state === 'unstaged_only') {
+    return 'unstaged source change blocks clean source provenance until owner commit, stash, or revert decision is made';
+  }
+  if (detail.staging_state === 'staged_and_unstaged') {
+    return 'split index/worktree source change blocks clean source provenance until separate owner decisions are made for both versions';
+  }
+  return 'tracked source change blocks clean source provenance until owner resolution is complete';
+}
+
+function sourceProvenanceIsolationEvidence(ledger) {
+  if (ledger.status === 'pass') {
+    return 'Source provenance isolation ledger: status=pass dirty_paths=0 release_blocking_paths=0 approval_gate=clean source still requires release-readiness and owner approval before deploy';
+  }
+
+  const topBlocking = ledger.rows
+    .slice(0, 5)
+    .map((item) => `${item.file_path}:${item.proof_type}:${item.isolation_status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Source provenance isolation ledger:',
+    `status=${ledger.status}`,
+    `dirty_paths=${ledger.dirty_path_count}`,
+    `release_blocking_paths=${ledger.release_blocking_path_count}`,
+    `rename_or_move=${ledger.rename_or_move_count}`,
+    `staged_only=${ledger.staged_only_count}`,
+    `unstaged_only=${ledger.unstaged_only_count}`,
+    `untracked=${ledger.untracked_count}`,
+    `ignored_local=${ledger.ignored_local_count}`,
+    `top_blocking=${topBlocking}`,
+    'approval_gate=ledger proves classification only; it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval',
+  ].join(' ');
+}
+
+function buildSourceProvenanceIsolationLedger(status) {
+  const rows = status.dirtyDetails.map((detail, index) => ({
+    rank: index + 1,
+    file_path: detail.file_path,
+    old_path: detail.old_path,
+    source_status: detail.status,
+    staging_state: detail.staging_state,
+    index_status: detail.index_status,
+    worktree_status: detail.worktree_status,
+    tracked: detail.tracked,
+    ignored_by_rule: detail.ignored_by_rule,
+    release_impact: sourceProvenanceIsolationReleaseImpact(detail),
+    isolation_status: 'owner_decision_required',
+    proof_command: 'git status --porcelain=v1 && corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    proof_type: sourceResolutionProofType(detail),
+    proof_boundary: `${sourceResolutionProofBoundary(detail)} This isolation row is release-impact classification only; it does not clear source provenance or prove release-readiness.`,
+    stop_gate: `${sourceResolutionStopGate(detail)} Do not treat this isolation ledger as clean-source, release-readiness, deploy, or production approval evidence.`,
+    blocks_release_source_gate: true,
+  }));
+  const ledger = {
+    status: status.isDirty ? 'blocked' : 'pass',
+    proof_type: 'source_provenance_isolation_ledger',
+    dirty_path_count: status.dirtyLines.length,
+    release_blocking_path_count: rows.filter((item) => item.blocks_release_source_gate).length,
+    owner_decision_count: rows.length,
+    rename_or_move_count: rows.filter((item) => item.old_path).length,
+    staged_only_count: rows.filter((item) => item.staging_state === 'staged_only').length,
+    unstaged_only_count: rows.filter((item) => item.staging_state === 'unstaged_only').length,
+    staged_and_unstaged_count: rows.filter((item) => item.staging_state === 'staged_and_unstaged').length,
+    untracked_count: rows.filter((item) => !item.tracked && !item.ignored_by_rule).length,
+    ignored_local_count: rows.filter((item) => !item.tracked && item.ignored_by_rule).length,
+    proof_boundary: 'This ledger isolates current dirty-source release impact only; it does not mutate source, clear provenance, run release-readiness, deploy, or grant production approval.',
+    stop_gate: 'Do not request deploy approval, run release-readiness as release evidence, or claim clean source provenance until every release-blocking path is intentionally resolved by the owner.',
+    rows,
+  };
+  return { ...ledger, evidence: sourceProvenanceIsolationEvidence(ledger) };
+}
+
 function branchFreshnessEvidence(rows) {
   if (rows.length === 0) {
     return 'Branch freshness review: no freshness rows were parsed from the branch readiness report.';
@@ -3836,6 +3924,7 @@ const generatedAt = new Date().toISOString();
 
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
 const sourceProvenanceResolutionQueue = buildSourceProvenanceResolutionQueue(gitStatus);
+const sourceProvenanceIsolationLedger = buildSourceProvenanceIsolationLedger(gitStatus);
 const productionApprovalPrerequisiteQueue = buildProductionApprovalPrerequisiteQueue({
   buyerProbe,
   branchReviewQueue,
@@ -3895,7 +3984,7 @@ const launchGaps = [
   launchGap({
     gap: 'Current source deploy approval is blocked when the worktree is dirty or owner approval is absent.',
     severity: gitStatus.isDirty ? 'P0' : 'P1',
-    evidence: dirtyEvidence,
+    evidence: [dirtyEvidence, sourceProvenanceIsolationLedger.evidence].join('; '),
     framework_mapping: ['Release readiness: source deploy provenance', 'NIST SSDF: release integrity'],
     buyer_impact: 'A buyer-facing production release request cannot proceed until source provenance is clean and explicitly approved.',
     fix: 'Commit, stash, or intentionally resolve dirty tracked paths, run release readiness, then request explicit owner approval before deploy.',
@@ -3970,6 +4059,7 @@ const manifest = {
     local: [
       'Local release readiness is verified separately with corepack pnpm run check:release-readiness; do not infer current deploy approval from this JSON alone.',
       dirtyEvidence,
+      sourceProvenanceIsolationLedger.evidence,
       sourceProvenanceResolutionQueue.evidence,
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
@@ -4104,6 +4194,7 @@ const manifest = {
     is_dirty: gitStatus.isDirty,
     dirty_path_count: gitStatus.dirtyLines.length,
     dirty_paths: gitStatus.dirtyDetails,
+    isolation_ledger: sourceProvenanceIsolationLedger,
     resolution_queue: sourceProvenanceResolutionQueue,
     evidence: dirtyEvidence,
     deploy_gate: gitStatus.isDirty
