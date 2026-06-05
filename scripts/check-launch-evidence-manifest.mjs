@@ -169,6 +169,47 @@ try {
       assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].stop_gate must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must be set.`);
       assert(item.status !== 'ready', `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must remain non-ready until the hard-gate row passes.`);
+      assert(!/[<>]/.test(item.proof_command), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must use shell-safe placeholders, not angle-bracket redirection placeholders.`);
+      if (item.proof_command.includes('prepare:pilot-evidence-artifact')) {
+        for (const option of [
+          '--evidence-root',
+          '--artifact-file',
+          '--route',
+          '--proof-pack-id',
+          '--record-date',
+          '--pii-screen-result',
+          '--buyer-data-coverage-pct',
+          '--time-to-artifact-hours',
+          '--reviewer-role',
+          '--reviewer-acceptance',
+          '--reviewer-feedback-status',
+          '--day-14-decision',
+          '--commercial-commitment-status',
+          '--claim-boundary',
+          '--do-not-claim',
+          '--diagnostic',
+        ]) {
+          assert(item.proof_command.includes(option), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must include ${option} when preparing retained pilot evidence artifacts.`);
+        }
+      }
+      if (item.proof_command.includes('prepare:forecast-trust-report-artifact')) {
+        for (const option of [
+          '--benchmark-pack-file',
+          '--evidence-root',
+          '--artifact-file',
+          '--proof-pack-id',
+          '--record-date',
+          '--buyer-data-coverage-pct',
+          '--time-to-artifact-hours',
+          '--reviewer-role',
+          '--reviewer-acceptance',
+          '--reviewer-feedback-status',
+          '--day-14-decision',
+          '--commercial-commitment-status',
+        ]) {
+          assert(item.proof_command.includes(option), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must include ${option} when preparing forecast trust retained evidence.`);
+        }
+      }
     }
     const buyerQueueRequirements = (manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items ?? []).map((item) => item.requirement);
     const nonPassBuyerRequirements = (manifest.buyer_evidence.hard_gate_deficits.items ?? [])

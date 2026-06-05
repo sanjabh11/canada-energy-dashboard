@@ -322,6 +322,54 @@ describe('launch evidence manifest report', () => {
     expect(strongSignalItem.stop_gate).toMatch(/status labels/i);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('keeps buyer artifact-preparation remediation commands complete and shell-safe', () => {
+    const stdout = runManifest();
+    const manifest = JSON.parse(stdout);
+    const buyerQueue = manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items;
+    const pilotArtifactOptions = [
+      '--evidence-root',
+      '--artifact-file',
+      '--route',
+      '--proof-pack-id',
+      '--record-date',
+      '--pii-screen-result',
+      '--buyer-data-coverage-pct',
+      '--time-to-artifact-hours',
+      '--reviewer-role',
+      '--reviewer-acceptance',
+      '--reviewer-feedback-status',
+      '--day-14-decision',
+      '--commercial-commitment-status',
+      '--claim-boundary',
+      '--do-not-claim',
+      '--diagnostic',
+    ];
+    const forecastArtifactOptions = [
+      '--benchmark-pack-file',
+      '--evidence-root',
+      '--artifact-file',
+      '--proof-pack-id',
+      '--record-date',
+      '--buyer-data-coverage-pct',
+      '--time-to-artifact-hours',
+      '--reviewer-role',
+      '--reviewer-acceptance',
+      '--reviewer-feedback-status',
+      '--day-14-decision',
+      '--commercial-commitment-status',
+    ];
+
+    for (const item of buyerQueue) {
+      expect(item.proof_command).not.toMatch(/[<>]/);
+      if (item.proof_command.includes('prepare:pilot-evidence-artifact')) {
+        for (const option of pilotArtifactOptions) expect(item.proof_command).toContain(option);
+      }
+      if (item.proof_command.includes('prepare:forecast-trust-report-artifact')) {
+        for (const option of forecastArtifactOptions) expect(item.proof_command).toContain(option);
+      }
+    }
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('keeps the release check wired to the blocked manifest contract', () => {
     const result = execFileSync(process.execPath, [checkScriptPath, '--skip-probes'], {
       cwd: process.cwd(),

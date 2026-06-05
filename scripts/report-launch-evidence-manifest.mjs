@@ -1088,28 +1088,100 @@ function buyerEvidenceRemediationOwner(requirement) {
   }
 }
 
+function buyerArtifactPrepOptions({
+  route,
+  proofPackId,
+  artifactFile,
+  diagnostic = 'REPLACE_WITH_RETAINED_ROUTE_SPECIFIC_DIAGNOSTIC_EVIDENCE',
+  commercialSignal = false,
+}) {
+  const commercialOptions = commercialSignal
+    ? [
+      '--commercial-commitment-status REPLACE_WITH_STRONG_COMMERCIAL_STATUS_DESIGN_PARTNER_PAID_PILOT_PO_OR_LOI',
+      '--commercial-commitment-evidence "REPLACE_WITH_REDACTED_SIGNED_AGREEMENT_PAID_PILOT_INVOICE_PO_OR_LOI_EVIDENCE"',
+    ]
+    : ['--commercial-commitment-status none'];
+
+  return [
+    '--evidence-root path/to/redacted-artifacts',
+    `--artifact-file ${artifactFile}`,
+    `--route ${route}`,
+    `--proof-pack-id ${proofPackId}`,
+    '--record-date REPLACE_WITH_RECORD_DATE_YYYY_MM_DD',
+    '--pii-screen-result redacted',
+    '--buyer-data-coverage-pct REPLACE_WITH_BUYER_DATA_COVERAGE_PCT_70_TO_100',
+    '--time-to-artifact-hours REPLACE_WITH_TIME_TO_ARTIFACT_HOURS_0_TO_120',
+    '--reviewer-role "REPLACE_WITH_INDEPENDENT_BUYER_REVIEWER_ROLE"',
+    '--reviewer-acceptance accepted',
+    '--reviewer-feedback-status complete',
+    '--day-14-decision proceed',
+    ...commercialOptions,
+    '--claim-boundary "REPLACE_WITH_BUYER_SUPPLIED_CLAIM_BOUNDARY"',
+    '--do-not-claim "REPLACE_WITH_ROUTE_SPECIFIC_DO_NOT_CLAIM_BOUNDARY"',
+    `--diagnostic "${diagnostic}"`,
+  ].join(' ');
+}
+
+function pilotEvidenceArtifactPrepCommand(options) {
+  return `corepack pnpm run prepare:pilot-evidence-artifact -- ${buyerArtifactPrepOptions(options)}`;
+}
+
+function forecastTrustArtifactPrepCommand() {
+  return [
+    'corepack pnpm run prepare:forecast-trust-report-artifact --',
+    '--benchmark-pack-file path/to/utility-forecast-benchmark-pack.json',
+    buyerArtifactPrepOptions({
+      route: '/utility-demand-forecast',
+      proofPackId: 'utility_forecast_planning_pack',
+      artifactFile: 'utility-forecast.md',
+    }),
+  ].join(' ');
+}
+
 function buyerEvidenceRemediationProofCommand(requirement) {
   switch (requirement) {
     case 'Utility forecast lane':
-      return 'corepack pnpm run prepare:forecast-trust-report-artifact -- <benchmark-pack.json> --output-file path/to/redacted-artifacts/utility-forecast.md';
+      return forecastTrustArtifactPrepCommand();
     case 'TIER or credit lane':
-      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --route /credit-banking --evidence-root path/to/redacted-artifacts --artifact-file credit-banking.md';
+      return pilotEvidenceArtifactPrepCommand({
+        route: '/credit-banking',
+        proofPackId: 'tier_credit_banking_audit_pack',
+        artifactFile: 'credit-banking.md',
+        diagnostic: 'REPLACE_WITH_CREDIT_LOT_EXPIRY_ALLOCATION_AND_LIABILITY_DIAGNOSTIC_EVIDENCE',
+      });
     case 'Billing or security lane':
-      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --route /shadow-billing --evidence-root path/to/redacted-artifacts --artifact-file shadow-billing.md';
+      return pilotEvidenceArtifactPrepCommand({
+        route: '/shadow-billing',
+        proofPackId: 'shadow_billing_invoice_pack',
+        artifactFile: 'shadow-billing.md',
+        diagnostic: 'REPLACE_WITH_FIELD_MAP_MONTHLY_DELTA_AND_EXCLUDED_RIDER_DIAGNOSTIC_EVIDENCE',
+      });
     case 'Distinct accepted proof packs':
       return 'corepack pnpm run report:pilot-evidence-95 -- path/to/filled-pilot-evidence-register.csv --evidence-root path/to/redacted-artifacts';
     case 'Accepted confidence_delta':
-      return 'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --confidence-delta <0..0.4> --output-file path/to/filled-register.csv';
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --output-file path/to/filled-register.csv';
     case 'Retained SHA-256 references':
-      return 'corepack pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file redacted-artifact.md';
+      return [
+        pilotEvidenceArtifactPrepCommand({
+          route: 'REPLACE_WITH_ROUTE',
+          proofPackId: 'REPLACE_WITH_PROOF_PACK_ID',
+          artifactFile: 'redacted-artifact.md',
+        }),
+        'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --output-file path/to/filled-register.csv',
+      ].join(' && ');
     case 'Buyer data coverage':
-      return 'corepack pnpm run update:pilot-evidence-register-row -- --buyer-data-coverage-pct <70..100> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --buyer-data-coverage-pct REPLACE_WITH_BUYER_DATA_COVERAGE_PCT_70_TO_100 --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --output-file path/to/filled-register.csv';
     case 'Artifact turnaround':
-      return 'corepack pnpm run update:pilot-evidence-register-row -- --time-to-artifact-hours <0..120> --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --output-file path/to/filled-register.csv';
+      return 'corepack pnpm run update:pilot-evidence-register-row -- --time-to-artifact-hours REPLACE_WITH_TIME_TO_ARTIFACT_HOURS_0_TO_120 --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference redacted-artifact.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --output-file path/to/filled-register.csv';
     case 'Strong commercial signal':
       return [
-        'corepack pnpm run prepare:pilot-evidence-artifact -- --evidence-root path/to/redacted-artifacts --artifact-file commercial-commitment.md --route <route> --proof-pack-id <proof_pack_id> --commercial-commitment-status <design_partner_signed|paid_pilot|purchase_order|letter_of_intent> --commercial-commitment-evidence "<redacted signed agreement, paid-pilot invoice, purchase-order, or LOI evidence>"',
-        'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference commercial-commitment.md#sha256=<hash-from-helper> --confidence-delta <0..0.4> --output-file path/to/filled-register.csv',
+        pilotEvidenceArtifactPrepCommand({
+          route: 'REPLACE_WITH_ROUTE',
+          proofPackId: 'REPLACE_WITH_PROOF_PACK_ID',
+          artifactFile: 'commercial-commitment.md',
+          commercialSignal: true,
+        }),
+        'corepack pnpm run update:pilot-evidence-register-row -- --register-file path/to/register.csv --evidence-root path/to/redacted-artifacts --evidence-file-reference commercial-commitment.md#sha256=REPLACE_WITH_HASH_FROM_HELPER --confidence-delta REPLACE_WITH_CONFIDENCE_DELTA_0_TO_0_4 --output-file path/to/filled-register.csv',
         'corepack pnpm run validate:pilot-evidence -- path/to/filled-register.csv --require-95 --evidence-root path/to/redacted-artifacts',
       ].join(' && ');
     case 'Retained-artifact 95% validation':
