@@ -1301,6 +1301,44 @@ try {
         && manifest.outreach_plan.email_script_boundary.includes('Do not claim buyer-proven 95% confidence'),
       'Manifest outreach plan must preserve the buyer-proof boundary.',
     );
+    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
+    assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
+    const adversarialProofTypesByLane = {
+      'buyer evidence': 'buyer_evidence_adversarial_review',
+      'production approval': 'production_approval_adversarial_review',
+      'release toolchain': 'release_toolchain_adversarial_review',
+      'Supabase advisor clearance': 'external_advisor_adversarial_review',
+      'branch risk': 'branch_risk_adversarial_review',
+    };
+    for (const [index, review] of manifest.adversarial_reviews.entries()) {
+      assert(typeof review.lane === 'string' && review.lane.length > 0, `adversarial_reviews[${index}].lane must be set.`);
+      assert(typeof review.finding === 'string' && review.finding.length > 0, `adversarial_reviews[${index}].finding must be set.`);
+      assert(typeof review.decision === 'string' && review.decision.length > 0, `adversarial_reviews[${index}].decision must be set.`);
+      assert(typeof review.proof_type === 'string' && review.proof_type.length > 0, `adversarial_reviews[${index}].proof_type must be set.`);
+      assert(typeof review.proof_boundary === 'string' && review.proof_boundary.length > 0, `adversarial_reviews[${index}].proof_boundary must be set.`);
+      assert(typeof review.stop_gate === 'string' && /do not/i.test(review.stop_gate), `adversarial_reviews[${index}].stop_gate must preserve an explicit no-claim gate.`);
+      if (adversarialProofTypesByLane[review.lane]) {
+        assert(
+          review.proof_type === adversarialProofTypesByLane[review.lane],
+          `adversarial_reviews[${index}] must classify ${review.lane} as ${adversarialProofTypesByLane[review.lane]}.`,
+        );
+      }
+      if (review.lane === 'buyer evidence') {
+        assert(/does not create buyer acceptance|retained artifacts|95% confidence|commercial-ready status/i.test(review.proof_boundary), 'Buyer evidence adversarial review must not imply buyer proof.');
+      }
+      if (review.lane === 'production approval') {
+        assert(/does not grant production approval|run deploys|push|prove live parity/i.test(review.proof_boundary), 'Production approval adversarial review must not imply deploy authorization.');
+      }
+      if (review.lane === 'release toolchain') {
+        assert(/does not install tools|run release-readiness|clear provenance|push|deploy|approve release/i.test(review.proof_boundary), 'Release toolchain adversarial review must not imply release readiness.');
+      }
+      if (review.lane === 'Supabase advisor clearance') {
+        assert(/does not access dashboards|reauthorize connectors|run migrations|alter secrets|clear findings|prove RLS\/performance clearance/i.test(review.proof_boundary), 'Supabase advisor adversarial review must not imply external clearance.');
+      }
+      if (review.lane === 'branch risk') {
+        assert(/does not checkout|merge|push|discard branches|select canonical heads|run migrations|deploy|grant approval/i.test(review.proof_boundary), 'Branch risk adversarial review must preserve read-only branch boundaries.');
+      }
+    }
     assert(manifest.ecc_ledger?.decision === 'blocked', 'Manifest ECC ledger decision must remain blocked.');
 
     const validation = run('python3', [validatorPath, manifestPath, '--require-repo-exists']);

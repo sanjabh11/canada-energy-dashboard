@@ -77,6 +77,25 @@ describe('launch evidence manifest report', () => {
     expect(gapsByProofType.get('external_advisor_clearance_gap')?.stop_gate).toMatch(/Do not claim Supabase advisor clearance|RLS\/performance clearance/i);
     expect(gapsByProofType.get('release_toolchain_approval_gap')?.proof_boundary).toMatch(/does not resolve Corepack|Git LFS|run full release-readiness|grant owner approval/i);
     expect(gapsByProofType.get('release_toolchain_approval_gap')?.stop_gate).toMatch(/Do not treat local pnpm checks|release-readiness|owner approval/i);
+    const adversarialReviewsByLane = new Map(
+      manifest.adversarial_reviews.map((review: {
+        lane: string;
+        proof_type?: string;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => [review.lane, review]),
+    );
+    expect(adversarialReviewsByLane.get('buyer evidence')?.proof_type).toBe('buyer_evidence_adversarial_review');
+    expect(adversarialReviewsByLane.get('buyer evidence')?.proof_boundary).toMatch(/does not create buyer acceptance|95% confidence|commercial-ready status/i);
+    expect(adversarialReviewsByLane.get('buyer evidence')?.stop_gate).toMatch(/Do not override buyer evidence blockers/i);
+    expect(adversarialReviewsByLane.get('production approval')?.proof_type).toBe('production_approval_adversarial_review');
+    expect(adversarialReviewsByLane.get('production approval')?.proof_boundary).toMatch(/does not grant production approval|run deploys|prove live parity/i);
+    expect(adversarialReviewsByLane.get('release toolchain')?.proof_type).toBe('release_toolchain_adversarial_review');
+    expect(adversarialReviewsByLane.get('release toolchain')?.proof_boundary).toMatch(/does not install tools|run release-readiness|clear provenance|approve release/i);
+    expect(adversarialReviewsByLane.get('Supabase advisor clearance')?.proof_type).toBe('external_advisor_adversarial_review');
+    expect(adversarialReviewsByLane.get('Supabase advisor clearance')?.proof_boundary).toMatch(/does not access dashboards|run migrations|alter secrets|prove RLS\/performance clearance/i);
+    expect(adversarialReviewsByLane.get('branch risk')?.proof_type).toBe('branch_risk_adversarial_review');
+    expect(adversarialReviewsByLane.get('branch risk')?.proof_boundary).toMatch(/does not checkout|merge|push|select canonical heads|deploy/i);
     expect(manifest.buyer_evidence.status).toBe('skipped');
     expect(manifest.buyer_evidence.production_registers).toBeNull();
     expect(manifest.buyer_evidence.outreach_logs).toBeNull();

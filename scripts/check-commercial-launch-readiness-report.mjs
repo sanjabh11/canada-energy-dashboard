@@ -280,6 +280,7 @@ function assertReport(markdown, options = {}) {
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
   const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
+  const adversarialSection = extractSection(markdown, 'Adversarial Review');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
   const eccSection = extractSection(markdown, 'ECC Ledger');
 
@@ -310,6 +311,18 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(productionApprovalSection) >= 8, 'Production approval prerequisite queue must include launch evidence validation plus the prerequisite, manual-stop, and post-deploy rows.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
+  assert(countDataRows(adversarialSection) >= 5, 'Adversarial review table must include the core launch review lanes.');
+  assert(adversarialSection.includes('Proof Type') && adversarialSection.includes('Proof Boundary') && adversarialSection.includes('Stop Gate'), 'Adversarial review table must expose proof type, proof boundary, and stop gate columns.');
+  for (const proofType of [
+    'buyer_evidence_adversarial_review',
+    'production_approval_adversarial_review',
+    'release_toolchain_adversarial_review',
+    'external_advisor_adversarial_review',
+    'branch_risk_adversarial_review',
+  ]) {
+    assert(adversarialSection.includes(proofType), `Adversarial review table must include proof type ${proofType}.`);
+  }
+  assert(/does not create buyer acceptance|does not grant production approval|does not checkout/i.test(adversarialSection), 'Adversarial review table must preserve no-proof and no-mutation boundaries.');
   assert(countDataRows(painSection) === 10, 'Pain point table must include exactly ten rows.');
   assert(countDataRows(targetSection) === 10, 'Target customer table must include exactly ten rows.');
   assert(countDataRows(evidenceSection) >= 5, 'Evidence validation table must include all validation gates.');

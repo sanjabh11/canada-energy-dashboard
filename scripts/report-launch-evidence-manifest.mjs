@@ -604,6 +604,66 @@ function launchGap(row) {
   };
 }
 
+function adversarialReviewProofType(lane) {
+  switch (lane) {
+    case 'buyer evidence':
+      return 'buyer_evidence_adversarial_review';
+    case 'production approval':
+      return 'production_approval_adversarial_review';
+    case 'release toolchain':
+      return 'release_toolchain_adversarial_review';
+    case 'Supabase advisor clearance':
+      return 'external_advisor_adversarial_review';
+    case 'branch risk':
+      return 'branch_risk_adversarial_review';
+    default:
+      return 'launch_claim_adversarial_review';
+  }
+}
+
+function adversarialReviewProofBoundary(lane) {
+  switch (lane) {
+    case 'buyer evidence':
+      return 'Challenges buyer-proof claims against current buyer evidence gates; it does not create buyer acceptance, retained artifacts, outreach permission, 95% confidence, or commercial-ready status.';
+    case 'production approval':
+      return 'Challenges deploy-authorization claims against source provenance and owner approval gates; it does not grant production approval, run deploys, push, or prove live parity.';
+    case 'release toolchain':
+      return 'Challenges release-readiness claims against Corepack, Git LFS, source provenance, and approval gates; it does not install tools, run release-readiness, clear provenance, push, deploy, or approve release.';
+    case 'Supabase advisor clearance':
+      return 'Challenges database-clearance claims against authorized Supabase advisor evidence; it does not access dashboards, reauthorize connectors, run migrations, alter secrets, clear findings, or prove RLS/performance clearance.';
+    case 'branch risk':
+      return 'Challenges merge/deploy readiness claims against read-only branch review evidence; it does not checkout, merge, push, discard branches, select canonical heads, run migrations, deploy, or grant approval.';
+    default:
+      return 'Challenges a launch claim only; it does not prove launch readiness or grant production approval.';
+  }
+}
+
+function adversarialReviewStopGate(lane) {
+  switch (lane) {
+    case 'buyer evidence':
+      return 'Do not override buyer evidence blockers or claim buyer-proven confidence from adversarial review text.';
+    case 'production approval':
+      return 'Do not run deploy-production.sh, netlify deploy, push, or claim owner approval from adversarial review text.';
+    case 'release toolchain':
+      return 'Do not treat adversarial review text as Corepack resolution, Git LFS push-path proof, release-readiness execution, clean provenance, or owner approval.';
+    case 'Supabase advisor clearance':
+      return 'Do not claim Supabase advisor, RLS, or performance clearance until authorized advisor evidence is rerun and public-safe findings are recorded.';
+    case 'branch risk':
+      return 'Do not checkout, merge, push, discard, migrate, deploy, or choose canonical heads from adversarial review text.';
+    default:
+      return 'Do not use adversarial review text as production approval or commercial-ready evidence.';
+  }
+}
+
+function adversarialReview(row) {
+  return {
+    ...row,
+    proof_type: adversarialReviewProofType(row.lane),
+    proof_boundary: adversarialReviewProofBoundary(row.lane),
+    stop_gate: adversarialReviewStopGate(row.lane),
+  };
+}
+
 function releaseRemediationStatus(status) {
   if (status === 'pass') return 'ready';
   if (status === 'manual_stop') return 'manual_stop';
@@ -3499,31 +3559,31 @@ const manifest = {
     ],
   },
   adversarial_reviews: [
-    {
+    adversarialReview({
       lane: 'buyer evidence',
       finding: 'Repo scaffolding and constructed proof packs are not buyer acceptance evidence.',
       decision: 'Keep launch_decision blocked until the hard pilot evidence gate passes.',
-    },
-    {
+    }),
+    adversarialReview({
       lane: 'production approval',
       finding: 'A passing local release gate or launch evidence validation does not authorize deployment while source provenance is dirty or owner approval is missing.',
       decision: 'Keep deploy request blocked until provenance, launch evidence validation, and approval gates clear.',
-    },
-    {
+    }),
+    adversarialReview({
       lane: 'release toolchain',
       finding: 'Direct pnpm checks, a skipped production approval packet, or a commit with a Git LFS hook warning do not prove the guarded release path is ready.',
       decision: 'Keep release approval blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, and owner approval are current.',
-    },
-    {
+    }),
+    adversarialReview({
       lane: 'Supabase advisor clearance',
       finding: 'CLI database lint and repo security artifacts do not substitute for connector-backed or dashboard Supabase advisor clearance.',
       decision: 'Keep Supabase advisor clearance blocked until authorization, security advisor evidence, performance advisor evidence, and public-safe findings records pass.',
-    },
-    {
+    }),
+    adversarialReview({
       lane: 'branch risk',
       finding: 'Unmerged branches are not launch evidence; local/origin split families and stale or aging refs add drift risk and can only become merge candidates after canonical-head selection, focused review, and release gates.',
       decision: 'Keep high-risk, local/origin split, and stale/aging branches in review queue.',
-    },
+    }),
   ],
   ecc_ledger: {
     route: 'commercial-launch-readiness-orchestrator',

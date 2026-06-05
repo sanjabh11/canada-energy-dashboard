@@ -540,10 +540,13 @@ ${(fixReport.unresolved_blockers ?? []).map((blocker, index) => row([
 
 ## Adversarial Review
 
-| Lane | Claim Challenged | Result | Remaining Risk |
-|---|---|---|---|
+| Lane | Proof Type | Proof Boundary | Stop Gate | Claim Challenged | Result | Remaining Risk |
+|---|---|---|---|---|---|---|
 ${reviews.map((review) => row([
     review.lane,
+    review.proof_type,
+    review.proof_boundary,
+    review.stop_gate,
     review.finding,
     review.decision,
     review.decision === 'blocked' ? 'Decision remains blocked.' : 'Recheck if evidence changes.',
