@@ -658,9 +658,25 @@ try {
       assert(typeof item.owner === 'string' && item.owner.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].owner must be set.`);
       assert(typeof item.action === 'string' && item.action.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].action must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.external_account_required === 'boolean', `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].external_account_required must be boolean.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].stop_gate must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].status must be set.`);
       assert(item.status !== 'ready', `supabase_advisor.clearance_deficits.remediation_queue.items[${index}].status must remain non-ready until the deficit row passes.`);
+      if (['Connector project authorization', 'Security advisor evidence', 'Performance advisor evidence'].includes(item.requirement)) {
+        assert(item.proof_type === 'external_account_evidence', `supabase_advisor.clearance_deficits.remediation_queue.items[${index}] must mark dashboard/connector advisor work as external_account_evidence.`);
+        assert(item.external_account_required === true, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}] must require external account access for dashboard/connector advisor work.`);
+        assert(/authorized|dashboard|connector|Advisor/i.test(item.proof_boundary), `supabase_advisor.clearance_deficits.remediation_queue.items[${index}] proof_boundary must preserve the authorized external-evidence boundary.`);
+      }
+      if (['CLI app lint freshness', 'Advisor clearance claim'].includes(item.requirement)) {
+        assert(item.proof_type === 'repo_command', `supabase_advisor.clearance_deficits.remediation_queue.items[${index}] must mark repo-local proof rows as repo_command.`);
+        assert(item.external_account_required === false, `supabase_advisor.clearance_deficits.remediation_queue.items[${index}] must not require external account access for repo-local proof rows.`);
+      }
+      if (item.requirement === 'Public-safe findings record') {
+        assert(item.proof_type === 'retained_redacted_record', 'Supabase advisor public-safe findings row must be a retained redacted record.');
+        assert(item.external_account_required === false, 'Supabase advisor public-safe findings row must not be marked as direct external-account execution.');
+      }
     }
     const supabaseQueueRequirements = (manifest.supabase_advisor.clearance_deficits.remediation_queue.items ?? []).map((item) => item.requirement);
     const nonPassSupabaseRequirements = (manifest.supabase_advisor.clearance_deficits.items ?? [])

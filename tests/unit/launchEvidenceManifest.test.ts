@@ -110,6 +110,26 @@ describe('launch evidence manifest report', () => {
       expect(firstSupabaseAction.stop_gate).toMatch(/Do not/i);
       expect(firstSupabaseAction.status).not.toBe('ready');
     }
+    const supabaseActionsByRequirement = new Map(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.items.map((item: {
+        requirement: string;
+        proof_type?: string;
+        external_account_required?: boolean;
+        proof_boundary?: string;
+      }) => [item.requirement, item]),
+    );
+    expect(supabaseActionsByRequirement.get('CLI app lint freshness')?.proof_type).toBe('repo_command');
+    expect(supabaseActionsByRequirement.get('CLI app lint freshness')?.external_account_required).toBe(false);
+    for (const requirement of ['Connector project authorization', 'Security advisor evidence', 'Performance advisor evidence']) {
+      const item = supabaseActionsByRequirement.get(requirement);
+      expect(item?.proof_type).toBe('external_account_evidence');
+      expect(item?.external_account_required).toBe(true);
+      expect(item?.proof_boundary).toMatch(/authorized|dashboard|connector|Advisor/i);
+    }
+    expect(supabaseActionsByRequirement.get('Public-safe findings record')?.proof_type).toBe('retained_redacted_record');
+    expect(supabaseActionsByRequirement.get('Public-safe findings record')?.external_account_required).toBe(false);
+    expect(supabaseActionsByRequirement.get('Advisor clearance claim')?.proof_type).toBe('repo_command');
+    expect(supabaseActionsByRequirement.get('Advisor clearance claim')?.external_account_required).toBe(false);
     expect(manifest.release_preflight.status).toBe('blocked');
     expect(manifest.release_preflight.package_manager).toBe('pnpm@10.23.0');
     expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');

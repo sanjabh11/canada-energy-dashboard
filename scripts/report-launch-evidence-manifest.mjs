@@ -213,6 +213,49 @@ function supabaseAdvisorRemediationProofCommand(requirement, advisor) {
   }
 }
 
+function supabaseAdvisorRemediationProofType(requirement) {
+  switch (requirement) {
+    case 'CLI app lint freshness':
+    case 'Advisor clearance claim':
+      return 'repo_command';
+    case 'Connector project authorization':
+    case 'Security advisor evidence':
+    case 'Performance advisor evidence':
+      return 'external_account_evidence';
+    case 'Public-safe findings record':
+      return 'retained_redacted_record';
+    default:
+      return 'manual_evidence';
+  }
+}
+
+function supabaseAdvisorRemediationRequiresExternalAccount(requirement) {
+  return [
+    'Connector project authorization',
+    'Security advisor evidence',
+    'Performance advisor evidence',
+  ].includes(requirement);
+}
+
+function supabaseAdvisorRemediationProofBoundary(requirement) {
+  switch (requirement) {
+    case 'CLI app lint freshness':
+      return 'Repo-side Supabase app lint is a local freshness probe only; it does not authorize connectors, run dashboard advisors, or clear advisor evidence.';
+    case 'Connector project authorization':
+      return 'Requires authorized Supabase connector or dashboard access; repo-local commands and permission-denied output cannot satisfy this row.';
+    case 'Security advisor evidence':
+      return 'Requires current authorized Database Security Advisor evidence for the project; CLI lint, public status cards, and generated manifests cannot satisfy this row.';
+    case 'Performance advisor evidence':
+      return 'Requires current authorized Database Performance Advisor evidence for the project; CLI lint, public status cards, and generated manifests cannot satisfy this row.';
+    case 'Public-safe findings record':
+      return 'Requires a retained redacted advisor summary with no secrets; raw private findings, credentials, or unrecorded dashboard views cannot satisfy this row.';
+    case 'Advisor clearance claim':
+      return 'Repo manifest regeneration may record clearance only after every CLI, authorization, advisor, and public-safe evidence row passes.';
+    default:
+      return 'Manual evidence is required; this queue row does not claim Supabase advisor clearance.';
+  }
+}
+
 function supabaseAdvisorRemediationStopGate(requirement) {
   switch (requirement) {
     case 'CLI app lint freshness':
@@ -271,6 +314,9 @@ function buildSupabaseAdvisorRemediationQueue(deficits, advisor) {
       owner: supabaseAdvisorRemediationOwner(item.requirement),
       action: supabaseAdvisorRemediationAction(item, advisor),
       proof_command: supabaseAdvisorRemediationProofCommand(item.requirement, advisor),
+      proof_type: supabaseAdvisorRemediationProofType(item.requirement),
+      external_account_required: supabaseAdvisorRemediationRequiresExternalAccount(item.requirement),
+      proof_boundary: supabaseAdvisorRemediationProofBoundary(item.requirement),
       stop_gate: supabaseAdvisorRemediationStopGate(item.requirement),
       status: supabaseAdvisorRemediationStatus(item.status),
     }));
