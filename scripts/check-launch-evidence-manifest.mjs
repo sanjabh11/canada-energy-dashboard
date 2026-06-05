@@ -157,6 +157,18 @@ try {
       manifest.buyer_evidence.hard_gate_deficits.remediation_queue.item_count === manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.length,
       'Buyer evidence remediation queue item_count must match items length.',
     );
+    const buyerProofTypesByRequirement = {
+      'Utility forecast lane': 'forecast_trust_artifact_preparation',
+      'TIER or credit lane': 'retained_artifact_preparation',
+      'Billing or security lane': 'retained_artifact_preparation',
+      'Distinct accepted proof packs': 'buyer_acceptance_report',
+      'Accepted confidence_delta': 'register_update',
+      'Retained SHA-256 references': 'retained_artifact_and_register_update',
+      'Buyer data coverage': 'register_update',
+      'Artifact turnaround': 'register_update',
+      'Strong commercial signal': 'commercial_commitment_artifact',
+      'Retained-artifact 95% validation': 'retained_artifact_validation',
+    };
     for (const [index, item] of (manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.requirement === 'string' && item.requirement.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].requirement must be set.`);
@@ -166,10 +178,42 @@ try {
       assert(typeof item.owner === 'string' && item.owner.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].owner must be set.`);
       assert(typeof item.action === 'string' && item.action.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].action must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.buyer_accepted_evidence_required === 'boolean', `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].buyer_accepted_evidence_required must be boolean.`);
+      assert(typeof item.retained_artifact_required === 'boolean', `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].retained_artifact_required must be boolean.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].stop_gate must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must be set.`);
       assert(item.status !== 'ready', `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].status must remain non-ready until the hard-gate row passes.`);
       assert(!/[<>]/.test(item.proof_command), `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}].proof_command must use shell-safe placeholders, not angle-bracket redirection placeholders.`);
+      if (buyerProofTypesByRequirement[item.requirement]) {
+        assert(
+          item.proof_type === buyerProofTypesByRequirement[item.requirement],
+          `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}] must classify ${item.requirement} as ${buyerProofTypesByRequirement[item.requirement]}.`,
+        );
+        assert(item.buyer_accepted_evidence_required === true, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}] must require accepted buyer evidence.`);
+        assert(item.retained_artifact_required === true, `buyer_evidence.hard_gate_deficits.remediation_queue.items[${index}] must require retained redacted artifacts.`);
+      }
+      if (item.requirement === 'Utility forecast lane') {
+        assert(item.proof_command.includes('prepare:forecast-trust-report-artifact'), 'Utility forecast buyer remediation must prepare a forecast trust retained artifact.');
+        assert(/accepted buyer review|retained redacted forecast trust artifact/i.test(item.proof_boundary), 'Utility forecast buyer remediation proof_boundary must require accepted retained buyer evidence.');
+      }
+      if (['TIER or credit lane', 'Billing or security lane'].includes(item.requirement)) {
+        assert(item.proof_command.includes('prepare:pilot-evidence-artifact'), `${item.requirement} buyer remediation must prepare retained pilot evidence artifacts.`);
+        assert(/buyer-supplied retained redacted/i.test(item.proof_boundary), `${item.requirement} buyer remediation proof_boundary must require buyer-supplied retained evidence.`);
+      }
+      if (['Accepted confidence_delta', 'Buyer data coverage', 'Artifact turnaround'].includes(item.requirement)) {
+        assert(item.proof_command.includes('update:pilot-evidence-register-row'), `${item.requirement} buyer remediation must update a retained evidence register row.`);
+        assert(/retained artifact|retained accepted artifact/i.test(item.proof_boundary), `${item.requirement} buyer remediation proof_boundary must require retained artifact support.`);
+      }
+      if (item.requirement === 'Distinct accepted proof packs') {
+        assert(item.proof_command.includes('report:pilot-evidence-95'), 'Distinct accepted proof-pack remediation must report the accepted proof-pack count.');
+        assert(/distinct accepted proof-pack rows|duplicate rows/i.test(item.proof_boundary), 'Distinct accepted proof-pack proof_boundary must reject duplicates and generated packs.');
+      }
+      if (item.requirement === 'Retained SHA-256 references') {
+        assert(item.proof_command.includes('prepare:pilot-evidence-artifact'), 'Retained SHA-256 remediation must prepare retained artifacts before register update.');
+        assert(/stable SHA-256 references|missing, changed, opaque/i.test(item.proof_boundary), 'Retained SHA-256 proof_boundary must reject missing, changed, or opaque artifacts.');
+      }
       if (item.proof_command.includes('prepare:pilot-evidence-artifact')) {
         for (const option of [
           '--evidence-root',
@@ -220,9 +264,14 @@ try {
       'Buyer evidence remediation queue must include exactly the current non-pass buyer hard-gate requirements.',
     );
     if (buyerQueueRequirements.includes('Retained-artifact 95% validation')) {
+      const validationItem = manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.find((item) => item.requirement === 'Retained-artifact 95% validation');
       assert(
         manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.some((item) => item.proof_command.includes('validate:pilot-evidence')),
         'Buyer evidence remediation queue must include validate:pilot-evidence while retained-artifact 95% validation is unresolved.',
+      );
+      assert(
+        /validation does not create buyer acceptance/i.test(validationItem?.proof_boundary ?? ''),
+        'Retained-artifact validation proof_boundary must not imply validation creates buyer acceptance.',
       );
     }
     if (buyerQueueRequirements.includes('Strong commercial signal')) {
@@ -233,6 +282,10 @@ try {
           && strongSignalItem.proof_command.includes('update:pilot-evidence-register-row')
           && strongSignalItem.proof_command.includes('validate:pilot-evidence'),
         'Buyer evidence remediation queue must require retained non-status-only commercial commitment evidence before strong commercial signal remediation can close.',
+      );
+      assert(
+        /status-only labels|informal interest|unretained claims/i.test(strongSignalItem?.proof_boundary ?? ''),
+        'Strong commercial signal proof_boundary must reject status-only labels, informal interest, and unretained claims.',
       );
     }
     if (buyerQueueRequirements.length > 0) {

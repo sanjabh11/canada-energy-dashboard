@@ -393,6 +393,47 @@ describe('launch evidence manifest report', () => {
     expect(strongSignalItem.stop_gate).toMatch(/status labels/i);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
+  it('classifies buyer evidence remediation proof rows with explicit boundaries', () => {
+    const stdout = runManifest();
+    const manifest = JSON.parse(stdout);
+    const buyerActionsByRequirement = new Map(
+      manifest.buyer_evidence.hard_gate_deficits.remediation_queue.items.map((item: {
+        requirement: string;
+        proof_type?: string;
+        buyer_accepted_evidence_required?: boolean;
+        retained_artifact_required?: boolean;
+        proof_boundary?: string;
+        proof_command: string;
+      }) => [item.requirement, item]),
+    );
+    const expectedProofTypes: Record<string, string> = {
+      'Utility forecast lane': 'forecast_trust_artifact_preparation',
+      'TIER or credit lane': 'retained_artifact_preparation',
+      'Billing or security lane': 'retained_artifact_preparation',
+      'Distinct accepted proof packs': 'buyer_acceptance_report',
+      'Accepted confidence_delta': 'register_update',
+      'Retained SHA-256 references': 'retained_artifact_and_register_update',
+      'Buyer data coverage': 'register_update',
+      'Artifact turnaround': 'register_update',
+      'Strong commercial signal': 'commercial_commitment_artifact',
+      'Retained-artifact 95% validation': 'retained_artifact_validation',
+    };
+
+    for (const [requirement, proofType] of Object.entries(expectedProofTypes)) {
+      const item = buyerActionsByRequirement.get(requirement);
+      expect(item).toBeTruthy();
+      expect(item?.proof_type).toBe(proofType);
+      expect(item?.buyer_accepted_evidence_required).toBe(true);
+      expect(item?.retained_artifact_required).toBe(true);
+      expect(item?.proof_boundary).toBeTruthy();
+    }
+    expect(buyerActionsByRequirement.get('Utility forecast lane')?.proof_command).toContain('prepare:forecast-trust-report-artifact');
+    expect(buyerActionsByRequirement.get('TIER or credit lane')?.proof_command).toContain('prepare:pilot-evidence-artifact');
+    expect(buyerActionsByRequirement.get('Billing or security lane')?.proof_command).toContain('prepare:pilot-evidence-artifact');
+    expect(buyerActionsByRequirement.get('Strong commercial signal')?.proof_boundary).toMatch(/status-only labels|informal interest|unretained claims/i);
+    expect(buyerActionsByRequirement.get('Retained-artifact 95% validation')?.proof_boundary).toMatch(/validation does not create buyer acceptance/i);
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('keeps buyer artifact-preparation remediation commands complete and shell-safe', () => {
     const stdout = runManifest();
     const manifest = JSON.parse(stdout);

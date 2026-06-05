@@ -1276,6 +1276,65 @@ function buyerEvidenceRemediationProofCommand(requirement) {
   }
 }
 
+function buyerEvidenceRemediationProofType(requirement) {
+  switch (requirement) {
+    case 'Utility forecast lane':
+      return 'forecast_trust_artifact_preparation';
+    case 'TIER or credit lane':
+    case 'Billing or security lane':
+      return 'retained_artifact_preparation';
+    case 'Distinct accepted proof packs':
+      return 'buyer_acceptance_report';
+    case 'Accepted confidence_delta':
+    case 'Buyer data coverage':
+    case 'Artifact turnaround':
+      return 'register_update';
+    case 'Retained SHA-256 references':
+      return 'retained_artifact_and_register_update';
+    case 'Strong commercial signal':
+      return 'commercial_commitment_artifact';
+    case 'Retained-artifact 95% validation':
+      return 'retained_artifact_validation';
+    default:
+      return 'buyer_evidence_workflow';
+  }
+}
+
+function buyerEvidenceRemediationRequiresBuyerAcceptedEvidence() {
+  return true;
+}
+
+function buyerEvidenceRemediationRequiresRetainedArtifact() {
+  return true;
+}
+
+function buyerEvidenceRemediationProofBoundary(requirement) {
+  switch (requirement) {
+    case 'Utility forecast lane':
+      return 'Requires accepted buyer review plus a retained redacted forecast trust artifact; forecast demos, generated benchmarks, and repo diagnostics do not satisfy this row.';
+    case 'TIER or credit lane':
+      return 'Requires accepted buyer-supplied retained redacted TIER or credit evidence; scaffolding, rehearsals, and consultant assumptions do not satisfy this row.';
+    case 'Billing or security lane':
+      return 'Requires privacy-screened buyer-supplied retained redacted billing or security evidence accepted by the reviewer; examples and constructed security demos do not satisfy this row.';
+    case 'Distinct accepted proof packs':
+      return 'Requires distinct accepted proof-pack rows from real buyer evidence; duplicate rows, starter registers, and generated proof packs do not satisfy this row.';
+    case 'Accepted confidence_delta':
+      return 'Requires an accepted buyer evidence row with retained artifact support before confidence_delta moves; templates, no-reply outreach, not-fit rows, and constructed demos do not satisfy this row.';
+    case 'Retained SHA-256 references':
+      return 'Requires retained text-inspectable redacted artifacts with stable SHA-256 references; missing, changed, opaque, unredacted, or direct-identifier artifacts do not satisfy this row.';
+    case 'Buyer data coverage':
+      return 'Requires buyer-supplied row data coverage at threshold with retained artifact support; rows below threshold do not satisfy this row.';
+    case 'Artifact turnaround':
+      return 'Requires retained accepted artifact delivery inside the turnaround threshold; slow or unrecorded proof-pack delivery does not satisfy this row.';
+    case 'Strong commercial signal':
+      return 'Requires retained redacted signed agreement, paid pilot, invoice, PO, or LOI evidence; status-only labels, informal interest, and unretained claims do not satisfy this row.';
+    case 'Retained-artifact 95% validation':
+      return 'Runs validate:pilot-evidence only after accepted rows and retained artifacts exist; validation does not create buyer acceptance or commercial commitment.';
+    default:
+      return 'Requires retained accepted buyer evidence; generated scaffolding, outreach headers, starter registers, and constructed demos do not satisfy this row.';
+  }
+}
+
 function buyerEvidenceRemediationStopGate(requirement) {
   switch (requirement) {
     case 'Utility forecast lane':
@@ -1355,6 +1414,10 @@ function buildBuyerEvidenceRemediationQueue(deficits) {
       owner: buyerEvidenceRemediationOwner(item.requirement),
       action: item.next_action,
       proof_command: buyerEvidenceRemediationProofCommand(item.requirement),
+      proof_type: buyerEvidenceRemediationProofType(item.requirement),
+      buyer_accepted_evidence_required: buyerEvidenceRemediationRequiresBuyerAcceptedEvidence(item.requirement),
+      retained_artifact_required: buyerEvidenceRemediationRequiresRetainedArtifact(item.requirement),
+      proof_boundary: buyerEvidenceRemediationProofBoundary(item.requirement),
       stop_gate: buyerEvidenceRemediationStopGate(item.requirement),
       status: buyerEvidenceRemediationStatus(item.status),
     }));
