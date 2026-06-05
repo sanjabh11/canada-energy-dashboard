@@ -154,6 +154,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.',
   },
   {
+    label: 'Release toolchain and approval deficit ledger',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The release toolchain and approval deficit ledger maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval deficits, but it does not install tools, clear source provenance, run release-readiness, push, deploy, prove hosted/live parity, grant owner approval, or create launch readiness. It does not prove production approval.',
+  },
+  {
     label: 'Release preflight remediation queue',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',

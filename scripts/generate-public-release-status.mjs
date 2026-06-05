@@ -61,6 +61,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'release_toolchain_approval_deficit_ledger',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'release_preflight_remediation_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -278,6 +284,13 @@ function validateManifest(manifest) {
   }
   if (!/does not.*commit|does not.*unstage|does not.*clear source provenance|does not.*prove current local cleanliness/i.test(sourceResolutionQueue.evidenceBoundary ?? '')) {
     failures.push('source_provenance_resolution_queue must preserve the non-mutation and non-cleanliness boundary.');
+  }
+  const releaseToolchainApprovalDeficitLedger = itemById.get('release_toolchain_approval_deficit_ledger') ?? {};
+  if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval|deficit/i.test(`${releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? ''}\n${releaseToolchainApprovalDeficitLedger.nextAction ?? ''}`)) {
+    failures.push('release_toolchain_approval_deficit_ledger must describe release toolchain and approval deficits.');
+  }
+  if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval|does not.*create launch readiness|does not prove production approval/i.test(releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? '')) {
+    failures.push('release_toolchain_approval_deficit_ledger must preserve the non-execution, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
   const releasePreflightQueue = itemById.get('release_preflight_remediation_queue') ?? {};
   if (!/Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|explicit owner production approval/i.test(`${releasePreflightQueue.evidenceBoundary ?? ''}\n${releasePreflightQueue.nextAction ?? ''}`)) {

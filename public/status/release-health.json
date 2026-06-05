@@ -79,6 +79,15 @@
       "nextAction": "Use the queue to identify owner decisions, keep unrelated user work untouched, and rerun the approval packet only after explicit owner intent resolves every source-provenance row."
     },
     {
+      "id": "release_toolchain_approval_deficit_ledger",
+      "label": "Release toolchain and approval deficit ledger",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The release toolchain and approval deficit ledger maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval deficits, but it does not install tools, clear source provenance, run release-readiness, push, deploy, prove hosted/live parity, grant owner approval, or create launch readiness. It does not prove production approval.",
+      "nextAction": "Use the ledger to keep release-blocking deficits visible, expose Corepack and Git LFS in the release shell, resolve source provenance only through explicit owner decisions, and rerun guarded release-readiness before any deploy approval request."
+    },
+    {
       "id": "release_preflight_remediation_queue",
       "label": "Release preflight remediation queue",
       "status": "external_gate",
