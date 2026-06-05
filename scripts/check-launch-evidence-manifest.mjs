@@ -396,6 +396,11 @@ try {
       assert(manifest.buyer_evidence.hard_gate_deficits.status !== 'pass', 'Buyer hard-gate deficits status must not pass while open deficits remain.');
       assert(buyerActionItem?.status !== 'ready', 'Buyer evidence launch action must not be ready while hard-gate deficits remain.');
     }
+    const releaseActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'release_toolchain');
+    assert(releaseActionItem, 'Launch action queue must include a release_toolchain phase.');
+    assert(/release-toolchain probe/i.test(releaseActionItem.blocker), 'Release toolchain launch action must summarize toolchain probe ledger state.');
+    assert(releaseActionItem.proof_command.includes('report:launch-evidence-manifest') && releaseActionItem.proof_command.includes('check:release-readiness'), 'Release toolchain launch action must refresh the launch evidence manifest before release-readiness.');
+    assert(/probe ledger/i.test(releaseActionItem.stop_gate), 'Release toolchain launch action must say the probe ledger is not approval evidence.');
     assert(
       manifest.launch_action_queue.items.some((item) => item.proof_command.includes('check:post-deploy-live')),
       'Manifest launch action queue must include post-deploy live proof command.',
@@ -446,6 +451,12 @@ try {
     }
     const ownerApprovalItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Explicit owner production approval');
     const liveProofItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Post-deploy live proof boundary');
+    const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
+    assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
+    assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
+    assert(/Corepack\/Git LFS probe ledger/i.test(releasePrerequisiteItem.needed), 'Corepack release-readiness prerequisite must require the current Corepack/Git LFS probe ledger.');
+    assert(releasePrerequisiteItem.proof_command.includes('report:launch-evidence-manifest') && releasePrerequisiteItem.proof_command.includes('check:release-readiness'), 'Corepack release-readiness prerequisite must refresh launch evidence before release-readiness.');
+    assert(/probe ledger/i.test(releasePrerequisiteItem.stop_gate), 'Corepack release-readiness prerequisite must say the probe ledger is not approval evidence.');
     assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
     assert(ownerApprovalItem?.proof_command === 'corepack pnpm run check:production-deploy-request', 'Production approval prerequisite queue must include the deploy-request proof command.');
@@ -748,4 +759,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, launch action queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, launch action queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance resolution queue, canonical-head decision deficits, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, pain map, target map, buyer boundary, and schema validation are consistent.');

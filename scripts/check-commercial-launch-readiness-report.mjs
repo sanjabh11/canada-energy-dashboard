@@ -144,6 +144,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('This is a sequenced execution plan only'), 'Report must preserve the action-queue non-execution boundary.');
   assert(markdown.includes('| source_provenance |'), 'Report must include the source provenance action phase.');
   assert(markdown.includes('| release_toolchain |'), 'Report must include the release toolchain action phase.');
+  assert(markdown.includes('release-toolchain probe(s) open'), 'Report must include release toolchain probe ledger state in the launch action queue.');
+  assert(markdown.includes('Refresh the release toolchain probe ledger'), 'Report must include the release toolchain probe refresh action.');
   assert(markdown.includes('| branch_review |'), 'Report must include the branch review action phase.');
   assert(markdown.includes('| supabase_advisor |'), 'Report must include the Supabase advisor action phase.');
   assert(markdown.includes('| buyer_evidence |'), 'Report must include the buyer evidence action phase.');
@@ -205,6 +207,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| Corepack pnpm resolver | corepack pnpm --version |'), 'Report must include the Corepack toolchain probe command.');
   assert(markdown.includes('| Git LFS push-path proof | git lfs version |'), 'Report must include the Git LFS push-path probe command.');
   assert(markdown.includes('does not install tools, run release-readiness'), 'Report must preserve the release toolchain probe non-execution boundary.');
+  assert(markdown.includes('Corepack/Git LFS probe ledger'), 'Report must include release toolchain probe state in production approval prerequisites.');
   assert(markdown.includes('| Corepack pnpm resolver |'), 'Report must include the Corepack resolver deficit row.');
   assert(markdown.includes('| Release-readiness execution |'), 'Report must include the release-readiness execution deficit row.');
   assert(markdown.includes('| Git LFS push-path proof |'), 'Report must include the Git LFS push-path deficit row.');
@@ -268,6 +271,7 @@ function assertReport(markdown, options = {}) {
   const supabaseDeficitSection = extractSection(markdown, 'Supabase Advisor Clearance Deficits');
   const supabaseRemediationSection = extractSection(markdown, 'Supabase Advisor Remediation Queue');
   const releasePreflightSection = extractSection(markdown, 'Release Toolchain And Approval Deficits');
+  const releaseToolchainProbeSection = extractSection(markdown, 'Release Toolchain Probe Ledger');
   const releaseRemediationSection = extractSection(markdown, 'Release Preflight Remediation Queue');
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
   const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
@@ -284,6 +288,7 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(supabaseDeficitSection) >= 3, 'Supabase advisor clearance deficit table must include the key advisor clearance rows.');
   assert(countDataRows(supabaseRemediationSection) >= 3, 'Supabase advisor remediation queue must include the key advisor remediation rows.');
   assert(countDataRows(releasePreflightSection) >= 4, 'Release preflight deficit table must include the key toolchain and approval rows.');
+  assert(countDataRows(releaseToolchainProbeSection) >= 2, 'Release toolchain probe ledger must include Corepack and Git LFS probe rows.');
   assert(countDataRows(releaseRemediationSection) >= 2, 'Release preflight remediation queue must include current release remediation actions.');
   assert(countDataRows(productionApprovalSection) >= 7, 'Production approval prerequisite queue must include the prerequisite, manual-stop, and post-deploy rows.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
@@ -300,4 +305,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release preflight remediation queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');
+console.log('Commercial launch readiness report check passed: required tables, blocked decision, source URLs, proof buckets, buyer evidence, launch action queue, source provenance resolution queue, canonical-head decision deficits, buyer hard-gate deficits, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight remediation queue, production approval prerequisite queue, post-deploy live proof gate queue, source provenance with staged/unstaged classification, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, and validation boundaries are present.');

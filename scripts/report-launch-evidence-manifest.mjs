@@ -686,6 +686,9 @@ function buildLaunchActionQueue({
   const buyerOpen = buyerOpenCount ?? 'unknown';
   const buyerDeficitsOpen = !Number.isInteger(buyerOpenCount) || buyerOpenCount > 0;
   const releaseOpen = releasePreflight.open_count ?? 'unknown';
+  const releaseToolchainProbeLedger = releasePreflight.toolchain_probe_ledger ?? {};
+  const releaseProbeOpen = releaseToolchainProbeLedger.open_count ?? 'unknown';
+  const releaseProbeStatus = releaseToolchainProbeLedger.status ?? 'unknown';
 
   const items = [
     {
@@ -701,11 +704,11 @@ function buildLaunchActionQueue({
     {
       rank: 2,
       phase: 'release_toolchain',
-      blocker: `${releaseOpen} release-preflight deficit(s) remain`,
+      blocker: `${releaseOpen} release-preflight deficit(s), ${releaseProbeOpen} release-toolchain probe(s) open; probe_status=${releaseProbeStatus}`,
       owner: 'operator',
-      action: 'Run the guarded release path only from a Corepack-enabled shell after source provenance is clean.',
-      proof_command: 'corepack pnpm run check:release-readiness',
-      stop_gate: 'Do not treat bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
+      action: 'Refresh the release toolchain probe ledger from the intended release shell, then run the guarded release path only after source provenance is clean.',
+      proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
       status: releasePreflight.status === 'pass' ? 'ready' : 'blocked',
     },
     {
@@ -804,6 +807,9 @@ function buildProductionApprovalPrerequisiteQueue({
 }) {
   const sourceReady = sourceProvenanceResolutionQueue.status === 'pass';
   const releaseReady = releasePreflight.status === 'pass';
+  const releaseToolchainProbeLedger = releasePreflight.toolchain_probe_ledger ?? {};
+  const releaseProbeOpen = releaseToolchainProbeLedger.open_count ?? 'unknown';
+  const releaseProbeStatus = releaseToolchainProbeLedger.status ?? 'unknown';
   const branchReviewFirst = branchReviewQueue.review_first_count;
   const branchReady = branchReviewQueue.status !== 'skipped'
     && canonicalHeadDecisions.status === 'pass'
@@ -829,11 +835,11 @@ function buildProductionApprovalPrerequisiteQueue({
       prerequisite: 'Corepack release-readiness',
       current: releaseReady
         ? 'release preflight passed'
-        : `${releasePreflight.open_count ?? 'unknown'} release-preflight deficit(s) remain`,
-      needed: 'Corepack-pinned release-readiness, Git LFS push-path proof, clean provenance, and owner-approval gate all current',
+        : `${releasePreflight.open_count ?? 'unknown'} release-preflight deficit(s); ${releaseProbeOpen} release-toolchain probe(s) open; probe_status=${releaseProbeStatus}`,
+      needed: 'Corepack-pinned release-readiness, current Corepack/Git LFS probe ledger, Git LFS push-path proof, clean provenance, and owner-approval gate all current',
       owner: 'operator',
-      proof_command: 'corepack pnpm run check:release-readiness',
-      stop_gate: 'Do not treat bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
+      proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
       status: statusForProductionPrerequisite(releaseReady),
     },
     {

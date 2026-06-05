@@ -166,6 +166,11 @@ describe('launch evidence manifest report', () => {
       'post_deploy_live_proof',
     ]);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
+    const releaseToolchainAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'release_toolchain');
+    expect(releaseToolchainAction.blocker).toMatch(/release-toolchain probe/i);
+    expect(releaseToolchainAction.action).toMatch(/Refresh the release toolchain probe ledger/i);
+    expect(releaseToolchainAction.proof_command).toBe('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
+    expect(releaseToolchainAction.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run check:post-deploy-live');
@@ -186,6 +191,11 @@ describe('launch evidence manifest report', () => {
       'Post-deploy live proof boundary',
     ]);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').status).toBe('manual_stop');
+    const releaseReadinessPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Corepack release-readiness');
+    expect(releaseReadinessPrerequisite.current).toMatch(/release-toolchain probe/i);
+    expect(releaseReadinessPrerequisite.needed).toMatch(/Corepack\/Git LFS probe ledger/i);
+    expect(releaseReadinessPrerequisite.proof_command).toBe('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
+    expect(releaseReadinessPrerequisite.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
@@ -357,6 +367,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| buyer_evidence |');
     expect(stdout).toContain('| production_approval |');
     expect(stdout).toContain('| post_deploy_live_proof |');
+    expect(stdout).toContain('release-toolchain probe(s) open');
+    expect(stdout).toContain('Refresh the release toolchain probe ledger');
     expect(stdout).toMatch(/\| 5 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
@@ -393,6 +405,8 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('Production approval prerequisite queue');
     expect(stdout).toContain('does not grant owner approval');
+    expect(stdout).toContain('Corepack/Git LFS probe ledger');
+    expect(stdout).toContain('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
     expect(stdout).toContain('| Explicit owner production approval |');
     expect(stdout).toContain('not granted by this manifest or report');
     expect(stdout).toContain('| Post-deploy live proof boundary |');
