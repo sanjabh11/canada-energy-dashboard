@@ -72,6 +72,16 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'production_approval_request_packet',
+    releaseHealthLabel: 'Production approval request packet',
+    boundaryPatterns: [
+      /pre-request, owner-decision, and post-deploy-boundary/i,
+      /does not prove production approval/i,
+      /access Supabase/i,
+      /hosted\/live parity/i,
+    ],
+  },
+  {
     publicId: 'post_deploy_live_proof_gate_queue',
     releaseHealthLabel: 'Post-deploy live proof gate queue',
     boundaryPatterns: [
@@ -210,13 +220,14 @@ describe('status page release posture', () => {
     const reviewFirstPacketQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Review-first branch packet queue');
     const launchQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Launch blocker action queue');
     const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
+    const productionApprovalRequestPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval request packet');
     const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
     const buyerRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence remediation queue');
     const supabaseRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor remediation queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(19);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(20);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -284,6 +295,12 @@ describe('status page release posture', () => {
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(productionApprovalQueueEvidence?.evidenceBoundary).toMatch(/claim post-deploy live parity/i);
+    expect(productionApprovalRequestPacketEvidence?.status).toBe('external_gate');
+    expect(productionApprovalRequestPacketEvidence?.command).toContain('check:production-deploy-request');
+    expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/pre-request, owner-decision, and post-deploy-boundary/i);
+    expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/access Supabase/i);
+    expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(postDeployQueueEvidence?.status).toBe('external_gate');
     expect(postDeployQueueEvidence?.command).toContain('report:launch-evidence-manifest');
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
@@ -349,6 +366,7 @@ describe('status page release posture', () => {
     const releaseToolchainProbeGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_probe_ledger');
     const launchQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_blocker_action_queue');
     const productionApprovalQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_prerequisite_queue');
+    const productionApprovalRequestPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_request_packet');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const canonicalHeadQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_decision_queue');
@@ -382,6 +400,7 @@ describe('status page release posture', () => {
       'release_toolchain_probe_ledger',
       'launch_blocker_action_queue',
       'production_approval_prerequisite_queue',
+      'production_approval_request_packet',
       'post_deploy_live_proof_gate_queue',
       'unmerged_branch_review_queue',
       'canonical_head_decision_queue',
@@ -434,6 +453,11 @@ describe('status page release posture', () => {
     expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(productionApprovalQueueGate?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(productionApprovalQueueGate?.nextAction).toMatch(/keep launch evidence validation passing/i);
+    expect(productionApprovalRequestPacketGate?.status).toBe('external_gate');
+    expect(productionApprovalRequestPacketGate?.command).toContain('check:production-deploy-request');
+    expect(productionApprovalRequestPacketGate?.evidenceBoundary).toMatch(/pre-request, owner-decision, and post-deploy-boundary/i);
+    expect(productionApprovalRequestPacketGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(productionApprovalRequestPacketGate?.nextAction).toMatch(/pre-request row is blocked/i);
     expect(postDeployQueueGate?.status).toBe('external_gate');
     expect(postDeployQueueGate?.proofBucket).toBe('hosted/live');
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);

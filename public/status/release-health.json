@@ -106,6 +106,15 @@
       "nextAction": "Clear source provenance, keep launch evidence validation passing, clear every prerequisite row, request explicit owner approval only after the queue is ready, then rerun the launch evidence manifest and production approval packet."
     },
     {
+      "id": "production_approval_request_packet",
+      "label": "Production approval request packet",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest && pnpm run check:production-deploy-request",
+      "evidenceBoundary": "The production approval request packet classifies prerequisite rows into pre-request, owner-decision, and post-deploy-boundary phases, but it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, request owner approval, or prove hosted/live parity.",
+      "nextAction": "Keep the request packet ineligible while any pre-request row is blocked; rerun check:production-deploy-request only after source provenance, launch evidence validation, release-readiness, branch review, Supabase advisor clearance, and buyer evidence gates are ready."
+    },
+    {
       "id": "post_deploy_live_proof_gate_queue",
       "label": "Post-deploy live proof gate queue",
       "status": "external_gate",

@@ -190,6 +190,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The production approval prerequisite queue sequences clean source provenance, launch evidence validation, Corepack release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof; it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, prove launch evidence validation, or claim post-deploy live parity.',
   },
   {
+    label: 'Production approval request packet',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest && pnpm run check:production-deploy-request',
+    evidenceBoundary: 'The production approval request packet classifies prerequisite rows into pre-request, owner-decision, and post-deploy-boundary phases, but it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, request owner approval, or prove hosted/live parity.',
+  },
+  {
     label: 'Post-deploy live proof gate queue',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',

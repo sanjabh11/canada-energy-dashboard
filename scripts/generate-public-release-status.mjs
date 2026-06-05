@@ -79,6 +79,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
   },
   {
+    id: 'production_approval_request_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest && pnpm run check:production-deploy-request',
+  },
+  {
     id: 'post_deploy_live_proof_gate_queue',
     status: 'external_gate',
     proofBucket: 'hosted/live',
@@ -269,6 +275,13 @@ function validateManifest(manifest) {
   }
   if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers|does not.*prove launch evidence validation/i.test(productionApprovalQueue.evidenceBoundary ?? '')) {
     failures.push('production_approval_prerequisite_queue must preserve the non-approval, non-execution, and non-validation boundary.');
+  }
+  const productionApprovalRequestPacket = itemById.get('production_approval_request_packet') ?? {};
+  if (!/pre-request|owner-decision|post-deploy-boundary|request packet/i.test(`${productionApprovalRequestPacket.evidenceBoundary ?? ''}\n${productionApprovalRequestPacket.nextAction ?? ''}`)) {
+    failures.push('production_approval_request_packet must describe the approval request packet phases.');
+  }
+  if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers|does not.*access Supabase|does not.*clear source provenance|does not.*prove hosted\/live parity/i.test(productionApprovalRequestPacket.evidenceBoundary ?? '')) {
+    failures.push('production_approval_request_packet must preserve the no-approval, no-deploy, no-buyer-contact, no-Supabase-access, and no-live-parity boundary.');
   }
   const postDeployQueue = itemById.get('post_deploy_live_proof_gate_queue') ?? {};
   if (!/live public metadata|live static dist parity|hosted proof-pack route smoke|check:post-deploy-live/i.test(`${postDeployQueue.evidenceBoundary ?? ''}\n${postDeployQueue.nextAction ?? ''}`)) {
