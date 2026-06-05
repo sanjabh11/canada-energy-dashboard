@@ -65,6 +65,18 @@ async function runPacket(extraArgs: string[], envOverrides: NodeJS.ProcessEnv = 
       '    echo "Launch evidence manifest check passed: blocked decision, release toolchain probe ledger, production approval prerequisite queue, buyer boundary, and schema validation are consistent."',
       '    exit 0',
       '    ;;',
+      '  *scripts/report-launch-evidence-manifest.mjs*)',
+      '    if [ "$CEIP_FAKE_APPROVAL_REQUEST_PACKET_MISSING" = "1" ]; then',
+      '      echo \'{"production_approval":{}}\'',
+      '      exit 0',
+      '    fi',
+      '    if [ "$CEIP_FAKE_APPROVAL_REQUEST_BLOCKED" = "1" ]; then',
+      '      echo \'{"production_approval":{"request_packet":{"status":"blocked","proof_type":"production_approval_request_packet","source_prerequisite_status":"blocked","request_eligible":false,"item_count":3,"request_blocking_count":2,"manual_stop_count":1,"proof_boundary":"Production approval request packet organizes evidence for owner review only; it does not grant owner approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.","stop_gate":"Do not request or claim production approval until every pre-request row is ready; do not run deploy-production.sh, netlify deploy, push, or hosted/live claims from this packet.","items":[{"rank":1,"prerequisite":"Buyer evidence hard gate","request_phase":"pre_request","source_status":"blocked","status":"blocked","blocks_request":true,"proof_command":"corepack pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts"},{"rank":2,"prerequisite":"Supabase advisor clearance","request_phase":"pre_request","source_status":"blocked","status":"blocked","blocks_request":true,"proof_command":"Supabase Dashboard > Database > Security Advisor"},{"rank":3,"prerequisite":"Explicit owner production approval","request_phase":"owner_decision","source_status":"manual_stop","status":"manual_stop","blocks_request":false,"proof_command":"corepack pnpm run check:production-deploy-request"}]}}}\'',
+      '      exit 0',
+      '    fi',
+      '    echo \'{"production_approval":{"request_packet":{"status":"ready_to_request","proof_type":"production_approval_request_packet","source_prerequisite_status":"ready","request_eligible":true,"item_count":1,"request_blocking_count":0,"manual_stop_count":1,"proof_boundary":"Production approval request packet organizes evidence for owner review only; it does not grant owner approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.","stop_gate":"Do not request or claim production approval until every pre-request row is ready; do not run deploy-production.sh, netlify deploy, push, or hosted/live claims from this packet.","items":[{"rank":1,"prerequisite":"Explicit owner production approval","request_phase":"owner_decision","source_status":"manual_stop","status":"manual_stop","blocks_request":false,"proof_command":"corepack pnpm run check:production-deploy-request"}]}}}\'',
+      '    exit 0',
+      '    ;;',
       '  *scripts/generate-public-release-status.mjs*)',
       '    if [ "$CEIP_FAKE_PUBLIC_RELEASE_STATUS_FAIL" = "1" ]; then',
       '      echo "Public release status manifest validation failed:"',
@@ -206,6 +218,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: skipped.');
     expect(result.stdout).toContain('- Live metadata parity: pass.');
@@ -250,6 +263,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: fail.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
@@ -269,6 +283,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: fail.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
     expect(result.stdout).toContain('- Live parity achieved: no.');
@@ -286,6 +301,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: fail.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('Dirty: R  .windsurf/workflows/master.md -> .devin/workflows/master.md');
     expect(result.stdout).toContain('Dirty detail: .devin/workflows/master.md | status=renamed | index_status=renamed | worktree_status=clean | staging_state=staged_only | old_path=.windsurf/workflows/master.md | tracked=yes | ignored_by_rule=no | action=staged source change; commit, unstage, stash, or revert before deploy');
@@ -300,6 +316,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
     expect(result.stdout).toContain('- Live metadata parity: fail.');
@@ -322,6 +339,7 @@ describe('production approval packet', () => {
 
     expect(result.status).toBe(0);
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(localReadinessSection).toContain('Local release readiness passed; live parity is reported by the dedicated live metadata');
     expect(localReadinessSection).toContain('Public metadata check passed for local source metadata.');
@@ -352,6 +370,26 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('- Live parity achieved: no.');
   });
 
+  it('blocks deploy request readiness when the production approval request packet is ineligible', async () => {
+    const result = await runPacket(['--include-hosted-smoke', '--fail-on-predeploy-blocker'], {
+      CEIP_FAKE_APPROVAL_REQUEST_BLOCKED: '1',
+    });
+
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('- Source deploy provenance: pass.');
+    expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: fail.');
+    expect(result.stdout).toContain('- Public release status manifest validation: pass.');
+    expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
+    expect(result.stdout).toContain('- Deployment request readiness: blocked.');
+    expect(result.stdout).toContain('Request eligible: no');
+    expect(result.stdout).toContain('Open pre-request blockers: 2/3');
+    expect(result.stdout).toContain('Blocking row: 1:Buyer evidence hard gate phase=pre_request source_status=blocked packet_status=blocked');
+    expect(result.stdout).toContain('Blocking row: 2:Supabase advisor clearance phase=pre_request source_status=blocked packet_status=blocked');
+    expect(result.stdout).toContain('Blocking pre-deploy gates: production approval request packet is not eligible.');
+    expect(result.stdout).toContain('Blocker: production approval request packet is not eligible; every pre-request row must be ready before owner approval is requested.');
+  });
+
   it('keeps all-green live gates framed as observed parity rather than deploy approval', async () => {
     const result = await runPacket(['--include-hosted-smoke', '--fail-on-blocker']);
 
@@ -372,6 +410,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: fail.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: pass.');
     expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');
@@ -388,6 +427,7 @@ describe('production approval packet', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toContain('- Source deploy provenance: pass.');
     expect(result.stdout).toContain('- Launch evidence manifest validation: pass.');
+    expect(result.stdout).toContain('- Production approval request packet: pass.');
     expect(result.stdout).toContain('- Public release status manifest validation: fail.');
     expect(result.stdout).toContain('- Local source approval state: preflight-clean.');
     expect(result.stdout).toContain('- Deployment request readiness: blocked.');

@@ -81,6 +81,99 @@ function runStep(label, command, commandArgs, options = {}) {
   };
 }
 
+function productionApprovalRequestPacketStep() {
+  const startedAt = Date.now();
+  const command = 'node';
+  const commandArgs = ['scripts/report-launch-evidence-manifest.mjs'];
+  const result = spawnSync(command, commandArgs, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0' },
+    maxBuffer: 30 * 1024 * 1024,
+  });
+  const output = result.stdout ?? '';
+  const stderr = result.stderr ?? '';
+  const commandDisplay = commandText(command, commandArgs);
+
+  if (result.error) {
+    return {
+      label: 'Production approval request packet',
+      command: commandDisplay,
+      exitCode: 1,
+      status: 'fail',
+      durationMs: Date.now() - startedAt,
+      stdout: '',
+      stderr,
+      error: processErrorText(command, result.error),
+    };
+  }
+
+  if (result.status !== 0) {
+    return {
+      label: 'Production approval request packet',
+      command: commandDisplay,
+      exitCode: result.status ?? 1,
+      status: 'fail',
+      durationMs: Date.now() - startedAt,
+      stdout: output,
+      stderr,
+      error: '',
+    };
+  }
+
+  let manifest;
+  try {
+    manifest = JSON.parse(output);
+  } catch (error) {
+    return {
+      label: 'Production approval request packet',
+      command: commandDisplay,
+      exitCode: 1,
+      status: 'fail',
+      durationMs: Date.now() - startedAt,
+      stdout: output.slice(0, 4000),
+      stderr,
+      error: `Could not parse launch evidence manifest JSON: ${error.message}`,
+    };
+  }
+
+  const packet = manifest.production_approval?.request_packet;
+  const items = Array.isArray(packet?.items) ? packet.items : [];
+  const blockingRows = items.filter((item) => item.blocks_request).slice(0, 12);
+  const requestEligible = packet?.request_eligible === true && packet?.status === 'ready_to_request';
+  const lines = [
+    `Production approval request packet: ${requestEligible ? 'eligible' : 'ineligible'}`,
+    `Request packet status: ${packet?.status ?? 'missing'}`,
+    `Request eligible: ${packet?.request_eligible === true ? 'yes' : 'no'}`,
+    `Open pre-request blockers: ${packet?.request_blocking_count ?? 'unknown'}/${packet?.item_count ?? 'unknown'}`,
+    `Manual stop rows: ${packet?.manual_stop_count ?? 'unknown'}`,
+    `Source prerequisite status: ${packet?.source_prerequisite_status ?? 'unknown'}`,
+    `Proof type: ${packet?.proof_type ?? 'missing'}`,
+    `Proof boundary: ${packet?.proof_boundary ?? 'Production approval request packet was not found in the launch evidence manifest.'}`,
+    `Stop gate: ${packet?.stop_gate ?? 'Do not request production approval until the launch evidence manifest emits an eligible request packet.'}`,
+    ...blockingRows.map((item) =>
+      `Blocking row: ${item.rank}:${item.prerequisite} phase=${item.request_phase} source_status=${item.source_status} packet_status=${item.status} proof=${item.proof_command}`,
+    ),
+  ];
+
+  if (!packet) {
+    lines.push('Blocker: production_approval.request_packet is missing from the launch evidence manifest.');
+  } else if (!requestEligible) {
+    lines.push('Blocker: production approval request packet is not eligible; every pre-request row must be ready before owner approval is requested.');
+  }
+
+  return {
+    label: 'Production approval request packet',
+    command: commandDisplay,
+    exitCode: requestEligible ? 0 : 1,
+    status: requestEligible ? 'pass' : 'fail',
+    durationMs: Date.now() - startedAt,
+    stdout: lines.join('\n'),
+    stderr,
+    error: '',
+  };
+}
+
 function skippedStep(label, reason) {
   return {
     label,
@@ -303,6 +396,10 @@ function relevantLines(step) {
     return lines.slice(0, 100);
   }
 
+  if (step.label === 'Production approval request packet') {
+    return lines.slice(0, 100);
+  }
+
   if (step.label === 'Public release status manifest validation') {
     return lines.slice(0, 100);
   }
@@ -337,6 +434,7 @@ const steps = [];
 
 steps.push(sourceProvenanceStep());
 steps.push(runStep('Launch evidence manifest validation', 'node', ['scripts/check-launch-evidence-manifest.mjs']));
+steps.push(productionApprovalRequestPacketStep());
 steps.push(runStep('Public release status manifest validation', 'node', ['scripts/generate-public-release-status.mjs', '--check']));
 
 if (skipReleaseReadiness) {
@@ -386,6 +484,7 @@ if (includeHostedSmoke) {
 
 const localReadiness = steps.find((step) => step.label === 'Local release readiness');
 const launchEvidenceManifest = steps.find((step) => step.label === 'Launch evidence manifest validation');
+const productionApprovalRequest = steps.find((step) => step.label === 'Production approval request packet');
 const publicReleaseStatus = steps.find((step) => step.label === 'Public release status manifest validation');
 const sourceProvenance = steps.find((step) => step.label === 'Source deploy provenance');
 const liveMetadata = steps.find((step) => step.label === 'Live metadata parity');
@@ -393,12 +492,13 @@ const liveStaticParity = steps.find((step) => step.label === 'Live static dist p
 const hostedSmoke = steps.find((step) => step.label === 'Hosted proof-pack route smoke');
 const sourceDeployable = sourceProvenance?.status === 'pass';
 const launchEvidenceManifestClean = launchEvidenceManifest?.status === 'pass';
+const productionApprovalRequestEligible = productionApprovalRequest?.status === 'pass';
 const publicReleaseStatusClean = publicReleaseStatus?.status === 'pass';
 const localPreflightClean = localReadiness?.status === 'pass';
 const liveMetadataGreen = liveMetadata?.status === 'pass';
 const liveStaticParityGreen = liveStaticParity?.status === 'pass';
 const hostedSmokeGreen = hostedSmoke?.status === 'pass';
-const deploymentRequestReady = sourceDeployable && launchEvidenceManifestClean && publicReleaseStatusClean && localPreflightClean;
+const deploymentRequestReady = sourceDeployable && launchEvidenceManifestClean && productionApprovalRequestEligible && publicReleaseStatusClean && localPreflightClean;
 const liveParityAchieved = deploymentRequestReady && liveMetadataGreen && liveStaticParityGreen && hostedSmokeGreen;
 const fullLiveGateGreen = liveParityAchieved;
 const blockedByLiveMetadata = liveMetadata?.status === 'fail';
@@ -408,6 +508,7 @@ const hostedSmokeNotRun = hostedSmoke?.status === 'skipped';
 const preDeployBlockers = [
   !sourceDeployable ? 'source deploy provenance is not deploy-script-ready' : null,
   !launchEvidenceManifestClean ? 'launch evidence manifest validation is not passing' : null,
+  !productionApprovalRequestEligible ? 'production approval request packet is not eligible' : null,
   !publicReleaseStatusClean ? 'public release status manifest validation is not passing' : null,
   !localPreflightClean ? 'local release readiness is not passing' : null,
 ].filter(Boolean);
@@ -433,6 +534,7 @@ const markdown = [
   '',
   `- Source deploy provenance: ${sourceProvenance?.status}.`,
   `- Launch evidence manifest validation: ${launchEvidenceManifest?.status}.`,
+  `- Production approval request packet: ${productionApprovalRequest?.status}.`,
   `- Public release status manifest validation: ${publicReleaseStatus?.status}.`,
   `- Local source approval state: ${localReadiness?.status === 'pass' ? 'preflight-clean' : localReadiness?.status}.`,
   `- Live metadata parity: ${liveMetadata?.status}.`,
@@ -472,12 +574,13 @@ const markdown = [
   '',
   '1. Review this packet and confirm source deploy provenance is on `main` with a clean worktree.',
   '2. Confirm launch evidence manifest validation is passing while the commercial launch decision remains proof-bound.',
-  '3. Confirm public release-status validation is passing so `/status/release-health.json` is synced before any approval request.',
-  '4. Confirm local release readiness is passing.',
-  '5. Confirm the owner explicitly approves production deployment.',
-  '6. Deploy current source using the guarded production deploy path only after approval.',
-  '7. Run `corepack pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
-  '8. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
+  '3. Confirm the production approval request packet is eligible; this means every pre-request row is ready, not that owner approval has been granted.',
+  '4. Confirm public release-status validation is passing so `/status/release-health.json` is synced before any approval request.',
+  '5. Confirm local release readiness is passing.',
+  '6. Confirm the owner explicitly approves production deployment.',
+  '7. Deploy current source using the guarded production deploy path only after approval.',
+  '8. Run `corepack pnpm run check:post-deploy-live` after deploy; it checks live metadata, static `dist` parity, and hosted proof-pack smoke.',
+  '9. Keep buyer-proven 95% market confidence unchanged until the filled buyer register and retained redacted artifact hashes pass the pilot-evidence gate.',
   '',
   '## Evidence',
   '',
