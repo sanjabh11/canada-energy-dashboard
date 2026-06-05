@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(7);
+    expect(manifest.implementation_decisions).toHaveLength(8);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(7);
+    expect(manifest.code_optimization_reviews).toHaveLength(8);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -770,6 +770,10 @@ describe('launch evidence manifest report', () => {
       'Leave the lower per-file timeout caps and continue treating the broad strategy-audit slice timeout as residual noise.',
       'Remove or skip the slow production approval and strategy completion audit cases from the strategy-audit slice.',
       'Rewrite the subprocess fixture harnesses and report scripts to reduce runtime.',
+      'Leave source provenance only inside release preflight, production approval packet, and commercial launch reports.',
+      'Duplicate git status parsing and dirty-path classification in a standalone source-provenance implementation.',
+      'Automatically commit, unstage, stash, revert, or rename paths to clear source provenance.',
+      'Add package scripts only and leave docs, public status, release posture, and validators on broad source-provenance handles.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -881,6 +885,27 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:strategy-audit-slice',
       'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts -t "keeps full blocker gates failing when live parity is stale" --no-file-parallelism --maxWorkers=1',
       'pnpm exec vitest run tests/unit/strategyCompletionAudit.test.ts -t "exits nonzero when a required local source gate fails|keeps live metadata failure as an external gate when local checks pass" --no-file-parallelism --maxWorkers=1',
+    ]));
+    const sourceProvenanceReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    );
+    expect(sourceProvenanceReportDecision).toBeTruthy();
+    expect(sourceProvenanceReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(sourceProvenanceReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-source-provenance-readiness.mjs',
+      'scripts/check-source-provenance-readiness-report.mjs',
+      'tests/unit/sourceProvenanceReadiness.test.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+    ]));
+    expect(sourceProvenanceReportDecision.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|deploy|hosted\/live parity/i);
+    const sourceProvenanceReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    );
+    expect(sourceProvenanceReportReview).toBeTruthy();
+    expect(sourceProvenanceReportReview.policy).toBe('strict');
+    expect(sourceProvenanceReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:source-provenance-readiness',
+      'pnpm run check:source-provenance-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

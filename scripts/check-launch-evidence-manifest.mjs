@@ -2057,6 +2057,33 @@ try {
         && strategyAuditTimeoutReview.tests_or_checks.some((check) => /test:strategy-audit-slice/.test(check)),
       'Strategy audit timeout code optimization review must record focused production approval, strategy completion, and broad strategy slice proof.',
     );
+    const sourceProvenanceReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT');
+    assert(sourceProvenanceReportDecision, 'Manifest must record the source provenance focused report implementation decision.');
+    assert(
+      sourceProvenanceReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Source provenance focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(sourceProvenanceReportDecision?.files_changed)
+        && sourceProvenanceReportDecision.files_changed.includes('scripts/report-source-provenance-readiness.mjs')
+        && sourceProvenanceReportDecision.files_changed.includes('scripts/check-source-provenance-readiness-report.mjs')
+        && sourceProvenanceReportDecision.files_changed.includes('tests/unit/sourceProvenanceReadiness.test.ts'),
+      'Source provenance focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not commit|clear source provenance|run release-readiness|push|deploy|hosted\/live parity/i.test(sourceProvenanceReportDecision?.proof_boundary ?? ''),
+      'Source provenance focused report decision must preserve source no-mutation and no-clearance boundaries.',
+    );
+    const sourceProvenanceReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT');
+    assert(sourceProvenanceReportReview, 'Manifest must record the source provenance focused report code optimization review.');
+    assert(sourceProvenanceReportReview?.policy === 'strict', 'Source provenance focused report code optimization review must use strict policy.');
+    assert(sourceProvenanceReportReview?.verdict === 'pass', 'Source provenance focused report code optimization review must pass.');
+    assert(
+      Array.isArray(sourceProvenanceReportReview?.tests_or_checks)
+        && sourceProvenanceReportReview.tests_or_checks.some((check) => /report:source-provenance-readiness/.test(check))
+        && sourceProvenanceReportReview.tests_or_checks.some((check) => /check:source-provenance-report/.test(check)),
+      'Source provenance focused report code optimization review must record focused source-provenance report and checker proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

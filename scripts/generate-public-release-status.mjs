@@ -40,13 +40,13 @@ const requiredItemContracts = [
     id: 'source_provenance',
     status: 'watch',
     proofBucket: 'local/source',
-    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
   },
   {
     id: 'source_provenance_isolation_ledger',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
   },
   {
     id: 'launch_evidence_validation_gate',
@@ -88,7 +88,7 @@ const requiredItemContracts = [
     id: 'source_provenance_resolution_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
   },
   {
     id: 'release_toolchain_approval_deficit_ledger',

@@ -127,6 +127,9 @@ const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and appr
 const focusedReleasePreflightReportPhrase = /report:release-preflight[\s\S]{0,260}focused release-preflight report|focused release-preflight report[\s\S]{0,260}report:release-preflight/i;
 const focusedReleasePreflightCheckerPhrase = /check:release-preflight-report[\s\S]{0,360}(?:validates|wrapper structure|--fail-on-blocker|does not.*production approval)/i;
 const publicStatusFocusedReleasePreflightHandlePhrase = /focused release preflight report\/check[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}focused release-preflight report/i;
+const focusedSourceProvenanceReportPhrase = /report:source-provenance-readiness[\s\S]{0,280}focused source-provenance report|focused source-provenance report[\s\S]{0,280}report:source-provenance-readiness/i;
+const focusedSourceProvenanceCheckerPhrase = /check:source-provenance-report[\s\S]{0,380}(?:validates|dirty-path|isolation ledger|does not.*production approval)/i;
+const publicStatusFocusedSourceProvenanceHandlePhrase = /focused source provenance report\/check[\s\S]{0,280}public-safe handles|public release status[\s\S]{0,340}focused source-provenance report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -496,6 +499,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:release-preflight-report wired to the focused release-preflight report checker.');
   }
 
+  if (packageScripts['report:source-provenance-readiness'] !== 'node scripts/report-source-provenance-readiness.mjs') {
+    failures.push('package.json must keep report:source-provenance-readiness wired to the focused source-provenance report.');
+  }
+
+  if (packageScripts['check:source-provenance-report'] !== 'node scripts/check-source-provenance-readiness-report.mjs') {
+    failures.push('package.json must keep check:source-provenance-report wired to the focused source-provenance report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -576,6 +587,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedReleasePreflightHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused release preflight report/check as public-safe handles.');
+  }
+
+  if (!focusedSourceProvenanceReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:source-provenance-readiness as the focused source-provenance report.');
+  }
+
+  if (!focusedSourceProvenanceCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:source-provenance-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedSourceProvenanceHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused source provenance report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

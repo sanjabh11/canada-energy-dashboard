@@ -4401,12 +4401,31 @@ const strategyAuditSliceTimeoutFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const sourceProvenanceReportFilesChanged = [
+  'package.json',
+  'scripts/report-source-provenance-readiness.mjs',
+  'scripts/check-source-provenance-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/sourceProvenanceReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
+  ...sourceProvenanceReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4464,12 +4483,25 @@ const strategyAuditSliceTimeoutTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const sourceProvenanceReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:source-provenance-readiness',
+  'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run check:source-provenance-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
+  ...sourceProvenanceReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4585,6 +4617,19 @@ const safeFixImplementationDecisions = [
     reason: 'The broad release-readiness strategy slice should fail on behavior, not on lower per-file timeout caps that conflict with subprocess-heavy fixture execution under the full suite.',
     proof_boundary: 'This record improves release-test reliability only; it does not clear source provenance, install Corepack, run release-readiness, clear branch review, collect buyer evidence, authorize Supabase advisors, grant owner approval, deploy, or prove hosted/live parity.',
     stop_gate: 'Do not treat a passing strategy-audit slice, larger test budget, or timeout fix as production approval, buyer acceptance, release-readiness execution, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    decision: 'Expose current source-provenance status, dirty-path classification, isolation ledger, and resolution queue through a focused source-provenance report and checker.',
+    acceptance_check: 'Operators can run report:source-provenance-readiness and check:source-provenance-report to inspect clean-source blockers, owner-decision rows, release preflight source status, and production approval source rows without mutating the staged rename or running release/deploy flows.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing source_provenance, isolation_ledger, resolution_queue, release_preflight Clean source provenance row, production_approval prerequisite/request rows, focused report/check conventions, and public release-status handle validation.',
+    files_changed: sourceProvenanceReportFilesChanged,
+    tests_run: sourceProvenanceReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON source-provenance evidence, while the checker asserts dirty-path owner decisions, isolation and resolution ledgers, release/approval source rows, public/source-of-truth handles, and no-mutation boundaries.',
+    reason: 'Source provenance was visible inside broad release and production approval reports but did not have a narrow operator handle for the current staged rename blocker.',
+    proof_boundary: 'This record improves source-provenance evidence visibility only; it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused source-provenance report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, production approval, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4736,6 +4781,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Runtime optimization could be useful later, but the current blocker is mismatch between file-level and release-slice timeout budgets.',
     evidence: 'The tests already complete quickly in isolation when given a clean execution window; the minimal defect is the per-file timeout cap.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    variant: 'Leave source provenance only inside release preflight, production approval packet, and commercial launch reports.',
+    reason_rejected: 'Would keep the active dirty-source blocker harder to inspect than release preflight despite source provenance being a prerequisite for every deploy approval request.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity and broad-report scanning.',
+    evidence: 'The current release preflight report points Clean source provenance at the production approval packet, but no focused package script exposed only the source-provenance lane.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    variant: 'Duplicate git status parsing and dirty-path classification in a standalone source-provenance implementation.',
+    reason_rejected: 'Duplicating source classification would drift from the launch manifest and production approval packet contracts.',
+    tradeoff: 'A standalone parser could avoid manifest generation but would add another release-critical source of truth.',
+    evidence: 'report-launch-evidence-manifest already emits source_provenance.dirty_paths, isolation_ledger, resolution_queue, release_preflight, and production_approval rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    variant: 'Automatically commit, unstage, stash, revert, or rename paths to clear source provenance.',
+    reason_rejected: 'The staged rename is an owner-decision item and unrelated user work must not be mutated without explicit owner intent.',
+    tradeoff: 'Automatic cleanup would remove the blocker but would violate the safe-fix lane and dirty-worktree policy.',
+    evidence: 'The source_provenance resolution queue stop gate says no commit, unstage, stash, revert, delete, rename, or move without explicit owner intent.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave docs, public status, release posture, and validators on broad source-provenance handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from the public/source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4813,6 +4886,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adjusts only file-level Vitest timeout budgets and existing manifest/check/report/test expectations, adds no dependency, removes no assertion, and preserves blocked launch, approval, and live-parity boundaries.',
     tests_or_checks: strategyAuditSliceTimeoutTestsRun,
     remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, clean source provenance, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed source-provenance Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated git classification, source mutation, release execution, deploy paths, or live-service access.',
+    tests_or_checks: sourceProvenanceReportTestsRun,
+    remaining_risk: 'Source provenance remains blocked until the owner intentionally resolves staged, unstaged, untracked, renamed, or ignored source rows; release-readiness, production approval, branch review, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
   },
 ];
 

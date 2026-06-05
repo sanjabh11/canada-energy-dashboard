@@ -47,7 +47,7 @@
       "label": "Source provenance and dirty-worktree gate",
       "status": "watch",
       "proofBucket": "local/source",
-      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness",
+      "command": "pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report",
       "evidenceBoundary": "Deploy requests require clean main-branch source provenance. The local packet classifies dirty paths by staged-only, unstaged-only, mixed, untracked, or ignored state, but this public manifest does not prove current local cleanliness or production approval.",
       "nextAction": "Rerun the approval packet, resolve any staged-only or unstaged source blockers, then run the full release gate before any production deploy request."
     },
@@ -56,7 +56,7 @@
       "label": "Source provenance isolation ledger",
       "status": "external_gate",
       "proofBucket": "local/source",
-      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest",
+      "command": "pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report",
       "evidenceBoundary": "The source provenance isolation ledger classifies dirty source paths by tracked, untracked, ignored, staged-only, unstaged-only, mixed, rename or move, and release-blocking state, but it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval. It does not prove current local cleanliness or production approval.",
       "nextAction": "Use the ledger to isolate owner-decision rows, keep unrelated user work untouched, and rerun the approval packet plus launch manifest only after explicit owner intent resolves every release-blocking source row."
     },
@@ -119,7 +119,7 @@
       "label": "Source provenance resolution queue",
       "status": "external_gate",
       "proofBucket": "local/source",
-      "command": "pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest",
+      "command": "pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report",
       "evidenceBoundary": "The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.",
       "nextAction": "Use the queue to identify owner decisions, keep unrelated user work untouched, and rerun the approval packet only after explicit owner intent resolves every source-provenance row."
     },

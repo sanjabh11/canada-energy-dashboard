@@ -174,13 +174,13 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Source provenance isolation ledger',
     status: 'external_gate',
-    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
     evidenceBoundary: 'The source provenance isolation ledger classifies dirty source paths by tracked, untracked, ignored, staged-only, unstaged-only, mixed, rename or move, and release-blocking state, but it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval. It does not prove current local cleanliness or production approval.',
   },
   {
     label: 'Source provenance resolution queue',
     status: 'external_gate',
-    command: 'pnpm run report:production-approval-packet -- --skip-release-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
     evidenceBoundary: 'The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.',
   },
   {
