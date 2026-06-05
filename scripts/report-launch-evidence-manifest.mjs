@@ -4392,11 +4392,21 @@ const releasePreflightSourceOfTruthHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const strategyAuditSliceTimeoutFilesChanged = [
+  'tests/unit/productionApprovalPacket.test.ts',
+  'tests/unit/strategyCompletionAudit.test.ts',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
+  ...strategyAuditSliceTimeoutFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4444,11 +4454,22 @@ const releasePreflightSourceOfTruthHandleTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const strategyAuditSliceTimeoutTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/strategyCompletionAudit.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts -t "keeps full blocker gates failing when live parity is stale" --no-file-parallelism --maxWorkers=1',
+  'pnpm exec vitest run tests/unit/strategyCompletionAudit.test.ts -t "exits nonzero when a required local source gate fails|keeps live metadata failure as an external gate when local checks pass" --no-file-parallelism --maxWorkers=1',
+  'pnpm run test:strategy-audit-slice',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
+  ...strategyAuditSliceTimeoutTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4551,6 +4572,19 @@ const safeFixImplementationDecisions = [
     reason: 'A focused release-preflight report loses operator value if source-of-truth docs and public-safe handles keep sending release operators through broad manifests only.',
     proof_boundary: 'This record aligns documentation and public-safe command handles only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused release-preflight handles, public release-status validation, docs sync, generated /status JSON, or report-check success as release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    decision: 'Align subprocess-heavy production approval and strategy completion audit unit test budgets with the full strategy-audit release slice.',
+    acceptance_check: 'The previously timeout-only strategy-audit slice cases run under the same 120000 ms budget as test:strategy-audit-slice, while their assertions still verify blocked production approval, local gate failure, and live-parity external-gate semantics.',
+    chosen_variant: 'minimal Vitest timeout budget alignment',
+    repo_pattern_reused: 'Existing Vitest vi.setConfig timeout pattern and package test:strategy-audit-slice timeout contract.',
+    files_changed: strategyAuditSliceTimeoutFilesChanged,
+    tests_run: strategyAuditSliceTimeoutTestsRun,
+    proof: 'The production approval packet and strategy completion audit timeout cases passed in isolation after the full strategy slice exposed timeout-only failures; this patch aligns their file-level test budgets with the release slice rather than weakening assertions.',
+    reason: 'The broad release-readiness strategy slice should fail on behavior, not on lower per-file timeout caps that conflict with subprocess-heavy fixture execution under the full suite.',
+    proof_boundary: 'This record improves release-test reliability only; it does not clear source provenance, install Corepack, run release-readiness, clear branch review, collect buyer evidence, authorize Supabase advisors, grant owner approval, deploy, or prove hosted/live parity.',
+    stop_gate: 'Do not treat a passing strategy-audit slice, larger test budget, or timeout fix as production approval, buyer acceptance, release-readiness execution, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4681,6 +4715,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A single release command looks simpler, but the current blocker is source-of-truth discoverability rather than execution.',
     evidence: 'The release-preflight report/check are intentionally non-mutating wrappers over manifest data and must not run release-readiness, push, deploy, or grant approval.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    variant: 'Leave the lower per-file timeout caps and continue treating the broad strategy-audit slice timeout as residual noise.',
+    reason_rejected: 'Would leave a release-readiness slice that can fail on timing despite the same cases passing in isolation.',
+    tradeoff: 'No-code defer avoids touching tests, but preserves an avoidable release-gate reliability failure.',
+    evidence: 'test:strategy-audit-slice timed out in three subprocess-heavy cases, while those exact cases passed when rerun in isolation.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    variant: 'Remove or skip the slow production approval and strategy completion audit cases from the strategy-audit slice.',
+    reason_rejected: 'Would weaken release evidence for production approval blocker handling and live-parity external-gate behavior.',
+    tradeoff: 'Skipping tests shortens runtime but lowers the commercial-readiness proof surface.',
+    evidence: 'The timed-out cases verify source/local gate failure handling, stale live parity, and deployment request boundaries.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    variant: 'Rewrite the subprocess fixture harnesses and report scripts to reduce runtime.',
+    reason_rejected: 'A harness rewrite is broader than required for timeout-only failures and risks changing approval/report behavior.',
+    tradeoff: 'Runtime optimization could be useful later, but the current blocker is mismatch between file-level and release-slice timeout budgets.',
+    evidence: 'The tests already complete quickly in isolation when given a clean execution window; the minimal defect is the per-file timeout cap.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4749,6 +4804,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates existing docs, public release-status command handles, release posture evidence, generator/checker contracts, and tests only, with no new dependency, no deploy path, no duplicated release probing, and no release-gate relaxation.',
     tests_or_checks: releasePreflightSourceOfTruthHandleTestsRun,
     remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, explicit owner approval, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adjusts only file-level Vitest timeout budgets and existing manifest/check/report/test expectations, adds no dependency, removes no assertion, and preserves blocked launch, approval, and live-parity boundaries.',
+    tests_or_checks: strategyAuditSliceTimeoutTestsRun,
+    remaining_risk: 'Release approval remains blocked until Corepack-pinned release-readiness, clean source provenance, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof are current.',
   },
 ];
 

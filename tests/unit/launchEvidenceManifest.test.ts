@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(6);
+    expect(manifest.implementation_decisions).toHaveLength(7);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(6);
+    expect(manifest.code_optimization_reviews).toHaveLength(7);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -767,6 +767,9 @@ describe('launch evidence manifest report', () => {
       'Leave source-of-truth docs and public handles pointing only at broad launch manifest and commercial readiness reports.',
       'Update only COMMERCIAL_SOURCE_OF_TRUTH and leave public status/release posture commands unchanged.',
       'Fold focused release-preflight report logic into release-readiness or production deploy scripts.',
+      'Leave the lower per-file timeout caps and continue treating the broad strategy-audit slice timeout as residual noise.',
+      'Remove or skip the slow production approval and strategy completion audit cases from the strategy-audit slice.',
+      'Rewrite the subprocess fixture harnesses and report scripts to reduce runtime.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -854,6 +857,30 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:commercial-source',
       'pnpm run check:public-release-status',
       'pnpm run check:release-preflight-report',
+    ]));
+    const strategyAuditTimeoutDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    );
+    expect(strategyAuditTimeoutDecision).toBeTruthy();
+    expect(strategyAuditTimeoutDecision.chosen_variant).toBe('minimal Vitest timeout budget alignment');
+    expect(strategyAuditTimeoutDecision.files_changed).toEqual(expect.arrayContaining([
+      'tests/unit/productionApprovalPacket.test.ts',
+      'tests/unit/strategyCompletionAudit.test.ts',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(strategyAuditTimeoutDecision.proof_boundary).toMatch(/does not clear source provenance|install Corepack|owner approval|deploy|hosted\/live parity/i);
+    const strategyAuditTimeoutReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET',
+    );
+    expect(strategyAuditTimeoutReview).toBeTruthy();
+    expect(strategyAuditTimeoutReview.policy).toBe('strict');
+    expect(strategyAuditTimeoutReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run test:strategy-audit-slice',
+      'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts -t "keeps full blocker gates failing when live parity is stale" --no-file-parallelism --maxWorkers=1',
+      'pnpm exec vitest run tests/unit/strategyCompletionAudit.test.ts -t "exits nonzero when a required local source gate fails|keeps live metadata failure as an external gate when local checks pass" --no-file-parallelism --maxWorkers=1',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

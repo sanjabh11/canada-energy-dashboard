@@ -5,7 +5,7 @@ import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 
 const scriptPath = path.join(process.cwd(), 'scripts/report-strategy-completion-audit.mjs');
-vi.setConfig({ testTimeout: 20_000 });
+vi.setConfig({ testTimeout: 120_000 });
 
 function shellSingleQuote(value: string) {
   return `'${value.replace(/'/g, "'\\''")}'`;
