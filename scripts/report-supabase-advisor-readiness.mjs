@@ -1,0 +1,318 @@
+#!/usr/bin/env node
+
+import { spawnSync } from 'node:child_process';
+import { existsSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+
+const repoRoot = process.cwd();
+const args = process.argv.slice(2);
+const values = new Map();
+const failures = [];
+let skipProbes = false;
+let jsonOutput = false;
+let failOnBlocker = false;
+
+for (let index = 0; index < args.length; index += 1) {
+  const arg = args[index];
+  if (arg === '--') continue;
+  if (arg === '--skip-probes') {
+    skipProbes = true;
+    continue;
+  }
+  if (arg === '--json') {
+    jsonOutput = true;
+    continue;
+  }
+  if (arg === '--fail-on-blocker') {
+    failOnBlocker = true;
+    continue;
+  }
+  if (arg === '--help' || arg === '-h') {
+    printUsage();
+    process.exit(0);
+  }
+  if (arg.startsWith('--')) {
+    const key = arg.slice(2);
+    const value = args[index + 1] ?? '';
+    index += 1;
+    if (!['output'].includes(key)) {
+      failures.push(`Unknown option: ${arg}`);
+    } else if (!value || value.startsWith('--')) {
+      failures.push(`${arg} requires a value.`);
+    } else if (values.has(key)) {
+      failures.push(`Duplicate option: ${arg}`);
+    } else {
+      values.set(key, value);
+    }
+    continue;
+  }
+  failures.push(`Unexpected positional argument: ${arg}`);
+}
+
+function printUsage() {
+  console.log(`Usage:
+  corepack pnpm run report:supabase-advisor-readiness
+
+Options:
+  --skip-probes        Reuse the launch manifest without running local Corepack, Git LFS, buyer, or branch probes.
+  --json               Emit the focused Supabase advisor payload as JSON.
+  --fail-on-blocker    Exit nonzero when Supabase advisor clearance is not pass/verified.
+  --output <path>      Write the report to a file as well as stdout.
+`);
+}
+
+if (failures.length > 0) {
+  console.error('Supabase advisor readiness report failed:\n');
+  for (const failure of failures) console.error(`- ${failure}`);
+  console.error('');
+  printUsage();
+  process.exit(1);
+}
+
+function runManifest() {
+  const commandArgs = ['scripts/report-launch-evidence-manifest.mjs'];
+  if (skipProbes) commandArgs.push('--skip-probes');
+
+  const result = spawnSync(process.execPath, commandArgs, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: { ...process.env, FORCE_COLOR: '0' },
+    maxBuffer: 30 * 1024 * 1024,
+  });
+
+  if (result.error) {
+    return {
+      ok: false,
+      error: String(result.error.message ?? result.error),
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? '',
+    };
+  }
+  if (result.status !== 0) {
+    return {
+      ok: false,
+      error: `Launch evidence manifest exited ${result.status ?? 1}.`,
+      stdout: result.stdout ?? '',
+      stderr: result.stderr ?? '',
+    };
+  }
+  try {
+    return { ok: true, manifest: JSON.parse(result.stdout ?? '{}') };
+  } catch (error) {
+    return {
+      ok: false,
+      error: `Could not parse launch evidence manifest JSON: ${error.message}`,
+      stdout: String(result.stdout ?? '').slice(0, 4000),
+      stderr: result.stderr ?? '',
+    };
+  }
+}
+
+function cell(value) {
+  const text = String(value ?? '-')
+    .replace(/\r?\n/g, ' ')
+    .replace(/\|/g, '\\|')
+    .trim();
+  return text || '-';
+}
+
+function renderTable(headers, rows) {
+  return [
+    `| ${headers.map(cell).join(' | ')} |`,
+    `| ${headers.map(() => '---').join(' | ')} |`,
+    ...rows.map((row) => `| ${row.map(cell).join(' | ')} |`),
+  ].join('\n');
+}
+
+function findByName(items, key, value) {
+  return (items ?? []).find((item) => item?.[key] === value) ?? null;
+}
+
+function focusedPayload(manifest) {
+  const advisor = manifest.supabase_advisor ?? {};
+  const productionPrerequisiteRow = findByName(
+    manifest.production_approval?.prerequisite_queue?.items,
+    'prerequisite',
+    'Supabase advisor clearance',
+  );
+  const productionRequestRow = findByName(
+    manifest.production_approval?.request_packet?.items,
+    'prerequisite',
+    'Supabase advisor clearance',
+  );
+  const launchActionRow = findByName(
+    manifest.launch_action_queue?.items,
+    'phase',
+    'supabase_advisor',
+  );
+
+  return {
+    schema_version: 1,
+    generated_at: manifest.run?.generated_at ?? null,
+    launch_decision: manifest.launch_decision ?? null,
+    repo: manifest.repo ?? {},
+    supabase_advisor: advisor,
+    launch_action_supabase_row: launchActionRow,
+    production_approval_advisor_prerequisite: productionPrerequisiteRow,
+    production_approval_request_advisor_row: productionRequestRow,
+    proof_boundary: 'Focused Supabase advisor evidence only; this report does not authorize connectors, access the dashboard, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, grant production approval, deploy, or prove hosted/live parity.',
+    stop_gate: 'Do not treat this focused report, CLI app lint, permission-denied connector output, public status cards, generated manifests, skipped probes, or remediation queues as Supabase advisor clearance, production approval, database security clearance, release-readiness, or hosted/live parity.',
+  };
+}
+
+function renderMarkdown(payload) {
+  const advisor = payload.supabase_advisor ?? {};
+  const deficits = advisor.clearance_deficits ?? {};
+  const remediationQueue = deficits.remediation_queue ?? {};
+  const launchRow = payload.launch_action_supabase_row ?? {};
+  const productionPrerequisite = payload.production_approval_advisor_prerequisite ?? {};
+  const productionRequest = payload.production_approval_request_advisor_row ?? {};
+
+  const deficitRows = (deficits.items ?? []).map((item) => [
+    item.requirement,
+    item.current,
+    item.needed,
+    item.status,
+    item.next_action,
+    item.proof_type,
+    item.external_account_required ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const remediationRows = (remediationQueue.items ?? []).map((item) => [
+    item.rank,
+    item.requirement,
+    item.status,
+    item.owner,
+    item.action,
+    item.proof_command,
+    item.proof_type,
+    item.external_account_required ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const launchRows = launchRow.phase ? [[
+    launchRow.rank,
+    launchRow.phase,
+    launchRow.blocker,
+    launchRow.owner,
+    launchRow.next_action ?? launchRow.action,
+    launchRow.proof_command,
+    launchRow.status,
+    launchRow.proof_type,
+    launchRow.proof_boundary,
+    launchRow.stop_gate,
+  ]] : [];
+
+  const productionRows = productionPrerequisite.prerequisite ? [[
+    productionPrerequisite.prerequisite,
+    productionPrerequisite.current,
+    productionPrerequisite.needed,
+    productionPrerequisite.status,
+    productionPrerequisite.owner,
+    productionPrerequisite.proof_command,
+    productionPrerequisite.proof_type,
+    productionPrerequisite.proof_boundary,
+    productionPrerequisite.stop_gate,
+  ]] : [];
+
+  const requestRows = productionRequest.prerequisite ? [[
+    productionRequest.prerequisite,
+    productionRequest.request_phase,
+    productionRequest.source_status,
+    productionRequest.status,
+    productionRequest.blocks_request ? 'yes' : 'no',
+    productionRequest.evidence_to_attach,
+    productionRequest.request_impact,
+  ]] : [];
+
+  return `${[
+    '# CEIP Supabase Advisor Readiness Report',
+    `Generated: ${payload.generated_at ?? 'unknown'}`,
+    `Repo: ${payload.repo?.name ?? 'unknown'} @ ${payload.repo?.commit ?? 'unknown'}`,
+    `Launch decision: \`${payload.launch_decision ?? 'unknown'}\``,
+    `Supabase advisor status: \`${advisor.status ?? 'unknown'}\``,
+    `Project ref: \`${advisor.project_ref ?? 'unknown'}\``,
+    `Open advisor rows: \`${deficits.open_count ?? 'unknown'}/${deficits.total_count ?? 'unknown'}\``,
+    '',
+    '## Decision Boundary',
+    '',
+    payload.proof_boundary,
+    '',
+    payload.stop_gate,
+    '',
+    '## Summary',
+    '',
+    `- CLI app lint: \`${advisor.cli_app_lint_status ?? 'unknown'}\``,
+    `- Connector permission: \`${advisor.connector_permission ?? 'unknown'}\``,
+    `- Database Security Advisor and Performance Advisor: \`${advisor.security_performance_advisors_status ?? 'unknown'}\``,
+    `- Proof bucket: \`${advisor.proof_bucket ?? 'unknown'}\``,
+    `- Docs reference: ${advisor.docs_reference ?? 'not recorded'}`,
+    `- Next action: ${advisor.next_action ?? 'not recorded'}`,
+    '',
+    '## Supabase Advisor Evidence',
+    '',
+    advisor.evidence ?? 'Supabase advisor evidence missing.',
+    '',
+    advisor.evidence_boundary ?? 'Supabase advisor evidence boundary missing.',
+    '',
+    '## Supabase Advisor Clearance Deficit Ledger',
+    '',
+    deficits.evidence ?? 'Supabase advisor clearance deficit ledger missing.',
+    '',
+    renderTable(['Requirement', 'Current', 'Needed', 'Status', 'Next Action', 'Proof Type', 'External Account Required', 'Proof Boundary', 'Stop Gate'], deficitRows),
+    '',
+    '## Supabase Advisor Remediation Queue',
+    '',
+    remediationQueue.evidence ?? 'Supabase advisor remediation queue missing.',
+    '',
+    renderTable(['Rank', 'Requirement', 'Status', 'Owner', 'Action', 'Proof Command', 'Proof Type', 'External Account Required', 'Proof Boundary', 'Stop Gate'], remediationRows),
+    '',
+    '## Launch Action Supabase Row',
+    '',
+    renderTable(['Rank', 'Phase', 'Blocker', 'Owner', 'Next Action', 'Proof Command', 'Status', 'Proof Type', 'Proof Boundary', 'Stop Gate'], launchRows),
+    '',
+    '## Production Approval Supabase Prerequisite',
+    '',
+    renderTable(['Prerequisite', 'Current', 'Needed', 'Status', 'Owner', 'Proof Command', 'Proof Type', 'Proof Boundary', 'Stop Gate'], productionRows),
+    '',
+    '## Production Approval Request Supabase Row',
+    '',
+    renderTable(['Prerequisite', 'Request Phase', 'Source Status', 'Status', 'Blocks Request', 'Evidence To Attach', 'Request Impact'], requestRows),
+  ].join('\n')}\n`;
+}
+
+const manifestResult = runManifest();
+if (!manifestResult.ok) {
+  console.error('Supabase advisor readiness report failed:\n');
+  console.error(`- ${manifestResult.error}`);
+  if (manifestResult.stderr.trim()) console.error(manifestResult.stderr.trim());
+  if (manifestResult.stdout.trim()) console.error(manifestResult.stdout.trim());
+  process.exit(1);
+}
+
+const payload = focusedPayload(manifestResult.manifest);
+const output = jsonOutput ? `${JSON.stringify(payload, null, 2)}\n` : renderMarkdown(payload);
+const outputPath = values.get('output');
+
+if (outputPath) {
+  const absoluteOutput = path.resolve(repoRoot, outputPath);
+  const expectedSuffix = jsonOutput ? '.json' : '.md';
+  if (existsSync(absoluteOutput) && !absoluteOutput.endsWith(expectedSuffix)) {
+    console.error('Supabase advisor readiness report failed:\n');
+    console.error(`- Refusing to overwrite non-${expectedSuffix.slice(1).toUpperCase()} output path: ${outputPath}`);
+    process.exit(1);
+  }
+  writeFileSync(absoluteOutput, output, 'utf8');
+}
+
+process.stdout.write(output);
+
+const advisorReady = payload.supabase_advisor?.status === 'verified'
+  && payload.supabase_advisor?.clearance_deficits?.status === 'pass';
+if (failOnBlocker && !advisorReady) {
+  console.error(`Supabase advisor clearance remains ${payload.supabase_advisor?.status ?? 'unknown'}; this report does not authorize connectors, rerun advisors, clear findings, or grant production approval.`);
+  process.exit(1);
+}

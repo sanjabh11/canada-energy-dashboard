@@ -294,13 +294,13 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Supabase advisor remediation queue',
     status: 'needs_remediation',
-    command: 'pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
     evidenceBoundary: 'The Supabase advisor remediation queue maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and no-clearance-claim rows, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, or record secrets. It does not create or claim advisor clearance.',
   },
   {
     label: 'Supabase advisor clearance deficit ledger',
     status: 'needs_remediation',
-    command: 'pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
     evidenceBoundary: 'The Supabase advisor clearance deficit ledger maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and the no-clearance claim row, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, record secrets, clear advisor findings, or claim advisor clearance. It does not grant production approval or create launch readiness, and it does not create advisor clearance.',
   },
   {

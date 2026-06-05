@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(8);
+    expect(manifest.implementation_decisions).toHaveLength(9);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(8);
+    expect(manifest.code_optimization_reviews).toHaveLength(9);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -774,6 +774,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate git status parsing and dirty-path classification in a standalone source-provenance implementation.',
       'Automatically commit, unstage, stash, revert, or rename paths to clear source provenance.',
       'Add package scripts only and leave docs, public status, release posture, and validators on broad source-provenance handles.',
+      'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
+      'Call Supabase connector or dashboard advisors from the focused report.',
+      'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
+      'Add package scripts only and leave public status, release posture, docs, and validators on broad Supabase advisor handles.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -906,6 +910,27 @@ describe('launch evidence manifest report', () => {
     expect(sourceProvenanceReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:source-provenance-readiness',
       'pnpm run check:source-provenance-report',
+    ]));
+    const supabaseAdvisorReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    );
+    expect(supabaseAdvisorReportDecision).toBeTruthy();
+    expect(supabaseAdvisorReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(supabaseAdvisorReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-supabase-advisor-readiness.mjs',
+      'scripts/check-supabase-advisor-readiness-report.mjs',
+      'tests/unit/supabaseAdvisorReadiness.test.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+    ]));
+    expect(supabaseAdvisorReportDecision.proof_boundary).toMatch(/does not authorize connectors|rerun Security Advisor|record secrets|grant production approval|hosted\/live parity/i);
+    const supabaseAdvisorReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    );
+    expect(supabaseAdvisorReportReview).toBeTruthy();
+    expect(supabaseAdvisorReportReview.policy).toBe('strict');
+    expect(supabaseAdvisorReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:supabase-advisor-readiness',
+      'pnpm run check:supabase-advisor-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

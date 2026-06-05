@@ -130,6 +130,9 @@ const publicStatusFocusedReleasePreflightHandlePhrase = /focused release preflig
 const focusedSourceProvenanceReportPhrase = /report:source-provenance-readiness[\s\S]{0,280}focused source-provenance report|focused source-provenance report[\s\S]{0,280}report:source-provenance-readiness/i;
 const focusedSourceProvenanceCheckerPhrase = /check:source-provenance-report[\s\S]{0,380}(?:validates|dirty-path|isolation ledger|does not.*production approval)/i;
 const publicStatusFocusedSourceProvenanceHandlePhrase = /focused source provenance report\/check[\s\S]{0,280}public-safe handles|public release status[\s\S]{0,340}focused source-provenance report/i;
+const focusedSupabaseAdvisorReportPhrase = /report:supabase-advisor-readiness[\s\S]{0,320}focused Supabase advisor report|focused Supabase advisor report[\s\S]{0,320}report:supabase-advisor-readiness/i;
+const focusedSupabaseAdvisorCheckerPhrase = /check:supabase-advisor-report[\s\S]{0,460}(?:validates|connector authorization|Security Advisor|Performance Advisor|does not.*production approval)/i;
+const publicStatusFocusedSupabaseAdvisorHandlePhrase = /focused Supabase advisor report\/check[\s\S]{0,320}public-safe handles|public release status[\s\S]{0,380}focused Supabase advisor report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -507,6 +510,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:source-provenance-report wired to the focused source-provenance report checker.');
   }
 
+  if (packageScripts['report:supabase-advisor-readiness'] !== 'node scripts/report-supabase-advisor-readiness.mjs') {
+    failures.push('package.json must keep report:supabase-advisor-readiness wired to the focused Supabase advisor report.');
+  }
+
+  if (packageScripts['check:supabase-advisor-report'] !== 'node scripts/check-supabase-advisor-readiness-report.mjs') {
+    failures.push('package.json must keep check:supabase-advisor-report wired to the focused Supabase advisor report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -599,6 +610,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedSourceProvenanceHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused source provenance report/check as public-safe handles.');
+  }
+
+  if (!focusedSupabaseAdvisorReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:supabase-advisor-readiness as the focused Supabase advisor report.');
+  }
+
+  if (!focusedSupabaseAdvisorCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:supabase-advisor-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedSupabaseAdvisorHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused Supabase advisor report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

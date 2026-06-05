@@ -2084,6 +2084,33 @@ try {
         && sourceProvenanceReportReview.tests_or_checks.some((check) => /check:source-provenance-report/.test(check)),
       'Source provenance focused report code optimization review must record focused source-provenance report and checker proof.',
     );
+    const supabaseAdvisorReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT');
+    assert(supabaseAdvisorReportDecision, 'Manifest must record the Supabase advisor focused report implementation decision.');
+    assert(
+      supabaseAdvisorReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Supabase advisor focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(supabaseAdvisorReportDecision?.files_changed)
+        && supabaseAdvisorReportDecision.files_changed.includes('scripts/report-supabase-advisor-readiness.mjs')
+        && supabaseAdvisorReportDecision.files_changed.includes('scripts/check-supabase-advisor-readiness-report.mjs')
+        && supabaseAdvisorReportDecision.files_changed.includes('tests/unit/supabaseAdvisorReadiness.test.ts'),
+      'Supabase advisor focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not authorize connectors|access dashboards|rerun Security Advisor|record secrets|grant production approval|hosted\/live parity/i.test(supabaseAdvisorReportDecision?.proof_boundary ?? ''),
+      'Supabase advisor focused report decision must preserve external-account, no-secret, and no-approval boundaries.',
+    );
+    const supabaseAdvisorReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT');
+    assert(supabaseAdvisorReportReview, 'Manifest must record the Supabase advisor focused report code optimization review.');
+    assert(supabaseAdvisorReportReview?.policy === 'strict', 'Supabase advisor focused report code optimization review must use strict policy.');
+    assert(supabaseAdvisorReportReview?.verdict === 'pass', 'Supabase advisor focused report code optimization review must pass.');
+    assert(
+      Array.isArray(supabaseAdvisorReportReview?.tests_or_checks)
+        && supabaseAdvisorReportReview.tests_or_checks.some((check) => /report:supabase-advisor-readiness/.test(check))
+        && supabaseAdvisorReportReview.tests_or_checks.some((check) => /check:supabase-advisor-report/.test(check)),
+      'Supabase advisor focused report code optimization review must record focused Supabase advisor report and checker proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

@@ -214,13 +214,13 @@ const requiredItemContracts = [
     id: 'supabase_advisor_clearance_deficit_ledger',
     status: 'needs_remediation',
     proofBucket: 'external account',
-    command: 'pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
   },
   {
     id: 'supabase_advisor_remediation_queue',
     status: 'needs_remediation',
     proofBucket: 'external account',
-    command: 'pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
   },
 ];
 const requiredItemIds = requiredItemContracts.map((item) => item.id);

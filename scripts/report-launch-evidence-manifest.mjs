@@ -4419,6 +4419,24 @@ const sourceProvenanceReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const supabaseAdvisorReportFilesChanged = [
+  'package.json',
+  'scripts/report-supabase-advisor-readiness.mjs',
+  'scripts/check-supabase-advisor-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/supabaseAdvisorReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4426,6 +4444,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
+  ...supabaseAdvisorReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4495,6 +4514,19 @@ const sourceProvenanceReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const supabaseAdvisorReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/supabaseAdvisorReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:supabase-advisor-readiness',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes',
+  'pnpm run check:supabase-advisor-report',
+  'pnpm run check:supabase-app-lint',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4502,6 +4534,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
+  ...supabaseAdvisorReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4630,6 +4663,19 @@ const safeFixImplementationDecisions = [
     reason: 'Source provenance was visible inside broad release and production approval reports but did not have a narrow operator handle for the current staged rename blocker.',
     proof_boundary: 'This record improves source-provenance evidence visibility only; it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused source-provenance report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    decision: 'Expose Supabase advisor clearance deficits, remediation queue, launch action row, and production approval Supabase rows through a focused Supabase advisor report and checker.',
+    acceptance_check: 'Operators can run report:supabase-advisor-readiness and check:supabase-advisor-report to inspect CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, no-clearance claim rows, and approval blockers without authorizing connectors, accessing dashboards, rerunning advisors, mutating databases, or recording secrets.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing supabase_advisor, clearance_deficits, remediation_queue, launch_action_queue supabase_advisor row, production_approval prerequisite/request rows, focused report/check conventions, and public release-status handle validation.',
+    files_changed: supabaseAdvisorReportFilesChanged,
+    tests_run: supabaseAdvisorReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON Supabase advisor evidence, while the checker asserts the six clearance deficit rows, remediation queue, external-account flags, public-safe retained-record row, production approval rows, and no-secret/no-clearance boundaries.',
+    reason: 'Supabase advisor clearance was visible inside broad launch artifacts but did not have a narrow operator handle separating local CLI app lint from external Security and Performance Advisor evidence.',
+    proof_boundary: 'This record improves Supabase advisor evidence visibility only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused Supabase advisor report, check pass, JSON output, skipped probes, public status handle, CLI app lint pass, permission-denied connector output, or docs sync as Supabase advisor clearance, production approval, release-readiness, database security clearance, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4809,6 +4855,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    variant: 'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
+    reason_rejected: 'Would keep the active external-account advisor blocker harder to inspect despite it being a pre-request production approval gate.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity around CLI lint versus Security and Performance Advisor evidence.',
+    evidence: 'The current public status exposes Supabase advisor deficit and remediation handles, but both pointed only to report:launch-evidence-manifest.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    variant: 'Call Supabase connector or dashboard advisors from the focused report.',
+    reason_rejected: 'Connector authorization and dashboard advisor execution are external-account actions and must not be performed by a local evidence wrapper without explicit approval and credentials.',
+    tradeoff: 'Direct connector execution could produce fresher evidence, but it risks account access, private findings, and permission-boundary confusion.',
+    evidence: 'The current clearance deficit ledger marks connector authorization, Security Advisor evidence, and Performance Advisor evidence as external-account rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    variant: 'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
+    reason_rejected: 'Duplicating clearance deficit and remediation queue construction would drift from the launch manifest and production approval packet contracts.',
+    tradeoff: 'Standalone parsing could avoid manifest generation but would create another launch-critical source of truth.',
+    evidence: 'report-launch-evidence-manifest already emits supabase_advisor, clearance_deficits, remediation_queue, launch_action_queue, and production_approval rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad Supabase advisor handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4896,6 +4970,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: sourceProvenanceReportTestsRun,
     remaining_risk: 'Source provenance remains blocked until the owner intentionally resolves staged, unstaged, untracked, renamed, or ignored source rows; release-readiness, production approval, branch review, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed Supabase advisor Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated advisor parsing, connector access, dashboard access, database mutation, secret recording, release execution, deploy paths, or live-service access.',
+    tests_or_checks: supabaseAdvisorReportTestsRun,
+    remaining_risk: 'Supabase advisor clearance remains blocked until authorized connector or dashboard access, current Database Security Advisor evidence, current Database Performance Advisor evidence, public-safe findings, and manifest regeneration prove every advisor row; source provenance, release-readiness, production approval, branch review, buyer evidence, and post-deploy live proof also remain open gates.',
+  },
 ];
 
 const manifest = {
@@ -4953,6 +5036,8 @@ const manifest = {
       'src/lib/commercialPositioning.ts',
       'scripts/report-buyer-evidence-readiness.mjs',
       'scripts/report-production-approval-packet.mjs',
+      'scripts/report-source-provenance-readiness.mjs',
+      'scripts/report-supabase-advisor-readiness.mjs',
       'scripts/report-unmerged-branch-readiness.mjs',
       'src/lib/releasePosture.ts',
       'src/lib/publicReleaseStatusManifest.json',
