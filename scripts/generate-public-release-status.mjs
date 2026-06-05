@@ -8,6 +8,15 @@ const args = process.argv.slice(2);
 const sourcePath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
 const publicPath = path.join(repoRoot, 'public/status/release-health.json');
 const validStatuses = new Set(['verified', 'watch', 'external_gate', 'needs_remediation']);
+const requiredRefreshCommands = [
+  'git status --porcelain=v1 --branch',
+  'pnpm run check:release-readiness',
+  'pnpm run check:launch-evidence-manifest',
+  'pnpm run check:production-deploy-request',
+  'pnpm run check:post-deploy-live',
+  'pnpm run report:commercial-launch-readiness',
+  'pnpm run report:buyer-evidence-readiness',
+];
 const forbiddenPatterns = [
   { name: 'direct email', pattern: /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i },
   { name: 'JWT-like token', pattern: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/ },
@@ -42,8 +51,10 @@ function validateManifest(manifest) {
   if (!/does not create buyer evidence/i.test(manifest.decisionBoundary ?? '')) {
     failures.push('decisionBoundary must explicitly say the manifest does not create buyer evidence.');
   }
-  if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
-    failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
+  if (JSON.stringify(manifest.refreshCommands ?? null) !== JSON.stringify(requiredRefreshCommands)) {
+    failures.push(
+      `refreshCommands must exactly preserve the public release refresh sequence: ${requiredRefreshCommands.join(' -> ')}.`,
+    );
   }
   if (!Array.isArray(manifest.items) || manifest.items.length < 18) {
     failures.push('items must include deployed artifact, current source live parity, source, provenance, launch-evidence validation, source-resolution queue, release-preflight queue, release-toolchain probe ledger, launch action queue, production approval, post-deploy live proof, branch-review, canonical-head, review-first packet, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');

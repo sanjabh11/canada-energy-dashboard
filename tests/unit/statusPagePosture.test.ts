@@ -234,6 +234,15 @@ describe('status page release posture', () => {
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.publicPath).toBe('/status/release-health.json');
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.decision).toBe('blocked');
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.decisionBoundary).toMatch(/does not create buyer evidence/i);
+    expect(PUBLIC_RELEASE_STATUS_MANIFEST.refreshCommands).toEqual([
+      'git status --porcelain=v1 --branch',
+      'pnpm run check:release-readiness',
+      'pnpm run check:launch-evidence-manifest',
+      'pnpm run check:production-deploy-request',
+      'pnpm run check:post-deploy-live',
+      'pnpm run report:commercial-launch-readiness',
+      'pnpm run report:buyer-evidence-readiness',
+    ]);
     expect(itemIds).toEqual([
       'deployed_artifact_live_parity',
       'current_source_live_parity',
