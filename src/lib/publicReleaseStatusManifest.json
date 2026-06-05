@@ -114,6 +114,15 @@
       "nextAction": "Collect real anonymized buyer evidence and keep rehearsal rows at confidence_delta=0."
     },
     {
+      "id": "buyer_evidence_remediation_queue",
+      "label": "Buyer evidence remediation queue",
+      "status": "external_gate",
+      "proofBucket": "buyer evidence",
+      "command": "pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The buyer evidence remediation queue maps non-pass buyer hard-gate rows for accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation, but it does not contact buyers. It does not create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.",
+      "nextAction": "Collect real anonymized accepted buyer rows, reviewer notes, commercial signal, and retained redacted artifacts, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims."
+    },
+    {
       "id": "supabase_advisor_access",
       "label": "Supabase connector advisors",
       "status": "needs_remediation",
@@ -121,6 +130,15 @@
       "command": "Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti",
       "evidenceBoundary": "CLI lint does not substitute for connector-backed advisors; current advisor evidence remains account-authorization dependent.",
       "nextAction": "Fix Supabase connector or project authorization, then rerun security and performance advisors."
+    },
+    {
+      "id": "supabase_advisor_remediation_queue",
+      "label": "Supabase advisor remediation queue",
+      "status": "needs_remediation",
+      "proofBucket": "external account",
+      "command": "pnpm run report:launch-evidence-manifest",
+      "evidenceBoundary": "The Supabase advisor remediation queue maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and no-clearance-claim rows, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, or record secrets. It does not create or claim advisor clearance.",
+      "nextAction": "Repair connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, then regenerate the launch evidence manifest."
     }
   ]
 }

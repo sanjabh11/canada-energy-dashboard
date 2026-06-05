@@ -45,8 +45,8 @@ function validateManifest(manifest) {
   if (!Array.isArray(manifest.refreshCommands) || manifest.refreshCommands.length < 4) {
     failures.push('refreshCommands must list the source, release, deploy, live, and buyer-evidence checks.');
   }
-  if (!Array.isArray(manifest.items) || manifest.items.length < 12) {
-    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, and Supabase advisor records.');
+  if (!Array.isArray(manifest.items) || manifest.items.length < 14) {
+    failures.push('items must include deployed artifact, current source live parity, source, provenance, source-resolution queue, release-preflight queue, launch action queue, production approval, post-deploy live proof, branch-review, buyer-evidence, buyer remediation, Supabase advisor, and Supabase remediation records.');
   }
 
   const ids = new Set();
@@ -74,7 +74,9 @@ function validateManifest(manifest) {
     'post_deploy_live_proof_gate_queue',
     'unmerged_branch_review_queue',
     'buyer_evidence_gate',
+    'buyer_evidence_remediation_queue',
     'supabase_advisor_access',
+    'supabase_advisor_remediation_queue',
   ];
   for (const id of requiredIds) {
     if (!ids.has(id)) failures.push(`missing required item: ${id}.`);
@@ -123,6 +125,20 @@ function validateManifest(manifest) {
   }
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
+  }
+  const buyerRemediationQueue = itemById.get('buyer_evidence_remediation_queue') ?? {};
+  if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation/i.test(`${buyerRemediationQueue.evidenceBoundary ?? ''}\n${buyerRemediationQueue.nextAction ?? ''}`)) {
+    failures.push('buyer_evidence_remediation_queue must describe the buyer-evidence hard-gate remediation sequence.');
+  }
+  if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*validate 95|does not.*claim buyer acceptance/i.test(buyerRemediationQueue.evidenceBoundary ?? '')) {
+    failures.push('buyer_evidence_remediation_queue must preserve the no-contact and no-buyer-proof boundary.');
+  }
+  const supabaseRemediationQueue = itemById.get('supabase_advisor_remediation_queue') ?? {};
+  if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance-claim/i.test(`${supabaseRemediationQueue.evidenceBoundary ?? ''}\n${supabaseRemediationQueue.nextAction ?? ''}`)) {
+    failures.push('supabase_advisor_remediation_queue must describe the Supabase advisor remediation sequence.');
+  }
+  if (!/does not.*authorize connectors|does not.*access the dashboard|does not.*rerun advisors|does not.*mutate the database|does not.*record secrets|does not.*claim advisor clearance/i.test(supabaseRemediationQueue.evidenceBoundary ?? '')) {
+    failures.push('supabase_advisor_remediation_queue must preserve the no-access, no-secret, and no-clearance boundary.');
   }
 
   const serialized = JSON.stringify(manifest);

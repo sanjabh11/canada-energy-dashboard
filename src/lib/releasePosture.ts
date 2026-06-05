@@ -172,6 +172,18 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim; it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.',
   },
   {
+    label: 'Buyer evidence remediation queue',
+    status: 'external_gate',
+    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The buyer evidence remediation queue maps non-pass buyer hard-gate rows for accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation, but it does not contact buyers. It does not create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.',
+  },
+  {
+    label: 'Supabase advisor remediation queue',
+    status: 'needs_remediation',
+    command: 'pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The Supabase advisor remediation queue maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and no-clearance-claim rows, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, or record secrets. It does not create or claim advisor clearance.',
+  },
+  {
     label: 'Buyer evidence scan',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-readiness',
