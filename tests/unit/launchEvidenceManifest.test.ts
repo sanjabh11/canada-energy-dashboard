@@ -654,6 +654,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.review_queue.status).toBe('skipped');
     expect(manifest.branch_review.review_queue.item_count).toBeNull();
     expect(manifest.branch_review.review_queue.review_first_count).toBeNull();
+    expect(manifest.branch_review.review_queue.blocked_count).toBeNull();
     expect(manifest.branch_review.review_queue.evidence).toContain('Branch review queue skipped');
     expect(manifest.branch_review.review_queue.items).toEqual([]);
     expect(manifest.branch_review.canonical_head_decisions.status).toBe('skipped');
@@ -712,9 +713,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(2);
+    expect(manifest.implementation_decisions).toHaveLength(3);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(2);
+    expect(manifest.code_optimization_reviews).toHaveLength(3);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -753,6 +754,9 @@ describe('launch evidence manifest report', () => {
       'Leave Launch evidence validation blocked inside the request packet.',
       'Run check-launch-evidence-manifest from report-launch-evidence-manifest.',
       'Patch report-production-approval-packet to hide or rewrite the manifest request rows after validation.',
+      'Leave branch_review.review_queue.status as pass while review_first_count is nonzero.',
+      'Attempt to retire, merge, delete, checkout, or push branch heads to clear the blocker.',
+      'Add a separate branch-review artifact for queue status.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -767,6 +771,20 @@ describe('launch evidence manifest report', () => {
     expect(approvalCircularityReview.policy).toBe('strict');
     expect(approvalCircularityReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    ]));
+    const branchQueueDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    );
+    expect(branchQueueDecision).toBeTruthy();
+    expect(branchQueueDecision.chosen_variant).toBe('minimal branch review queue status patch');
+    expect(branchQueueDecision.proof_boundary).toMatch(/does not checkout|merge|push|select canonical heads|deploy/i);
+    const branchQueueReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    );
+    expect(branchQueueReview).toBeTruthy();
+    expect(branchQueueReview.policy).toBe('strict');
+    expect(branchQueueReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
@@ -805,6 +823,10 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.evidence).toContain('Branch review clearance');
     expect(manifest.branch_review.evidence).toContain('probe_status=pass');
     expect(manifest.branch_review.evidence_boundary).toMatch(/read-only branch probe execution does not clear/i);
+    expect(manifest.branch_review.review_queue.status).toBe(reviewFirstOpen ? 'blocked' : 'pass');
+    expect(manifest.branch_review.review_queue.blocked_count).toBe(manifest.branch_review.review_queue.review_first_count);
+    expect(manifest.branch_review.review_queue.evidence).toContain(`status=${manifest.branch_review.review_queue.status}`);
+    expect(manifest.branch_review.review_queue.evidence).toContain(`blocked=${manifest.branch_review.review_queue.blocked_count}`);
     expect(manifest.branch_review.top_review_packet.read_only).toBe(true);
     expect(manifest.branch_review.top_review_packet.proof_type).toBeTruthy();
     expect(manifest.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);

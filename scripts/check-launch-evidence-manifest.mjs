@@ -1435,9 +1435,21 @@ try {
     assert(hasIntegerOrNull(manifest.branch_review?.freshness_counts?.aging), 'Manifest branch_review freshness_counts.aging must be an integer or null.');
     assert(typeof manifest.branch_review?.review_queue?.evidence === 'string', 'Manifest branch_review.review_queue.evidence must be set.');
     assert(manifest.branch_review.review_queue.evidence.includes('Branch review queue'), 'Manifest branch_review.review_queue evidence must include a queue marker.');
+    assert(['skipped', 'pass', 'blocked'].includes(manifest.branch_review.review_queue.status), 'Manifest branch_review.review_queue.status must be skipped, pass, or blocked.');
     assert(Array.isArray(manifest.branch_review?.review_queue?.items), 'Manifest branch_review.review_queue.items must be a list.');
     assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.item_count), 'Manifest branch_review.review_queue.item_count must be an integer or null.');
     assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.review_first_count), 'Manifest branch_review.review_queue.review_first_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review?.review_queue?.blocked_count), 'Manifest branch_review.review_queue.blocked_count must be an integer or null.');
+    if (manifest.branch_review.review_queue.status !== 'skipped') {
+      assert(
+        manifest.branch_review.review_queue.blocked_count === manifest.branch_review.review_queue.review_first_count,
+        'Branch review queue blocked_count must match review_first_count.',
+      );
+      assert(
+        manifest.branch_review.review_queue.status === ((manifest.branch_review.review_queue.review_first_count ?? 0) > 0 ? 'blocked' : 'pass'),
+        'Branch review queue status must block exactly while review-first branch families remain.',
+      );
+    }
     for (const [index, item] of (manifest.branch_review.review_queue.items ?? []).entries()) {
       assert(typeof item.family === 'string' && item.family.length > 0, `branch_review.review_queue.items[${index}].family must be set.`);
       assert(Array.isArray(item.family_refs), `branch_review.review_queue.items[${index}].family_refs must be a list.`);
@@ -1920,6 +1932,25 @@ try {
       Array.isArray(approvalCircularityReview?.tests_or_checks)
         && approvalCircularityReview.tests_or_checks.some((check) => /report:production-approval-packet/.test(check)),
       'Production approval circularity code optimization review must record the production approval packet proof.',
+    );
+    const branchQueueDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS');
+    assert(branchQueueDecision, 'Manifest must record the branch review queue status implementation decision.');
+    assert(
+      /branch review queue status|review-first branch blockers/i.test(branchQueueDecision?.decision ?? ''),
+      'Branch review queue decision must name the queue status and review-first blockers.',
+    );
+    assert(
+      /does not checkout|merge|push|select canonical heads|deploy|grant production approval/i.test(branchQueueDecision?.proof_boundary ?? ''),
+      'Branch review queue decision must preserve read-only branch-review boundaries.',
+    );
+    const branchQueueReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS');
+    assert(branchQueueReview, 'Manifest must record the branch review queue status code optimization review.');
+    assert(branchQueueReview?.policy === 'strict', 'Branch review queue status code optimization review must use strict policy.');
+    assert(branchQueueReview?.verdict === 'pass', 'Branch review queue status code optimization review must pass.');
+    assert(
+      Array.isArray(branchQueueReview?.tests_or_checks)
+        && branchQueueReview.tests_or_checks.some((check) => /report:unmerged-branch-readiness/.test(check)),
+      'Branch review queue status code optimization review must record the unmerged branch report proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

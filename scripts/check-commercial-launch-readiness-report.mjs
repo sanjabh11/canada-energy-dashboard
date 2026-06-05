@@ -313,6 +313,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('Canonical head comparison'), 'Report must include the local-vs-origin canonical head comparison evidence from the manifest.');
   assert(markdown.includes('approval_gate=no checkout/merge/deploy/migration/push'), 'Report must preserve the top branch packet no-mutation approval gate.');
   if (!options.skipProbes) {
+    assert(markdown.includes('Branch review queue: status='), 'Report must surface branch review queue status evidence from the manifest.');
+    assert(markdown.includes('blocked='), 'Report must surface branch review queue blocked-count evidence from the manifest.');
     assert(markdown.includes('local_only='), 'Report must surface canonical-head local-only commit counts when branch probes run.');
     assert(markdown.includes('review_first'), 'Report must surface review-first branch queue priority when branch probes run.');
     assert(markdown.includes('canonical_states='), 'Report must surface review-first canonical head states when branch probes run.');
@@ -408,8 +410,10 @@ function assertReport(markdown, options = {}) {
   assert(countDataRows(codeOptimizationSection) >= 3, 'Code optimization report must include implementation, rejected variant, and optimization review rows.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES'), 'Code optimization report must include the preview manifest TypeScript safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY'), 'Code optimization report must include the production approval validation circularity safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS'), 'Code optimization report must include the branch review queue status safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal manifest/report evidence patch'), 'Code optimization report must record the selected minimal manifest/report evidence patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite status and evidence-text patch'), 'Code optimization report must record the selected minimal production approval circularity patch.');
+  assert(codeOptimizationSection.includes('minimal branch review queue status patch'), 'Code optimization report must record the selected minimal branch review queue status patch.');
   assert(codeOptimizationSection.includes('tests/unit/launchEvidenceManifest.test.ts'), 'Code optimization report must record the launch manifest test file change.');
   assert(codeOptimizationSection.includes('pnpm exec tsc -b --pretty false'), 'Code optimization report must record the TypeScript build gate.');
   assert(codeOptimizationSection.includes('pnpm run test:e2e:preview'), 'Code optimization report must record the production preview build gate.');
@@ -417,6 +421,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('strict') && codeOptimizationSection.includes('pass'), 'Code optimization report must include a strict passing optimization review.');
   assert(/does not clear buyer evidence|production approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve external launch gate boundaries.');
   assert(/does not clear source provenance|owner approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve approval circularity external gate boundaries.');
+  assert(/does not checkout|merge|push|select canonical heads|deploy|grant production approval/i.test(codeOptimizationSection), 'Code optimization report must preserve branch review read-only boundaries.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
   for (const proofType of [

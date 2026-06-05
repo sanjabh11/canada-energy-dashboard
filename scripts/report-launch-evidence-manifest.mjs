@@ -3062,6 +3062,7 @@ function branchReviewQueueForProbe(probe) {
       status: 'skipped',
       item_count: null,
       review_first_count: null,
+      blocked_count: null,
       evidence: 'Branch review queue skipped by --skip-probes; run corepack pnpm run report:unmerged-branch-readiness for the current review order.',
       items: [],
     };
@@ -3108,16 +3109,20 @@ function branchReviewQueueForProbe(probe) {
     });
 
   const reviewFirstCount = items.filter((item) => item.priority.startsWith('review_first')).length;
+  const queueStatus = reviewFirstCount > 0 ? 'blocked' : 'pass';
   const topFamilies = items.slice(0, 4).map((item) => `${item.family}:${item.priority}`);
 
   return {
-    status: probe.status,
+    status: queueStatus,
     item_count: items.length,
     review_first_count: reviewFirstCount,
+    blocked_count: reviewFirstCount,
     evidence: [
       'Branch review queue:',
+      `status=${queueStatus}`,
       `items=${items.length}`,
       `review_first=${reviewFirstCount}`,
+      `blocked=${reviewFirstCount}`,
       topFamilies.length > 0 ? `top=${topFamilies.join(', ')}` : 'top=none',
     ].join(' '),
     items: items.slice(0, 8),
@@ -4348,9 +4353,11 @@ const safeFixTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/productionApprovalPacket.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/unmergedBranchReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
   'pnpm run report:production-approval-packet -- --skip-release-readiness',
+  'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
   'pnpm run check:public-release-status',
   'pnpm run check:claim-boundaries',
   'pnpm run test:e2e:preview',
@@ -4395,6 +4402,30 @@ const safeFixImplementationDecisions = [
     reason: 'A hard-coded blocked status made request eligibility unreachable even after the external manifest validation check passed.',
     proof_boundary: 'This record only resolves a repo-local evidence-packet circularity; it does not clear source provenance, release-readiness, branch review, Supabase advisor, buyer evidence, owner approval, deployment, or hosted/live parity.',
     stop_gate: 'Do not treat the ready Launch evidence validation row, manifest check pass, or production approval packet generation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    decision: 'Align branch review queue status with open review-first branch blockers.',
+    acceptance_check: 'When read-only branch evidence finds review-first branch families, branch_review.review_queue.status is blocked, blocked_count matches review_first_count, and branch review remains read-only without clearing canonical-head or release gates.',
+    chosen_variant: 'minimal branch review queue status patch',
+    repo_pattern_reused: 'Existing branch_review.review_queue evidence, branch clearance matrix, canonical-head decision ledger, and launch manifest validators.',
+    files_changed: [
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ],
+    tests_run: [
+      'pnpm exec tsc -b --pretty false',
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/unmergedBranchReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+    ],
+    proof: 'The current read-only branch report finds review-first high-risk/stale branch families; the manifest queue now reports that as blocked rather than pass while preserving read-only review boundaries.',
+    reason: 'A queue with open review-first blockers should not report pass while the surrounding branch clearance and production approval gates are blocked.',
+    proof_boundary: 'This record improves branch-review evidence semantics only; it does not checkout, merge, push, discard, select canonical heads, run migrations, clear release-readiness, deploy, or grant production approval.',
+    stop_gate: 'Do not treat a blocked branch review queue, focused branch packet, or branch report as branch clearance, canonical-head owner decision, merge approval, deployment, or buyer evidence.',
   },
 ];
 
@@ -4441,6 +4472,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Synthesis-only patch is narrower at runtime but weaker as source-of-truth evidence.',
     evidence: 'The commercial launch report and manifest validator both read production_approval.request_packet directly.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    variant: 'Leave branch_review.review_queue.status as pass while review_first_count is nonzero.',
+    reason_rejected: 'Would keep the queue internally inconsistent with the blocked branch clearance matrix and production approval prerequisite.',
+    tradeoff: 'No-code defer avoids edits but weakens operator evidence for the branch review gate.',
+    evidence: 'The current read-only branch report identifies review-first high-risk/stale families while the manifest queue previously emitted status=pass.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    variant: 'Attempt to retire, merge, delete, checkout, or push branch heads to clear the blocker.',
+    reason_rejected: 'Branch ownership decisions are explicitly outside the safe-fix lane and require owner approval.',
+    tradeoff: 'Clearing branch state would reduce blockers but would mutate branch/source state and violate the read-only branch-review boundary.',
+    evidence: 'Branch report stop gates require no checkout, merge, push, discard, deploy, migration, or production approval without explicit owner approval and release gates.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    variant: 'Add a separate branch-review artifact for queue status.',
+    reason_rejected: 'The manifest and commercial report already expose the branch review queue, clearance matrix, and canonical-head ledgers.',
+    tradeoff: 'A new artifact would add maintenance surface without improving the source-of-truth manifest contract.',
+    evidence: 'scripts/report-commercial-launch-readiness.mjs renders branch_review.review_queue directly from the manifest.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -4467,6 +4519,21 @@ const safeFixCodeOptimizationReviews = [
       'pnpm run report:production-approval-packet -- --skip-release-readiness',
     ],
     remaining_risk: 'The request packet remains ineligible until source provenance, release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adjusts only the existing branch review queue status/count evidence and validator/test expectations, with no branch mutation, new dependency, new artifact, or deploy path.',
+    tests_or_checks: [
+      'pnpm exec tsc -b --pretty false',
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/unmergedBranchReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+    ],
+    remaining_risk: 'Branch review remains blocked until focused review, canonical-head owner decisions, clean release gates, and explicit owner approval are current.',
   },
 ];
 
