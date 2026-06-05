@@ -139,6 +139,12 @@ const requiredItemContracts = [
     command: 'pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
   },
   {
+    id: 'buyer_evidence_hard_gate_deficit_ledger',
+    status: 'external_gate',
+    proofBucket: 'buyer evidence',
+    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+  },
+  {
     id: 'buyer_evidence_acquisition_matrix',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
@@ -353,6 +359,13 @@ function validateManifest(manifest) {
   }
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
+  }
+  const buyerHardGateDeficitLedger = itemById.get('buyer_evidence_hard_gate_deficit_ledger') ?? {};
+  if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation|hard-gate/i.test(`${buyerHardGateDeficitLedger.evidenceBoundary ?? ''}\n${buyerHardGateDeficitLedger.nextAction ?? ''}`)) {
+    failures.push('buyer_evidence_hard_gate_deficit_ledger must describe buyer hard-gate deficits.');
+  }
+  if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*attach artifacts|does not.*validate 95|does not.*claim buyer acceptance|does not.*create buyer proof|does not.*prove commercial readiness/i.test(buyerHardGateDeficitLedger.evidenceBoundary ?? '')) {
+    failures.push('buyer_evidence_hard_gate_deficit_ledger must preserve the no-contact, no-buyer-proof, and no-commercial-readiness boundary.');
   }
   const buyerAcquisitionMatrix = itemById.get('buyer_evidence_acquisition_matrix') ?? {};
   if (!/outreach intake|production pilot register|utility forecast|TIER or credit|billing or security|distinct proof-pack|accepted confidence|reviewer|retained artifact|95% validation/i.test(`${buyerAcquisitionMatrix.evidenceBoundary ?? ''}\n${buyerAcquisitionMatrix.nextAction ?? ''}`)) {

@@ -121,6 +121,7 @@ const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation led
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchClearanceHandlePhrase = /branch clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}branch clearance matrix/i;
 const publicStatusCanonicalResolutionHandlePhrase = /canonical-head resolution queue[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,300}canonical-head resolution queue/i;
+const publicStatusBuyerHardGateDeficitsHandlePhrase = /buyer evidence hard-gate deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}buyer evidence hard-gate deficits/i;
 const publicStatusBuyerAcquisitionHandlePhrase = /buyer evidence acquisition matrix[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,280}buyer evidence acquisition matrix/i;
 const publicStatusSupabaseClearanceDeficitsHandlePhrase = /Supabase advisor clearance deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}Supabase advisor clearance deficits/i;
 const stalePostP1LiveParityPhrases = [
@@ -596,6 +597,10 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusCanonicalResolutionHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the canonical-head resolution queue as a public-safe evidence handle.');
+  }
+
+  if (!publicStatusBuyerHardGateDeficitsHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes buyer evidence hard-gate deficits as a public-safe evidence handle.');
   }
 
   if (!publicStatusBuyerAcquisitionHandlePhrase.test(sourceDoc)) {
