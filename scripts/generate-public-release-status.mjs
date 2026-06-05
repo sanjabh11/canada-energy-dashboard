@@ -138,18 +138,18 @@ function validateManifest(manifest) {
     failures.push('review_first_branch_packet_queue must preserve the no-mutation and no-approval boundary.');
   }
   const launchQueue = itemById.get('launch_blocker_action_queue') ?? {};
-  if (!/sequenced|source provenance|post-deploy/i.test(`${launchQueue.evidenceBoundary ?? ''}\n${launchQueue.nextAction ?? ''}`)) {
+  if (!/sequenced|source provenance|launch evidence validation|post-deploy/i.test(`${launchQueue.evidenceBoundary ?? ''}\n${launchQueue.nextAction ?? ''}`)) {
     failures.push('launch_blocker_action_queue must describe the sequenced launch blocker plan.');
   }
-  if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
-    failures.push('launch_blocker_action_queue must preserve the non-execution launch boundary.');
+  if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*prove launch evidence validation|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
+    failures.push('launch_blocker_action_queue must preserve the non-execution, non-validation, and launch boundary.');
   }
   const productionApprovalQueue = itemById.get('production_approval_prerequisite_queue') ?? {};
-  if (!/clean source provenance|Corepack release-readiness|explicit owner approval|post-deploy live proof/i.test(`${productionApprovalQueue.evidenceBoundary ?? ''}\n${productionApprovalQueue.nextAction ?? ''}`)) {
+  if (!/clean source provenance|launch evidence validation|Corepack release-readiness|explicit owner approval|post-deploy live proof/i.test(`${productionApprovalQueue.evidenceBoundary ?? ''}\n${productionApprovalQueue.nextAction ?? ''}`)) {
     failures.push('production_approval_prerequisite_queue must describe the approval prerequisite sequence.');
   }
-  if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers/i.test(productionApprovalQueue.evidenceBoundary ?? '')) {
-    failures.push('production_approval_prerequisite_queue must preserve the non-approval and non-execution boundary.');
+  if (!/does not prove production approval|does not.*deploy|does not.*push|does not.*contact buyers|does not.*prove launch evidence validation/i.test(productionApprovalQueue.evidenceBoundary ?? '')) {
+    failures.push('production_approval_prerequisite_queue must preserve the non-approval, non-execution, and non-validation boundary.');
   }
   const postDeployQueue = itemById.get('post_deploy_live_proof_gate_queue') ?? {};
   if (!/live public metadata|live static dist parity|hosted proof-pack route smoke|check:post-deploy-live/i.test(`${postDeployQueue.evidenceBoundary ?? ''}\n${postDeployQueue.nextAction ?? ''}`)) {

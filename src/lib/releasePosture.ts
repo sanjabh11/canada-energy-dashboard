@@ -181,13 +181,13 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     label: 'Launch blocker action queue',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
-    evidenceBoundary: 'The launch blocker action queue sequences source provenance, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof; it does not deploy, merge, contact buyers, mutate branches, clear blockers, or create launch readiness, and it does not create launch readiness.',
+    evidenceBoundary: 'The launch blocker action queue sequences source provenance, launch evidence validation, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof; it does not deploy, merge, contact buyers, mutate branches, clear blockers, prove launch evidence validation, or create launch readiness, and it does not create launch readiness.',
   },
   {
     label: 'Production approval prerequisite queue',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
-    evidenceBoundary: 'The production approval prerequisite queue sequences clean source provenance, Corepack release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof; it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or claim post-deploy live parity.',
+    evidenceBoundary: 'The production approval prerequisite queue sequences clean source provenance, launch evidence validation, Corepack release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy live proof; it does not prove production approval, deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, prove launch evidence validation, or claim post-deploy live parity.',
   },
   {
     label: 'Post-deploy live proof gate queue',
