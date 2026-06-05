@@ -955,6 +955,18 @@ try {
       assert(typeof item.freshness === 'string' && item.freshness.length > 0, `branch_review.review_queue.items[${index}].freshness must be set.`);
       assert(typeof item.review_command === 'string' && item.review_command.includes('report:unmerged-branch-readiness'), `branch_review.review_queue.items[${index}].review_command must point to the focused branch report.`);
       assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|owner approval/i.test(item.stop_gate), `branch_review.review_queue.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `branch_review.review_queue.items[${index}].proof_type must be set.`);
+      assert(item.read_only === true, `branch_review.review_queue.items[${index}].read_only must be true.`);
+      assert(
+        typeof item.proof_boundary === 'string' && /read-only|does not checkout|merge|push|discard|migrate|deploy|production approval/i.test(item.proof_boundary),
+        `branch_review.review_queue.items[${index}].proof_boundary must preserve the read-only non-mutating proof boundary.`,
+      );
+      if (item.highest_risk === 'high') {
+        assert(
+          item.proof_type === 'high_risk_read_only_branch_review',
+          `branch_review.review_queue.items[${index}].proof_type must classify high-risk branch review rows.`,
+        );
+      }
     }
     assert(typeof manifest.branch_review?.canonical_head_decisions?.evidence === 'string', 'Manifest branch_review.canonical_head_decisions.evidence must be set.');
     assert(manifest.branch_review.canonical_head_decisions.evidence.includes('Canonical head decision ledger'), 'Manifest branch_review.canonical_head_decisions evidence must include a ledger marker.');
@@ -972,8 +984,33 @@ try {
       assert(typeof item.local_origin_state === 'string' && item.local_origin_state.length > 0, `branch_review.canonical_head_decisions.items[${index}].local_origin_state must be set.`);
       assert(typeof item.state_key === 'string' && item.state_key.length > 0, `branch_review.canonical_head_decisions.items[${index}].state_key must be set.`);
       assert(typeof item.decision_needed === 'string' && /choose|decide|refresh/i.test(item.decision_needed), `branch_review.canonical_head_decisions.items[${index}].decision_needed must describe the decision.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `branch_review.canonical_head_decisions.items[${index}].proof_type must be set.`);
+      assert(item.owner_decision_required === true, `branch_review.canonical_head_decisions.items[${index}].owner_decision_required must be true.`);
+      assert(item.read_only === true, `branch_review.canonical_head_decisions.items[${index}].read_only must be true.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_review.canonical_head_decisions.items[${index}].proof_command must point to the focused branch report.`);
+      assert(
+        typeof item.proof_boundary === 'string' && /owner decision record only|does not checkout|merge|push|discard|delete|migrate|deploy|grant production approval|select a canonical head/i.test(item.proof_boundary),
+        `branch_review.canonical_head_decisions.items[${index}].proof_boundary must preserve the owner-decision-only non-mutating proof boundary.`,
+      );
       assert(typeof item.stop_gate === 'string' && /no checkout|no .*merge|no .*push|owner approval/i.test(item.stop_gate), `branch_review.canonical_head_decisions.items[${index}].stop_gate must preserve the non-mutating approval boundary.`);
+      if (['local_ahead', 'origin_ahead', 'diverged'].includes(item.state_key)) {
+        assert(
+          item.proof_type === 'split_canonical_head_decision',
+          `branch_review.canonical_head_decisions.items[${index}].proof_type must classify split canonical-head decisions.`,
+        );
+      }
+      if (item.state_key === 'local_only') {
+        assert(
+          item.proof_type === 'local_only_canonical_head_decision',
+          `branch_review.canonical_head_decisions.items[${index}].proof_type must classify local-only canonical-head decisions.`,
+        );
+      }
+      if (item.state_key === 'origin_only') {
+        assert(
+          item.proof_type === 'origin_only_canonical_head_decision',
+          `branch_review.canonical_head_decisions.items[${index}].proof_type must classify origin-only canonical-head decisions.`,
+        );
+      }
       assert(item.status !== 'pass', `branch_review.canonical_head_decisions.items[${index}].status must remain blocked until owner review clears the decision.`);
     }
     assert(typeof manifest.branch_review?.review_first_packets?.evidence === 'string', 'Manifest branch_review.review_first_packets.evidence must be set.');

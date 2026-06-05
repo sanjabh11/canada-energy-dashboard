@@ -436,11 +436,38 @@ describe('launch evidence manifest report', () => {
     const branchPrerequisite = manifest.production_approval.prerequisite_queue.items.find(
       (item: { prerequisite: string }) => item.prerequisite === 'Canonical branch review',
     );
+    const firstReviewItem = manifest.branch_review.review_queue.items[0];
+    const firstCanonicalHeadDecision = manifest.branch_review.canonical_head_decisions.items[0];
 
     expect(manifest.branch_review.probe_status).toBe('pass');
     expect(manifest.branch_review.evidence).toContain('Branch review clearance');
     expect(manifest.branch_review.evidence).toContain('probe_status=pass');
     expect(manifest.branch_review.evidence_boundary).toMatch(/read-only branch probe execution does not clear/i);
+    expect(firstReviewItem).toBeTruthy();
+    if (firstReviewItem) {
+      expect(firstReviewItem.read_only).toBe(true);
+      expect(firstReviewItem.proof_type).toBeTruthy();
+      expect(firstReviewItem.proof_boundary).toMatch(/read-only|does not checkout|merge|push/i);
+      if (firstReviewItem.highest_risk === 'high') {
+        expect(firstReviewItem.proof_type).toBe('high_risk_read_only_branch_review');
+      }
+    }
+
+    if (firstCanonicalHeadDecision) {
+      expect(firstCanonicalHeadDecision.read_only).toBe(true);
+      expect(firstCanonicalHeadDecision.owner_decision_required).toBe(true);
+      expect(firstCanonicalHeadDecision.proof_type).toBeTruthy();
+      expect(firstCanonicalHeadDecision.proof_boundary).toMatch(/owner decision record only|does not checkout|merge|push/i);
+      if (['local_ahead', 'origin_ahead', 'diverged'].includes(firstCanonicalHeadDecision.state_key)) {
+        expect(firstCanonicalHeadDecision.proof_type).toBe('split_canonical_head_decision');
+      }
+      if (firstCanonicalHeadDecision.state_key === 'local_only') {
+        expect(firstCanonicalHeadDecision.proof_type).toBe('local_only_canonical_head_decision');
+      }
+      if (firstCanonicalHeadDecision.state_key === 'origin_only') {
+        expect(firstCanonicalHeadDecision.proof_type).toBe('origin_only_canonical_head_decision');
+      }
+    }
 
     if (reviewFirstOpen || canonicalHeadOpen) {
       expect(manifest.branch_review.status).toBe('blocked');

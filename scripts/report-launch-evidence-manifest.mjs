@@ -2115,6 +2115,17 @@ function reasonForBranchFamily(familyRow, freshness) {
   return reasons.length > 0 ? reasons.join('; ') : 'normal branch review queue item';
 }
 
+function branchReviewQueueProofType(item) {
+  if (item.highest_risk === 'high') return 'high_risk_read_only_branch_review';
+  if (item.priority?.startsWith('review_first')) return 'read_only_branch_review';
+  if (familyStateKey(item.local_origin_state) !== 'matching_heads') return 'canonical_head_read_only_branch_review';
+  return 'branch_review_backlog';
+}
+
+function branchReviewQueueProofBoundary() {
+  return 'Focused branch report is read-only review evidence for this branch family; it does not checkout, merge, push, discard, migrate, deploy, grant production approval, or resolve canonical head ownership.';
+}
+
 function branchReviewQueueForProbe(probe) {
   if (probe.status === 'skipped') {
     return {
@@ -2132,7 +2143,7 @@ function branchReviewQueueForProbe(probe) {
     .map((familyRow) => {
       const freshness = worstFreshnessForFamily(familyRow.family, freshnessRows);
       const refs = refsForFamily(familyRow);
-      return {
+      const item = {
         family: familyRow.family,
         family_refs: refs.family_refs,
         local_ref: refs.local_ref,
@@ -2148,6 +2159,12 @@ function branchReviewQueueForProbe(probe) {
         review_command: reviewCommandForFamily(familyRow),
         review_action: familyRow.reviewAction,
         stop_gate: 'Read-only focused review first; no checkout, merge, deploy, migration, push, or production approval without explicit owner approval and release gates.',
+      };
+      return {
+        ...item,
+        proof_type: branchReviewQueueProofType(item),
+        read_only: true,
+        proof_boundary: branchReviewQueueProofBoundary(),
       };
     })
     .sort((a, b) => {
@@ -2210,6 +2227,18 @@ function canonicalDecisionNeeded(item) {
   return 'Canonical heads match; complete focused risk review before any merge discussion.';
 }
 
+function canonicalHeadDecisionProofType(item) {
+  const stateKey = familyStateKey(item.local_origin_state);
+  if (['local_ahead', 'origin_ahead', 'diverged'].includes(stateKey)) return 'split_canonical_head_decision';
+  if (stateKey === 'local_only') return 'local_only_canonical_head_decision';
+  if (stateKey === 'origin_only') return 'origin_only_canonical_head_decision';
+  return 'canonical_head_owner_decision';
+}
+
+function canonicalHeadDecisionProofBoundary() {
+  return 'Canonical-head ledger row is an owner decision record only; focused report output does not checkout, merge, push, discard, delete, migrate, deploy, grant production approval, or select a canonical head by itself.';
+}
+
 function buildCanonicalHeadDecisionLedger(reviewQueue) {
   if (reviewQueue.status === 'skipped') {
     const decisions = {
@@ -2239,7 +2268,11 @@ function buildCanonicalHeadDecisionLedger(reviewQueue) {
         highest_risk: item.highest_risk,
         freshness: item.freshness,
         decision_needed: canonicalDecisionNeeded(item),
+        proof_type: canonicalHeadDecisionProofType(item),
+        owner_decision_required: true,
+        read_only: true,
         proof_command: item.review_command,
+        proof_boundary: canonicalHeadDecisionProofBoundary(),
         stop_gate: 'No checkout, merge, push, discard, deploy, migration, or production approval until the canonical head decision is explicit and release gates are clean.',
         status: 'blocked',
       };
