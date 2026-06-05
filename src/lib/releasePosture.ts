@@ -148,6 +148,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The adversarial review ledger maps buyer evidence, production approval, release toolchain, Supabase advisor clearance, and branch-risk challenge lanes, but it does not prove production approval, buyer acceptance, release readiness, Supabase clearance, branch approval, deployment, hosted/live parity, or commercial launch readiness.',
   },
   {
+    label: 'Fix report blocker map',
+    status: 'external_gate',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    evidenceBoundary: 'The fix report blocker map summarizes files changed, tests run, required checks, unresolved blockers, and approval gates from the launch evidence manifest, but it does not modify files, run missing checks, clear buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain, production approval, deployment, hosted/live parity, or commercial launch readiness. It does not prove production approval.',
+  },
+  {
     label: 'Current source CI gate',
     status: 'watch',
     command: 'gh run list --repo sanjabh11/canada-energy-dashboard --limit 5',
