@@ -1036,6 +1036,44 @@ function postDeployLiveProofGateEvidence(queue) {
   ].join(' ');
 }
 
+function postDeployLiveProofGateProofType(gate) {
+  switch (gate) {
+    case 'Production approval clearance':
+      return 'manual_approval_gate';
+    case 'Guarded production deploy completion':
+      return 'approved_deploy_execution';
+    case 'Live public metadata':
+      return 'hosted_metadata_probe';
+    case 'Live static dist parity':
+      return 'hosted_static_parity_probe';
+    case 'Hosted proof-pack route smoke':
+      return 'hosted_browser_smoke';
+    case 'Current-source hosted parity claim':
+      return 'post_deploy_parity_claim';
+    default:
+      return 'post_deploy_live_proof_gate';
+  }
+}
+
+function postDeployLiveProofGateProofBoundary(gate) {
+  switch (gate) {
+    case 'Production approval clearance':
+      return 'Runs the deploy-request eligibility check only; it does not grant owner approval, deploy, or bypass source, release, branch, Supabase, or buyer gates.';
+    case 'Guarded production deploy completion':
+      return 'Requires explicit owner approval plus the typed deploy phrase before running the deploy script; this queue row and manifest do not run deploys, push, mutate Netlify, or prove hosted/live parity.';
+    case 'Live public metadata':
+      return 'Checks live metadata only after the approved deploy; metadata evidence alone does not prove static parity, hosted proof-pack smoke, or current-source hosted parity.';
+    case 'Live static dist parity':
+      return 'Compares hosted static files to the just-built dist artifact after the approved deploy; it does not rebuild dist or prove metadata, browser smoke, or full hosted/live parity alone.';
+    case 'Hosted proof-pack route smoke':
+      return 'Runs hosted browser smoke only after the approved deploy; local smoke, constructed demos, skipped smoke, and generated artifacts do not prove hosted proof-pack route evidence.';
+    case 'Current-source hosted parity claim':
+      return 'May pass only after approval, guarded deploy completion, live metadata, static parity, and hosted proof-pack smoke all pass; the queued command does not create live proof by itself.';
+    default:
+      return 'Post-deploy live proof requires explicit approval and current hosted evidence; this queue row does not deploy or claim live parity by itself.';
+  }
+}
+
 function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue, packageScripts }) {
   const approvalReady = productionApprovalPrerequisiteQueue.status === 'ready';
   const liveMetadataCommand = packageScriptCommand(packageScripts, 'check:live-public-metadata', 'corepack pnpm run check:live-public-metadata');
@@ -1051,6 +1089,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       needed: 'clean prerequisite queue and explicit owner approval before any deploy or live-proof attempt',
       owner: 'owner',
       proof_command: 'corepack pnpm run check:production-deploy-request',
+      proof_type: postDeployLiveProofGateProofType('Production approval clearance'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Production approval clearance'),
       stop_gate: 'Do not use post-deploy checks to bypass source provenance, release-readiness, branch review, buyer evidence, Supabase advisor, or explicit owner approval gates.',
       status: approvalReady ? 'manual_stop' : 'blocked',
     },
@@ -1065,6 +1105,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       approval_command: 'corepack pnpm run check:production-deploy-request',
       approval_phrase: 'DEPLOY CEIP PRODUCTION',
       execution_command: 'scripts/deploy-production.sh',
+      proof_type: postDeployLiveProofGateProofType('Guarded production deploy completion'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Guarded production deploy completion'),
       stop_gate: 'Do not run deploy-production.sh, netlify deploy, push, or mutate production from this queue or manifest; require explicit owner approval and the typed phrase DEPLOY CEIP PRODUCTION inside the deploy script.',
       status: 'blocked',
     },
@@ -1075,6 +1117,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       needed: 'live root metadata, manifest, and JSON-LD carry current proof-pack positioning after the approved deploy',
       owner: 'operator',
       proof_command: liveMetadataCommand,
+      proof_type: postDeployLiveProofGateProofType('Live public metadata'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Live public metadata'),
       stop_gate: 'Do not claim metadata parity before the approved deploy and the live public metadata check pass for the deployed artifact.',
       status: 'blocked',
     },
@@ -1085,6 +1129,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       needed: 'hosted /, /manifest.json, and /schema-webapp.jsonld match the just-built dist artifact',
       owner: 'operator',
       proof_command: liveStaticParityCommand,
+      proof_type: postDeployLiveProofGateProofType('Live static dist parity'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Live static dist parity'),
       stop_gate: 'Do not rebuild dist inside the live parity claim or compare production to stale local artifacts.',
       status: 'blocked',
     },
@@ -1095,6 +1141,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       needed: 'hosted proof-pack routes smoke successfully against production after the approved deploy',
       owner: 'operator',
       proof_command: hostedProofPackCommand,
+      proof_type: postDeployLiveProofGateProofType('Hosted proof-pack route smoke'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Hosted proof-pack route smoke'),
       stop_gate: 'Do not treat local browser smoke, constructed demos, or skipped hosted smoke as hosted proof-pack route evidence.',
       status: 'blocked',
     },
@@ -1105,6 +1153,8 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
       needed: 'the full post-deploy live gate passes after the explicitly approved deploy',
       owner: 'operator',
       proof_command: postDeployCommand,
+      proof_type: postDeployLiveProofGateProofType('Current-source hosted parity claim'),
+      proof_boundary: postDeployLiveProofGateProofBoundary('Current-source hosted parity claim'),
       stop_gate: 'Do not present hosted/live parity for current source until live metadata, static parity, and hosted proof-pack smoke all pass after the approved deploy.',
       status: 'blocked',
     },

@@ -611,6 +611,14 @@ try {
       manifest.post_deploy_live_proof.gate_queue.item_count === manifest.post_deploy_live_proof.gate_queue.items.length,
       'Post-deploy live proof gate item_count must match items length.',
     );
+    const postDeployProofTypesByGate = {
+      'Production approval clearance': 'manual_approval_gate',
+      'Guarded production deploy completion': 'approved_deploy_execution',
+      'Live public metadata': 'hosted_metadata_probe',
+      'Live static dist parity': 'hosted_static_parity_probe',
+      'Hosted proof-pack route smoke': 'hosted_browser_smoke',
+      'Current-source hosted parity claim': 'post_deploy_parity_claim',
+    };
     for (const [index, item] of (manifest.post_deploy_live_proof.gate_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `post_deploy_live_proof.gate_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.gate === 'string' && item.gate.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].gate must be set.`);
@@ -618,9 +626,35 @@ try {
       assert(typeof item.needed === 'string' && item.needed.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].needed must be set.`);
       assert(typeof item.owner === 'string' && item.owner.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].owner must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && /do not|no /i.test(item.stop_gate), `post_deploy_live_proof.gate_queue.items[${index}].stop_gate must preserve an explicit stop gate.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `post_deploy_live_proof.gate_queue.items[${index}].status must be set.`);
       assert(item.status !== 'ready', `post_deploy_live_proof.gate_queue.items[${index}].status must remain non-ready until the approved post-deploy gate passes.`);
+      if (postDeployProofTypesByGate[item.gate]) {
+        assert(
+          item.proof_type === postDeployProofTypesByGate[item.gate],
+          `post_deploy_live_proof.gate_queue.items[${index}] must classify ${item.gate} as ${postDeployProofTypesByGate[item.gate]}.`,
+        );
+      }
+      if (item.gate === 'Production approval clearance') {
+        assert(/does not grant owner approval|does not.*deploy|bypass source/i.test(item.proof_boundary), 'Production approval clearance proof_boundary must not imply approval, deploy, or gate bypass.');
+      }
+      if (item.gate === 'Guarded production deploy completion') {
+        assert(/explicit owner approval|typed deploy phrase|do not run deploys|prove hosted\/live parity/i.test(item.proof_boundary), 'Guarded deploy completion proof_boundary must preserve approval, execution, and live-parity boundaries.');
+      }
+      if (item.gate === 'Live public metadata') {
+        assert(/metadata evidence alone does not prove static parity|hosted proof-pack smoke|current-source hosted parity/i.test(item.proof_boundary), 'Live public metadata proof_boundary must not imply full hosted parity.');
+      }
+      if (item.gate === 'Live static dist parity') {
+        assert(/does not rebuild dist|full hosted\/live parity alone/i.test(item.proof_boundary), 'Live static parity proof_boundary must reject rebuild and full-parity claims.');
+      }
+      if (item.gate === 'Hosted proof-pack route smoke') {
+        assert(/local smoke|constructed demos|skipped smoke|do not prove hosted proof-pack route evidence/i.test(item.proof_boundary), 'Hosted proof-pack smoke proof_boundary must reject local, skipped, or constructed proof.');
+      }
+      if (item.gate === 'Current-source hosted parity claim') {
+        assert(/approval, guarded deploy completion, live metadata, static parity, and hosted proof-pack smoke all pass|does not create live proof/i.test(item.proof_boundary), 'Current-source hosted parity proof_boundary must require every post-deploy proof gate.');
+      }
     }
     const liveProofGates = manifest.post_deploy_live_proof.gate_queue.items.map((item) => item.gate);
     for (const gate of [

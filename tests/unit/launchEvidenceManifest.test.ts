@@ -272,6 +272,25 @@ describe('launch evidence manifest report', () => {
     expect(deployCompletionGate.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
     expect(deployCompletionGate.stop_gate).toContain('DEPLOY CEIP PRODUCTION');
     expect(manifest.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === 'Current-source hosted parity claim').status).toBe('blocked');
+    const postDeployProofTypesByGate = new Map(
+      manifest.post_deploy_live_proof.gate_queue.items.map((item: {
+        gate: string;
+        proof_type?: string;
+        proof_boundary?: string;
+      }) => [item.gate, item]),
+    );
+    expect(postDeployProofTypesByGate.get('Production approval clearance')?.proof_type).toBe('manual_approval_gate');
+    expect(postDeployProofTypesByGate.get('Production approval clearance')?.proof_boundary).toMatch(/does not grant owner approval|does not.*deploy/i);
+    expect(postDeployProofTypesByGate.get('Guarded production deploy completion')?.proof_type).toBe('approved_deploy_execution');
+    expect(postDeployProofTypesByGate.get('Guarded production deploy completion')?.proof_boundary).toMatch(/explicit owner approval|typed deploy phrase/i);
+    expect(postDeployProofTypesByGate.get('Live public metadata')?.proof_type).toBe('hosted_metadata_probe');
+    expect(postDeployProofTypesByGate.get('Live public metadata')?.proof_boundary).toMatch(/metadata evidence alone does not prove static parity/i);
+    expect(postDeployProofTypesByGate.get('Live static dist parity')?.proof_type).toBe('hosted_static_parity_probe');
+    expect(postDeployProofTypesByGate.get('Live static dist parity')?.proof_boundary).toMatch(/does not rebuild dist/i);
+    expect(postDeployProofTypesByGate.get('Hosted proof-pack route smoke')?.proof_type).toBe('hosted_browser_smoke');
+    expect(postDeployProofTypesByGate.get('Hosted proof-pack route smoke')?.proof_boundary).toMatch(/local smoke|constructed demos|skipped smoke/i);
+    expect(postDeployProofTypesByGate.get('Current-source hosted parity claim')?.proof_type).toBe('post_deploy_parity_claim');
+    expect(postDeployProofTypesByGate.get('Current-source hosted parity claim')?.proof_boundary).toMatch(/does not create live proof/i);
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
