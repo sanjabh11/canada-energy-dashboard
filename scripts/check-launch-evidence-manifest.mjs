@@ -392,9 +392,27 @@ try {
       assert(typeof item.owner === 'string' && item.owner.length > 0, `release_preflight.remediation_queue.items[${index}].owner must be set.`);
       assert(typeof item.action === 'string' && item.action.length > 0, `release_preflight.remediation_queue.items[${index}].action must be set.`);
       assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `release_preflight.remediation_queue.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `release_preflight.remediation_queue.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `release_preflight.remediation_queue.items[${index}].proof_boundary must be set.`);
       assert(typeof item.stop_gate === 'string' && item.stop_gate.length > 0, `release_preflight.remediation_queue.items[${index}].stop_gate must be set.`);
       assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.remediation_queue.items[${index}].status must be set.`);
       assert(item.status !== 'ready', `release_preflight.remediation_queue.items[${index}].status must remain non-ready until the deficit row passes.`);
+      if (['Corepack pnpm resolver', 'Git LFS push-path proof'].includes(item.requirement)) {
+        assert(item.proof_type === 'toolchain_probe', `release_preflight.remediation_queue.items[${index}] must mark Corepack/Git LFS rows as toolchain_probe.`);
+        assert(/does not install|does not.*push|does not.*deploy|grant approval/i.test(item.proof_boundary), `release_preflight.remediation_queue.items[${index}] proof_boundary must preserve the toolchain-probe limitation.`);
+      }
+      if (item.requirement === 'Release-readiness execution') {
+        assert(item.proof_type === 'gated_release_command', 'Release-readiness remediation row must be a gated_release_command.');
+        assert(/does not grant owner approval|does not.*deploy|hosted\/live parity/i.test(item.proof_boundary), 'Release-readiness proof_boundary must not imply approval, deploy, or hosted/live parity.');
+      }
+      if (item.requirement === 'Clean source provenance') {
+        assert(item.proof_type === 'source_provenance_decision', 'Clean source provenance remediation row must be a source_provenance_decision.');
+        assert(/does not commit|clear provenance/i.test(item.proof_boundary), 'Clean source provenance proof_boundary must preserve owner-decision semantics.');
+      }
+      if (item.requirement === 'Explicit owner production approval') {
+        assert(item.proof_type === 'manual_approval', 'Explicit owner production approval remediation row must be manual_approval.');
+        assert(/does not approve|does not.*deploy|live parity/i.test(item.proof_boundary), 'Explicit owner approval proof_boundary must not imply approval, deploy, or live parity.');
+      }
     }
     const releaseQueueRequirements = (manifest.release_preflight.remediation_queue.items ?? []).map((item) => item.requirement);
     const nonPassReleaseRequirements = (manifest.release_preflight.items ?? [])

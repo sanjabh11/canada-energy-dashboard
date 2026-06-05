@@ -468,6 +468,39 @@ function releaseRemediationProofCommand(requirement) {
   }
 }
 
+function releaseRemediationProofType(requirement) {
+  switch (requirement) {
+    case 'Corepack pnpm resolver':
+    case 'Git LFS push-path proof':
+      return 'toolchain_probe';
+    case 'Release-readiness execution':
+      return 'gated_release_command';
+    case 'Clean source provenance':
+      return 'source_provenance_decision';
+    case 'Explicit owner production approval':
+      return 'manual_approval';
+    default:
+      return 'repo_command';
+  }
+}
+
+function releaseRemediationProofBoundary(requirement) {
+  switch (requirement) {
+    case 'Corepack pnpm resolver':
+      return 'Verifies Corepack can resolve the packageManager-pinned pnpm version in the intended release shell; it does not install tools, run release-readiness, clear provenance, push, deploy, or grant approval.';
+    case 'Release-readiness execution':
+      return 'Runs the guarded Corepack-pinned release-readiness chain only after source provenance is clean and toolchain probes are current; it does not grant owner approval, push, deploy, or prove hosted/live parity.';
+    case 'Git LFS push-path proof':
+      return 'Verifies git-lfs is available on PATH for commit and push evidence; it does not install Git LFS, push, clear provenance, deploy, or grant approval.';
+    case 'Clean source provenance':
+      return 'Requires an owner decision for dirty source paths; this report row does not commit, unstage, stash, revert, delete, rename, move, or clear provenance.';
+    case 'Explicit owner production approval':
+      return 'Requires explicit owner approval after all prerequisite gates are ready; this row does not approve, push, deploy, or claim live parity.';
+    default:
+      return 'Repo-side proof row only; it does not grant production approval or launch readiness.';
+  }
+}
+
 function releaseRemediationStopGate(requirement) {
   switch (requirement) {
     case 'Corepack pnpm resolver':
@@ -589,6 +622,8 @@ function buildReleasePreflightRemediationQueue(deficits) {
       owner: releaseRemediationOwner(item.requirement),
       action: releaseRemediationAction(item),
       proof_command: releaseRemediationProofCommand(item.requirement),
+      proof_type: releaseRemediationProofType(item.requirement),
+      proof_boundary: releaseRemediationProofBoundary(item.requirement),
       stop_gate: releaseRemediationStopGate(item.requirement),
       status: releaseRemediationStatus(item.status),
     }));

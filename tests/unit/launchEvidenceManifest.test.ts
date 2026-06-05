@@ -158,6 +158,23 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.release_preflight.remediation_queue.status).toMatch(/blocked|pass/);
     expect(manifest.release_preflight.remediation_queue.evidence).toContain('Release preflight remediation queue');
+    const releaseActionsByRequirement = new Map(
+      manifest.release_preflight.remediation_queue.items.map((item: {
+        requirement: string;
+        proof_type?: string;
+        proof_boundary?: string;
+      }) => [item.requirement, item]),
+    );
+    expect(releaseActionsByRequirement.get('Corepack pnpm resolver')?.proof_type).toBe('toolchain_probe');
+    expect(releaseActionsByRequirement.get('Corepack pnpm resolver')?.proof_boundary).toMatch(/does not install tools/i);
+    expect(releaseActionsByRequirement.get('Git LFS push-path proof')?.proof_type).toBe('toolchain_probe');
+    expect(releaseActionsByRequirement.get('Git LFS push-path proof')?.proof_boundary).toMatch(/does not install Git LFS/i);
+    expect(releaseActionsByRequirement.get('Release-readiness execution')?.proof_type).toBe('gated_release_command');
+    expect(releaseActionsByRequirement.get('Release-readiness execution')?.proof_boundary).toMatch(/does not grant owner approval/i);
+    expect(releaseActionsByRequirement.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(releaseActionsByRequirement.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit/i);
+    expect(releaseActionsByRequirement.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
+    expect(releaseActionsByRequirement.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve/i);
     expect(manifest.release_preflight.remediation_queue.open_count).toBe(manifest.release_preflight.open_count);
     expect(manifest.release_preflight.remediation_queue.total_count).toBe(manifest.release_preflight.total_count);
     expect(manifest.release_preflight.remediation_queue.item_count).toBe(manifest.release_preflight.remediation_queue.items.length);
