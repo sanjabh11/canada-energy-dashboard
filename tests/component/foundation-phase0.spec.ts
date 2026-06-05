@@ -26,6 +26,7 @@ test.describe('Phase 0 foundation gating', () => {
   test('status page shows tracked uptime monitors', async ({ page }) => {
     await page.goto('/status');
     const publicReleaseStatus = page.getByTestId('public-release-status-manifest');
+    const releaseHealthEvidence = page.getByTestId('release-health-evidence');
     await expect(page.getByRole('heading', { name: 'System Status' })).toBeVisible();
     await expect(publicReleaseStatus).toBeVisible();
     await expect(publicReleaseStatus.getByText('Public release status manifest')).toBeVisible();
@@ -33,11 +34,27 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('Current source does not prove production parity')).toBeVisible();
     await expect(publicReleaseStatus.getByText('Required release refresh sequence')).toBeVisible();
     await expect(publicReleaseStatus.getByText('pnpm run check:launch-evidence-manifest').first()).toBeVisible();
-    await expect(publicReleaseStatus.getByText('pnpm run check:production-deploy-request')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('pnpm run check:production-deploy-request').first()).toBeVisible();
     await expect(publicReleaseStatus.getByText('pnpm run check:post-deploy-live').first()).toBeVisible();
     await expect(page.getByText('Source provenance and dirty-worktree gate')).toBeVisible();
     await expect(page.getByText('Unmerged branch review queue').first()).toBeVisible();
     await expect(page.getByText('does not create launch evidence').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Launch evidence validation gate' })).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Objective completion audit' })).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Adversarial review ledger' })).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Fix report blocker map' })).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Progress update digest' })).toBeVisible();
+    await expect(publicReleaseStatus.getByRole('heading', { name: 'Bottleneck log digest' })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('claim-refutation lanes').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('phase progress').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('top unblock options').first()).toBeVisible();
+    await expect(releaseHealthEvidence).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Launch evidence validation gate' })).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Objective completion audit' })).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Adversarial review ledger' })).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Fix report blocker map' })).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Progress update digest' })).toBeVisible();
+    await expect(releaseHealthEvidence.getByRole('heading', { name: 'Bottleneck log digest' })).toBeVisible();
     await expect(page.getByRole('link', { name: /Open JSON manifest/ })).toHaveAttribute('href', '/status/release-health.json');
     await expect(page.getByTestId('supabase-advisor-status-card')).toBeVisible();
     await expect(page.getByTestId('supabase-advisor-status-card')).toContainText('does not claim advisor clearance');
