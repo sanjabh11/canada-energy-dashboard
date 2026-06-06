@@ -788,9 +788,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(36);
+    expect(manifest.implementation_decisions).toHaveLength(37);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(36);
+    expect(manifest.code_optimization_reviews).toHaveLength(37);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1228,6 +1228,28 @@ describe('launch evidence manifest report', () => {
     expect(branchReviewReportReview).toBeTruthy();
     expect(branchReviewReportReview.policy).toBe('strict');
     expect(branchReviewReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:branch-review-readiness',
+      'pnpm run check:branch-review-report',
+    ]));
+    const branchReviewFunctionImpactDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-SUPABASE-FUNCTION-IMPACT-CHECK',
+    );
+    expect(branchReviewFunctionImpactDecision).toBeTruthy();
+    expect(branchReviewFunctionImpactDecision.chosen_variant).toBe('minimal branch checker hardening');
+    expect(branchReviewFunctionImpactDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/check-branch-review-readiness-report.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'tests/unit/branchReviewReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(branchReviewFunctionImpactDecision.proof_boundary).toMatch(/does not checkout|merge|push|select canonical heads|run migrations|deploy Supabase functions|alter secrets|change policies|production approval|hosted\/live parity|raise launch status/i);
+    const branchReviewFunctionImpactReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-SUPABASE-FUNCTION-IMPACT-CHECK',
+    );
+    expect(branchReviewFunctionImpactReview).toBeTruthy();
+    expect(branchReviewFunctionImpactReview.policy).toBe('strict');
+    expect(branchReviewFunctionImpactReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
     ]));

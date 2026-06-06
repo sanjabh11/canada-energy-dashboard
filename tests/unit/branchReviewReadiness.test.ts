@@ -46,6 +46,7 @@ describe('branch review readiness report', () => {
     expect(stdout).toContain('Branch Clearance Matrix');
     expect(stdout).toContain('Review-First Branch Packets');
     expect(stdout).toContain('Top Branch Review Packet');
+    expect(stdout).toContain('Top Branch Changed Supabase Function Rows');
     expect(stdout).toContain('Canonical Head Comparison');
     expect(stdout).toContain('Launch Action Branch Row');
     expect(stdout).toContain('Production Approval Branch Prerequisite');
@@ -92,6 +93,21 @@ describe('branch review readiness report', () => {
       expect(payload.branch_review.review_queue.blocked_count).toBe(payload.branch_review.review_queue.review_first_count);
       expect(payload.branch_review.top_review_packet.read_only).toBe(true);
       expect(payload.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
+      expect(payload.branch_review.top_review_packet.changed_supabase_function_rows).toHaveLength(
+        payload.branch_review.top_review_packet.changed_supabase_function_count,
+      );
+      if (payload.branch_review.top_review_packet.changed_supabase_function_count > 0) {
+        expect(payload.branch_review.top_review_packet.categories).toContain('supabase/database');
+      }
+      for (const row of payload.branch_review.top_review_packet.changed_supabase_function_rows) {
+        expect(row.function_name).toBeTruthy();
+        expect(row.changed_paths).toMatch(/supabase\/functions\//);
+        expect(row.review_focus).toMatch(/secret|auth|entitlement|database writes|observability|import-impact/i);
+        expect(row.suggested_checks).toContain('git diff');
+        expect(row.proof_type).toBe('read_only_supabase_function_branch_review');
+        expect(row.proof_boundary).toMatch(/does not deploy functions|run migrations|alter secrets|change policies|grant production approval/i);
+        expect(row.stop_gate).toMatch(/No production function deploy|service-role|live data write/i);
+      }
     }
   });
 
@@ -104,6 +120,7 @@ describe('branch review readiness report', () => {
     });
 
     expect(stdout).toContain('Branch review readiness report check passed');
+    expect(stdout).toContain('top branch Supabase function impact rows');
   });
 
   it('can fail as a machine branch gate when branch-review blockers remain', () => {

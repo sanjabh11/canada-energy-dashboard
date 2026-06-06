@@ -96,6 +96,7 @@ if (failures.length === 0) {
     assertContains(stdout, '## Branch Clearance Matrix', 'Report must include the branch clearance matrix.');
     assertContains(stdout, '## Review-First Branch Packets', 'Report must include review-first branch packets.');
     assertContains(stdout, '## Top Branch Review Packet', 'Report must include the top branch review packet.');
+    assertContains(stdout, '## Top Branch Changed Supabase Function Rows', 'Report must include top branch Supabase function impact rows.');
     assertContains(stdout, '## Canonical Head Comparison', 'Report must include canonical-head comparison.');
     assertContains(stdout, '## Launch Action Branch Row', 'Report must include the launch action branch row.');
     assertContains(stdout, '## Production Approval Branch Prerequisite', 'Report must include the production approval branch prerequisite.');
@@ -146,12 +147,29 @@ if (failures.length === 0) {
       assert(Number.isInteger(clearanceMatrix.family_count), 'clearance_matrix.family_count must be an integer when branch probes run.');
       assert(clearanceMatrix.family_count === clearanceMatrix.rows.length, 'clearance_matrix.family_count must match rows when branch probes run.');
       assert(typeof topPacket.proof_boundary === 'string' && /read-only branch evidence|does not checkout|merge|push/i.test(topPacket.proof_boundary), 'top_review_packet.proof_boundary must preserve read-only branch semantics.');
+      assert(Number.isInteger(topPacket.changed_supabase_function_count), 'top_review_packet.changed_supabase_function_count must be an integer when branch probes run.');
+      assert(Array.isArray(topPacket.changed_supabase_functions), 'top_review_packet.changed_supabase_functions must be a list when branch probes run.');
+      assert(Array.isArray(topPacket.changed_supabase_function_rows), 'top_review_packet.changed_supabase_function_rows must be a list when branch probes run.');
+      assert(topPacket.changed_supabase_function_rows.length === topPacket.changed_supabase_function_count, 'top_review_packet changed Supabase function rows must match changed_supabase_function_count.');
+      if (topPacket.changed_supabase_function_count > 0) {
+        assert((topPacket.categories ?? []).includes('supabase/database'), 'top_review_packet must include the supabase/database category when Supabase functions changed.');
+      }
     }
 
     for (const [index, item] of (reviewQueue.items ?? []).entries()) {
       assert(item.read_only === true, `review_queue.items[${index}].read_only must be true.`);
       assert(typeof item.review_command === 'string' && item.review_command.includes('report:unmerged-branch-readiness'), `review_queue.items[${index}].review_command must point at the read-only branch report.`);
       assert(typeof item.proof_boundary === 'string' && /does not checkout|merge|push/i.test(item.proof_boundary), `review_queue.items[${index}].proof_boundary must preserve read-only semantics.`);
+    }
+
+    for (const [index, item] of (topPacket.changed_supabase_function_rows ?? []).entries()) {
+      assert(typeof item.function_name === 'string' && item.function_name.length > 0, `top_review_packet.changed_supabase_function_rows[${index}].function_name must be set.`);
+      assert(typeof item.changed_paths === 'string' && /supabase\/functions\//.test(item.changed_paths), `top_review_packet.changed_supabase_function_rows[${index}].changed_paths must name Supabase function paths.`);
+      assert(typeof item.review_focus === 'string' && /secret|auth|entitlement|database writes|observability|import-impact/i.test(item.review_focus), `top_review_packet.changed_supabase_function_rows[${index}].review_focus must describe security/runtime review focus.`);
+      assert(typeof item.suggested_checks === 'string' && /git diff/.test(item.suggested_checks), `top_review_packet.changed_supabase_function_rows[${index}].suggested_checks must include read-only git diff checks.`);
+      assert(item.proof_type === 'read_only_supabase_function_branch_review', `top_review_packet.changed_supabase_function_rows[${index}].proof_type must be read_only_supabase_function_branch_review.`);
+      assert(typeof item.proof_boundary === 'string' && /does not deploy functions|run migrations|alter secrets|change policies|grant production approval/i.test(item.proof_boundary), `top_review_packet.changed_supabase_function_rows[${index}].proof_boundary must preserve no-deploy/no-secret boundaries.`);
+      assert(typeof item.stop_gate === 'string' && /No production function deploy|service-role|live data write/i.test(item.stop_gate), `top_review_packet.changed_supabase_function_rows[${index}].stop_gate must block production function deploys and live writes.`);
     }
   }
 }
@@ -162,4 +180,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Branch review readiness report check passed: focused branch status, review queue, canonical-head decisions, clearance matrix, review-first packets, production approval rows, and no-branch-mutation boundaries are consistent.');
+console.log('Branch review readiness report check passed: focused branch status, review queue, canonical-head decisions, clearance matrix, review-first packets, top branch Supabase function impact rows, production approval rows, and no-branch-mutation boundaries are consistent.');
