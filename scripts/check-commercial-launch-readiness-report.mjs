@@ -421,6 +421,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT'), 'Code optimization report must include the Supabase advisor focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT'), 'Code optimization report must include the branch review focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING'), 'Code optimization report must include the production approval packet sequencing safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT'), 'Code optimization report must include the post-deploy live proof focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal manifest/report evidence patch'), 'Code optimization report must record the selected minimal manifest/report evidence patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite status and evidence-text patch'), 'Code optimization report must record the selected minimal production approval circularity patch.');
   assert(codeOptimizationSection.includes('minimal branch review queue status patch'), 'Code optimization report must record the selected minimal branch review queue status patch.');
@@ -431,11 +432,14 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal Vitest timeout budget alignment'), 'Code optimization report must record the selected minimal strategy audit timeout-budget patch.');
   assert(codeOptimizationSection.includes('minimal focused manifest wrapper and public handle alignment'), 'Code optimization report must record the selected minimal source provenance wrapper patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite sequencing patch'), 'Code optimization report must record the selected minimal production approval packet sequencing patch.');
+  assert(codeOptimizationSection.includes('minimal focused manifest wrapper and public handle alignment'), 'Code optimization report must record the selected minimal post-deploy live proof wrapper patch.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');
+  assert(codeOptimizationSection.includes('scripts/report-post-deploy-live-proof-readiness.mjs'), 'Code optimization report must record the post-deploy live proof focused report file change.');
   assert(codeOptimizationSection.includes('tests/unit/branchReviewReadiness.test.ts'), 'Code optimization report must record the branch review readiness test file change.');
   assert(codeOptimizationSection.includes('tests/unit/buyerEvidenceGateReadiness.test.ts'), 'Code optimization report must record the buyer evidence gate readiness test file change.');
+  assert(codeOptimizationSection.includes('tests/unit/postDeployLiveProofReadiness.test.ts'), 'Code optimization report must record the post-deploy live proof readiness test file change.');
   assert(codeOptimizationSection.includes('tests/unit/buyerEvidenceReadiness.test.ts'), 'Code optimization report must record the buyer evidence readiness test file change.');
   assert(codeOptimizationSection.includes('tests/unit/releasePreflightReadiness.test.ts'), 'Code optimization report must record the release preflight readiness test file change.');
   assert(codeOptimizationSection.includes('tests/unit/statusPagePosture.test.ts'), 'Code optimization report must record the status page posture test file change.');
@@ -450,6 +454,7 @@ function assertReport(markdown, options = {}) {
   assert(/does not clear source provenance|owner approval|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve approval circularity external gate boundaries.');
   assert(/does not checkout|merge|push|select canonical heads|deploy|grant production approval/i.test(codeOptimizationSection), 'Code optimization report must preserve branch review read-only boundaries.');
   assert(/does not contact buyers|create accepted evidence|move confidence|validate 95%|commercial-ready status/i.test(codeOptimizationSection), 'Code optimization report must preserve buyer evidence hard-gate boundaries.');
+  assert(/does not grant owner approval|run deploys|mutate Netlify|run browser smoke|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve post-deploy live proof boundaries.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
   for (const proofType of [

@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(12);
+    expect(manifest.implementation_decisions).toHaveLength(13);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(12);
+    expect(manifest.code_optimization_reviews).toHaveLength(13);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1006,6 +1006,26 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:production-approval-packet',
       'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    ]));
+    const postDeployLiveProofReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    );
+    expect(postDeployLiveProofReportDecision).toBeTruthy();
+    expect(postDeployLiveProofReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(postDeployLiveProofReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-post-deploy-live-proof-readiness.mjs',
+      'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+      'tests/unit/postDeployLiveProofReadiness.test.ts',
+    ]));
+    expect(postDeployLiveProofReportDecision.proof_boundary).toMatch(/does not grant owner approval|run deploys|mutate Netlify|run browser smoke|prove hosted\/live parity/i);
+    const postDeployLiveProofReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    );
+    expect(postDeployLiveProofReportReview).toBeTruthy();
+    expect(postDeployLiveProofReportReview.policy).toBe('strict');
+    expect(postDeployLiveProofReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:post-deploy-live-proof-readiness',
+      'pnpm run check:post-deploy-live-proof-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

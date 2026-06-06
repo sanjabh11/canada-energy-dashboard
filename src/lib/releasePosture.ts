@@ -270,7 +270,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Post-deploy live proof gate queue',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
     evidenceBoundary: 'The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim; it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.',
   },
   {

@@ -2191,6 +2191,33 @@ try {
         && productionPacketSequencingReview.tests_or_checks.some((check) => /report:production-approval-packet/.test(check)),
       'Production approval packet sequencing code optimization review must record focused packet test and report proof.',
     );
+    const postDeployLiveProofReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT');
+    assert(postDeployLiveProofReportDecision, 'Manifest must record the post-deploy live proof focused report implementation decision.');
+    assert(
+      postDeployLiveProofReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Post-deploy live proof focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(postDeployLiveProofReportDecision?.files_changed)
+        && postDeployLiveProofReportDecision.files_changed.includes('scripts/report-post-deploy-live-proof-readiness.mjs')
+        && postDeployLiveProofReportDecision.files_changed.includes('scripts/check-post-deploy-live-proof-readiness-report.mjs')
+        && postDeployLiveProofReportDecision.files_changed.includes('tests/unit/postDeployLiveProofReadiness.test.ts'),
+      'Post-deploy live proof focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not grant owner approval|run deploys|mutate Netlify|run browser smoke|prove hosted\/live parity/i.test(postDeployLiveProofReportDecision?.proof_boundary ?? ''),
+      'Post-deploy live proof focused report decision must preserve no-approval, no-deploy, no-browser-smoke, and no-live-proof boundaries.',
+    );
+    const postDeployLiveProofReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT');
+    assert(postDeployLiveProofReportReview, 'Manifest must record the post-deploy live proof focused report code optimization review.');
+    assert(postDeployLiveProofReportReview?.policy === 'strict', 'Post-deploy live proof focused report code optimization review must use strict policy.');
+    assert(postDeployLiveProofReportReview?.verdict === 'pass', 'Post-deploy live proof focused report code optimization review must pass.');
+    assert(
+      Array.isArray(postDeployLiveProofReportReview?.tests_or_checks)
+        && postDeployLiveProofReportReview.tests_or_checks.some((check) => /report:post-deploy-live-proof-readiness/.test(check))
+        && postDeployLiveProofReportReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report/.test(check)),
+      'Post-deploy live proof focused report code optimization review must record focused post-deploy report and checker proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

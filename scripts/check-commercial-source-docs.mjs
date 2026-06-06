@@ -139,6 +139,9 @@ const publicStatusFocusedBuyerEvidenceGateHandlePhrase = /focused buyer evidence
 const focusedBranchReviewReportPhrase = /report:branch-review-readiness[\s\S]{0,420}focused branch review report|focused branch review report[\s\S]{0,420}report:branch-review-readiness/i;
 const focusedBranchReviewCheckerPhrase = /check:branch-review-report[\s\S]{0,620}(?:validates|review queue|canonical-head|clearance matrix|does not.*production approval)/i;
 const publicStatusFocusedBranchReviewHandlePhrase = /focused branch review report\/check[\s\S]{0,420}public-safe handles|public release status[\s\S]{0,520}focused branch review report/i;
+const focusedPostDeployLiveProofReportPhrase = /report:post-deploy-live-proof-readiness[\s\S]{0,460}focused post-deploy live-proof report|focused post-deploy live-proof report[\s\S]{0,460}report:post-deploy-live-proof-readiness/i;
+const focusedPostDeployLiveProofCheckerPhrase = /check:post-deploy-live-proof-report[\s\S]{0,620}(?:validates|gate queue|live public metadata|static dist parity|does not.*production approval)/i;
+const publicStatusFocusedPostDeployLiveProofHandlePhrase = /focused post-deploy live proof report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused post-deploy live-proof report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -164,6 +167,8 @@ const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-ev
 const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
 const branchReviewReportPath = path.join(repoRoot, 'scripts/report-branch-review-readiness.mjs');
 const branchReviewCheckPath = path.join(repoRoot, 'scripts/check-branch-review-readiness-report.mjs');
+const postDeployLiveProofReportPath = path.join(repoRoot, 'scripts/report-post-deploy-live-proof-readiness.mjs');
+const postDeployLiveProofCheckPath = path.join(repoRoot, 'scripts/check-post-deploy-live-proof-readiness-report.mjs');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
   'Do not compete on enterprise bill management',
@@ -544,6 +549,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:branch-review-report wired to the focused branch review report checker.');
   }
 
+  if (packageScripts['report:post-deploy-live-proof-readiness'] !== 'node scripts/report-post-deploy-live-proof-readiness.mjs') {
+    failures.push('package.json must keep report:post-deploy-live-proof-readiness wired to the focused post-deploy live proof report.');
+  }
+
+  if (packageScripts['check:post-deploy-live-proof-report'] !== 'node scripts/check-post-deploy-live-proof-readiness-report.mjs') {
+    failures.push('package.json must keep check:post-deploy-live-proof-report wired to the focused post-deploy live proof report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -580,6 +593,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!existsSync(branchReviewCheckPath)) {
     failures.push('scripts/check-branch-review-readiness-report.mjs is missing.');
+  }
+
+  if (!existsSync(postDeployLiveProofReportPath)) {
+    failures.push('scripts/report-post-deploy-live-proof-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(postDeployLiveProofCheckPath)) {
+    failures.push('scripts/check-post-deploy-live-proof-readiness-report.mjs is missing.');
   }
 
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
@@ -688,6 +709,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedBranchReviewHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused branch review report/check as public-safe handles.');
+  }
+
+  if (!focusedPostDeployLiveProofReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:post-deploy-live-proof-readiness as the focused post-deploy live-proof report.');
+  }
+
+  if (!focusedPostDeployLiveProofCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:post-deploy-live-proof-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedPostDeployLiveProofHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused post-deploy live proof report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

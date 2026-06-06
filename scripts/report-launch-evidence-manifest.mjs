@@ -4482,6 +4482,24 @@ const productionApprovalPacketSequencingFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const postDeployLiveProofReportFilesChanged = [
+  'package.json',
+  'scripts/report-post-deploy-live-proof-readiness.mjs',
+  'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/postDeployLiveProofReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4493,6 +4511,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...productionApprovalPacketSequencingFilesChanged,
+  ...postDeployLiveProofReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4608,6 +4627,18 @@ const productionApprovalPacketSequencingTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const postDeployLiveProofReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/postDeployLiveProofReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:post-deploy-live-proof-readiness',
+  'pnpm run report:post-deploy-live-proof-readiness -- --skip-probes',
+  'pnpm run check:post-deploy-live-proof-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4619,6 +4650,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
   ...productionApprovalPacketSequencingTestsRun,
+  ...postDeployLiveProofReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4799,6 +4831,19 @@ const safeFixImplementationDecisions = [
     reason: 'Running static parity after Corepack release-readiness fails creates noisy evidence: the missing dist failure is downstream of the toolchain/build blocker and should not be treated as an independent live parity result.',
     proof_boundary: 'This record improves production approval packet sequencing only; it does not install Corepack, run release-readiness successfully, build dist, clear source provenance, approve production, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat skipped static parity, production approval packet generation, direct pnpm report execution, or focused unit tests as release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    decision: 'Expose the manifest post-deploy live proof gate queue through a focused post-deploy live proof report and checker.',
+    acceptance_check: 'Operators can run report:post-deploy-live-proof-readiness and check:post-deploy-live-proof-report to inspect production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack smoke, current-source hosted parity claim, and production approval live rows without deploying or running live proof.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing post_deploy_live_proof.gate_queue, launch_action_queue post_deploy_live_proof row, production_approval prerequisite/request rows, focused report/check conventions, and public release-status handle validation.',
+    files_changed: postDeployLiveProofReportFilesChanged,
+    tests_run: postDeployLiveProofReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON post-deploy gate evidence, while the checker asserts the six gate rows, package-script handles, approval phrase, production approval live rows, public/source-of-truth handles, and no-deploy/no-live-proof boundaries.',
+    reason: 'Post-deploy proof sequencing was present inside broad launch artifacts, but did not have a narrow operator handle for the hosted/live parity blocker that follows explicit production approval.',
+    proof_boundary: 'This record improves post-deploy proof visibility only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused post-deploy live proof report, check pass, JSON output, skipped probes, public status handle, or docs sync as production approval, deployment, current-source hosted parity, commercial-ready status, or post-deploy live proof.',
   },
 ];
 
@@ -5083,6 +5128,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Skipping all live checks would reduce noise but remove useful hosted-state evidence from the approval packet.',
     evidence: 'The packet currently reports live metadata parity independently while keeping deployment request readiness blocked by source, request-packet, and release-readiness gates.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    variant: 'Leave post-deploy proof only inside the broad launch manifest and commercial launch report.',
+    reason_rejected: 'Would keep the hosted/live parity blocker harder to inspect despite it being the final post-approval gate for current-source live proof.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity around approval, deploy completion, live metadata, static parity, and hosted smoke sequencing.',
+    evidence: 'The manifest already emits post_deploy_live_proof.gate_queue, but package scripts and public handles did not expose a focused post-deploy report/check.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    variant: 'Duplicate post-deploy gate construction or live-check parsing in a standalone implementation.',
+    reason_rejected: 'Duplicating gate construction would drift from the launch manifest, production approval packet, and deploy-script contracts.',
+    tradeoff: 'Standalone parsing could avoid manifest generation but would create another launch-critical source of truth for approval and live proof semantics.',
+    evidence: 'report-launch-evidence-manifest already emits the six gate rows, package-script proof commands, approval phrase, launch action row, and production approval live rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    variant: 'Run deploy-production.sh, Netlify deploy, hosted browser smoke, or live parity checks from the focused report.',
+    reason_rejected: 'Deploy and live checks require explicit owner approval, clean release gates, and post-deploy execution context; a readiness report must not mutate production or create live proof.',
+    tradeoff: 'Direct execution could produce fresher live evidence, but it would violate the safe-fix lane, approval boundary, and current dirty-source/toolchain blockers.',
+    evidence: 'The post-deploy gate queue marks production approval clearance, guarded deploy completion, live metadata, static parity, hosted proof-pack smoke, and hosted parity claim as blocked until the approved deploy path completes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad post-deploy handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -5205,6 +5278,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing local release-readiness step status to skip static parity only when the build prerequisite is skipped or failed, with no new dependency, no fallback package manager, no deploy path, and no live-check relaxation beyond the dependent static-dist comparison.',
     tests_or_checks: productionApprovalPacketSequencingTestsRun,
     remaining_risk: 'Production approval remains blocked until clean source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed post-deploy live proof Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated live-proof sequencing, deploy execution, browser smoke execution, Netlify mutation, or live-parity relaxation.',
+    tests_or_checks: postDeployLiveProofReportTestsRun,
+    remaining_risk: 'Post-deploy live proof remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, live static parity, and hosted proof-pack smoke are current.',
   },
 ];
 

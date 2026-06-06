@@ -578,7 +578,8 @@ describe('status page release posture', () => {
     expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/access Supabase/i);
     expect(productionApprovalRequestPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(postDeployQueueEvidence?.status).toBe('external_gate');
-    expect(postDeployQueueEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(postDeployQueueEvidence?.command).toContain('report:post-deploy-live-proof-readiness');
+    expect(postDeployQueueEvidence?.command).toContain('check:post-deploy-live-proof-report');
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
@@ -869,6 +870,8 @@ describe('status page release posture', () => {
     expect(productionApprovalRequestPacketGate?.nextAction).toMatch(/pre-request row is blocked/i);
     expect(postDeployQueueGate?.status).toBe('external_gate');
     expect(postDeployQueueGate?.proofBucket).toBe('hosted/live');
+    expect(postDeployQueueGate?.command).toContain('report:post-deploy-live-proof-readiness');
+    expect(postDeployQueueGate?.command).toContain('check:post-deploy-live-proof-report');
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueGate?.nextAction).toMatch(/check:post-deploy-live passes/i);

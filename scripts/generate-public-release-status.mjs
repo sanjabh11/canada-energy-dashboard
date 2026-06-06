@@ -137,7 +137,7 @@ const requiredItemContracts = [
     id: 'post_deploy_live_proof_gate_queue',
     status: 'external_gate',
     proofBucket: 'hosted/live',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
   },
   {
     id: 'unmerged_branch_review_queue',

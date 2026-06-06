@@ -179,10 +179,14 @@ corepack pnpm run check:unmerged-branch-readiness-report
 After an explicitly approved production deploy, run:
 
 ```bash
+pnpm run report:post-deploy-live-proof-readiness
+pnpm run check:post-deploy-live-proof-report
 pnpm run check:post-deploy-live
 ```
 
 `check:post-deploy-live` runs live metadata checks, exact static parity against the already-built and deployed `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`. Build `dist` first with `pnpm run build:prod` or the full release-readiness/deploy script; the post-deploy gate does not rebuild because rebuilding can produce different hashed entry chunks than the artifact that was just deployed.
+
+`report:post-deploy-live-proof-readiness` renders a focused post-deploy live-proof report from the launch evidence manifest, and `check:post-deploy-live-proof-report` validates the post-deploy gate queue, production approval live prerequisite, production approval request live row, package-script handles, live public metadata row, live static `dist` parity row, hosted proof-pack smoke row, explicit approval phrase boundary, and no-approval/no-live-parity boundary. These focused commands do not grant owner approval, deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or replace `check:post-deploy-live`. The public release status exposes the focused post-deploy live proof report/check as public-safe handles for the post-deploy live proof gate queue; those handles sequence post-approval proof only and do not prove current hosted/live parity or production approval.
 
 `check:client-env-safety` rejects client-exposed `VITE_*` key names that look privileged, including service-role, secret, private, password, database URL, JWT, signing, webhook, admin, root, or master credentials. Supabase's frontend-safe key remains the anon or publishable key with RLS; service-role keys must stay backend-only because they bypass RLS. The guard reports only key names and source surfaces, never values.
 
