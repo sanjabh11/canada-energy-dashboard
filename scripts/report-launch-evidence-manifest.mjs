@@ -5800,6 +5800,15 @@ const objectiveCompletionAuditFocusedReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const objectiveCompletionAuditUnitContractFilesChanged = [
+  'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const adversarialReviewFocusedReportFilesChanged = [
   'package.json',
   'scripts/report-adversarial-review-readiness.mjs',
@@ -5901,6 +5910,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
+  ...objectiveCompletionAuditUnitContractFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
@@ -6444,6 +6454,23 @@ const objectiveCompletionAuditFocusedReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const objectiveCompletionAuditUnitContractTestsRun = [
+  'node --check scripts/report-objective-completion-audit-readiness.mjs',
+  'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
+  'pnpm run report:objective-completion-audit-readiness -- --skip-probes --json',
+  'pnpm run check:objective-completion-audit-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const adversarialReviewFocusedReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6564,6 +6591,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
+  ...objectiveCompletionAuditUnitContractTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
   ...launchManifestJsonAliasTestsRun,
   ...progressDigestLatestRatchetTestsRun,
@@ -7283,6 +7311,19 @@ const safeFixImplementationDecisions = [
     reason: 'The launch action queue named the phase-wise blockers, but operators lacked a compact handoff that sequences next proof commands without implying that report generation can clear blockers, mutate source, contact buyers, access Supabase, request approval, deploy, run live proof, or claim launch readiness.',
     proof_boundary: 'This record improves launch action operator handoff visibility only; it does not execute launch actions, commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, run browser smoke, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the launch action operator handoff packet, focused launch action report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as clean source provenance, release-readiness, branch clearance, Supabase advisor clearance, buyer acceptance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
+    decision: 'Add focused unit-test coverage for the objective completion audit readiness report and checker.',
+    acceptance_check: 'tests/unit/objectiveCompletionAuditReadiness.test.ts validates Markdown rendering, JSON payload structure, focused checker success, and fail-on-blocker behavior for the objective completion audit without clearing launch blockers.',
+    chosen_variant: 'minimal focused objective completion audit unit contract',
+    repo_pattern_reused: 'Existing focused readiness report unit-test pattern, objective completion audit report/check pair, broad launch manifest checker, commercial readiness report checker, and launch manifest code-optimization ledger.',
+    files_changed: objectiveCompletionAuditUnitContractFilesChanged,
+    tests_run: objectiveCompletionAuditUnitContractTestsRun,
+    proof: 'The patch adds a dedicated unit test for report:objective-completion-audit-readiness and check:objective-completion-audit-report, covering deliverable rows, blocker rows, package handles, public handle, no-completion boundaries, and fail-on-blocker behavior while leaving the manifest launch decision blocked.',
+    reason: 'The objective completion audit is the active-goal completion surface, but the focused report/check pair lacked a file-level unit contract even though adjacent focused reports are covered by dedicated tests.',
+    proof_boundary: 'This record improves objective completion audit test coverage only; it does not mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, deploy, mutate live services, prove hosted/live parity, prove production approval, prove buyer acceptance, or raise launch status.',
+    stop_gate: 'Do not treat the objective completion audit unit test, focused report/check success, skipped-probe manifest output, JSON payload, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -8177,6 +8218,27 @@ const safeFixRejectedVariants = [
     evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
+    variant: 'Rely on the focused checker without a dedicated unit test file.',
+    reason_rejected: 'The checker validates the CLI contract, but the repo would still lack a focused Vitest contract for Markdown output, JSON output, and fail-on-blocker behavior.',
+    tradeoff: 'No-code defer avoids one test file, but keeps the active goal-completion surface less protected than adjacent focused readiness reports.',
+    evidence: 'Focused reports such as launch evidence validation, production approval, post-deploy live proof, launch action, buyer, source, release, branch, and Supabase lanes all have dedicated unit contracts.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
+    variant: 'Patch the objective completion audit report behavior while adding the test.',
+    reason_rejected: 'Current report and checker behavior already expose deliverables, blocker rows, public handles, package handles, and no-completion boundaries; this phase only needs missing test coverage.',
+    tradeoff: 'Behavior edits could look more substantial, but would increase blast radius without evidence of a report defect.',
+    evidence: 'check:objective-completion-audit-report already passes against the current report contract and broad manifest checks already assert the focused report decision.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
+    variant: 'Use the unit test to mark the active launch goal complete or relax blocker rows.',
+    reason_rejected: 'Unit coverage proves the audit surface shape only; it does not produce retained buyer evidence, clean source provenance, branch clearance, Supabase advisor clearance, release-readiness, owner approval, deploy completion, or hosted/live parity.',
+    tradeoff: 'Relaxing blockers would make tests greener for the wrong reason and violate the completion audit proof boundary.',
+    evidence: 'completion_audit.stop_gate explicitly forbids marking the launch goal complete while buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, or post-deploy live proof gates remain open.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
     variant: 'Leave adversarial_review_ledger discoverable only through broad manifest and commercial readiness reports.',
     reason_rejected: 'Would keep the claim-refutation lanes weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
@@ -9059,6 +9121,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change derives a compact launch action operator handoff from existing launch_action_queue rows, renders it through the existing focused launch action report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, source mutation, release execution, branch mutation, buyer contact, Supabase access, owner approval request execution, deploy execution, live proof execution, or launch-status changes.',
     tests_or_checks: launchActionOperatorHandoffPacketTestsRun,
     remaining_risk: 'The launch action operator handoff packet is planning guidance only; launch readiness still depends on owner resolution of source provenance, Corepack-pinned release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds one focused Vitest contract for the existing objective completion audit report/check pair and updates only the manifest/checker/test ledger, with no report behavior changes, new dependencies, external-account calls, source cleanup, release execution, approval request, deploy execution, or launch-status change.',
+    tests_or_checks: objectiveCompletionAuditUnitContractTestsRun,
+    remaining_risk: 'The objective completion audit remains evidence visibility and test coverage only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
