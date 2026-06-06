@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(10);
+    expect(manifest.implementation_decisions).toHaveLength(11);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(10);
+    expect(manifest.code_optimization_reviews).toHaveLength(11);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -782,6 +782,10 @@ describe('launch evidence manifest report', () => {
       'Call Supabase connector or dashboard advisors from the focused report.',
       'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad Supabase advisor handles.',
+      'Leave branch review only inside the broad launch manifest, commercial launch report, and unmerged branch inventory.',
+      'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
+      'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
+      'Add package scripts only and leave public status, release posture, docs, and validators on broad branch handles.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -956,6 +960,27 @@ describe('launch evidence manifest report', () => {
     expect(supabaseAdvisorReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:supabase-advisor-readiness',
       'pnpm run check:supabase-advisor-report',
+    ]));
+    const branchReviewReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    );
+    expect(branchReviewReportDecision).toBeTruthy();
+    expect(branchReviewReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(branchReviewReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-branch-review-readiness.mjs',
+      'scripts/check-branch-review-readiness-report.mjs',
+      'tests/unit/branchReviewReadiness.test.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+    ]));
+    expect(branchReviewReportDecision.proof_boundary).toMatch(/does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|grant production approval|hosted\/live parity/i);
+    const branchReviewReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    );
+    expect(branchReviewReportReview).toBeTruthy();
+    expect(branchReviewReportReview.policy).toBe('strict');
+    expect(branchReviewReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:branch-review-readiness',
+      'pnpm run check:branch-review-report',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

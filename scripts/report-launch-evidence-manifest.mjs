@@ -4455,6 +4455,24 @@ const supabaseAdvisorReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const branchReviewReportFilesChanged = [
+  'package.json',
+  'scripts/report-branch-review-readiness.mjs',
+  'scripts/check-branch-review-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/branchReviewReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4464,6 +4482,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
+  ...branchReviewReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4558,6 +4577,18 @@ const supabaseAdvisorReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const branchReviewReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:branch-review-readiness',
+  'pnpm run report:branch-review-readiness -- --skip-probes',
+  'pnpm run check:branch-review-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4567,6 +4598,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...supabaseAdvisorReportTestsRun,
+  ...branchReviewReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4721,6 +4753,19 @@ const safeFixImplementationDecisions = [
     reason: 'Supabase advisor clearance was visible inside broad launch artifacts but did not have a narrow operator handle separating local CLI app lint from external Security and Performance Advisor evidence.',
     proof_boundary: 'This record improves Supabase advisor evidence visibility only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused Supabase advisor report, check pass, JSON output, skipped probes, public status handle, CLI app lint pass, permission-denied connector output, or docs sync as Supabase advisor clearance, production approval, release-readiness, database security clearance, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    decision: 'Expose branch review queues, canonical-head decisions, clearance matrix, review-first packets, and approval branch rows through a focused branch review report and checker.',
+    acceptance_check: 'Operators can run report:branch-review-readiness and check:branch-review-report to inspect review-first branch families, canonical-head decisions, clearance matrix rows, top branch packet, changed Supabase function rows, launch action branch row, and production approval branch rows without checking out, merging, pushing, discarding, selecting canonical heads, migrating, deploying, or granting approval.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing branch_review manifest object, launch_action_queue branch_review row, production_approval Canonical branch review rows, focused report/check conventions, and public release-status handle validation.',
+    files_changed: branchReviewReportFilesChanged,
+    tests_run: branchReviewReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON branch-review evidence, while the checker asserts the review queue, canonical-head decisions, canonical-head resolution queue, clearance matrix, review-first packets, top packet, approval rows, and no-branch-mutation boundaries.',
+    reason: 'Branch review was visible inside the broad manifest and commercial launch report, but the active launch blocker needed a narrow operator handle for review-first and canonical-head execution without mutating branches.',
+    proof_boundary: 'This record improves branch-review evidence visibility only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, clear branch review, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused branch review report, check pass, JSON output, skipped probes, public status handle, review queue, canonical-head ledger, clearance matrix, or focused packet as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, or hosted/live parity.',
   },
 ];
 
@@ -4956,6 +5001,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    variant: 'Leave branch review only inside the broad launch manifest, commercial launch report, and unmerged branch inventory.',
+    reason_rejected: 'Would keep the active review-first and canonical-head blocker harder to inspect despite it being a pre-request production approval gate.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity around broad branch inventory versus manifest clearance rows.',
+    evidence: 'The current public status exposes branch family, clearance, canonical-head, and packet handles, but those rows previously pointed at broad manifest and unmerged-branch commands.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    variant: 'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
+    reason_rejected: 'Duplicating branch scanning would drift from report:unmerged-branch-readiness and the launch manifest branch_review contract.',
+    tradeoff: 'Standalone parsing could avoid manifest generation but would create another branch-critical source of truth.',
+    evidence: 'report-launch-evidence-manifest already emits branch_review.review_queue, canonical_head_decisions, clearance_matrix, review_first_packets, top_review_packet, launch action rows, and production approval branch rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    variant: 'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
+    reason_rejected: 'Branch state and canonical-head decisions require explicit owner approval and normal release gates; automated mutation would violate the safe-fix lane.',
+    tradeoff: 'Mutating branches could make the blocker disappear, but it would destroy the evidence boundary and risk unrelated owner work.',
+    evidence: 'Branch review rows and canonical-head ledgers explicitly stop before checkout, merge, push, discard, delete, canonical-head selection, migration, deploy, or production approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad branch handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -5061,6 +5134,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: supabaseAdvisorReportTestsRun,
     remaining_risk: 'Supabase advisor clearance remains blocked until authorized connector or dashboard access, current Database Security Advisor evidence, current Database Performance Advisor evidence, public-safe findings, and manifest regeneration prove every advisor row; source provenance, release-readiness, production approval, branch review, buyer evidence, and post-deploy live proof also remain open gates.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed branch review Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated branch scanning, branch checkout, merge, push, discard, delete, canonical-head selection, migration, deploy paths, or live-service access.',
+    tests_or_checks: branchReviewReportTestsRun,
+    remaining_risk: 'Branch review remains blocked until focused branch packets, canonical-head owner decisions, drift review for stale or aging refs, clean release gates, and explicit owner approvals are current; source provenance, release-readiness, production approval, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
+  },
 ];
 
 const manifest = {
@@ -5123,6 +5205,8 @@ const manifest = {
       'scripts/report-source-provenance-readiness.mjs',
       'scripts/report-supabase-advisor-readiness.mjs',
       'scripts/report-unmerged-branch-readiness.mjs',
+      'scripts/report-branch-review-readiness.mjs',
+      'scripts/check-branch-review-readiness-report.mjs',
       'src/lib/releasePosture.ts',
       'src/lib/publicReleaseStatusManifest.json',
       'scripts/check-corepack-toolchain.mjs',
@@ -5280,6 +5364,8 @@ const manifest = {
       'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
       'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+      'corepack pnpm run report:branch-review-readiness',
+      'corepack pnpm run check:branch-review-report',
       'corepack pnpm run check:launch-evidence-manifest',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',

@@ -136,6 +136,9 @@ const publicStatusFocusedSupabaseAdvisorHandlePhrase = /focused Supabase advisor
 const focusedBuyerEvidenceGateReportPhrase = /report:buyer-evidence-gate-readiness[\s\S]{0,340}focused buyer evidence hard-gate report|focused buyer evidence hard-gate report[\s\S]{0,340}report:buyer-evidence-gate-readiness/i;
 const focusedBuyerEvidenceGateCheckerPhrase = /check:buyer-evidence-gate-report[\s\S]{0,520}(?:validates|hard-gate deficit ledger|acquisition matrix|remediation queue|does not.*production approval)/i;
 const publicStatusFocusedBuyerEvidenceGateHandlePhrase = /focused buyer evidence gate report\/check[\s\S]{0,340}public-safe handles|public release status[\s\S]{0,420}focused buyer evidence gate report/i;
+const focusedBranchReviewReportPhrase = /report:branch-review-readiness[\s\S]{0,420}focused branch review report|focused branch review report[\s\S]{0,420}report:branch-review-readiness/i;
+const focusedBranchReviewCheckerPhrase = /check:branch-review-report[\s\S]{0,620}(?:validates|review queue|canonical-head|clearance matrix|does not.*production approval)/i;
+const publicStatusFocusedBranchReviewHandlePhrase = /focused branch review report\/check[\s\S]{0,420}public-safe handles|public release status[\s\S]{0,520}focused branch review report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -159,6 +162,8 @@ const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_G
 const buyerEvidenceReadinessReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-readiness.mjs');
 const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-gate-readiness.mjs');
 const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
+const branchReviewReportPath = path.join(repoRoot, 'scripts/report-branch-review-readiness.mjs');
+const branchReviewCheckPath = path.join(repoRoot, 'scripts/check-branch-review-readiness-report.mjs');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
   'Do not compete on enterprise bill management',
@@ -531,6 +536,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:buyer-evidence-gate-report wired to the focused buyer evidence gate report checker.');
   }
 
+  if (packageScripts['report:branch-review-readiness'] !== 'node scripts/report-branch-review-readiness.mjs') {
+    failures.push('package.json must keep report:branch-review-readiness wired to the focused branch review report.');
+  }
+
+  if (packageScripts['check:branch-review-report'] !== 'node scripts/check-branch-review-readiness-report.mjs') {
+    failures.push('package.json must keep check:branch-review-report wired to the focused branch review report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -559,6 +572,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!existsSync(buyerEvidenceGateCheckPath)) {
     failures.push('scripts/check-buyer-evidence-gate-readiness-report.mjs is missing.');
+  }
+
+  if (!existsSync(branchReviewReportPath)) {
+    failures.push('scripts/report-branch-review-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(branchReviewCheckPath)) {
+    failures.push('scripts/check-branch-review-readiness-report.mjs is missing.');
   }
 
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
@@ -655,6 +676,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedBuyerEvidenceGateHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused buyer evidence gate report/check as public-safe handles.');
+  }
+
+  if (!focusedBranchReviewReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:branch-review-readiness as the focused branch review report.');
+  }
+
+  if (!focusedBranchReviewCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:branch-review-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedBranchReviewHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused branch review report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

@@ -2138,6 +2138,33 @@ try {
         && supabaseAdvisorReportReview.tests_or_checks.some((check) => /check:supabase-advisor-report/.test(check)),
       'Supabase advisor focused report code optimization review must record focused Supabase advisor report and checker proof.',
     );
+    const branchReviewReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT');
+    assert(branchReviewReportDecision, 'Manifest must record the branch review focused report implementation decision.');
+    assert(
+      branchReviewReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Branch review focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(branchReviewReportDecision?.files_changed)
+        && branchReviewReportDecision.files_changed.includes('scripts/report-branch-review-readiness.mjs')
+        && branchReviewReportDecision.files_changed.includes('scripts/check-branch-review-readiness-report.mjs')
+        && branchReviewReportDecision.files_changed.includes('tests/unit/branchReviewReadiness.test.ts'),
+      'Branch review focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|grant production approval|hosted\/live parity/i.test(branchReviewReportDecision?.proof_boundary ?? ''),
+      'Branch review focused report decision must preserve branch non-mutation and no-approval boundaries.',
+    );
+    const branchReviewReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT');
+    assert(branchReviewReportReview, 'Manifest must record the branch review focused report code optimization review.');
+    assert(branchReviewReportReview?.policy === 'strict', 'Branch review focused report code optimization review must use strict policy.');
+    assert(branchReviewReportReview?.verdict === 'pass', 'Branch review focused report code optimization review must pass.');
+    assert(
+      Array.isArray(branchReviewReportReview?.tests_or_checks)
+        && branchReviewReportReview.tests_or_checks.some((check) => /report:branch-review-readiness/.test(check))
+        && branchReviewReportReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check)),
+      'Branch review focused report code optimization review must record focused branch review report and checker proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
