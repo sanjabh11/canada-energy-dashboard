@@ -5056,7 +5056,7 @@ const releaseToolchainGitLfsHookDiagnosticTestsRun = [
 const releaseToolchainCorepackEnvDiagnosticTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
-  'node scripts/check-corepack-toolchain.mjs (expected blocker output while Corepack is missing)',
+  'node scripts/check-corepack-toolchain.mjs',
   'node scripts/report-launch-evidence-manifest.mjs',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
@@ -5836,7 +5836,7 @@ const safeFixImplementationDecisions = [
     repo_pattern_reused: 'Existing check-corepack-toolchain hard gate, release_preflight non-clearance diagnostic language, and launch manifest code-optimization ledger contract.',
     files_changed: releaseToolchainCorepackEnvDiagnosticFilesChanged,
     tests_run: releaseToolchainCorepackEnvDiagnosticTestsRun,
-    proof: 'The patch adds environment diagnostics to the existing hard-failing Corepack checker and covers the missing-Corepack plus matching bare-pnpm case in the focused unit test without adding a release fallback.',
+    proof: 'The patch adds environment diagnostics to the existing hard-failing Corepack checker and covers the missing-Corepack plus matching bare-pnpm case in the focused unit test without adding a release fallback; direct node scripts/check-corepack-toolchain.mjs output is expected to remain nonzero while Corepack is missing.',
     reason: 'The manifest-level release-preflight report already separated Corepack, bare pnpm, and Git LFS context, but the standalone release gate still stopped with a terse ENOENT that hid the shell split operators need to remediate correctly.',
     proof_boundary: 'This record adds current-shell diagnostic visibility only; it does not install Corepack, enable Corepack, rewrite PATH, treat bare pnpm as Corepack evidence, run release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
     stop_gate: 'Do not treat Corepack checker diagnostics, matching bare pnpm version output, git-lfs context, skipped probes, or this code optimization ledger as Corepack-pinned release-readiness, source provenance cleanup, push-path proof, production approval, deployment, hosted/live parity, or commercial-ready status.',

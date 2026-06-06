@@ -1714,7 +1714,7 @@ describe('launch evidence manifest report', () => {
     expect(releaseToolchainCorepackEnvDiagnosticReview.policy).toBe('strict');
     expect(releaseToolchainCorepackEnvDiagnosticReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
-      'node scripts/check-corepack-toolchain.mjs (expected blocker output while Corepack is missing)',
+      'node scripts/check-corepack-toolchain.mjs',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
