@@ -516,7 +516,9 @@ describe('launch evidence manifest report', () => {
     expect(releaseReadinessPrerequisite.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
-    expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').proof_command).toBe('corepack pnpm run check:post-deploy-live');
+    const postDeployLiveProofPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary');
+    expect(postDeployLiveProofPrerequisite.proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
+    expect(postDeployLiveProofPrerequisite.needed).toMatch(/underlying check:post-deploy-live/i);
     const productionPrerequisitesByName = mapBy(
       manifest.production_approval.prerequisite_queue.items,
       (item: {
@@ -587,6 +589,8 @@ describe('launch evidence manifest report', () => {
     expect(productionRequestRowsByName.get('Explicit owner production approval')?.status).toBe('manual_stop');
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.request_phase).toBe('post_deploy_boundary');
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.blocks_request).toBe(false);
+    expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
+    expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.evidence_to_attach).toMatch(/focused post-deploy live-proof report\/check|underlying check:post-deploy-live result/i);
     expect(productionRequestRowsByName.get('Clean source provenance')?.evidence_to_attach).toMatch(/source-provenance/i);
     if (renameDirtyPath) {
       const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
@@ -792,9 +796,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(39);
+    expect(manifest.implementation_decisions).toHaveLength(40);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(39);
+    expect(manifest.code_optimization_reviews).toHaveLength(40);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1490,6 +1494,32 @@ describe('launch evidence manifest report', () => {
     expect(postDeployLiveProofReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:post-deploy-live-proof-readiness',
       'pnpm run check:post-deploy-live-proof-report',
+    ]));
+    const postDeployProductionApprovalProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    );
+    expect(postDeployProductionApprovalProofHandleDecision).toBeTruthy();
+    expect(postDeployProductionApprovalProofHandleDecision.chosen_variant).toBe('minimal post-deploy production approval proof-handle alignment');
+    expect(postDeployProductionApprovalProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'tests/unit/launchEvidenceManifest.test.ts',
+      'tests/unit/productionApprovalReadiness.test.ts',
+      'tests/unit/postDeployLiveProofReadiness.test.ts',
+    ]));
+    expect(postDeployProductionApprovalProofHandleDecision.proof_boundary).toMatch(/does not grant owner approval|run deploys|push|rebuild|mutate Netlify|access live accounts|run browser smoke|prove hosted\/live parity|raise launch status/i);
+    const postDeployProductionApprovalProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    );
+    expect(postDeployProductionApprovalProofHandleReview).toBeTruthy();
+    expect(postDeployProductionApprovalProofHandleReview.policy).toBe('strict');
+    expect(postDeployProductionApprovalProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:post-deploy-live-proof-report -- --skip-probes',
+      'pnpm run check:production-approval-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     const completionAuditProofHandleDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',

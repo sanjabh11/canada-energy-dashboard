@@ -129,6 +129,10 @@ describe('production approval readiness report', () => {
     expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('pre_request');
     expect(requestRows.get('Explicit owner production approval').request_phase).toBe('owner_decision');
     expect(requestRows.get('Post-deploy live proof boundary').request_phase).toBe('post_deploy_boundary');
+    expect(prerequisiteRows.get('Post-deploy live proof boundary').proof_command).toContain('report:post-deploy-live-proof-readiness');
+    expect(prerequisiteRows.get('Post-deploy live proof boundary').proof_command).toContain('check:post-deploy-live-proof-report');
+    expect(requestRows.get('Post-deploy live proof boundary').proof_command).toContain('report:post-deploy-live-proof-readiness');
+    expect(requestRows.get('Post-deploy live proof boundary').proof_command).toContain('check:post-deploy-live-proof-report');
     expect(requestRows.get('Explicit owner production approval').blocks_request).toBe(false);
     expect(requestRows.get('Post-deploy live proof boundary').blocks_request).toBe(false);
     expect(payload.launch_action_production_approval_row.phase).toBe('production_approval');

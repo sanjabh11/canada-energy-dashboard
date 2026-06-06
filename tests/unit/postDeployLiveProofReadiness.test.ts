@@ -91,8 +91,14 @@ describe('post-deploy live proof readiness report', () => {
     expect(deployGate.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
     expect(payload.launch_action_post_deploy_row.phase).toBe('post_deploy_live_proof');
     expect(payload.production_approval_live_prerequisite.prerequisite).toBe('Post-deploy live proof boundary');
+    expect(payload.production_approval_live_prerequisite.proof_command).toContain('report:post-deploy-live-proof-readiness');
+    expect(payload.production_approval_live_prerequisite.proof_command).toContain('check:post-deploy-live-proof-report');
+    expect(payload.production_approval_live_prerequisite.needed).toMatch(/underlying check:post-deploy-live/i);
     expect(payload.production_approval_request_live_row.request_phase).toBe('post_deploy_boundary');
     expect(payload.production_approval_request_live_row.blocks_request).toBe(false);
+    expect(payload.production_approval_request_live_row.proof_command).toContain('report:post-deploy-live-proof-readiness');
+    expect(payload.production_approval_request_live_row.proof_command).toContain('check:post-deploy-live-proof-report');
+    expect(payload.production_approval_request_live_row.evidence_to_attach).toMatch(/underlying check:post-deploy-live result/i);
     expect(payload.proof_boundary).toMatch(/does not grant owner approval|deploy|mutate Netlify|run browser smoke|prove hosted\/live parity/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|post-deploy live proof/i);
   });

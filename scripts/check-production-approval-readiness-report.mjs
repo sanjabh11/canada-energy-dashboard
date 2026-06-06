@@ -191,6 +191,18 @@ if (failures.length === 0) {
     );
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.request_phase === 'owner_decision', 'Explicit owner approval must be an owner-decision row.');
     assert(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.request_phase === 'post_deploy_boundary', 'Post-deploy live proof must be a post-deploy boundary row.');
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(prerequisiteRowsByName.get('Post-deploy live proof boundary')?.proof_command ?? '')
+        && /check:post-deploy-live-proof-report/.test(prerequisiteRowsByName.get('Post-deploy live proof boundary')?.proof_command ?? ''),
+      'Post-deploy live proof prerequisite must point to the focused post-deploy live-proof report/check.',
+    );
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.proof_command ?? '')
+        && /check:post-deploy-live-proof-report/.test(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.proof_command ?? ''),
+      'Post-deploy live proof request row must point to the focused post-deploy live-proof report/check.',
+    );
+    assert(/underlying check:post-deploy-live/i.test(prerequisiteRowsByName.get('Post-deploy live proof boundary')?.needed ?? ''), 'Post-deploy live proof prerequisite must keep the underlying post-deploy live check requirement.');
+    assert(/underlying check:post-deploy-live result/i.test(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.evidence_to_attach ?? ''), 'Post-deploy live proof request row must keep the underlying post-deploy live check attachment.');
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.blocks_request === false, 'Owner decision row must not count as a pre-request blocker.');
     assert(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.blocks_request === false, 'Post-deploy boundary row must not count as a pre-request blocker.');
     assert(requestPacket.request_blocking_count >= 1, 'Request packet must keep pre-request blockers visible.');

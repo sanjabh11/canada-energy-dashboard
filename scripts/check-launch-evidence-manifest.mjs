@@ -1193,7 +1193,12 @@ try {
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
     assert(ownerApprovalItem?.proof_command === 'corepack pnpm run check:production-deploy-request', 'Production approval prerequisite queue must include the deploy-request proof command.');
     assert(liveProofItem?.status === 'blocked', 'Production approval prerequisite queue must keep post-deploy live proof blocked before approved deploy.');
-    assert(liveProofItem?.proof_command === 'corepack pnpm run check:post-deploy-live', 'Production approval prerequisite queue must include the post-deploy live proof command.');
+    assert(
+      liveProofItem?.proof_command.includes('report:post-deploy-live-proof-readiness')
+        && liveProofItem.proof_command.includes('check:post-deploy-live-proof-report'),
+      'Production approval prerequisite queue must run the focused post-deploy live-proof report/check.',
+    );
+    assert(/underlying check:post-deploy-live/i.test(liveProofItem?.needed ?? ''), 'Production approval post-deploy prerequisite must preserve the underlying post-deploy live check requirement.');
     assert(
       manifest.production_approval.prerequisite_queue.items.some((item) => /does not grant owner approval|claim production approval|claim post-deploy live parity/i.test(item.stop_gate)),
       'Production approval prerequisite queue must preserve explicit non-approval and live-parity stop gates.',
@@ -1285,6 +1290,12 @@ try {
       if (item.prerequisite === 'Post-deploy live proof boundary') {
         assert(item.request_phase === 'post_deploy_boundary', 'Post-deploy live proof request row must be post_deploy_boundary.');
         assert(item.blocks_request === false, 'Post-deploy live proof request row must not be counted as a pre-request blocker.');
+        assert(
+          item.proof_command.includes('report:post-deploy-live-proof-readiness')
+            && item.proof_command.includes('check:post-deploy-live-proof-report'),
+          'Post-deploy live proof request row must point to the focused post-deploy report/check.',
+        );
+        assert(/underlying check:post-deploy-live result/i.test(item.evidence_to_attach), 'Post-deploy live proof request row must preserve the underlying post-deploy live check attachment.');
         assert(/downstream|post-deploy/i.test(item.request_impact), 'Post-deploy live proof request row must be framed as downstream of approval and deploy completion.');
       }
     }
@@ -2753,6 +2764,39 @@ try {
         && postDeployLiveProofReportReview.tests_or_checks.some((check) => /report:post-deploy-live-proof-readiness/.test(check))
         && postDeployLiveProofReportReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report/.test(check)),
       'Post-deploy live proof focused report code optimization review must record focused post-deploy report and checker proof.',
+    );
+    const postDeployProductionApprovalProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES');
+    assert(postDeployProductionApprovalProofHandleDecision, 'Manifest must record the post-deploy production approval proof-handle implementation decision.');
+    assert(
+      postDeployProductionApprovalProofHandleDecision?.chosen_variant === 'minimal post-deploy production approval proof-handle alignment',
+      'Post-deploy production approval proof-handle decision must record the chosen minimal proof-handle alignment variant.',
+    );
+    assert(
+      Array.isArray(postDeployProductionApprovalProofHandleDecision?.files_changed)
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('scripts/check-post-deploy-live-proof-readiness-report.mjs')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts')
+        && postDeployProductionApprovalProofHandleDecision.files_changed.includes('tests/unit/postDeployLiveProofReadiness.test.ts'),
+      'Post-deploy production approval proof-handle decision must record the manifest, focused checkers, source of truth, and unit test files.',
+    );
+    assert(
+      /does not grant owner approval|run deploys|push|rebuild|mutate Netlify|access live accounts|run browser smoke|prove hosted\/live parity|raise launch status/i.test(postDeployProductionApprovalProofHandleDecision?.proof_boundary ?? ''),
+      'Post-deploy production approval proof-handle decision must preserve no-approval, no-deploy, no-live-account, no-browser-smoke, and no-live-proof boundaries.',
+    );
+    const postDeployProductionApprovalProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES');
+    assert(postDeployProductionApprovalProofHandleReview, 'Manifest must record the post-deploy production approval proof-handle code optimization review.');
+    assert(postDeployProductionApprovalProofHandleReview?.policy === 'strict', 'Post-deploy production approval proof-handle code optimization review must use strict policy.');
+    assert(postDeployProductionApprovalProofHandleReview?.verdict === 'pass', 'Post-deploy production approval proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(postDeployProductionApprovalProofHandleReview?.tests_or_checks)
+        && postDeployProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report -- --skip-probes/.test(check))
+        && postDeployProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check))
+        && postDeployProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check)),
+      'Post-deploy production approval proof-handle code optimization review must record focused post-deploy, production approval, and manifest checker proof.',
     );
     const completionAuditProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES');
     assert(completionAuditProofHandleDecision, 'Manifest must record the completion audit proof-handle implementation decision.');

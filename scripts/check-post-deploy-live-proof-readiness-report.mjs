@@ -135,8 +135,20 @@ if (failures.length === 0) {
     assert(/Do not treat this focused report|production approval|hosted parity|post-deploy live proof/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject live-proof claims from the report itself.');
     assert(payload.launch_action_post_deploy_row?.phase === 'post_deploy_live_proof', 'Focused report JSON must include the launch action post-deploy row.');
     assert(payload.production_approval_live_prerequisite?.prerequisite === 'Post-deploy live proof boundary', 'Focused report JSON must include the production approval post-deploy prerequisite.');
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(payload.production_approval_live_prerequisite?.proof_command ?? '')
+        && /check:post-deploy-live-proof-report/.test(payload.production_approval_live_prerequisite?.proof_command ?? ''),
+      'Production approval post-deploy prerequisite must point to the focused post-deploy live-proof report/check.',
+    );
+    assert(/underlying check:post-deploy-live/i.test(payload.production_approval_live_prerequisite?.needed ?? ''), 'Production approval post-deploy prerequisite must preserve the underlying post-deploy live check requirement.');
     assert(payload.production_approval_request_live_row?.request_phase === 'post_deploy_boundary', 'Focused report JSON must preserve the post-deploy request phase.');
     assert(payload.production_approval_request_live_row?.blocks_request === false, 'Post-deploy request row must not count as a pre-request blocker.');
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(payload.production_approval_request_live_row?.proof_command ?? '')
+        && /check:post-deploy-live-proof-report/.test(payload.production_approval_request_live_row?.proof_command ?? ''),
+      'Production approval post-deploy request row must point to the focused post-deploy live-proof report/check.',
+    );
+    assert(/underlying check:post-deploy-live result/i.test(payload.production_approval_request_live_row?.evidence_to_attach ?? ''), 'Production approval post-deploy request row must preserve the underlying post-deploy live check attachment.');
   }
 }
 

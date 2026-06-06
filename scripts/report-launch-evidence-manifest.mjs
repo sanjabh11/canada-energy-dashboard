@@ -1663,9 +1663,9 @@ function buildProductionApprovalPrerequisiteQueue({
       rank: 8,
       prerequisite: 'Post-deploy live proof boundary',
       current: 'not eligible before explicit approved deploy',
-      needed: 'after approved deploy, live metadata, static parity, and hosted proof-pack route smoke pass',
+      needed: 'after approved deploy, focused post-deploy live-proof report/check and the underlying check:post-deploy-live pass with live metadata, static parity, and hosted proof-pack route smoke',
       owner: 'operator',
-      proof_command: 'corepack pnpm run check:post-deploy-live',
+      proof_command: POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Post-deploy live proof boundary'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Post-deploy live proof boundary'),
       stop_gate: 'Do not present hosted/live parity for current source until post-deploy live checks pass after an explicitly approved deploy.',
@@ -1728,7 +1728,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Explicit owner production approval':
       return 'Attach the explicit owner approval record only after every pre-request blocker is ready; this packet does not create that approval.';
     case 'Post-deploy live proof boundary':
-      return 'Attach post-deploy live metadata, static parity, and hosted proof-pack smoke only after an explicitly approved deploy.';
+      return 'Attach focused post-deploy live-proof report/check output, including the underlying check:post-deploy-live result for live metadata, static parity, and hosted proof-pack smoke, only after an explicitly approved deploy.';
     default:
       return 'Attach current proof for this prerequisite before requesting production approval.';
   }
@@ -4847,6 +4847,17 @@ const postDeployLiveProofReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const postDeployProductionApprovalProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/postDeployLiveProofReadiness.test.ts',
+];
+
 const completionAuditProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -4965,6 +4976,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
+  ...postDeployProductionApprovalProofHandleFilesChanged,
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
   ...fixReportFocusedChecksFilesChanged,
@@ -5305,6 +5317,19 @@ const postDeployLiveProofReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const postDeployProductionApprovalProofHandleTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-production-approval-readiness-report.mjs',
+  'node --check scripts/check-post-deploy-live-proof-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/postDeployLiveProofReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:post-deploy-live-proof-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const completionAuditProofHandleTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -5407,6 +5432,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
+  ...postDeployProductionApprovalProofHandleTestsRun,
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
   ...fixReportFocusedChecksTestsRun,
@@ -5802,6 +5828,19 @@ const safeFixImplementationDecisions = [
     reason: 'Post-deploy proof sequencing was present inside broad launch artifacts, but did not have a narrow operator handle for the hosted/live parity blocker that follows explicit production approval.',
     proof_boundary: 'This record improves post-deploy proof visibility only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused post-deploy live proof report, check pass, JSON output, skipped probes, public status handle, or docs sync as production approval, deployment, current-source hosted parity, commercial-ready status, or post-deploy live proof.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    decision: 'Route production approval post-deploy live proof prerequisite and request rows through the focused post-deploy live-proof report/check while preserving the underlying post-deploy live check requirement.',
+    acceptance_check: 'Production approval prerequisite and request rows for Post-deploy live proof boundary expose report:post-deploy-live-proof-readiness plus check:post-deploy-live-proof-report, while needed/attachment text still requires the underlying check:post-deploy-live result after explicit approval and guarded deploy completion.',
+    chosen_variant: 'minimal post-deploy production approval proof-handle alignment',
+    repo_pattern_reused: 'Existing POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND, production_approval prerequisite/request rows, focused post-deploy live-proof checker, focused production approval checker, and launch manifest code-optimization ledger.',
+    files_changed: postDeployProductionApprovalProofHandleFilesChanged,
+    tests_run: postDeployProductionApprovalProofHandleTestsRun,
+    proof: 'The patch reuses the existing focused post-deploy report/check handle in production approval rows, keeps check:post-deploy-live as the underlying live-proof attachment requirement, and adds broad/focused checker plus unit coverage without changing approval eligibility or launch status.',
+    reason: 'The launch action post-deploy row already pointed to the focused post-deploy report/check, but production approval live prerequisite/request rows still exposed only the raw post-deploy check, making approval evidence handles inconsistent for operators.',
+    proof_boundary: 'This record aligns post-deploy live proof handles inside production approval only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused post-deploy proof handles, check:post-deploy-live output, production approval row readiness, skipped probes, public status handles, or this code optimization ledger as production approval, deployment, current-source hosted parity, commercial-ready status, or post-deploy live proof.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
@@ -6650,6 +6689,27 @@ const safeFixRejectedVariants = [
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Leave production approval post-deploy live proof rows pointing only at check:post-deploy-live.',
+    reason_rejected: 'Would keep production approval proof handles broader and less inspectable than the launch action post-deploy row after the focused post-deploy live-proof report/check existed.',
+    tradeoff: 'No-code defer avoids touching approval rows, but preserves operator inconsistency between the launch action plan and production approval request packet.',
+    evidence: 'launch_action_queue.post_deploy_live_proof already uses report:post-deploy-live-proof-readiness plus check:post-deploy-live-proof-report.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Remove the underlying check:post-deploy-live requirement from production approval rows.',
+    reason_rejected: 'The focused post-deploy report/check is an operator handle, but the raw post-deploy live check remains the underlying live metadata, static parity, and hosted smoke gate it reports.',
+    tradeoff: 'Focused-only wording would be shorter, but would hide the hard live-proof command required after approval and deploy completion.',
+    evidence: 'report:post-deploy-live-proof-readiness exposes check_post_deploy_live as check:post-deploy-live and renders the six downstream live-proof gate rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Run deploy-production.sh, Netlify deploy, browser smoke, or live parity checks while aligning proof handles.',
+    reason_rejected: 'Deploy and live checks require explicit owner approval, clean release gates, and post-deploy context outside this repo-side proof-handle phase.',
+    tradeoff: 'Direct execution could create stronger proof if approved, but it would cross manual-stop and live-service boundaries.',
+    evidence: 'post_deploy_live_proof.gate_queue remains blocked for production approval clearance, guarded deploy completion, live metadata, static parity, hosted smoke, and hosted parity claim.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
     variant: 'Leave completion audit blocker rows pointing directly at raw validation, dashboard, release, deploy, and live-proof commands.',
     reason_rejected: 'Would keep the broad objective checklist inconsistent with the focused lane reports and make operators skip the safer inspection-first handles.',
@@ -7202,6 +7262,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed post-deploy live proof Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated live-proof sequencing, deploy execution, browser smoke execution, Netlify mutation, or live-parity relaxation.',
     tests_or_checks: postDeployLiveProofReportTestsRun,
     remaining_risk: 'Post-deploy live proof remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, live static parity, and hosted proof-pack smoke are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-POST-DEPLOY-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only production approval post-deploy proof rows, focused checkers, source-of-truth text, and tests, reusing the existing focused post-deploy command and underlying live-proof check without new dependencies, duplicated live-check parsing, approval eligibility changes, deploy execution, browser smoke execution, Netlify mutation, or live-parity relaxation.',
+    tests_or_checks: postDeployProductionApprovalProofHandleTestsRun,
+    remaining_risk: 'Post-deploy proof handles are now consistent, but production approval and live proof remain blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, live static parity, and hosted proof-pack smoke are current.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
