@@ -112,7 +112,10 @@ if (failures.length === 0) {
     const items = queue.items ?? [];
     const phases = items.map((item) => item.phase);
     const rowsByPhase = new Map(items.map((item) => [item.phase, item]));
-    const lanes = (payload.lane_status_summary ?? []).map((item) => item.lane);
+    const laneRows = payload.lane_status_summary ?? [];
+    const lanes = laneRows.map((item) => item.lane);
+    const lanesByName = new Map(laneRows.map((item) => [item.lane, item]));
+    const buyerLane = lanesByName.get('buyer_evidence');
 
     assert(payload.schema_version === 1, 'Focused launch action JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused launch action JSON must preserve the blocked launch decision.');
@@ -130,6 +133,10 @@ if (failures.length === 0) {
     assert(rowsByPhase.get('production_approval')?.proof_type === 'manual_approval_gate', 'Production approval row must keep manual approval proof type.');
     assert(rowsByPhase.get('post_deploy_live_proof')?.proof_type === 'post_deploy_live_proof_gate', 'Post-deploy row must keep post-deploy proof type.');
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
+    assert(buyerLane?.status === 'blocked', 'Buyer evidence lane summary must remain blocked while hard-gate or acquisition evidence is skipped/open/non-ready.');
+    assert(/open_hard_gate_rows=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate open row count.');
+    assert(/hard_gate_status=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate status.');
+    assert(/acquisition_status=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose acquisition matrix status.');
     assert(payload.package_script_handles?.check_launch_action_report === 'corepack pnpm run check:launch-action-report', 'Focused report must expose the launch action checker command handle.');
     assert(payload.package_script_handles?.check_launch_evidence_validation_report === 'corepack pnpm run check:launch-evidence-validation-report', 'Focused report must expose the launch evidence validation checker command handle.');
     assert(/does not commit|clear source provenance|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must not imply mutation, external action, deploy, live parity, or launch readiness.');

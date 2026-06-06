@@ -436,6 +436,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS'), 'Code optimization report must record the launch action validation status task.');
   assert(codeOptimizationSection.includes('minimal launch action row status alignment'), 'Code optimization report must record the selected minimal launch action validation status patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT'), 'Code optimization report must record the launch action focused report task.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS'), 'Code optimization report must record the launch action buyer lane status task.');
+  assert(codeOptimizationSection.includes('minimal launch action buyer lane status derivation'), 'Code optimization report must record the selected minimal buyer lane status derivation patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite sequencing patch'), 'Code optimization report must record the selected minimal production approval packet sequencing patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT'), 'Code optimization report must record the production approval focused report task.');
   assert(codeOptimizationSection.includes('minimal focused manifest wrapper and public handle alignment'), 'Code optimization report must record the selected minimal post-deploy live proof wrapper patch.');

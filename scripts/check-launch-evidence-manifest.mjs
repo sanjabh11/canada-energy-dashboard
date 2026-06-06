@@ -2247,6 +2247,33 @@ try {
         && launchActionReportReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check)),
       'Launch action focused report code optimization review must record focused launch action report and checker proof.',
     );
+    const launchActionBuyerLaneStatusDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS');
+    assert(launchActionBuyerLaneStatusDecision, 'Manifest must record the launch action buyer lane status implementation decision.');
+    assert(
+      launchActionBuyerLaneStatusDecision?.chosen_variant === 'minimal launch action buyer lane status derivation',
+      'Launch action buyer lane status decision must record the chosen minimal status derivation variant.',
+    );
+    assert(
+      Array.isArray(launchActionBuyerLaneStatusDecision?.files_changed)
+        && launchActionBuyerLaneStatusDecision.files_changed.includes('scripts/report-launch-action-readiness.mjs')
+        && launchActionBuyerLaneStatusDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionBuyerLaneStatusDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts'),
+      'Launch action buyer lane status decision must record the focused launch action report, checker, and unit test file.',
+    );
+    assert(
+      /does not contact buyers|create accepted evidence|validate 95%|clear buyer evidence|request production approval|deploy|hosted\/live parity|raise launch status/i.test(launchActionBuyerLaneStatusDecision?.proof_boundary ?? ''),
+      'Launch action buyer lane status decision must preserve no-contact, no-evidence, no-approval, no-deploy, and no-readiness boundaries.',
+    );
+    const launchActionBuyerLaneStatusReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS');
+    assert(launchActionBuyerLaneStatusReview, 'Manifest must record the launch action buyer lane status code optimization review.');
+    assert(launchActionBuyerLaneStatusReview?.policy === 'strict', 'Launch action buyer lane status code optimization review must use strict policy.');
+    assert(launchActionBuyerLaneStatusReview?.verdict === 'pass', 'Launch action buyer lane status code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionBuyerLaneStatusReview?.tests_or_checks)
+        && launchActionBuyerLaneStatusReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check))
+        && launchActionBuyerLaneStatusReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Launch action buyer lane status code optimization review must record focused launch action and manifest checker proof.',
+    );
     const productionPacketSequencingDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING');
     assert(productionPacketSequencingDecision, 'Manifest must record the production approval packet sequencing implementation decision.');
     assert(

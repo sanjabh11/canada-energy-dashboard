@@ -715,9 +715,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(17);
+    expect(manifest.implementation_decisions).toHaveLength(18);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(17);
+    expect(manifest.code_optimization_reviews).toHaveLength(18);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -799,6 +799,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate launch action queue construction in a standalone implementation.',
       'Commit source changes, run release-readiness, checkout branches, contact buyers, authorize Supabase, request approval, or deploy from the focused report.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad launch action handles.',
+      'Leave buyer_evidence lane_status_summary as the broad buyer evidence scan status.',
+      'Mark the buyer evidence lane ready from manifest.buyer_evidence.status alone.',
+      'Contact buyers, create retained artifacts, or run validate:pilot-evidence from the launch action report.',
+      'Rewrite the global buyer_evidence.status semantics for the manifest.',
       'Keep running live static parity even when local release-readiness fails.',
       'Fall back to bare pnpm or build dist directly when Corepack is unavailable.',
       'Skip every live check when any pre-deploy gate is blocked.',
@@ -1061,6 +1065,26 @@ describe('launch evidence manifest report', () => {
     expect(launchActionReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:launch-action-readiness',
       'pnpm run check:launch-action-report',
+    ]));
+    const launchActionBuyerLaneStatusDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    );
+    expect(launchActionBuyerLaneStatusDecision).toBeTruthy();
+    expect(launchActionBuyerLaneStatusDecision.chosen_variant).toBe('minimal launch action buyer lane status derivation');
+    expect(launchActionBuyerLaneStatusDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-action-readiness.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'tests/unit/launchActionReadiness.test.ts',
+    ]));
+    expect(launchActionBuyerLaneStatusDecision.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95%|clear buyer evidence|production approval|hosted\/live parity/i);
+    const launchActionBuyerLaneStatusReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    );
+    expect(launchActionBuyerLaneStatusReview).toBeTruthy();
+    expect(launchActionBuyerLaneStatusReview.policy).toBe('strict');
+    expect(launchActionBuyerLaneStatusReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:launch-action-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     const productionPacketSequencingDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',

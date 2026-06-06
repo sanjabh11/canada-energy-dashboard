@@ -15,6 +15,13 @@ type LaunchActionRow = {
   status: string;
 };
 
+type LaneStatusRow = {
+  lane: string;
+  status: string;
+  current: string;
+  proof_command: string;
+};
+
 function makeTempRoot() {
   const root = mkdtempSync(path.join(tmpdir(), 'ceip-launch-action-'));
   tempRoots.push(root);
@@ -65,6 +72,9 @@ describe('launch action readiness report', () => {
     expect(stdout).toContain('corepack pnpm run check:launch-evidence-validation-report');
     expect(stdout).toContain('corepack pnpm run report:production-approval-readiness');
     expect(stdout).toContain('corepack pnpm run report:post-deploy-live-proof-readiness');
+    expect(stdout).toContain('| buyer_evidence | blocked |');
+    expect(stdout).toContain('hard_gate_status=skipped');
+    expect(stdout).toContain('acquisition_status=blocked');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -81,7 +91,13 @@ describe('launch action readiness report', () => {
       item.phase,
       item,
     ]));
-    const lanes = payload.lane_status_summary.map((item: { lane: string }) => item.lane);
+    const laneRows: LaneStatusRow[] = payload.lane_status_summary;
+    const lanes = laneRows.map((item) => item.lane);
+    const lanesByName = new Map<string, LaneStatusRow>(laneRows.map((item) => [
+      item.lane,
+      item,
+    ]));
+    const buyerLane = lanesByName.get('buyer_evidence');
 
     expect(payload.schema_version).toBe(1);
     expect(payload.launch_decision).toBe('blocked');
@@ -117,6 +133,11 @@ describe('launch action readiness report', () => {
       'production_approval',
       'post_deploy_live_proof',
     ]));
+    expect(buyerLane?.status).toBe('blocked');
+    expect(buyerLane?.current).toContain('open_hard_gate_rows=');
+    expect(buyerLane?.current).toContain('hard_gate_status=skipped');
+    expect(buyerLane?.current).toContain('acquisition_status=blocked');
+    expect(buyerLane?.proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(payload.package_script_handles.check_launch_action_report).toBe('corepack pnpm run check:launch-action-report');
     expect(payload.package_script_handles.check_launch_evidence_validation_report).toBe('corepack pnpm run check:launch-evidence-validation-report');
     expect(payload.proof_boundary).toMatch(/does not commit|clear source provenance|contact buyers|authorize Supabase|deploy|commercial launch readiness/i);

@@ -4521,6 +4521,16 @@ const launchActionReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchActionBuyerLaneStatusFilesChanged = [
+  'scripts/report-launch-action-readiness.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const productionApprovalPacketSequencingFilesChanged = [
   'scripts/report-production-approval-packet.mjs',
   'scripts/report-launch-evidence-manifest.mjs',
@@ -4579,6 +4589,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...launchEvidenceValidationReportFilesChanged,
   ...launchActionValidationStatusFilesChanged,
   ...launchActionReportFilesChanged,
+  ...launchActionBuyerLaneStatusFilesChanged,
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
@@ -4723,6 +4734,16 @@ const launchActionReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchActionBuyerLaneStatusTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-action-readiness -- --skip-probes',
+  'pnpm run report:launch-action-readiness -- --json',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const productionApprovalPacketSequencingTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -4769,6 +4790,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...launchEvidenceValidationReportTestsRun,
   ...launchActionValidationStatusTestsRun,
   ...launchActionReportTestsRun,
+  ...launchActionBuyerLaneStatusTestsRun,
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
@@ -4978,6 +5000,19 @@ const safeFixImplementationDecisions = [
     reason: 'The top-level launch blocker action queue was present inside broad launch artifacts, but did not have a narrow operator handle for phase-wise execution planning across source, release, branch, Supabase, buyer, approval, and post-deploy lanes.',
     proof_boundary: 'This record improves launch action queue visibility only; it does not commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, prove launch evidence validation, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused launch action readiness report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, branch clearance, Supabase advisor clearance, buyer acceptance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    decision: 'Align the launch action buyer evidence lane summary with buyer hard-gate and acquisition readiness instead of the broad buyer evidence scan status.',
+    acceptance_check: 'When buyer hard-gate deficits are skipped/open or the acquisition matrix is non-ready, report:launch-action-readiness and check:launch-action-report keep lane_status_summary.buyer_evidence blocked while preserving the blocked launch action buyer row and no-contact/no-evidence boundaries.',
+    chosen_variant: 'minimal launch action buyer lane status derivation',
+    repo_pattern_reused: 'Existing buyer evidence gate readiness definition, launch action lane_status_summary, hard_gate_deficits, acquisition_matrix, focused launch action checker, and manifest code-optimization ledger.',
+    files_changed: launchActionBuyerLaneStatusFilesChanged,
+    tests_run: launchActionBuyerLaneStatusTestsRun,
+    proof: 'The focused launch action report now derives buyer_evidence lane status from buyer_evidence.status, hard_gate_deficits.status, and acquisition_matrix.status, and exposes hard_gate_status plus acquisition_status in the lane summary.',
+    reason: 'The launch action buyer row remained blocked, but the lane summary could report pass from the broad buyer evidence scan while hard-gate deficits and acquisition readiness were still skipped/open.',
+    proof_boundary: 'This record improves launch action buyer lane status accuracy only; it does not contact buyers, create accepted evidence, attach retained artifacts, move confidence, validate 95%, clear buyer evidence, request production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the blocked buyer evidence lane summary, focused launch action report, JSON output, or checker pass as buyer acceptance, retained artifact proof, validate:pilot-evidence --require-95 success, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
@@ -5365,6 +5400,34 @@ const safeFixRejectedVariants = [
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    variant: 'Leave buyer_evidence lane_status_summary as the broad buyer evidence scan status.',
+    reason_rejected: 'Would keep a false pass in the phase-wise launch action summary while hard-gate deficits or acquisition rows remain skipped, unknown, or blocked.',
+    tradeoff: 'No-code defer avoids a small report patch but leaves operator-facing execution planning internally inconsistent.',
+    evidence: 'report:launch-action-readiness -- --json showed buyer_evidence lane status pass while the launch action buyer row stayed blocked with buyer hard-gate deficits.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    variant: 'Mark the buyer evidence lane ready from manifest.buyer_evidence.status alone.',
+    reason_rejected: 'The broad buyer scan status does not prove hard-gate deficits are zero or that the acquisition matrix has retained buyer artifacts ready.',
+    tradeoff: 'Status-only derivation is smaller but materially weaker than the existing focused buyer gate readiness definition.',
+    evidence: 'report:buyer-evidence-gate-readiness only treats buyer evidence as ready when buyer_evidence.status and hard_gate_deficits.status pass and acquisition_matrix.status is ready.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    variant: 'Contact buyers, create retained artifacts, or run validate:pilot-evidence from the launch action report.',
+    reason_rejected: 'Buyer contact, retained artifact creation, and 95% validation are owner/operator actions with real anonymized buyer inputs, not report-generation side effects.',
+    tradeoff: 'External execution could reduce blockers but would violate safe-fix, no-contact, no-fabrication, and proof-bucket boundaries.',
+    evidence: 'Buyer evidence launch action rows require real accepted buyer rows, retained redacted artifacts, and validate:pilot-evidence --require-95 before readiness.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    variant: 'Rewrite the global buyer_evidence.status semantics for the manifest.',
+    reason_rejected: 'The defect is limited to focused launch-action lane summarization; changing the broad manifest status would be wider and could break existing buyer evidence scan semantics.',
+    tradeoff: 'A global status rewrite might make one field stricter, but it risks conflating raw buyer-evidence scan state with production hard-gate readiness.',
+    evidence: 'The launch action report already has access to hard_gate_deficits and acquisition_matrix, so a local derived lane status fixes the operator-facing mismatch without changing source data.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
     variant: 'Keep running live static parity even when local release-readiness fails.',
     reason_rejected: 'This preserves a noisy secondary failure where missing dist is caused by an already-failed build/toolchain prerequisite rather than by an independently verified hosted-static mismatch.',
@@ -5581,6 +5644,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed launch action Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated queue construction, source mutation, branch mutation, buyer contact, external account access, approval request execution, deploy execution, or live-parity relaxation.',
     tests_or_checks: launchActionReportTestsRun,
     remaining_risk: 'Launch action execution remains blocked until source provenance, launch evidence validation, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-ACTION-BUYER-LANE-STATUS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only the focused launch action buyer lane status derivation and checker/test expectations, reusing existing buyer_evidence.status, hard_gate_deficits.status, and acquisition_matrix.status without new dependencies, duplicated buyer scanning, buyer contact, retained artifact creation, validation execution, or launch-gate relaxation.',
+    tests_or_checks: launchActionBuyerLaneStatusTestsRun,
+    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, branch review, Supabase advisor clearance, production approval, and post-deploy live proof also remain open gates.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',

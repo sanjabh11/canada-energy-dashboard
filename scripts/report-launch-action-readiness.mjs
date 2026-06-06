@@ -127,6 +127,15 @@ function firstOpenAction(items) {
   return (items ?? []).find((item) => item?.status !== 'ready') ?? null;
 }
 
+function buyerEvidenceLaneStatus(buyerEvidence = {}) {
+  const buyerStatus = buyerEvidence?.status ?? 'unknown';
+  const hardGateStatus = buyerEvidence?.hard_gate_deficits?.status ?? 'unknown';
+  const acquisitionStatus = buyerEvidence?.acquisition_matrix?.status ?? 'unknown';
+  return buyerStatus === 'pass' && hardGateStatus === 'pass' && acquisitionStatus === 'ready'
+    ? 'ready'
+    : 'blocked';
+}
+
 function focusedPayload(manifest) {
   const launchActionQueue = manifest.launch_action_queue ?? {};
   const queueItems = launchActionQueue.items ?? [];
@@ -172,8 +181,8 @@ function focusedPayload(manifest) {
       },
       {
         lane: 'buyer_evidence',
-        status: manifest.buyer_evidence?.status ?? 'unknown',
-        current: `open_hard_gate_rows=${manifest.buyer_evidence?.hard_gate_deficits?.open_count ?? 'unknown'}; phase_f_gate=${manifest.buyer_evidence?.phase_f_gate ?? 'unknown'}`,
+        status: buyerEvidenceLaneStatus(manifest.buyer_evidence),
+        current: `open_hard_gate_rows=${manifest.buyer_evidence?.hard_gate_deficits?.open_count ?? 'unknown'}; hard_gate_status=${manifest.buyer_evidence?.hard_gate_deficits?.status ?? 'unknown'}; acquisition_status=${manifest.buyer_evidence?.acquisition_matrix?.status ?? 'unknown'}; phase_f_gate=${manifest.buyer_evidence?.phase_f_gate ?? 'unknown'}`,
         proof_command: 'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
       },
       {
