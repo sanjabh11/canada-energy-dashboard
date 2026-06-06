@@ -4367,6 +4367,24 @@ const buyerEvidenceStarterBoundaryFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const buyerEvidenceGateReportFilesChanged = [
+  'package.json',
+  'scripts/report-buyer-evidence-gate-readiness.mjs',
+  'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/buyerEvidenceGateReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releasePreflightReportFilesChanged = [
   'package.json',
   'scripts/report-release-preflight-readiness.mjs',
@@ -4440,6 +4458,7 @@ const supabaseAdvisorReportFilesChanged = [
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
+  ...buyerEvidenceGateReportFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
@@ -4470,6 +4489,18 @@ const buyerEvidenceStarterBoundaryTestsRun = [
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
   'pnpm run report:buyer-evidence-readiness -- --root /tmp/ceip-phase-f-evidence-codex --evidence-root /tmp/ceip-phase-f-evidence-codex/phase-f-minimum-intake',
+];
+
+const buyerEvidenceGateReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/buyerEvidenceGateReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:buyer-evidence-gate-readiness',
+  'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+  'pnpm run check:buyer-evidence-gate-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
 const releasePreflightReportTestsRun = [
@@ -4530,6 +4561,7 @@ const supabaseAdvisorReportTestsRun = [
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
+  ...buyerEvidenceGateReportTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
@@ -4611,6 +4643,19 @@ const safeFixImplementationDecisions = [
     reason: 'Counting starter CSVs only as production registers could make acquisition status and operator summaries look more complete than the hard 95% gate allows.',
     proof_boundary: 'This record improves buyer-evidence classification only; it does not contact buyers, create accepted evidence, move confidence, attach retained artifacts, validate 95%, clear buyer hard gates, or grant commercial-ready status.',
     stop_gate: 'Do not treat starter-only register counts, workspace creation, report generation, or base validation as buyer acceptance, confidence movement, retained-artifact validation, or permission to contact buyers.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    decision: 'Expose buyer evidence hard-gate deficits, acquisition rows, remediation rows, launch action row, and production approval buyer rows through a focused buyer evidence gate report and checker.',
+    acceptance_check: 'Operators can run report:buyer-evidence-gate-readiness and check:buyer-evidence-gate-report to inspect buyer hard-gate deficits, acquisition matrix, remediation queue, launch action buyer row, and production approval buyer rows without scanning broad launch artifacts or creating buyer proof.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing buyer_evidence, hard_gate_deficits, acquisition_matrix, remediation_queue, launch_action_queue buyer_evidence row, production_approval prerequisite/request rows, focused report/check conventions, and public release-status handle validation.',
+    files_changed: buyerEvidenceGateReportFilesChanged,
+    tests_run: buyerEvidenceGateReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON buyer evidence gate evidence, while the checker asserts the ten hard-gate deficit rows, ten acquisition matrix rows, remediation queue, accepted-buyer and retained-artifact requirements, production approval rows, public/source-of-truth handles, and no-buyer-proof boundaries.',
+    reason: 'Buyer hard-gate deficits were visible inside broad launch artifacts and the raw filesystem scan, but did not have a narrow operator handle for the production approval buyer evidence blocker.',
+    proof_boundary: 'This record improves buyer evidence gate visibility only; it does not contact buyers, send outreach, create accepted evidence, move confidence, attach retained artifacts, validate 95%, create buyer proof, claim buyer acceptance, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused buyer evidence gate report, check pass, JSON output, skipped probes, public status handle, starter registers, workspace generation, or docs sync as buyer-proven evidence, Phase F 95% validation, production approval, commercial-ready status, deployment, or hosted/live parity.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
@@ -4763,6 +4808,34 @@ const safeFixRejectedVariants = [
     reason_rejected: 'Base validation only proves CSV shape and claim-boundary fields; it does not prove accepted buyer rows or retained artifacts.',
     tradeoff: 'Would simplify acquisition status but would violate the hard buyer-evidence gate.',
     evidence: 'validate:pilot-evidence --require-95 fails for starter registers until real buyer-supplied retained artifacts and accepted rows exist.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    variant: 'Leave buyer evidence hard-gate details only inside the broad launch manifest and commercial launch report.',
+    reason_rejected: 'Would keep the active buyer evidence blocker harder to inspect despite it being a production approval prerequisite and launch action queue row.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity between raw evidence scanning and approval-gate synthesis.',
+    evidence: 'The public status exposed buyer hard-gate, acquisition, and remediation handles, but they still pointed to broad launch artifacts rather than a focused gate report.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    variant: 'Duplicate buyer evidence readiness scanning in a standalone hard-gate implementation.',
+    reason_rejected: 'Duplicating CSV scanning, hard-gate parsing, and acquisition/remediation synthesis would drift from the launch manifest and buyer readiness report contracts.',
+    tradeoff: 'A standalone scanner could avoid manifest generation but would create another buyer-proof source of truth.',
+    evidence: 'report-launch-evidence-manifest already emits buyer_evidence, hard_gate_deficits, acquisition_matrix, remediation_queue, launch_action_queue, and production_approval rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    variant: 'Contact buyers, create evidence workspaces, or update pilot evidence registers from the focused report.',
+    reason_rejected: 'Buyer contact and accepted evidence creation require operator-owned real anonymized buyer inputs and retained artifacts, not a local evidence wrapper.',
+    tradeoff: 'Automatic evidence creation would look more complete but would fabricate or mutate buyer-proof state and violate the hard 95% gate.',
+    evidence: 'Buyer evidence proof boundaries require real accepted buyer-supplied rows, retained redacted artifacts, and validate:pilot-evidence --require-95 before confidence moves.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad buyer evidence handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
@@ -4935,6 +5008,15 @@ const safeFixCodeOptimizationReviews = [
     remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifact hashes, commercial signal evidence, and validate:pilot-evidence --require-95 are current.',
   },
   {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed buyer evidence gate Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated buyer scanning, buyer contact, evidence creation, confidence movement, retained artifact mutation, release execution, deploy paths, or live-service access.',
+    tests_or_checks: buyerEvidenceGateReportTestsRun,
+    remaining_risk: 'Buyer evidence remains blocked until real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, and validate:pilot-evidence --require-95 are current; source provenance, release-readiness, production approval, branch review, Supabase advisor clearance, and post-deploy live proof also remain open gates.',
+  },
+  {
     target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
     policy: 'strict',
     verdict: 'pass',
@@ -5035,6 +5117,8 @@ const manifest = {
       'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md',
       'src/lib/commercialPositioning.ts',
       'scripts/report-buyer-evidence-readiness.mjs',
+      'scripts/report-buyer-evidence-gate-readiness.mjs',
+      'scripts/check-buyer-evidence-gate-readiness-report.mjs',
       'scripts/report-production-approval-packet.mjs',
       'scripts/report-source-provenance-readiness.mjs',
       'scripts/report-supabase-advisor-readiness.mjs',

@@ -276,19 +276,19 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Buyer evidence hard-gate deficit ledger',
     status: 'external_gate',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
     evidenceBoundary: 'The buyer evidence hard-gate deficit ledger maps accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation deficits, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.',
   },
   {
     label: 'Buyer evidence acquisition matrix',
     status: 'external_gate',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
     evidenceBoundary: 'The buyer evidence acquisition matrix maps outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, distinct proof-pack, accepted confidence, reviewer, retained artifact, and 95% validation rows, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.',
   },
   {
     label: 'Buyer evidence remediation queue',
     status: 'external_gate',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
     evidenceBoundary: 'The buyer evidence remediation queue maps non-pass buyer hard-gate rows for accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation, but it does not contact buyers. It does not create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.',
   },
   {

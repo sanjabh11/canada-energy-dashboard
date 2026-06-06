@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(9);
+    expect(manifest.implementation_decisions).toHaveLength(10);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(9);
+    expect(manifest.code_optimization_reviews).toHaveLength(10);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -761,6 +761,10 @@ describe('launch evidence manifest report', () => {
       'Leave starter registers counted only as production pilot evidence registers.',
       'Ignore all starter registers during readiness scanning.',
       'Treat any base-valid register as ready acquisition evidence.',
+      'Leave buyer evidence hard-gate details only inside the broad launch manifest and commercial launch report.',
+      'Duplicate buyer evidence readiness scanning in a standalone hard-gate implementation.',
+      'Contact buyers, create evidence workspaces, or update pilot evidence registers from the focused report.',
+      'Add package scripts only and leave public status, release posture, docs, and validators on broad buyer evidence handles.',
       'Leave release preflight only inside the large launch manifest and commercial launch report.',
       'Duplicate release preflight probing logic in a new standalone implementation.',
       'Make the focused checker pass the release gate or install Corepack/Git LFS automatically.',
@@ -820,6 +824,27 @@ describe('launch evidence manifest report', () => {
     expect(starterBoundaryReview.policy).toBe('strict');
     expect(starterBoundaryReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run check:phase-f-evidence-workspace',
+    ]));
+    const buyerEvidenceGateReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    );
+    expect(buyerEvidenceGateReportDecision).toBeTruthy();
+    expect(buyerEvidenceGateReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(buyerEvidenceGateReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-buyer-evidence-gate-readiness.mjs',
+      'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+      'tests/unit/buyerEvidenceGateReadiness.test.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+    ]));
+    expect(buyerEvidenceGateReportDecision.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|move confidence|validate 95|grant production approval|hosted\/live parity/i);
+    const buyerEvidenceGateReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT',
+    );
+    expect(buyerEvidenceGateReportReview).toBeTruthy();
+    expect(buyerEvidenceGateReportReview.policy).toBe('strict');
+    expect(buyerEvidenceGateReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:buyer-evidence-gate-readiness',
+      'pnpm run check:buyer-evidence-gate-report',
     ]));
     const releasePreflightDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',

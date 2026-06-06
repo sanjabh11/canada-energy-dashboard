@@ -577,18 +577,21 @@ describe('status page release posture', () => {
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
     expect(buyerHardGateDeficitLedgerEvidence?.status).toBe('external_gate');
-    expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
     expect(buyerAcquisitionMatrixEvidence?.status).toBe('external_gate');
-    expect(buyerAcquisitionMatrixEvidence?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerAcquisitionMatrixEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerAcquisitionMatrixEvidence?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
     expect(buyerRemediationQueueEvidence?.status).toBe('external_gate');
-    expect(buyerRemediationQueueEvidence?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerRemediationQueueEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerRemediationQueueEvidence?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not create accepted evidence, move confidence/i);
@@ -693,6 +696,7 @@ describe('status page release posture', () => {
       'pnpm run check:post-deploy-live',
       'pnpm run report:commercial-launch-readiness',
       'pnpm run report:buyer-evidence-readiness',
+      'pnpm run report:buyer-evidence-gate-readiness',
     ]);
     expect(itemIds).toEqual([
       'deployed_artifact_live_parity',
@@ -909,18 +913,22 @@ describe('status page release posture', () => {
     expect(buyerGate?.status).toBe('external_gate');
     expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
     expect(buyerHardGateDeficitLedgerGate?.status).toBe('external_gate');
-    expect(buyerHardGateDeficitLedgerGate?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerHardGateDeficitLedgerGate?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerHardGateDeficitLedgerGate?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/prove commercial readiness/i);
     expect(buyerHardGateDeficitLedgerGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
     expect(buyerAcquisitionMatrixGate?.status).toBe('external_gate');
+    expect(buyerAcquisitionMatrixGate?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerAcquisitionMatrixGate?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
     expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerAcquisitionMatrixGate?.nextAction).toMatch(/missing buyer-supplied rows/i);
     expect(buyerRemediationQueueGate?.status).toBe('external_gate');
-    expect(buyerRemediationQueueGate?.command).toContain('report:buyer-evidence-readiness');
+    expect(buyerRemediationQueueGate?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerRemediationQueueGate?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerRemediationQueueGate?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
     expect(buyerRemediationQueueGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerRemediationQueueGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);

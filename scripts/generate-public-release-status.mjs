@@ -16,6 +16,7 @@ const requiredRefreshCommands = [
   'pnpm run check:post-deploy-live',
   'pnpm run report:commercial-launch-readiness',
   'pnpm run report:buyer-evidence-readiness',
+  'pnpm run report:buyer-evidence-gate-readiness',
 ];
 const requiredItemContracts = [
   {
@@ -190,19 +191,19 @@ const requiredItemContracts = [
     id: 'buyer_evidence_hard_gate_deficit_ledger',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
   },
   {
     id: 'buyer_evidence_acquisition_matrix',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
   },
   {
     id: 'buyer_evidence_remediation_queue',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
-    command: 'pnpm run report:buyer-evidence-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
   },
   {
     id: 'supabase_advisor_access',

@@ -133,6 +133,9 @@ const publicStatusFocusedSourceProvenanceHandlePhrase = /focused source provenan
 const focusedSupabaseAdvisorReportPhrase = /report:supabase-advisor-readiness[\s\S]{0,320}focused Supabase advisor report|focused Supabase advisor report[\s\S]{0,320}report:supabase-advisor-readiness/i;
 const focusedSupabaseAdvisorCheckerPhrase = /check:supabase-advisor-report[\s\S]{0,460}(?:validates|connector authorization|Security Advisor|Performance Advisor|does not.*production approval)/i;
 const publicStatusFocusedSupabaseAdvisorHandlePhrase = /focused Supabase advisor report\/check[\s\S]{0,320}public-safe handles|public release status[\s\S]{0,380}focused Supabase advisor report/i;
+const focusedBuyerEvidenceGateReportPhrase = /report:buyer-evidence-gate-readiness[\s\S]{0,340}focused buyer evidence hard-gate report|focused buyer evidence hard-gate report[\s\S]{0,340}report:buyer-evidence-gate-readiness/i;
+const focusedBuyerEvidenceGateCheckerPhrase = /check:buyer-evidence-gate-report[\s\S]{0,520}(?:validates|hard-gate deficit ledger|acquisition matrix|remediation queue|does not.*production approval)/i;
+const publicStatusFocusedBuyerEvidenceGateHandlePhrase = /focused buyer evidence gate report\/check[\s\S]{0,340}public-safe handles|public release status[\s\S]{0,420}focused buyer evidence gate report/i;
 const publicStatusReleasePreflightClearanceHandlePhrase = /release preflight clearance matrix[\s\S]{0,220}public-safe handles|public release status[\s\S]{0,260}release preflight clearance matrix/i;
 const publicStatusBranchFamilyFreshnessHandlePhrase = /branch-family freshness rollup[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}branch-family freshness rollup/i;
 const publicStatusTopBranchPacketHandlePhrase = /top branch review packet[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}top branch review packet/i;
@@ -154,6 +157,8 @@ const staleCurrentStatePhrases = [
 ];
 const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_GAP_ROADMAP_2026-05-31.md');
 const buyerEvidenceReadinessReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-readiness.mjs');
+const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-gate-readiness.mjs');
+const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
 const strategyRoadmapWhitespacePhrases = [
   'Incumbent Foreclosure Matrix',
   'Do not compete on enterprise bill management',
@@ -518,6 +523,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:supabase-advisor-report wired to the focused Supabase advisor report checker.');
   }
 
+  if (packageScripts['report:buyer-evidence-gate-readiness'] !== 'node scripts/report-buyer-evidence-gate-readiness.mjs') {
+    failures.push('package.json must keep report:buyer-evidence-gate-readiness wired to the focused buyer evidence gate report.');
+  }
+
+  if (packageScripts['check:buyer-evidence-gate-report'] !== 'node scripts/check-buyer-evidence-gate-readiness-report.mjs') {
+    failures.push('package.json must keep check:buyer-evidence-gate-report wired to the focused buyer evidence gate report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -538,6 +551,14 @@ if (!existsSync(sourceDocPath)) {
     if (!outreachRowAppenderPhrase.test(buyerEvidenceReadinessReport)) {
       failures.push('scripts/report-buyer-evidence-readiness.mjs must point real outreach rows through append:outreach-response-log-row.');
     }
+  }
+
+  if (!existsSync(buyerEvidenceGateReportPath)) {
+    failures.push('scripts/report-buyer-evidence-gate-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(buyerEvidenceGateCheckPath)) {
+    failures.push('scripts/check-buyer-evidence-gate-readiness-report.mjs is missing.');
   }
 
   if (packageScripts['update:pilot-evidence-register-row'] !== 'node scripts/update-pilot-evidence-register-row.mjs') {
@@ -622,6 +643,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedSupabaseAdvisorHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused Supabase advisor report/check as public-safe handles.');
+  }
+
+  if (!focusedBuyerEvidenceGateReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:buyer-evidence-gate-readiness as the focused buyer evidence hard-gate report.');
+  }
+
+  if (!focusedBuyerEvidenceGateCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:buyer-evidence-gate-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedBuyerEvidenceGateHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused buyer evidence gate report/check as public-safe handles.');
   }
 
   if (!pilotEvidenceRegisterUpdaterPhrase.test(sourceDoc)) {

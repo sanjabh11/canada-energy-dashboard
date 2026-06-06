@@ -1973,6 +1973,33 @@ try {
         && buyerStarterReview.tests_or_checks.some((check) => /check:phase-f-evidence-workspace/.test(check)),
       'Buyer evidence starter-register code optimization review must record the Phase F workspace proof.',
     );
+    const buyerEvidenceGateReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT');
+    assert(buyerEvidenceGateReportDecision, 'Manifest must record the buyer evidence gate focused report implementation decision.');
+    assert(
+      buyerEvidenceGateReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Buyer evidence gate focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(buyerEvidenceGateReportDecision?.files_changed)
+        && buyerEvidenceGateReportDecision.files_changed.includes('scripts/report-buyer-evidence-gate-readiness.mjs')
+        && buyerEvidenceGateReportDecision.files_changed.includes('scripts/check-buyer-evidence-gate-readiness-report.mjs')
+        && buyerEvidenceGateReportDecision.files_changed.includes('tests/unit/buyerEvidenceGateReadiness.test.ts'),
+      'Buyer evidence gate focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not contact buyers|create accepted evidence|move confidence|validate 95|grant production approval|hosted\/live parity/i.test(buyerEvidenceGateReportDecision?.proof_boundary ?? ''),
+      'Buyer evidence gate focused report decision must preserve no-contact, no-evidence, no-approval, and no-live-parity boundaries.',
+    );
+    const buyerEvidenceGateReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT');
+    assert(buyerEvidenceGateReportReview, 'Manifest must record the buyer evidence gate focused report code optimization review.');
+    assert(buyerEvidenceGateReportReview?.policy === 'strict', 'Buyer evidence gate focused report code optimization review must use strict policy.');
+    assert(buyerEvidenceGateReportReview?.verdict === 'pass', 'Buyer evidence gate focused report code optimization review must pass.');
+    assert(
+      Array.isArray(buyerEvidenceGateReportReview?.tests_or_checks)
+        && buyerEvidenceGateReportReview.tests_or_checks.some((check) => /report:buyer-evidence-gate-readiness/.test(check))
+        && buyerEvidenceGateReportReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report/.test(check)),
+      'Buyer evidence gate focused report code optimization review must record focused buyer gate report and checker proof.',
+    );
     const releasePreflightDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT');
     assert(releasePreflightDecision, 'Manifest must record the release preflight focused report implementation decision.');
     assert(
