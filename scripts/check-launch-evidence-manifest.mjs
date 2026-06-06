@@ -2191,6 +2191,33 @@ try {
         && productionPacketSequencingReview.tests_or_checks.some((check) => /report:production-approval-packet/.test(check)),
       'Production approval packet sequencing code optimization review must record focused packet test and report proof.',
     );
+    const productionApprovalReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT');
+    assert(productionApprovalReportDecision, 'Manifest must record the production approval focused report implementation decision.');
+    assert(
+      productionApprovalReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Production approval focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(productionApprovalReportDecision?.files_changed)
+        && productionApprovalReportDecision.files_changed.includes('scripts/report-production-approval-readiness.mjs')
+        && productionApprovalReportDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && productionApprovalReportDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts'),
+      'Production approval focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not grant owner approval|request approval|clear source provenance|run release-readiness successfully|deploy|post-deploy live proof/i.test(productionApprovalReportDecision?.proof_boundary ?? ''),
+      'Production approval focused report decision must preserve no-approval, no-source-clearance, no-deploy, and no-live-proof boundaries.',
+    );
+    const productionApprovalReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT');
+    assert(productionApprovalReportReview, 'Manifest must record the production approval focused report code optimization review.');
+    assert(productionApprovalReportReview?.policy === 'strict', 'Production approval focused report code optimization review must use strict policy.');
+    assert(productionApprovalReportReview?.verdict === 'pass', 'Production approval focused report code optimization review must pass.');
+    assert(
+      Array.isArray(productionApprovalReportReview?.tests_or_checks)
+        && productionApprovalReportReview.tests_or_checks.some((check) => /report:production-approval-readiness/.test(check))
+        && productionApprovalReportReview.tests_or_checks.some((check) => /check:production-approval-report/.test(check)),
+      'Production approval focused report code optimization review must record focused production approval report and checker proof.',
+    );
     const postDeployLiveProofReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT');
     assert(postDeployLiveProofReportDecision, 'Manifest must record the post-deploy live proof focused report implementation decision.');
     assert(

@@ -125,13 +125,13 @@ const requiredItemContracts = [
     id: 'production_approval_prerequisite_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:production-approval-readiness && pnpm run check:production-approval-report',
   },
   {
     id: 'production_approval_request_packet',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest && pnpm run check:production-deploy-request',
+    command: 'pnpm run report:production-approval-readiness && pnpm run check:production-approval-report && pnpm run check:production-deploy-request',
   },
   {
     id: 'post_deploy_live_proof_gate_queue',

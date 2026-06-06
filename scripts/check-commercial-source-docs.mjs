@@ -139,6 +139,9 @@ const publicStatusFocusedBuyerEvidenceGateHandlePhrase = /focused buyer evidence
 const focusedBranchReviewReportPhrase = /report:branch-review-readiness[\s\S]{0,420}focused branch review report|focused branch review report[\s\S]{0,420}report:branch-review-readiness/i;
 const focusedBranchReviewCheckerPhrase = /check:branch-review-report[\s\S]{0,620}(?:validates|review queue|canonical-head|clearance matrix|does not.*production approval)/i;
 const publicStatusFocusedBranchReviewHandlePhrase = /focused branch review report\/check[\s\S]{0,420}public-safe handles|public release status[\s\S]{0,520}focused branch review report/i;
+const focusedProductionApprovalReportPhrase = /report:production-approval-readiness[\s\S]{0,460}focused production approval report|focused production approval report[\s\S]{0,460}report:production-approval-readiness/i;
+const focusedProductionApprovalCheckerPhrase = /check:production-approval-report[\s\S]{0,620}(?:validates|prerequisite queue|request packet|does not.*production approval)/i;
+const publicStatusFocusedProductionApprovalHandlePhrase = /focused production approval report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused production approval report/i;
 const focusedPostDeployLiveProofReportPhrase = /report:post-deploy-live-proof-readiness[\s\S]{0,460}focused post-deploy live-proof report|focused post-deploy live-proof report[\s\S]{0,460}report:post-deploy-live-proof-readiness/i;
 const focusedPostDeployLiveProofCheckerPhrase = /check:post-deploy-live-proof-report[\s\S]{0,620}(?:validates|gate queue|live public metadata|static dist parity|does not.*production approval)/i;
 const publicStatusFocusedPostDeployLiveProofHandlePhrase = /focused post-deploy live proof report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused post-deploy live-proof report/i;
@@ -167,6 +170,8 @@ const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-ev
 const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
 const branchReviewReportPath = path.join(repoRoot, 'scripts/report-branch-review-readiness.mjs');
 const branchReviewCheckPath = path.join(repoRoot, 'scripts/check-branch-review-readiness-report.mjs');
+const productionApprovalReportPath = path.join(repoRoot, 'scripts/report-production-approval-readiness.mjs');
+const productionApprovalCheckPath = path.join(repoRoot, 'scripts/check-production-approval-readiness-report.mjs');
 const postDeployLiveProofReportPath = path.join(repoRoot, 'scripts/report-post-deploy-live-proof-readiness.mjs');
 const postDeployLiveProofCheckPath = path.join(repoRoot, 'scripts/check-post-deploy-live-proof-readiness-report.mjs');
 const strategyRoadmapWhitespacePhrases = [
@@ -549,6 +554,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:branch-review-report wired to the focused branch review report checker.');
   }
 
+  if (packageScripts['report:production-approval-readiness'] !== 'node scripts/report-production-approval-readiness.mjs') {
+    failures.push('package.json must keep report:production-approval-readiness wired to the focused production approval report.');
+  }
+
+  if (packageScripts['check:production-approval-report'] !== 'node scripts/check-production-approval-readiness-report.mjs') {
+    failures.push('package.json must keep check:production-approval-report wired to the focused production approval report checker.');
+  }
+
   if (packageScripts['report:post-deploy-live-proof-readiness'] !== 'node scripts/report-post-deploy-live-proof-readiness.mjs') {
     failures.push('package.json must keep report:post-deploy-live-proof-readiness wired to the focused post-deploy live proof report.');
   }
@@ -593,6 +606,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!existsSync(branchReviewCheckPath)) {
     failures.push('scripts/check-branch-review-readiness-report.mjs is missing.');
+  }
+
+  if (!existsSync(productionApprovalReportPath)) {
+    failures.push('scripts/report-production-approval-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(productionApprovalCheckPath)) {
+    failures.push('scripts/check-production-approval-readiness-report.mjs is missing.');
   }
 
   if (!existsSync(postDeployLiveProofReportPath)) {
@@ -709,6 +730,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedBranchReviewHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused branch review report/check as public-safe handles.');
+  }
+
+  if (!focusedProductionApprovalReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:production-approval-readiness as the focused production approval report.');
+  }
+
+  if (!focusedProductionApprovalCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:production-approval-report and preserve its no-approval/checker boundary.');
+  }
+
+  if (!publicStatusFocusedProductionApprovalHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused production approval report/check as public-safe handles.');
   }
 
   if (!focusedPostDeployLiveProofReportPhrase.test(sourceDoc)) {

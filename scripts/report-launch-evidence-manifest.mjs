@@ -4482,6 +4482,24 @@ const productionApprovalPacketSequencingFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const productionApprovalReportFilesChanged = [
+  'package.json',
+  'scripts/report-production-approval-readiness.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const postDeployLiveProofReportFilesChanged = [
   'package.json',
   'scripts/report-post-deploy-live-proof-readiness.mjs',
@@ -4511,6 +4529,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...productionApprovalPacketSequencingFilesChanged,
+  ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
 ]));
 
@@ -4627,6 +4646,18 @@ const productionApprovalPacketSequencingTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const productionApprovalReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/productionApprovalReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:production-approval-readiness',
+  'pnpm run report:production-approval-readiness -- --skip-probes',
+  'pnpm run check:production-approval-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const postDeployLiveProofReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/postDeployLiveProofReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -4650,6 +4681,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
   ...productionApprovalPacketSequencingTestsRun,
+  ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
 ]));
 
@@ -4831,6 +4863,19 @@ const safeFixImplementationDecisions = [
     reason: 'Running static parity after Corepack release-readiness fails creates noisy evidence: the missing dist failure is downstream of the toolchain/build blocker and should not be treated as an independent live parity result.',
     proof_boundary: 'This record improves production approval packet sequencing only; it does not install Corepack, run release-readiness successfully, build dist, clear source provenance, approve production, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat skipped static parity, production approval packet generation, direct pnpm report execution, or focused unit tests as release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    decision: 'Expose the manifest production approval prerequisite queue and request packet through a focused production approval readiness report and checker.',
+    acceptance_check: 'Operators can run report:production-approval-readiness and check:production-approval-report to inspect prerequisite rows, request phases, package-script handles, launch action rows, release preflight owner-approval rows, and no-approval boundaries without broad-report scanning or requesting approval.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing production_approval.prerequisite_queue, production_approval.request_packet, launch_action_queue production_approval row, release_preflight Explicit owner production approval row, focused report/check conventions, and public release-status handle validation.',
+    files_changed: productionApprovalReportFilesChanged,
+    tests_run: productionApprovalReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON production approval readiness evidence, while the checker asserts prerequisite ordering, request phases, launch action rows, release preflight owner-approval rows, package-script handles, public/source-of-truth handles, and no-approval/no-deploy boundaries.',
+    reason: 'Production approval prerequisites and request-packet rows were visible inside broad launch artifacts and the production approval packet, but did not have a narrow operator handle for deciding whether an approval request is structurally ready.',
+    proof_boundary: 'This record improves production approval evidence visibility only; it does not grant owner approval, request approval, clear source provenance, run release-readiness successfully, clear branch review, authorize Supabase advisors, create buyer evidence, deploy, prove post-deploy live proof, or raise launch status.',
+    stop_gate: 'Do not treat the focused production approval readiness report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, owner production approval, deployment, post-deploy live proof, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
@@ -5129,6 +5174,34 @@ const safeFixRejectedVariants = [
     evidence: 'The packet currently reports live metadata parity independently while keeping deployment request readiness blocked by source, request-packet, and release-readiness gates.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    variant: 'Leave production approval readiness only inside the broad launch manifest, commercial launch report, and production approval packet.',
+    reason_rejected: 'Would keep the active approval-request blocker harder to inspect despite it being the manual stop before any deploy or post-deploy live proof.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity around prerequisite rows, request phases, owner-decision rows, and post-deploy boundaries.',
+    evidence: 'The manifest already emits production_approval.prerequisite_queue and production_approval.request_packet, but package scripts and public handles did not expose a focused production approval readiness report/check.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    variant: 'Duplicate production approval prerequisite and request-packet construction in a standalone implementation.',
+    reason_rejected: 'Duplicating approval queue construction would drift from the launch manifest, production approval packet, and release preflight contracts.',
+    tradeoff: 'Standalone parsing could avoid manifest generation but would create another launch-critical source of truth for manual approval semantics.',
+    evidence: 'report-launch-evidence-manifest already emits the prerequisite queue, request packet, package-script proof commands, launch action row, and release preflight owner-approval row.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    variant: 'Run deploy-production.sh, request owner approval, or run live proof checks from the focused report.',
+    reason_rejected: 'Deploy, approval request, and live checks require clean source provenance, current release gates, explicit owner approval, and post-deploy context; a readiness report must not mutate production or create approval proof.',
+    tradeoff: 'Direct execution could produce fresher evidence, but it would violate the safe-fix lane, manual approval boundary, and current dirty-source/toolchain blockers.',
+    evidence: 'The production approval queue keeps source provenance, release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, and post-deploy proof as blocked or manual-stop rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad production approval handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
     variant: 'Leave post-deploy proof only inside the broad launch manifest and commercial launch report.',
     reason_rejected: 'Would keep the hosted/live parity blocker harder to inspect despite it being the final post-approval gate for current-source live proof.',
@@ -5278,6 +5351,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing local release-readiness step status to skip static parity only when the build prerequisite is skipped or failed, with no new dependency, no fallback package manager, no deploy path, and no live-check relaxation beyond the dependent static-dist comparison.',
     tests_or_checks: productionApprovalPacketSequencingTestsRun,
     remaining_risk: 'Production approval remains blocked until clean source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed production approval readiness Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated approval queue construction, approval request execution, deploy execution, browser smoke execution, or live-parity relaxation.',
+    tests_or_checks: productionApprovalReportTestsRun,
+    remaining_risk: 'Production approval remains blocked until clean source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',

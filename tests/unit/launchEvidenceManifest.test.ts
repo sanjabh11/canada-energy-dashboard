@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(13);
+    expect(manifest.implementation_decisions).toHaveLength(14);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(13);
+    expect(manifest.code_optimization_reviews).toHaveLength(14);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -789,6 +789,10 @@ describe('launch evidence manifest report', () => {
       'Keep running live static parity even when local release-readiness fails.',
       'Fall back to bare pnpm or build dist directly when Corepack is unavailable.',
       'Skip every live check when any pre-deploy gate is blocked.',
+      'Leave production approval readiness only inside the broad launch manifest, commercial launch report, and production approval packet.',
+      'Duplicate production approval prerequisite and request-packet construction in a standalone implementation.',
+      'Run deploy-production.sh, request owner approval, or run live proof checks from the focused report.',
+      'Add package scripts only and leave public status, release posture, docs, and validators on broad production approval handles.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -1006,6 +1010,26 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:production-approval-packet',
       'pnpm run report:production-approval-packet -- --skip-release-readiness',
+    ]));
+    const productionApprovalReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    );
+    expect(productionApprovalReportDecision).toBeTruthy();
+    expect(productionApprovalReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(productionApprovalReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-production-approval-readiness.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'tests/unit/productionApprovalReadiness.test.ts',
+    ]));
+    expect(productionApprovalReportDecision.proof_boundary).toMatch(/does not grant owner approval|request approval|clear source provenance|run release-readiness successfully|deploy|post-deploy live proof/i);
+    const productionApprovalReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT',
+    );
+    expect(productionApprovalReportReview).toBeTruthy();
+    expect(productionApprovalReportReview.policy).toBe('strict');
+    expect(productionApprovalReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:production-approval-readiness',
+      'pnpm run check:production-approval-report',
     ]));
     const postDeployLiveProofReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-FOCUSED-REPORT',
