@@ -121,6 +121,9 @@ const publicStatusAdversarialReviewLedgerHandlePhrase = /adversarial review ledg
 const publicStatusFixReportBlockerMapHandlePhrase = /fix report blocker map[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}fix report blocker map/i;
 const publicStatusProgressDigestHandlePhrase = /progress update digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}progress update digest/i;
 const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}bottleneck log digest/i;
+const focusedLaunchActionReportPhrase = /report:launch-action-readiness[\s\S]{0,460}focused launch action report|focused launch action report[\s\S]{0,460}report:launch-action-readiness/i;
+const focusedLaunchActionCheckerPhrase = /check:launch-action-report[\s\S]{0,620}(?:validates|launch blocker action queue|lane status summary|does not.*launch readiness)/i;
+const publicStatusFocusedLaunchActionHandlePhrase = /focused launch action report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused launch action report/i;
 const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
@@ -168,6 +171,8 @@ const strategyRoadmapPath = path.join(repoRoot, 'docs/CEIP_STRATEGY_95_FEATURE_G
 const buyerEvidenceReadinessReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-readiness.mjs');
 const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-evidence-gate-readiness.mjs');
 const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
+const launchActionReportPath = path.join(repoRoot, 'scripts/report-launch-action-readiness.mjs');
+const launchActionCheckPath = path.join(repoRoot, 'scripts/check-launch-action-readiness-report.mjs');
 const branchReviewReportPath = path.join(repoRoot, 'scripts/report-branch-review-readiness.mjs');
 const branchReviewCheckPath = path.join(repoRoot, 'scripts/check-branch-review-readiness-report.mjs');
 const productionApprovalReportPath = path.join(repoRoot, 'scripts/report-production-approval-readiness.mjs');
@@ -546,6 +551,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:buyer-evidence-gate-report wired to the focused buyer evidence gate report checker.');
   }
 
+  if (packageScripts['report:launch-action-readiness'] !== 'node scripts/report-launch-action-readiness.mjs') {
+    failures.push('package.json must keep report:launch-action-readiness wired to the focused launch action report.');
+  }
+
+  if (packageScripts['check:launch-action-report'] !== 'node scripts/check-launch-action-readiness-report.mjs') {
+    failures.push('package.json must keep check:launch-action-report wired to the focused launch action report checker.');
+  }
+
   if (packageScripts['report:branch-review-readiness'] !== 'node scripts/report-branch-review-readiness.mjs') {
     failures.push('package.json must keep report:branch-review-readiness wired to the focused branch review report.');
   }
@@ -598,6 +611,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!existsSync(buyerEvidenceGateCheckPath)) {
     failures.push('scripts/check-buyer-evidence-gate-readiness-report.mjs is missing.');
+  }
+
+  if (!existsSync(launchActionReportPath)) {
+    failures.push('scripts/report-launch-action-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(launchActionCheckPath)) {
+    failures.push('scripts/check-launch-action-readiness-report.mjs is missing.');
   }
 
   if (!existsSync(branchReviewReportPath)) {
@@ -806,6 +827,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusBottleneckDigestHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the bottleneck log digest as a public-safe predeploy evidence handle.');
+  }
+
+  if (!focusedLaunchActionReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:launch-action-readiness as the focused launch action report.');
+  }
+
+  if (!focusedLaunchActionCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:launch-action-report and preserve its no-launch-readiness checker boundary.');
+  }
+
+  if (!publicStatusFocusedLaunchActionHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused launch action report/check as public-safe handles.');
   }
 
   if (!publicStatusRequestPacketHandlePhrase.test(sourceDoc)) {

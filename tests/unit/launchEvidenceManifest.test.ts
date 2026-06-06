@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(14);
+    expect(manifest.implementation_decisions).toHaveLength(15);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(14);
+    expect(manifest.code_optimization_reviews).toHaveLength(15);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -786,6 +786,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
       'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad branch handles.',
+      'Leave launch action planning only inside the broad launch manifest and commercial launch report.',
+      'Duplicate launch action queue construction in a standalone implementation.',
+      'Commit source changes, run release-readiness, checkout branches, contact buyers, authorize Supabase, request approval, or deploy from the focused report.',
+      'Add package scripts only and leave public status, release posture, docs, and validators on broad launch action handles.',
       'Keep running live static parity even when local release-readiness fails.',
       'Fall back to bare pnpm or build dist directly when Corepack is unavailable.',
       'Skip every live check when any pre-deploy gate is blocked.',
@@ -988,6 +992,26 @@ describe('launch evidence manifest report', () => {
     expect(branchReviewReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
+    ]));
+    const launchActionReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    );
+    expect(launchActionReportDecision).toBeTruthy();
+    expect(launchActionReportDecision.chosen_variant).toBe('minimal focused manifest wrapper and public handle alignment');
+    expect(launchActionReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-action-readiness.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'tests/unit/launchActionReadiness.test.ts',
+    ]));
+    expect(launchActionReportDecision.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i);
+    const launchActionReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    );
+    expect(launchActionReportReview).toBeTruthy();
+    expect(launchActionReportReview.policy).toBe('strict');
+    expect(launchActionReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:launch-action-readiness',
+      'pnpm run check:launch-action-report',
     ]));
     const productionPacketSequencingDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',

@@ -163,6 +163,8 @@ corepack pnpm run report:production-approval-packet
 corepack pnpm --silent run report:launch-evidence-manifest -- --output /tmp/ceip-launch-evidence.json
 python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py /tmp/ceip-launch-evidence.json --require-repo-exists
 corepack pnpm run report:commercial-launch-readiness -- --output /tmp/ceip-commercial-launch-readiness.md
+corepack pnpm run report:launch-action-readiness
+corepack pnpm run check:launch-action-report
 corepack pnpm run report:production-approval-readiness
 corepack pnpm run check:production-approval-report
 corepack pnpm run report:source-provenance-readiness
@@ -189,6 +191,8 @@ pnpm run check:post-deploy-live
 `check:post-deploy-live` runs live metadata checks, exact static parity against the already-built and deployed `dist` files, and hosted proof-pack route smoke for `/utility-demand-forecast`, `/forecast-benchmarking`, `/regulatory-filing`, `/pilot-readiness`, `/ga-ici-5cp`, and `/byo-csv-proof`. Build `dist` first with `pnpm run build:prod` or the full release-readiness/deploy script; the post-deploy gate does not rebuild because rebuilding can produce different hashed entry chunks than the artifact that was just deployed.
 
 `report:post-deploy-live-proof-readiness` renders a focused post-deploy live-proof report from the launch evidence manifest, and `check:post-deploy-live-proof-report` validates the post-deploy gate queue, production approval live prerequisite, production approval request live row, package-script handles, live public metadata row, live static `dist` parity row, hosted proof-pack smoke row, explicit approval phrase boundary, and no-approval/no-live-parity boundary. These focused commands do not grant owner approval, deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or replace `check:post-deploy-live`. The public release status exposes the focused post-deploy live proof report/check as public-safe handles for the post-deploy live proof gate queue; those handles sequence post-approval proof only and do not prove current hosted/live parity or production approval.
+
+`report:launch-action-readiness` renders a focused launch action report from the launch evidence manifest, and `check:launch-action-report` validates the launch blocker action queue, first open action, lane status summary, focused command handles, and no-execution/no-launch-readiness boundaries. These focused commands do not commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, prove hosted/live parity, prove launch evidence validation, or create launch readiness. The public release status exposes the focused launch action report/check as public-safe handles for the launch blocker action queue; those handles organize the step-by-step execution plan only, and they do not clear blockers or grant production approval.
 
 `check:client-env-safety` rejects client-exposed `VITE_*` key names that look privileged, including service-role, secret, private, password, database URL, JWT, signing, webhook, admin, root, or master credentials. Supabase's frontend-safe key remains the anon or publishable key with RLS; service-role keys must stay backend-only because they bypass RLS. The guard reports only key names and source surfaces, never values.
 

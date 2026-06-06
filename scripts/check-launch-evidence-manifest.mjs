@@ -2165,6 +2165,33 @@ try {
         && branchReviewReportReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check)),
       'Branch review focused report code optimization review must record focused branch review report and checker proof.',
     );
+    const launchActionReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT');
+    assert(launchActionReportDecision, 'Manifest must record the launch action focused report implementation decision.');
+    assert(
+      launchActionReportDecision?.chosen_variant === 'minimal focused manifest wrapper and public handle alignment',
+      'Launch action focused report decision must record the chosen minimal wrapper and public-handle variant.',
+    );
+    assert(
+      Array.isArray(launchActionReportDecision?.files_changed)
+        && launchActionReportDecision.files_changed.includes('scripts/report-launch-action-readiness.mjs')
+        && launchActionReportDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionReportDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts'),
+      'Launch action focused report decision must record the focused report scripts and unit test file.',
+    );
+    assert(
+      /does not commit|clear source provenance|run release-readiness|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i.test(launchActionReportDecision?.proof_boundary ?? ''),
+      'Launch action focused report decision must preserve no-mutation, no-external-action, no-deploy, and no-readiness boundaries.',
+    );
+    const launchActionReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT');
+    assert(launchActionReportReview, 'Manifest must record the launch action focused report code optimization review.');
+    assert(launchActionReportReview?.policy === 'strict', 'Launch action focused report code optimization review must use strict policy.');
+    assert(launchActionReportReview?.verdict === 'pass', 'Launch action focused report code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionReportReview?.tests_or_checks)
+        && launchActionReportReview.tests_or_checks.some((check) => /report:launch-action-readiness/.test(check))
+        && launchActionReportReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check)),
+      'Launch action focused report code optimization review must record focused launch action report and checker proof.',
+    );
     const productionPacketSequencingDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING');
     assert(productionPacketSequencingDecision, 'Manifest must record the production approval packet sequencing implementation decision.');
     assert(

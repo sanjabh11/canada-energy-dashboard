@@ -119,7 +119,7 @@ const requiredItemContracts = [
     id: 'launch_blocker_action_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:launch-action-readiness && pnpm run check:launch-action-report',
   },
   {
     id: 'production_approval_prerequisite_queue',

@@ -4473,6 +4473,24 @@ const branchReviewReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchActionReportFilesChanged = [
+  'package.json',
+  'scripts/report-launch-action-readiness.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/check-commercial-source-docs.mjs',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const productionApprovalPacketSequencingFilesChanged = [
   'scripts/report-production-approval-packet.mjs',
   'scripts/report-launch-evidence-manifest.mjs',
@@ -4528,6 +4546,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceReportFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
+  ...launchActionReportFilesChanged,
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
@@ -4637,6 +4656,18 @@ const branchReviewReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchActionReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchActionReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-action-readiness',
+  'pnpm run report:launch-action-readiness -- --skip-probes',
+  'pnpm run check:launch-action-report',
+  'pnpm run check:commercial-source',
+  'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const productionApprovalPacketSequencingTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -4680,6 +4711,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceReportTestsRun,
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
+  ...launchActionReportTestsRun,
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
@@ -4850,6 +4882,19 @@ const safeFixImplementationDecisions = [
     reason: 'Branch review was visible inside the broad manifest and commercial launch report, but the active launch blocker needed a narrow operator handle for review-first and canonical-head execution without mutating branches.',
     proof_boundary: 'This record improves branch-review evidence visibility only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, clear branch review, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused branch review report, check pass, JSON output, skipped probes, public status handle, review queue, canonical-head ledger, clearance matrix, or focused packet as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    decision: 'Expose the manifest launch blocker action queue through a focused launch action readiness report and checker.',
+    acceptance_check: 'Operators can run report:launch-action-readiness and check:launch-action-report to inspect the eight-step launch blocker queue, first open action, lane status summary, focused command handles, and no-execution boundaries without scanning broad launch artifacts or clearing any gate.',
+    chosen_variant: 'minimal focused manifest wrapper and public handle alignment',
+    repo_pattern_reused: 'Existing launch_action_queue rows, proof types, stop gates, focused report/check conventions, public release-status handle validation, and commercial source-of-truth command checks.',
+    files_changed: launchActionReportFilesChanged,
+    tests_run: launchActionReportTestsRun,
+    proof: 'The wrapper consumes the existing launch evidence manifest and renders Markdown/JSON launch action evidence, while the checker asserts the stable eight-phase queue, first open action, lane status summary, public/source-of-truth handles, focused command handles, and no-execution/no-readiness boundaries.',
+    reason: 'The top-level launch blocker action queue was present inside broad launch artifacts, but did not have a narrow operator handle for phase-wise execution planning across source, release, branch, Supabase, buyer, approval, and post-deploy lanes.',
+    proof_boundary: 'This record improves launch action queue visibility only; it does not commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, prove launch evidence validation, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused launch action readiness report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, branch clearance, Supabase advisor clearance, buyer acceptance, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
@@ -5153,6 +5198,34 @@ const safeFixRejectedVariants = [
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    variant: 'Leave launch action planning only inside the broad launch manifest and commercial launch report.',
+    reason_rejected: 'Would keep the phase-wise execution queue harder to inspect even though every remaining launch gate depends on that sequence.',
+    tradeoff: 'No-code defer avoids a wrapper but preserves operator ambiguity around the first open action, lane sequencing, focused proof commands, and stop gates.',
+    evidence: 'The manifest already emits launch_action_queue, but package scripts and public handles did not expose a focused launch action report/check.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    variant: 'Duplicate launch action queue construction in a standalone implementation.',
+    reason_rejected: 'Duplicating queue construction would drift from the launch manifest, production approval prerequisites, release preflight, branch review, buyer evidence, Supabase advisor, and post-deploy contracts.',
+    tradeoff: 'Standalone parsing could avoid manifest generation but would create another launch-critical source of truth for execution sequencing.',
+    evidence: 'report-launch-evidence-manifest already emits the eight launch action rows, proof commands, proof boundaries, stop gates, and top blocked action evidence.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    variant: 'Commit source changes, run release-readiness, checkout branches, contact buyers, authorize Supabase, request approval, or deploy from the focused report.',
+    reason_rejected: 'Those actions require explicit owner intent, clean source provenance, external accounts, buyer activity, production approval, or post-deploy context; a readiness report must not execute them.',
+    tradeoff: 'Direct execution could move blockers faster, but it would violate safe-fix boundaries and blur proof buckets.',
+    evidence: 'The launch action queue rows explicitly stop before source mutation, branch mutation, buyer contact, Supabase authorization, owner approval, deploy, and hosted/live parity claims.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    variant: 'Add package scripts only and leave public status, release posture, docs, and validators on broad launch action handles.',
+    reason_rejected: 'Operators would still discover stale broad commands from public and source-of-truth surfaces.',
+    tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
+    evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
     variant: 'Keep running live static parity even when local release-readiness fails.',
     reason_rejected: 'This preserves a noisy secondary failure where missing dist is caused by an already-failed build/toolchain prerequisite rather than by an independently verified hosted-static mismatch.',
@@ -5342,6 +5415,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed branch review Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated branch scanning, branch checkout, merge, push, discard, delete, canonical-head selection, migration, deploy paths, or live-service access.',
     tests_or_checks: branchReviewReportTestsRun,
     remaining_risk: 'Branch review remains blocked until focused branch packets, canonical-head owner decisions, drift review for stale or aging refs, clean release gates, and explicit owner approvals are current; source provenance, release-readiness, production approval, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds a thin manifest-backed launch action Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated queue construction, source mutation, branch mutation, buyer contact, external account access, approval request execution, deploy execution, or live-parity relaxation.',
+    tests_or_checks: launchActionReportTestsRun,
+    remaining_risk: 'Launch action execution remains blocked until source provenance, launch evidence validation, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',

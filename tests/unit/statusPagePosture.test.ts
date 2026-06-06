@@ -559,8 +559,8 @@ describe('status page release posture', () => {
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/mutate Supabase/i);
     expect(launchQueueEvidence?.status).toBe('external_gate');
-    expect(launchQueueEvidence?.command).toContain('report:commercial-launch-readiness');
-    expect(launchQueueEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(launchQueueEvidence?.command).toContain('report:launch-action-readiness');
+    expect(launchQueueEvidence?.command).toContain('check:launch-action-report');
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/sequences source provenance, launch evidence validation, release toolchain, branch review/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
@@ -855,8 +855,8 @@ describe('status page release posture', () => {
     expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/does not substitute for release-readiness or production approval/i);
     expect(releaseToolchainProbeGate?.nextAction).toMatch(/without --skip-probes/i);
     expect(launchQueueGate?.status).toBe('external_gate');
-    expect(launchQueueGate?.command).toContain('report:commercial-launch-readiness');
-    expect(launchQueueGate?.command).toContain('report:launch-evidence-manifest');
+    expect(launchQueueGate?.command).toContain('report:launch-action-readiness');
+    expect(launchQueueGate?.command).toContain('check:launch-action-report');
     expect(launchQueueGate?.evidenceBoundary).toMatch(/sequences source provenance, launch evidence validation, release toolchain, branch review/i);
     expect(launchQueueGate?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueGate?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
