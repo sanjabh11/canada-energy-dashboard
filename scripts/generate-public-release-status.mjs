@@ -53,7 +53,7 @@ const requiredItemContracts = [
     id: 'launch_evidence_validation_gate',
     status: 'external_gate',
     proofBucket: 'repo artifact',
-    command: 'pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet',
+    command: 'pnpm run report:launch-evidence-validation-readiness && pnpm run check:launch-evidence-validation-report',
   },
   {
     id: 'objective_completion_audit',

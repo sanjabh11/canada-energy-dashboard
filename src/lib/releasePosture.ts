@@ -132,7 +132,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Launch evidence validation gate',
     status: 'external_gate',
-    command: 'pnpm run check:launch-evidence-manifest && pnpm run report:production-approval-packet',
+    command: 'pnpm run report:launch-evidence-validation-readiness && pnpm run check:launch-evidence-validation-report',
     evidenceBoundary: 'Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.',
   },
   {

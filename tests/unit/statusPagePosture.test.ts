@@ -421,8 +421,8 @@ describe('status page release posture', () => {
     expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/launch evidence validation passes/i);
     expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/owner approval is explicit/i);
     expect(launchEvidenceValidationEvidence?.status).toBe('external_gate');
-    expect(launchEvidenceValidationEvidence?.command).toContain('check:launch-evidence-manifest');
-    expect(launchEvidenceValidationEvidence?.command).toContain('report:production-approval-packet');
+    expect(launchEvidenceValidationEvidence?.command).toContain('report:launch-evidence-validation-readiness');
+    expect(launchEvidenceValidationEvidence?.command).toContain('check:launch-evidence-validation-report');
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/manifest structure and proof-boundary consistency/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/buyer acceptance/i);
@@ -763,7 +763,8 @@ describe('status page release posture', () => {
     expect(sourceIsolationLedgerGate?.nextAction).toMatch(/explicit owner intent/i);
     expect(launchEvidenceValidationGate?.status).toBe('external_gate');
     expect(launchEvidenceValidationGate?.proofBucket).toBe('repo artifact');
-    expect(launchEvidenceValidationGate?.command).toContain('check:launch-evidence-manifest');
+    expect(launchEvidenceValidationGate?.command).toContain('report:launch-evidence-validation-readiness');
+    expect(launchEvidenceValidationGate?.command).toContain('check:launch-evidence-validation-report');
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/manifest structure and proof-boundary consistency/i);
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationGate?.nextAction).toMatch(/before any deploy request/i);

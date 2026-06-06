@@ -101,6 +101,8 @@ if (failures.length === 0) {
     }
     assertContains(stdout, '## Lane Status Summary', 'Report must include the lane status summary.');
     assertContains(stdout, 'corepack pnpm run report:source-provenance-readiness', 'Report must include the source provenance focused command.');
+    assertContains(stdout, 'corepack pnpm run report:launch-evidence-validation-readiness', 'Report must include the launch evidence validation focused command.');
+    assertContains(stdout, 'corepack pnpm run check:launch-evidence-validation-report', 'Report must include the launch evidence validation checker command.');
     assertContains(stdout, 'corepack pnpm run report:production-approval-readiness', 'Report must include the production approval focused command.');
     assertContains(stdout, 'corepack pnpm run report:post-deploy-live-proof-readiness', 'Report must include the post-deploy focused command.');
   }
@@ -128,6 +130,7 @@ if (failures.length === 0) {
     assert(rowsByPhase.get('post_deploy_live_proof')?.proof_type === 'post_deploy_live_proof_gate', 'Post-deploy row must keep post-deploy proof type.');
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
     assert(payload.package_script_handles?.check_launch_action_report === 'corepack pnpm run check:launch-action-report', 'Focused report must expose the launch action checker command handle.');
+    assert(payload.package_script_handles?.check_launch_evidence_validation_report === 'corepack pnpm run check:launch-evidence-validation-report', 'Focused report must expose the launch evidence validation checker command handle.');
     assert(/does not commit|clear source provenance|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must not imply mutation, external action, deploy, live parity, or launch readiness.');
     assert(/Do not treat this focused report|clean source provenance|production approval|commercial-ready status/i.test(payload.stop_gate ?? ''), 'Focused stop gate must reject readiness claims from the report itself.');
   }

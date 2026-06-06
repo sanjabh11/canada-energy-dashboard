@@ -61,6 +61,8 @@ describe('launch action readiness report', () => {
     }
     expect(stdout).toContain('Lane Status Summary');
     expect(stdout).toContain('corepack pnpm run report:source-provenance-readiness');
+    expect(stdout).toContain('corepack pnpm run report:launch-evidence-validation-readiness');
+    expect(stdout).toContain('corepack pnpm run check:launch-evidence-validation-report');
     expect(stdout).toContain('corepack pnpm run report:production-approval-readiness');
     expect(stdout).toContain('corepack pnpm run report:post-deploy-live-proof-readiness');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
@@ -115,6 +117,7 @@ describe('launch action readiness report', () => {
       'post_deploy_live_proof',
     ]));
     expect(payload.package_script_handles.check_launch_action_report).toBe('corepack pnpm run check:launch-action-report');
+    expect(payload.package_script_handles.check_launch_evidence_validation_report).toBe('corepack pnpm run check:launch-evidence-validation-report');
     expect(payload.proof_boundary).toMatch(/does not commit|clear source provenance|contact buyers|authorize Supabase|deploy|commercial launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|commercial-ready status/i);
   });

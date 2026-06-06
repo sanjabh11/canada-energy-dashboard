@@ -124,6 +124,9 @@ const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,
 const focusedLaunchActionReportPhrase = /report:launch-action-readiness[\s\S]{0,460}focused launch action report|focused launch action report[\s\S]{0,460}report:launch-action-readiness/i;
 const focusedLaunchActionCheckerPhrase = /check:launch-action-report[\s\S]{0,620}(?:validates|launch blocker action queue|lane status summary|does not.*launch readiness)/i;
 const publicStatusFocusedLaunchActionHandlePhrase = /focused launch action report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused launch action report/i;
+const focusedLaunchEvidenceValidationReportPhrase = /report:launch-evidence-validation-readiness[\s\S]{0,620}focused launch evidence validation report|focused launch evidence validation report[\s\S]{0,620}report:launch-evidence-validation-readiness/i;
+const focusedLaunchEvidenceValidationCheckerPhrase = /check:launch-evidence-validation-report[\s\S]{0,760}(?:validates|validation command result|production approval validation prerequisite|does not.*launch readiness|no-self-certification)/i;
+const publicStatusFocusedLaunchEvidenceValidationHandlePhrase = /focused launch evidence validation report\/check[\s\S]{0,520}public-safe handles|public release status[\s\S]{0,640}focused launch evidence validation/i;
 const publicStatusRequestPacketHandlePhrase = /production approval request packet[\s\S]{0,220}public-safe evidence handles|public release status[\s\S]{0,260}production approval request packet/i;
 const publicStatusSourceIsolationLedgerPhrase = /source provenance isolation ledger[\s\S]{0,240}public-safe handles|public release status[\s\S]{0,280}source provenance isolation ledger/i;
 const publicStatusReleaseDeficitLedgerHandlePhrase = /release toolchain and approval deficits[\s\S]{0,260}public-safe handles|public release status[\s\S]{0,320}release toolchain and approval deficits/i;
@@ -173,6 +176,8 @@ const buyerEvidenceGateReportPath = path.join(repoRoot, 'scripts/report-buyer-ev
 const buyerEvidenceGateCheckPath = path.join(repoRoot, 'scripts/check-buyer-evidence-gate-readiness-report.mjs');
 const launchActionReportPath = path.join(repoRoot, 'scripts/report-launch-action-readiness.mjs');
 const launchActionCheckPath = path.join(repoRoot, 'scripts/check-launch-action-readiness-report.mjs');
+const launchEvidenceValidationReportPath = path.join(repoRoot, 'scripts/report-launch-evidence-validation-readiness.mjs');
+const launchEvidenceValidationCheckPath = path.join(repoRoot, 'scripts/check-launch-evidence-validation-readiness-report.mjs');
 const branchReviewReportPath = path.join(repoRoot, 'scripts/report-branch-review-readiness.mjs');
 const branchReviewCheckPath = path.join(repoRoot, 'scripts/check-branch-review-readiness-report.mjs');
 const productionApprovalReportPath = path.join(repoRoot, 'scripts/report-production-approval-readiness.mjs');
@@ -559,6 +564,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:launch-action-report wired to the focused launch action report checker.');
   }
 
+  if (packageScripts['report:launch-evidence-validation-readiness'] !== 'node scripts/report-launch-evidence-validation-readiness.mjs') {
+    failures.push('package.json must keep report:launch-evidence-validation-readiness wired to the focused launch evidence validation report.');
+  }
+
+  if (packageScripts['check:launch-evidence-validation-report'] !== 'node scripts/check-launch-evidence-validation-readiness-report.mjs') {
+    failures.push('package.json must keep check:launch-evidence-validation-report wired to the focused launch evidence validation report checker.');
+  }
+
   if (packageScripts['report:branch-review-readiness'] !== 'node scripts/report-branch-review-readiness.mjs') {
     failures.push('package.json must keep report:branch-review-readiness wired to the focused branch review report.');
   }
@@ -619,6 +632,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!existsSync(launchActionCheckPath)) {
     failures.push('scripts/check-launch-action-readiness-report.mjs is missing.');
+  }
+
+  if (!existsSync(launchEvidenceValidationReportPath)) {
+    failures.push('scripts/report-launch-evidence-validation-readiness.mjs is missing.');
+  }
+
+  if (!existsSync(launchEvidenceValidationCheckPath)) {
+    failures.push('scripts/check-launch-evidence-validation-readiness-report.mjs is missing.');
   }
 
   if (!existsSync(branchReviewReportPath)) {
@@ -839,6 +860,18 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusFocusedLaunchActionHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused launch action report/check as public-safe handles.');
+  }
+
+  if (!focusedLaunchEvidenceValidationReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:launch-evidence-validation-readiness as the focused launch evidence validation report.');
+  }
+
+  if (!focusedLaunchEvidenceValidationCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:launch-evidence-validation-report and preserve its no-self-certification/no-launch-readiness checker boundary.');
+  }
+
+  if (!publicStatusFocusedLaunchEvidenceValidationHandlePhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention the focused launch evidence validation report/check as public-safe handles.');
   }
 
   if (!publicStatusRequestPacketHandlePhrase.test(sourceDoc)) {

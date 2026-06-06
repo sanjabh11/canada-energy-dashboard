@@ -150,7 +150,7 @@ function focusedPayload(manifest) {
         lane: 'launch_evidence_validation',
         status: 'external_gate',
         current: 'Run manifest validation before any deploy approval request; validation does not grant approval.',
-        proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+        proof_command: 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
       },
       {
         lane: 'release_toolchain',
@@ -192,6 +192,8 @@ function focusedPayload(manifest) {
     package_script_handles: {
       report_launch_action_readiness: 'corepack pnpm run report:launch-action-readiness',
       check_launch_action_report: 'corepack pnpm run check:launch-action-report',
+      report_launch_evidence_validation_readiness: 'corepack pnpm run report:launch-evidence-validation-readiness',
+      check_launch_evidence_validation_report: 'corepack pnpm run check:launch-evidence-validation-report',
       report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
       check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
       report_commercial_launch_readiness: 'corepack pnpm run report:commercial-launch-readiness',
