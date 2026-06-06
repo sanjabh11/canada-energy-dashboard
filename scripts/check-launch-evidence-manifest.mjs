@@ -1896,9 +1896,24 @@ try {
     assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.status === 'blocked', 'Completion audit must keep buyer evidence hard gate blocked.');
     assert(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion === true, 'Completion audit buyer evidence row must block goal completion.');
     assert(/validate:pilot-evidence --require-95|retained artifacts/i.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate ?? ''), 'Completion audit buyer evidence row must require retained 95% buyer evidence.');
+    assert(/report:buyer-evidence-gate-readiness/.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command ?? ''), 'Completion audit buyer evidence row must route next proof through the focused buyer evidence gate report.');
+    assert(/check:buyer-evidence-gate-report/.test(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command ?? ''), 'Completion audit buyer evidence row must include the focused buyer evidence gate checker.');
+    assert(/report:source-provenance-readiness/.test(completionItemsByRequirement.get('Source provenance release gate')?.next_proof_command ?? ''), 'Completion audit source provenance row must route next proof through the focused source provenance report.');
+    assert(/check:source-provenance-report/.test(completionItemsByRequirement.get('Source provenance release gate')?.next_proof_command ?? ''), 'Completion audit source provenance row must include the focused source provenance checker.');
+    assert(/report:branch-review-readiness/.test(completionItemsByRequirement.get('Branch canonical review gate')?.next_proof_command ?? ''), 'Completion audit branch review row must route next proof through the focused branch review report.');
+    assert(/check:branch-review-report/.test(completionItemsByRequirement.get('Branch canonical review gate')?.next_proof_command ?? ''), 'Completion audit branch review row must include the focused branch review checker.');
+    assert(/report:supabase-advisor-readiness/.test(completionItemsByRequirement.get('Supabase advisor clearance gate')?.next_proof_command ?? ''), 'Completion audit Supabase advisor row must route next proof through the focused Supabase advisor report.');
+    assert(/check:supabase-advisor-report/.test(completionItemsByRequirement.get('Supabase advisor clearance gate')?.next_proof_command ?? ''), 'Completion audit Supabase advisor row must include the focused Supabase advisor checker.');
+    assert(/report:release-preflight/.test(completionItemsByRequirement.get('Release toolchain approval gate')?.next_proof_command ?? ''), 'Completion audit release row must route next proof through the focused release preflight report.');
+    assert(/check:release-preflight-report/.test(completionItemsByRequirement.get('Release toolchain approval gate')?.next_proof_command ?? ''), 'Completion audit release row must include the focused release preflight checker.');
+    assert(/check:release-readiness/.test(completionItemsByRequirement.get('Release toolchain approval gate')?.next_proof_command ?? ''), 'Completion audit release row must still include the guarded release-readiness command.');
     assert(completionItemsByRequirement.get('Production approval and live proof gate')?.status === 'manual_stop', 'Completion audit must keep production/live proof as manual_stop.');
     assert(completionItemsByRequirement.get('Production approval and live proof gate')?.blocks_goal_completion === true, 'Completion audit production/live proof row must block goal completion.');
     assert(/does not run deploys|prove live parity|mutate Netlify/i.test(completionItemsByRequirement.get('Production approval and live proof gate')?.proof_boundary ?? ''), 'Completion audit production/live proof boundary must not imply deploy or live parity.');
+    assert(/report:production-approval-readiness/.test(completionItemsByRequirement.get('Production approval and live proof gate')?.next_proof_command ?? ''), 'Completion audit production/live row must route next proof through the focused production approval report.');
+    assert(/check:production-approval-report/.test(completionItemsByRequirement.get('Production approval and live proof gate')?.next_proof_command ?? ''), 'Completion audit production/live row must include the focused production approval checker.');
+    assert(/report:post-deploy-live-proof-readiness/.test(completionItemsByRequirement.get('Production approval and live proof gate')?.next_proof_command ?? ''), 'Completion audit production/live row must route next proof through the focused post-deploy live proof report.');
+    assert(/check:post-deploy-live-proof-report/.test(completionItemsByRequirement.get('Production approval and live proof gate')?.next_proof_command ?? ''), 'Completion audit production/live row must include the focused post-deploy live proof checker.');
     assert(completionItemsByRequirement.get('Supabase advisor clearance gate')?.status === 'blocked', 'Completion audit must keep Supabase advisor clearance blocked.');
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
@@ -2551,6 +2566,35 @@ try {
         && postDeployLiveProofReportReview.tests_or_checks.some((check) => /report:post-deploy-live-proof-readiness/.test(check))
         && postDeployLiveProofReportReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report/.test(check)),
       'Post-deploy live proof focused report code optimization review must record focused post-deploy report and checker proof.',
+    );
+    const completionAuditProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES');
+    assert(completionAuditProofHandleDecision, 'Manifest must record the completion audit proof-handle implementation decision.');
+    assert(
+      completionAuditProofHandleDecision?.chosen_variant === 'minimal focused completion audit proof-handle derivation',
+      'Completion audit proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(completionAuditProofHandleDecision?.files_changed)
+        && completionAuditProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && completionAuditProofHandleDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && completionAuditProofHandleDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && completionAuditProofHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Completion audit proof-handle decision must record the manifest, checkers, and manifest unit test files.',
+    );
+    assert(
+      /does not contact buyers|authorize Supabase|checkout branches|install tools|run release-readiness as clearance|request owner approval|deploy|run live proof|hosted\/live parity|raise launch status/i.test(completionAuditProofHandleDecision?.proof_boundary ?? ''),
+      'Completion audit proof-handle decision must preserve no-external-action, no-mutation, no-deploy, and no-readiness boundaries.',
+    );
+    const completionAuditProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES');
+    assert(completionAuditProofHandleReview, 'Manifest must record the completion audit proof-handle code optimization review.');
+    assert(completionAuditProofHandleReview?.policy === 'strict', 'Completion audit proof-handle code optimization review must use strict policy.');
+    assert(completionAuditProofHandleReview?.verdict === 'pass', 'Completion audit proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(completionAuditProofHandleReview?.tests_or_checks)
+        && completionAuditProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check))
+        && completionAuditProofHandleReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report/.test(check))
+        && completionAuditProofHandleReview.tests_or_checks.some((check) => /report:commercial-launch-readiness/.test(check)),
+      'Completion audit proof-handle code optimization review must record manifest, commercial report checker, and commercial report proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

@@ -105,6 +105,7 @@ describe('launch evidence manifest report', () => {
         proof_type?: string;
         proof_boundary?: string;
         stop_gate?: string;
+        next_proof_command?: string;
         blocks_goal_completion?: boolean;
       }) => item.requirement,
     );
@@ -117,12 +118,18 @@ describe('launch evidence manifest report', () => {
     expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.status).toBe('blocked');
     expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.blocks_goal_completion).toBe(true);
     expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.stop_gate).toMatch(/validate:pilot-evidence --require-95|retained artifacts/i);
+    expect(completionItemsByRequirement.get('Buyer evidence hard gate')?.next_proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(completionItemsByRequirement.get('Source provenance release gate')?.proof_type).toBe('source_provenance_approval_gate');
+    expect(completionItemsByRequirement.get('Source provenance release gate')?.next_proof_command).toBe('corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report');
     expect(completionItemsByRequirement.get('Branch canonical review gate')?.proof_type).toBe('read_only_branch_review');
+    expect(completionItemsByRequirement.get('Branch canonical review gate')?.next_proof_command).toBe('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
     expect(completionItemsByRequirement.get('Supabase advisor clearance gate')?.status).toBe('blocked');
+    expect(completionItemsByRequirement.get('Supabase advisor clearance gate')?.next_proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(completionItemsByRequirement.get('Release toolchain approval gate')?.proof_type).toBe('release_toolchain_approval');
+    expect(completionItemsByRequirement.get('Release toolchain approval gate')?.next_proof_command).toBe('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(completionItemsByRequirement.get('Production approval and live proof gate')?.status).toBe('manual_stop');
     expect(completionItemsByRequirement.get('Production approval and live proof gate')?.proof_boundary).toMatch(/does not run deploys|prove live parity|mutate Netlify/i);
+    expect(completionItemsByRequirement.get('Production approval and live proof gate')?.next_proof_command).toBe('corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report && corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
     expect(manifest.branch_review.clearance_matrix.status).toBe('skipped');
     expect(manifest.branch_review.clearance_matrix.proof_type).toBe('read_only_branch_clearance_matrix');
     expect(manifest.branch_review.clearance_matrix.evidence).toContain('Branch clearance matrix skipped');
@@ -731,9 +738,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(23);
+    expect(manifest.implementation_decisions).toHaveLength(24);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(23);
+    expect(manifest.code_optimization_reviews).toHaveLength(24);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -846,6 +853,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate production approval prerequisite and request-packet construction in a standalone implementation.',
       'Run deploy-production.sh, request owner approval, or run live proof checks from the focused report.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad production approval handles.',
+      'Leave completion audit blocker rows pointing directly at raw validation, dashboard, release, deploy, and live-proof commands.',
+      'Run buyer validation, Supabase advisors, release-readiness, approval request, deploy, or post-deploy live proof from the completion audit phase.',
+      'Duplicate gate parsing or remediation logic inside the completion audit checker.',
+      'Remove or flatten unresolved blocker rows from the objective completion audit.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -1292,6 +1303,28 @@ describe('launch evidence manifest report', () => {
     expect(postDeployLiveProofReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:post-deploy-live-proof-readiness',
       'pnpm run check:post-deploy-live-proof-report',
+    ]));
+    const completionAuditProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    );
+    expect(completionAuditProofHandleDecision).toBeTruthy();
+    expect(completionAuditProofHandleDecision.chosen_variant).toBe('minimal focused completion audit proof-handle derivation');
+    expect(completionAuditProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(completionAuditProofHandleDecision.proof_boundary).toMatch(/does not contact buyers|authorize Supabase|checkout branches|install tools|run release-readiness as clearance|request owner approval|deploy|run live proof|hosted\/live parity|raise launch status/i);
+    const completionAuditProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    );
+    expect(completionAuditProofHandleReview).toBeTruthy();
+    expect(completionAuditProofHandleReview.policy).toBe('strict');
+    expect(completionAuditProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:commercial-launch-readiness -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
@@ -1767,6 +1800,10 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('completion_audit_current_state');
     expect(stdout).toContain('| Buyer evidence hard gate | blocked | yes |');
     expect(stdout).toContain('| Production approval and live proof gate | manual_stop | yes |');
+    expect(stdout).toContain('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
+    expect(stdout).toContain('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
+    expect(stdout).toContain('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
+    expect(stdout).toContain('corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report && corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
     expect(stdout).toContain('This audit maps current manifest/report evidence only');
     expect(stdout).toContain('Do not mark the launch goal complete or claim readiness');
     expect(stdout).toContain('validate_launch_evidence.py');

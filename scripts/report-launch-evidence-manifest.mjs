@@ -16,6 +16,7 @@ const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PRO
 const BRANCH_REVIEW_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report';
 const SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report';
 const BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report';
+const PRODUCTION_AND_POST_DEPLOY_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report && corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -787,7 +788,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'buyer_evidence_hard_gate',
       proof_boundary: 'Buyer evidence gate requires real retained redacted artifacts and accepted register rows; generated scaffolding, outreach headers, demos, and this audit do not prove buyer acceptance.',
       stop_gate: 'Do not claim buyer-proven 95% confidence, accepted proof packs, commercial-ready status, or permission to contact buyers until validate:pilot-evidence --require-95 passes against retained artifacts.',
-      next_proof_command: 'corepack pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+      next_proof_command: BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
       requirement: 'Source provenance release gate',
@@ -805,7 +806,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'read_only_branch_review',
       proof_boundary: 'Branch review evidence is read-only; it does not checkout, merge, push, discard branches, select canonical heads, run migrations, deploy, or grant approval.',
       stop_gate: 'Do not merge, checkout, deploy, or select canonical heads without focused branch review and explicit owner approval.',
-      next_proof_command: 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+      next_proof_command: BRANCH_REVIEW_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
       requirement: 'Supabase advisor clearance gate',
@@ -814,7 +815,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'external_advisor_clearance',
       proof_boundary: 'Supabase advisor clearance requires authorized connector or dashboard advisor evidence; repo CLI lint and this audit do not access dashboards, clear advisor findings, run migrations, alter secrets, or prove RLS/performance clearance.',
       stop_gate: 'Do not claim Supabase advisor, RLS, or performance clearance until authorized advisor evidence is rerun and recorded.',
-      next_proof_command: 'Supabase Dashboard > Database > Security Advisor and Performance Advisor',
+      next_proof_command: SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
       requirement: 'Release toolchain approval gate',
@@ -823,7 +824,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'release_toolchain_approval',
       proof_boundary: 'Release preflight rows summarize Corepack, Git LFS, release-readiness, source provenance, and owner approval state; this audit does not install tools, run full release-readiness, push, deploy, or grant approval.',
       stop_gate: 'Do not treat local pnpm checks, package metadata, skipped approval packets, or hook warnings as release-readiness, push-path proof, deploy readiness, or owner approval.',
-      next_proof_command: 'corepack pnpm run check:release-readiness',
+      next_proof_command: RELEASE_READINESS_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
       requirement: 'Production approval and live proof gate',
@@ -832,7 +833,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'production_approval_and_live_proof_gate',
       proof_boundary: 'Production approval and hosted/live proof require explicit owner approval, guarded deploy execution, live metadata, static parity, and hosted smoke; this audit does not run deploys, mutate Netlify, push, or prove live parity.',
       stop_gate: 'Do not run deploy-production.sh, netlify deploy, push, or present hosted/live parity until owner approval and post-deploy live gates pass.',
-      next_proof_command: 'corepack pnpm run check:production-deploy-request && corepack pnpm run check:post-deploy-live',
+      next_proof_command: PRODUCTION_AND_POST_DEPLOY_FOCUSED_PROOF_COMMAND,
     }),
   ];
   const completedCount = items.filter((item) => item.status === 'present').length;
@@ -4652,6 +4653,13 @@ const postDeployLiveProofReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const completionAuditProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4674,6 +4682,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
+  ...completionAuditProofHandleFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4916,6 +4925,14 @@ const postDeployLiveProofReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const completionAuditProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run report:commercial-launch-readiness -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4938,6 +4955,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
+  ...completionAuditProofHandleTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5261,6 +5279,19 @@ const safeFixImplementationDecisions = [
     reason: 'Post-deploy proof sequencing was present inside broad launch artifacts, but did not have a narrow operator handle for the hosted/live parity blocker that follows explicit production approval.',
     proof_boundary: 'This record improves post-deploy proof visibility only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused post-deploy live proof report, check pass, JSON output, skipped probes, public status handle, or docs sync as production approval, deployment, current-source hosted parity, commercial-ready status, or post-deploy live proof.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    decision: 'Route objective completion audit blocker rows through focused report/check handles while preserving their real external gate requirements.',
+    acceptance_check: 'The completion audit buyer, branch, Supabase, release, and production/live rows expose the focused report/check handles as next proof commands, while stop gates still require retained buyer evidence, branch owner decisions, advisor evidence, guarded release-readiness, owner approval, deploy execution, and post-deploy live proof.',
+    chosen_variant: 'minimal focused completion audit proof-handle derivation',
+    repo_pattern_reused: 'Existing focused proof command constants, objectiveCompletionItem rows, launch evidence manifest checker, commercial readiness report checker, and launch manifest unit test contract.',
+    files_changed: completionAuditProofHandleFilesChanged,
+    tests_run: completionAuditProofHandleTestsRun,
+    proof: 'The patch reuses existing focused report/check commands for buyer evidence, branch review, Supabase advisor, release preflight, production approval, and post-deploy proof, then asserts the exact command handles in the manifest, commercial report, and unit tests without changing launch gate status.',
+    reason: 'The completion audit is the final operator-facing checklist for the broad goal, so its next proof handles should route through the lane-specific focused reports added in earlier phases instead of sending operators directly to raw validation, dashboard, release, deploy, or live-proof commands.',
+    proof_boundary: 'This record aligns objective completion audit proof handles only; it does not contact buyers, create accepted evidence, run retained-artifact validation as clearance, authorize Supabase, access dashboards, checkout branches, merge, push, install tools, run release-readiness as clearance, request owner approval, deploy, run live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused completion-audit proof handles, skipped-probe report/check success, manifest validation, commercial report output, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -5853,6 +5884,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    variant: 'Leave completion audit blocker rows pointing directly at raw validation, dashboard, release, deploy, and live-proof commands.',
+    reason_rejected: 'Would keep the broad objective checklist inconsistent with the focused lane reports and make operators skip the safer inspection-first handles.',
+    tradeoff: 'Raw commands are shorter, but they blur inspection with external gate execution or account/dashboard work.',
+    evidence: 'Focused report/check handles already exist for buyer evidence, branch review, Supabase advisor, release preflight, production approval, and post-deploy live proof.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    variant: 'Run buyer validation, Supabase advisors, release-readiness, approval request, deploy, or post-deploy live proof from the completion audit phase.',
+    reason_rejected: 'Those operations require retained buyer evidence, external account authorization, clean source provenance, owner approval, deploy context, or live-service access outside this safe-fix phase.',
+    tradeoff: 'Direct execution could produce fresher gate evidence, but it would violate the safe no-execution boundary and risk overstating launch readiness.',
+    evidence: 'Objective completion audit rows remain blocked or manual_stop and their stop gates require real external proof before goal completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    variant: 'Duplicate gate parsing or remediation logic inside the completion audit checker.',
+    reason_rejected: 'Duplicating lane logic would create another source of truth for buyer, branch, Supabase, release, approval, and live-proof state.',
+    tradeoff: 'Inline parsing could make the audit more self-contained, but it would drift from the focused report/check contracts.',
+    evidence: 'report-launch-evidence-manifest already emits the source lane objects, and focused checkers validate the lane-specific proof boundaries.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    variant: 'Remove or flatten unresolved blocker rows from the objective completion audit.',
+    reason_rejected: 'The audit is the goal-level checklist and must continue showing every unresolved launch gate that blocks completion.',
+    tradeoff: 'A smaller audit table is easier to scan, but it hides the active blockers and weakens the completion decision evidence.',
+    evidence: 'check-launch-evidence-manifest and check-commercial-launch-readiness-report require the completion audit to include buyer, source, branch, Supabase, release, and production/live proof rows.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6074,6 +6133,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed post-deploy live proof Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated live-proof sequencing, deploy execution, browser smoke execution, Netlify mutation, or live-parity relaxation.',
     tests_or_checks: postDeployLiveProofReportTestsRun,
     remaining_risk: 'Post-deploy live proof remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, live static parity, and hosted proof-pack smoke are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-COMPLETION-AUDIT-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only objective completion audit next_proof_command values plus existing manifest/report checkers and the manifest unit test, reusing focused command constants without new dependencies, duplicate gate parsers, external account calls, release execution, deploy execution, or live-service mutation.',
+    tests_or_checks: completionAuditProofHandleTestsRun,
+    remaining_risk: 'The launch goal remains blocked until retained buyer evidence, source provenance, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
   },
 ];
 
