@@ -159,7 +159,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -790,6 +790,38 @@ describe('launch evidence manifest report', () => {
         expect(firstSourceDecision.proof_boundary).toMatch(/staged rename or move|does not rename/i);
       }
     }
+    expect(manifest.source_provenance.owner_decision_packet.status).toBe(manifest.source_provenance.is_dirty ? 'blocked' : 'ready');
+    expect(manifest.source_provenance.owner_decision_packet.proof_type).toBe('source_owner_decision_packet');
+    expect(manifest.source_provenance.owner_decision_packet.source).toBe('source_provenance.resolution_queue.items');
+    expect(manifest.source_provenance.owner_decision_packet.evidence).toContain('Source owner decision packet');
+    expect(manifest.source_provenance.owner_decision_packet.item_count).toBe(manifest.source_provenance.resolution_queue.item_count);
+    expect(manifest.source_provenance.owner_decision_packet.blocked_count).toBe(manifest.source_provenance.resolution_queue.blocked_count);
+    expect(manifest.source_provenance.owner_decision_packet.owner_decision_count).toBe(manifest.source_provenance.resolution_queue.blocked_count);
+    expect(manifest.source_provenance.owner_decision_packet.proof_boundary).toMatch(/decision support only|does not commit|request production approval|deploy|grant owner approval/i);
+    expect(manifest.source_provenance.owner_decision_packet.stop_gate).toMatch(/Do not mutate source paths|explicit owner intent|clean source-provenance rerun/i);
+    if (manifest.source_provenance.owner_decision_packet.items.length > 0) {
+      const firstOwnerDecision = manifest.source_provenance.owner_decision_packet.items[0];
+      const firstResolutionDecision = manifest.source_provenance.resolution_queue.items[0];
+      expect(firstOwnerDecision.file_path).toBe(firstResolutionDecision.file_path);
+      expect(firstOwnerDecision.old_path).toBe(firstResolutionDecision.old_path);
+      expect(firstOwnerDecision.proof_type).toBe(firstResolutionDecision.proof_type);
+      expect(firstOwnerDecision.owner_decision_required).toBe(true);
+      expect(firstOwnerDecision.recommended_owner_options.length).toBeGreaterThanOrEqual(2);
+      const ownerOptionNames = firstOwnerDecision.recommended_owner_options.map((option: { option?: string }) => option.option);
+      if (firstOwnerDecision.old_path || firstOwnerDecision.staging_state === 'staged_only') {
+        expect(ownerOptionNames).toEqual(expect.arrayContaining([
+          'commit_as_intentional_change',
+        ]));
+        expect(ownerOptionNames).toEqual(expect.arrayContaining([
+          expect.stringMatching(/unstage_for_later_review|stash_or_revert_with_owner_approval/),
+        ]));
+      }
+      expect(firstOwnerDecision.proof_command).toContain('report:source-provenance-readiness');
+      expect(firstOwnerDecision.proof_command).toContain('check:source-provenance-report');
+      expect(firstOwnerDecision.proof_boundary).toMatch(/decision support only|does not mutate source|request production approval|deploy/i);
+      expect(firstOwnerDecision.stop_gate).toMatch(/Do not treat this packet item as approval|clear source provenance/i);
+      expect(firstOwnerDecision.blocks_release_source_gate).toBe(true);
+    }
     expect(manifest.branch_review.status).toBe('skipped');
     expect(manifest.branch_review.probe_status).toBe('skipped');
     expect(manifest.branch_review.evidence_boundary).toMatch(/does not clear review-first branch families/i);
@@ -876,9 +908,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(46);
+    expect(manifest.implementation_decisions).toHaveLength(47);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(46);
+    expect(manifest.code_optimization_reviews).toHaveLength(47);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2043,6 +2075,34 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const sourceOwnerDecisionPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    );
+    expect(sourceOwnerDecisionPacketDecision).toBeTruthy();
+    expect(sourceOwnerDecisionPacketDecision.chosen_variant).toBe('minimal derived source owner-decision packet');
+    expect(sourceOwnerDecisionPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-source-provenance-readiness.mjs',
+      'scripts/check-source-provenance-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/sourceProvenanceReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(sourceOwnerDecisionPacketDecision.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|request production approval|deploy|hosted\/live parity|grant owner approval|raise launch status/i);
+    const sourceOwnerDecisionPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    );
+    expect(sourceOwnerDecisionPacketReview).toBeTruthy();
+    expect(sourceOwnerDecisionPacketReview.policy).toBe('strict');
+    expect(sourceOwnerDecisionPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:source-provenance-readiness -- --skip-probes',
+      'pnpm run check:source-provenance-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');

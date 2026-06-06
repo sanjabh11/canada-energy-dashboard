@@ -720,6 +720,59 @@ try {
         assert(/separate owner decisions|index and worktree|grant approval/i.test(item.proof_boundary), `source_provenance.resolution_queue.items[${index}] proof_boundary must preserve split index/worktree semantics.`);
       }
     }
+    const sourceOwnerDecisionPacket = manifest.source_provenance.owner_decision_packet ?? {};
+    assert(sourceOwnerDecisionPacket.proof_type === 'source_owner_decision_packet', 'Manifest source_provenance.owner_decision_packet must classify source owner decisions.');
+    assert(sourceOwnerDecisionPacket.source === 'source_provenance.resolution_queue.items', 'Source owner decision packet must link to the source resolution queue items.');
+    assert(sourceOwnerDecisionPacket.status === (manifest.source_provenance.is_dirty ? 'blocked' : 'ready'), 'Source owner decision packet status must match source dirty state.');
+    assert(typeof sourceOwnerDecisionPacket.evidence === 'string' && sourceOwnerDecisionPacket.evidence.includes('Source owner decision packet'), 'Source owner decision packet evidence must include a packet marker.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.item_count), 'Source owner decision packet item_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.blocked_count), 'Source owner decision packet blocked_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.owner_decision_count), 'Source owner decision packet owner_decision_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.rename_or_move_count), 'Source owner decision packet rename_or_move_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.staged_only_count), 'Source owner decision packet staged_only_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.unstaged_only_count), 'Source owner decision packet unstaged_only_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.staged_and_unstaged_count), 'Source owner decision packet staged_and_unstaged_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.untracked_count), 'Source owner decision packet untracked_count must be an integer.');
+    assert(Number.isInteger(sourceOwnerDecisionPacket.ignored_local_count), 'Source owner decision packet ignored_local_count must be an integer.');
+    assert(Array.isArray(sourceOwnerDecisionPacket.items), 'Source owner decision packet items must be a list.');
+    assert(sourceOwnerDecisionPacket.item_count === manifest.source_provenance.resolution_queue.item_count, 'Source owner decision packet item_count must match the source resolution queue.');
+    assert(sourceOwnerDecisionPacket.blocked_count === manifest.source_provenance.resolution_queue.blocked_count, 'Source owner decision packet blocked_count must match the source resolution queue.');
+    assert(sourceOwnerDecisionPacket.owner_decision_count === manifest.source_provenance.resolution_queue.blocked_count, 'Source owner decision packet owner decision count must match blocked source decisions.');
+    assert(sourceOwnerDecisionPacket.items.length === manifest.source_provenance.resolution_queue.items.length, 'Source owner decision packet items must match source resolution queue items.');
+    assert(
+      typeof sourceOwnerDecisionPacket.proof_boundary === 'string'
+        && /decision support only|does not commit|clear source provenance|run release-readiness|request production approval|deploy|grant owner approval/i.test(sourceOwnerDecisionPacket.proof_boundary),
+      'Source owner decision packet proof_boundary must preserve no-mutation, no-release, no-approval, and no-deploy semantics.',
+    );
+    assert(
+      typeof sourceOwnerDecisionPacket.stop_gate === 'string'
+        && /Do not mutate source paths|explicit owner intent|clean source-provenance rerun/i.test(sourceOwnerDecisionPacket.stop_gate),
+      'Source owner decision packet stop_gate must require explicit owner intent and clean source rerun.',
+    );
+    for (const [index, item] of (sourceOwnerDecisionPacket.items ?? []).entries()) {
+      const sourceQueueItem = manifest.source_provenance.resolution_queue.items[index] ?? {};
+      assert(Number.isInteger(item.rank), `source_provenance.owner_decision_packet.items[${index}].rank must be an integer.`);
+      assert(item.file_path === sourceQueueItem.file_path, `source_provenance.owner_decision_packet.items[${index}] must preserve resolution queue file_path.`);
+      assert(item.old_path === sourceQueueItem.old_path, `source_provenance.owner_decision_packet.items[${index}] must preserve resolution queue old_path.`);
+      assert(item.proof_type === sourceQueueItem.proof_type, `source_provenance.owner_decision_packet.items[${index}] must preserve resolution queue proof_type.`);
+      assert(item.owner_decision_required === true, `source_provenance.owner_decision_packet.items[${index}] must require owner decision.`);
+      assert(Array.isArray(item.recommended_owner_options) && item.recommended_owner_options.length >= 2, `source_provenance.owner_decision_packet.items[${index}] must include recommended owner options.`);
+      const optionNames = item.recommended_owner_options.map((option) => option?.option);
+      if (item.old_path || item.staging_state === 'staged_only') {
+        assert(optionNames.includes('commit_as_intentional_change'), `source_provenance.owner_decision_packet.items[${index}] must include intentional commit as an owner option for staged or renamed rows.`);
+        assert(optionNames.includes('unstage_for_later_review') || optionNames.includes('stash_or_revert_with_owner_approval'), `source_provenance.owner_decision_packet.items[${index}] must include a non-commit owner option for staged or renamed rows.`);
+      }
+      for (const [optionIndex, option] of item.recommended_owner_options.entries()) {
+        assert(typeof option.option === 'string' && option.option.length > 0, `source_provenance.owner_decision_packet.items[${index}].recommended_owner_options[${optionIndex}].option must be set.`);
+        assert(typeof option.impact === 'string' && option.impact.length > 0, `source_provenance.owner_decision_packet.items[${index}].recommended_owner_options[${optionIndex}].impact must be set.`);
+        assert(typeof option.risk === 'string' && option.risk.length > 0, `source_provenance.owner_decision_packet.items[${index}].recommended_owner_options[${optionIndex}].risk must be set.`);
+      }
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:source-provenance-readiness') && item.proof_command.includes('check:source-provenance-report'), `source_provenance.owner_decision_packet.items[${index}].proof_command must point to the focused source report/check.`);
+      assert(typeof item.proof_boundary === 'string' && /decision support only|does not mutate source|request production approval|deploy|grant approval/i.test(item.proof_boundary), `source_provenance.owner_decision_packet.items[${index}].proof_boundary must preserve no-mutation semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not treat this packet item as approval|clear source provenance/i.test(item.stop_gate), `source_provenance.owner_decision_packet.items[${index}].stop_gate must reject approval and clearance claims.`);
+      assert(item.status !== 'pass', `source_provenance.owner_decision_packet.items[${index}].status must remain blocked until source provenance is resolved.`);
+      assert(item.blocks_release_source_gate === true, `source_provenance.owner_decision_packet.items[${index}].blocks_release_source_gate must block release source gate for dirty paths.`);
+    }
     assert(hasOpenGap(manifest, 'P1', 'Release toolchain'), 'Manifest must keep the open P1 release toolchain and approval proof gap.');
     assert(typeof manifest.release_preflight?.evidence === 'string', 'Manifest must include release_preflight.evidence.');
     assert(manifest.release_preflight.evidence.includes('Release toolchain and approval deficit ledger'), 'Manifest release preflight evidence must include a ledger marker.');
@@ -2077,7 +2130,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF', 'Manifest progress_updates must expose the latest buyer evidence minimum-packet handoff safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET', 'Manifest progress_updates must expose the latest source owner-decision packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3413,6 +3466,41 @@ try {
         && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
         && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Buyer evidence minimum-packet handoff code optimization review must record focused buyer, progress, manifest, and commercial report checks.',
+    );
+    const sourceOwnerDecisionPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET');
+    assert(sourceOwnerDecisionPacketDecision, 'Manifest must record the source owner-decision packet implementation decision.');
+    assert(
+      sourceOwnerDecisionPacketDecision?.chosen_variant === 'minimal derived source owner-decision packet',
+      'Source owner-decision packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(sourceOwnerDecisionPacketDecision?.files_changed)
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/report-source-provenance-readiness.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/check-source-provenance-readiness-report.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('tests/unit/sourceProvenanceReadiness.test.ts')
+        && sourceOwnerDecisionPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Source owner-decision packet decision must record the manifest, focused report, checkers, and unit test files.',
+    );
+    assert(
+      /does not commit|clear source provenance|run release-readiness|request production approval|deploy|hosted\/live parity|grant owner approval|raise launch status/i.test(sourceOwnerDecisionPacketDecision?.proof_boundary ?? ''),
+      'Source owner-decision packet decision must preserve no-mutation, no-release, no-approval, no-live-proof, and no-readiness boundaries.',
+    );
+    const sourceOwnerDecisionPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET');
+    assert(sourceOwnerDecisionPacketReview, 'Manifest must record the source owner-decision packet code optimization review.');
+    assert(sourceOwnerDecisionPacketReview?.policy === 'strict', 'Source owner-decision packet code optimization review must use strict policy.');
+    assert(sourceOwnerDecisionPacketReview?.verdict === 'pass', 'Source owner-decision packet code optimization review must pass.');
+    assert(
+      Array.isArray(sourceOwnerDecisionPacketReview?.tests_or_checks)
+        && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /report:source-provenance-readiness -- --skip-probes/.test(check))
+        && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
+        && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Source owner-decision packet code optimization review must record focused source, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

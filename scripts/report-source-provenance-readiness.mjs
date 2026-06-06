@@ -124,6 +124,12 @@ function renderTable(headers, rows) {
   ].join('\n');
 }
 
+function formatOwnerOptions(options) {
+  return (options ?? [])
+    .map((item) => `${item.option}: ${item.impact} Risk: ${item.risk}`)
+    .join('; ');
+}
+
 function findByName(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
@@ -157,6 +163,7 @@ function focusedPayload(manifest) {
       dirty_paths: source.dirty_paths ?? [],
       isolation_ledger: source.isolation_ledger ?? null,
       resolution_queue: source.resolution_queue ?? null,
+      owner_decision_packet: source.owner_decision_packet ?? null,
       evidence: source.evidence ?? '',
       deploy_gate: source.deploy_gate ?? '',
     },
@@ -172,6 +179,7 @@ function renderMarkdown(payload) {
   const source = payload.source_provenance ?? {};
   const isolationLedger = source.isolation_ledger ?? {};
   const resolutionQueue = source.resolution_queue ?? {};
+  const ownerDecisionPacket = source.owner_decision_packet ?? {};
   const releaseRow = payload.release_preflight_source_row ?? {};
   const productionPrerequisite = payload.production_approval_source_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_source_row ?? {};
@@ -217,6 +225,24 @@ function renderMarkdown(payload) {
     item.decision_required,
     item.proof_type,
     item.status,
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const ownerDecisionRows = (ownerDecisionPacket.items ?? []).map((item) => [
+    item.rank,
+    item.file_path,
+    item.old_path ?? '-',
+    item.source_status,
+    item.index_status,
+    item.worktree_status,
+    item.staging_state,
+    item.decision_required,
+    formatOwnerOptions(item.recommended_owner_options),
+    item.proof_command,
+    item.proof_type,
+    item.status,
+    item.blocks_release_source_gate ? 'yes' : 'no',
     item.proof_boundary,
     item.stop_gate,
   ]);
@@ -277,6 +303,7 @@ function renderMarkdown(payload) {
     `- Dirty paths: \`${source.dirty_path_count ?? 'unknown'}\``,
     `- Isolation ledger: \`${isolationLedger.status ?? 'unknown'}\`, release-blocking \`${isolationLedger.release_blocking_path_count ?? 'unknown'}\``,
     `- Resolution queue: \`${resolutionQueue.status ?? 'unknown'}\`, owner decisions \`${resolutionQueue.blocked_count ?? 'unknown'}\``,
+    `- Owner decision packet: \`${ownerDecisionPacket.status ?? 'unknown'}\`, owner decisions \`${ownerDecisionPacket.owner_decision_count ?? 'unknown'}\``,
     `- Deploy gate: ${source.deploy_gate || 'not reported'}`,
     '',
     '## Raw Source Provenance',
@@ -302,6 +329,18 @@ function renderMarkdown(payload) {
     resolutionQueue.evidence ?? 'Source provenance resolution queue missing.',
     '',
     renderTable(['Rank', 'Path', 'Old Path', 'Source Status', 'Index Status', 'Worktree Status', 'Staging State', 'Decision Required', 'Proof Type', 'Status', 'Proof Boundary', 'Stop Gate'], resolutionRows),
+    '',
+    '## Source Owner Decision Packet',
+    '',
+    ownerDecisionPacket.evidence ?? 'Source owner decision packet missing.',
+    '',
+    `Proof type: ${ownerDecisionPacket.proof_type ?? 'source_owner_decision_packet'}`,
+    '',
+    ownerDecisionPacket.proof_boundary ?? 'Source owner decision packet proof boundary missing.',
+    '',
+    ownerDecisionPacket.stop_gate ?? 'Source owner decision packet stop gate missing.',
+    '',
+    renderTable(['Rank', 'Path', 'Old Path', 'Source Status', 'Index Status', 'Worktree Status', 'Staging State', 'Decision Required', 'Recommended Owner Options', 'Proof Command', 'Proof Type', 'Status', 'Blocks Release Source Gate', 'Proof Boundary', 'Stop Gate'], ownerDecisionRows),
     '',
     '## Release Preflight Source Row',
     '',

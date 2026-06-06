@@ -44,6 +44,10 @@ describe('source provenance readiness report', () => {
     expect(stdout).toContain('dirty-source release impact only');
     expect(stdout).toContain('Source Provenance Resolution Queue');
     expect(stdout).toContain('Source provenance resolution queue');
+    expect(stdout).toContain('Source Owner Decision Packet');
+    expect(stdout).toContain('source_owner_decision_packet');
+    expect(stdout).toContain('Recommended Owner Options');
+    expect(stdout).toContain('Do not mutate source paths');
     expect(stdout).toContain('Release Preflight Source Row');
     expect(stdout).toContain('Production Approval Source Prerequisite');
     expect(stdout).toContain('Production Approval Request Source Row');
@@ -70,12 +74,38 @@ describe('source provenance readiness report', () => {
     expect(payload.source_provenance.isolation_ledger.proof_type).toBe('source_provenance_isolation_ledger');
     expect(payload.source_provenance.isolation_ledger.dirty_path_count).toBe(payload.source_provenance.dirty_path_count);
     expect(payload.source_provenance.resolution_queue.dirty_path_count).toBe(payload.source_provenance.dirty_path_count);
+    expect(payload.source_provenance.owner_decision_packet.proof_type).toBe('source_owner_decision_packet');
+    expect(payload.source_provenance.owner_decision_packet.source).toBe('source_provenance.resolution_queue.items');
+    expect(payload.source_provenance.owner_decision_packet.status).toBe(payload.source_provenance.is_dirty ? 'blocked' : 'ready');
+    expect(payload.source_provenance.owner_decision_packet.item_count).toBe(payload.source_provenance.resolution_queue.item_count);
+    expect(payload.source_provenance.owner_decision_packet.blocked_count).toBe(payload.source_provenance.resolution_queue.blocked_count);
+    expect(payload.source_provenance.owner_decision_packet.owner_decision_count).toBe(payload.source_provenance.resolution_queue.blocked_count);
+    expect(payload.source_provenance.owner_decision_packet.proof_boundary).toMatch(/decision support only|does not commit|request production approval|deploy/i);
+    expect(payload.source_provenance.owner_decision_packet.stop_gate).toMatch(/Do not mutate source paths|explicit owner intent|clean source-provenance rerun/i);
     expect(payload.release_preflight_source_row.requirement).toBe('Clean source provenance');
     expect(payload.production_approval_source_prerequisite.prerequisite).toBe('Clean source provenance');
     expect(payload.production_approval_request_source_row.prerequisite).toBe('Clean source provenance');
     if (payload.source_provenance.resolution_queue.items.length > 0) {
       expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');
       expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('check:source-provenance-report');
+    }
+    if (payload.source_provenance.owner_decision_packet.items.length > 0) {
+      const firstOwnerDecision = payload.source_provenance.owner_decision_packet.items[0];
+      const firstResolutionDecision = payload.source_provenance.resolution_queue.items[0];
+      expect(firstOwnerDecision.file_path).toBe(firstResolutionDecision.file_path);
+      expect(firstOwnerDecision.old_path).toBe(firstResolutionDecision.old_path);
+      expect(firstOwnerDecision.proof_type).toBe(firstResolutionDecision.proof_type);
+      expect(firstOwnerDecision.owner_decision_required).toBe(true);
+      expect(firstOwnerDecision.recommended_owner_options.length).toBeGreaterThanOrEqual(2);
+      if (firstOwnerDecision.old_path || firstOwnerDecision.staging_state === 'staged_only') {
+        expect(firstOwnerDecision.recommended_owner_options.map((option: { option?: string }) => option.option)).toEqual(expect.arrayContaining([
+          'commit_as_intentional_change',
+        ]));
+      }
+      expect(firstOwnerDecision.proof_command).toContain('report:source-provenance-readiness');
+      expect(firstOwnerDecision.proof_command).toContain('check:source-provenance-report');
+      expect(firstOwnerDecision.proof_boundary).toMatch(/decision support only|does not mutate source|request production approval|deploy/i);
+      expect(firstOwnerDecision.stop_gate).toMatch(/Do not treat this packet item as approval|clear source provenance/i);
     }
     if (payload.source_provenance.isolation_ledger.rows.length > 0) {
       expect(payload.source_provenance.isolation_ledger.rows[0].proof_command).toContain('git status --porcelain=v1');

@@ -91,6 +91,10 @@ if (failures.length === 0) {
     assertContains(stdout, 'git status --porcelain=v1', 'Report must include the source isolation proof command.');
     assertContains(stdout, '## Source Provenance Resolution Queue', 'Report must include source resolution queue evidence.');
     assertContains(stdout, 'Source provenance resolution queue', 'Report must include structured source resolution evidence.');
+    assertContains(stdout, '## Source Owner Decision Packet', 'Report must include the source owner decision packet.');
+    assertContains(stdout, 'source_owner_decision_packet', 'Report must classify the source owner decision packet.');
+    assertContains(stdout, 'Recommended Owner Options', 'Report must render recommended owner options.');
+    assertContains(stdout, 'Do not mutate source paths', 'Report must preserve packet no-mutation semantics.');
     assertContains(stdout, '## Release Preflight Source Row', 'Report must include the release preflight clean-source row.');
     assertContains(stdout, '| Clean source provenance |', 'Report must include the clean source provenance row.');
     assertContains(stdout, '## Production Approval Source Prerequisite', 'Report must include the production approval source prerequisite.');
@@ -102,6 +106,7 @@ if (failures.length === 0) {
     const source = payload.source_provenance ?? {};
     const isolationLedger = source.isolation_ledger ?? {};
     const resolutionQueue = source.resolution_queue ?? {};
+    const ownerDecisionPacket = source.owner_decision_packet ?? {};
     assert(payload.schema_version === 1, 'Focused source provenance JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused source provenance JSON must preserve the blocked launch decision.');
     assert(['pass', 'blocked'].includes(source.status), 'source_provenance.status must be pass or blocked.');
@@ -115,8 +120,37 @@ if (failures.length === 0) {
     assert(isolationLedger.dirty_path_count === source.dirty_path_count, 'Isolation ledger dirty_path_count must match source provenance.');
     assert(resolutionQueue.dirty_path_count === source.dirty_path_count, 'Resolution queue dirty_path_count must match source provenance.');
     assert(Array.isArray(resolutionQueue.items), 'Resolution queue items must be a list.');
+    assert(ownerDecisionPacket.proof_type === 'source_owner_decision_packet', 'Focused JSON must include the source owner decision packet.');
+    assert(ownerDecisionPacket.source === 'source_provenance.resolution_queue.items', 'Source owner decision packet must point at the source resolution queue.');
+    assert(ownerDecisionPacket.status === (source.is_dirty ? 'blocked' : 'ready'), 'Source owner decision packet status must match source dirty state.');
+    assert(ownerDecisionPacket.item_count === resolutionQueue.item_count, 'Source owner decision packet item_count must match the resolution queue.');
+    assert(ownerDecisionPacket.blocked_count === resolutionQueue.blocked_count, 'Source owner decision packet blocked_count must match the resolution queue.');
+    assert(ownerDecisionPacket.owner_decision_count === resolutionQueue.blocked_count, 'Source owner decision packet owner decision count must match blocked source decisions.');
+    assert(Array.isArray(ownerDecisionPacket.items), 'Source owner decision packet items must be a list.');
+    assert(/decision support only|does not commit|clear source provenance|request production approval|deploy/i.test(ownerDecisionPacket.proof_boundary ?? ''), 'Source owner decision packet proof boundary must preserve no-mutation and no-approval semantics.');
+    assert(/Do not mutate source paths|explicit owner intent|clean source-provenance rerun/i.test(ownerDecisionPacket.stop_gate ?? ''), 'Source owner decision packet stop gate must require explicit owner intent and clean rerun.');
     if ((resolutionQueue.items ?? []).length > 0) {
       assert(/report:source-provenance-readiness/.test(resolutionQueue.items[0]?.proof_command ?? '') && /check:source-provenance-report/.test(resolutionQueue.items[0]?.proof_command ?? ''), 'Resolution queue proof command must point to the focused source provenance report/check.');
+    }
+    if ((ownerDecisionPacket.items ?? []).length > 0) {
+      const firstOwnerDecision = ownerDecisionPacket.items[0] ?? {};
+      const firstResolutionDecision = resolutionQueue.items[0] ?? {};
+      assert(firstOwnerDecision.file_path === firstResolutionDecision.file_path, 'Source owner decision packet first item must preserve the resolution queue file path.');
+      assert(firstOwnerDecision.old_path === firstResolutionDecision.old_path, 'Source owner decision packet first item must preserve the resolution queue old path.');
+      assert(firstOwnerDecision.proof_type === firstResolutionDecision.proof_type, 'Source owner decision packet first item must preserve source decision proof type.');
+      assert(firstOwnerDecision.owner_decision_required === true, 'Source owner decision packet first item must require owner decision.');
+      assert(Array.isArray(firstOwnerDecision.recommended_owner_options) && firstOwnerDecision.recommended_owner_options.length >= 2, 'Source owner decision packet items must include recommended owner options.');
+      const optionNames = firstOwnerDecision.recommended_owner_options.map((option) => option?.option);
+      if (firstOwnerDecision.old_path || firstOwnerDecision.staging_state === 'staged_only') {
+        assert(
+          optionNames.includes('commit_as_intentional_change')
+            && (optionNames.includes('unstage_for_later_review') || optionNames.includes('stash_or_revert_with_owner_approval')),
+          'Source owner decision packet must include intentional commit plus non-commit owner options for staged or renamed rows.',
+        );
+      }
+      assert(/report:source-provenance-readiness/.test(firstOwnerDecision.proof_command ?? '') && /check:source-provenance-report/.test(firstOwnerDecision.proof_command ?? ''), 'Source owner decision packet proof command must point to the focused source report/check.');
+      assert(/decision support only|does not mutate source|request production approval|deploy/i.test(firstOwnerDecision.proof_boundary ?? ''), 'Source owner decision packet item proof boundary must preserve no-mutation semantics.');
+      assert(/Do not treat this packet item as approval|clear source provenance/i.test(firstOwnerDecision.stop_gate ?? ''), 'Source owner decision packet item stop gate must reject approval and clearance claims.');
     }
     if ((isolationLedger.rows ?? []).length > 0) {
       assert(/git status --porcelain=v1/.test(isolationLedger.rows[0]?.proof_command ?? '') && /report:source-provenance-readiness/.test(isolationLedger.rows[0]?.proof_command ?? '') && /check:source-provenance-report/.test(isolationLedger.rows[0]?.proof_command ?? ''), 'Isolation ledger proof command must include git status plus the focused source provenance report/check.');

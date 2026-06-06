@@ -3007,6 +3007,180 @@ function buildSourceProvenanceResolutionQueue(status) {
   return { ...queue, evidence: sourceProvenanceResolutionEvidence(queue) };
 }
 
+function sourceOwnerDecisionOptions(item) {
+  if (item.old_path) {
+    return [
+      {
+        option: 'commit_as_intentional_change',
+        impact: `Commit ${sourcePathDisplay(item)} only if the owner confirms the staged rename or move is intentional launch source work.`,
+        risk: 'Commits the staged source rename into history; do not use for accidental or unrelated workflow moves.',
+      },
+      {
+        option: 'unstage_for_later_review',
+        impact: 'Unstage the rename or move if it should not be part of the next release-source state.',
+        risk: 'Keeps the change in the worktree for later review and still requires a clean source-provenance rerun.',
+      },
+      {
+        option: 'stash_or_revert_with_owner_approval',
+        impact: 'Stash or revert only when the owner explicitly requests that exact source cleanup action.',
+        risk: 'Can hide or discard owner work if used without explicit approval.',
+      },
+    ];
+  }
+  if (!item.tracked && item.ignored_by_rule) {
+    return [
+      {
+        option: 'leave_outside_launch_evidence',
+        impact: 'Confirm the ignored local artifact remains outside launch evidence and release proof.',
+        risk: 'Local artifact stays out of source; any retained evidence must be recorded through the approved evidence path.',
+      },
+      {
+        option: 'remove_local_copy_with_owner_approval',
+        impact: 'Remove or move the ignored local artifact only with explicit owner intent before deploy approval.',
+        risk: 'Can delete local work if used without approval.',
+      },
+    ];
+  }
+  if (!item.tracked) {
+    return [
+      {
+        option: 'commit_as_source_evidence',
+        impact: 'Add and commit the path only if it is intentional launch source or retained evidence metadata.',
+        risk: 'Can leak local artifacts or unsupported evidence into source if misclassified.',
+      },
+      {
+        option: 'move_out_or_ignore_with_owner_approval',
+        impact: 'Move the path out of the repo or add an ignore rule only after the owner confirms it is not launch source.',
+        risk: 'Can hide real source work or create ignore-rule drift if used prematurely.',
+      },
+    ];
+  }
+  if (item.staging_state === 'staged_only') {
+    return [
+      {
+        option: 'commit_as_intentional_change',
+        impact: 'Commit the staged source change only if the owner confirms it is intentional launch source work.',
+        risk: 'Commits the staged source change into history; do not use for accidental or unrelated work.',
+      },
+      {
+        option: 'unstage_for_later_review',
+        impact: 'Unstage if the change should not be part of the next release-source state.',
+        risk: 'Keeps the change in the worktree and still requires a clean source-provenance rerun.',
+      },
+      {
+        option: 'stash_or_revert_with_owner_approval',
+        impact: 'Stash or revert only when the owner explicitly requests that exact source cleanup action.',
+        risk: 'Can hide or discard owner work if used without explicit approval.',
+      },
+    ];
+  }
+  if (item.staging_state === 'unstaged_only') {
+    return [
+      {
+        option: 'commit_as_intentional_change',
+        impact: 'Stage and commit the source change only if the owner confirms it is intentional launch source work.',
+        risk: 'Commits local work into history; do not use for accidental or unrelated changes.',
+      },
+      {
+        option: 'stash_or_revert_with_owner_approval',
+        impact: 'Stash or revert only when the owner explicitly requests that exact source cleanup action.',
+        risk: 'Can hide or discard owner work if used without explicit approval.',
+      },
+    ];
+  }
+  if (item.staging_state === 'staged_and_unstaged') {
+    return [
+      {
+        option: 'split_owner_decision',
+        impact: 'Decide separately on the staged version and the unstaged worktree version before any release-source clearance.',
+        risk: 'Combining both versions without review can commit unintended deltas.',
+      },
+      {
+        option: 'stash_or_revert_with_owner_approval',
+        impact: 'Stash or revert one or both versions only when the owner explicitly requests that exact source cleanup action.',
+        risk: 'Can hide or discard owner work if used without explicit approval.',
+      },
+    ];
+  }
+  return [
+    {
+      option: 'commit_as_intentional_change',
+      impact: 'Commit the tracked source change only if the owner confirms it is intentional launch source work.',
+      risk: 'Commits local work into history; do not use for accidental or unrelated changes.',
+    },
+    {
+      option: 'stash_or_revert_with_owner_approval',
+      impact: 'Stash or revert only when the owner explicitly requests that exact source cleanup action.',
+      risk: 'Can hide or discard owner work if used without explicit approval.',
+    },
+  ];
+}
+
+function sourceOwnerDecisionPacketEvidence(packet) {
+  if (packet.status === 'ready') {
+    return 'Source owner decision packet: status=ready items=0 owner_decisions=0 approval_gate=clean source still requires release-readiness, production approval, deploy approval, and live proof before launch.';
+  }
+
+  const topDecisions = packet.items
+    .slice(0, 5)
+    .map((item) => `${sourceDecisionLabel(item)}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Source owner decision packet:',
+    `status=${packet.status}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `owner_decisions=${packet.owner_decision_count}`,
+    `rename_or_move=${packet.rename_or_move_count}`,
+    `staged_only=${packet.staged_only_count}`,
+    `top_decisions=${topDecisions}`,
+    'approval_gate=owner decision support only; no commit, unstage, stash, revert, delete, rename, move, provenance clearance, production approval request, or deploy without explicit owner intent and clean source rerun',
+  ].join(' ');
+}
+
+function buildSourceOwnerDecisionPacket(resolutionQueue) {
+  const sourceItems = resolutionQueue.items ?? [];
+  const items = sourceItems.map((item) => ({
+    rank: item.rank,
+    file_path: item.file_path,
+    old_path: item.old_path,
+    source_status: item.source_status,
+    index_status: item.index_status,
+    worktree_status: item.worktree_status,
+    staging_state: item.staging_state,
+    tracked: item.tracked,
+    ignored_by_rule: item.ignored_by_rule,
+    decision_required: item.decision_required,
+    recommended_owner_options: sourceOwnerDecisionOptions(item),
+    proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
+    proof_type: item.proof_type,
+    owner_decision_required: item.owner_decision_required === true,
+    proof_boundary: `${item.proof_boundary} This source owner decision packet item is decision support only; it does not mutate source, clear provenance, request production approval, deploy, or grant approval.`,
+    stop_gate: `${item.stop_gate} Do not treat this packet item as approval to mutate source, request production approval, deploy, or clear source provenance.`,
+    status: item.status,
+    blocks_release_source_gate: item.status !== 'pass',
+  }));
+  const packet = {
+    status: resolutionQueue.status === 'pass' ? 'ready' : 'blocked',
+    proof_type: 'source_owner_decision_packet',
+    source: 'source_provenance.resolution_queue.items',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_release_source_gate).length,
+    owner_decision_count: items.filter((item) => item.owner_decision_required).length,
+    rename_or_move_count: items.filter((item) => item.old_path).length,
+    staged_only_count: items.filter((item) => item.staging_state === 'staged_only').length,
+    unstaged_only_count: items.filter((item) => item.staging_state === 'unstaged_only').length,
+    staged_and_unstaged_count: items.filter((item) => item.staging_state === 'staged_and_unstaged').length,
+    untracked_count: items.filter((item) => !item.tracked && !item.ignored_by_rule).length,
+    ignored_local_count: items.filter((item) => !item.tracked && item.ignored_by_rule).length,
+    proof_boundary: 'This source owner decision packet is source-provenance decision support only; it does not commit, unstage, stash, revert, delete, rename, move, mutate source, clear source provenance, run release-readiness, request production approval, deploy, or grant owner approval.',
+    stop_gate: 'Do not mutate source paths, request deploy approval, request production approval, or treat source provenance as clean from this packet without explicit owner intent and a clean source-provenance rerun.',
+    items,
+  };
+  return { ...packet, evidence: sourceOwnerDecisionPacketEvidence(packet) };
+}
+
 function sourceProvenanceIsolationReleaseImpact(detail) {
   if (!detail) {
     return 'no dirty source path blocks release provenance at manifest generation time';
@@ -4411,6 +4585,7 @@ const generatedAt = new Date().toISOString();
 const dirtyEvidence = sourceProvenanceEvidence(gitStatus);
 const sourceProvenanceResolutionQueue = buildSourceProvenanceResolutionQueue(gitStatus);
 const sourceProvenanceIsolationLedger = buildSourceProvenanceIsolationLedger(gitStatus);
+const sourceOwnerDecisionPacket = buildSourceOwnerDecisionPacket(sourceProvenanceResolutionQueue);
 const productionApprovalPrerequisiteQueue = buildProductionApprovalPrerequisiteQueue({
   buyerProbe,
   branchReviewQueue,
@@ -4709,6 +4884,17 @@ const sourceProvenanceRenameSummaryFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
   'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const sourceOwnerDecisionPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-source-provenance-readiness.mjs',
+  'scripts/check-source-provenance-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/sourceProvenanceReadiness.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
@@ -5066,6 +5252,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
   ...sourceProvenanceRenameSummaryFilesChanged,
+  ...sourceOwnerDecisionPacketFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -5269,6 +5456,22 @@ const sourceProvenanceRenameSummaryTestsRun = [
   'pnpm run check:source-provenance-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const sourceOwnerDecisionPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-source-provenance-readiness.mjs',
+  'node --check scripts/check-source-provenance-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run check:source-provenance-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
 ];
 
 const releaseToolchainProofHandleTestsRun = [
@@ -6254,6 +6457,19 @@ const safeFixImplementationDecisions = [
     reason: 'The acquisition matrix had the required row data, but operators lacked a compact manifest-backed handoff that grouped the minimum evidence packet needed to start clearing the top buyer-evidence blocker.',
     proof_boundary: 'This record improves buyer evidence handoff visibility only; it does not contact buyers, send outreach, create accepted evidence, attach retained artifacts, move confidence, validate 95%, clear buyer hard gates, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the minimum packet handoff, focused buyer report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as buyer acceptance, retained-artifact proof, validate:pilot-evidence --require-95 success, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    decision: 'Expose a source owner-decision packet derived from the source-provenance resolution queue.',
+    acceptance_check: 'source_provenance.owner_decision_packet records source linkage, status, counts, recommended owner options, proof commands, proof boundaries, and stop gates; report:source-provenance-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived source owner-decision packet',
+    repo_pattern_reused: 'Existing source_provenance.resolution_queue items, source decision labels, focused source-provenance report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: sourceOwnerDecisionPacketFilesChanged,
+    tests_run: sourceOwnerDecisionPacketTestsRun,
+    proof: 'The patch derives the packet from existing source_provenance.resolution_queue rows, preserves the staged rename blocker, exposes owner options without executing them, and validates the source linkage, counts, options, proof commands, and no-mutation boundaries.',
+    reason: 'The source resolution queue named the owner decision, but operators still lacked a compact source-linked packet that grouped the allowed owner choices for the top source-provenance blocker without mutating the staged rename.',
+    proof_boundary: 'This record improves source owner-decision handoff visibility only; it does not commit, unstage, stash, revert, delete, rename, move, mutate source, clear source provenance, run release-readiness, request production approval, deploy, prove hosted/live parity, grant owner approval, or raise launch status.',
+    stop_gate: 'Do not treat the source owner-decision packet, focused source report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as owner approval, source cleanup, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7392,6 +7608,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing buyer evidence work could clear the blocker only with real data and authorization, but local generation would fabricate proof or exceed scope.',
     evidence: 'Buyer evidence stop gates require real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 before readiness changes.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    variant: 'Leave owner action implicit in source_provenance.resolution_queue rows.',
+    reason_rejected: 'The resolution queue names the decision but does not group the concrete owner options into a compact handoff for the active source-provenance blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the first source gate less executable for the owner.',
+    evidence: 'source_provenance.resolution_queue.items already contains the staged rename row, but no dedicated owner_decision_packet or focused report section surfaces the allowed owner choices.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    variant: 'Automatically commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
+    reason_rejected: 'The staged rename is owner work and must remain untouched without explicit owner intent.',
+    tradeoff: 'Mutation could clear source provenance locally, but it would violate dirty-worktree policy and erase the source-provenance owner-decision gate.',
+    evidence: 'git status shows .windsurf/workflows/master.md -> .devin/workflows/master.md staged, and the source resolution stop gate forbids mutation without explicit owner intent.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    variant: 'Create a separate source decision artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the owner packet from source_provenance.resolution_queue.items.',
+    tradeoff: 'A standalone artifact could be convenient, but it would increase drift risk and require extra output lifecycle management.',
+    evidence: 'The launch manifest already emits source_provenance.dirty_paths, isolation_ledger, and resolution_queue from one parser and the focused source report reads that same manifest.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7821,6 +8058,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: buyerEvidenceMinimumPacketHandoffTestsRun,
     remaining_risk: 'The minimum packet handoff is operator guidance only; launch readiness still depends on real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, validate:pilot-evidence --require-95, source provenance cleanup, branch decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a source owner-decision packet from existing source_provenance.resolution_queue rows, renders it through the existing focused source report, and tightens existing checkers/tests without adding dependencies, a new parser, a separate artifact, source mutation, release execution, approval request, or launch-status changes.',
+    tests_or_checks: sourceOwnerDecisionPacketTestsRun,
+    remaining_risk: 'The source owner-decision packet is operator guidance only; launch readiness still depends on explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8007,6 +8253,7 @@ const manifest = {
       dirtyEvidence,
       sourceProvenanceIsolationLedger.evidence,
       sourceProvenanceResolutionQueue.evidence,
+      sourceOwnerDecisionPacket.evidence,
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
       buyerEvidenceAcquisitionMatrix.evidence,
@@ -8156,6 +8403,7 @@ const manifest = {
     dirty_paths: gitStatus.dirtyDetails,
     isolation_ledger: sourceProvenanceIsolationLedger,
     resolution_queue: sourceProvenanceResolutionQueue,
+    owner_decision_packet: sourceOwnerDecisionPacket,
     evidence: dirtyEvidence,
     deploy_gate: gitStatus.isDirty
       ? 'blocked until dirty tracked/untracked paths are committed, stashed, removed, or otherwise intentionally resolved before deploy approval'
