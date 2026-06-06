@@ -156,13 +156,13 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Progress update digest',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report',
     evidenceBoundary: 'The progress update digest summarizes accomplished work, target matrix, pending work, current bottleneck, and phase progress from the launch evidence manifest, but it does not complete pending work, clear blockers, run checks, contact buyers, approve branches, deploy, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.',
   },
   {
     label: 'Bottleneck log digest',
     status: 'external_gate',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report',
     evidenceBoundary: 'The bottleneck log digest summarizes the blocked task or subtask, elapsed time, last update, root cause, and top unblock options from the launch evidence manifest, but it does not resolve evidence gaps, collect buyer artifacts, authorize Supabase advisors, choose branch heads, approve deploys, mutate live services, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.',
   },
   {

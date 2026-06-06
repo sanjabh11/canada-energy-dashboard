@@ -4693,6 +4693,23 @@ const publicFixReportCommandFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressDigestFocusedReportFilesChanged = [
+  'package.json',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/generate-public-release-status.mjs',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'scripts/check-commercial-source-docs.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4719,6 +4736,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...launchActionFinalProofHandleFilesChanged,
   ...fixReportFocusedChecksFilesChanged,
   ...publicFixReportCommandFilesChanged,
+  ...progressDigestFocusedReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4996,6 +5014,18 @@ const publicFixReportCommandTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const progressDigestFocusedReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run check:commercial-source',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5022,6 +5052,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...launchActionFinalProofHandleTestsRun,
   ...fixReportFocusedChecksTestsRun,
   ...publicFixReportCommandTestsRun,
+  ...progressDigestFocusedReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5397,6 +5428,19 @@ const safeFixImplementationDecisions = [
     reason: 'The structured Fix Report now has focused required-check assertions; the public status item should point operators to the report/check pair that proves that contract rather than to report-only output.',
     proof_boundary: 'This record aligns public Fix Report command handles only; it does not run missing checks as clearance, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat public Fix Report command handles, public status sync, status posture tests, manifest validation, source-of-truth docs, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    decision: 'Expose progress update and bottleneck log evidence through a focused report/check pair and public-safe handles.',
+    acceptance_check: 'Operators can run report:progress-digest-readiness and check:progress-digest-report to inspect progress_updates, bottleneck_log, public progress/bottleneck handles, package-script handles, target matrix, active bottleneck, root cause, and top unblock options without broad-report scanning or clearing any blocker.',
+    chosen_variant: 'minimal focused progress and bottleneck digest wrapper',
+    repo_pattern_reused: 'Existing manifest-backed focused report/check wrappers, public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, COMMERCIAL_SOURCE_OF_TRUTH public-handle notes, statusPagePosture tests, and launch evidence code-optimization ledger.',
+    files_changed: progressDigestFocusedReportFilesChanged,
+    tests_run: progressDigestFocusedReportTestsRun,
+    proof: 'The patch adds a thin progress-digest report/check over existing progress_updates and bottleneck_log manifest fields, routes both public-safe handles through that report/check pair, and asserts package, public status, docs, manifest, and commercial report contracts without changing launch status.',
+    reason: 'The commercial-launch skill requires progress updates and bottleneck logs, but the repo previously exposed those lanes only inside broad launch artifacts and public status report-only handles.',
+    proof_boundary: 'This record improves progress and bottleneck evidence visibility only; it does not complete pending work, clear blockers, run missing checks as clearance, contact buyers, approve branches, authorize Supabase, resolve evidence gaps, request owner approval, deploy, mutate live services, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused progress digest report/check, public progress or bottleneck handles, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6101,6 +6145,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Generated-only is faster, but the next generate:public-release-status run would revert it.',
     evidence: 'scripts/generate-public-release-status.mjs validates the source manifest and writes public/status/release-health.json from it.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    variant: 'Leave progress_update_digest and bottleneck_log_digest discoverable only through broad reports.',
+    reason_rejected: 'Would keep progress visibility weaker than the focused lane-report pattern now used by other launch-readiness blockers.',
+    tradeoff: 'No-code defer avoids new scripts, but operators must scan broad launch artifacts to find progress and bottleneck proof.',
+    evidence: 'progress_updates and bottleneck_log are already structured manifest fields, and public status already exposes them as separate handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    variant: 'Create separate progress and bottleneck report/check pairs.',
+    reason_rejected: 'The two public handles are driven by adjacent manifest progress state and can share one focused wrapper without duplicating manifest reads, package scripts, and tests.',
+    tradeoff: 'Separate wrappers would be more granular, but they would add extra scripts and command surfaces for the same operator decision point.',
+    evidence: 'The skill progress contract requires progress updates and bottleneck logs together in the same digest context.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    variant: 'Run buyer validation, Supabase advisors, branch mutations, release-readiness, production deploy request, or live proof from the progress digest report.',
+    reason_rejected: 'Those operations require external evidence, owner approval, live context, or source decisions outside this safe report-wrapper phase.',
+    tradeoff: 'Direct execution could look more complete, but it would violate the progress-digest no-clearance boundary and risk overstating launch readiness.',
+    evidence: 'The manifest progress update and bottleneck log explicitly identify buyer artifacts, owner approval, authorized Supabase evidence, branch decisions, and guarded deploy/live proof as unresolved external blockers.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    variant: 'Store progress digest state in a new durable artifact instead of rendering the manifest fields.',
+    reason_rejected: 'A new artifact would add another source of truth when the manifest already contains progress_updates and bottleneck_log fields.',
+    tradeoff: 'A separate artifact could be easier to archive, but it would drift from the structured launch evidence manifest.',
+    evidence: 'check:launch-evidence-manifest already validates progress_updates and bottleneck_log as top-level schema evidence.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6358,6 +6430,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates only the existing public release-status Fix Report command contract, source/generated JSON, source-of-truth docs, tests, and manifest ledger assertions, with no new dependency, new public artifact type, lane-parser duplication, external gate execution, or launch-status change.',
     tests_or_checks: publicFixReportCommandTestsRun,
     remaining_risk: 'The public status remains an external-gate map; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds one thin focused report/check pair over existing manifest progress fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no blocker scanner, executes no external gate, and preserves blocked launch status.',
+    tests_or_checks: progressDigestFocusedReportTestsRun,
+    remaining_risk: 'The progress digest remains evidence visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

@@ -456,14 +456,16 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(progressUpdateDigestEvidence?.status).toBe('external_gate');
-    expect(progressUpdateDigestEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(progressUpdateDigestEvidence?.command).toContain('report:progress-digest-readiness');
+    expect(progressUpdateDigestEvidence?.command).toContain('check:progress-digest-report');
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/accomplished work, target matrix, pending work/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/current bottleneck, and phase progress/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not complete pending work/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/contact buyers/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(bottleneckLogDigestEvidence?.status).toBe('external_gate');
-    expect(bottleneckLogDigestEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(bottleneckLogDigestEvidence?.command).toContain('report:progress-digest-readiness');
+    expect(bottleneckLogDigestEvidence?.command).toContain('check:progress-digest-report');
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/blocked task or subtask, elapsed time, last update/i);
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/root cause, and top unblock options/i);
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/does not resolve evidence gaps/i);
@@ -807,7 +809,8 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapGate?.nextAction).toMatch(/owner-side gate/i);
     expect(progressUpdateDigestGate?.status).toBe('external_gate');
     expect(progressUpdateDigestGate?.proofBucket).toBe('repo artifact');
-    expect(progressUpdateDigestGate?.command).toContain('report:commercial-launch-readiness');
+    expect(progressUpdateDigestGate?.command).toContain('report:progress-digest-readiness');
+    expect(progressUpdateDigestGate?.command).toContain('check:progress-digest-report');
     expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/accomplished work, target matrix, pending work/i);
     expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/current bottleneck, and phase progress/i);
     expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/does not complete pending work/i);
@@ -816,7 +819,8 @@ describe('status page release posture', () => {
     expect(progressUpdateDigestGate?.nextAction).toMatch(/post-deploy proof gates/i);
     expect(bottleneckLogDigestGate?.status).toBe('external_gate');
     expect(bottleneckLogDigestGate?.proofBucket).toBe('repo artifact');
-    expect(bottleneckLogDigestGate?.command).toContain('report:launch-evidence-manifest');
+    expect(bottleneckLogDigestGate?.command).toContain('report:progress-digest-readiness');
+    expect(bottleneckLogDigestGate?.command).toContain('check:progress-digest-report');
     expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/blocked task or subtask, elapsed time, last update/i);
     expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/root cause, and top unblock options/i);
     expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/does not resolve evidence gaps/i);

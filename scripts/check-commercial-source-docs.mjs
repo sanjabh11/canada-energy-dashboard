@@ -121,6 +121,8 @@ const publicStatusAdversarialReviewLedgerHandlePhrase = /adversarial review ledg
 const publicStatusFixReportBlockerMapHandlePhrase = /fix report blocker map[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,320}fix report blocker map/i;
 const publicStatusProgressDigestHandlePhrase = /progress update digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}progress update digest/i;
 const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}bottleneck log digest/i;
+const focusedProgressDigestReportPhrase = /report:progress-digest-readiness[\s\S]{0,520}(?:progress update|bottleneck log digest|launch evidence manifest)/i;
+const focusedProgressDigestCheckerPhrase = /check:progress-digest-report[\s\S]{0,620}(?:validates|current phase|target matrix|top unblock options|no-completion|no-readiness)/i;
 const focusedLaunchActionReportPhrase = /report:launch-action-readiness[\s\S]{0,460}focused launch action report|focused launch action report[\s\S]{0,460}report:launch-action-readiness/i;
 const focusedLaunchActionCheckerPhrase = /check:launch-action-report[\s\S]{0,620}(?:validates|launch blocker action queue|lane status summary|does not.*launch readiness)/i;
 const publicStatusFocusedLaunchActionHandlePhrase = /focused launch action report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused launch action report/i;
@@ -596,6 +598,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:post-deploy-live-proof-report wired to the focused post-deploy live proof report checker.');
   }
 
+  if (packageScripts['report:progress-digest-readiness'] !== 'node scripts/report-progress-digest-readiness.mjs') {
+    failures.push('package.json must keep report:progress-digest-readiness wired to the focused progress digest report.');
+  }
+
+  if (packageScripts['check:progress-digest-report'] !== 'node scripts/check-progress-digest-readiness-report.mjs') {
+    failures.push('package.json must keep check:progress-digest-report wired to the focused progress digest report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -848,6 +858,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!publicStatusBottleneckDigestHandlePhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must say public release status exposes the bottleneck log digest as a public-safe predeploy evidence handle.');
+  }
+
+  if (!focusedProgressDigestReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:progress-digest-readiness as the focused progress and bottleneck digest report.');
+  }
+
+  if (!focusedProgressDigestCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:progress-digest-report and preserve its no-completion/no-readiness checker boundary.');
   }
 
   if (!focusedLaunchActionReportPhrase.test(sourceDoc)) {

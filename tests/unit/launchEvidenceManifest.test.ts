@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(27);
+    expect(manifest.implementation_decisions).toHaveLength(28);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(27);
+    expect(manifest.code_optimization_reviews).toHaveLength(28);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1418,6 +1418,40 @@ describe('launch evidence manifest report', () => {
     expect(publicFixReportCommandReview.policy).toBe('strict');
     expect(publicFixReportCommandReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run generate:public-release-status',
+      'pnpm run check:public-release-status',
+      'pnpm run check:commercial-source',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const progressDigestReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    );
+    expect(progressDigestReportDecision).toBeTruthy();
+    expect(progressDigestReportDecision.chosen_variant).toBe('minimal focused progress and bottleneck digest wrapper');
+    expect(progressDigestReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'package.json',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/generate-public-release-status.mjs',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'scripts/check-commercial-source-docs.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressDigestReportDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|run missing checks as clearance|contact buyers|approve branches|authorize Supabase|resolve evidence gaps|request owner approval|deploy|hosted\/live parity|raise launch status/i);
+    const progressDigestReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-FOCUSED-REPORT',
+    );
+    expect(progressDigestReportReview).toBeTruthy();
+    expect(progressDigestReportReview.policy).toBe('strict');
+    expect(progressDigestReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
