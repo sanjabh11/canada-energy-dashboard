@@ -85,6 +85,9 @@ if (failures.length === 0) {
     assertContains(stdout, 'does not install tools, run release-readiness, clear source provenance, push, deploy', 'Report must preserve release non-execution boundaries.');
     assertContains(stdout, '## Release Toolchain Probe Ledger', 'Report must include the release toolchain probe ledger.');
     assertContains(stdout, '| Corepack pnpm resolver | corepack pnpm --version |', 'Report must include the Corepack probe row.');
+    assertContains(stdout, 'Diagnostic Command', 'Report must expose diagnostic command columns for non-clearance tool context.');
+    assertContains(stdout, 'pnpm --version', 'Report must include the bare pnpm diagnostic command.');
+    assertContains(stdout, 'Bare pnpm diagnostics are local-shell context only', 'Report must preserve the bare pnpm non-clearance boundary.');
     assertContains(stdout, '| Git LFS push-path proof | git lfs version |', 'Report must include the Git LFS probe row.');
     assertContains(stdout, 'Do not treat bare pnpm, local shims, skipped probes', 'Report must reject bare pnpm and skipped probes as release evidence.');
     assertContains(stdout, '## Release Preflight Deficits', 'Report must include release preflight deficits.');
@@ -111,8 +114,10 @@ if (failures.length === 0) {
     const remediationQueue = releasePreflight.remediation_queue ?? {};
     const requirements = (releasePreflight.items ?? []).map((item) => item.requirement);
     const releaseItemsByRequirement = new Map((releasePreflight.items ?? []).map((item) => [item.requirement, item]));
+    const toolchainItemsById = new Map((toolchainLedger.items ?? []).map((item) => [item.id, item]));
     const clearanceRowsByRequirement = new Map((clearanceMatrix.rows ?? []).map((item) => [item.requirement, item]));
     const remediationRowsByRequirement = new Map((remediationQueue.items ?? []).map((item) => [item.requirement, item]));
+    const corepackProbe = toolchainItemsById.get('corepack_pnpm_resolver');
 
     assert(payload.schema_version === 1, 'Focused release preflight JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused release preflight JSON must preserve the blocked launch decision.');
@@ -121,6 +126,13 @@ if (failures.length === 0) {
     assert(toolchainLedger.items?.length === 2, 'toolchain_probe_ledger must include exactly Corepack and Git LFS probes.');
     assert(toolchainLedger.items?.[0]?.id === 'corepack_pnpm_resolver', 'First toolchain probe must be corepack_pnpm_resolver.');
     assert(toolchainLedger.items?.[1]?.id === 'git_lfs_push_path', 'Second toolchain probe must be git_lfs_push_path.');
+    assert(corepackProbe?.diagnostic_command === 'pnpm --version', 'Corepack probe must expose the bare pnpm diagnostic command.');
+    assert(typeof corepackProbe?.diagnostic_current === 'string' && corepackProbe.diagnostic_current.length > 0, 'Corepack probe must expose diagnostic_current.');
+    assert(/Bare pnpm diagnostics are local-shell context only|does not satisfy the Corepack pnpm resolver gate|run release-readiness|deploy|production approval/i.test(corepackProbe?.diagnostic_boundary ?? ''), 'Corepack probe diagnostic boundary must reject bare pnpm as Corepack release evidence.');
+    assert(releasePreflight.bare_pnpm_diagnostic === 'skipped' || /does not satisfy Corepack/i.test(releasePreflight.bare_pnpm_diagnostic ?? ''), 'bare_pnpm_diagnostic must be skipped or explicitly say it does not satisfy Corepack.');
+    if (releasePreflight.corepack_probe === 'fail') {
+      assert(corepackProbe?.status === 'blocked', 'Corepack probe must stay blocked when corepack pnpm --version fails, regardless of bare pnpm diagnostics.');
+    }
     assert(clearanceMatrix.proof_type === 'release_preflight_clearance_matrix', 'clearance matrix proof_type must be release_preflight_clearance_matrix.');
     assert(clearanceMatrix.row_count === releasePreflight.items?.length, 'clearance matrix row_count must match release preflight item count.');
     assert(clearanceMatrix.blocked_count >= 1, 'clearance matrix must keep blocked release rows visible until release preflight passes.');

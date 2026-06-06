@@ -251,6 +251,9 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('## Release Toolchain Probe Ledger'), 'Report must include the release toolchain probe ledger table.');
   assert(markdown.includes('Release Toolchain Probe Ledger'), 'Report must include structured release toolchain probe evidence from the manifest.');
   assert(markdown.includes('| Corepack pnpm resolver | corepack pnpm --version |'), 'Report must include the Corepack toolchain probe command.');
+  assert(markdown.includes('Diagnostic Command'), 'Report must expose release toolchain diagnostic command columns.');
+  assert(markdown.includes('pnpm --version'), 'Report must include bare pnpm as a diagnostic command.');
+  assert(markdown.includes('Bare pnpm diagnostics are local-shell context only'), 'Report must preserve the bare pnpm non-clearance diagnostic boundary.');
   assert(markdown.includes('| Git LFS push-path proof | git lfs version |'), 'Report must include the Git LFS push-path probe command.');
   assert(markdown.includes('does not install tools, run release-readiness'), 'Report must preserve the release toolchain probe non-execution boundary.');
   assert(markdown.includes('Corepack/Git LFS probe ledger'), 'Report must include release toolchain probe state in production approval prerequisites.');
@@ -502,6 +505,9 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal focused adversarial review wrapper'), 'Code optimization report must record the selected minimal adversarial review wrapper.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES'), 'Code optimization report must record the release preflight public checker handle task.');
   assert(codeOptimizationSection.includes('minimal public release-preflight checker alignment'), 'Code optimization report must record the selected minimal release preflight public checker handle patch.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC'), 'Code optimization report must record the release toolchain bare pnpm diagnostic task.');
+  assert(codeOptimizationSection.includes('minimal non-clearance bare pnpm diagnostic'), 'Code optimization report must record the selected minimal non-clearance bare pnpm diagnostic.');
+  assert(/does not install Corepack|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve the release toolchain pnpm diagnostic non-clearance boundary.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');

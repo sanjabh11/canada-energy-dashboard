@@ -291,6 +291,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.release_preflight.package_manager).toBe('pnpm@10.23.0');
     expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');
     expect(manifest.release_preflight.corepack_probe).toBe('skipped');
+    expect(manifest.release_preflight.bare_pnpm_diagnostic).toBe('skipped');
     expect(manifest.release_preflight.git_lfs_probe).toBe('skipped');
     expect(manifest.release_preflight.toolchain_probe_ledger.status).toBe('skipped');
     expect(manifest.release_preflight.toolchain_probe_ledger.evidence).toContain('Release toolchain probe ledger skipped');
@@ -300,6 +301,9 @@ describe('launch evidence manifest report', () => {
     ]);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].command).toBe('corepack pnpm --version');
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].diagnostic_command).toBe('pnpm --version');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].diagnostic_current).toBe('skipped');
+    expect(manifest.release_preflight.toolchain_probe_ledger.items[0].diagnostic_boundary).toMatch(/Bare pnpm diagnostics are local-shell context only|does not satisfy the Corepack pnpm resolver gate|deploy|production approval/i);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].proof_type).toBe('corepack_pnpm_toolchain_probe');
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].proof_boundary).toMatch(/release-shell evidence only|does not install tools|run release-readiness|push|deploy/i);
     expect(manifest.release_preflight.toolchain_probe_ledger.items[0].evidence_boundary).toMatch(/does not install tools/i);
@@ -780,9 +784,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(33);
+    expect(manifest.implementation_decisions).toHaveLength(34);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(33);
+    expect(manifest.code_optimization_reviews).toHaveLength(34);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -856,6 +860,9 @@ describe('launch evidence manifest report', () => {
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
       'Duplicate release preflight probing logic in launch action or production approval rows.',
+      'Treat bare pnpm 10.23.0 as satisfying Corepack release evidence.',
+      'Install or enable Corepack globally from the safe-fix report phase.',
+      'Leave Corepack ENOENT without local pnpm diagnostic context.',
       'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
       'Call Supabase connector or dashboard advisors from the focused report.',
       'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
@@ -1628,6 +1635,32 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:public-release-status',
       'pnpm run report:release-preflight -- --skip-probes',
       'pnpm run check:release-preflight-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const releaseToolchainPnpmDiagnosticDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC',
+    );
+    expect(releaseToolchainPnpmDiagnosticDecision).toBeTruthy();
+    expect(releaseToolchainPnpmDiagnosticDecision.chosen_variant).toBe('minimal non-clearance bare pnpm diagnostic');
+    expect(releaseToolchainPnpmDiagnosticDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-release-preflight-readiness.mjs',
+      'scripts/report-commercial-launch-readiness.mjs',
+      'scripts/check-release-preflight-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/releasePreflightReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(releaseToolchainPnpmDiagnosticDecision.proof_boundary).toMatch(/does not install Corepack|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i);
+    const releaseToolchainPnpmDiagnosticReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC',
+    );
+    expect(releaseToolchainPnpmDiagnosticReview).toBeTruthy();
+    expect(releaseToolchainPnpmDiagnosticReview.policy).toBe('strict');
+    expect(releaseToolchainPnpmDiagnosticReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:release-preflight -- --json',
+      'pnpm run check:release-preflight-report',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');

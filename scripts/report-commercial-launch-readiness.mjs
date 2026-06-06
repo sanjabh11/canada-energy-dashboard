@@ -505,8 +505,8 @@ ${releasePreflightItems.length > 0
 
 Open release-toolchain probes: ${text(releaseToolchainProbeLedger.open_count ?? 'unknown')}/${text(releaseToolchainProbeLedger.item_count ?? 'unknown')}. This ledger is proof collection only; it does not install tools, run release-readiness, push, deploy, clear source provenance, or grant production approval.
 
-| Probe | Command | Current | Expected | Status | Evidence Boundary | Next Action |
-|---|---|---|---|---|---|---|
+| Probe | Command | Current | Expected | Status | Diagnostic Command | Diagnostic Current | Diagnostic Boundary | Evidence Boundary | Next Action |
+|---|---|---|---|---|---|---|---|---|---|
 ${releaseToolchainProbeItems.length > 0
     ? releaseToolchainProbeItems.map((item) => row([
       item.label,
@@ -514,10 +514,13 @@ ${releaseToolchainProbeItems.length > 0
       item.current,
       item.expected,
       item.status,
+      item.diagnostic_command ?? '-',
+      item.diagnostic_current ?? '-',
+      item.diagnostic_boundary ?? '-',
       item.evidence_boundary,
       item.next_action,
     ])).join('\n')
-    : row(['Release toolchain probe ledger', 'corepack pnpm --version; git lfs version', 'not available', 'Run report:launch-evidence-manifest without --skip-probes', releaseToolchainProbeLedger.status ?? 'unknown', releaseToolchainProbeLedger.evidence ?? 'No release toolchain probe ledger was captured.', 'Refresh toolchain probes before release-readiness evidence is claimed.'])}
+    : row(['Release toolchain probe ledger', 'corepack pnpm --version; git lfs version', 'not available', 'Run report:launch-evidence-manifest without --skip-probes', releaseToolchainProbeLedger.status ?? 'unknown', 'pnpm --version', 'not available', 'Bare pnpm diagnostics are local-shell context only and do not satisfy Corepack release evidence.', releaseToolchainProbeLedger.evidence ?? 'No release toolchain probe ledger was captured.', 'Refresh toolchain probes before release-readiness evidence is claimed.'])}
 
 ## Release Preflight Clearance Matrix
 

@@ -652,6 +652,11 @@ try {
     assert(typeof manifest.release_preflight?.package_manager === 'string' && manifest.release_preflight.package_manager.length > 0, 'Manifest release_preflight.package_manager must be set.');
     assert(typeof manifest.release_preflight?.expected_pnpm_version === 'string' && manifest.release_preflight.expected_pnpm_version.length > 0, 'Manifest release_preflight.expected_pnpm_version must be set.');
     assert(typeof manifest.release_preflight?.corepack_probe === 'string' && manifest.release_preflight.corepack_probe.length > 0, 'Manifest release_preflight.corepack_probe must be set.');
+    assert(typeof manifest.release_preflight?.bare_pnpm_diagnostic === 'string' && manifest.release_preflight.bare_pnpm_diagnostic.length > 0, 'Manifest release_preflight.bare_pnpm_diagnostic must be set.');
+    assert(
+      manifest.release_preflight.bare_pnpm_diagnostic === 'skipped' || /does not satisfy Corepack/i.test(manifest.release_preflight.bare_pnpm_diagnostic),
+      'Manifest release_preflight.bare_pnpm_diagnostic must be skipped or explicitly reject bare pnpm as Corepack evidence.',
+    );
     assert(typeof manifest.release_preflight?.git_lfs_probe === 'string' && manifest.release_preflight.git_lfs_probe.length > 0, 'Manifest release_preflight.git_lfs_probe must be set.');
     assert(typeof manifest.release_preflight?.toolchain_probe_ledger?.evidence === 'string', 'Manifest release_preflight.toolchain_probe_ledger.evidence must be set.');
     assert(manifest.release_preflight.toolchain_probe_ledger.evidence.includes('Release toolchain probe ledger'), 'Manifest release toolchain probe ledger evidence must include a ledger marker.');
@@ -690,6 +695,13 @@ try {
       }
       if (item.id === 'corepack_pnpm_resolver') {
         assert(item.command === 'corepack pnpm --version', 'Corepack probe command must remain corepack pnpm --version.');
+        assert(item.diagnostic_command === 'pnpm --version', 'Corepack probe must expose bare pnpm as a diagnostic command only.');
+        assert(typeof item.diagnostic_current === 'string' && item.diagnostic_current.length > 0, 'Corepack probe diagnostic_current must be set.');
+        assert(/Bare pnpm diagnostics are local-shell context only|does not satisfy the Corepack pnpm resolver gate|run release-readiness|deploy|production approval/i.test(item.diagnostic_boundary ?? ''), 'Corepack probe diagnostic_boundary must reject bare pnpm as release evidence.');
+        assert(
+          item.diagnostic_current === 'skipped' || /does not satisfy Corepack/i.test(item.diagnostic_current),
+          'Corepack probe diagnostic_current must be skipped or explicitly say bare pnpm does not satisfy Corepack.',
+        );
         assert(/Corepack pnpm resolver probe|release-shell evidence only|does not install tools|run release-readiness|push|deploy|production approval/i.test(item.proof_boundary), 'Corepack probe proof_boundary must not imply tool install, release-readiness, push, deploy, or approval.');
         assert(/bare pnpm|local shims|skipped probes|Corepack-pinned release evidence/i.test(item.stop_gate), 'Corepack probe stop_gate must reject bare pnpm, local shims, and skipped probes as release evidence.');
       }
@@ -2956,6 +2968,36 @@ try {
         && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check))
         && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Release preflight public checker handle review must record public-status, focused release-preflight, and manifest checks.',
+    );
+    const releaseToolchainPnpmDiagnosticDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC');
+    assert(releaseToolchainPnpmDiagnosticDecision, 'Manifest must record the release toolchain bare pnpm diagnostic implementation decision.');
+    assert(
+      releaseToolchainPnpmDiagnosticDecision?.chosen_variant === 'minimal non-clearance bare pnpm diagnostic',
+      'Release toolchain pnpm diagnostic decision must record the minimal non-clearance diagnostic variant.',
+    );
+    assert(
+      Array.isArray(releaseToolchainPnpmDiagnosticDecision?.files_changed)
+        && releaseToolchainPnpmDiagnosticDecision.files_changed.includes('scripts/report-release-preflight-readiness.mjs')
+        && releaseToolchainPnpmDiagnosticDecision.files_changed.includes('scripts/check-release-preflight-readiness-report.mjs')
+        && releaseToolchainPnpmDiagnosticDecision.files_changed.includes('scripts/report-commercial-launch-readiness.mjs')
+        && releaseToolchainPnpmDiagnosticDecision.files_changed.includes('tests/unit/releasePreflightReadiness.test.ts')
+        && releaseToolchainPnpmDiagnosticDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Release toolchain pnpm diagnostic decision must record focused report, checker, commercial report, and unit test files.',
+    );
+    assert(
+      /does not install Corepack|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(releaseToolchainPnpmDiagnosticDecision?.proof_boundary ?? ''),
+      'Release toolchain pnpm diagnostic decision must preserve diagnostic-only, no-release-clearance boundaries.',
+    );
+    const releaseToolchainPnpmDiagnosticReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC');
+    assert(releaseToolchainPnpmDiagnosticReview, 'Manifest must record the release toolchain bare pnpm diagnostic code optimization review.');
+    assert(releaseToolchainPnpmDiagnosticReview?.policy === 'strict', 'Release toolchain pnpm diagnostic review must use strict policy.');
+    assert(releaseToolchainPnpmDiagnosticReview?.verdict === 'pass', 'Release toolchain pnpm diagnostic review must pass.');
+    assert(
+      Array.isArray(releaseToolchainPnpmDiagnosticReview?.tests_or_checks)
+        && releaseToolchainPnpmDiagnosticReview.tests_or_checks.some((check) => /report:release-preflight -- --json/.test(check))
+        && releaseToolchainPnpmDiagnosticReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check))
+        && releaseToolchainPnpmDiagnosticReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Release toolchain pnpm diagnostic review must record release-preflight JSON, focused checker, and manifest checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
