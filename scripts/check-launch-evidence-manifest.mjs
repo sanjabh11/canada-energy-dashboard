@@ -2686,6 +2686,41 @@ try {
         && fixReportFocusedChecksReview.tests_or_checks.some((check) => /report:commercial-launch-readiness/.test(check)),
       'Fix Report focused checks code optimization review must record manifest, commercial report checker, and commercial report proof.',
     );
+    const publicFixReportCommandDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES');
+    assert(publicFixReportCommandDecision, 'Manifest must record the public Fix Report command-handle implementation decision.');
+    assert(
+      publicFixReportCommandDecision?.chosen_variant === 'minimal public Fix Report command-handle alignment',
+      'Public Fix Report command-handle decision must record the chosen minimal public command variant.',
+    );
+    assert(
+      Array.isArray(publicFixReportCommandDecision?.files_changed)
+        && publicFixReportCommandDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && publicFixReportCommandDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && publicFixReportCommandDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && publicFixReportCommandDecision.files_changed.includes('public/status/release-health.json')
+        && publicFixReportCommandDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && publicFixReportCommandDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && publicFixReportCommandDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && publicFixReportCommandDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && publicFixReportCommandDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Public Fix Report command-handle decision must record the release posture, public status, docs, manifest, checker, and test files.',
+    );
+    assert(
+      /does not run missing checks as clearance|contact buyers|authorize Supabase|mutate branches|resolve source provenance|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(publicFixReportCommandDecision?.proof_boundary ?? ''),
+      'Public Fix Report command-handle decision must preserve no-clearance, no-approval, no-deploy, and no-readiness boundaries.',
+    );
+    const publicFixReportCommandReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES');
+    assert(publicFixReportCommandReview, 'Manifest must record the public Fix Report command-handle code optimization review.');
+    assert(publicFixReportCommandReview?.policy === 'strict', 'Public Fix Report command-handle code optimization review must use strict policy.');
+    assert(publicFixReportCommandReview?.verdict === 'pass', 'Public Fix Report command-handle code optimization review must pass.');
+    assert(
+      Array.isArray(publicFixReportCommandReview?.tests_or_checks)
+        && publicFixReportCommandReview.tests_or_checks.some((check) => /generate:public-release-status/.test(check))
+        && publicFixReportCommandReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && publicFixReportCommandReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+        && publicFixReportCommandReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Public Fix Report command-handle code optimization review must record public status, docs, and manifest checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

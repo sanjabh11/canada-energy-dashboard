@@ -71,7 +71,7 @@ const requiredItemContracts = [
     id: 'fix_report_blocker_map',
     status: 'external_gate',
     proofBucket: 'repo artifact',
-    command: 'pnpm run report:commercial-launch-readiness && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:commercial-launch-readiness && pnpm run check:commercial-launch-readiness-report && pnpm run report:launch-evidence-manifest && pnpm run check:launch-evidence-manifest',
   },
   {
     id: 'progress_update_digest',
@@ -338,6 +338,9 @@ function validateManifest(manifest) {
   const fixReportBlockerMap = itemById.get('fix_report_blocker_map') ?? {};
   if (!/files changed|tests run|required checks|unresolved blockers|approval gates|owner-side gate/i.test(`${fixReportBlockerMap.evidenceBoundary ?? ''}\n${fixReportBlockerMap.nextAction ?? ''}`)) {
     failures.push('fix_report_blocker_map must describe files changed, tests run, required checks, unresolved blockers, approval gates, and owner-side gate sequencing.');
+  }
+  if (!/report:commercial-launch-readiness/.test(fixReportBlockerMap.command ?? '') || !/check:commercial-launch-readiness-report/.test(fixReportBlockerMap.command ?? '') || !/report:launch-evidence-manifest/.test(fixReportBlockerMap.command ?? '') || !/check:launch-evidence-manifest/.test(fixReportBlockerMap.command ?? '')) {
+    failures.push('fix_report_blocker_map must route through the commercial readiness report/check and launch evidence manifest report/check handles.');
   }
   if (!/does not.*modify files|does not.*run missing checks|does not.*clear buyer evidence|does not.*source provenance|does not.*branch review|does not.*Supabase advisor clearance|does not.*release toolchain|does not.*production approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(fixReportBlockerMap.evidenceBoundary ?? '')) {
     failures.push('fix_report_blocker_map must preserve the no-mutation, no-check-execution, no-clearance, no-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');

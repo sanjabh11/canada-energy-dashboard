@@ -446,7 +446,9 @@ describe('status page release posture', () => {
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(fixReportBlockerMapEvidence?.status).toBe('external_gate');
     expect(fixReportBlockerMapEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(fixReportBlockerMapEvidence?.command).toContain('check:commercial-launch-readiness-report');
     expect(fixReportBlockerMapEvidence?.command).toContain('report:launch-evidence-manifest');
+    expect(fixReportBlockerMapEvidence?.command).toContain('check:launch-evidence-manifest');
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/files changed, tests run, required checks/i);
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/unresolved blockers, and approval gates/i);
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/does not modify files/i);
@@ -792,7 +794,9 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapGate?.status).toBe('external_gate');
     expect(fixReportBlockerMapGate?.proofBucket).toBe('repo artifact');
     expect(fixReportBlockerMapGate?.command).toContain('report:commercial-launch-readiness');
+    expect(fixReportBlockerMapGate?.command).toContain('check:commercial-launch-readiness-report');
     expect(fixReportBlockerMapGate?.command).toContain('report:launch-evidence-manifest');
+    expect(fixReportBlockerMapGate?.command).toContain('check:launch-evidence-manifest');
     expect(fixReportBlockerMapGate?.evidenceBoundary).toMatch(/files changed, tests run, required checks/i);
     expect(fixReportBlockerMapGate?.evidenceBoundary).toMatch(/unresolved blockers, and approval gates/i);
     expect(fixReportBlockerMapGate?.evidenceBoundary).toMatch(/does not modify files/i);

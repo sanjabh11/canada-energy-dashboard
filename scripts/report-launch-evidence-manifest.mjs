@@ -4680,6 +4680,19 @@ const fixReportFocusedChecksFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const publicFixReportCommandFilesChanged = [
+  'scripts/generate-public-release-status.mjs',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'tests/unit/statusPagePosture.test.ts',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4705,6 +4718,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
   ...fixReportFocusedChecksFilesChanged,
+  ...publicFixReportCommandFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4972,6 +4986,16 @@ const fixReportFocusedChecksTestsRun = [
   'pnpm run report:commercial-launch-readiness -- --skip-probes',
 ];
 
+const publicFixReportCommandTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run check:commercial-source',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4997,6 +5021,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
   ...fixReportFocusedChecksTestsRun,
+  ...publicFixReportCommandTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5359,6 +5384,19 @@ const safeFixImplementationDecisions = [
     reason: 'After focused lane reports were added, the top-level Fix Report still emphasized older broad/raw handles and did not present the safer inspection-first path now used by the launch action and completion audit surfaces.',
     proof_boundary: 'This record aligns the Fix Report command list only; it does not run focused reports as clearance, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused Fix Report check list, skipped-probe report/check success, manifest validation, commercial report output, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    decision: 'Route the public release-status Fix Report blocker-map handle through both report and checker commands.',
+    acceptance_check: 'The fix_report_blocker_map public release-status item exposes report:commercial-launch-readiness, check:commercial-launch-readiness-report, report:launch-evidence-manifest, and check:launch-evidence-manifest, and the source-of-truth docs plus status posture tests assert that public-safe command path.',
+    chosen_variant: 'minimal public Fix Report command-handle alignment',
+    repo_pattern_reused: 'Existing public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, source/generated status JSON pair, COMMERCIAL_SOURCE_OF_TRUTH public-handle notes, statusPagePosture tests, and launch evidence code-optimization ledger.',
+    files_changed: publicFixReportCommandFilesChanged,
+    tests_run: publicFixReportCommandTestsRun,
+    proof: 'The patch updates the canonical public release-status manifest, regenerated release-health JSON, RELEASE_HEALTH_EVIDENCE, generator validator, source-of-truth docs, and status tests so the Fix Report public handle validates the rendered report and structured manifest instead of only generating broad reports.',
+    reason: 'The structured Fix Report now has focused required-check assertions; the public status item should point operators to the report/check pair that proves that contract rather than to report-only output.',
+    proof_boundary: 'This record aligns public Fix Report command handles only; it does not run missing checks as clearance, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat public Fix Report command handles, public status sync, status posture tests, manifest validation, source-of-truth docs, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6035,6 +6073,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Renderer-only patch could change the visible report without changing JSON, but it would leave machine-readable evidence stale.',
     evidence: 'report-commercial-launch-readiness renders fix_report.current_required_checks directly from the manifest.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    variant: 'Leave the public fix_report_blocker_map command on broad report generation only.',
+    reason_rejected: 'Would keep the public status item weaker than the new Fix Report checker contract and make public operators miss the validation commands.',
+    tradeoff: 'Report-only commands are shorter, but they do not prove the current required-check list and proof boundaries are still structurally valid.',
+    evidence: 'check:commercial-launch-readiness-report and check:launch-evidence-manifest now assert focused Fix Report command handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    variant: 'Expose every lane-specific focused command directly in the public fix_report_blocker_map command.',
+    reason_rejected: 'The Fix Report public handle should validate the map source and rendered report, not become a long executable remediation script for every blocker lane.',
+    tradeoff: 'Listing every lane command could be explicit, but it would duplicate fix_report.current_required_checks and blur inspection with execution.',
+    evidence: 'The manifest Fix Report already carries the lane-specific focused and guarded command list; the public item only needs to point to its report/check contract.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    variant: 'Run release-readiness, production deploy request, post-deploy live proof, buyer validation, Supabase advisors, or branch mutations from the public status item.',
+    reason_rejected: 'Those gates require external evidence, owner approval, live context, or source decisions outside this safe public-status alignment phase.',
+    tradeoff: 'Direct execution could look more complete, but it would violate the public-safe no-clearance boundary and risk overstating launch readiness.',
+    evidence: 'The public status item remains external_gate and the manifest keeps buyer, source, branch, Supabase, release, approval, deploy, and live-proof gates blocked or manual-stop.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    variant: 'Patch only the generated public/status/release-health.json file.',
+    reason_rejected: 'Generated-only edits would fail the source/generator sync model and drift from src/lib/publicReleaseStatusManifest.json.',
+    tradeoff: 'Generated-only is faster, but the next generate:public-release-status run would revert it.',
+    evidence: 'scripts/generate-public-release-status.mjs validates the source manifest and writes public/status/release-health.json from it.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6283,6 +6349,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates only the existing manifest Fix Report command list plus checker/test assertions, reusing focused proof command constants without adding dependencies, duplicating lane parsers, executing external gates, or changing launch status.',
     tests_or_checks: fixReportFocusedChecksTestsRun,
     remaining_risk: 'The launch goal remains blocked until retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only the existing public release-status Fix Report command contract, source/generated JSON, source-of-truth docs, tests, and manifest ledger assertions, with no new dependency, new public artifact type, lane-parser duplication, external gate execution, or launch-status change.',
+    tests_or_checks: publicFixReportCommandTestsRun,
+    remaining_risk: 'The public status remains an external-gate map; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

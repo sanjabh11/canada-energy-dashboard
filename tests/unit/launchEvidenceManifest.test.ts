@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(26);
+    expect(manifest.implementation_decisions).toHaveLength(27);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(26);
+    expect(manifest.code_optimization_reviews).toHaveLength(27);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1392,6 +1392,35 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
       'pnpm run report:commercial-launch-readiness -- --skip-probes',
+    ]));
+    const publicFixReportCommandDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    );
+    expect(publicFixReportCommandDecision).toBeTruthy();
+    expect(publicFixReportCommandDecision.chosen_variant).toBe('minimal public Fix Report command-handle alignment');
+    expect(publicFixReportCommandDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/generate-public-release-status.mjs',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'tests/unit/statusPagePosture.test.ts',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(publicFixReportCommandDecision.proof_boundary).toMatch(/does not run missing checks as clearance|contact buyers|authorize Supabase|mutate branches|resolve source provenance|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const publicFixReportCommandReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PUBLIC-FIX-REPORT-COMMAND-HANDLES',
+    );
+    expect(publicFixReportCommandReview).toBeTruthy();
+    expect(publicFixReportCommandReview.policy).toBe('strict');
+    expect(publicFixReportCommandReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run generate:public-release-status',
+      'pnpm run check:public-release-status',
+      'pnpm run check:commercial-source',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
