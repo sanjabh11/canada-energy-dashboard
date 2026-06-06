@@ -3784,6 +3784,7 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
       categories: [],
       changed_supabase_function_count: null,
       changed_supabase_functions: [],
+      changed_supabase_function_rows: [],
       canonical_head_comparison: compareCanonicalHeads(null),
       command: `corepack pnpm run report:unmerged-branch-readiness -- --branch <review-ref> --max-files ${maxFiles}`,
       stop_gate: 'Read-only focused review first; no branch mutation or production action.',
@@ -3803,6 +3804,7 @@ function probeFocusedBranchReviewPacket(queueItem, { evidenceLabel = 'Top branch
       categories: [],
       changed_supabase_function_count: 0,
       changed_supabase_functions: [],
+      changed_supabase_function_rows: [],
       canonical_head_comparison: compareCanonicalHeads(null),
       command: 'corepack pnpm run report:unmerged-branch-readiness',
       stop_gate: 'No branch review item available.',
@@ -4723,6 +4725,12 @@ const branchReviewSupabaseFunctionImpactFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchManifestBranchFunctionImpactFilesChanged = [
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const launchEvidenceValidationReportFilesChanged = [
   'package.json',
   'scripts/report-launch-evidence-validation-readiness.mjs',
@@ -4935,6 +4943,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...branchReviewSupabaseFunctionImpactFilesChanged,
+  ...launchManifestBranchFunctionImpactFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
   ...launchActionValidationStatusFilesChanged,
   ...launchActionReportFilesChanged,
@@ -5181,6 +5190,16 @@ const branchReviewSupabaseFunctionImpactTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchManifestBranchFunctionImpactTestsRun = [
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'node scripts/check-launch-evidence-manifest.mjs',
+  'node scripts/check-launch-evidence-manifest.mjs --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const launchEvidenceValidationReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -5352,6 +5371,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
   ...branchReviewSupabaseFunctionImpactTestsRun,
+  ...launchManifestBranchFunctionImpactTestsRun,
   ...launchEvidenceValidationReportTestsRun,
   ...launchActionValidationStatusTestsRun,
   ...launchActionReportTestsRun,
@@ -5637,6 +5657,19 @@ const safeFixImplementationDecisions = [
     reason: 'The active branch blocker is a high-risk stale branch with changed Supabase functions; the report rendered those rows, but the focused checker did not yet make their shape and no-deploy boundaries a contract.',
     proof_boundary: 'This record improves branch-review function-impact validation only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, deploy Supabase functions, alter secrets, change policies, clear Supabase advisor findings, grant production approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat Supabase function impact row validation, focused branch report/check success, skipped probes, branch packet output, or this code optimization ledger as branch approval, canonical-head owner selection, function deploy approval, Supabase advisor clearance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    decision: 'Require the broad launch evidence manifest checker to enforce the top-branch Supabase function impact row contract already enforced by the focused branch checker.',
+    acceptance_check: 'check:launch-evidence-manifest rejects non-skipped top_review_packet payloads whose changed_supabase_function_rows do not match changed_supabase_function_count, omit the supabase/database category when function rows exist, or weaken function-path, review-focus, read-only git-diff, proof-boundary, and stop-gate semantics.',
+    chosen_variant: 'minimal launch manifest checker hardening',
+    repo_pattern_reused: 'Existing branch_review.top_review_packet changed_supabase_function_rows, assertChangedSupabaseFunctionReviewRow helper, focused branch-review checker contract, launch manifest checker branch_review block, and launch manifest code-optimization ledger.',
+    files_changed: launchManifestBranchFunctionImpactFilesChanged,
+    tests_run: launchManifestBranchFunctionImpactTestsRun,
+    proof: 'The patch strengthens only the central launch manifest checker and unit contract, reusing existing top-branch function-impact rows and the focused branch checker semantics without adding a new scanner, checking out branches, deploying functions, or mutating Supabase.',
+    reason: 'The focused branch checker made top-branch Supabase function impact rows a hard contract, but the broad launch manifest checker still accepted a non-skipped top packet whose row count or category could drift from changed_supabase_function_count.',
+    proof_boundary: 'This record improves broad launch-manifest branch function-impact validation only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, deploy Supabase functions, alter secrets, change policies, clear Supabase advisor findings, grant production approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat launch manifest function-impact row validation, focused branch report/check success, skipped probes, branch packet output, or this code optimization ledger as branch approval, canonical-head owner selection, function deploy approval, Supabase advisor clearance, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT',
@@ -6345,6 +6378,27 @@ const safeFixRejectedVariants = [
     evidence: 'scripts/report-branch-review-readiness.mjs already renders the changed Supabase function rows and no-deploy boundaries.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    variant: 'Leave the broad launch manifest checker with only per-row shape checks.',
+    reason_rejected: 'Would still allow the central launch gate to accept non-skipped top branch packets whose Supabase function row count or category drifted from changed_supabase_function_count.',
+    tradeoff: 'No-code defer avoids touching the broad validator, but weakens the manifest as the source of truth for production approval evidence attachments.',
+    evidence: 'The focused branch checker already requires row-count equality and the supabase/database category when changed Supabase functions exist.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    variant: 'Duplicate branch diff parsing inside check-launch-evidence-manifest.',
+    reason_rejected: 'The launch manifest checker should validate generated evidence contracts, not become a second branch inventory and diff implementation.',
+    tradeoff: 'Independent parsing could detect generator defects differently, but it would add branch-review drift and more git state surface to the broad manifest validator.',
+    evidence: 'report-launch-evidence-manifest already emits branch_review.top_review_packet from the existing read-only branch-review path.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    variant: 'Clear the branch blocker by checking out, merging, deploying, or serving the changed Supabase functions.',
+    reason_rejected: 'Branch mutation, function deploys, secret-dependent serving, migrations, policy changes, and production approval are outside this repo-side validator phase.',
+    tradeoff: 'Runtime validation would be stronger evidence, but it crosses explicit owner approval and no-deploy boundaries.',
+    evidence: 'The top branch function-impact rows are read-only review targets and their stop gates prohibit production function deploys, service-role changes, and live data writes.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT',
     variant: 'Leave launch evidence validation only as check:launch-evidence-manifest plus the production approval packet.',
     reason_rejected: 'Would keep the second launch-action phase less inspectable than the other focused launch-readiness lanes.',
@@ -7005,6 +7059,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change strengthens only the focused branch report checker/test and manifest ledger, reusing existing top-branch function-impact rows without new dependencies, branch checkout, merge, push, function deploy, Supabase advisor access, migration execution, or launch-status change.',
     tests_or_checks: branchReviewSupabaseFunctionImpactTestsRun,
     remaining_risk: 'Branch review remains blocked until owner-approved canonical-head decisions and read-only focused review clear all branch families; source provenance, Corepack-pinned release-readiness, Supabase advisor clearance, buyer evidence, explicit owner approval, deploy, and post-deploy live proof also remain open.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change strengthens only the broad launch manifest checker/test and manifest ledger, reusing existing top-branch function-impact rows and the focused branch checker contract without new dependencies, branch checkout, merge, push, function deploy, Supabase advisor access, migration execution, or launch-status change.',
+    tests_or_checks: launchManifestBranchFunctionImpactTestsRun,
+    remaining_risk: 'The broad validator now rejects malformed top-branch Supabase function impact evidence, but branch review still remains blocked until owner-approved canonical-head decisions and read-only focused review clear all branch families; source provenance, Corepack-pinned release-readiness, Supabase advisor clearance, buyer evidence, explicit owner approval, deploy, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT',

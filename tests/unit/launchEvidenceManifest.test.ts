@@ -737,6 +737,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.top_review_packet.branch).toBeNull();
     expect(manifest.branch_review.top_review_packet.changed_supabase_function_count).toBeNull();
     expect(manifest.branch_review.top_review_packet.changed_supabase_functions).toEqual([]);
+    expect(manifest.branch_review.top_review_packet.changed_supabase_function_rows).toEqual([]);
     expect(manifest.branch_review.top_review_packet.canonical_head_comparison.status).toBe('skipped');
     expect(manifest.branch_review.top_review_packet.canonical_head_comparison.local_ref).toBeNull();
     expect(manifest.branch_review.top_review_packet.canonical_head_comparison.origin_ref).toBeNull();
@@ -788,9 +789,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(37);
+    expect(manifest.implementation_decisions).toHaveLength(38);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(37);
+    expect(manifest.code_optimization_reviews).toHaveLength(38);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1252,6 +1253,27 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
+    ]));
+    const launchManifestBranchFunctionImpactDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    );
+    expect(launchManifestBranchFunctionImpactDecision).toBeTruthy();
+    expect(launchManifestBranchFunctionImpactDecision.chosen_variant).toBe('minimal launch manifest checker hardening');
+    expect(launchManifestBranchFunctionImpactDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(launchManifestBranchFunctionImpactDecision.proof_boundary).toMatch(/does not checkout|merge|push|select canonical heads|run migrations|deploy Supabase functions|alter secrets|change policies|production approval|hosted\/live parity|raise launch status/i);
+    const launchManifestBranchFunctionImpactReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-BRANCH-FUNCTION-IMPACT-CHECK',
+    );
+    expect(launchManifestBranchFunctionImpactReview).toBeTruthy();
+    expect(launchManifestBranchFunctionImpactReview.policy).toBe('strict');
+    expect(launchManifestBranchFunctionImpactReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'node scripts/check-launch-evidence-manifest.mjs',
+      'node scripts/check-launch-evidence-manifest.mjs --skip-probes',
     ]));
     const branchReviewProofHandleDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
@@ -1787,6 +1809,12 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.top_review_packet.read_only).toBe(true);
     expect(manifest.branch_review.top_review_packet.proof_type).toBeTruthy();
     expect(manifest.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
+    expect(manifest.branch_review.top_review_packet.changed_supabase_function_rows).toHaveLength(
+      manifest.branch_review.top_review_packet.changed_supabase_function_count,
+    );
+    if (manifest.branch_review.top_review_packet.changed_supabase_function_count > 0) {
+      expect(manifest.branch_review.top_review_packet.categories).toContain('supabase/database');
+    }
     expect(branchClearanceMatrix.status).toBe(manifest.branch_review.status);
     expect(branchClearanceMatrix.proof_type).toBe('read_only_branch_clearance_matrix');
     expect(branchClearanceMatrix.family_count).toBe(manifest.branch_review.review_queue.item_count);
@@ -1862,7 +1890,11 @@ describe('launch evidence manifest report', () => {
     if (firstChangedFunctionRow) {
       expect(firstChangedFunctionRow.read_only).toBe(true);
       expect(firstChangedFunctionRow.proof_type).toBe('read_only_supabase_function_branch_review');
+      expect(firstChangedFunctionRow.changed_paths).toMatch(/supabase\/functions\//);
+      expect(firstChangedFunctionRow.review_focus).toMatch(/secret|auth|entitlement|database writes|observability|import-impact/i);
+      expect(firstChangedFunctionRow.suggested_checks).toMatch(/git diff/);
       expect(firstChangedFunctionRow.proof_boundary).toMatch(/review-target evidence|does not deploy functions|run migrations|alter secrets/i);
+      expect(firstChangedFunctionRow.stop_gate).toMatch(/No production function deploy|service-role|live data write/i);
     }
 
     if (reviewFirstOpen || canonicalHeadOpen) {

@@ -74,15 +74,15 @@ function isBoolean(value) {
 
 function assertChangedSupabaseFunctionReviewRow(row, pathLabel) {
   assert(typeof row.function_name === 'string' && row.function_name.length > 0, `${pathLabel}.function_name must be set.`);
-  assert(typeof row.changed_paths === 'string' && row.changed_paths.length > 0, `${pathLabel}.changed_paths must be set.`);
-  assert(typeof row.review_focus === 'string' && row.review_focus.length > 0, `${pathLabel}.review_focus must be set.`);
-  assert(typeof row.suggested_checks === 'string' && row.suggested_checks.length > 0, `${pathLabel}.suggested_checks must be set.`);
-  assert(typeof row.stop_gate === 'string' && /no deploy|no .*migration|no .*secret|no .*production/i.test(row.stop_gate), `${pathLabel}.stop_gate must preserve the non-deploying Supabase function review boundary.`);
+  assert(typeof row.changed_paths === 'string' && /supabase\/functions\//.test(row.changed_paths), `${pathLabel}.changed_paths must name Supabase function paths.`);
+  assert(typeof row.review_focus === 'string' && /secret|auth|entitlement|database writes|observability|import-impact/i.test(row.review_focus), `${pathLabel}.review_focus must describe security/runtime review focus.`);
+  assert(typeof row.suggested_checks === 'string' && /git diff/.test(row.suggested_checks), `${pathLabel}.suggested_checks must include read-only git diff checks.`);
+  assert(typeof row.stop_gate === 'string' && /No production function deploy|service-role|live data write/i.test(row.stop_gate), `${pathLabel}.stop_gate must block production function deploys and live writes.`);
   assert(row.proof_type === 'read_only_supabase_function_branch_review', `${pathLabel}.proof_type must classify parsed Supabase function rows as read-only branch-review targets.`);
   assert(row.read_only === true, `${pathLabel}.read_only must be true.`);
   assert(
-    typeof row.proof_boundary === 'string' && /review-target evidence|does not deploy functions|run migrations|alter secrets|clear advisor findings|production approval/i.test(row.proof_boundary),
-    `${pathLabel}.proof_boundary must say the row is review-target evidence only and does not deploy or clear advisor findings.`,
+    typeof row.proof_boundary === 'string' && /does not deploy functions|run migrations|alter secrets|change policies|grant production approval/i.test(row.proof_boundary),
+    `${pathLabel}.proof_boundary must preserve no-deploy/no-secret boundaries.`,
   );
 }
 
@@ -1851,6 +1851,16 @@ try {
         manifest.branch_review.top_review_packet.changed_supabase_functions.length === manifest.branch_review.top_review_packet.changed_supabase_function_count,
         'Top branch review packet function names must match changed_supabase_function_count.',
       );
+      assert(
+        manifest.branch_review.top_review_packet.changed_supabase_function_rows.length === manifest.branch_review.top_review_packet.changed_supabase_function_count,
+        'Top branch review packet function impact rows must match changed_supabase_function_count.',
+      );
+      if (manifest.branch_review.top_review_packet.changed_supabase_function_count > 0) {
+        assert(
+          manifest.branch_review.top_review_packet.categories.includes('supabase/database'),
+          'Top branch review packet must include the supabase/database category when Supabase function rows exist.',
+        );
+      }
       if (manifest.branch_review.top_review_packet.canonical_head_comparison.status === 'pass') {
         assert(
           typeof manifest.branch_review.top_review_packet.canonical_head_comparison.command === 'string'
