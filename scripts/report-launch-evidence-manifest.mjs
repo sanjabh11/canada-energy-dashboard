@@ -4473,6 +4473,15 @@ const branchReviewReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const productionApprovalPacketSequencingFilesChanged = [
+  'scripts/report-production-approval-packet.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/productionApprovalPacket.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4483,6 +4492,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceReportFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
+  ...productionApprovalPacketSequencingFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4589,6 +4599,15 @@ const branchReviewReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const productionApprovalPacketSequencingTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:production-approval-packet',
+  'pnpm run report:production-approval-packet -- --skip-release-readiness',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4599,6 +4618,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceReportTestsRun,
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
+  ...productionApprovalPacketSequencingTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -4766,6 +4786,19 @@ const safeFixImplementationDecisions = [
     reason: 'Branch review was visible inside the broad manifest and commercial launch report, but the active launch blocker needed a narrow operator handle for review-first and canonical-head execution without mutating branches.',
     proof_boundary: 'This record improves branch-review evidence visibility only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, clear branch review, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused branch review report, check pass, JSON output, skipped probes, public status handle, review queue, canonical-head ledger, clearance matrix, or focused packet as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    decision: 'Gate live static dist parity in the production approval packet on successful local release-readiness.',
+    acceptance_check: 'When local release-readiness is skipped or fails, the production approval packet marks Live static dist parity as skipped with prerequisite-specific wording instead of running a dist comparison against a missing or stale build output.',
+    chosen_variant: 'minimal prerequisite sequencing patch',
+    repo_pattern_reused: 'Existing production approval packet step list, skippedStep helper, local release-readiness gate, static parity gate, and productionApprovalPacket unit harness.',
+    files_changed: productionApprovalPacketSequencingFilesChanged,
+    tests_run: productionApprovalPacketSequencingTestsRun,
+    proof: 'The approval packet already treats local release-readiness as a pre-deploy blocker; this patch reuses that status to avoid a secondary static-parity failure that is caused by the failed build prerequisite rather than hosted artifact drift.',
+    reason: 'Running static parity after Corepack release-readiness fails creates noisy evidence: the missing dist failure is downstream of the toolchain/build blocker and should not be treated as an independent live parity result.',
+    proof_boundary: 'This record improves production approval packet sequencing only; it does not install Corepack, run release-readiness successfully, build dist, clear source provenance, approve production, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat skipped static parity, production approval packet generation, direct pnpm report execution, or focused unit tests as release-readiness, production approval, deployment, or hosted/live parity.',
   },
 ];
 
@@ -5029,6 +5062,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    variant: 'Keep running live static parity even when local release-readiness fails.',
+    reason_rejected: 'This preserves a noisy secondary failure where missing dist is caused by an already-failed build/toolchain prerequisite rather than by an independently verified hosted-static mismatch.',
+    tradeoff: 'No-code defer avoids edits but leaves production approval evidence harder to interpret during Corepack or release-readiness failures.',
+    evidence: 'Current packet output shows Local release readiness fails because Corepack is missing, then Live static dist parity fails because dist is absent.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    variant: 'Fall back to bare pnpm or build dist directly when Corepack is unavailable.',
+    reason_rejected: 'Bare pnpm or ad hoc dist generation would violate the pinned Corepack release evidence boundary and could make a local workaround look like release-readiness.',
+    tradeoff: 'A fallback could make parity runnable in this shell, but it would weaken the production deploy script and release-preflight contract.',
+    evidence: 'check-corepack-toolchain and deploy-production.sh require Corepack to honor packageManager pnpm@10.23.0 before release-readiness evidence is accepted.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    variant: 'Skip every live check when any pre-deploy gate is blocked.',
+    reason_rejected: 'Live metadata parity can still provide independent public artifact evidence even when local release-readiness or source provenance is blocked.',
+    tradeoff: 'Skipping all live checks would reduce noise but remove useful hosted-state evidence from the approval packet.',
+    evidence: 'The packet currently reports live metadata parity independently while keeping deployment request readiness blocked by source, request-packet, and release-readiness gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -5142,6 +5196,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed branch review Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated branch scanning, branch checkout, merge, push, discard, delete, canonical-head selection, migration, deploy paths, or live-service access.',
     tests_or_checks: branchReviewReportTestsRun,
     remaining_risk: 'Branch review remains blocked until focused branch packets, canonical-head owner decisions, drift review for stale or aging refs, clean release gates, and explicit owner approvals are current; source provenance, release-readiness, production approval, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing local release-readiness step status to skip static parity only when the build prerequisite is skipped or failed, with no new dependency, no fallback package manager, no deploy path, and no live-check relaxation beyond the dependent static-dist comparison.',
+    tests_or_checks: productionApprovalPacketSequencingTestsRun,
+    remaining_risk: 'Production approval remains blocked until clean source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof are current.',
   },
 ];
 

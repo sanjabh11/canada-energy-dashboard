@@ -437,18 +437,20 @@ steps.push(runStep('Launch evidence manifest validation', 'node', ['scripts/chec
 steps.push(productionApprovalRequestPacketStep());
 steps.push(runStep('Public release status manifest validation', 'node', ['scripts/generate-public-release-status.mjs', '--check']));
 
-if (skipReleaseReadiness) {
-  steps.push(skippedStep('Local release readiness', 'Skipped by --skip-release-readiness.'));
-} else {
-  steps.push(runStep('Local release readiness', 'corepack', pnpmRunArgs('check:release-readiness')));
-}
+const localReleaseReadinessStep = skipReleaseReadiness
+  ? skippedStep('Local release readiness', 'Skipped by --skip-release-readiness.')
+  : runStep('Local release readiness', 'corepack', pnpmRunArgs('check:release-readiness'));
+steps.push(localReleaseReadinessStep);
 
 steps.push(runStep('Live metadata parity', 'node', ['scripts/check-public-metadata.mjs', '--base-url', baseUrl]));
-if (skipReleaseReadiness) {
+if (localReleaseReadinessStep.status !== 'pass') {
+  const staticParitySkipReason = localReleaseReadinessStep.status === 'skipped'
+    ? 'Skipped because local release readiness was skipped; exact static parity requires a freshly built dist from `corepack pnpm run check:release-readiness` or `corepack pnpm run check:post-deploy-live`.'
+    : 'Skipped because local release readiness did not pass; exact static parity requires a freshly built dist from `corepack pnpm run check:release-readiness` or `corepack pnpm run check:post-deploy-live`.';
   steps.push(
     skippedStep(
       'Live static dist parity',
-      'Skipped because local release readiness was skipped; exact static parity requires a freshly built dist from `corepack pnpm run check:release-readiness` or `corepack pnpm run check:post-deploy-live`.',
+      staticParitySkipReason,
     ),
   );
 } else {

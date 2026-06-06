@@ -420,6 +420,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SOURCE-PROVENANCE-FOCUSED-REPORT'), 'Code optimization report must include the source provenance focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT'), 'Code optimization report must include the Supabase advisor focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT'), 'Code optimization report must include the branch review focused report safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING'), 'Code optimization report must include the production approval packet sequencing safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal manifest/report evidence patch'), 'Code optimization report must record the selected minimal manifest/report evidence patch.');
   assert(codeOptimizationSection.includes('minimal prerequisite status and evidence-text patch'), 'Code optimization report must record the selected minimal production approval circularity patch.');
   assert(codeOptimizationSection.includes('minimal branch review queue status patch'), 'Code optimization report must record the selected minimal branch review queue status patch.');
@@ -429,6 +430,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal docs and public handle alignment'), 'Code optimization report must record the selected minimal release preflight source-of-truth handle patch.');
   assert(codeOptimizationSection.includes('minimal Vitest timeout budget alignment'), 'Code optimization report must record the selected minimal strategy audit timeout-budget patch.');
   assert(codeOptimizationSection.includes('minimal focused manifest wrapper and public handle alignment'), 'Code optimization report must record the selected minimal source provenance wrapper patch.');
+  assert(codeOptimizationSection.includes('minimal prerequisite sequencing patch'), 'Code optimization report must record the selected minimal production approval packet sequencing patch.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');

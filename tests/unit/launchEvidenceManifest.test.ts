@@ -714,9 +714,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(11);
+    expect(manifest.implementation_decisions).toHaveLength(12);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(11);
+    expect(manifest.code_optimization_reviews).toHaveLength(12);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -786,6 +786,9 @@ describe('launch evidence manifest report', () => {
       'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
       'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad branch handles.',
+      'Keep running live static parity even when local release-readiness fails.',
+      'Fall back to bare pnpm or build dist directly when Corepack is unavailable.',
+      'Skip every live check when any pre-deploy gate is blocked.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -981,6 +984,28 @@ describe('launch evidence manifest report', () => {
     expect(branchReviewReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
+    ]));
+    const productionPacketSequencingDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    );
+    expect(productionPacketSequencingDecision).toBeTruthy();
+    expect(productionPacketSequencingDecision.chosen_variant).toBe('minimal prerequisite sequencing patch');
+    expect(productionPacketSequencingDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-production-approval-packet.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'tests/unit/productionApprovalPacket.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(productionPacketSequencingDecision.proof_boundary).toMatch(/does not install Corepack|run release-readiness successfully|build dist|approve production|deploy|hosted\/live parity/i);
+    const productionPacketSequencingReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING',
+    );
+    expect(productionPacketSequencingReview).toBeTruthy();
+    expect(productionPacketSequencingReview.policy).toBe('strict');
+    expect(productionPacketSequencingReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:production-approval-packet',
+      'pnpm run report:production-approval-packet -- --skip-release-readiness',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

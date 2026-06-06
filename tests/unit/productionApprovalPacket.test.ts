@@ -272,6 +272,9 @@ describe('production approval packet', () => {
     expect(result.stdout).toContain('Production deploy preflight uses Corepack to honor the pinned packageManager pnpm version.');
     expect(result.stdout).toContain('do not treat bare pnpm or a temporary local shim as production approval evidence.');
     expect(result.stdout).toContain('- Command: `corepack pnpm run check:release-readiness`');
+    expect(result.stdout).toContain('- Live static dist parity: skipped.');
+    expect(result.stdout).toContain('Skipped because local release readiness did not pass; exact static parity requires a freshly built dist');
+    expect(result.stdout).not.toContain('Live static parity check failed:');
   });
 
   it('blocks production approval when source provenance is not deploy-script-ready', async () => {

@@ -2165,6 +2165,32 @@ try {
         && branchReviewReportReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check)),
       'Branch review focused report code optimization review must record focused branch review report and checker proof.',
     );
+    const productionPacketSequencingDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING');
+    assert(productionPacketSequencingDecision, 'Manifest must record the production approval packet sequencing implementation decision.');
+    assert(
+      productionPacketSequencingDecision?.chosen_variant === 'minimal prerequisite sequencing patch',
+      'Production approval packet sequencing decision must record the chosen minimal prerequisite sequencing variant.',
+    );
+    assert(
+      Array.isArray(productionPacketSequencingDecision?.files_changed)
+        && productionPacketSequencingDecision.files_changed.includes('scripts/report-production-approval-packet.mjs')
+        && productionPacketSequencingDecision.files_changed.includes('tests/unit/productionApprovalPacket.test.ts'),
+      'Production approval packet sequencing decision must record the packet script and unit test file.',
+    );
+    assert(
+      /does not install Corepack|run release-readiness successfully|build dist|approve production|deploy|hosted\/live parity/i.test(productionPacketSequencingDecision?.proof_boundary ?? ''),
+      'Production approval packet sequencing decision must preserve no-tool-install, no-deploy, and no-live-proof boundaries.',
+    );
+    const productionPacketSequencingReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING');
+    assert(productionPacketSequencingReview, 'Manifest must record the production approval packet sequencing code optimization review.');
+    assert(productionPacketSequencingReview?.policy === 'strict', 'Production approval packet sequencing code optimization review must use strict policy.');
+    assert(productionPacketSequencingReview?.verdict === 'pass', 'Production approval packet sequencing code optimization review must pass.');
+    assert(
+      Array.isArray(productionPacketSequencingReview?.tests_or_checks)
+        && productionPacketSequencingReview.tests_or_checks.some((check) => /tests\/unit\/productionApprovalPacket\.test\.ts/.test(check))
+        && productionPacketSequencingReview.tests_or_checks.some((check) => /report:production-approval-packet/.test(check)),
+      'Production approval packet sequencing code optimization review must record focused packet test and report proof.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
