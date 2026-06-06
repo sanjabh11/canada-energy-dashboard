@@ -246,6 +246,7 @@ function renderMarkdown(payload) {
     `- Corepack probe: \`${releasePreflight.corepack_probe ?? 'unknown'}\``,
     `- Bare pnpm diagnostic: \`${releasePreflight.bare_pnpm_diagnostic ?? 'unknown'}\``,
     `- Git LFS probe: \`${releasePreflight.git_lfs_probe ?? 'unknown'}\``,
+    `- Git LFS hook diagnostic: \`${releasePreflight.git_lfs_hook_diagnostic ?? 'unknown'}\``,
     `- Toolchain probe ledger: \`${toolchainLedger.status ?? 'unknown'}\`, open \`${toolchainLedger.open_count ?? 'unknown'}/${toolchainLedger.item_count ?? 'unknown'}\``,
     `- Clearance matrix: \`${clearanceMatrix.status ?? 'unknown'}\`, blocked \`${clearanceMatrix.blocked_count ?? 'unknown'}/${clearanceMatrix.row_count ?? 'unknown'}\``,
     `- Source provenance: branch \`${payload.source_provenance?.branch ?? 'unknown'}\`, dirty paths \`${payload.source_provenance?.dirty_path_count ?? 'unknown'}\``,

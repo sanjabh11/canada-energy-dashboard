@@ -441,6 +441,56 @@ function compactCommandOutput(result) {
     .join(' | ') || 'no output captured';
 }
 
+function resolveRepoFilePath(filePath) {
+  return path.isAbsolute(filePath) ? filePath : path.join(repoRoot, filePath);
+}
+
+function probeGitLfsHookPath() {
+  const hookPathResult = run('git', ['config', '--get', 'core.hookspath']);
+  const hookPath = hookPathResult.status === 0
+    ? String(hookPathResult.stdout ?? '').trim() || '.git/hooks'
+    : '.git/hooks';
+  const postCommitPathResult = run('git', ['rev-parse', '--git-path', 'hooks/post-commit']);
+  const prePushPathResult = run('git', ['rev-parse', '--git-path', 'hooks/pre-push']);
+  const postCommitHookPath = postCommitPathResult.status === 0
+    ? String(postCommitPathResult.stdout ?? '').trim()
+    : '';
+  const prePushHookPath = prePushPathResult.status === 0
+    ? String(prePushPathResult.stdout ?? '').trim()
+    : '';
+  const postCommitHook = postCommitHookPath ? readTextIfExists(resolveRepoFilePath(postCommitHookPath)) : '';
+  const prePushHook = prePushHookPath ? readTextIfExists(resolveRepoFilePath(prePushHookPath)) : '';
+  const hookRequiresPathBinary = /command\s+-v\s+git-lfs|git\s+lfs/.test(`${postCommitHook}\n${prePushHook}`);
+  const gitLfsPathResult = run('sh', ['-lc', 'command -v git-lfs']);
+  const gitLfsBinaryPath = gitLfsPathResult.status === 0
+    ? String(gitLfsPathResult.stdout ?? '').trim().split(/\r?\n/).at(-1)?.trim() ?? ''
+    : '';
+  const gitLfsBinaryResult = run('git-lfs', ['version']);
+  const gitLfsBinaryOutput = gitLfsBinaryResult.status === 0
+    ? compactCommandOutput(gitLfsBinaryResult)
+    : compactCommandOutput(gitLfsPathResult);
+
+  const hookSummary = [
+    `core.hookspath=${hookPath}`,
+    postCommitHookPath ? `post-commit=${postCommitHookPath}` : 'post-commit=missing',
+    prePushHookPath ? `pre-push=${prePushHookPath}` : 'pre-push=missing',
+    `hook_requires_git_lfs_on_path=${hookRequiresPathBinary ? 'yes' : 'unknown'}`,
+    gitLfsBinaryPath
+      ? `current_path_git_lfs=${gitLfsBinaryPath}`
+      : 'current_path_git_lfs=missing',
+  ].join('; ');
+
+  return {
+    hookPath,
+    postCommitHookPath,
+    prePushHookPath,
+    hookRequiresPathBinary,
+    gitLfsBinaryPath,
+    gitLfsBinaryAvailable: gitLfsBinaryResult.status === 0,
+    diagnosticCurrent: `${hookSummary}; ${gitLfsBinaryOutput}`,
+  };
+}
+
 function expectedPnpmVersion(packageManager) {
   const match = String(packageManager ?? '').match(/^pnpm@(\d+\.\d+\.\d+)$/);
   return match?.[1] ?? null;
@@ -1009,6 +1059,7 @@ function buildReleaseToolchainProbeLedger({
   barePnpmMatches,
   gitLfsOutput,
   gitLfsAvailable,
+  gitLfsHookDiagnosticCurrent,
 }) {
   const items = [
     {
@@ -1043,6 +1094,9 @@ function buildReleaseToolchainProbeLedger({
       command: 'git lfs version',
       status: skipProbes ? 'skipped' : gitLfsAvailable ? 'pass' : 'needs_remediation',
       current: skipProbes ? 'skipped' : gitLfsOutput,
+      diagnostic_command: 'git config --get core.hookspath; git rev-parse --git-path hooks/post-commit; git rev-parse --git-path hooks/pre-push; git-lfs version',
+      diagnostic_current: skipProbes ? 'skipped' : gitLfsHookDiagnosticCurrent,
+      diagnostic_boundary: 'Git LFS hook-path diagnostics are current-shell context only; they do not rewrite hooks, install Git LFS, guarantee future commit or push hook PATH, push, deploy, clear source provenance, or grant production approval.',
       expected: 'git-lfs available on PATH for the same shell used for commit and push evidence',
       proof_type: 'git_lfs_push_path_probe',
       proof_boundary: 'Git LFS push-path probe is release-shell evidence only; it does not install Git LFS, push, deploy, clear source provenance, prove hosted/live parity, or grant production approval.',
@@ -1113,6 +1167,8 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
   const gitLfsResult = skipProbes ? null : run('git', ['lfs', 'version']);
   const gitLfsOutput = gitLfsResult ? compactCommandOutput(gitLfsResult) : 'probe skipped by --skip-probes';
   const gitLfsAvailable = gitLfsResult?.status === 0;
+  const gitLfsHookDiagnostic = skipProbes ? null : probeGitLfsHookPath();
+  const gitLfsHookDiagnosticCurrent = gitLfsHookDiagnostic?.diagnosticCurrent ?? 'probe skipped by --skip-probes';
 
   const items = [
     {
@@ -1201,6 +1257,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     corepack_probe: skipProbes ? 'skipped' : (corepackResult?.status === 0 ? 'pass' : 'fail'),
     bare_pnpm_diagnostic: barePnpmDiagnostic,
     git_lfs_probe: skipProbes ? 'skipped' : (gitLfsAvailable ? 'pass' : 'fail'),
+    git_lfs_hook_diagnostic: skipProbes ? 'skipped' : gitLfsHookDiagnosticCurrent,
     open_count: itemsWithProofCommands.filter((item) => item.status !== 'pass').length,
     total_count: itemsWithProofCommands.length,
     items: itemsWithProofCommands,
@@ -1218,6 +1275,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       barePnpmMatches,
       gitLfsOutput,
       gitLfsAvailable,
+      gitLfsHookDiagnosticCurrent,
     }),
     remediation_queue: buildReleasePreflightRemediationQueue(deficits),
     clearance_matrix: buildReleasePreflightClearanceMatrix(deficits),
@@ -4520,6 +4578,16 @@ const releaseToolchainPnpmDiagnosticFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releaseToolchainGitLfsHookDiagnosticFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-release-preflight-readiness.mjs',
+  'scripts/check-release-preflight-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const strategyAuditSliceTimeoutFilesChanged = [
   'tests/unit/productionApprovalPacket.test.ts',
   'tests/unit/strategyCompletionAudit.test.ts',
@@ -4841,6 +4909,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...releasePreflightPublicCheckHandleFilesChanged,
   ...releaseToolchainPnpmDiagnosticFilesChanged,
+  ...releaseToolchainGitLfsHookDiagnosticFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
@@ -4962,6 +5031,15 @@ const releaseToolchainPnpmDiagnosticTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run report:release-preflight -- --json',
+  'pnpm run check:release-preflight-report',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const releaseToolchainGitLfsHookDiagnosticTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'node scripts/report-launch-evidence-manifest.mjs',
   'pnpm run check:release-preflight-report',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
@@ -5228,6 +5306,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
   ...releaseToolchainPnpmDiagnosticTestsRun,
+  ...releaseToolchainGitLfsHookDiagnosticTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
@@ -5717,6 +5796,19 @@ const safeFixImplementationDecisions = [
     reason: 'The current release shell can have /opt/homebrew/bin/pnpm 10.23.0 available while corepack is missing; operators need that distinction visible without weakening the Corepack-pinned release evidence contract.',
     proof_boundary: 'This record adds diagnostic visibility only; it does not install Corepack, treat bare pnpm as Corepack evidence, run release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
     stop_gate: 'Do not treat bare pnpm diagnostics, matching bare pnpm version output, focused release-preflight report/check success, skipped probes, or this code optimization ledger as Corepack-pinned release-readiness, source provenance cleanup, push-path proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC',
+    decision: 'Expose Git LFS hook-path diagnostics on the existing Git LFS push-path proof row.',
+    acceptance_check: 'The release_preflight payload and focused/commercial reports show the configured hook path, post-commit/pre-push hook locations, hook requirement for git-lfs on PATH, and current-shell git-lfs binary resolution without treating that diagnostic as future commit or push clearance.',
+    chosen_variant: 'minimal Git LFS hook-path diagnostic',
+    repo_pattern_reused: 'Existing release_preflight.toolchain_probe_ledger, Git LFS push-path proof row, focused release-preflight report/check, commercial readiness report, and launch manifest checker contracts.',
+    files_changed: releaseToolchainGitLfsHookDiagnosticFilesChanged,
+    tests_run: releaseToolchainGitLfsHookDiagnosticTestsRun,
+    proof: 'The patch keeps the two-row toolchain ledger intact, adds hook-path diagnostic fields to the Git LFS row, and validates those fields in focused and broad report checkers plus unit tests.',
+    reason: 'The commit hook emitted a real warning when git-lfs was absent from the Git hook PATH, while a PATH-injected release-preflight run could still pass git lfs version; operators need that hook-path risk visible before push or deploy evidence is trusted.',
+    proof_boundary: 'This record adds Git LFS hook-path diagnostic visibility only; it does not rewrite hooks, install Git LFS, guarantee future commit or push hook PATH, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
+    stop_gate: 'Do not treat Git LFS hook diagnostics, matching git-lfs version output, focused release-preflight report/check success, skipped probes, or this code optimization ledger as future commit-hook proof, push-path proof, source provenance cleanup, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6589,6 +6681,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'No-code defer preserves the existing blocker, but leaves useful non-clearance shell context hidden.',
     evidence: 'The release_preflight payload already separates Corepack and Git LFS probe rows; adding a diagnostic field to the Corepack row keeps one source of truth without adding another probe gate.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC',
+    variant: 'Rewrite the configured Git hooks or global hook PATH to include /opt/homebrew/bin.',
+    reason_rejected: 'Global hook edits mutate user-level Git configuration outside the repo and require explicit owner approval.',
+    tradeoff: 'Changing hooks could remove the warning for this workstation, but it would exceed a safe diagnostic phase and might mask release-shell differences.',
+    evidence: 'core.hookspath is configured to /Users/sanjayb/.codex/git-hooks and the hook scripts require command -v git-lfs before post-commit or pre-push work.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC',
+    variant: 'Treat git lfs version success in a PATH-injected report as full commit and push hook clearance.',
+    reason_rejected: 'A report process can have a richer PATH than a later git commit or pre-push hook invocation, so the binary probe alone does not prove future hook PATH.',
+    tradeoff: 'This would keep the existing two-line evidence simpler, but it would hide a real hook warning observed during commit.',
+    evidence: 'The previous commit produced a Git LFS hook warning while PATH=/opt/homebrew/bin git lfs version passed separately.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC',
+    variant: 'Add a third release-toolchain ledger item for Git LFS hook PATH.',
+    reason_rejected: 'The hook check is diagnostic context for the Git LFS push-path row rather than an independent release gate.',
+    tradeoff: 'A third row could be more visible, but it would increase row-count churn and duplicate the Git LFS gate semantics.',
+    evidence: 'The existing Git LFS push-path row already contains command, current, expected, proof boundary, stop gate, and diagnostic fields.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6909,6 +7022,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one diagnostic command/current/boundary field set to the existing Corepack toolchain row, renders those fields in existing focused and broad reports, and updates existing validators/tests without adding dependencies, new probe gates, release execution, tool installation, or launch-status changes.',
     tests_or_checks: releaseToolchainPnpmDiagnosticTestsRun,
     remaining_risk: 'Release readiness remains blocked until Corepack is available in the release shell, Corepack-pinned release-readiness passes, Git LFS push-path proof is current, source provenance is clean, owner approval is explicit, guarded deploy completes, and post-deploy live proof passes.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds hook-path diagnostic fields to the existing Git LFS toolchain row, reuses report/check/table contracts, and avoids hook mutation, global PATH mutation, new dependencies, new release gates, push execution, deploy execution, or launch-status changes.',
+    tests_or_checks: releaseToolchainGitLfsHookDiagnosticTestsRun,
+    remaining_risk: 'Git LFS hook execution still depends on the PATH used by future git commit and pre-push invocations; release readiness also remains blocked until Corepack, source provenance, branch review, Supabase advisor, buyer evidence, owner approval, guarded deploy, and post-deploy live proof are current.',
   },
 ];
 

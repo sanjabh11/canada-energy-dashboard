@@ -255,6 +255,8 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('pnpm --version'), 'Report must include bare pnpm as a diagnostic command.');
   assert(markdown.includes('Bare pnpm diagnostics are local-shell context only'), 'Report must preserve the bare pnpm non-clearance diagnostic boundary.');
   assert(markdown.includes('| Git LFS push-path proof | git lfs version |'), 'Report must include the Git LFS push-path probe command.');
+  assert(markdown.includes('git config --get core.hookspath'), 'Report must include the Git LFS hook-path diagnostic command.');
+  assert(markdown.includes('Git LFS hook-path diagnostics are current-shell context only'), 'Report must preserve the Git LFS hook-path diagnostic boundary.');
   assert(markdown.includes('does not install tools, run release-readiness'), 'Report must preserve the release toolchain probe non-execution boundary.');
   assert(markdown.includes('Corepack/Git LFS probe ledger'), 'Report must include release toolchain probe state in production approval prerequisites.');
   assert(markdown.includes('## Release Preflight Clearance Matrix'), 'Report must include the release preflight clearance matrix table.');
@@ -508,6 +510,9 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PNPM-DIAGNOSTIC'), 'Code optimization report must record the release toolchain bare pnpm diagnostic task.');
   assert(codeOptimizationSection.includes('minimal non-clearance bare pnpm diagnostic'), 'Code optimization report must record the selected minimal non-clearance bare pnpm diagnostic.');
   assert(/does not install Corepack|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve the release toolchain pnpm diagnostic non-clearance boundary.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC'), 'Code optimization report must record the release toolchain Git LFS hook diagnostic task.');
+  assert(codeOptimizationSection.includes('minimal Git LFS hook-path diagnostic'), 'Code optimization report must record the selected minimal Git LFS hook-path diagnostic.');
+  assert(/does not rewrite hooks|install Git LFS|future commit or push hook PATH|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve the Git LFS hook diagnostic non-mutation and non-clearance boundary.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');

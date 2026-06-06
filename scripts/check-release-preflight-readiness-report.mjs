@@ -89,6 +89,8 @@ if (failures.length === 0) {
     assertContains(stdout, 'pnpm --version', 'Report must include the bare pnpm diagnostic command.');
     assertContains(stdout, 'Bare pnpm diagnostics are local-shell context only', 'Report must preserve the bare pnpm non-clearance boundary.');
     assertContains(stdout, '| Git LFS push-path proof | git lfs version |', 'Report must include the Git LFS probe row.');
+    assertContains(stdout, 'git config --get core.hookspath', 'Report must include the Git LFS hook-path diagnostic command.');
+    assertContains(stdout, 'Git LFS hook-path diagnostics are current-shell context only', 'Report must preserve the Git LFS hook diagnostic proof boundary.');
     assertContains(stdout, 'Do not treat bare pnpm, local shims, skipped probes', 'Report must reject bare pnpm and skipped probes as release evidence.');
     assertContains(stdout, '## Release Preflight Deficits', 'Report must include release preflight deficits.');
     assertContains(stdout, '| Release-readiness execution |', 'Report must include the release-readiness execution row.');
@@ -118,6 +120,7 @@ if (failures.length === 0) {
     const clearanceRowsByRequirement = new Map((clearanceMatrix.rows ?? []).map((item) => [item.requirement, item]));
     const remediationRowsByRequirement = new Map((remediationQueue.items ?? []).map((item) => [item.requirement, item]));
     const corepackProbe = toolchainItemsById.get('corepack_pnpm_resolver');
+    const gitLfsProbe = toolchainItemsById.get('git_lfs_push_path');
 
     assert(payload.schema_version === 1, 'Focused release preflight JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused release preflight JSON must preserve the blocked launch decision.');
@@ -133,6 +136,10 @@ if (failures.length === 0) {
     if (releasePreflight.corepack_probe === 'fail') {
       assert(corepackProbe?.status === 'blocked', 'Corepack probe must stay blocked when corepack pnpm --version fails, regardless of bare pnpm diagnostics.');
     }
+    assert(/git config --get core\.hookspath/.test(gitLfsProbe?.diagnostic_command ?? ''), 'Git LFS probe must expose the hook-path diagnostic command.');
+    assert(typeof gitLfsProbe?.diagnostic_current === 'string' && gitLfsProbe.diagnostic_current.length > 0, 'Git LFS probe must expose diagnostic_current.');
+    assert(/Git LFS hook-path diagnostics are current-shell context only|do not rewrite hooks|future commit or push hook PATH|production approval/i.test(gitLfsProbe?.diagnostic_boundary ?? ''), 'Git LFS probe diagnostic boundary must reject hook-path diagnostics as future push approval.');
+    assert(releasePreflight.git_lfs_hook_diagnostic === 'skipped' || /core\.hookspath|current_path_git_lfs|hook_requires_git_lfs_on_path/i.test(releasePreflight.git_lfs_hook_diagnostic ?? ''), 'git_lfs_hook_diagnostic must be skipped or include hook/path context.');
     assert(clearanceMatrix.proof_type === 'release_preflight_clearance_matrix', 'clearance matrix proof_type must be release_preflight_clearance_matrix.');
     assert(clearanceMatrix.row_count === releasePreflight.items?.length, 'clearance matrix row_count must match release preflight item count.');
     assert(clearanceMatrix.blocked_count >= 1, 'clearance matrix must keep blocked release rows visible until release preflight passes.');

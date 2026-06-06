@@ -658,6 +658,11 @@ try {
       'Manifest release_preflight.bare_pnpm_diagnostic must be skipped or explicitly reject bare pnpm as Corepack evidence.',
     );
     assert(typeof manifest.release_preflight?.git_lfs_probe === 'string' && manifest.release_preflight.git_lfs_probe.length > 0, 'Manifest release_preflight.git_lfs_probe must be set.');
+    assert(typeof manifest.release_preflight?.git_lfs_hook_diagnostic === 'string' && manifest.release_preflight.git_lfs_hook_diagnostic.length > 0, 'Manifest release_preflight.git_lfs_hook_diagnostic must be set.');
+    assert(
+      manifest.release_preflight.git_lfs_hook_diagnostic === 'skipped' || /core\.hookspath|current_path_git_lfs|hook_requires_git_lfs_on_path/i.test(manifest.release_preflight.git_lfs_hook_diagnostic),
+      'Manifest release_preflight.git_lfs_hook_diagnostic must be skipped or include hook/path context.',
+    );
     assert(typeof manifest.release_preflight?.toolchain_probe_ledger?.evidence === 'string', 'Manifest release_preflight.toolchain_probe_ledger.evidence must be set.');
     assert(manifest.release_preflight.toolchain_probe_ledger.evidence.includes('Release toolchain probe ledger'), 'Manifest release toolchain probe ledger evidence must include a ledger marker.');
     assert(hasIntegerOrNull(manifest.release_preflight.toolchain_probe_ledger?.open_count), 'Manifest release_preflight.toolchain_probe_ledger.open_count must be an integer or null.');
@@ -707,6 +712,9 @@ try {
       }
       if (item.id === 'git_lfs_push_path') {
         assert(item.command === 'git lfs version', 'Git LFS probe command must remain git lfs version.');
+        assert(/git config --get core\.hookspath/.test(item.diagnostic_command ?? ''), 'Git LFS probe must expose hook-path diagnostic commands.');
+        assert(typeof item.diagnostic_current === 'string' && item.diagnostic_current.length > 0, 'Git LFS probe diagnostic_current must be set.');
+        assert(/Git LFS hook-path diagnostics are current-shell context only|do not rewrite hooks|future commit or push hook PATH|production approval/i.test(item.diagnostic_boundary ?? ''), 'Git LFS probe diagnostic_boundary must reject hook diagnostics as future push approval.');
         assert(/Git LFS push-path probe|release-shell evidence only|does not install Git LFS|push|deploy|production approval/i.test(item.proof_boundary), 'Git LFS probe proof_boundary must not imply install, push, deploy, or approval.');
         assert(/commit hook warnings|previous pushes|skipped probes|missing git-lfs binary|push-path proof/i.test(item.stop_gate), 'Git LFS probe stop_gate must reject hook warnings, old pushes, skipped probes, and missing binaries as push-path proof.');
       }
@@ -2998,6 +3006,36 @@ try {
         && releaseToolchainPnpmDiagnosticReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check))
         && releaseToolchainPnpmDiagnosticReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Release toolchain pnpm diagnostic review must record release-preflight JSON, focused checker, and manifest checks.',
+    );
+    const releaseToolchainGitLfsHookDiagnosticDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC');
+    assert(releaseToolchainGitLfsHookDiagnosticDecision, 'Manifest must record the release toolchain Git LFS hook-path diagnostic implementation decision.');
+    assert(
+      releaseToolchainGitLfsHookDiagnosticDecision?.chosen_variant === 'minimal Git LFS hook-path diagnostic',
+      'Release toolchain Git LFS hook diagnostic decision must record the minimal hook-path diagnostic variant.',
+    );
+    assert(
+      Array.isArray(releaseToolchainGitLfsHookDiagnosticDecision?.files_changed)
+        && releaseToolchainGitLfsHookDiagnosticDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && releaseToolchainGitLfsHookDiagnosticDecision.files_changed.includes('scripts/report-release-preflight-readiness.mjs')
+        && releaseToolchainGitLfsHookDiagnosticDecision.files_changed.includes('scripts/check-release-preflight-readiness-report.mjs')
+        && releaseToolchainGitLfsHookDiagnosticDecision.files_changed.includes('tests/unit/releasePreflightReadiness.test.ts')
+        && releaseToolchainGitLfsHookDiagnosticDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Release toolchain Git LFS hook diagnostic decision must record manifest, focused report, checker, and unit test files.',
+    );
+    assert(
+      /does not rewrite hooks|install Git LFS|future commit or push hook PATH|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(releaseToolchainGitLfsHookDiagnosticDecision?.proof_boundary ?? ''),
+      'Release toolchain Git LFS hook diagnostic decision must preserve diagnostic-only, no-hook-mutation, no-release-clearance boundaries.',
+    );
+    const releaseToolchainGitLfsHookDiagnosticReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-GIT-LFS-HOOK-DIAGNOSTIC');
+    assert(releaseToolchainGitLfsHookDiagnosticReview, 'Manifest must record the release toolchain Git LFS hook diagnostic code optimization review.');
+    assert(releaseToolchainGitLfsHookDiagnosticReview?.policy === 'strict', 'Release toolchain Git LFS hook diagnostic review must use strict policy.');
+    assert(releaseToolchainGitLfsHookDiagnosticReview?.verdict === 'pass', 'Release toolchain Git LFS hook diagnostic review must pass.');
+    assert(
+      Array.isArray(releaseToolchainGitLfsHookDiagnosticReview?.tests_or_checks)
+        && releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks.some((check) => /node scripts\/report-launch-evidence-manifest\.mjs/.test(check))
+        && releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check))
+        && releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Release toolchain Git LFS hook diagnostic review must record direct manifest, focused checker, and manifest checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

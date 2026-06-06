@@ -41,6 +41,8 @@ describe('release preflight readiness report', () => {
     expect(stdout).toContain('pnpm --version');
     expect(stdout).toContain('Bare pnpm diagnostics are local-shell context only');
     expect(stdout).toContain('| Git LFS push-path proof | git lfs version |');
+    expect(stdout).toContain('git config --get core.hookspath');
+    expect(stdout).toContain('Git LFS hook-path diagnostics are current-shell context only');
     expect(stdout).toContain('Do not treat bare pnpm, local shims, skipped probes');
     expect(stdout).toContain('Release Preflight Clearance Matrix');
     expect(stdout).toContain('Do not mark release approval ready');
@@ -78,10 +80,17 @@ describe('release preflight readiness report', () => {
     const corepackProbe = payload.release_preflight.toolchain_probe_ledger.items.find(
       (item: { id: string }) => item.id === 'corepack_pnpm_resolver',
     );
+    const gitLfsProbe = payload.release_preflight.toolchain_probe_ledger.items.find(
+      (item: { id: string }) => item.id === 'git_lfs_push_path',
+    );
     expect(corepackProbe.diagnostic_command).toBe('pnpm --version');
     expect(corepackProbe.diagnostic_current).toBe('skipped');
     expect(corepackProbe.diagnostic_boundary).toMatch(/Bare pnpm diagnostics are local-shell context only|does not satisfy the Corepack pnpm resolver gate|deploy|production approval/i);
     expect(payload.release_preflight.bare_pnpm_diagnostic).toBe('skipped');
+    expect(gitLfsProbe.diagnostic_command).toContain('git config --get core.hookspath');
+    expect(gitLfsProbe.diagnostic_current).toBe('skipped');
+    expect(gitLfsProbe.diagnostic_boundary).toMatch(/Git LFS hook-path diagnostics are current-shell context only|future commit or push hook PATH|production approval/i);
+    expect(payload.release_preflight.git_lfs_hook_diagnostic).toBe('skipped');
     expect(payload.release_preflight.clearance_matrix.proof_type).toBe('release_preflight_clearance_matrix');
     expect(payload.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
     expect(payload.source_provenance.resolution_queue.items[0].proof_type).toMatch(/source_rename_decision|staged_source_decision|unstaged_source_decision|untracked_source_decision/);
