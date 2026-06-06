@@ -83,6 +83,23 @@ function targetMatrixHasLane(matrix, lane, predicate = () => true) {
     ));
 }
 
+function hasStructuredUnblockOption(options, predicate = () => true) {
+  return Array.isArray(options)
+    && options.some((option) => (
+      option
+      && typeof option === 'object'
+      && typeof option.action === 'string'
+      && option.action.length > 0
+      && typeof option.tradeoff === 'string'
+      && option.tradeoff.length > 0
+      && typeof option.expected_time_saved === 'string'
+      && option.expected_time_saved.length > 0
+      && typeof option.risk === 'string'
+      && option.risk.length > 0
+      && predicate(option)
+    ));
+}
+
 function isBoolean(value) {
   return value === true || value === false;
 }
@@ -2018,7 +2035,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING', 'Manifest progress_updates must expose the latest activities-remaining safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL', 'Manifest progress_updates must expose the latest bottleneck-detail safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2048,8 +2065,14 @@ try {
     assert(manifest.bottleneck_log.some((item) => (
       item
       && item.root_cause === 'evidence gap'
+      && item.affected_lane === 'Synthesis + Validation'
+      && Number.isInteger(item.elapsed_minutes)
+      && typeof item.last_update === 'string'
       && Array.isArray(item.top_unblock_options)
       && item.top_unblock_options.length >= 3
+      && hasStructuredUnblockOption(item.top_unblock_options, (option) => /buyer rows|retained redacted artifacts/i.test(option.action))
+      && hasStructuredUnblockOption(item.top_unblock_options, (option) => /source provenance|release-readiness/i.test(option.action))
+      && hasStructuredUnblockOption(item.top_unblock_options, (option) => /branch review|Supabase advisor/i.test(option.action))
     )), 'Manifest bottleneck_log must record the launch evidence gap and at least three unblock options.');
     assert(manifest.market_evidence_mode === 'mixed', 'Manifest market_evidence_mode must remain mixed while public source research and unvalidated buyer hypotheses are combined.');
     assert(Array.isArray(manifest.synthetic_data_points), 'Manifest synthetic_data_points must be a list for the current launch-evidence schema.');
@@ -3284,6 +3307,37 @@ try {
         && progressActivitiesRemainingReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && progressActivitiesRemainingReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Progress activities-remaining code optimization review must record focused progress, manifest, and commercial report checks.',
+    );
+    const progressBottleneckDetailDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL');
+    assert(progressBottleneckDetailDecision, 'Manifest must record the progress bottleneck-detail implementation decision.');
+    assert(
+      progressBottleneckDetailDecision?.chosen_variant === 'minimal structured bottleneck detail patch',
+      'Progress bottleneck-detail decision must record the minimal structured bottleneck patch variant.',
+    );
+    assert(
+      Array.isArray(progressBottleneckDetailDecision?.files_changed)
+        && progressBottleneckDetailDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && progressBottleneckDetailDecision.files_changed.includes('scripts/report-progress-digest-readiness.mjs')
+        && progressBottleneckDetailDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && progressBottleneckDetailDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && progressBottleneckDetailDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Progress bottleneck-detail decision must record the manifest, focused digest, checkers, and unit test files.',
+    );
+    assert(
+      /does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(progressBottleneckDetailDecision?.proof_boundary ?? ''),
+      'Progress bottleneck-detail decision must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const progressBottleneckDetailReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL');
+    assert(progressBottleneckDetailReview, 'Manifest must record the progress bottleneck-detail code optimization review.');
+    assert(progressBottleneckDetailReview?.policy === 'strict', 'Progress bottleneck-detail code optimization review must use strict policy.');
+    assert(progressBottleneckDetailReview?.verdict === 'pass', 'Progress bottleneck-detail code optimization review must pass.');
+    assert(
+      Array.isArray(progressBottleneckDetailReview?.tests_or_checks)
+        && progressBottleneckDetailReview.tests_or_checks.some((check) => /report:progress-digest-readiness -- --skip-probes/.test(check))
+        && progressBottleneckDetailReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && progressBottleneckDetailReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && progressBottleneckDetailReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Progress bottleneck-detail code optimization review must record focused progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

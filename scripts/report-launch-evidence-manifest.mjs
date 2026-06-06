@@ -4979,6 +4979,14 @@ const progressActivitiesRemainingFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressBottleneckDetailFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -5022,6 +5030,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
   ...progressActivitiesRemainingFilesChanged,
+  ...progressBottleneckDetailFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5488,6 +5497,19 @@ const progressActivitiesRemainingTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const progressBottleneckDetailTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5531,6 +5553,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...progressDigestLatestRatchetTestsRun,
   ...progressTargetMatrixStructureTestsRun,
   ...progressActivitiesRemainingTestsRun,
+  ...progressBottleneckDetailTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -6127,6 +6150,19 @@ const safeFixImplementationDecisions = [
     reason: 'The commercial-launch progress contract requires activities remaining with current-phase and next-phase action counts; the focused digest previously omitted that section even though the required queue data already existed in the manifest.',
     proof_boundary: 'This record improves activities-remaining visibility only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat activities remaining counts, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    decision: 'Add affected-lane and structured unblock-option details to the progress bottleneck digest.',
+    acceptance_check: 'bottleneck_log entries include affected_lane and top_unblock_options with action, tradeoff, expected_time_saved, and risk; report:progress-digest-readiness renders those details; and focused/broad checks reject incomplete bottleneck evidence.',
+    chosen_variant: 'minimal structured bottleneck detail patch',
+    repo_pattern_reused: 'Existing bottleneck_log schema field, focused progress digest renderer/checker, broad manifest checker, and launch manifest unit test contract.',
+    files_changed: progressBottleneckDetailFilesChanged,
+    tests_run: progressBottleneckDetailTestsRun,
+    proof: 'The patch keeps bottleneck_log as the single source of truth, adds affected_lane and structured top unblock options, and updates focused/broad validation to assert action, tradeoff, expected time saved, and risk without executing any unblock path.',
+    reason: 'The commercial-launch progress contract requires the current bottleneck to include affected lane plus top three unblock options with tradeoff, expected time saved, and risk; string-only options under-reported that evidence.',
+    proof_boundary: 'This record improves bottleneck detail visibility only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat structured bottleneck options, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7223,6 +7259,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing gates could reduce counts if authorized, but would violate the no-deploy/no-external-action boundary for this phase.',
     evidence: 'The unresolved action queue contains buyer evidence, Supabase advisor, production approval, deploy, and post-deploy live proof gates.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    variant: 'Leave bottleneck unblock options as plain strings.',
+    reason_rejected: 'String-only options do not expose the tradeoff, expected time saved, and risk fields required by the progress reporting contract.',
+    tradeoff: 'No-code defer avoids schema-shape churn, but keeps the bottleneck digest less actionable for operators.',
+    evidence: 'The current bottleneck_log.top_unblock_options entries are strings with no structured tradeoff or risk metadata.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    variant: 'Add a separate bottleneck_options top-level manifest artifact.',
+    reason_rejected: 'The current bottleneck source already lives in bottleneck_log; adding another artifact would create a second source of truth.',
+    tradeoff: 'A separate artifact could simplify focused rendering, but would increase drift risk from the canonical bottleneck log.',
+    evidence: 'Focused progress digest reports already consume bottleneck_log.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    variant: 'Run the top unblock options during report generation.',
+    reason_rejected: 'The top options include buyer evidence collection, source provenance resolution, release checks, branch review, and Supabase advisor work that may require owner-side artifacts, secrets, or explicit approval.',
+    tradeoff: 'Executing options could reduce blockers if authorized, but would exceed a report-contract safe fix and violate no-external-action boundaries.',
+    evidence: 'The bottleneck options point at validate:pilot-evidence, release-readiness, production-approval, branch review, and Supabase advisor gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7633,6 +7690,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change derives activities remaining from existing manifest queues and updates the focused renderer/checker plus manifest ledger assertions, with no new dependency, no new canonical artifact, no proof-command execution, and no launch-status change.',
     tests_or_checks: progressActivitiesRemainingTestsRun,
     remaining_risk: 'Activities remaining counts are now visible but remain a reporting surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates existing bottleneck_log rows and existing focused/broad checks only, with no new dependency, no extra artifact, no proof-command execution, and no launch-status change.',
+    tests_or_checks: progressBottleneckDetailTestsRun,
+    remaining_risk: 'Bottleneck options are now structured but remain reporting guidance only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
@@ -8089,13 +8155,29 @@ const manifest = {
     {
       phase: 'commercial launch readiness',
       task_or_subtask: 'clear objective completion blockers',
+      affected_lane: 'Synthesis + Validation',
       elapsed_minutes: 0,
       last_update: generatedAt,
       root_cause: 'evidence gap',
       top_unblock_options: [
-        'Collect real anonymized buyer rows and retained redacted artifacts, then run validate:pilot-evidence --require-95.',
-        'Resolve source provenance intentionally and run the guarded release-readiness and production-approval checks.',
-        'Complete read-only branch review plus authorized Supabase advisor review before any deploy approval request.',
+        {
+          action: 'Collect real anonymized buyer rows and retained redacted artifacts, then run validate:pilot-evidence --require-95.',
+          tradeoff: 'Highest launch-evidence value, but depends on real buyer participation and retained artifact handling outside this repo-only phase.',
+          expected_time_saved: 'Avoids repeated repo-side polishing once the hard buyer evidence gate is the blocker.',
+          risk: 'Cannot be synthesized or assumed; weak or rehearsal-only artifacts would keep launch blocked.',
+        },
+        {
+          action: 'Resolve source provenance intentionally and run the guarded release-readiness and production-approval checks.',
+          tradeoff: 'Clarifies deploy eligibility and release toolchain state, but may require owner decisions about staged/dirty files and Corepack/Git LFS environment remediation.',
+          expected_time_saved: 'Prevents production approval review from re-discovering source and toolchain blockers late.',
+          risk: 'Running guarded release or approval commands without clean provenance or explicit approval could blur proof boundaries.',
+        },
+        {
+          action: 'Complete read-only branch review plus authorized Supabase advisor review before any deploy approval request.',
+          tradeoff: 'Reduces branch and external-account uncertainty, but depends on owner-approved branch decisions and Supabase advisor access.',
+          expected_time_saved: 'Avoids pushing a production approval packet through known unresolved branch and advisor gates.',
+          risk: 'Branch mutation, Supabase changes, or dashboard claims without authorization would exceed this safe-fix lane.',
+        },
       ],
     },
   ],

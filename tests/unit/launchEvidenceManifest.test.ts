@@ -159,7 +159,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -193,7 +193,16 @@ describe('launch evidence manifest report', () => {
     ]));
     expect(objectiveCompletionProgressUpdate.bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(manifest.bottleneck_log[0].root_cause).toBe('evidence gap');
+    expect(manifest.bottleneck_log[0].affected_lane).toBe('Synthesis + Validation');
     expect(manifest.bottleneck_log[0].top_unblock_options).toHaveLength(3);
+    expect(manifest.bottleneck_log[0].top_unblock_options[0]).toMatchObject({
+      action: expect.stringMatching(/buyer rows|retained redacted artifacts/i),
+      tradeoff: expect.stringMatching(/buyer participation|repo-only phase/i),
+      expected_time_saved: expect.stringMatching(/hard buyer evidence gate/i),
+      risk: expect.stringMatching(/Cannot be synthesized|rehearsal-only artifacts/i),
+    });
+    expect(manifest.bottleneck_log[0].top_unblock_options[1].action).toMatch(/source provenance|release-readiness/i);
+    expect(manifest.bottleneck_log[0].top_unblock_options[2].action).toMatch(/branch review|Supabase advisor/i);
     expect(manifest.market_evidence_mode).toBe('mixed');
     expect(manifest.synthetic_data_points).toEqual([]);
     const adversarialReviewsByLane = mapBy(
@@ -849,9 +858,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(44);
+    expect(manifest.implementation_decisions).toHaveLength(45);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(44);
+    expect(manifest.code_optimization_reviews).toHaveLength(45);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1963,6 +1972,30 @@ describe('launch evidence manifest report', () => {
     expect(progressActivitiesRemainingReview).toBeTruthy();
     expect(progressActivitiesRemainingReview.policy).toBe('strict');
     expect(progressActivitiesRemainingReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const progressBottleneckDetailDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    );
+    expect(progressBottleneckDetailDecision).toBeTruthy();
+    expect(progressBottleneckDetailDecision.chosen_variant).toBe('minimal structured bottleneck detail patch');
+    expect(progressBottleneckDetailDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressBottleneckDetailDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const progressBottleneckDetailReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL',
+    );
+    expect(progressBottleneckDetailReview).toBeTruthy();
+    expect(progressBottleneckDetailReview.policy).toBe('strict');
+    expect(progressBottleneckDetailReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:progress-digest-readiness -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

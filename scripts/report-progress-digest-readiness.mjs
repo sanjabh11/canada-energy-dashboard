@@ -220,10 +220,13 @@ function focusedPayload(manifest) {
       proof_type: 'bottleneck_log_digest',
       entry_count: bottleneckLog.length,
       current_task_or_subtask: bottleneckLog[0]?.task_or_subtask ?? 'missing',
+      affected_lane: bottleneckLog[0]?.affected_lane ?? 'missing',
+      elapsed_minutes: bottleneckLog[0]?.elapsed_minutes ?? null,
+      last_update: bottleneckLog[0]?.last_update ?? 'missing',
       root_cause: bottleneckLog[0]?.root_cause ?? 'missing',
       top_unblock_option_count: Array.isArray(bottleneckLog[0]?.top_unblock_options) ? bottleneckLog[0].top_unblock_options.length : 0,
       evidence: bottleneckLog.length > 0
-        ? 'Bottleneck digest is present and records the active evidence-gap blocker plus top unblock options.'
+        ? 'Bottleneck digest is present and records the active evidence-gap blocker, affected lane, elapsed time, last update, and structured top unblock options.'
         : 'Bottleneck digest is missing from the launch evidence manifest.',
     },
     activities_remaining: activitiesRemaining,
@@ -259,6 +262,18 @@ function formatTargetMatrixItem(item) {
   return `${item.lane ?? 'Unknown lane'} (${item.status ?? 'unknown'}; target ${targetPercent}%; current ${currentPercent}%; confidence ${confidence}): ${evidence}`;
 }
 
+function formatUnblockOption(option) {
+  if (typeof option === 'string') return option;
+  if (!option || typeof option !== 'object') return '';
+
+  return [
+    `Action: ${option.action ?? 'missing'}`,
+    `Tradeoff: ${option.tradeoff ?? 'missing'}`,
+    `Expected time saved: ${option.expected_time_saved ?? 'missing'}`,
+    `Risk: ${option.risk ?? 'missing'}`,
+  ].join(' ');
+}
+
 function renderMarkdown(payload) {
   const progress = payload.progress_digest ?? {};
   const bottleneck = payload.bottleneck_digest ?? {};
@@ -276,10 +291,11 @@ function renderMarkdown(payload) {
     index + 1,
     item.phase,
     item.task_or_subtask,
+    item.affected_lane,
     item.elapsed_minutes,
     item.last_update,
     item.root_cause,
-    Array.isArray(item.top_unblock_options) ? item.top_unblock_options.join('; ') : '',
+    Array.isArray(item.top_unblock_options) ? item.top_unblock_options.map(formatUnblockOption).join('; ') : '',
   ]);
   const currentActivityRows = (activities.current_phase_actions ?? []).map((item) => [
     item.rank,
@@ -357,13 +373,13 @@ function renderMarkdown(payload) {
     '## Bottleneck Summary',
     '',
     renderTable(
-      ['Status', 'Proof Type', 'Current Task Or Subtask', 'Root Cause', 'Top Unblock Options', 'Evidence'],
-      [[bottleneck.status, bottleneck.proof_type, bottleneck.current_task_or_subtask, bottleneck.root_cause, bottleneck.top_unblock_option_count, bottleneck.evidence]],
+      ['Status', 'Proof Type', 'Current Task Or Subtask', 'Affected Lane', 'Elapsed Minutes', 'Last Update', 'Root Cause', 'Top Unblock Options', 'Evidence'],
+      [[bottleneck.status, bottleneck.proof_type, bottleneck.current_task_or_subtask, bottleneck.affected_lane, bottleneck.elapsed_minutes, bottleneck.last_update, bottleneck.root_cause, bottleneck.top_unblock_option_count, bottleneck.evidence]],
     ),
     '',
     '## Bottleneck Log',
     '',
-    renderTable(['Rank', 'Phase', 'Task Or Subtask', 'Elapsed Minutes', 'Last Update', 'Root Cause', 'Top Unblock Options'], bottleneckRows),
+    renderTable(['Rank', 'Phase', 'Task Or Subtask', 'Affected Lane', 'Elapsed Minutes', 'Last Update', 'Root Cause', 'Top Unblock Options'], bottleneckRows),
     '',
     '## Public Release Status Handles',
     '',
