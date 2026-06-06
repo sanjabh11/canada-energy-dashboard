@@ -99,6 +99,13 @@ if (failures.length === 0) {
     assertContains(stdout, 'pre_request', 'Report must include pre-request request phases.');
     assertContains(stdout, 'owner_decision', 'Report must include the owner decision phase.');
     assertContains(stdout, 'post_deploy_boundary', 'Report must include the post-deploy boundary phase.');
+    assertContains(stdout, '## Production Approval Operator Handoff Packet', 'Report must include the operator handoff packet.');
+    assertContains(stdout, 'production_approval_operator_handoff_packet', 'Report must classify the operator handoff packet proof type.');
+    assertContains(stdout, 'production_approval.request_packet.items', 'Report must source the operator handoff packet from request packet rows.');
+    assertContains(stdout, 'Execution Gate', 'Report must render operator execution gates.');
+    assertContains(stdout, 'Can Execute From Packet', 'Report must render the packet execution boundary.');
+    assertContains(stdout, 'Owner Decision Required', 'Report must render the owner-decision flag.');
+    assertContains(stdout, 'planning evidence only', 'Report must preserve planning-only operator handoff boundaries.');
     assertContains(stdout, '## Launch Action Production Approval Row', 'Report must include the launch action production approval row.');
     assertContains(stdout, '## Release Preflight Owner Approval Row', 'Report must include the release preflight owner approval row.');
     assertContains(stdout, 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Report must include the buyer evidence gate focused command.');
@@ -111,11 +118,24 @@ if (failures.length === 0) {
     const productionApproval = payload.production_approval ?? {};
     const prerequisiteQueue = productionApproval.prerequisite_queue ?? {};
     const requestPacket = productionApproval.request_packet ?? {};
+    const operatorHandoffPacket = productionApproval.operator_handoff_packet ?? requestPacket.operator_handoff_packet ?? {};
     const prerequisiteItems = prerequisiteQueue.items ?? [];
     const requestItems = requestPacket.items ?? [];
+    const operatorItems = operatorHandoffPacket.items ?? [];
     const prerequisites = prerequisiteItems.map((item) => item.prerequisite);
     const prerequisiteRowsByName = new Map(prerequisiteItems.map((item) => [item.prerequisite, item]));
     const requestRowsByPrerequisite = new Map(requestItems.map((item) => [item.prerequisite, item]));
+    const operatorRowsByPrerequisite = new Map(operatorItems.map((item) => [item.prerequisite, item]));
+    const expectedExecutionGates = {
+      'Clean source provenance': 'clean_source_provenance_first',
+      'Launch evidence validation': 'attach_manifest_validation_evidence',
+      'Corepack release-readiness': 'release_readiness_after_clean_source',
+      'Canonical branch review': 'branch_review_before_owner_request',
+      'Supabase advisor clearance': 'supabase_advisor_after_authorization',
+      'Buyer evidence hard gate': 'buyer_evidence_validation_before_approval',
+      'Explicit owner production approval': 'owner_approval_after_pre_request_gates',
+      'Post-deploy live proof boundary': 'post_deploy_proof_after_approved_deploy',
+    };
 
     assert(payload.schema_version === 1, 'Focused production approval JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused production approval JSON must preserve the blocked launch decision.');
@@ -206,6 +226,43 @@ if (failures.length === 0) {
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.blocks_request === false, 'Owner decision row must not count as a pre-request blocker.');
     assert(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.blocks_request === false, 'Post-deploy boundary row must not count as a pre-request blocker.');
     assert(requestPacket.request_blocking_count >= 1, 'Request packet must keep pre-request blockers visible.');
+    assert(operatorHandoffPacket.proof_type === 'production_approval_operator_handoff_packet', 'Operator handoff packet must preserve its proof type.');
+    assert(operatorHandoffPacket.source === 'production_approval.request_packet.items', 'Operator handoff packet must source request packet rows.');
+    assert(operatorHandoffPacket.status === 'blocked', 'Operator handoff packet must remain blocked while request rows are blocked.');
+    assert(operatorHandoffPacket.item_count === requestItems.length, 'Operator handoff item count must match request rows.');
+    assert(operatorItems.length === requestItems.length, 'Operator handoff items must mirror request rows.');
+    assert(operatorHandoffPacket.request_blocking_count === operatorItems.filter((item) => item.blocks_approval_request).length, 'Operator handoff request_blocking_count must match blocking rows.');
+    assert(operatorHandoffPacket.owner_decision_count === operatorItems.filter((item) => item.owner_decision_required).length, 'Operator handoff owner_decision_count must match owner-decision rows.');
+    assert(operatorHandoffPacket.post_deploy_boundary_count === operatorItems.filter((item) => item.post_deploy_boundary).length, 'Operator handoff post_deploy_boundary_count must match post-deploy rows.');
+    assert(operatorHandoffPacket.pre_request_count === operatorItems.filter((item) => item.request_phase === 'pre_request').length, 'Operator handoff pre_request_count must match pre-request rows.');
+    assert(operatorHandoffPacket.ready_count === operatorItems.filter((item) => item.status === 'ready').length, 'Operator handoff ready_count must match ready rows.');
+    assert(operatorHandoffPacket.manual_stop_count === operatorItems.filter((item) => item.status === 'manual_stop').length, 'Operator handoff manual_stop_count must match manual-stop rows.');
+    assert(operatorHandoffPacket.blocked_count === operatorItems.filter((item) => item.status !== 'ready').length, 'Operator handoff blocked_count must match non-ready rows.');
+    assert(operatorHandoffPacket.evidence.includes('Production approval operator handoff packet'), 'Operator handoff evidence must include a packet marker.');
+    assert(/planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|clear source provenance|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary ?? ''), 'Operator handoff proof_boundary must preserve planning-only approval boundaries.');
+    assert(/Do not request or claim production approval|deploy-production|netlify deploy|contact buyers|access Supabase|hosted\/live parity/i.test(operatorHandoffPacket.stop_gate ?? ''), 'Operator handoff stop_gate must reject approval, deploy, external-account, and live claims.');
+    assert(
+      operatorItems.map((item) => item.prerequisite).join(',') === requestItems.map((item) => item.prerequisite).join(','),
+      'Operator handoff rows must preserve request packet order.',
+    );
+    for (const [index, item] of operatorItems.entries()) {
+      const requestRow = requestItems[index] ?? {};
+      assert(Number.isInteger(item.rank), `Operator handoff row ${index} rank must be an integer.`);
+      assert(item.prerequisite === requestRow.prerequisite, `Operator handoff row ${index} prerequisite must match request row.`);
+      assert(item.request_phase === requestRow.request_phase, `Operator handoff row ${index} request_phase must match request row.`);
+      assert(item.owner === requestRow.owner, `Operator handoff row ${index} owner must match request row.`);
+      assert(item.status === requestRow.status, `Operator handoff row ${index} status must match request row.`);
+      assert(item.source_status === requestRow.source_status, `Operator handoff row ${index} source_status must match request row.`);
+      assert(item.proof_command === requestRow.proof_command, `Operator handoff row ${index} proof_command must match request row.`);
+      assert(item.proof_type === requestRow.proof_type, `Operator handoff row ${index} proof_type must match request row.`);
+      assert(item.blocks_approval_request === requestRow.blocks_request, `Operator handoff row ${index} blocks_approval_request must match request row blocks_request.`);
+      assert(item.can_execute_from_packet === false, `Operator handoff row ${index} must not be executable from the packet.`);
+      assert(item.execution_gate === expectedExecutionGates[item.prerequisite], `Operator handoff row ${index} must expose the expected execution gate.`);
+      assert(/planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|hosted\/live parity/i.test(item.proof_boundary ?? ''), `Operator handoff row ${index} proof_boundary must preserve planning-only semantics.`);
+      assert(/Do not execute approval, deploy, or external-account work|claim readiness|mark this row ready/i.test(item.stop_gate ?? ''), `Operator handoff row ${index} stop_gate must reject packet execution.`);
+    }
+    assert(operatorRowsByPrerequisite.get('Explicit owner production approval')?.owner_decision_required === true, 'Operator handoff owner decision row must set owner_decision_required.');
+    assert(operatorRowsByPrerequisite.get('Post-deploy live proof boundary')?.post_deploy_boundary === true, 'Operator handoff post-deploy row must set post_deploy_boundary.');
     assert(payload.launch_action_production_approval_row?.phase === 'production_approval', 'Focused report JSON must include the launch action production approval row.');
     assert(payload.release_preflight_owner_approval_row?.requirement === 'Explicit owner production approval', 'Focused report JSON must include the release preflight owner approval row.');
     assert(payload.package_script_handles?.check_production_deploy_request === 'corepack pnpm run check:production-deploy-request', 'Focused report must expose the production deploy request command handle.');
@@ -220,4 +277,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Production approval readiness report check passed: focused prerequisite queue, request packet, approval rows, command handles, and no-approval boundaries are consistent.');
+console.log('Production approval readiness report check passed: focused prerequisite queue, request packet, operator handoff packet, approval rows, command handles, and no-approval boundaries are consistent.');

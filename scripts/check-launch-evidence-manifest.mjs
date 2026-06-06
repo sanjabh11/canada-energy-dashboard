@@ -1279,6 +1279,16 @@ try {
       'Explicit owner production approval': 'manual_approval',
       'Post-deploy live proof boundary': 'post_deploy_live_proof_gate',
     };
+    const productionOperatorExecutionGatesByPrerequisite = {
+      'Clean source provenance': 'clean_source_provenance_first',
+      'Launch evidence validation': 'attach_manifest_validation_evidence',
+      'Corepack release-readiness': 'release_readiness_after_clean_source',
+      'Canonical branch review': 'branch_review_before_owner_request',
+      'Supabase advisor clearance': 'supabase_advisor_after_authorization',
+      'Buyer evidence hard gate': 'buyer_evidence_validation_before_approval',
+      'Explicit owner production approval': 'owner_approval_after_pre_request_gates',
+      'Post-deploy live proof boundary': 'post_deploy_proof_after_approved_deploy',
+    };
     for (const [index, item] of (manifest.production_approval.prerequisite_queue.items ?? []).entries()) {
       assert(Number.isInteger(item.rank), `production_approval.prerequisite_queue.items[${index}].rank must be an integer.`);
       assert(typeof item.prerequisite === 'string' && item.prerequisite.length > 0, `production_approval.prerequisite_queue.items[${index}].prerequisite must be set.`);
@@ -1503,6 +1513,93 @@ try {
       JSON.stringify((productionApprovalRequestPacket.items ?? []).map((item) => item.prerequisite)) === JSON.stringify((manifest.production_approval.prerequisite_queue.items ?? []).map((item) => item.prerequisite)),
       'Production approval request packet must include exactly the prerequisite queue rows in order.',
     );
+    const productionApprovalOperatorHandoffPacket = manifest.production_approval.operator_handoff_packet;
+    assert(typeof productionApprovalOperatorHandoffPacket?.evidence === 'string', 'Manifest production_approval.operator_handoff_packet.evidence must be set.');
+    assert(productionApprovalOperatorHandoffPacket.evidence.includes('Production approval operator handoff packet'), 'Manifest production approval operator handoff packet evidence must include a packet marker.');
+    assert(productionApprovalOperatorHandoffPacket.proof_type === 'production_approval_operator_handoff_packet', 'Manifest production approval operator handoff packet proof_type must be production_approval_operator_handoff_packet.');
+    assert(productionApprovalOperatorHandoffPacket.source === 'production_approval.request_packet.items', 'Manifest production approval operator handoff packet must source request packet items.');
+    assert(productionApprovalOperatorHandoffPacket.status === (productionApprovalRequestPacket.status === 'ready_to_request' ? 'ready_to_request' : 'blocked'), 'Production approval operator handoff packet status must derive from the request packet status.');
+    assert(productionApprovalOperatorHandoffPacket.request_eligible === productionApprovalRequestPacket.request_eligible, 'Production approval operator handoff request_eligible must match request packet request_eligible.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.item_count), 'Manifest production_approval.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.request_blocking_count), 'Manifest production_approval.operator_handoff_packet.request_blocking_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.owner_decision_count), 'Manifest production_approval.operator_handoff_packet.owner_decision_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.post_deploy_boundary_count), 'Manifest production_approval.operator_handoff_packet.post_deploy_boundary_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.pre_request_count), 'Manifest production_approval.operator_handoff_packet.pre_request_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.ready_count), 'Manifest production_approval.operator_handoff_packet.ready_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.manual_stop_count), 'Manifest production_approval.operator_handoff_packet.manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(productionApprovalOperatorHandoffPacket.blocked_count), 'Manifest production_approval.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(Array.isArray(productionApprovalOperatorHandoffPacket.items), 'Manifest production_approval.operator_handoff_packet.items must be a list.');
+    assert(
+      productionApprovalOperatorHandoffPacket.item_count === productionApprovalRequestPacket.items.length,
+      'Production approval operator handoff packet item_count must match request packet items length.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.request_blocking_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.blocks_approval_request).length,
+      'Production approval operator handoff packet request_blocking_count must match approval-request-blocking rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.owner_decision_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.owner_decision_required).length,
+      'Production approval operator handoff packet owner_decision_count must match owner-decision rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.post_deploy_boundary_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.post_deploy_boundary).length,
+      'Production approval operator handoff packet post_deploy_boundary_count must match post-deploy rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.pre_request_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.request_phase === 'pre_request').length,
+      'Production approval operator handoff packet pre_request_count must match pre-request rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.ready_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.status === 'ready').length,
+      'Production approval operator handoff packet ready_count must match ready rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.manual_stop_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.status === 'manual_stop').length,
+      'Production approval operator handoff packet manual_stop_count must match manual-stop rows.',
+    );
+    assert(
+      productionApprovalOperatorHandoffPacket.blocked_count === productionApprovalOperatorHandoffPacket.items.filter((item) => item.status !== 'ready').length,
+      'Production approval operator handoff packet blocked_count must match non-ready rows.',
+    );
+    assert(
+      JSON.stringify((productionApprovalOperatorHandoffPacket.items ?? []).map((item) => item.prerequisite)) === JSON.stringify((productionApprovalRequestPacket.items ?? []).map((item) => item.prerequisite)),
+      'Production approval operator handoff packet must include exactly request packet prerequisites in order.',
+    );
+    assert(typeof productionApprovalOperatorHandoffPacket.proof_boundary === 'string' && /planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|clear source provenance|hosted\/live parity/i.test(productionApprovalOperatorHandoffPacket.proof_boundary), 'Production approval operator handoff packet proof_boundary must preserve planning-only approval semantics.');
+    assert(typeof productionApprovalOperatorHandoffPacket.stop_gate === 'string' && /Do not request or claim production approval|deploy-production|netlify deploy|contact buyers|access Supabase|hosted\/live parity/i.test(productionApprovalOperatorHandoffPacket.stop_gate), 'Production approval operator handoff packet stop_gate must reject approval, deploy, external-account, and live-parity claims.');
+    const productionOperatorRowsByPrerequisite = new Map((productionApprovalOperatorHandoffPacket.items ?? []).map((item) => [item.prerequisite, item]));
+    for (const [index, item] of (productionApprovalOperatorHandoffPacket.items ?? []).entries()) {
+      const requestRow = (productionApprovalRequestPacket.items ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `production_approval.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.prerequisite === requestRow.prerequisite, `production_approval.operator_handoff_packet.items[${index}].prerequisite must match the request packet row.`);
+      assert(item.request_phase === requestRow.request_phase, `production_approval.operator_handoff_packet.items[${index}].request_phase must match the request packet row.`);
+      assert(item.owner === requestRow.owner, `production_approval.operator_handoff_packet.items[${index}].owner must match the request packet row.`);
+      assert(item.status === requestRow.status, `production_approval.operator_handoff_packet.items[${index}].status must match the request packet row.`);
+      assert(item.source_status === requestRow.source_status, `production_approval.operator_handoff_packet.items[${index}].source_status must match the request packet row.`);
+      assert(item.current === requestRow.current, `production_approval.operator_handoff_packet.items[${index}].current must match the request packet row.`);
+      assert(item.needed === requestRow.needed, `production_approval.operator_handoff_packet.items[${index}].needed must match the request packet row.`);
+      assert(item.evidence_to_attach === requestRow.evidence_to_attach, `production_approval.operator_handoff_packet.items[${index}].evidence_to_attach must match the request packet row.`);
+      assert(item.proof_command === requestRow.proof_command, `production_approval.operator_handoff_packet.items[${index}].proof_command must match the request packet row.`);
+      assert(item.proof_type === requestRow.proof_type, `production_approval.operator_handoff_packet.items[${index}].proof_type must match the request packet row.`);
+      assert(item.request_impact === requestRow.request_impact, `production_approval.operator_handoff_packet.items[${index}].request_impact must match the request packet row.`);
+      assert(item.blocks_approval_request === requestRow.blocks_request, `production_approval.operator_handoff_packet.items[${index}].blocks_approval_request must match request packet blocks_request.`);
+      assert(item.owner_decision_required === (requestRow.request_phase === 'owner_decision'), `production_approval.operator_handoff_packet.items[${index}].owner_decision_required must derive from request_phase.`);
+      assert(item.post_deploy_boundary === (requestRow.request_phase === 'post_deploy_boundary'), `production_approval.operator_handoff_packet.items[${index}].post_deploy_boundary must derive from request_phase.`);
+      assert(item.can_execute_from_packet === false, `production_approval.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.execution_gate === productionOperatorExecutionGatesByPrerequisite[item.prerequisite], `production_approval.operator_handoff_packet.items[${index}] must expose the expected execution gate.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|hosted\/live parity/i.test(item.proof_boundary), `production_approval.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only approval semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute approval, deploy, or external-account work|claim readiness|mark this row ready/i.test(item.stop_gate), `production_approval.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+    }
+    assert(productionOperatorRowsByPrerequisite.get('Clean source provenance')?.execution_gate === 'clean_source_provenance_first', 'Production approval operator source row must require clean_source_provenance_first.');
+    assert(productionOperatorRowsByPrerequisite.get('Launch evidence validation')?.execution_gate === 'attach_manifest_validation_evidence', 'Production approval operator validation row must require attach_manifest_validation_evidence.');
+    assert(productionOperatorRowsByPrerequisite.get('Corepack release-readiness')?.execution_gate === 'release_readiness_after_clean_source', 'Production approval operator release row must require release_readiness_after_clean_source.');
+    assert(productionOperatorRowsByPrerequisite.get('Canonical branch review')?.execution_gate === 'branch_review_before_owner_request', 'Production approval operator branch row must require branch_review_before_owner_request.');
+    assert(productionOperatorRowsByPrerequisite.get('Supabase advisor clearance')?.execution_gate === 'supabase_advisor_after_authorization', 'Production approval operator Supabase row must require supabase_advisor_after_authorization.');
+    assert(productionOperatorRowsByPrerequisite.get('Buyer evidence hard gate')?.execution_gate === 'buyer_evidence_validation_before_approval', 'Production approval operator buyer row must require buyer_evidence_validation_before_approval.');
+    assert(productionOperatorRowsByPrerequisite.get('Explicit owner production approval')?.execution_gate === 'owner_approval_after_pre_request_gates', 'Production approval operator owner row must require owner_approval_after_pre_request_gates.');
+    assert(productionOperatorRowsByPrerequisite.get('Explicit owner production approval')?.owner_decision_required === true, 'Production approval operator owner row must mark owner_decision_required.');
+    assert(productionOperatorRowsByPrerequisite.get('Post-deploy live proof boundary')?.execution_gate === 'post_deploy_proof_after_approved_deploy', 'Production approval operator live-proof row must require post_deploy_proof_after_approved_deploy.');
+    assert(productionOperatorRowsByPrerequisite.get('Post-deploy live proof boundary')?.post_deploy_boundary === true, 'Production approval operator live-proof row must mark post_deploy_boundary.');
     assert(typeof manifest.post_deploy_live_proof?.evidence === 'string', 'Manifest post_deploy_live_proof.evidence must be set.');
     assert(manifest.post_deploy_live_proof.evidence.includes('Post-deploy live proof gate queue'), 'Manifest post-deploy live proof evidence must include a queue marker.');
     assert(manifest.post_deploy_live_proof.current_source_live_proven === false, 'Manifest must not imply current source is live-proven.');
@@ -2424,7 +2521,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest post-deploy live-proof operator handoff packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest production approval operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3936,6 +4033,41 @@ try {
         && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Post-deploy live-proof operator handoff packet code optimization review must record focused post-deploy, progress, manifest, and commercial report checks.',
     );
+    const productionApprovalOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET');
+    assert(productionApprovalOperatorHandoffPacketDecision, 'Manifest must record the production approval operator handoff packet implementation decision.');
+    assert(
+      productionApprovalOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived production approval operator handoff packet',
+      'Production approval operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(productionApprovalOperatorHandoffPacketDecision?.files_changed)
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/report-production-approval-readiness.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts')
+        && productionApprovalOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Production approval operator handoff packet decision must record the manifest, focused production report, checkers, and unit test files.',
+    );
+    assert(
+      /does not request owner approval|grant approval|run deploys|push|merge|mutate branches|contact buyers|access Supabase|clear source provenance|release-readiness as clearance|hosted\/live parity|raise launch status/i.test(productionApprovalOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Production approval operator handoff packet decision must preserve no-approval-request, no-approval, no-deploy, no-external-action, no-source-clearance, no-live-proof, and no-readiness boundaries.',
+    );
+    const productionApprovalOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET');
+    assert(productionApprovalOperatorHandoffPacketReview, 'Manifest must record the production approval operator handoff packet code optimization review.');
+    assert(productionApprovalOperatorHandoffPacketReview?.policy === 'strict', 'Production approval operator handoff packet code optimization review must use strict policy.');
+    assert(productionApprovalOperatorHandoffPacketReview?.verdict === 'pass', 'Production approval operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(productionApprovalOperatorHandoffPacketReview?.tests_or_checks)
+        && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:production-approval-readiness -- --skip-probes/.test(check))
+        && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check))
+        && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Production approval operator handoff packet code optimization review must record focused production approval, progress, manifest, and commercial report checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
@@ -3997,4 +4129,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, code optimization evidence, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, production approval operator handoff packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, code optimization evidence, pain map, target map, buyer boundary, and schema validation are consistent.');

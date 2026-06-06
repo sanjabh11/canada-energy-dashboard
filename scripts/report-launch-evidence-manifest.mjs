@@ -1963,6 +1963,96 @@ function buildProductionApprovalRequestPacket(prerequisiteQueue) {
   return { ...packet, evidence: productionApprovalRequestPacketEvidence(packet) };
 }
 
+function productionApprovalOperatorExecutionGate(item) {
+  switch (item.prerequisite) {
+    case 'Clean source provenance':
+      return 'clean_source_provenance_first';
+    case 'Launch evidence validation':
+      return 'attach_manifest_validation_evidence';
+    case 'Corepack release-readiness':
+      return 'release_readiness_after_clean_source';
+    case 'Canonical branch review':
+      return 'branch_review_before_owner_request';
+    case 'Supabase advisor clearance':
+      return 'supabase_advisor_after_authorization';
+    case 'Buyer evidence hard gate':
+      return 'buyer_evidence_validation_before_approval';
+    case 'Explicit owner production approval':
+      return 'owner_approval_after_pre_request_gates';
+    case 'Post-deploy live proof boundary':
+      return 'post_deploy_proof_after_approved_deploy';
+    default:
+      return 'production_approval_prerequisite_review';
+  }
+}
+
+function productionApprovalOperatorEvidence(packet) {
+  if (packet.status === 'ready_to_request') {
+    return 'Production approval operator handoff packet: status=ready_to_request source=production_approval.request_packet.items request_blocking=0 approval_gate=explicit owner approval is still a manual decision and does not deploy or prove hosted/live parity';
+  }
+
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_approval_request || item.owner_decision_required)
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.prerequisite}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Production approval operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `request_blocking=${packet.request_blocking_count}`,
+    `owner_decision=${packet.owner_decision_count}`,
+    `post_deploy_boundary=${packet.post_deploy_boundary_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is planning evidence only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity',
+  ].join(' ');
+}
+
+function buildProductionApprovalOperatorHandoffPacket(requestPacket) {
+  const items = (requestPacket.items ?? []).map((item) => ({
+    rank: item.rank,
+    prerequisite: item.prerequisite,
+    request_phase: item.request_phase,
+    owner: item.owner,
+    status: item.status,
+    source_status: item.source_status,
+    current: item.current,
+    needed: item.needed,
+    evidence_to_attach: item.evidence_to_attach,
+    execution_gate: productionApprovalOperatorExecutionGate(item),
+    proof_command: item.proof_command,
+    proof_type: item.proof_type,
+    proof_boundary: `${item.proof_boundary} This production approval operator handoff row is planning evidence only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.`,
+    stop_gate: `${item.stop_gate} Do not execute approval, deploy, or external-account work, claim readiness, or mark this row ready from the handoff packet itself.`,
+    request_impact: item.request_impact,
+    blocks_approval_request: item.blocks_request === true,
+    owner_decision_required: item.request_phase === 'owner_decision',
+    post_deploy_boundary: item.request_phase === 'post_deploy_boundary',
+    can_execute_from_packet: false,
+  }));
+  const packet = {
+    status: requestPacket.status === 'ready_to_request' ? 'ready_to_request' : 'blocked',
+    proof_type: 'production_approval_operator_handoff_packet',
+    source: 'production_approval.request_packet.items',
+    source_request_status: requestPacket.status,
+    request_eligible: requestPacket.request_eligible === true,
+    item_count: items.length,
+    request_blocking_count: items.filter((item) => item.blocks_approval_request).length,
+    owner_decision_count: items.filter((item) => item.owner_decision_required).length,
+    post_deploy_boundary_count: items.filter((item) => item.post_deploy_boundary).length,
+    pre_request_count: items.filter((item) => item.request_phase === 'pre_request').length,
+    ready_count: items.filter((item) => item.status === 'ready').length,
+    manual_stop_count: items.filter((item) => item.status === 'manual_stop').length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    proof_boundary: 'This production approval operator handoff packet is planning evidence only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not request or claim production approval, run deploy-production.sh, netlify deploy, push, mutate production, contact buyers, access Supabase, clear source provenance, or present hosted/live parity from this handoff packet.',
+    items,
+  };
+  return { ...packet, evidence: productionApprovalOperatorEvidence(packet) };
+}
+
 function packageScriptCommand(packageScripts, scriptName, fallback) {
   const command = packageScripts?.[scriptName];
   return command ? `corepack pnpm run ${scriptName}` : fallback;
@@ -4968,6 +5058,7 @@ const productionApprovalPrerequisiteQueue = buildProductionApprovalPrerequisiteQ
   sourceProvenanceResolutionQueue,
 });
 const productionApprovalRequestPacket = buildProductionApprovalRequestPacket(productionApprovalPrerequisiteQueue);
+const productionApprovalOperatorHandoffPacket = buildProductionApprovalOperatorHandoffPacket(productionApprovalRequestPacket);
 const postDeployLiveProofGateQueue = buildPostDeployLiveProofGateQueue({
   productionApprovalPrerequisiteQueue,
   packageScripts: pkg.scripts,
@@ -5517,6 +5608,17 @@ const postDeployLiveProofOperatorHandoffPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const productionApprovalOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-production-approval-readiness.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const postDeployProductionApprovalProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -5690,6 +5792,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
   ...postDeployLiveProofOperatorHandoffPacketFilesChanged,
+  ...productionApprovalOperatorHandoffPacketFilesChanged,
   ...postDeployProductionApprovalProofHandleFilesChanged,
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
@@ -6134,6 +6237,23 @@ const postDeployLiveProofOperatorHandoffPacketTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const productionApprovalOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-production-approval-readiness.mjs',
+  'node --check scripts/check-production-approval-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:production-approval-readiness -- --skip-probes',
+  'pnpm run report:production-approval-readiness -- --skip-probes --json',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const postDeployProductionApprovalProofHandleTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -6317,6 +6437,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
   ...postDeployLiveProofOperatorHandoffPacketTestsRun,
+  ...productionApprovalOperatorHandoffPacketTestsRun,
   ...postDeployProductionApprovalProofHandleTestsRun,
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
@@ -7017,6 +7138,19 @@ const safeFixImplementationDecisions = [
     reason: 'The post-deploy live-proof gate queue named the blocked live-proof actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can grant owner approval, deploy, mutate production, access live accounts, run hosted browser smoke, or prove hosted/live parity.',
     proof_boundary: 'This record improves post-deploy live-proof operator handoff visibility only; it does not grant owner approval, run deploys, run deploy-production.sh, run netlify deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
     stop_gate: 'Do not treat the post-deploy live-proof operator handoff packet, focused post-deploy report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as production approval, deployment, live-account proof, browser-smoke proof, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a production approval operator handoff packet derived from the production approval request packet.',
+    acceptance_check: 'production_approval.operator_handoff_packet records source linkage, request eligibility, item counts, execution gates, proof commands, owner-decision and post-deploy flags, and non-executable packet rows; report:production-approval-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived production approval operator handoff packet',
+    repo_pattern_reused: 'Existing production_approval.request_packet.items, focused production approval report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: productionApprovalOperatorHandoffPacketFilesChanged,
+    tests_run: productionApprovalOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing production_approval.request_packet rows, assigns explicit execution gates for source provenance, manifest evidence attachment, release, branch, Supabase, buyer evidence, owner decision, and post-deploy boundary rows, marks every row non-executable from the packet, and validates source linkage, counts, commands, gates, owner-decision flags, post-deploy flags, and no-approval/no-deploy boundaries.',
+    reason: 'The production approval request packet named the prerequisite rows, but operators lacked a compact handoff that sequences the next proof commands without implying that report generation can request owner approval, grant approval, deploy, mutate production, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.',
+    proof_boundary: 'This record improves production approval operator handoff visibility only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness as clearance, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the production approval operator handoff packet, focused production approval report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as owner approval, approval request eligibility, production approval, deployment, buyer evidence, Supabase clearance, clean source provenance, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -8260,6 +8394,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused post-deploy live-proof report already reads the manifest post_deploy_live_proof object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave production approval operator actions implicit in production_approval.request_packet rows.',
+    reason_rejected: 'Operators would still need to infer execution gates, owner-decision boundaries, and post-deploy sequencing from request rows instead of seeing a compact source-linked handoff for the manual approval blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps production approval less executable and easier to misread as an approval request rather than a guarded handoff.',
+    evidence: 'production_approval.request_packet.items already contains prerequisites, request phases, proof commands, proof types, request impacts, and stop gates, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET',
+    variant: 'Request owner approval, run production deploy request, deploy, or mutate production from the handoff phase.',
+    reason_rejected: 'Approval requests, deploy-request checks, production deploys, and production mutation require clean prerequisites, explicit owner decision, current release gates, and separate proof capture.',
+    tradeoff: 'Executing approval or deploy operations could reduce blockers only after prerequisites pass, but it would exceed this repo-side safe-fix boundary and risk unsupported approval or production changes.',
+    evidence: 'Production approval request packet stop gates require every pre-request row to be ready, explicit owner approval to be granted separately, and post-deploy live proof to run only after approved deploy completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate production approval runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from production_approval.request_packet.items.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused production approval report already reads the manifest production_approval object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8734,6 +8889,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: postDeployLiveProofOperatorHandoffPacketTestsRun,
     remaining_risk: 'The post-deploy live-proof operator handoff packet is planning guidance only; launch readiness still depends on clean source provenance, release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, current live metadata, static parity, hosted proof-pack smoke, and final hosted/live parity proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact production approval operator handoff from existing production_approval.request_packet rows, renders it through the existing focused production approval report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, owner approval request execution, deploy execution, branch mutation, buyer contact, Supabase access, source cleanup, release-readiness execution, live proof execution, or launch-status changes.',
+    tests_or_checks: productionApprovalOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The production approval operator handoff packet is planning guidance only; launch readiness still depends on clean source provenance, current launch evidence validation attachment, Corepack-pinned release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8948,6 +9112,7 @@ const manifest = {
       launchActionQueue.evidence,
       productionApprovalPrerequisiteQueue.evidence,
       productionApprovalRequestPacket.evidence,
+      productionApprovalOperatorHandoffPacket.evidence,
       postDeployLiveProofGateQueue.evidence,
       postDeployLiveProofGateQueue.operator_handoff_packet.evidence,
     ],
@@ -9091,9 +9256,11 @@ const manifest = {
     explicit_owner_approval: false,
     prerequisite_queue: productionApprovalPrerequisiteQueue,
     request_packet: productionApprovalRequestPacket,
+    operator_handoff_packet: productionApprovalOperatorHandoffPacket,
     evidence: [
       productionApprovalPrerequisiteQueue.evidence,
       productionApprovalRequestPacket.evidence,
+      productionApprovalOperatorHandoffPacket.evidence,
     ].join(' '),
     stop_gate: 'This manifest does not grant production approval; deploy-production.sh, netlify deploy, push, or post-deploy live claims require explicit owner approval and current release gates.',
   },

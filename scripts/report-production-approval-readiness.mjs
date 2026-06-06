@@ -163,6 +163,7 @@ function renderMarkdown(payload) {
   const productionApproval = payload.production_approval ?? {};
   const prerequisiteQueue = productionApproval.prerequisite_queue ?? {};
   const requestPacket = productionApproval.request_packet ?? {};
+  const operatorHandoffPacket = productionApproval.operator_handoff_packet ?? requestPacket.operator_handoff_packet ?? {};
   const prerequisiteRows = (prerequisiteQueue.items ?? []).map((item) => [
     item.rank,
     item.prerequisite,
@@ -188,6 +189,23 @@ function renderMarkdown(payload) {
     item.source_status,
     item.status,
     item.blocks_request ? 'yes' : 'no',
+  ]);
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.prerequisite,
+    item.request_phase,
+    item.owner,
+    item.status,
+    item.source_status,
+    item.execution_gate,
+    item.proof_command,
+    item.proof_type,
+    item.blocks_approval_request ? 'yes' : 'no',
+    item.owner_decision_required ? 'yes' : 'no',
+    item.post_deploy_boundary ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
   ]);
   const launchActionRows = payload.launch_action_production_approval_row
     ? [[
@@ -241,6 +259,7 @@ function renderMarkdown(payload) {
     '',
     `- Prerequisite queue: ${prerequisiteQueue.evidence ?? 'No production approval prerequisite queue evidence captured.'}`,
     `- Request packet: ${requestPacket.evidence ?? 'No production approval request packet evidence captured.'}`,
+    `- Operator handoff packet: \`${operatorHandoffPacket.status ?? 'unknown'}; request_blocking=${operatorHandoffPacket.request_blocking_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}\``,
     `- Post-deploy live proof: ${payload.post_deploy_live_proof?.evidence ?? 'No post-deploy live proof evidence captured.'}`,
     '',
     '## Production Approval Prerequisite Queue',
@@ -259,6 +278,22 @@ function renderMarkdown(payload) {
       requestRows.length > 0
         ? requestRows
         : [['n/a', 'none', 'missing', 'production approval request packet missing', 'Regenerate launch evidence manifest before requesting approval.', 'operator', 'No request evidence captured.', 'corepack pnpm run report:launch-evidence-manifest', 'No request impact captured.', 'unknown', 'missing', 'yes']],
+    ),
+    '',
+    '## Production Approval Operator Handoff Packet',
+    '',
+    `Evidence: ${operatorHandoffPacket.evidence ?? 'No production approval operator handoff packet evidence captured.'}`,
+    '',
+    `Proof type: \`${operatorHandoffPacket.proof_type ?? 'unknown'}\``,
+    `Source: \`${operatorHandoffPacket.source ?? 'unknown'}\``,
+    `Proof boundary: ${operatorHandoffPacket.proof_boundary ?? payload.proof_boundary}`,
+    `Stop gate: ${operatorHandoffPacket.stop_gate ?? payload.stop_gate}`,
+    '',
+    renderTable(
+      ['Rank', 'Prerequisite', 'Request Phase', 'Owner', 'Status', 'Source Status', 'Execution Gate', 'Proof Command', 'Proof Type', 'Blocks Approval Request', 'Owner Decision Required', 'Post Deploy Boundary', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'],
+      operatorHandoffRows.length > 0
+        ? operatorHandoffRows
+        : [['n/a', 'none', 'missing', 'operator', 'missing', 'unknown', 'production_approval_prerequisite_review', 'corepack pnpm run report:launch-evidence-manifest', 'production_approval_operator_handoff_packet', 'yes', 'no', 'no', 'no', payload.proof_boundary, payload.stop_gate]],
     ),
     '',
     '## Launch Action Production Approval Row',
@@ -304,6 +339,7 @@ process.stdout.write(output);
 
 const blocked = payload.production_approval?.request_packet?.request_eligible !== true
   || payload.production_approval?.request_packet?.status !== 'ready_to_request'
+  || payload.production_approval?.operator_handoff_packet?.status !== 'ready_to_request'
   || payload.production_approval?.explicit_owner_approval !== true;
 
 if (failOnBlocker && blocked) {

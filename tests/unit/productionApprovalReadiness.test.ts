@@ -14,6 +14,23 @@ type ProductionApprovalRequestRow = {
   request_phase: string;
   blocks_request: boolean;
   proof_command: string;
+  source_status: string;
+  proof_type: string;
+};
+
+type ProductionApprovalOperatorHandoffRow = {
+  prerequisite: string;
+  request_phase: string;
+  execution_gate: string;
+  source_status: string;
+  blocks_approval_request: boolean;
+  owner_decision_required: boolean;
+  post_deploy_boundary: boolean;
+  can_execute_from_packet: boolean;
+  proof_command: string;
+  proof_type: string;
+  proof_boundary: string;
+  stop_gate: string;
 };
 
 function makeTempRoot() {
@@ -60,6 +77,13 @@ describe('production approval readiness report', () => {
     expect(stdout).toContain('pre_request');
     expect(stdout).toContain('owner_decision');
     expect(stdout).toContain('post_deploy_boundary');
+    expect(stdout).toContain('Production Approval Operator Handoff Packet');
+    expect(stdout).toContain('production_approval_operator_handoff_packet');
+    expect(stdout).toContain('production_approval.request_packet.items');
+    expect(stdout).toContain('Execution Gate');
+    expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('Owner Decision Required');
+    expect(stdout).toContain('planning evidence only');
     expect(stdout).toContain('Launch Action Production Approval Row');
     expect(stdout).toContain('Release Preflight Owner Approval Row');
     expect(stdout).toContain('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
@@ -100,6 +124,10 @@ describe('production approval readiness report', () => {
       item.prerequisite,
       item,
     ]));
+    const operatorRows = new Map<string, ProductionApprovalOperatorHandoffRow>(payload.production_approval.operator_handoff_packet.items.map((item: ProductionApprovalOperatorHandoffRow) => [
+      item.prerequisite,
+      item,
+    ]));
     expect(payload.production_approval.request_packet.proof_type).toBe('production_approval_request_packet');
     expect(payload.production_approval.request_packet.status).toBe('blocked');
     expect(payload.production_approval.request_packet.request_eligible).toBe(false);
@@ -135,6 +163,39 @@ describe('production approval readiness report', () => {
     expect(requestRows.get('Post-deploy live proof boundary').proof_command).toContain('check:post-deploy-live-proof-report');
     expect(requestRows.get('Explicit owner production approval').blocks_request).toBe(false);
     expect(requestRows.get('Post-deploy live proof boundary').blocks_request).toBe(false);
+    expect(payload.production_approval.operator_handoff_packet.proof_type).toBe('production_approval_operator_handoff_packet');
+    expect(payload.production_approval.operator_handoff_packet.source).toBe('production_approval.request_packet.items');
+    expect(payload.production_approval.operator_handoff_packet.status).toBe('blocked');
+    expect(payload.production_approval.operator_handoff_packet.item_count).toBe(payload.production_approval.request_packet.items.length);
+    expect(payload.production_approval.operator_handoff_packet.request_blocking_count).toBe(
+      payload.production_approval.operator_handoff_packet.items.filter((item: ProductionApprovalOperatorHandoffRow) => item.blocks_approval_request).length,
+    );
+    expect(payload.production_approval.operator_handoff_packet.owner_decision_count).toBe(1);
+    expect(payload.production_approval.operator_handoff_packet.post_deploy_boundary_count).toBe(1);
+    expect(payload.production_approval.operator_handoff_packet.items.map((item: ProductionApprovalOperatorHandoffRow) => item.prerequisite)).toEqual(
+      payload.production_approval.request_packet.items.map((item: ProductionApprovalRequestRow) => item.prerequisite),
+    );
+    expect(payload.production_approval.operator_handoff_packet.proof_boundary).toMatch(/planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|hosted\/live parity/i);
+    expect(payload.production_approval.operator_handoff_packet.stop_gate).toMatch(/Do not request or claim production approval|deploy-production|netlify deploy|contact buyers|access Supabase|hosted\/live parity/i);
+    expect(operatorRows.get('Clean source provenance').execution_gate).toBe('clean_source_provenance_first');
+    expect(operatorRows.get('Launch evidence validation').execution_gate).toBe('attach_manifest_validation_evidence');
+    expect(operatorRows.get('Corepack release-readiness').execution_gate).toBe('release_readiness_after_clean_source');
+    expect(operatorRows.get('Canonical branch review').execution_gate).toBe('branch_review_before_owner_request');
+    expect(operatorRows.get('Supabase advisor clearance').execution_gate).toBe('supabase_advisor_after_authorization');
+    expect(operatorRows.get('Buyer evidence hard gate').execution_gate).toBe('buyer_evidence_validation_before_approval');
+    expect(operatorRows.get('Explicit owner production approval').execution_gate).toBe('owner_approval_after_pre_request_gates');
+    expect(operatorRows.get('Explicit owner production approval').owner_decision_required).toBe(true);
+    expect(operatorRows.get('Post-deploy live proof boundary').execution_gate).toBe('post_deploy_proof_after_approved_deploy');
+    expect(operatorRows.get('Post-deploy live proof boundary').post_deploy_boundary).toBe(true);
+    for (const [prerequisite, row] of operatorRows) {
+      expect(row.proof_command).toBe(requestRows.get(prerequisite).proof_command);
+      expect(row.proof_type).toBe(requestRows.get(prerequisite).proof_type);
+      expect(row.source_status).toBe(requestRows.get(prerequisite).source_status);
+      expect(row.blocks_approval_request).toBe(requestRows.get(prerequisite).blocks_request);
+      expect(row.can_execute_from_packet).toBe(false);
+      expect(row.proof_boundary).toMatch(/planning evidence only|does not request owner approval|grant approval|run deploys|contact buyers|access Supabase|hosted\/live parity/i);
+      expect(row.stop_gate).toMatch(/Do not execute approval, deploy, or external-account work|claim readiness|mark this row ready/i);
+    }
     expect(payload.launch_action_production_approval_row.phase).toBe('production_approval');
     expect(payload.release_preflight_owner_approval_row.requirement).toBe('Explicit owner production approval');
     expect(payload.package_script_handles.check_production_deploy_request).toBe('corepack pnpm run check:production-deploy-request');
@@ -151,6 +212,7 @@ describe('production approval readiness report', () => {
     });
 
     expect(stdout).toContain('Production approval readiness report check passed');
+    expect(stdout).toContain('operator handoff packet');
   });
 
   it('can fail as a machine approval gate while request blockers remain', () => {
@@ -168,9 +230,13 @@ describe('production approval readiness report', () => {
       timeout,
     });
 
-    expect(result.status).toBe(json.production_approval.request_packet.request_eligible === true ? 0 : 1);
+    const approvalReady = json.production_approval.request_packet.request_eligible === true
+      && json.production_approval.request_packet.status === 'ready_to_request'
+      && json.production_approval.operator_handoff_packet.status === 'ready_to_request'
+      && json.production_approval.explicit_owner_approval === true;
+    expect(result.status).toBe(approvalReady ? 0 : 1);
     expect(result.stdout).toContain('# CEIP Production Approval Readiness Report');
-    if (json.production_approval.request_packet.request_eligible !== true) {
+    if (!approvalReady) {
       expect(result.stderr).toContain('Production approval remains blocked');
       expect(result.stderr).toContain('does not grant approval, deploy, or prove hosted/live parity');
     }
