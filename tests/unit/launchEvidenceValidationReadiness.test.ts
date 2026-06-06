@@ -71,8 +71,14 @@ describe('launch evidence validation readiness report', () => {
     expect(payload.launch_action_validation_row.status).toBe('ready');
     expect(payload.production_approval_validation_prerequisite.prerequisite).toBe('Launch evidence validation');
     expect(payload.production_approval_validation_prerequisite.status).toBe('ready');
+    expect(payload.production_approval_validation_prerequisite.proof_command).toContain('report:launch-evidence-validation-readiness');
+    expect(payload.production_approval_validation_prerequisite.proof_command).toContain('check:launch-evidence-validation-report');
+    expect(payload.production_approval_validation_prerequisite.needed).toMatch(/underlying check:launch-evidence-manifest/i);
     expect(payload.production_approval_request_validation_row.prerequisite).toBe('Launch evidence validation');
     expect(payload.production_approval_request_validation_row.blocks_request).toBe(false);
+    expect(payload.production_approval_request_validation_row.proof_command).toContain('report:launch-evidence-validation-readiness');
+    expect(payload.production_approval_request_validation_row.proof_command).toContain('check:launch-evidence-validation-report');
+    expect(payload.production_approval_request_validation_row.evidence_to_attach).toMatch(/underlying check:launch-evidence-manifest result/i);
     expect(payload.public_status_validation_gate.id).toBe('launch_evidence_validation_gate');
     expect(payload.package_script_handles.check_launch_evidence_validation_report).toBe('corepack pnpm run check:launch-evidence-validation-report');
     expect(payload.proof_boundary).toMatch(/does not self-certify|clear source provenance|request owner approval|contact buyers|deploy|hosted\/live parity|commercial launch readiness/i);

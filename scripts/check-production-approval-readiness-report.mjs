@@ -131,6 +131,18 @@ if (failures.length === 0) {
     assert(requestItems.length === prerequisiteItems.length, 'Request packet items must mirror prerequisite rows.');
     assert(requestRowsByPrerequisite.get('Clean source provenance')?.request_phase === 'pre_request', 'Clean source provenance must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Launch evidence validation')?.request_phase === 'pre_request', 'Launch evidence validation must be a pre-request row.');
+    assert(
+      /report:launch-evidence-validation-readiness/.test(prerequisiteRowsByName.get('Launch evidence validation')?.proof_command ?? '')
+        && /check:launch-evidence-validation-report/.test(prerequisiteRowsByName.get('Launch evidence validation')?.proof_command ?? ''),
+      'Launch evidence validation prerequisite must point to the focused validation report/check.',
+    );
+    assert(
+      /report:launch-evidence-validation-readiness/.test(requestRowsByPrerequisite.get('Launch evidence validation')?.proof_command ?? '')
+        && /check:launch-evidence-validation-report/.test(requestRowsByPrerequisite.get('Launch evidence validation')?.proof_command ?? ''),
+      'Launch evidence validation request row must point to the focused validation report/check.',
+    );
+    assert(/underlying check:launch-evidence-manifest/i.test(prerequisiteRowsByName.get('Launch evidence validation')?.needed ?? ''), 'Launch evidence validation prerequisite must keep the underlying manifest check requirement.');
+    assert(/underlying check:launch-evidence-manifest result/i.test(requestRowsByPrerequisite.get('Launch evidence validation')?.evidence_to_attach ?? ''), 'Launch evidence validation request row must keep the underlying manifest check attachment.');
     assert(requestRowsByPrerequisite.get('Corepack release-readiness')?.request_phase === 'pre_request', 'Corepack release-readiness must be a pre-request row.');
     assert(
       /report:release-preflight/.test(prerequisiteRowsByName.get('Corepack release-readiness')?.proof_command ?? '')

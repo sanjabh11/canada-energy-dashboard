@@ -1582,10 +1582,10 @@ function buildProductionApprovalPrerequisiteQueue({
     {
       rank: 2,
       prerequisite: 'Launch evidence validation',
-      current: 'validation command is external to manifest generation; production approval packet must attach passing check:launch-evidence-manifest output',
-      needed: 'check:launch-evidence-manifest passes before any production approval request uses this packet',
+      current: 'focused launch evidence validation report/check is external to manifest generation and must attach passing check:launch-evidence-manifest output',
+      needed: 'report:launch-evidence-validation-readiness, check:launch-evidence-validation-report, and the underlying check:launch-evidence-manifest pass before any production approval request uses this packet',
       owner: 'operator',
-      proof_command: 'corepack pnpm run check:launch-evidence-manifest',
+      proof_command: LAUNCH_EVIDENCE_VALIDATION_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Launch evidence validation'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Launch evidence validation'),
       stop_gate: 'Do not treat manifest generation, public release status, schema validation, or launch evidence validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
@@ -1716,7 +1716,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Clean source provenance':
       return 'Attach the focused source-provenance report/check output plus the production approval packet source-provenance section showing no unresolved staged, unstaged, untracked, ignored, or renamed source decisions.';
     case 'Launch evidence validation':
-      return 'Attach check:launch-evidence-manifest output plus the production approval packet validation section.';
+      return 'Attach focused launch evidence validation report/check output, including the underlying check:launch-evidence-manifest result, plus the production approval packet validation section.';
     case 'Corepack release-readiness':
       return 'Attach focused release-preflight report/check output plus Corepack-pinned release-readiness output and current Corepack/Git LFS probe evidence.';
     case 'Canonical branch review':
@@ -4750,6 +4750,19 @@ const launchEvidenceValidationReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchValidationProductionApprovalProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/report-launch-evidence-validation-readiness.mjs',
+  'scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/launchEvidenceValidationReadiness.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+];
+
 const launchActionValidationStatusFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -4945,6 +4958,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...branchReviewSupabaseFunctionImpactFilesChanged,
   ...launchManifestBranchFunctionImpactFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
+  ...launchValidationProductionApprovalProofHandleFilesChanged,
   ...launchActionValidationStatusFilesChanged,
   ...launchActionReportFilesChanged,
   ...launchActionBuyerLaneStatusFilesChanged,
@@ -5212,6 +5226,19 @@ const launchEvidenceValidationReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchValidationProductionApprovalProofHandleTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'node --check scripts/check-production-approval-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-validation-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const launchActionValidationStatusTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -5373,6 +5400,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...branchReviewSupabaseFunctionImpactTestsRun,
   ...launchManifestBranchFunctionImpactTestsRun,
   ...launchEvidenceValidationReportTestsRun,
+  ...launchValidationProductionApprovalProofHandleTestsRun,
   ...launchActionValidationStatusTestsRun,
   ...launchActionReportTestsRun,
   ...launchActionBuyerLaneStatusTestsRun,
@@ -5683,6 +5711,19 @@ const safeFixImplementationDecisions = [
     reason: 'Launch evidence validation was a first-class predeploy row, but operators had to infer validation readiness from the broad manifest check and production approval packet rather than a narrow evidence handle.',
     proof_boundary: 'This record improves launch evidence validation visibility only; it does not self-certify the manifest, clear source provenance, run release-readiness, request owner approval, contact buyers, authorize Supabase, deploy, mutate live services, prove buyer acceptance, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused launch evidence validation report, check pass, JSON output, production approval validation row, public status handle, or docs sync as production approval, buyer acceptance, clean source provenance, release-readiness, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    decision: 'Route production approval launch-evidence validation prerequisite and request rows through the focused launch validation report/check while preserving the underlying manifest validation requirement.',
+    acceptance_check: 'Production approval prerequisite and request rows for Launch evidence validation expose report:launch-evidence-validation-readiness plus check:launch-evidence-validation-report, while current/needed/attachment text still requires the underlying check:launch-evidence-manifest result before any approval request uses the packet.',
+    chosen_variant: 'minimal production approval validation proof-handle alignment',
+    repo_pattern_reused: 'Existing LAUNCH_EVIDENCE_VALIDATION_FOCUSED_PROOF_COMMAND, production_approval prerequisite/request rows, focused launch evidence validation checker, focused production approval checker, and launch manifest code-optimization ledger.',
+    files_changed: launchValidationProductionApprovalProofHandleFilesChanged,
+    tests_run: launchValidationProductionApprovalProofHandleTestsRun,
+    proof: 'The patch reuses the existing focused validation report/check handle in production approval rows, keeps the raw manifest check as an underlying attachment requirement, and adds broad/focused checker plus unit coverage without changing approval eligibility or launch status.',
+    reason: 'The launch action validation row already pointed to the focused validation report/check, but the production approval prerequisite and request rows still exposed only the raw broad manifest check, making approval evidence handles inconsistent for operators.',
+    proof_boundary: 'This record aligns launch validation proof handles inside production approval only; it does not self-certify the manifest, clear source provenance, run release-readiness, request owner approval, contact buyers, authorize Supabase, deploy, mutate live services, prove buyer acceptance, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused launch validation proof handles, check:launch-evidence-manifest output, production approval row readiness, skipped probes, public status handles, or this code optimization ledger as production approval, buyer acceptance, clean source provenance, release-readiness, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS',
@@ -6427,6 +6468,27 @@ const safeFixRejectedVariants = [
     evidence: 'The launch action row and production approval rows state that validation does not grant approval, create buyer acceptance, deploy, or prove live parity.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Leave production approval Launch evidence validation rows pointing only at check:launch-evidence-manifest.',
+    reason_rejected: 'Would keep production approval proof handles broader and less inspectable than the launch action validation row after the focused validation report/check existed.',
+    tradeoff: 'No-code defer avoids touching approval rows, but preserves operator inconsistency between the launch action plan and production approval request packet.',
+    evidence: 'launch_action_queue.launch_evidence_validation already uses report:launch-evidence-validation-readiness plus check:launch-evidence-validation-report.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Remove the underlying check:launch-evidence-manifest requirement from production approval rows.',
+    reason_rejected: 'The focused validation report/check is an operator handle, but the raw manifest check remains the underlying structure/proof-boundary gate it executes and reports.',
+    tradeoff: 'Focused-only wording would be shorter, but would hide the hard validator attachment required before production approval review.',
+    evidence: 'report:launch-evidence-validation-readiness records validation_readiness.validation_check.command as check:launch-evidence-manifest.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    variant: 'Make Launch evidence validation approval-ready by clearing production approval request blockers.',
+    reason_rejected: 'The row is already ready only for manifest validation; production approval remains blocked by source provenance, release-readiness, branch review, Supabase advisor, buyer evidence, owner approval, and post-deploy proof gates.',
+    tradeoff: 'Changing approval eligibility would look like faster launch progress, but it would blur structure validation with production approval.',
+    evidence: 'production_approval.prerequisite_queue remains blocked and request_packet.request_eligible remains false while the real pre-request and manual-stop blockers remain open.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS',
     variant: 'Leave the launch action validation row blocked even after focused validation evidence is externalized.',
     reason_rejected: 'Would keep the launch action queue overstating action blockers and contradict the ready production approval validation prerequisite/request rows.',
@@ -7077,6 +7139,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed validation Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without duplicating schema validation, self-certifying the manifest, adding dependencies, changing production approval eligibility, running release gates, contacting buyers, accessing external accounts, deploying, or relaxing live-parity boundaries.',
     tests_or_checks: launchEvidenceValidationReportTestsRun,
     remaining_risk: 'Launch evidence validation remains only a structure/proof-boundary gate; launch execution remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only production approval launch-validation proof rows, focused checkers, source-of-truth text, and tests, reusing the existing focused validation command and underlying manifest check without new dependencies, duplicated validation logic, approval eligibility changes, deploy execution, source mutation, buyer contact, or external account access.',
+    tests_or_checks: launchValidationProductionApprovalProofHandleTestsRun,
+    remaining_risk: 'Launch evidence validation proof handles are now consistent, but production approval remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS',

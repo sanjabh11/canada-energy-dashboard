@@ -1145,9 +1145,14 @@ try {
     const branchPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Canonical branch review');
     const buyerPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Buyer evidence hard gate');
     assert(launchEvidencePrerequisiteItem, 'Production approval prerequisite queue must include launch evidence validation.');
-    assert(launchEvidencePrerequisiteItem.proof_command === 'corepack pnpm run check:launch-evidence-manifest', 'Launch evidence validation prerequisite must include the manifest validation proof command.');
+    assert(
+      launchEvidencePrerequisiteItem.proof_command.includes('report:launch-evidence-validation-readiness')
+        && launchEvidencePrerequisiteItem.proof_command.includes('check:launch-evidence-validation-report'),
+      'Launch evidence validation prerequisite must run the focused validation report/check.',
+    );
     assert(launchEvidencePrerequisiteItem.status === 'ready', 'Launch evidence validation prerequisite must not be a circular self-blocker inside the request packet.');
     assert(/external to manifest generation|attach passing check:launch-evidence-manifest output/i.test(launchEvidencePrerequisiteItem.current), 'Launch evidence validation prerequisite must say external check output is required.');
+    assert(/underlying check:launch-evidence-manifest/i.test(launchEvidencePrerequisiteItem.needed), 'Launch evidence validation prerequisite must preserve the underlying manifest check requirement.');
     assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidencePrerequisiteItem.stop_gate), 'Launch evidence validation prerequisite must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
     assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
@@ -1249,6 +1254,12 @@ try {
       if (item.prerequisite === 'Launch evidence validation') {
         assert(item.source_status === 'ready', 'Launch evidence validation request row must inherit ready status from the externally validated prerequisite.');
         assert(item.blocks_request === false, 'Launch evidence validation request row must not circularly block the packet after external validation is attached.');
+        assert(
+          item.proof_command.includes('report:launch-evidence-validation-readiness')
+            && item.proof_command.includes('check:launch-evidence-validation-report'),
+          'Launch evidence validation request row must point to the focused validation report/check.',
+        );
+        assert(/underlying check:launch-evidence-manifest result/i.test(item.evidence_to_attach), 'Launch evidence validation request row must preserve the underlying manifest check attachment.');
         assert(/does not grant approval|buyer acceptance|deployment|live parity/i.test(item.request_impact), 'Launch evidence validation request impact must preserve the no-approval and no-live-parity boundary.');
       }
       if (item.prerequisite === 'Clean source provenance' && renameDirtyPath) {
@@ -2552,6 +2563,35 @@ try {
         && launchEvidenceValidationReportReview.tests_or_checks.some((check) => /report:launch-evidence-validation-readiness/.test(check))
         && launchEvidenceValidationReportReview.tests_or_checks.some((check) => /check:launch-evidence-validation-report/.test(check)),
       'Launch evidence validation focused report code optimization review must record focused launch evidence validation report and checker proof.',
+    );
+    const launchValidationProductionApprovalProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES');
+    assert(launchValidationProductionApprovalProofHandleDecision, 'Manifest must record the launch validation production approval proof-handle implementation decision.');
+    assert(
+      launchValidationProductionApprovalProofHandleDecision?.chosen_variant === 'minimal production approval validation proof-handle alignment',
+      'Launch validation production approval proof-handle decision must record the minimal proof-handle alignment variant.',
+    );
+    assert(
+      Array.isArray(launchValidationProductionApprovalProofHandleDecision?.files_changed)
+        && launchValidationProductionApprovalProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && launchValidationProductionApprovalProofHandleDecision.files_changed.includes('scripts/check-launch-evidence-validation-readiness-report.mjs')
+        && launchValidationProductionApprovalProofHandleDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && launchValidationProductionApprovalProofHandleDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts'),
+      'Launch validation production approval proof-handle decision must record manifest, focused checker, production checker, and production test changes.',
+    );
+    assert(
+      /does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|raise launch status/i.test(launchValidationProductionApprovalProofHandleDecision?.proof_boundary ?? ''),
+      'Launch validation production approval proof-handle decision must preserve no-self-certification, no-external-action, no-deploy, and no-readiness boundaries.',
+    );
+    const launchValidationProductionApprovalProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-VALIDATION-PRODUCTION-APPROVAL-PROOF-HANDLES');
+    assert(launchValidationProductionApprovalProofHandleReview, 'Manifest must record the launch validation production approval proof-handle code optimization review.');
+    assert(launchValidationProductionApprovalProofHandleReview?.policy === 'strict', 'Launch validation production approval proof-handle code optimization review must use strict policy.');
+    assert(launchValidationProductionApprovalProofHandleReview?.verdict === 'pass', 'Launch validation production approval proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(launchValidationProductionApprovalProofHandleReview?.tests_or_checks)
+        && launchValidationProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-validation-report -- --skip-probes/.test(check))
+        && launchValidationProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check))
+        && launchValidationProductionApprovalProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check)),
+      'Launch validation production approval proof-handle code optimization review must record focused validation, production approval, and launch manifest checker proof.',
     );
     const launchActionValidationStatusDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS');
     assert(launchActionValidationStatusDecision, 'Manifest must record the launch action validation status implementation decision.');

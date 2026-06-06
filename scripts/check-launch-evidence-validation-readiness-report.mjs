@@ -115,8 +115,20 @@ if (failures.length === 0) {
     assert(actionRow.status === 'ready', 'Launch action validation row must not remain self-blocking after focused validation evidence is externalized.');
     assert(prerequisite.prerequisite === 'Launch evidence validation', 'Focused JSON must include the production approval validation prerequisite.');
     assert(prerequisite.status === 'ready', 'Production approval validation prerequisite must reflect external check readiness.');
+    assert(
+      /report:launch-evidence-validation-readiness/.test(prerequisite.proof_command ?? '')
+        && /check:launch-evidence-validation-report/.test(prerequisite.proof_command ?? ''),
+      'Production approval validation prerequisite must point to the focused validation report/check.',
+    );
+    assert(/underlying check:launch-evidence-manifest/i.test(prerequisite.needed ?? ''), 'Production approval validation prerequisite must retain the underlying manifest check requirement.');
     assert(requestRow.prerequisite === 'Launch evidence validation', 'Focused JSON must include the production approval request validation row.');
     assert(requestRow.blocks_request === false, 'Launch evidence validation request row must not remain a self-blocking request row after the external check passes.');
+    assert(
+      /report:launch-evidence-validation-readiness/.test(requestRow.proof_command ?? '')
+        && /check:launch-evidence-validation-report/.test(requestRow.proof_command ?? ''),
+      'Production approval validation request row must point to the focused validation report/check.',
+    );
+    assert(/underlying check:launch-evidence-manifest result/i.test(requestRow.evidence_to_attach ?? ''), 'Production approval validation request row must retain the underlying manifest check attachment.');
     assert(publicGate.id === 'launch_evidence_validation_gate', 'Focused JSON must include the public validation gate handle.');
     assert(payload.package_script_handles?.check_launch_evidence_validation_report === 'corepack pnpm run check:launch-evidence-validation-report', 'Focused report must expose the validation checker command handle.');
     assert(/does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-self-certification, no-mutation, no-external-action, no-deploy, no-live-parity, and no-readiness semantics.');

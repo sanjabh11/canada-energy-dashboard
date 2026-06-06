@@ -280,8 +280,9 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('does not grant owner approval'), 'Report must preserve the production approval non-approval boundary.');
   assert(markdown.includes('does not grant owner approval, deploy, push, merge, mutate branches'), 'Report must preserve the production approval no-mutation boundary.');
   assert(markdown.includes('| Launch evidence validation |'), 'Report must include the launch evidence validation prerequisite row.');
-  assert(markdown.includes('validation command is external to manifest generation; production approval packet must attach passing check:launch-evidence-manifest output'), 'Report must not imply launch evidence validation is self-certified by the manifest.');
-  assert(markdown.includes('corepack pnpm run check:launch-evidence-manifest'), 'Report must include the launch evidence validation proof command.');
+  assert(markdown.includes('focused launch evidence validation report/check is external to manifest generation and must attach passing check:launch-evidence-manifest output'), 'Report must not imply launch evidence validation is self-certified by the manifest.');
+  assert(markdown.includes('corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report'), 'Report must include the focused launch evidence validation proof command.');
+  assert(markdown.includes('underlying check:launch-evidence-manifest'), 'Report must preserve the underlying manifest validation requirement.');
   assert(markdown.includes('| Explicit owner production approval |'), 'Report must include the explicit owner approval prerequisite row.');
   assert(markdown.includes('| Post-deploy live proof boundary |'), 'Report must include the post-deploy live proof boundary row.');
   assert(markdown.includes('## Production Approval Request Packet'), 'Report must include the production approval request packet table.');

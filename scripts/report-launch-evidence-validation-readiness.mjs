@@ -259,7 +259,7 @@ function renderMarkdown(payload) {
       ['Rank', 'Phase', 'Blocker', 'Owner', 'Action', 'Proof Command', 'Proof Type', 'Proof Boundary', 'Stop Gate', 'Status'],
       action.phase
         ? [[action.rank, action.phase, action.blocker, action.owner, action.action, action.proof_command, action.proof_type, action.proof_boundary, action.stop_gate, action.status]]
-        : [['n/a', 'launch_evidence_validation', 'missing', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run check:launch-evidence-manifest', 'manifest_validation_and_approval_packet', payload.proof_boundary, payload.stop_gate, 'missing']],
+        : [['n/a', 'launch_evidence_validation', 'missing', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report', 'manifest_validation_and_approval_packet', payload.proof_boundary, payload.stop_gate, 'missing']],
     ),
     '',
     '## Production Approval Validation Prerequisite',
@@ -268,7 +268,7 @@ function renderMarkdown(payload) {
       ['Rank', 'Prerequisite', 'Current', 'Needed', 'Owner', 'Proof Command', 'Proof Type', 'Proof Boundary', 'Stop Gate', 'Status'],
       prerequisite.prerequisite
         ? [[prerequisite.rank, prerequisite.prerequisite, prerequisite.current, prerequisite.needed, prerequisite.owner, prerequisite.proof_command, prerequisite.proof_type, prerequisite.proof_boundary, prerequisite.stop_gate, prerequisite.status]]
-        : [['n/a', 'Launch evidence validation', 'missing', 'Attach passing check:launch-evidence-manifest output.', 'operator', 'corepack pnpm run check:launch-evidence-manifest', 'manifest_validation_and_approval_packet', payload.proof_boundary, payload.stop_gate, 'missing']],
+        : [['n/a', 'Launch evidence validation', 'missing', 'Attach focused launch evidence validation report/check output, including the underlying check:launch-evidence-manifest result.', 'operator', 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report', 'manifest_validation_and_approval_packet', payload.proof_boundary, payload.stop_gate, 'missing']],
     ),
     '',
     '## Production Approval Request Validation Row',
@@ -277,7 +277,7 @@ function renderMarkdown(payload) {
       ['Rank', 'Prerequisite', 'Request Phase', 'Status', 'Blocks Request', 'Evidence To Attach', 'Impact', 'Proof Command', 'Proof Boundary', 'Stop Gate'],
       request.prerequisite
         ? [[request.rank, request.prerequisite, request.request_phase, request.status, request.blocks_request ? 'yes' : 'no', request.evidence_to_attach, request.impact, request.proof_command, request.proof_boundary, request.stop_gate]]
-        : [['n/a', 'Launch evidence validation', 'pre_request', 'missing', 'yes', 'Attach passing check:launch-evidence-manifest output.', 'Missing validation row blocks approval request evidence.', 'corepack pnpm run check:launch-evidence-manifest', payload.proof_boundary, payload.stop_gate]],
+        : [['n/a', 'Launch evidence validation', 'pre_request', 'missing', 'yes', 'Attach focused launch evidence validation report/check output, including the underlying check:launch-evidence-manifest result.', 'Missing validation row blocks approval request evidence.', 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report', payload.proof_boundary, payload.stop_gate]],
     ),
     '',
     '## Public Release Status Handle',

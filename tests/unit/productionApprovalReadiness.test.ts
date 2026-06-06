@@ -104,6 +104,10 @@ describe('production approval readiness report', () => {
     expect(payload.production_approval.request_packet.status).toBe('blocked');
     expect(payload.production_approval.request_packet.request_eligible).toBe(false);
     expect(requestRows.get('Clean source provenance').request_phase).toBe('pre_request');
+    expect(prerequisiteRows.get('Launch evidence validation').proof_command).toContain('report:launch-evidence-validation-readiness');
+    expect(prerequisiteRows.get('Launch evidence validation').proof_command).toContain('check:launch-evidence-validation-report');
+    expect(requestRows.get('Launch evidence validation').proof_command).toContain('report:launch-evidence-validation-readiness');
+    expect(requestRows.get('Launch evidence validation').proof_command).toContain('check:launch-evidence-validation-report');
     expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('report:release-preflight');
     expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('check:release-preflight-report');
     expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('check:release-readiness');
