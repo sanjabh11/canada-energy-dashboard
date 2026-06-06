@@ -154,7 +154,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('This is a sequenced execution plan only'), 'Report must preserve the action-queue non-execution boundary.');
   assert(markdown.includes('| source_provenance |'), 'Report must include the source provenance action phase.');
   assert(markdown.includes('| launch_evidence_validation |'), 'Report must include the launch evidence validation action phase.');
-  assert(markdown.includes('launch evidence validation must pass before a deploy approval request'), 'Report must include the launch evidence validation action blocker.');
+  assert(markdown.includes('focused launch evidence validation must stay attached before a deploy approval request'), 'Report must include the launch evidence validation action blocker.');
   assert(markdown.includes('| release_toolchain |'), 'Report must include the release toolchain action phase.');
   assert(markdown.includes('release-toolchain probe(s) open'), 'Report must include release toolchain probe ledger state in the launch action queue.');
   assert(markdown.includes('Refresh the release toolchain probe ledger'), 'Report must include the release toolchain probe refresh action.');
@@ -433,6 +433,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal focused manifest wrapper and public handle alignment'), 'Code optimization report must record the selected minimal source provenance wrapper patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT'), 'Code optimization report must record the launch evidence validation focused report task.');
   assert(codeOptimizationSection.includes('minimal focused validation wrapper and public handle alignment'), 'Code optimization report must record the selected minimal launch evidence validation wrapper patch.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS'), 'Code optimization report must record the launch action validation status task.');
+  assert(codeOptimizationSection.includes('minimal launch action row status alignment'), 'Code optimization report must record the selected minimal launch action validation status patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT'), 'Code optimization report must record the launch action focused report task.');
   assert(codeOptimizationSection.includes('minimal prerequisite sequencing patch'), 'Code optimization report must record the selected minimal production approval packet sequencing patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-FOCUSED-REPORT'), 'Code optimization report must record the production approval focused report task.');
@@ -441,6 +443,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-launch-evidence-validation-readiness.mjs'), 'Code optimization report must record the launch evidence validation focused report file change.');
+  assert(codeOptimizationSection.includes('scripts/check-launch-action-readiness-report.mjs'), 'Code optimization report must record the launch action checker file change.');
   assert(codeOptimizationSection.includes('scripts/report-launch-action-readiness.mjs'), 'Code optimization report must record the launch action focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-production-approval-readiness.mjs'), 'Code optimization report must record the production approval focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-post-deploy-live-proof-readiness.mjs'), 'Code optimization report must record the post-deploy live proof focused report file change.');
@@ -465,6 +468,7 @@ function assertReport(markdown, options = {}) {
   assert(/does not checkout|merge|push|select canonical heads|deploy|grant production approval/i.test(codeOptimizationSection), 'Code optimization report must preserve branch review read-only boundaries.');
   assert(/does not contact buyers|create accepted evidence|move confidence|validate 95%|commercial-ready status/i.test(codeOptimizationSection), 'Code optimization report must preserve buyer evidence hard-gate boundaries.');
   assert(/does not self-certify|clear source provenance|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve launch evidence validation focused report boundaries.');
+  assert(/ready launch_evidence_validation action row|does not self-certify|clear source provenance|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|commercial-ready status/i.test(codeOptimizationSection), 'Code optimization report must preserve launch action validation status boundaries.');
   assert(/does not commit|clear source provenance|checkout branches|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve launch action focused report boundaries.');
   assert(/does not grant owner approval|request approval|clear source provenance|run release-readiness successfully|post-deploy live proof/i.test(codeOptimizationSection), 'Code optimization report must preserve production approval focused report boundaries.');
   assert(/does not grant owner approval|run deploys|mutate Netlify|run browser smoke|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve post-deploy live proof boundaries.');

@@ -442,6 +442,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
     const launchEvidenceValidationAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'launch_evidence_validation');
     expect(launchEvidenceValidationAction.proof_command).toBe('corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report');
+    expect(launchEvidenceValidationAction.status).toBe('ready');
     expect(launchEvidenceValidationAction.stop_gate).toMatch(/production approval, buyer acceptance, deployment, or current hosted\/live parity/i);
     const releaseToolchainAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'release_toolchain');
     expect(releaseToolchainAction.blocker).toMatch(/release-toolchain probe/i);
@@ -714,9 +715,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(16);
+    expect(manifest.implementation_decisions).toHaveLength(17);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(16);
+    expect(manifest.code_optimization_reviews).toHaveLength(17);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -790,6 +791,10 @@ describe('launch evidence manifest report', () => {
       'Teach report-launch-evidence-manifest to self-certify launch evidence validation status.',
       'Duplicate validate_launch_evidence.py and manifest structural assertions in a new checker.',
       'Run release-readiness, request owner approval, contact buyers, authorize Supabase, deploy, or mutate source from the validation report.',
+      'Leave the launch action validation row blocked even after focused validation evidence is externalized.',
+      'Run check:launch-evidence-manifest inside report-launch-evidence-manifest to derive the row status dynamically.',
+      'Remove the launch_evidence_validation row from the launch action queue.',
+      'Mark the entire launch action queue ready when launch evidence validation passes.',
       'Leave launch action planning only inside the broad launch manifest and commercial launch report.',
       'Duplicate launch action queue construction in a standalone implementation.',
       'Commit source changes, run release-readiness, checkout branches, contact buyers, authorize Supabase, request approval, or deploy from the focused report.',
@@ -1016,6 +1021,26 @@ describe('launch evidence manifest report', () => {
     expect(launchEvidenceValidationReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:launch-evidence-validation-readiness',
       'pnpm run check:launch-evidence-validation-report',
+    ]));
+    const launchActionValidationStatusDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS',
+    );
+    expect(launchActionValidationStatusDecision).toBeTruthy();
+    expect(launchActionValidationStatusDecision.chosen_variant).toBe('minimal launch action row status alignment');
+    expect(launchActionValidationStatusDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'tests/unit/launchActionReadiness.test.ts',
+    ]));
+    expect(launchActionValidationStatusDecision.proof_boundary).toMatch(/does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|raise launch status/i);
+    const launchActionValidationStatusReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS',
+    );
+    expect(launchActionValidationStatusReview).toBeTruthy();
+    expect(launchActionValidationStatusReview.policy).toBe('strict');
+    expect(launchActionValidationStatusReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:launch-action-report -- --skip-probes',
+      'pnpm run check:launch-evidence-validation-report -- --skip-probes',
     ]));
     const launchActionReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT',
@@ -1476,7 +1501,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('| production_approval |');
     expect(stdout).toContain('| post_deploy_live_proof |');
     expect(stdout).toContain('release-toolchain probe(s) open');
-    expect(stdout).toContain('launch evidence validation must pass before a deploy approval request');
+    expect(stdout).toContain('focused launch evidence validation must stay attached before a deploy approval request');
     expect(stdout).toContain('Refresh the release toolchain probe ledger');
     expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');

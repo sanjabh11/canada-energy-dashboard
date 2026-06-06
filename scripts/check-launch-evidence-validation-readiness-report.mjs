@@ -112,6 +112,7 @@ if (failures.length === 0) {
     assert(validation.status === 'pass', 'Focused validation check must pass in the current repo contract.');
     assert(actionRow.phase === 'launch_evidence_validation', 'Focused JSON must include the launch action validation row.');
     assert(actionRow.proof_type === 'manifest_validation_and_approval_packet', 'Launch action validation row must keep the manifest validation proof type.');
+    assert(actionRow.status === 'ready', 'Launch action validation row must not remain self-blocking after focused validation evidence is externalized.');
     assert(prerequisite.prerequisite === 'Launch evidence validation', 'Focused JSON must include the production approval validation prerequisite.');
     assert(prerequisite.status === 'ready', 'Production approval validation prerequisite must reflect external check readiness.');
     assert(requestRow.prerequisite === 'Launch evidence validation', 'Focused JSON must include the production approval request validation row.');

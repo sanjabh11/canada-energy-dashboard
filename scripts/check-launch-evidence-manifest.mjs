@@ -969,6 +969,7 @@ try {
     const launchEvidenceActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'launch_evidence_validation');
     assert(launchEvidenceActionItem, 'Launch action queue must include launch_evidence_validation.');
     assert(launchEvidenceActionItem.proof_command.includes('report:launch-evidence-validation-readiness') && launchEvidenceActionItem.proof_command.includes('check:launch-evidence-validation-report'), 'Launch evidence validation action must run the focused validation report and checker.');
+    assert(launchEvidenceActionItem.status === 'ready', 'Launch evidence validation action must not remain a self-blocking launch action row after focused validation evidence is externalized.');
     assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidenceActionItem.stop_gate), 'Launch evidence validation action must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     const buyerActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'buyer_evidence');
     if (Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count) && manifest.buyer_evidence.hard_gate_deficits.open_count > 0) {
@@ -2191,6 +2192,33 @@ try {
         && launchEvidenceValidationReportReview.tests_or_checks.some((check) => /report:launch-evidence-validation-readiness/.test(check))
         && launchEvidenceValidationReportReview.tests_or_checks.some((check) => /check:launch-evidence-validation-report/.test(check)),
       'Launch evidence validation focused report code optimization review must record focused launch evidence validation report and checker proof.',
+    );
+    const launchActionValidationStatusDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS');
+    assert(launchActionValidationStatusDecision, 'Manifest must record the launch action validation status implementation decision.');
+    assert(
+      launchActionValidationStatusDecision?.chosen_variant === 'minimal launch action row status alignment',
+      'Launch action validation status decision must record the chosen minimal status-alignment variant.',
+    );
+    assert(
+      Array.isArray(launchActionValidationStatusDecision?.files_changed)
+        && launchActionValidationStatusDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && launchActionValidationStatusDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionValidationStatusDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts'),
+      'Launch action validation status decision must record the manifest, checker, and launch action unit test file.',
+    );
+    assert(
+      /does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|raise launch status/i.test(launchActionValidationStatusDecision?.proof_boundary ?? ''),
+      'Launch action validation status decision must preserve no-self-certification, no-mutation, no-external-action, no-deploy, and no-readiness boundaries.',
+    );
+    const launchActionValidationStatusReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS');
+    assert(launchActionValidationStatusReview, 'Manifest must record the launch action validation status code optimization review.');
+    assert(launchActionValidationStatusReview?.policy === 'strict', 'Launch action validation status code optimization review must use strict policy.');
+    assert(launchActionValidationStatusReview?.verdict === 'pass', 'Launch action validation status code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionValidationStatusReview?.tests_or_checks)
+        && launchActionValidationStatusReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check))
+        && launchActionValidationStatusReview.tests_or_checks.some((check) => /check:launch-evidence-validation-report/.test(check)),
+      'Launch action validation status code optimization review must record focused launch action and validation checker proof.',
     );
     const launchActionReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FOCUSED-REPORT');
     assert(launchActionReportDecision, 'Manifest must record the launch action focused report implementation decision.');

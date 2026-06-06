@@ -100,6 +100,7 @@ describe('launch action readiness report', () => {
     ]);
     expect(payload.first_open_action.status).not.toBe('ready');
     expect(rowsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(rowsByPhase.get('launch_evidence_validation')?.status).toBe('ready');
     expect(rowsByPhase.get('release_toolchain')?.proof_type).toBe('release_toolchain_and_gated_release');
     expect(rowsByPhase.get('branch_review')?.proof_type).toBe('read_only_branch_review');
     expect(rowsByPhase.get('supabase_advisor')?.proof_type).toBe('external_account_evidence');

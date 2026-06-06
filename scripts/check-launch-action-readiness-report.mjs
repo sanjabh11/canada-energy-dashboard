@@ -122,6 +122,7 @@ if (failures.length === 0) {
     assert(phases.join(',') === 'source_provenance,launch_evidence_validation,release_toolchain,branch_review,supabase_advisor,buyer_evidence,production_approval,post_deploy_live_proof', 'Launch action phase order must remain stable.');
     assert(payload.first_open_action?.phase === 'source_provenance' || payload.first_open_action?.status !== 'ready', 'Focused JSON must include the first open action.');
     assert(rowsByPhase.get('source_provenance')?.proof_type === 'source_provenance_decision', 'Source provenance row must keep source provenance proof type.');
+    assert(rowsByPhase.get('launch_evidence_validation')?.status === 'ready', 'Launch evidence validation row must be ready after focused validation evidence is externalized.');
     assert(rowsByPhase.get('release_toolchain')?.proof_type === 'release_toolchain_and_gated_release', 'Release toolchain row must keep release proof type.');
     assert(rowsByPhase.get('branch_review')?.proof_type === 'read_only_branch_review', 'Branch review row must keep read-only proof type.');
     assert(rowsByPhase.get('supabase_advisor')?.proof_type === 'external_account_evidence', 'Supabase row must keep external account proof type.');

@@ -68,6 +68,7 @@ describe('launch evidence validation readiness report', () => {
     expect(payload.validation_readiness.validation_check.status).toBe('pass');
     expect(payload.launch_action_validation_row.phase).toBe('launch_evidence_validation');
     expect(payload.launch_action_validation_row.proof_type).toBe('manifest_validation_and_approval_packet');
+    expect(payload.launch_action_validation_row.status).toBe('ready');
     expect(payload.production_approval_validation_prerequisite.prerequisite).toBe('Launch evidence validation');
     expect(payload.production_approval_validation_prerequisite.status).toBe('ready');
     expect(payload.production_approval_request_validation_row.prerequisite).toBe('Launch evidence validation');
