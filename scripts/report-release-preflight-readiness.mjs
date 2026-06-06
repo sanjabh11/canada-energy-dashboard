@@ -151,6 +151,7 @@ function renderMarkdown(payload) {
   const toolchainLedger = releasePreflight.toolchain_probe_ledger ?? {};
   const clearanceMatrix = releasePreflight.clearance_matrix ?? {};
   const remediationQueue = releasePreflight.remediation_queue ?? {};
+  const operatorHandoffPacket = releasePreflight.operator_handoff_packet ?? {};
   const requestPacket = payload.production_approval_request_packet ?? {};
   const sourceQueue = payload.source_provenance?.resolution_queue ?? {};
 
@@ -203,6 +204,21 @@ function renderMarkdown(payload) {
     item.stop_gate,
   ]);
 
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.requirement,
+    item.owner,
+    item.status,
+    item.execution_gate,
+    item.action,
+    item.proof_command,
+    item.proof_type,
+    item.blocks_release_gate ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
   const requestRows = (requestPacket.items ?? []).map((item) => [
     item.rank,
     item.prerequisite,
@@ -249,6 +265,7 @@ function renderMarkdown(payload) {
     `- Git LFS hook diagnostic: \`${releasePreflight.git_lfs_hook_diagnostic ?? 'unknown'}\``,
     `- Toolchain probe ledger: \`${toolchainLedger.status ?? 'unknown'}\`, open \`${toolchainLedger.open_count ?? 'unknown'}/${toolchainLedger.item_count ?? 'unknown'}\``,
     `- Clearance matrix: \`${clearanceMatrix.status ?? 'unknown'}\`, blocked \`${clearanceMatrix.blocked_count ?? 'unknown'}/${clearanceMatrix.row_count ?? 'unknown'}\``,
+    `- Operator handoff packet: \`${operatorHandoffPacket.status ?? 'unknown'}\`, blocked \`${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}\``,
     `- Source provenance: branch \`${payload.source_provenance?.branch ?? 'unknown'}\`, dirty paths \`${payload.source_provenance?.dirty_path_count ?? 'unknown'}\``,
     `- Production approval request: \`${requestPacket.status ?? 'unknown'}\`, eligible \`${requestPacket.request_eligible === true ? 'yes' : 'no'}\``,
     '',
@@ -279,6 +296,18 @@ function renderMarkdown(payload) {
     remediationQueue.evidence ?? 'Release preflight remediation queue missing.',
     '',
     renderTable(['Rank', 'Requirement', 'Status', 'Owner', 'Action', 'Proof Command', 'Proof Type', 'Proof Boundary', 'Stop Gate'], remediationRows),
+    '',
+    '## Release Operator Handoff Packet',
+    '',
+    operatorHandoffPacket.evidence ?? 'Release operator handoff packet missing.',
+    '',
+    `Proof type: \`${operatorHandoffPacket.proof_type ?? 'unknown'}\`; Source: \`${operatorHandoffPacket.source ?? 'unknown'}\``,
+    '',
+    operatorHandoffPacket.proof_boundary ?? 'Release operator handoff packet proof boundary missing.',
+    '',
+    operatorHandoffPacket.stop_gate ?? 'Release operator handoff packet stop gate missing.',
+    '',
+    renderTable(['Rank', 'Requirement', 'Owner', 'Status', 'Execution Gate', 'Action', 'Proof Command', 'Proof Type', 'Blocks Release Gate', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'], operatorHandoffRows),
     '',
     '## Source Provenance Boundary',
     '',

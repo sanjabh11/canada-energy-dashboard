@@ -958,6 +958,28 @@ function releasePreflightRemediationEvidence(queue) {
   ].join(' ');
 }
 
+function releaseOperatorHandoffEvidence(packet) {
+  if (packet.status === 'ready') {
+    return 'Release operator handoff packet: status=ready source=release_preflight.remediation_queue.items open=0 approval_gate=owner approval, guarded deploy, and post-deploy live proof still apply before production deploy';
+  }
+
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_release_gate)
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.requirement}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Release operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is planning evidence only; it does not install tools, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity',
+  ].join(' ');
+}
+
 function releasePreflightClearanceEvidence(matrix) {
   if (matrix.status === 'pass') {
     return 'Release preflight clearance matrix: status=pass release_blocking=0 approval_gate=owner approval and post-deploy live proof still apply before production deploy';
@@ -1148,6 +1170,57 @@ function buildReleasePreflightRemediationQueue(deficits) {
   return { ...queue, evidence: releasePreflightRemediationEvidence(queue) };
 }
 
+function releaseOperatorHandoffExecutionGate(item) {
+  switch (item.requirement) {
+    case 'Corepack pnpm resolver':
+    case 'Git LFS push-path proof':
+      return 'toolchain_probe_first';
+    case 'Release-readiness execution':
+      return 'after_corepack_git_lfs_and_clean_source';
+    case 'Clean source provenance':
+      return 'owner_source_decision_first';
+    case 'Explicit owner production approval':
+      return 'manual_stop_after_all_prerequisites';
+    default:
+      return 'release_prerequisite_review';
+  }
+}
+
+function buildReleaseOperatorHandoffPacket(remediationQueue) {
+  const items = (remediationQueue.items ?? []).map((item) => ({
+    rank: item.rank,
+    requirement: item.requirement,
+    owner: item.owner,
+    status: item.status,
+    deficit_status: item.deficit_status,
+    current: item.current,
+    needed: item.needed,
+    action: item.action,
+    execution_gate: releaseOperatorHandoffExecutionGate(item),
+    proof_command: item.proof_command,
+    proof_type: item.proof_type,
+    proof_boundary: `${item.proof_boundary} This release operator handoff row is planning evidence only; it does not install tools, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity.`,
+    stop_gate: `${item.stop_gate} Do not execute or mark this row ready from the handoff packet itself.`,
+    blocks_release_gate: item.status !== 'ready',
+    can_execute_from_packet: false,
+  }));
+  const packet = {
+    status: remediationQueue.status === 'pass' ? 'ready' : 'blocked',
+    proof_type: 'release_operator_handoff_packet',
+    source: 'release_preflight.remediation_queue.items',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_release_gate).length,
+    toolchain_probe_count: items.filter((item) => item.proof_type === 'toolchain_probe').length,
+    gated_release_count: items.filter((item) => item.proof_type === 'gated_release_command').length,
+    source_decision_count: items.filter((item) => item.proof_type === 'source_provenance_decision').length,
+    manual_stop_count: items.filter((item) => item.proof_type === 'manual_approval' || item.status === 'manual_stop').length,
+    proof_boundary: 'This release operator handoff packet is remediation planning only; it does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity.',
+    stop_gate: 'Do not mark release preflight ready, request production approval, push, deploy, or claim hosted/live parity from this handoff; run each proof command separately after source provenance and owner gates are satisfied.',
+    items,
+  };
+  return { ...packet, evidence: releaseOperatorHandoffEvidence(packet) };
+}
+
 function probeReleasePreflight({ packageManager, gitStatus }) {
   const expectedVersion = expectedPnpmVersion(packageManager);
   const packageManagerPinned = Boolean(expectedVersion);
@@ -1266,6 +1339,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     total_count: itemsWithProofCommands.length,
     items: itemsWithProofCommands,
   };
+  const remediationQueue = buildReleasePreflightRemediationQueue(deficits);
 
   return {
     ...deficits,
@@ -1281,7 +1355,8 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
       gitLfsAvailable,
       gitLfsHookDiagnosticCurrent,
     }),
-    remediation_queue: buildReleasePreflightRemediationQueue(deficits),
+    remediation_queue: remediationQueue,
+    operator_handoff_packet: buildReleaseOperatorHandoffPacket(remediationQueue),
     clearance_matrix: buildReleasePreflightClearanceMatrix(deficits),
     evidence: releasePreflightDeficitEvidence(deficits),
   };
@@ -4898,6 +4973,17 @@ const sourceOwnerDecisionPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releaseOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-release-preflight-readiness.mjs',
+  'scripts/check-release-preflight-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releaseToolchainProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -5253,6 +5339,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceProofHandleFilesChanged,
   ...sourceProvenanceRenameSummaryFilesChanged,
   ...sourceOwnerDecisionPacketFilesChanged,
+  ...releaseOperatorHandoffPacketFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -5468,6 +5555,22 @@ const sourceOwnerDecisionPacketTestsRun = [
   'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run report:source-provenance-readiness -- --skip-probes',
   'pnpm run check:source-provenance-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const releaseOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-release-preflight-readiness.mjs',
+  'node --check scripts/check-release-preflight-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:release-preflight -- --skip-probes',
+  'pnpm run check:release-preflight-report -- --skip-probes',
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
@@ -5807,6 +5910,8 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
   ...sourceProvenanceRenameSummaryTestsRun,
+  ...sourceOwnerDecisionPacketTestsRun,
+  ...releaseOperatorHandoffPacketTestsRun,
   ...releaseToolchainProofHandleTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
@@ -6470,6 +6575,19 @@ const safeFixImplementationDecisions = [
     reason: 'The source resolution queue named the owner decision, but operators still lacked a compact source-linked packet that grouped the allowed owner choices for the top source-provenance blocker without mutating the staged rename.',
     proof_boundary: 'This record improves source owner-decision handoff visibility only; it does not commit, unstage, stash, revert, delete, rename, move, mutate source, clear source provenance, run release-readiness, request production approval, deploy, prove hosted/live parity, grant owner approval, or raise launch status.',
     stop_gate: 'Do not treat the source owner-decision packet, focused source report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as owner approval, source cleanup, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a release operator handoff packet derived from the release preflight remediation queue.',
+    acceptance_check: 'release_preflight.operator_handoff_packet records source linkage, status, item counts, execution gates, proof commands, proof boundaries, and non-executable packet rows; report:release-preflight renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived release operator handoff packet',
+    repo_pattern_reused: 'Existing release_preflight.remediation_queue items, release proof command/type helpers, focused release-preflight report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: releaseOperatorHandoffPacketFilesChanged,
+    tests_run: releaseOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing release_preflight.remediation_queue rows, assigns explicit execution gates for toolchain, release-readiness, source, and manual approval rows, marks every row non-executable from the packet, and validates source linkage, counts, commands, gates, and no-release-execution boundaries.',
+    reason: 'The release remediation queue named the blocked actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can install tools, run release-readiness, clear source provenance, push, deploy, request approval, or prove live parity.',
+    proof_boundary: 'This record improves release operator handoff visibility only; it does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
+    stop_gate: 'Do not treat the release operator handoff packet, focused release report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as toolchain remediation, release-readiness, clean source provenance, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7629,6 +7747,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone artifact could be convenient, but it would increase drift risk and require extra output lifecycle management.',
     evidence: 'The launch manifest already emits source_provenance.dirty_paths, isolation_ledger, and resolution_queue from one parser and the focused source report reads that same manifest.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave release operator actions implicit in release_preflight.remediation_queue rows.',
+    reason_rejected: 'Operators would still need to infer execution order and stop gates from individual remediation rows instead of seeing a compact source-linked handoff for the active release-toolchain blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the release blocker less executable and easier to misread as an unsequenced checklist.',
+    evidence: 'release_preflight.remediation_queue.items already contains the blocked release rows, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    variant: 'Install or enable Corepack, install Git LFS, or run release-readiness from the handoff phase.',
+    reason_rejected: 'Tool installation, release-readiness execution, and source cleanup are outside this repo-side reporting phase and require separate current-shell proof plus owner gates.',
+    tradeoff: 'Executing release operations could clear some blockers only after prerequisites pass, but it would exceed the safe-fix boundary and risk mutating environment or source state.',
+    evidence: 'Release preflight stop gates require Corepack pnpm proof, Git LFS proof, clean source provenance, release-readiness, and owner production approval as separate commands before deploy claims.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate release runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from release_preflight.remediation_queue.items.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused release-preflight report already reads the manifest release_preflight object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8067,6 +8206,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: sourceOwnerDecisionPacketTestsRun,
     remaining_risk: 'The source owner-decision packet is operator guidance only; launch readiness still depends on explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact release operator handoff from existing release_preflight.remediation_queue rows, renders it through the existing focused release report, and tightens existing checkers/tests without adding dependencies, a new parser, a separate artifact, tool installation, release-readiness execution, source mutation, approval request, deploy execution, or launch-status changes.',
+    tests_or_checks: releaseOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The release operator handoff packet is planning guidance only; launch readiness still depends on current Corepack proof, Git LFS proof, clean source provenance, guarded release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8274,6 +8422,7 @@ const manifest = {
       releasePreflight.evidence,
       releasePreflight.clearance_matrix.evidence,
       releasePreflight.remediation_queue.evidence,
+      releasePreflight.operator_handoff_packet.evidence,
       launchActionQueue.evidence,
       productionApprovalPrerequisiteQueue.evidence,
       productionApprovalRequestPacket.evidence,

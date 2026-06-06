@@ -466,6 +466,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal source decision summary helper'), 'Code optimization report must include the selected minimal source decision summary helper patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET'), 'Code optimization report must include the source owner-decision packet safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal derived source owner-decision packet'), 'Code optimization report must include the selected minimal source owner-decision packet patch.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the release operator handoff packet safe-fix task id.');
+  assert(codeOptimizationSection.includes('minimal derived release operator handoff packet'), 'Code optimization report must include the selected minimal release operator handoff packet patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES'), 'Code optimization report must include the release toolchain proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT'), 'Code optimization report must include the Supabase advisor focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES'), 'Code optimization report must include the Supabase advisor proof-handle safe-fix task id.');

@@ -159,7 +159,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -498,6 +498,46 @@ describe('launch evidence manifest report', () => {
       expect(firstReleaseAction.stop_gate).toMatch(/Do not/i);
       expect(firstReleaseAction.status).not.toBe('ready');
     }
+    expect(manifest.release_preflight.operator_handoff_packet.status).toBe('blocked');
+    expect(manifest.release_preflight.operator_handoff_packet.proof_type).toBe('release_operator_handoff_packet');
+    expect(manifest.release_preflight.operator_handoff_packet.source).toBe('release_preflight.remediation_queue.items');
+    expect(manifest.release_preflight.operator_handoff_packet.evidence).toContain('Release operator handoff packet');
+    expect(manifest.release_preflight.operator_handoff_packet.proof_boundary).toMatch(/does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|hosted\/live parity/i);
+    expect(manifest.release_preflight.operator_handoff_packet.stop_gate).toMatch(/Do not mark release preflight ready|request production approval|push|deploy|hosted\/live parity/i);
+    expect(manifest.release_preflight.operator_handoff_packet.item_count).toBe(manifest.release_preflight.remediation_queue.items.length);
+    expect(manifest.release_preflight.operator_handoff_packet.blocked_count).toBe(
+      manifest.release_preflight.operator_handoff_packet.items.filter((item: { blocks_release_gate: boolean }) => item.blocks_release_gate).length,
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.toolchain_probe_count).toBe(
+      manifest.release_preflight.operator_handoff_packet.items.filter((item: { proof_type: string }) => item.proof_type === 'toolchain_probe').length,
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.gated_release_count).toBe(
+      manifest.release_preflight.operator_handoff_packet.items.filter((item: { proof_type: string }) => item.proof_type === 'gated_release_command').length,
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.source_decision_count).toBe(
+      manifest.release_preflight.operator_handoff_packet.items.filter((item: { proof_type: string }) => item.proof_type === 'source_provenance_decision').length,
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.manual_stop_count).toBe(
+      manifest.release_preflight.operator_handoff_packet.items.filter((item: { proof_type: string; status: string }) => item.proof_type === 'manual_approval' || item.status === 'manual_stop').length,
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      manifest.release_preflight.remediation_queue.items.map((item: { requirement: string }) => item.requirement),
+    );
+    expect(manifest.release_preflight.operator_handoff_packet.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const releaseOperatorRowsByRequirement = mapBy(
+      manifest.release_preflight.operator_handoff_packet.items,
+      (item: {
+        requirement: string;
+        execution_gate?: string;
+        stop_gate?: string;
+      }) => item.requirement,
+    );
+    expect(releaseOperatorRowsByRequirement.get('Corepack pnpm resolver')?.execution_gate).toBe('toolchain_probe_first');
+    expect(releaseOperatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate).toBe('toolchain_probe_first');
+    expect(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.execution_gate).toBe('after_corepack_git_lfs_and_clean_source');
+    expect(releaseOperatorRowsByRequirement.get('Clean source provenance')?.execution_gate).toBe('owner_source_decision_first');
+    expect(releaseOperatorRowsByRequirement.get('Explicit owner production approval')?.execution_gate).toBe('manual_stop_after_all_prerequisites');
+    expect(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.stop_gate).toMatch(/Do not execute or mark this row ready from the handoff packet itself/i);
     expect(manifest.launch_action_queue.status).toBe('blocked');
     expect(manifest.launch_action_queue.evidence).toContain('Launch blocker action queue');
     expect(manifest.launch_action_queue.items.map((item: { phase: string }) => item.phase)).toEqual([
@@ -908,9 +948,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(47);
+    expect(manifest.implementation_decisions).toHaveLength(48);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(47);
+    expect(manifest.code_optimization_reviews).toHaveLength(48);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -980,6 +1020,9 @@ describe('launch evidence manifest report', () => {
       'Replace the production approval packet as an approval-request artifact.',
       'Automatically commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
       'Add a new source-provenance command instead of reusing the focused source-provenance report/check.',
+      'Leave release operator actions implicit in release_preflight.remediation_queue rows.',
+      'Install or enable Corepack, install Git LFS, or run release-readiness from the handoff phase.',
+      'Create a separate release runbook artifact or file.',
       'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
@@ -2101,6 +2144,34 @@ describe('launch evidence manifest report', () => {
     expect(sourceOwnerDecisionPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:source-provenance-readiness -- --skip-probes',
       'pnpm run check:source-provenance-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const releaseOperatorHandoffPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(releaseOperatorHandoffPacketDecision).toBeTruthy();
+    expect(releaseOperatorHandoffPacketDecision.chosen_variant).toBe('minimal derived release operator handoff packet');
+    expect(releaseOperatorHandoffPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-release-preflight-readiness.mjs',
+      'scripts/check-release-preflight-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/releasePreflightReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(releaseOperatorHandoffPacketDecision.proof_boundary).toMatch(/does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|grant owner approval|raise launch status/i);
+    const releaseOperatorHandoffPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(releaseOperatorHandoffPacketReview).toBeTruthy();
+    expect(releaseOperatorHandoffPacketReview.policy).toBe('strict');
+    expect(releaseOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:release-preflight -- --skip-probes',
+      'pnpm run check:release-preflight-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

@@ -48,6 +48,13 @@ describe('release preflight readiness report', () => {
     expect(stdout).toContain('Do not mark release approval ready');
     expect(stdout).toContain('Release Preflight Remediation Queue');
     expect(stdout).toContain('corepack pnpm run check:release-readiness');
+    expect(stdout).toContain('Release Operator Handoff Packet');
+    expect(stdout).toContain('release_operator_handoff_packet');
+    expect(stdout).toContain('release_preflight.remediation_queue.items');
+    expect(stdout).toContain('toolchain_probe_first');
+    expect(stdout).toContain('after_corepack_git_lfs_and_clean_source');
+    expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('planning evidence only');
     expect(stdout).toContain('Source Provenance Boundary');
     expect(stdout).toContain('Production Approval Request Boundary');
     expect(stdout).toContain('does not grant owner approval');
@@ -92,6 +99,27 @@ describe('release preflight readiness report', () => {
     expect(gitLfsProbe.diagnostic_boundary).toMatch(/Git LFS hook-path diagnostics are current-shell context only|future commit or push hook PATH|production approval/i);
     expect(payload.release_preflight.git_lfs_hook_diagnostic).toBe('skipped');
     expect(payload.release_preflight.clearance_matrix.proof_type).toBe('release_preflight_clearance_matrix');
+    expect(payload.release_preflight.operator_handoff_packet.proof_type).toBe('release_operator_handoff_packet');
+    expect(payload.release_preflight.operator_handoff_packet.source).toBe('release_preflight.remediation_queue.items');
+    expect(payload.release_preflight.operator_handoff_packet.status).toBe('blocked');
+    expect(payload.release_preflight.operator_handoff_packet.item_count).toBe(payload.release_preflight.remediation_queue.items.length);
+    expect(payload.release_preflight.operator_handoff_packet.blocked_count).toBe(
+      payload.release_preflight.operator_handoff_packet.items.filter((item: { blocks_release_gate: boolean }) => item.blocks_release_gate).length,
+    );
+    expect(payload.release_preflight.operator_handoff_packet.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      payload.release_preflight.remediation_queue.items.map((item: { requirement: string }) => item.requirement),
+    );
+    expect(payload.release_preflight.operator_handoff_packet.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const operatorRowsByRequirement = new Map(
+      payload.release_preflight.operator_handoff_packet.items.map((item: { requirement: string }) => [item.requirement, item] as const),
+    );
+    expect((operatorRowsByRequirement.get('Corepack pnpm resolver') as { execution_gate?: string } | undefined)?.execution_gate).toBe('toolchain_probe_first');
+    expect((operatorRowsByRequirement.get('Git LFS push-path proof') as { execution_gate?: string } | undefined)?.execution_gate).toBe('toolchain_probe_first');
+    expect((operatorRowsByRequirement.get('Release-readiness execution') as { execution_gate?: string } | undefined)?.execution_gate).toBe('after_corepack_git_lfs_and_clean_source');
+    expect((operatorRowsByRequirement.get('Clean source provenance') as { execution_gate?: string } | undefined)?.execution_gate).toBe('owner_source_decision_first');
+    expect((operatorRowsByRequirement.get('Explicit owner production approval') as { execution_gate?: string } | undefined)?.execution_gate).toBe('manual_stop_after_all_prerequisites');
+    expect(payload.release_preflight.operator_handoff_packet.proof_boundary).toMatch(/does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|hosted\/live parity/i);
+    expect(payload.release_preflight.operator_handoff_packet.stop_gate).toMatch(/Do not mark release preflight ready|request production approval|push|deploy|hosted\/live parity/i);
     expect(payload.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
     expect(payload.source_provenance.resolution_queue.items[0].proof_type).toMatch(/source_rename_decision|staged_source_decision|unstaged_source_decision|untracked_source_decision/);
     expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');

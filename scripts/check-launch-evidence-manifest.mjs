@@ -1049,6 +1049,79 @@ try {
       manifest.release_preflight.remediation_queue.items.some((item) => item.stop_gate.includes('Do not')),
       'Release preflight remediation queue must preserve explicit stop gates.',
     );
+    assert(typeof manifest.release_preflight?.operator_handoff_packet?.evidence === 'string', 'Manifest release_preflight.operator_handoff_packet.evidence must be set.');
+    assert(manifest.release_preflight.operator_handoff_packet.evidence.includes('Release operator handoff packet'), 'Manifest release operator handoff packet evidence must include a packet marker.');
+    assert(manifest.release_preflight.operator_handoff_packet.proof_type === 'release_operator_handoff_packet', 'Manifest release operator handoff packet must classify proof_type as release_operator_handoff_packet.');
+    assert(manifest.release_preflight.operator_handoff_packet.source === 'release_preflight.remediation_queue.items', 'Manifest release operator handoff packet must source remediation queue items.');
+    assert(manifest.release_preflight.operator_handoff_packet.status === (manifest.release_preflight.remediation_queue.status === 'pass' ? 'ready' : 'blocked'), 'Release operator handoff packet status must derive from remediation queue status.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.item_count), 'Manifest release_preflight.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.blocked_count), 'Manifest release_preflight.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.toolchain_probe_count), 'Manifest release_preflight.operator_handoff_packet.toolchain_probe_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.gated_release_count), 'Manifest release_preflight.operator_handoff_packet.gated_release_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.source_decision_count), 'Manifest release_preflight.operator_handoff_packet.source_decision_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.release_preflight.operator_handoff_packet?.manual_stop_count), 'Manifest release_preflight.operator_handoff_packet.manual_stop_count must be an integer or null.');
+    assert(Array.isArray(manifest.release_preflight.operator_handoff_packet.items), 'Manifest release_preflight.operator_handoff_packet.items must be a list.');
+    assert(
+      manifest.release_preflight.operator_handoff_packet.item_count === manifest.release_preflight.remediation_queue.items.length,
+      'Release operator handoff packet item_count must match remediation queue items length.',
+    );
+    assert(
+      manifest.release_preflight.operator_handoff_packet.blocked_count === manifest.release_preflight.operator_handoff_packet.items.filter((item) => item.blocks_release_gate).length,
+      'Release operator handoff packet blocked_count must match release-blocking rows.',
+    );
+    assert(
+      manifest.release_preflight.operator_handoff_packet.toolchain_probe_count === manifest.release_preflight.operator_handoff_packet.items.filter((item) => item.proof_type === 'toolchain_probe').length,
+      'Release operator handoff packet toolchain_probe_count must match toolchain proof rows.',
+    );
+    assert(
+      manifest.release_preflight.operator_handoff_packet.gated_release_count === manifest.release_preflight.operator_handoff_packet.items.filter((item) => item.proof_type === 'gated_release_command').length,
+      'Release operator handoff packet gated_release_count must match gated release rows.',
+    );
+    assert(
+      manifest.release_preflight.operator_handoff_packet.source_decision_count === manifest.release_preflight.operator_handoff_packet.items.filter((item) => item.proof_type === 'source_provenance_decision').length,
+      'Release operator handoff packet source_decision_count must match source-decision rows.',
+    );
+    assert(
+      manifest.release_preflight.operator_handoff_packet.manual_stop_count === manifest.release_preflight.operator_handoff_packet.items.filter((item) => item.proof_type === 'manual_approval' || item.status === 'manual_stop').length,
+      'Release operator handoff packet manual_stop_count must match manual approval rows.',
+    );
+    assert(
+      JSON.stringify((manifest.release_preflight.operator_handoff_packet.items ?? []).map((item) => item.requirement)) === JSON.stringify(releaseQueueRequirements),
+      'Release operator handoff packet must include exactly remediation queue requirements in order.',
+    );
+    assert(typeof manifest.release_preflight.operator_handoff_packet.proof_boundary === 'string' && /does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|request production approval|hosted\/live parity/i.test(manifest.release_preflight.operator_handoff_packet.proof_boundary), 'Release operator handoff packet proof_boundary must preserve non-execution semantics.');
+    assert(typeof manifest.release_preflight.operator_handoff_packet.stop_gate === 'string' && /Do not mark release preflight ready|request production approval|push|deploy|hosted\/live parity/i.test(manifest.release_preflight.operator_handoff_packet.stop_gate), 'Release operator handoff packet stop_gate must reject release claims from the handoff.');
+    const releaseOperatorRowsByRequirement = new Map((manifest.release_preflight.operator_handoff_packet.items ?? []).map((item) => [item.requirement, item]));
+    for (const [index, item] of (manifest.release_preflight.operator_handoff_packet.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `release_preflight.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(typeof item.requirement === 'string' && item.requirement.length > 0, `release_preflight.operator_handoff_packet.items[${index}].requirement must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `release_preflight.operator_handoff_packet.items[${index}].owner must be set.`);
+      assert(typeof item.status === 'string' && item.status.length > 0, `release_preflight.operator_handoff_packet.items[${index}].status must be set.`);
+      assert(typeof item.deficit_status === 'string' && item.deficit_status.length > 0, `release_preflight.operator_handoff_packet.items[${index}].deficit_status must be set.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `release_preflight.operator_handoff_packet.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `release_preflight.operator_handoff_packet.items[${index}].needed must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `release_preflight.operator_handoff_packet.items[${index}].action must be set.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `release_preflight.operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.length > 0, `release_preflight.operator_handoff_packet.items[${index}].proof_command must be set.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `release_preflight.operator_handoff_packet.items[${index}].proof_type must be set.`);
+      assert(typeof item.blocks_release_gate === 'boolean', `release_preflight.operator_handoff_packet.items[${index}].blocks_release_gate must be boolean.`);
+      assert(typeof item.can_execute_from_packet === 'boolean', `release_preflight.operator_handoff_packet.items[${index}].can_execute_from_packet must be boolean.`);
+      assert(item.can_execute_from_packet === false, `release_preflight.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.blocks_release_gate === (item.status !== 'ready'), `release_preflight.operator_handoff_packet.items[${index}] must derive blocks_release_gate from status.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not install tools|request production approval|hosted\/live parity/i.test(item.proof_boundary), `release_preflight.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute or mark this row ready from the handoff packet itself/i.test(item.stop_gate), `release_preflight.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+    }
+    if (releaseOperatorRowsByRequirement.has('Corepack pnpm resolver')) {
+      assert(releaseOperatorRowsByRequirement.get('Corepack pnpm resolver')?.execution_gate === 'toolchain_probe_first', 'Release operator Corepack row must require toolchain_probe_first.');
+    }
+    if (releaseOperatorRowsByRequirement.has('Git LFS push-path proof')) {
+      assert(releaseOperatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate === 'toolchain_probe_first', 'Release operator Git LFS row must require toolchain_probe_first.');
+    }
+    assert(releaseOperatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release operator release-readiness row must wait for Corepack, Git LFS, and clean source.');
+    if (releaseOperatorRowsByRequirement.has('Clean source provenance')) {
+      assert(releaseOperatorRowsByRequirement.get('Clean source provenance')?.execution_gate === 'owner_source_decision_first', 'Release operator clean-source row must require owner source decision first.');
+    }
+    assert(releaseOperatorRowsByRequirement.get('Explicit owner production approval')?.execution_gate === 'manual_stop_after_all_prerequisites', 'Release operator owner-approval row must stay manual_stop after prerequisites.');
     assert(typeof manifest.launch_action_queue?.evidence === 'string', 'Manifest launch_action_queue.evidence must be set.');
     assert(manifest.launch_action_queue.evidence.includes('Launch blocker action queue'), 'Manifest launch action queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.launch_action_queue?.item_count), 'Manifest launch_action_queue.item_count must be an integer or null.');
@@ -2130,7 +2203,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SOURCE-OWNER-DECISION-PACKET', 'Manifest progress_updates must expose the latest source owner-decision packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest release operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3501,6 +3574,41 @@ try {
         && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && sourceOwnerDecisionPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Source owner-decision packet code optimization review must record focused source, progress, manifest, and commercial report checks.',
+    );
+    const releaseOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET');
+    assert(releaseOperatorHandoffPacketDecision, 'Manifest must record the release operator handoff packet implementation decision.');
+    assert(
+      releaseOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived release operator handoff packet',
+      'Release operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(releaseOperatorHandoffPacketDecision?.files_changed)
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/report-release-preflight-readiness.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/check-release-preflight-readiness-report.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('tests/unit/releasePreflightReadiness.test.ts')
+        && releaseOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Release operator handoff packet decision must record the manifest, focused release report, checkers, and unit test files.',
+    );
+    assert(
+      /does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|request production approval|hosted\/live parity|grant owner approval|raise launch status/i.test(releaseOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Release operator handoff packet decision must preserve no-tool-install, no-release, no-source-clearance, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const releaseOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET');
+    assert(releaseOperatorHandoffPacketReview, 'Manifest must record the release operator handoff packet code optimization review.');
+    assert(releaseOperatorHandoffPacketReview?.policy === 'strict', 'Release operator handoff packet code optimization review must use strict policy.');
+    assert(releaseOperatorHandoffPacketReview?.verdict === 'pass', 'Release operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(releaseOperatorHandoffPacketReview?.tests_or_checks)
+        && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:release-preflight -- --skip-probes/.test(check))
+        && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check))
+        && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Release operator handoff packet code optimization review must record focused release, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

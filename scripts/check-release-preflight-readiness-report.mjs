@@ -102,6 +102,16 @@ if (failures.length === 0) {
     assertContains(stdout, '## Release Preflight Remediation Queue', 'Report must include the remediation queue.');
     assertContains(stdout, 'corepack pnpm run check:release-readiness', 'Report must include the guarded release-readiness command.');
     assertContains(stdout, 'corepack pnpm run check:production-deploy-request', 'Report must include the production deploy request command.');
+    assertContains(stdout, '## Release Operator Handoff Packet', 'Report must include the release operator handoff packet.');
+    assertContains(stdout, 'release_operator_handoff_packet', 'Report must classify the release operator handoff packet proof type.');
+    assertContains(stdout, 'release_preflight.remediation_queue.items', 'Report must expose the remediation queue as the operator handoff source.');
+    if ((payload?.release_preflight?.operator_handoff_packet?.items ?? []).some((item) => item.execution_gate === 'toolchain_probe_first')) {
+      assertContains(stdout, 'toolchain_probe_first', 'Report must include the toolchain-first execution gate when toolchain rows are blocked.');
+    }
+    assertContains(stdout, 'after_corepack_git_lfs_and_clean_source', 'Report must include the guarded release-readiness execution gate.');
+    assertContains(stdout, 'manual_stop_after_all_prerequisites', 'Report must include the manual approval execution gate.');
+    assertContains(stdout, 'Can Execute From Packet', 'Report must expose the packet non-execution column.');
+    assertContains(stdout, 'planning evidence only', 'Report must preserve the operator handoff planning-only boundary.');
     assertContains(stdout, '## Source Provenance Boundary', 'Report must include source provenance boundary evidence.');
     assertContains(stdout, 'Source provenance', 'Report must include source provenance evidence text.');
     assertContains(stdout, '## Production Approval Request Boundary', 'Report must include production approval request boundary evidence.');
@@ -114,11 +124,13 @@ if (failures.length === 0) {
     const toolchainLedger = releasePreflight.toolchain_probe_ledger ?? {};
     const clearanceMatrix = releasePreflight.clearance_matrix ?? {};
     const remediationQueue = releasePreflight.remediation_queue ?? {};
+    const operatorHandoffPacket = releasePreflight.operator_handoff_packet ?? {};
     const requirements = (releasePreflight.items ?? []).map((item) => item.requirement);
     const releaseItemsByRequirement = new Map((releasePreflight.items ?? []).map((item) => [item.requirement, item]));
     const toolchainItemsById = new Map((toolchainLedger.items ?? []).map((item) => [item.id, item]));
     const clearanceRowsByRequirement = new Map((clearanceMatrix.rows ?? []).map((item) => [item.requirement, item]));
     const remediationRowsByRequirement = new Map((remediationQueue.items ?? []).map((item) => [item.requirement, item]));
+    const operatorRowsByRequirement = new Map((operatorHandoffPacket.items ?? []).map((item) => [item.requirement, item]));
     const corepackProbe = toolchainItemsById.get('corepack_pnpm_resolver');
     const gitLfsProbe = toolchainItemsById.get('git_lfs_push_path');
 
@@ -147,6 +159,36 @@ if (failures.length === 0) {
     assert(/Do not mark release approval ready|Corepack-pinned release-readiness|Git LFS push-path proof|owner approval/i.test(clearanceMatrix.stop_gate ?? ''), 'clearance matrix stop gate must require current release evidence.');
     assert(Array.isArray(remediationQueue.items), 'remediation_queue.items must be an array.');
     assert(/does not install tools|clear source provenance|run release-readiness|push|deploy/i.test(remediationQueue.evidence ?? ''), 'remediation queue evidence must preserve non-execution semantics.');
+    assert(operatorHandoffPacket.proof_type === 'release_operator_handoff_packet', 'operator_handoff_packet proof_type must be release_operator_handoff_packet.');
+    assert(operatorHandoffPacket.source === 'release_preflight.remediation_queue.items', 'operator_handoff_packet source must point to the release remediation queue items.');
+    assert(operatorHandoffPacket.status === (remediationQueue.status === 'pass' ? 'ready' : 'blocked'), 'operator_handoff_packet status must derive from remediation queue status.');
+    assert(Array.isArray(operatorHandoffPacket.items), 'operator_handoff_packet.items must be an array.');
+    assert(operatorHandoffPacket.item_count === remediationQueue.items?.length, 'operator_handoff_packet item_count must match remediation queue item count.');
+    assert(operatorHandoffPacket.blocked_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocks_release_gate).length, 'operator_handoff_packet blocked_count must match release-blocking rows.');
+    assert(operatorHandoffPacket.toolchain_probe_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'toolchain_probe').length, 'operator_handoff_packet toolchain_probe_count must match toolchain rows.');
+    assert(operatorHandoffPacket.gated_release_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'gated_release_command').length, 'operator_handoff_packet gated_release_count must match gated release rows.');
+    assert(operatorHandoffPacket.source_decision_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'source_provenance_decision').length, 'operator_handoff_packet source_decision_count must match source decision rows.');
+    assert(operatorHandoffPacket.manual_stop_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'manual_approval' || item.status === 'manual_stop').length, 'operator_handoff_packet manual_stop_count must match manual stop rows.');
+    assert(JSON.stringify((operatorHandoffPacket.items ?? []).map((item) => item.requirement)) === JSON.stringify((remediationQueue.items ?? []).map((item) => item.requirement)), 'operator_handoff_packet must preserve remediation queue requirement order.');
+    assert((operatorHandoffPacket.items ?? []).every((item) => item.can_execute_from_packet === false), 'operator_handoff_packet rows must not be executable from the packet.');
+    assert((operatorHandoffPacket.items ?? []).every((item) => item.blocks_release_gate === (item.status !== 'ready')), 'operator_handoff_packet rows must derive blocks_release_gate from row status.');
+    assert(/does not install Corepack|install Git LFS|run release-readiness|clear source provenance|push|deploy|request production approval|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary ?? ''), 'operator_handoff_packet proof_boundary must preserve non-execution semantics.');
+    assert(/Do not mark release preflight ready|request production approval|push|deploy|hosted\/live parity/i.test(operatorHandoffPacket.stop_gate ?? ''), 'operator_handoff_packet stop_gate must reject release claims from the handoff.');
+    if (operatorRowsByRequirement.has('Corepack pnpm resolver')) {
+      assert(operatorRowsByRequirement.get('Corepack pnpm resolver')?.execution_gate === 'toolchain_probe_first', 'Corepack handoff row must require toolchain_probe_first.');
+    }
+    if (operatorRowsByRequirement.has('Git LFS push-path proof')) {
+      assert(operatorRowsByRequirement.get('Git LFS push-path proof')?.execution_gate === 'toolchain_probe_first', 'Git LFS handoff row must require toolchain_probe_first.');
+    }
+    assert(operatorRowsByRequirement.get('Release-readiness execution')?.execution_gate === 'after_corepack_git_lfs_and_clean_source', 'Release-readiness handoff row must wait for Corepack, Git LFS, and clean source.');
+    if (operatorRowsByRequirement.has('Clean source provenance')) {
+      assert(operatorRowsByRequirement.get('Clean source provenance')?.execution_gate === 'owner_source_decision_first', 'Clean source provenance handoff row must require owner source decision first.');
+    }
+    assert(operatorRowsByRequirement.get('Explicit owner production approval')?.execution_gate === 'manual_stop_after_all_prerequisites', 'Owner approval handoff row must remain manual stop after prerequisites.');
+    if (operatorRowsByRequirement.has('Corepack pnpm resolver')) {
+      assert(/planning evidence only|does not install tools|request production approval|hosted\/live parity/i.test(operatorRowsByRequirement.get('Corepack pnpm resolver')?.proof_boundary ?? ''), 'Corepack operator handoff row must preserve planning-only boundaries.');
+    }
+    assert(/Do not execute or mark this row ready from the handoff packet itself/i.test(operatorRowsByRequirement.get('Release-readiness execution')?.stop_gate ?? ''), 'Release-readiness operator handoff row must reject execution from the packet.');
     assert(payload.source_provenance?.resolution_queue, 'Focused report JSON must include source provenance resolution queue.');
     assert(/report:source-provenance-readiness/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance release preflight row must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance clearance row must point to the focused source provenance report/check.');
@@ -163,4 +205,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Release preflight readiness report check passed: focused release preflight status, toolchain probe ledger, release deficits, clearance matrix, remediation queue, source provenance, production approval packet, and proof boundaries are consistent.');
+console.log('Release preflight readiness report check passed: focused release preflight status, toolchain probe ledger, release deficits, clearance matrix, remediation queue, operator handoff packet, source provenance, production approval packet, and proof boundaries are consistent.');
