@@ -4971,6 +4971,14 @@ const progressTargetMatrixStructureFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressActivitiesRemainingFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -5013,6 +5021,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
+  ...progressActivitiesRemainingFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5466,6 +5475,19 @@ const progressTargetMatrixStructureTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const progressActivitiesRemainingTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5508,6 +5530,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...launchManifestJsonAliasTestsRun,
   ...progressDigestLatestRatchetTestsRun,
   ...progressTargetMatrixStructureTestsRun,
+  ...progressActivitiesRemainingTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -6091,6 +6114,19 @@ const safeFixImplementationDecisions = [
     reason: 'The commercial-launch progress contract requires a target accomplishment matrix with lane, target percent, current percent, status, evidence, and confidence; string labels under-reported that evidence.',
     proof_boundary: 'This record improves progress matrix structure only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat structured progress target rows, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    decision: 'Add activities remaining counts to the focused progress digest from existing launch queues.',
+    acceptance_check: 'report:progress-digest-readiness and check:progress-digest-report expose activities_remaining with current-phase action counts, next-phase action counts, action rows, and no-clearance boundaries derived from launch_action_queue, completion_audit, production_approval, and post_deploy_live_proof.',
+    chosen_variant: 'minimal focused activities-remaining digest derivation',
+    repo_pattern_reused: 'Existing manifest-backed focused progress digest, launch_action_queue, completion_audit, production_approval.prerequisite_queue, post_deploy_live_proof.gate_queue, and launch manifest unit/check contracts.',
+    files_changed: progressActivitiesRemainingFilesChanged,
+    tests_run: progressActivitiesRemainingTestsRun,
+    proof: 'The patch derives activities_remaining inside the focused progress digest from existing manifest queues, renders current and next action counts, and validates the section without adding a new top-level artifact or changing any blocker status.',
+    reason: 'The commercial-launch progress contract requires activities remaining with current-phase and next-phase action counts; the focused digest previously omitted that section even though the required queue data already existed in the manifest.',
+    proof_boundary: 'This record improves activities-remaining visibility only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat activities remaining counts, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7166,6 +7202,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'More granular percentages could be attractive, but would blur verified current evidence with inferred historical progress.',
     evidence: 'The progress contract allows default pass/running/fail/pending mapping unless stronger evidence exists.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    variant: 'Leave activities remaining absent from the focused progress digest.',
+    reason_rejected: 'The progress contract requires current-phase and next-phase action counts, and omission hides the operator action queue from the focused digest.',
+    tradeoff: 'No-code defer avoids report churn, but keeps the progress digest below the skill contract.',
+    evidence: 'report-progress-digest-readiness currently emits progress_digest and bottleneck_digest but no activities_remaining section.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    variant: 'Add a new top-level activities_remaining artifact to the launch evidence manifest.',
+    reason_rejected: 'The action counts can be derived from existing launch_action_queue, completion_audit, production_approval, and post_deploy_live_proof fields without adding another source of truth.',
+    tradeoff: 'A new artifact could simplify the focused report, but it would increase manifest surface area and risk drift from the canonical queues.',
+    evidence: 'The manifest already emits launch_action_queue.items, completion_audit.items, production_approval.prerequisite_queue.items, and post_deploy_live_proof.gate_queue.items.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    variant: 'Execute unresolved proof commands to reduce activities remaining counts.',
+    reason_rejected: 'Running buyer validation, owner approval, deploy, live proof, or external account checks would exceed a reporting-contract safe fix and may require secrets or explicit approval.',
+    tradeoff: 'Executing gates could reduce counts if authorized, but would violate the no-deploy/no-external-action boundary for this phase.',
+    evidence: 'The unresolved action queue contains buyer evidence, Supabase advisor, production approval, deploy, and post-deploy live proof gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7567,6 +7624,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates existing progress_updates rows and existing renderer/checker tests only, with no new dependency, no extra artifact, no historical inference engine, and no launch-status change.',
     tests_or_checks: progressTargetMatrixStructureTestsRun,
     remaining_risk: 'The target matrix is now structured but remains a reporting surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives activities remaining from existing manifest queues and updates the focused renderer/checker plus manifest ledger assertions, with no new dependency, no new canonical artifact, no proof-command execution, and no launch-status change.',
+    tests_or_checks: progressActivitiesRemainingTestsRun,
+    remaining_risk: 'Activities remaining counts are now visible but remain a reporting surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

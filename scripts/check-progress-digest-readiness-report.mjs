@@ -96,18 +96,25 @@ if (failures.length === 0) {
     const stdout = markdown.stdout;
     assertContains(stdout, '# CEIP Progress Digest Readiness Report', 'Report must include the focused progress digest title.');
     assertContains(stdout, 'Progress digest status:', 'Report must include progress digest status.');
+    assertContains(stdout, 'Activities remaining status:', 'Report must include activities remaining status.');
     assertContains(stdout, 'Bottleneck digest status:', 'Report must include bottleneck digest status.');
     assertContains(stdout, '## Decision Boundary', 'Report must include a decision-boundary section.');
     assertContains(stdout, 'does not complete pending work', 'Report must reject completion from progress digest evidence.');
     assert(/does not .*clear blockers|contact buyers|approve branches|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness boundaries.');
     assertContains(stdout, '## Progress Summary', 'Report must include the progress summary.');
     assertContains(stdout, '## Progress Updates', 'Report must include progress update rows.');
-    assertContains(stdout, 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE', 'Report must expose the latest structured target-matrix phase as current evidence.');
+    assertContains(stdout, 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING', 'Report must expose the latest activities-remaining phase as current evidence.');
     assertContains(stdout, 'Safe Fix Lane', 'Report must include latest safe-fix lane target matrix evidence.');
     assertContains(stdout, 'code optimization review evidence', 'Report must include latest code-optimization target matrix evidence.');
     assertContains(stdout, 'objective completion audit', 'Report must include the objective completion audit phase.');
     assertContains(stdout, 'structured evidence manifest', 'Report must include target matrix evidence.');
     assertContains(stdout, 'retained buyer artifacts', 'Report must include the active buyer-evidence bottleneck.');
+    assertContains(stdout, '## Activities Remaining', 'Report must include activities remaining rows.');
+    assertContains(stdout, '## Current Phase Actions', 'Report must include current phase action rows.');
+    assertContains(stdout, '## Next Phase Actions', 'Report must include next phase action rows.');
+    assertContains(stdout, 'source_provenance', 'Report must include source provenance as a remaining current action.');
+    assertContains(stdout, 'production_approval', 'Report must include production approval as a remaining current action.');
+    assertContains(stdout, 'post_deploy_live_proof', 'Report must include post-deploy live proof as a remaining action.');
     assertContains(stdout, '## Bottleneck Summary', 'Report must include the bottleneck summary.');
     assertContains(stdout, '## Bottleneck Log', 'Report must include bottleneck rows.');
     assertContains(stdout, 'evidence gap', 'Report must include the current root cause.');
@@ -126,14 +133,14 @@ if (failures.length === 0) {
     assert(payload.progress_digest?.proof_type === 'progress_update_digest', 'Focused JSON must include the progress update digest proof type.');
     assert(payload.progress_digest?.status === 'blocked', 'Focused progress digest must remain blocked while launch blockers remain open.');
     assert(payload.progress_digest?.update_count >= 2, 'Focused progress digest must include the latest safe-fix row and the objective-completion audit row.');
-    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE', 'Focused progress digest current phase must be the latest structured target-matrix progress ratchet.');
+    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING', 'Focused progress digest current phase must be the latest activities-remaining progress ratchet.');
     assert(payload.progress_digest?.target_matrix_count >= 5, 'Focused progress digest must include the target matrix count.');
     assert(/retained buyer artifacts|guarded deploy\/live proof/i.test(payload.progress_digest?.current_bottleneck ?? ''), 'Focused progress digest must preserve the active evidence bottleneck.');
     assert(
       Array.isArray(payload.progress_updates)
-        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE')
+        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING')
         && payload.progress_updates.some((item) => item?.phase === 'objective completion audit'),
-      'Focused progress digest must include both the latest structured target-matrix phase and the objective-completion audit history.',
+      'Focused progress digest must include both the latest activities-remaining phase and the objective-completion audit history.',
     );
     assert(
       targetMatrixHasLane(payload.progress_updates?.[0]?.target_matrix, 'Safe Fix Lane', (item) => (
@@ -155,6 +162,25 @@ if (failures.length === 0) {
       )),
       'Focused progress digest history row must preserve structured objective-completion synthesis evidence.',
     );
+    assert(payload.activities_remaining?.proof_type === 'activities_remaining_digest', 'Focused JSON must include the activities remaining digest proof type.');
+    assert(payload.activities_remaining?.status === 'blocked', 'Focused activities remaining digest must stay blocked while actions remain.');
+    assert(payload.activities_remaining?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING', 'Focused activities remaining digest must bind to the latest current phase.');
+    assert(payload.activities_remaining?.current_phase_action_count >= 7, 'Focused activities remaining digest must count unresolved launch action queue rows.');
+    assert(payload.activities_remaining?.next_phase_action_count >= 10, 'Focused activities remaining digest must count production approval and post-deploy action rows.');
+    assert(payload.activities_remaining?.completion_blocker_count >= 4, 'Focused activities remaining digest must count objective-completion blockers.');
+    assert(
+      Array.isArray(payload.activities_remaining?.current_phase_actions)
+        && payload.activities_remaining.current_phase_actions.some((item) => item.phase === 'source_provenance' && item.status === 'blocked')
+        && payload.activities_remaining.current_phase_actions.some((item) => item.phase === 'production_approval' && item.status === 'manual_stop'),
+      'Focused activities remaining digest must include source provenance and production approval current actions.',
+    );
+    assert(
+      Array.isArray(payload.activities_remaining?.next_phase_actions)
+        && payload.activities_remaining.next_phase_actions.some((item) => item.phase === 'Post-deploy live proof boundary' && item.status === 'blocked')
+        && payload.activities_remaining.next_phase_actions.some((item) => item.phase === 'Hosted proof-pack route smoke' && item.status === 'blocked'),
+      'Focused activities remaining digest must include production approval and hosted post-deploy next actions.',
+    );
+    assert(/without executing any proof commands/i.test(payload.activities_remaining?.evidence ?? ''), 'Focused activities remaining evidence must preserve report-only derivation.');
     assert(payload.bottleneck_digest?.proof_type === 'bottleneck_log_digest', 'Focused JSON must include the bottleneck log digest proof type.');
     assert(payload.bottleneck_digest?.status === 'blocked', 'Focused bottleneck digest must remain blocked while evidence gaps remain.');
     assert(payload.bottleneck_digest?.root_cause === 'evidence gap', 'Focused bottleneck digest must preserve the evidence-gap root cause.');

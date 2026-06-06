@@ -159,7 +159,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -849,9 +849,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(43);
+    expect(manifest.implementation_decisions).toHaveLength(44);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(43);
+    expect(manifest.code_optimization_reviews).toHaveLength(44);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1939,6 +1939,30 @@ describe('launch evidence manifest report', () => {
     expect(progressTargetMatrixStructureReview).toBeTruthy();
     expect(progressTargetMatrixStructureReview.policy).toBe('strict');
     expect(progressTargetMatrixStructureReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const progressActivitiesRemainingDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    );
+    expect(progressActivitiesRemainingDecision).toBeTruthy();
+    expect(progressActivitiesRemainingDecision.chosen_variant).toBe('minimal focused activities-remaining digest derivation');
+    expect(progressActivitiesRemainingDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressActivitiesRemainingDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const progressActivitiesRemainingReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING',
+    );
+    expect(progressActivitiesRemainingReview).toBeTruthy();
+    expect(progressActivitiesRemainingReview.policy).toBe('strict');
+    expect(progressActivitiesRemainingReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:progress-digest-readiness -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

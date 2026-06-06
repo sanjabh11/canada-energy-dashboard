@@ -144,11 +144,58 @@ function progressStatus(manifest) {
   return blockedCount > 0 || manifest.launch_decision !== 'commercial-ready' ? 'blocked' : 'pass';
 }
 
+function isRemainingAction(item) {
+  return !['pass', 'present', 'ready', 'complete', 'completed'].includes(item?.status ?? '');
+}
+
+function normalizeAction(item, index, source) {
+  return {
+    rank: Number.isInteger(item?.rank) ? item.rank : index + 1,
+    source,
+    phase: item?.phase ?? item?.prerequisite ?? item?.gate ?? item?.check ?? `action_${index + 1}`,
+    status: item?.status ?? 'missing',
+    proof_type: item?.proof_type ?? 'missing',
+    proof_command: item?.proof_command ?? item?.next_proof_command ?? 'missing',
+  };
+}
+
+function remainingActions(items, source) {
+  return (Array.isArray(items) ? items : [])
+    .filter(isRemainingAction)
+    .map((item, index) => normalizeAction(item, index, source));
+}
+
+function deriveActivitiesRemaining(manifest, currentProgressUpdate) {
+  const completionBlockers = (manifest.completion_audit?.items ?? [])
+    .filter((item) => item?.blocks_goal_completion && item.status !== 'present');
+  const currentPhaseActions = remainingActions(manifest.launch_action_queue?.items, 'launch_action_queue');
+  const productionActions = remainingActions(manifest.production_approval?.prerequisite_queue?.items, 'production_approval.prerequisite_queue');
+  const postDeployActions = remainingActions(manifest.post_deploy_live_proof?.gate_queue?.items, 'post_deploy_live_proof.gate_queue');
+  const nextPhaseActions = [...productionActions, ...postDeployActions];
+  const status = completionBlockers.length > 0 || currentPhaseActions.length > 0 || nextPhaseActions.length > 0
+    ? 'blocked'
+    : 'pass';
+
+  return {
+    status,
+    proof_type: 'activities_remaining_digest',
+    current_phase: currentProgressUpdate?.phase ?? 'missing',
+    current_phase_action_count: currentPhaseActions.length,
+    current_phase_actions: currentPhaseActions,
+    next_phase: 'production approval and post-deploy live proof',
+    next_phase_action_count: nextPhaseActions.length,
+    next_phase_actions: nextPhaseActions,
+    completion_blocker_count: completionBlockers.length,
+    evidence: 'Activities remaining are derived from launch_action_queue, completion_audit, production_approval.prerequisite_queue, and post_deploy_live_proof.gate_queue without executing any proof commands.',
+  };
+}
+
 function focusedPayload(manifest) {
   const progressUpdates = Array.isArray(manifest.progress_updates) ? manifest.progress_updates : [];
   const currentProgressUpdate = progressUpdates[0] ?? null;
   const bottleneckLog = Array.isArray(manifest.bottleneck_log) ? manifest.bottleneck_log : [];
   const blockers = manifest.completion_audit?.items?.filter((item) => item?.blocks_goal_completion) ?? [];
+  const activitiesRemaining = deriveActivitiesRemaining(manifest, currentProgressUpdate);
 
   return {
     schema_version: 1,
@@ -179,6 +226,7 @@ function focusedPayload(manifest) {
         ? 'Bottleneck digest is present and records the active evidence-gap blocker plus top unblock options.'
         : 'Bottleneck digest is missing from the launch evidence manifest.',
     },
+    activities_remaining: activitiesRemaining,
     progress_updates: progressUpdates,
     bottleneck_log: bottleneckLog,
     public_status_handles: {
@@ -214,6 +262,7 @@ function formatTargetMatrixItem(item) {
 function renderMarkdown(payload) {
   const progress = payload.progress_digest ?? {};
   const bottleneck = payload.bottleneck_digest ?? {};
+  const activities = payload.activities_remaining ?? {};
   const progressRows = (payload.progress_updates ?? []).map((item, index) => [
     index + 1,
     item.phase,
@@ -231,6 +280,22 @@ function renderMarkdown(payload) {
     item.last_update,
     item.root_cause,
     Array.isArray(item.top_unblock_options) ? item.top_unblock_options.join('; ') : '',
+  ]);
+  const currentActivityRows = (activities.current_phase_actions ?? []).map((item) => [
+    item.rank,
+    item.source,
+    item.phase,
+    item.status,
+    item.proof_type,
+    item.proof_command,
+  ]);
+  const nextActivityRows = (activities.next_phase_actions ?? []).map((item) => [
+    item.rank,
+    item.source,
+    item.phase,
+    item.status,
+    item.proof_type,
+    item.proof_command,
   ]);
   const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
     id,
@@ -250,8 +315,11 @@ function renderMarkdown(payload) {
     `Repo: ${payload.repo?.name ?? 'unknown'} @ ${payload.repo?.commit ?? 'unknown'}`,
     `Launch decision: \`${payload.launch_decision ?? 'unknown'}\``,
     `Progress digest status: \`${progress.status ?? 'unknown'}\``,
+    `Activities remaining status: \`${activities.status ?? 'unknown'}\``,
     `Bottleneck digest status: \`${bottleneck.status ?? 'unknown'}\``,
     `Progress update count: \`${progress.update_count ?? 0}\``,
+    `Current phase action count: \`${activities.current_phase_action_count ?? 0}\``,
+    `Next phase action count: \`${activities.next_phase_action_count ?? 0}\``,
     `Bottleneck entry count: \`${bottleneck.entry_count ?? 0}\``,
     '',
     '## Decision Boundary',
@@ -270,6 +338,21 @@ function renderMarkdown(payload) {
     '## Progress Updates',
     '',
     renderTable(['Rank', 'Phase', 'Accomplished', 'Target Matrix', 'Pending', 'Bottleneck', 'Created At'], progressRows),
+    '',
+    '## Activities Remaining',
+    '',
+    renderTable(
+      ['Status', 'Proof Type', 'Current Phase', 'Current Phase Actions', 'Next Phase', 'Next Phase Actions', 'Completion Blockers', 'Evidence'],
+      [[activities.status, activities.proof_type, activities.current_phase, activities.current_phase_action_count, activities.next_phase, activities.next_phase_action_count, activities.completion_blocker_count, activities.evidence]],
+    ),
+    '',
+    '## Current Phase Actions',
+    '',
+    renderTable(['Rank', 'Source', 'Phase', 'Status', 'Proof Type', 'Proof Command'], currentActivityRows),
+    '',
+    '## Next Phase Actions',
+    '',
+    renderTable(['Rank', 'Source', 'Phase', 'Status', 'Proof Type', 'Proof Command'], nextActivityRows),
     '',
     '## Bottleneck Summary',
     '',

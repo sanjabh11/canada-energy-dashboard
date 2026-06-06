@@ -2018,7 +2018,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE', 'Manifest progress_updates must expose the latest structured target-matrix safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING', 'Manifest progress_updates must expose the latest activities-remaining safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2033,7 +2033,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest structured target-matrix progress ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest activities-remaining progress ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -3253,6 +3253,37 @@ try {
         && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Structured progress target-matrix code optimization review must record focused progress, manifest, and commercial report checks.',
+    );
+    const progressActivitiesRemainingDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING');
+    assert(progressActivitiesRemainingDecision, 'Manifest must record the progress activities-remaining implementation decision.');
+    assert(
+      progressActivitiesRemainingDecision?.chosen_variant === 'minimal focused activities-remaining digest derivation',
+      'Progress activities-remaining decision must record the minimal focused derivation variant.',
+    );
+    assert(
+      Array.isArray(progressActivitiesRemainingDecision?.files_changed)
+        && progressActivitiesRemainingDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && progressActivitiesRemainingDecision.files_changed.includes('scripts/report-progress-digest-readiness.mjs')
+        && progressActivitiesRemainingDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && progressActivitiesRemainingDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && progressActivitiesRemainingDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Progress activities-remaining decision must record the manifest, focused digest, checkers, and unit test files.',
+    );
+    assert(
+      /does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(progressActivitiesRemainingDecision?.proof_boundary ?? ''),
+      'Progress activities-remaining decision must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const progressActivitiesRemainingReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-ACTIVITIES-REMAINING');
+    assert(progressActivitiesRemainingReview, 'Manifest must record the progress activities-remaining code optimization review.');
+    assert(progressActivitiesRemainingReview?.policy === 'strict', 'Progress activities-remaining code optimization review must use strict policy.');
+    assert(progressActivitiesRemainingReview?.verdict === 'pass', 'Progress activities-remaining code optimization review must pass.');
+    assert(
+      Array.isArray(progressActivitiesRemainingReview?.tests_or_checks)
+        && progressActivitiesRemainingReview.tests_or_checks.some((check) => /report:progress-digest-readiness -- --skip-probes/.test(check))
+        && progressActivitiesRemainingReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && progressActivitiesRemainingReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && progressActivitiesRemainingReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Progress activities-remaining code optimization review must record focused progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
