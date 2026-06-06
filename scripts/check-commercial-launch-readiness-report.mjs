@@ -476,6 +476,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal derived post-deploy live-proof operator handoff packet'), 'Code optimization report must include the selected minimal post-deploy live-proof operator handoff packet patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the production approval operator handoff packet safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal derived production approval operator handoff packet'), 'Code optimization report must include the selected minimal production approval operator handoff packet patch.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the launch action operator handoff packet safe-fix task id.');
+  assert(codeOptimizationSection.includes('minimal derived launch action operator handoff packet'), 'Code optimization report must include the selected minimal launch action operator handoff packet patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES'), 'Code optimization report must include the release toolchain proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT'), 'Code optimization report must include the Supabase advisor focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES'), 'Code optimization report must include the Supabase advisor proof-handle safe-fix task id.');

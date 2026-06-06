@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -625,6 +625,7 @@ describe('launch evidence manifest report', () => {
         proof_command?: string;
         proof_type?: string;
         proof_boundary?: string;
+        status?: string;
       }) => item.phase,
     );
     expect(launchActionsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
@@ -672,6 +673,79 @@ describe('launch evidence manifest report', () => {
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
+    const launchActionOperatorHandoffPacket = manifest.launch_action_queue.operator_handoff_packet;
+    expect(launchActionOperatorHandoffPacket.status).toBe('blocked');
+    expect(launchActionOperatorHandoffPacket.proof_type).toBe('launch_action_operator_handoff_packet');
+    expect(launchActionOperatorHandoffPacket.source).toBe('launch_action_queue.items');
+    expect(launchActionOperatorHandoffPacket.evidence).toContain('Launch action operator handoff packet');
+    expect(launchActionOperatorHandoffPacket.proof_boundary).toMatch(/planning evidence only|does not execute queue rows|clear source provenance|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i);
+    expect(launchActionOperatorHandoffPacket.stop_gate).toMatch(/Do not execute launch actions|mark blockers ready|request production approval|deploy-production|netlify deploy|contact buyers|access Supabase|commercial-ready status/i);
+    expect(launchActionOperatorHandoffPacket.item_count).toBe(manifest.launch_action_queue.items.length);
+    expect(launchActionOperatorHandoffPacket.blocked_count).toBe(
+      launchActionOperatorHandoffPacket.items.filter((item: { blocks_launch_clearance: boolean }) => item.blocks_launch_clearance).length,
+    );
+    expect(launchActionOperatorHandoffPacket.ready_count).toBe(
+      launchActionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'ready').length,
+    );
+    expect(launchActionOperatorHandoffPacket.manual_stop_count).toBe(
+      launchActionOperatorHandoffPacket.items.filter((item: { status: string }) => item.status === 'manual_stop').length,
+    );
+    expect(launchActionOperatorHandoffPacket.owner_approval_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.external_account_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.buyer_evidence_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.read_only_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.source_provenance_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.release_gate_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.post_deploy_boundary_count).toBe(1);
+    expect(launchActionOperatorHandoffPacket.items.map((item: { phase: string }) => item.phase)).toEqual(
+      manifest.launch_action_queue.items.map((item: { phase: string }) => item.phase),
+    );
+    const launchOperatorRowsByPhase = mapBy(
+      launchActionOperatorHandoffPacket.items,
+      (item: {
+        phase: string;
+        execution_gate?: string;
+        proof_command?: string;
+        proof_type?: string;
+        status?: string;
+        blocks_launch_clearance?: boolean;
+        owner_approval_required?: boolean;
+        external_account_required?: boolean;
+        buyer_evidence_required?: boolean;
+        read_only_required?: boolean;
+        source_provenance_required?: boolean;
+        release_gate_required?: boolean;
+        post_deploy_boundary?: boolean;
+        can_execute_from_packet?: boolean;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => item.phase,
+    );
+    expect(launchOperatorRowsByPhase.get('source_provenance')?.execution_gate).toBe('resolve_source_provenance_first');
+    expect(launchOperatorRowsByPhase.get('source_provenance')?.source_provenance_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('launch_evidence_validation')?.execution_gate).toBe('attach_launch_validation_evidence');
+    expect(launchOperatorRowsByPhase.get('release_toolchain')?.execution_gate).toBe('release_toolchain_after_clean_source');
+    expect(launchOperatorRowsByPhase.get('release_toolchain')?.release_gate_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('branch_review')?.execution_gate).toBe('read_only_branch_review_before_approval');
+    expect(launchOperatorRowsByPhase.get('branch_review')?.read_only_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('supabase_advisor')?.execution_gate).toBe('supabase_advisor_after_authorization');
+    expect(launchOperatorRowsByPhase.get('supabase_advisor')?.external_account_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_approval');
+    expect(launchOperatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('production_approval')?.execution_gate).toBe('owner_approval_after_all_prelaunch_gates');
+    expect(launchOperatorRowsByPhase.get('production_approval')?.owner_approval_required).toBe(true);
+    expect(launchOperatorRowsByPhase.get('post_deploy_live_proof')?.execution_gate).toBe('post_deploy_proof_after_approved_deploy');
+    expect(launchOperatorRowsByPhase.get('post_deploy_live_proof')?.post_deploy_boundary).toBe(true);
+    for (const row of launchActionOperatorHandoffPacket.items) {
+      const queueRow = launchActionsByPhase.get(row.phase);
+      expect(row.proof_command).toBe(queueRow?.proof_command);
+      expect(row.proof_type).toBe(queueRow?.proof_type);
+      expect(row.status).toBe(queueRow?.status);
+      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready');
+      expect(row.can_execute_from_packet).toBe(false);
+      expect(row.proof_boundary).toMatch(/planning evidence only|does not execute the row|clear blockers|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i);
+      expect(row.stop_gate).toMatch(/Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i);
+    }
     expect(manifest.production_approval.status).toBe('blocked');
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.production_approval.evidence).toContain('Production approval prerequisite queue');
@@ -1147,9 +1221,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(52);
+    expect(manifest.implementation_decisions).toHaveLength(53);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(52);
+    expect(manifest.code_optimization_reviews).toHaveLength(53);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1234,6 +1308,9 @@ describe('launch evidence manifest report', () => {
       'Leave production approval operator actions implicit in production_approval.request_packet rows.',
       'Request owner approval, run production deploy request, deploy, or mutate production from the handoff phase.',
       'Create a separate production approval runbook artifact or file.',
+      'Leave launch action operator sequencing implicit in launch_action_queue rows.',
+      'Execute source cleanup, release-readiness, branch operations, buyer outreach, Supabase advisor access, owner approval request, deploy, or live proof from the handoff phase.',
+      'Create a separate launch action runbook artifact or file.',
       'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
@@ -2495,6 +2572,34 @@ describe('launch evidence manifest report', () => {
     expect(productionApprovalOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:production-approval-readiness -- --skip-probes',
       'pnpm run check:production-approval-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const launchActionOperatorHandoffPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(launchActionOperatorHandoffPacketDecision).toBeTruthy();
+    expect(launchActionOperatorHandoffPacketDecision.chosen_variant).toBe('minimal derived launch action operator handoff packet');
+    expect(launchActionOperatorHandoffPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-launch-action-readiness.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchActionReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(launchActionOperatorHandoffPacketDecision.proof_boundary).toMatch(/does not execute launch actions|commit|unstage|clear source provenance|run release-readiness|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|mutate live services|browser smoke|hosted\/live parity|raise launch status/i);
+    const launchActionOperatorHandoffPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(launchActionOperatorHandoffPacketReview).toBeTruthy();
+    expect(launchActionOperatorHandoffPacketReview.policy).toBe('strict');
+    expect(launchActionOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:launch-action-readiness -- --skip-probes',
+      'pnpm run check:launch-action-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

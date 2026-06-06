@@ -100,6 +100,13 @@ if (failures.length === 0) {
       assertContains(stdout, `| ${phase} |`, `Report must include launch action phase ${phase}.`);
     }
     assertContains(stdout, '## Lane Status Summary', 'Report must include the lane status summary.');
+    assertContains(stdout, '## Launch Action Operator Handoff Packet', 'Report must include the launch action operator handoff packet.');
+    assertContains(stdout, 'launch_action_operator_handoff_packet', 'Report must classify the launch action operator handoff packet proof type.');
+    assertContains(stdout, 'launch_action_queue.items', 'Report must source the operator handoff packet from launch action queue rows.');
+    assertContains(stdout, 'Execution Gate', 'Report must render operator execution gates.');
+    assertContains(stdout, 'Can Execute From Packet', 'Report must render the packet execution boundary.');
+    assertContains(stdout, 'Owner Approval Required', 'Report must render the owner approval flag.');
+    assertContains(stdout, 'planning evidence only', 'Report must preserve planning-only operator handoff boundaries.');
     assertContains(stdout, 'corepack pnpm run report:source-provenance-readiness', 'Report must include the source provenance focused command.');
     assertContains(stdout, 'corepack pnpm run report:launch-evidence-validation-readiness', 'Report must include the launch evidence validation focused command.');
     assertContains(stdout, 'corepack pnpm run check:launch-evidence-validation-report', 'Report must include the launch evidence validation checker command.');
@@ -111,13 +118,26 @@ if (failures.length === 0) {
 
   if (payload) {
     const queue = payload.launch_action_queue ?? {};
+    const operatorHandoffPacket = queue.operator_handoff_packet ?? {};
     const items = queue.items ?? [];
+    const operatorItems = operatorHandoffPacket.items ?? [];
     const phases = items.map((item) => item.phase);
     const rowsByPhase = new Map(items.map((item) => [item.phase, item]));
+    const operatorRowsByPhase = new Map(operatorItems.map((item) => [item.phase, item]));
     const laneRows = payload.lane_status_summary ?? [];
     const lanes = laneRows.map((item) => item.lane);
     const lanesByName = new Map(laneRows.map((item) => [item.lane, item]));
     const buyerLane = lanesByName.get('buyer_evidence');
+    const expectedExecutionGates = {
+      source_provenance: 'resolve_source_provenance_first',
+      launch_evidence_validation: 'attach_launch_validation_evidence',
+      release_toolchain: 'release_toolchain_after_clean_source',
+      branch_review: 'read_only_branch_review_before_approval',
+      supabase_advisor: 'supabase_advisor_after_authorization',
+      buyer_evidence: 'buyer_evidence_before_approval',
+      production_approval: 'owner_approval_after_all_prelaunch_gates',
+      post_deploy_live_proof: 'post_deploy_proof_after_approved_deploy',
+    };
 
     assert(payload.schema_version === 1, 'Focused launch action JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused launch action JSON must preserve the blocked launch decision.');
@@ -166,6 +186,48 @@ if (failures.length === 0) {
         && /check:post-deploy-live-proof-report/.test(rowsByPhase.get('post_deploy_live_proof')?.proof_command ?? ''),
       'Post-deploy row must point to the focused post-deploy live proof report/check.',
     );
+    assert(operatorHandoffPacket.proof_type === 'launch_action_operator_handoff_packet', 'Operator handoff packet must preserve its proof type.');
+    assert(operatorHandoffPacket.source === 'launch_action_queue.items', 'Operator handoff packet must source launch action queue rows.');
+    assert(operatorHandoffPacket.status === 'blocked', 'Operator handoff packet must remain blocked while launch action rows are blocked.');
+    assert(operatorHandoffPacket.item_count === items.length, 'Operator handoff item count must match launch action rows.');
+    assert(operatorItems.length === items.length, 'Operator handoff items must mirror launch action rows.');
+    assert(operatorHandoffPacket.blocked_count === operatorItems.filter((item) => item.blocks_launch_clearance).length, 'Operator handoff blocked_count must match launch-blocking rows.');
+    assert(operatorHandoffPacket.ready_count === operatorItems.filter((item) => item.status === 'ready').length, 'Operator handoff ready_count must match ready rows.');
+    assert(operatorHandoffPacket.manual_stop_count === operatorItems.filter((item) => item.status === 'manual_stop').length, 'Operator handoff manual_stop_count must match manual-stop rows.');
+    assert(operatorHandoffPacket.owner_approval_count === operatorItems.filter((item) => item.owner_approval_required).length, 'Operator handoff owner_approval_count must match owner approval rows.');
+    assert(operatorHandoffPacket.external_account_count === operatorItems.filter((item) => item.external_account_required).length, 'Operator handoff external_account_count must match external-account rows.');
+    assert(operatorHandoffPacket.buyer_evidence_count === operatorItems.filter((item) => item.buyer_evidence_required).length, 'Operator handoff buyer_evidence_count must match buyer evidence rows.');
+    assert(operatorHandoffPacket.read_only_count === operatorItems.filter((item) => item.read_only_required).length, 'Operator handoff read_only_count must match read-only rows.');
+    assert(operatorHandoffPacket.source_provenance_count === operatorItems.filter((item) => item.source_provenance_required).length, 'Operator handoff source_provenance_count must match source provenance rows.');
+    assert(operatorHandoffPacket.release_gate_count === operatorItems.filter((item) => item.release_gate_required).length, 'Operator handoff release_gate_count must match release gate rows.');
+    assert(operatorHandoffPacket.post_deploy_boundary_count === operatorItems.filter((item) => item.post_deploy_boundary).length, 'Operator handoff post_deploy_boundary_count must match post-deploy rows.');
+    assert(operatorHandoffPacket.evidence.includes('Launch action operator handoff packet'), 'Operator handoff evidence must include a packet marker.');
+    assert(/planning evidence only|does not execute queue rows|clear blockers|mutate source|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i.test(operatorHandoffPacket.proof_boundary ?? ''), 'Operator handoff proof_boundary must preserve planning-only launch boundaries.');
+    assert(/Do not execute launch actions|mark blockers ready|request production approval|deploy-production|netlify deploy|contact buyers|access Supabase|commercial-ready status/i.test(operatorHandoffPacket.stop_gate ?? ''), 'Operator handoff stop_gate must reject execution, approval, deploy, external-action, and readiness claims.');
+    assert(operatorItems.map((item) => item.phase).join(',') === phases.join(','), 'Operator handoff rows must preserve launch action order.');
+    for (const [index, item] of operatorItems.entries()) {
+      const queueRow = items[index] ?? {};
+      assert(Number.isInteger(item.rank), `Operator handoff row ${index} rank must be an integer.`);
+      assert(item.phase === queueRow.phase, `Operator handoff row ${index} phase must match queue row.`);
+      assert(item.owner === queueRow.owner, `Operator handoff row ${index} owner must match queue row.`);
+      assert(item.status === queueRow.status, `Operator handoff row ${index} status must match queue row.`);
+      assert(item.blocker === queueRow.blocker, `Operator handoff row ${index} blocker must match queue row.`);
+      assert(item.action === queueRow.action, `Operator handoff row ${index} action must match queue row.`);
+      assert(item.proof_command === queueRow.proof_command, `Operator handoff row ${index} proof_command must match queue row.`);
+      assert(item.proof_type === queueRow.proof_type, `Operator handoff row ${index} proof_type must match queue row.`);
+      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready'), `Operator handoff row ${index} blocks_launch_clearance must derive from queue row status.`);
+      assert(item.can_execute_from_packet === false, `Operator handoff row ${index} must not be executable from the packet.`);
+      assert(item.execution_gate === expectedExecutionGates[item.phase], `Operator handoff row ${index} must expose the expected execution gate.`);
+      assert(/planning evidence only|does not execute the row|clear blockers|mutate source|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i.test(item.proof_boundary ?? ''), `Operator handoff row ${index} proof_boundary must preserve planning-only semantics.`);
+      assert(/Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i.test(item.stop_gate ?? ''), `Operator handoff row ${index} stop_gate must reject packet execution.`);
+    }
+    assert(operatorRowsByPhase.get('source_provenance')?.source_provenance_required === true, 'Operator handoff source row must set source_provenance_required.');
+    assert(operatorRowsByPhase.get('release_toolchain')?.release_gate_required === true, 'Operator handoff release row must set release_gate_required.');
+    assert(operatorRowsByPhase.get('branch_review')?.read_only_required === true, 'Operator handoff branch row must set read_only_required.');
+    assert(operatorRowsByPhase.get('supabase_advisor')?.external_account_required === true, 'Operator handoff Supabase row must set external_account_required.');
+    assert(operatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required === true, 'Operator handoff buyer row must set buyer_evidence_required.');
+    assert(operatorRowsByPhase.get('production_approval')?.owner_approval_required === true, 'Operator handoff approval row must set owner_approval_required.');
+    assert(operatorRowsByPhase.get('post_deploy_live_proof')?.post_deploy_boundary === true, 'Operator handoff post-deploy row must set post_deploy_boundary.');
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
     assert(buyerLane?.status === 'blocked', 'Buyer evidence lane summary must remain blocked while hard-gate or acquisition evidence is skipped/open/non-ready.');
     assert(/open_hard_gate_rows=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate open row count.');
@@ -184,4 +246,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch action readiness report check passed: focused action queue, lane status summary, command handles, and no-execution boundaries are consistent.');
+console.log('Launch action readiness report check passed: focused action queue, operator handoff packet, lane status summary, command handles, and no-execution boundaries are consistent.');

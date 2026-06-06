@@ -1254,6 +1254,116 @@ try {
       manifest.launch_action_queue.items.some((item) => /no checkout|no .*merge|no .*push|no .*deploy/i.test(item.stop_gate)),
       'Manifest launch action queue must preserve branch/deploy no-mutation stop gates.',
     );
+    const launchActionOperatorHandoffPacket = manifest.launch_action_queue.operator_handoff_packet;
+    const launchActionOperatorExecutionGatesByPhase = {
+      source_provenance: 'resolve_source_provenance_first',
+      launch_evidence_validation: 'attach_launch_validation_evidence',
+      release_toolchain: 'release_toolchain_after_clean_source',
+      branch_review: 'read_only_branch_review_before_approval',
+      supabase_advisor: 'supabase_advisor_after_authorization',
+      buyer_evidence: 'buyer_evidence_before_approval',
+      production_approval: 'owner_approval_after_all_prelaunch_gates',
+      post_deploy_live_proof: 'post_deploy_proof_after_approved_deploy',
+    };
+    assert(typeof launchActionOperatorHandoffPacket?.evidence === 'string', 'Manifest launch_action_queue.operator_handoff_packet.evidence must be set.');
+    assert(launchActionOperatorHandoffPacket.evidence.includes('Launch action operator handoff packet'), 'Manifest launch action operator handoff packet evidence must include a packet marker.');
+    assert(launchActionOperatorHandoffPacket.proof_type === 'launch_action_operator_handoff_packet', 'Manifest launch action operator handoff packet proof_type must be launch_action_operator_handoff_packet.');
+    assert(launchActionOperatorHandoffPacket.source === 'launch_action_queue.items', 'Manifest launch action operator handoff packet must source launch action queue items.');
+    assert(launchActionOperatorHandoffPacket.status === (manifest.launch_action_queue.status === 'ready' ? 'ready' : 'blocked'), 'Launch action operator handoff packet status must derive from launch action queue status.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.item_count), 'Manifest launch_action_queue.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.blocked_count), 'Manifest launch_action_queue.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.ready_count), 'Manifest launch_action_queue.operator_handoff_packet.ready_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.manual_stop_count), 'Manifest launch_action_queue.operator_handoff_packet.manual_stop_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.owner_approval_count), 'Manifest launch_action_queue.operator_handoff_packet.owner_approval_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.external_account_count), 'Manifest launch_action_queue.operator_handoff_packet.external_account_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.buyer_evidence_count), 'Manifest launch_action_queue.operator_handoff_packet.buyer_evidence_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.read_only_count), 'Manifest launch_action_queue.operator_handoff_packet.read_only_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.source_provenance_count), 'Manifest launch_action_queue.operator_handoff_packet.source_provenance_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.release_gate_count), 'Manifest launch_action_queue.operator_handoff_packet.release_gate_count must be an integer or null.');
+    assert(hasIntegerOrNull(launchActionOperatorHandoffPacket.post_deploy_boundary_count), 'Manifest launch_action_queue.operator_handoff_packet.post_deploy_boundary_count must be an integer or null.');
+    assert(Array.isArray(launchActionOperatorHandoffPacket.items), 'Manifest launch_action_queue.operator_handoff_packet.items must be a list.');
+    assert(
+      launchActionOperatorHandoffPacket.item_count === manifest.launch_action_queue.items.length,
+      'Launch action operator handoff packet item_count must match launch action queue items length.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.blocked_count === launchActionOperatorHandoffPacket.items.filter((item) => item.blocks_launch_clearance).length,
+      'Launch action operator handoff packet blocked_count must match launch-blocking rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.ready_count === launchActionOperatorHandoffPacket.items.filter((item) => item.status === 'ready').length,
+      'Launch action operator handoff packet ready_count must match ready rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.manual_stop_count === launchActionOperatorHandoffPacket.items.filter((item) => item.status === 'manual_stop').length,
+      'Launch action operator handoff packet manual_stop_count must match manual-stop rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.owner_approval_count === launchActionOperatorHandoffPacket.items.filter((item) => item.owner_approval_required).length,
+      'Launch action operator handoff packet owner_approval_count must match owner-approval rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.external_account_count === launchActionOperatorHandoffPacket.items.filter((item) => item.external_account_required).length,
+      'Launch action operator handoff packet external_account_count must match external-account rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.buyer_evidence_count === launchActionOperatorHandoffPacket.items.filter((item) => item.buyer_evidence_required).length,
+      'Launch action operator handoff packet buyer_evidence_count must match buyer evidence rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.read_only_count === launchActionOperatorHandoffPacket.items.filter((item) => item.read_only_required).length,
+      'Launch action operator handoff packet read_only_count must match read-only rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.source_provenance_count === launchActionOperatorHandoffPacket.items.filter((item) => item.source_provenance_required).length,
+      'Launch action operator handoff packet source_provenance_count must match source provenance rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.release_gate_count === launchActionOperatorHandoffPacket.items.filter((item) => item.release_gate_required).length,
+      'Launch action operator handoff packet release_gate_count must match release rows.',
+    );
+    assert(
+      launchActionOperatorHandoffPacket.post_deploy_boundary_count === launchActionOperatorHandoffPacket.items.filter((item) => item.post_deploy_boundary).length,
+      'Launch action operator handoff packet post_deploy_boundary_count must match post-deploy rows.',
+    );
+    assert(
+      JSON.stringify((launchActionOperatorHandoffPacket.items ?? []).map((item) => item.phase)) === JSON.stringify((manifest.launch_action_queue.items ?? []).map((item) => item.phase)),
+      'Launch action operator handoff packet must include exactly launch action queue phases in order.',
+    );
+    assert(typeof launchActionOperatorHandoffPacket.proof_boundary === 'string' && /planning evidence only|does not execute queue rows|commit|clear source provenance|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i.test(launchActionOperatorHandoffPacket.proof_boundary), 'Launch action operator handoff packet proof_boundary must preserve planning-only launch semantics.');
+    assert(typeof launchActionOperatorHandoffPacket.stop_gate === 'string' && /Do not execute launch actions|mark blockers ready|request production approval|deploy-production|netlify deploy|contact buyers|access Supabase|commercial-ready status/i.test(launchActionOperatorHandoffPacket.stop_gate), 'Launch action operator handoff packet stop_gate must reject execution, approval, deploy, external-action, and readiness claims.');
+    const launchOperatorRowsByPhase = new Map((launchActionOperatorHandoffPacket.items ?? []).map((item) => [item.phase, item]));
+    for (const [index, item] of (launchActionOperatorHandoffPacket.items ?? []).entries()) {
+      const queueRow = (manifest.launch_action_queue.items ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `launch_action_queue.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.phase === queueRow.phase, `launch_action_queue.operator_handoff_packet.items[${index}].phase must match the launch action row.`);
+      assert(item.owner === queueRow.owner, `launch_action_queue.operator_handoff_packet.items[${index}].owner must match the launch action row.`);
+      assert(item.status === queueRow.status, `launch_action_queue.operator_handoff_packet.items[${index}].status must match the launch action row.`);
+      assert(item.blocker === queueRow.blocker, `launch_action_queue.operator_handoff_packet.items[${index}].blocker must match the launch action row.`);
+      assert(item.action === queueRow.action, `launch_action_queue.operator_handoff_packet.items[${index}].action must match the launch action row.`);
+      assert(item.proof_command === queueRow.proof_command, `launch_action_queue.operator_handoff_packet.items[${index}].proof_command must match the launch action row.`);
+      assert(item.proof_type === queueRow.proof_type, `launch_action_queue.operator_handoff_packet.items[${index}].proof_type must match the launch action row.`);
+      assert(item.blocks_launch_clearance === (queueRow.status !== 'ready'), `launch_action_queue.operator_handoff_packet.items[${index}].blocks_launch_clearance must derive from launch action row status.`);
+      assert(item.can_execute_from_packet === false, `launch_action_queue.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.execution_gate === launchActionOperatorExecutionGatesByPhase[item.phase], `launch_action_queue.operator_handoff_packet.items[${index}] must expose the expected execution gate.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not execute the row|clear blockers|mutate source|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i.test(item.proof_boundary), `launch_action_queue.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only launch semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i.test(item.stop_gate), `launch_action_queue.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+    }
+    assert(launchOperatorRowsByPhase.get('source_provenance')?.execution_gate === 'resolve_source_provenance_first', 'Launch action operator source row must require resolve_source_provenance_first.');
+    assert(launchOperatorRowsByPhase.get('source_provenance')?.source_provenance_required === true, 'Launch action operator source row must mark source_provenance_required.');
+    assert(launchOperatorRowsByPhase.get('launch_evidence_validation')?.execution_gate === 'attach_launch_validation_evidence', 'Launch action operator validation row must require attach_launch_validation_evidence.');
+    assert(launchOperatorRowsByPhase.get('release_toolchain')?.execution_gate === 'release_toolchain_after_clean_source', 'Launch action operator release row must require release_toolchain_after_clean_source.');
+    assert(launchOperatorRowsByPhase.get('release_toolchain')?.release_gate_required === true, 'Launch action operator release row must mark release_gate_required.');
+    assert(launchOperatorRowsByPhase.get('branch_review')?.execution_gate === 'read_only_branch_review_before_approval', 'Launch action operator branch row must require read_only_branch_review_before_approval.');
+    assert(launchOperatorRowsByPhase.get('branch_review')?.read_only_required === true, 'Launch action operator branch row must mark read_only_required.');
+    assert(launchOperatorRowsByPhase.get('supabase_advisor')?.execution_gate === 'supabase_advisor_after_authorization', 'Launch action operator Supabase row must require supabase_advisor_after_authorization.');
+    assert(launchOperatorRowsByPhase.get('supabase_advisor')?.external_account_required === true, 'Launch action operator Supabase row must mark external_account_required.');
+    assert(launchOperatorRowsByPhase.get('buyer_evidence')?.execution_gate === 'buyer_evidence_before_approval', 'Launch action operator buyer row must require buyer_evidence_before_approval.');
+    assert(launchOperatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required === true, 'Launch action operator buyer row must mark buyer_evidence_required.');
+    assert(launchOperatorRowsByPhase.get('production_approval')?.execution_gate === 'owner_approval_after_all_prelaunch_gates', 'Launch action operator production approval row must require owner_approval_after_all_prelaunch_gates.');
+    assert(launchOperatorRowsByPhase.get('production_approval')?.owner_approval_required === true, 'Launch action operator production approval row must mark owner_approval_required.');
+    assert(launchOperatorRowsByPhase.get('post_deploy_live_proof')?.execution_gate === 'post_deploy_proof_after_approved_deploy', 'Launch action operator post-deploy row must require post_deploy_proof_after_approved_deploy.');
+    assert(launchOperatorRowsByPhase.get('post_deploy_live_proof')?.post_deploy_boundary === true, 'Launch action operator post-deploy row must mark post_deploy_boundary.');
     assert(typeof manifest.production_approval?.evidence === 'string', 'Manifest production_approval.evidence must be set.');
     assert(manifest.production_approval.evidence.includes('Production approval prerequisite queue'), 'Manifest production approval evidence must include a queue marker.');
     assert(manifest.production_approval.explicit_owner_approval === false, 'Manifest must not imply explicit owner production approval is granted.');
@@ -2521,7 +2631,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest production approval operator handoff packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest launch action operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4068,6 +4178,41 @@ try {
         && productionApprovalOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Production approval operator handoff packet code optimization review must record focused production approval, progress, manifest, and commercial report checks.',
     );
+    const launchActionOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET');
+    assert(launchActionOperatorHandoffPacketDecision, 'Manifest must record the launch action operator handoff packet implementation decision.');
+    assert(
+      launchActionOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived launch action operator handoff packet',
+      'Launch action operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(launchActionOperatorHandoffPacketDecision?.files_changed)
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-action-readiness.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts')
+        && launchActionOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Launch action operator handoff packet decision must record the manifest, focused launch action report, checkers, and unit test files.',
+    );
+    assert(
+      /does not execute launch actions|commit|unstage|clear source provenance|run release-readiness|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|mutate live services|browser smoke|hosted\/live parity|raise launch status/i.test(launchActionOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Launch action operator handoff packet decision must preserve no-execution, no-source-mutation, no-release, no-branch-mutation, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const launchActionOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET');
+    assert(launchActionOperatorHandoffPacketReview, 'Manifest must record the launch action operator handoff packet code optimization review.');
+    assert(launchActionOperatorHandoffPacketReview?.policy === 'strict', 'Launch action operator handoff packet code optimization review must use strict policy.');
+    assert(launchActionOperatorHandoffPacketReview?.verdict === 'pass', 'Launch action operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionOperatorHandoffPacketReview?.tests_or_checks)
+        && launchActionOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:launch-action-readiness -- --skip-probes/.test(check))
+        && launchActionOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-action-report -- --skip-probes/.test(check))
+        && launchActionOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && launchActionOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && launchActionOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Launch action operator handoff packet code optimization review must record focused launch action, progress, manifest, and commercial report checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
@@ -4129,4 +4274,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, production approval operator handoff packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, code optimization evidence, pain map, target map, buyer boundary, and schema validation are consistent.');
+console.log('Launch evidence manifest check passed: blocked decision, proof buckets, buyer evidence, buyer hard-gate deficits, buyer evidence acquisition matrix, buyer evidence remediation queue, Supabase advisor evidence, Supabase advisor clearance deficits, Supabase advisor remediation queue, release preflight deficits, release toolchain probe ledger, release preflight clearance matrix, release preflight remediation queue, launch action queue, launch action operator handoff packet, launch evidence validation prerequisite, production approval prerequisite queue, production approval request packet, production approval operator handoff packet, post-deploy live proof gate queue, source provenance isolation ledger, source provenance resolution queue, canonical-head decision deficits, canonical-head resolution queue, source provenance, branch families, branch freshness, branch review queue, review-first branch packets, top branch packet, canonical head comparison, code optimization evidence, pain map, target map, buyer boundary, and schema validation are consistent.');

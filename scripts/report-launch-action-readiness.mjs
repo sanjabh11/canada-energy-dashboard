@@ -216,6 +216,7 @@ function focusedPayload(manifest) {
 function renderMarkdown(payload) {
   const queue = payload.launch_action_queue ?? {};
   const items = queue.items ?? [];
+  const operatorHandoffPacket = queue.operator_handoff_packet ?? {};
   const actionRows = items.map((item) => [
     item.rank,
     item.phase,
@@ -227,6 +228,26 @@ function renderMarkdown(payload) {
     item.proof_boundary,
     item.stop_gate,
     item.status,
+  ]);
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.phase,
+    item.owner,
+    item.status,
+    item.execution_gate,
+    item.proof_command,
+    item.proof_type,
+    item.blocks_launch_clearance ? 'yes' : 'no',
+    item.owner_approval_required ? 'yes' : 'no',
+    item.external_account_required ? 'yes' : 'no',
+    item.buyer_evidence_required ? 'yes' : 'no',
+    item.read_only_required ? 'yes' : 'no',
+    item.source_provenance_required ? 'yes' : 'no',
+    item.release_gate_required ? 'yes' : 'no',
+    item.post_deploy_boundary ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
   ]);
   const laneRows = (payload.lane_status_summary ?? []).map((item) => [
     item.lane,
@@ -257,6 +278,7 @@ function renderMarkdown(payload) {
     '## Summary',
     '',
     `- Queue evidence: ${queue.evidence ?? 'No launch action queue evidence captured.'}`,
+    `- Operator handoff packet: \`${operatorHandoffPacket.status ?? 'unknown'}; blocked=${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}\``,
     `- First open action: ${payload.first_open_action ? `${payload.first_open_action.rank}:${payload.first_open_action.phase}:${payload.first_open_action.status}` : 'none'}`,
     '',
     '## Launch Blocker Action Queue',
@@ -266,6 +288,22 @@ function renderMarkdown(payload) {
       actionRows.length > 0
         ? actionRows
         : [['n/a', 'queue_missing', 'not available', 'operator', 'Regenerate the launch evidence manifest.', 'corepack pnpm run report:launch-evidence-manifest', 'sequenced_launch_action_queue', payload.proof_boundary, payload.stop_gate, 'missing']],
+    ),
+    '',
+    '## Launch Action Operator Handoff Packet',
+    '',
+    `Evidence: ${operatorHandoffPacket.evidence ?? 'No launch action operator handoff packet evidence captured.'}`,
+    '',
+    `Proof type: \`${operatorHandoffPacket.proof_type ?? 'unknown'}\``,
+    `Source: \`${operatorHandoffPacket.source ?? 'unknown'}\``,
+    `Proof boundary: ${operatorHandoffPacket.proof_boundary ?? payload.proof_boundary}`,
+    `Stop gate: ${operatorHandoffPacket.stop_gate ?? payload.stop_gate}`,
+    '',
+    renderTable(
+      ['Rank', 'Phase', 'Owner', 'Status', 'Execution Gate', 'Proof Command', 'Proof Type', 'Blocks Launch Clearance', 'Owner Approval Required', 'External Account Required', 'Buyer Evidence Required', 'Read Only Required', 'Source Provenance Required', 'Release Gate Required', 'Post Deploy Boundary', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'],
+      operatorHandoffRows.length > 0
+        ? operatorHandoffRows
+        : [['n/a', 'queue_missing', 'operator', 'missing', 'launch_action_review', 'corepack pnpm run report:launch-evidence-manifest', 'launch_action_operator_handoff_packet', 'yes', 'no', 'no', 'no', 'no', 'no', 'no', 'no', 'no', payload.proof_boundary, payload.stop_gate]],
     ),
     '',
     '## Lane Status Summary',
@@ -300,7 +338,8 @@ if (values.has('output')) {
 process.stdout.write(output);
 
 const blocked = payload.launch_action_queue?.status !== 'ready'
-  || payload.launch_action_queue?.blocked_count !== 0;
+  || payload.launch_action_queue?.blocked_count !== 0
+  || payload.launch_action_queue?.operator_handoff_packet?.status !== 'ready';
 
 if (failOnBlocker && blocked) {
   console.error(`Launch action queue remains ${payload.launch_action_queue?.status ?? 'unknown'}; this report does not clear blockers, deploy, or create launch readiness.`);

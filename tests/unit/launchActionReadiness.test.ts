@@ -14,6 +14,28 @@ type LaunchActionRow = {
   proof_command: string;
   proof_type: string;
   status: string;
+  owner: string;
+  blocker: string;
+  action: string;
+};
+
+type LaunchActionOperatorHandoffRow = {
+  phase: string;
+  execution_gate: string;
+  proof_command: string;
+  proof_type: string;
+  status: string;
+  blocks_launch_clearance: boolean;
+  owner_approval_required: boolean;
+  external_account_required: boolean;
+  buyer_evidence_required: boolean;
+  read_only_required: boolean;
+  source_provenance_required: boolean;
+  release_gate_required: boolean;
+  post_deploy_boundary: boolean;
+  can_execute_from_packet: boolean;
+  proof_boundary: string;
+  stop_gate: string;
 };
 
 type LaneStatusRow = {
@@ -55,6 +77,13 @@ describe('launch action readiness report', () => {
     expect(stdout).toContain('does not commit, unstage, stash, revert, clear source provenance');
     expect(stdout).toMatch(/contact buyers[\s\S]*authorize Supabase[\s\S]*request owner approval[\s\S]*deploy/i);
     expect(stdout).toContain('Launch Blocker Action Queue');
+    expect(stdout).toContain('Launch Action Operator Handoff Packet');
+    expect(stdout).toContain('launch_action_operator_handoff_packet');
+    expect(stdout).toContain('launch_action_queue.items');
+    expect(stdout).toContain('Execution Gate');
+    expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('Owner Approval Required');
+    expect(stdout).toContain('planning evidence only');
     for (const phase of [
       'source_provenance',
       'launch_evidence_validation',
@@ -89,6 +118,11 @@ describe('launch action readiness report', () => {
     const payload = JSON.parse(stdout);
     const items: LaunchActionRow[] = payload.launch_action_queue.items;
     const rowsByPhase = new Map<string, LaunchActionRow>(items.map((item) => [
+      item.phase,
+      item,
+    ]));
+    const operatorItems: LaunchActionOperatorHandoffRow[] = payload.launch_action_queue.operator_handoff_packet.items;
+    const operatorRowsByPhase = new Map<string, LaunchActionOperatorHandoffRow>(operatorItems.map((item) => [
       item.phase,
       item,
     ]));
@@ -139,6 +173,54 @@ describe('launch action readiness report', () => {
     expect(rowsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
     expect(rowsByPhase.get('post_deploy_live_proof')?.proof_command).toContain('report:post-deploy-live-proof-readiness');
     expect(rowsByPhase.get('post_deploy_live_proof')?.proof_command).toContain('check:post-deploy-live-proof-report');
+    expect(payload.launch_action_queue.operator_handoff_packet.proof_type).toBe('launch_action_operator_handoff_packet');
+    expect(payload.launch_action_queue.operator_handoff_packet.source).toBe('launch_action_queue.items');
+    expect(payload.launch_action_queue.operator_handoff_packet.status).toBe('blocked');
+    expect(payload.launch_action_queue.operator_handoff_packet.item_count).toBe(items.length);
+    expect(payload.launch_action_queue.operator_handoff_packet.blocked_count).toBe(
+      operatorItems.filter((item) => item.blocks_launch_clearance).length,
+    );
+    expect(payload.launch_action_queue.operator_handoff_packet.ready_count).toBe(
+      operatorItems.filter((item) => item.status === 'ready').length,
+    );
+    expect(payload.launch_action_queue.operator_handoff_packet.manual_stop_count).toBe(
+      operatorItems.filter((item) => item.status === 'manual_stop').length,
+    );
+    expect(payload.launch_action_queue.operator_handoff_packet.owner_approval_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.external_account_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.buyer_evidence_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.read_only_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.source_provenance_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.release_gate_count).toBe(1);
+    expect(payload.launch_action_queue.operator_handoff_packet.post_deploy_boundary_count).toBe(1);
+    expect(operatorItems.map((item) => item.phase)).toEqual(items.map((item) => item.phase));
+    expect(payload.launch_action_queue.operator_handoff_packet.proof_boundary).toMatch(/planning evidence only|does not execute queue rows|clear blockers|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|raise launch status/i);
+    expect(payload.launch_action_queue.operator_handoff_packet.stop_gate).toMatch(/Do not execute launch actions|mark blockers ready|request production approval|deploy-production|netlify deploy|contact buyers|access Supabase|commercial-ready status/i);
+    expect(operatorRowsByPhase.get('source_provenance')?.execution_gate).toBe('resolve_source_provenance_first');
+    expect(operatorRowsByPhase.get('source_provenance')?.source_provenance_required).toBe(true);
+    expect(operatorRowsByPhase.get('launch_evidence_validation')?.execution_gate).toBe('attach_launch_validation_evidence');
+    expect(operatorRowsByPhase.get('release_toolchain')?.execution_gate).toBe('release_toolchain_after_clean_source');
+    expect(operatorRowsByPhase.get('release_toolchain')?.release_gate_required).toBe(true);
+    expect(operatorRowsByPhase.get('branch_review')?.execution_gate).toBe('read_only_branch_review_before_approval');
+    expect(operatorRowsByPhase.get('branch_review')?.read_only_required).toBe(true);
+    expect(operatorRowsByPhase.get('supabase_advisor')?.execution_gate).toBe('supabase_advisor_after_authorization');
+    expect(operatorRowsByPhase.get('supabase_advisor')?.external_account_required).toBe(true);
+    expect(operatorRowsByPhase.get('buyer_evidence')?.execution_gate).toBe('buyer_evidence_before_approval');
+    expect(operatorRowsByPhase.get('buyer_evidence')?.buyer_evidence_required).toBe(true);
+    expect(operatorRowsByPhase.get('production_approval')?.execution_gate).toBe('owner_approval_after_all_prelaunch_gates');
+    expect(operatorRowsByPhase.get('production_approval')?.owner_approval_required).toBe(true);
+    expect(operatorRowsByPhase.get('post_deploy_live_proof')?.execution_gate).toBe('post_deploy_proof_after_approved_deploy');
+    expect(operatorRowsByPhase.get('post_deploy_live_proof')?.post_deploy_boundary).toBe(true);
+    for (const row of operatorItems) {
+      const queueRow = rowsByPhase.get(row.phase);
+      expect(row.proof_command).toBe(queueRow?.proof_command);
+      expect(row.proof_type).toBe(queueRow?.proof_type);
+      expect(row.status).toBe(queueRow?.status);
+      expect(row.blocks_launch_clearance).toBe(queueRow?.status !== 'ready');
+      expect(row.can_execute_from_packet).toBe(false);
+      expect(row.proof_boundary).toMatch(/planning evidence only|does not execute the row|clear blockers|contact buyers|access Supabase|request owner approval|deploy|live proof|launch readiness/i);
+      expect(row.stop_gate).toMatch(/Do not execute this launch action|mark it ready|clear blockers|claim launch readiness/i);
+    }
     expect(lanes).toEqual(expect.arrayContaining([
       'source_provenance',
       'launch_evidence_validation',
@@ -169,6 +251,7 @@ describe('launch action readiness report', () => {
     });
 
     expect(stdout).toContain('Launch action readiness report check passed');
+    expect(stdout).toContain('operator handoff packet');
   });
 
   it('can fail as a machine gate while launch action blockers remain', () => {
@@ -186,9 +269,12 @@ describe('launch action readiness report', () => {
       timeout,
     });
 
-    expect(result.status).toBe(json.launch_action_queue.status === 'ready' ? 0 : 1);
+    const actionReady = json.launch_action_queue.status === 'ready'
+      && json.launch_action_queue.blocked_count === 0
+      && json.launch_action_queue.operator_handoff_packet.status === 'ready';
+    expect(result.status).toBe(actionReady ? 0 : 1);
     expect(result.stdout).toContain('# CEIP Launch Action Readiness Report');
-    if (json.launch_action_queue.status !== 'ready') {
+    if (!actionReady) {
       expect(result.stderr).toContain('Launch action queue remains blocked');
       expect(result.stderr).toContain('does not clear blockers, deploy, or create launch readiness');
     }

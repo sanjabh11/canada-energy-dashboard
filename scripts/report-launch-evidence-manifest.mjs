@@ -1460,6 +1460,94 @@ function launchActionQueueEvidence(queue) {
   ].join(' ');
 }
 
+function launchActionOperatorExecutionGate(item) {
+  switch (item.phase) {
+    case 'source_provenance':
+      return 'resolve_source_provenance_first';
+    case 'launch_evidence_validation':
+      return 'attach_launch_validation_evidence';
+    case 'release_toolchain':
+      return 'release_toolchain_after_clean_source';
+    case 'branch_review':
+      return 'read_only_branch_review_before_approval';
+    case 'supabase_advisor':
+      return 'supabase_advisor_after_authorization';
+    case 'buyer_evidence':
+      return 'buyer_evidence_before_approval';
+    case 'production_approval':
+      return 'owner_approval_after_all_prelaunch_gates';
+    case 'post_deploy_live_proof':
+      return 'post_deploy_proof_after_approved_deploy';
+    default:
+      return 'launch_action_review';
+  }
+}
+
+function launchActionOperatorHandoffEvidence(packet) {
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_launch_clearance)
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.phase}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Launch action operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `manual_stop=${packet.manual_stop_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is planning evidence only; it does not execute queue rows, clear blockers, mutate source, contact buyers, access Supabase, request owner approval, deploy, run live proof, or claim launch readiness',
+  ].join(' ');
+}
+
+function buildLaunchActionOperatorHandoffPacket(queue) {
+  const items = (queue.items ?? []).map((item) => ({
+    rank: item.rank,
+    phase: item.phase,
+    owner: item.owner,
+    status: item.status,
+    blocker: item.blocker,
+    action: item.action,
+    execution_gate: launchActionOperatorExecutionGate(item),
+    proof_command: item.proof_command,
+    proof_type: item.proof_type,
+    proof_boundary: `${item.proof_boundary} This launch action operator handoff row is planning evidence only; it does not execute the row, clear blockers, mutate source, contact buyers, access Supabase, request owner approval, deploy, run live proof, or claim launch readiness.`,
+    stop_gate: `${item.stop_gate} Do not execute this launch action, mark it ready, clear blockers, or claim launch readiness from the handoff packet itself.`,
+    blocks_launch_clearance: item.status !== 'ready',
+    owner_approval_required: item.phase === 'production_approval',
+    external_account_required: item.phase === 'supabase_advisor',
+    buyer_evidence_required: item.phase === 'buyer_evidence',
+    read_only_required: item.phase === 'branch_review',
+    source_provenance_required: item.phase === 'source_provenance',
+    release_gate_required: item.phase === 'release_toolchain',
+    post_deploy_boundary: item.phase === 'post_deploy_live_proof',
+    can_execute_from_packet: false,
+  }));
+  const packet = {
+    status: queue.status === 'ready' ? 'ready' : 'blocked',
+    proof_type: 'launch_action_operator_handoff_packet',
+    source: 'launch_action_queue.items',
+    source_queue_status: queue.status,
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_launch_clearance).length,
+    ready_count: items.filter((item) => item.status === 'ready').length,
+    manual_stop_count: items.filter((item) => item.status === 'manual_stop').length,
+    owner_approval_count: items.filter((item) => item.owner_approval_required).length,
+    external_account_count: items.filter((item) => item.external_account_required).length,
+    buyer_evidence_count: items.filter((item) => item.buyer_evidence_required).length,
+    read_only_count: items.filter((item) => item.read_only_required).length,
+    source_provenance_count: items.filter((item) => item.source_provenance_required).length,
+    release_gate_count: items.filter((item) => item.release_gate_required).length,
+    post_deploy_boundary_count: items.filter((item) => item.post_deploy_boundary).length,
+    proof_boundary: 'This launch action operator handoff packet is planning evidence only; it does not execute queue rows, commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, run browser smoke, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not execute launch actions, mark blockers ready, request production approval, run deploy-production.sh, netlify deploy, push, contact buyers, access Supabase, mutate branches, clear source provenance, or claim commercial-ready status from this handoff packet.',
+    items,
+  };
+  return { ...packet, evidence: launchActionOperatorHandoffEvidence(packet) };
+}
+
 function launchActionProofType(phase) {
   switch (phase) {
     case 'source_provenance':
@@ -1634,6 +1722,7 @@ function buildLaunchActionQueue({
   return {
     ...queue,
     evidence: launchActionQueueEvidence(queue),
+    operator_handoff_packet: buildLaunchActionOperatorHandoffPacket(queue),
   };
 }
 
@@ -5552,6 +5641,17 @@ const launchActionBuyerLaneStatusFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchActionOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-launch-action-readiness.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const productionApprovalPacketSequencingFilesChanged = [
   'scripts/report-production-approval-packet.mjs',
   'scripts/report-launch-evidence-manifest.mjs',
@@ -5788,6 +5888,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...launchActionValidationStatusFilesChanged,
   ...launchActionReportFilesChanged,
   ...launchActionBuyerLaneStatusFilesChanged,
+  ...launchActionOperatorHandoffPacketFilesChanged,
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
@@ -6187,6 +6288,23 @@ const launchActionBuyerLaneStatusTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchActionOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-launch-action-readiness.mjs',
+  'node --check scripts/check-launch-action-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-action-readiness -- --skip-probes',
+  'pnpm run report:launch-action-readiness -- --skip-probes --json',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const productionApprovalPacketSequencingTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/productionApprovalPacket.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6433,6 +6551,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...launchActionValidationStatusTestsRun,
   ...launchActionReportTestsRun,
   ...launchActionBuyerLaneStatusTestsRun,
+  ...launchActionOperatorHandoffPacketTestsRun,
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
@@ -7151,6 +7270,19 @@ const safeFixImplementationDecisions = [
     reason: 'The production approval request packet named the prerequisite rows, but operators lacked a compact handoff that sequences the next proof commands without implying that report generation can request owner approval, grant approval, deploy, mutate production, contact buyers, access Supabase, clear source provenance, or prove hosted/live parity.',
     proof_boundary: 'This record improves production approval operator handoff visibility only; it does not request owner approval, grant approval, run deploys, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness as clearance, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the production approval operator handoff packet, focused production approval report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as owner approval, approval request eligibility, production approval, deployment, buyer evidence, Supabase clearance, clean source provenance, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a launch action operator handoff packet derived from the launch action queue.',
+    acceptance_check: 'launch_action_queue.operator_handoff_packet records source linkage, status, item counts, execution gates, proof commands, lane flags, and non-executable packet rows; report:launch-action-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived launch action operator handoff packet',
+    repo_pattern_reused: 'Existing launch_action_queue.items, focused launch action report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch action/manifest unit test contracts.',
+    files_changed: launchActionOperatorHandoffPacketFilesChanged,
+    tests_run: launchActionOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing launch_action_queue rows, assigns explicit execution gates for source provenance, launch validation, release, branch, Supabase, buyer evidence, owner approval, and post-deploy proof rows, marks every row non-executable from the packet, and validates source linkage, counts, commands, gates, lane flags, and no-execution/no-readiness boundaries.',
+    reason: 'The launch action queue named the phase-wise blockers, but operators lacked a compact handoff that sequences next proof commands without implying that report generation can clear blockers, mutate source, contact buyers, access Supabase, request approval, deploy, run live proof, or claim launch readiness.',
+    proof_boundary: 'This record improves launch action operator handoff visibility only; it does not execute launch actions, commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, authorize Supabase, request owner approval, deploy, mutate live services, run browser smoke, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the launch action operator handoff packet, focused launch action report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as clean source provenance, release-readiness, branch clearance, Supabase advisor clearance, buyer acceptance, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -8415,6 +8547,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused production approval report already reads the manifest production_approval object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave launch action operator sequencing implicit in launch_action_queue rows.',
+    reason_rejected: 'Operators would still need to infer execution gates, lane-specific boundaries, and no-execution semantics from individual queue rows instead of seeing a compact source-linked handoff for the phase-wise launch plan.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the top-level launch queue less executable and easier to misread as an ordinary runnable checklist.',
+    evidence: 'launch_action_queue.items already contains phases, blockers, owners, actions, proof commands, proof types, proof boundaries, and stop gates, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    variant: 'Execute source cleanup, release-readiness, branch operations, buyer outreach, Supabase advisor access, owner approval request, deploy, or live proof from the handoff phase.',
+    reason_rejected: 'Those operations require explicit owner decisions, clean prerequisites, authorized accounts, buyer artifacts, production approval, and separate proof capture; this phase is repo-side evidence planning only.',
+    tradeoff: 'Executing launch actions could reduce blockers only after prerequisites pass, but it would exceed this safe-fix boundary and risk source mutation, external-account access, production mutation, or unsupported readiness claims.',
+    evidence: 'Launch action queue stop gates require source owner intent, focused release proof, read-only branch review, authorized Supabase advisor evidence, retained buyer artifacts, explicit owner approval, and post-deploy checks as separate gates.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate launch action runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from launch_action_queue.items.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused launch action report already reads the manifest launch_action_queue object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8898,6 +9051,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: productionApprovalOperatorHandoffPacketTestsRun,
     remaining_risk: 'The production approval operator handoff packet is planning guidance only; launch readiness still depends on clean source provenance, current launch evidence validation attachment, Corepack-pinned release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-ACTION-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact launch action operator handoff from existing launch_action_queue rows, renders it through the existing focused launch action report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, source mutation, release execution, branch mutation, buyer contact, Supabase access, owner approval request execution, deploy execution, live proof execution, or launch-status changes.',
+    tests_or_checks: launchActionOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The launch action operator handoff packet is planning guidance only; launch readiness still depends on owner resolution of source provenance, Corepack-pinned release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -9110,6 +9272,7 @@ const manifest = {
       releasePreflight.remediation_queue.evidence,
       releasePreflight.operator_handoff_packet.evidence,
       launchActionQueue.evidence,
+      launchActionQueue.operator_handoff_packet.evidence,
       productionApprovalPrerequisiteQueue.evidence,
       productionApprovalRequestPacket.evidence,
       productionApprovalOperatorHandoffPacket.evidence,
