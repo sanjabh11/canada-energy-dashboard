@@ -75,8 +75,14 @@ describe('branch review readiness report', () => {
     expect(Array.isArray(payload.branch_review.clearance_matrix.rows)).toBe(true);
     expect(Array.isArray(payload.branch_review.review_first_packets.packets)).toBe(true);
     expect(payload.launch_action_branch_row.phase).toBe('branch_review');
+    expect(payload.launch_action_branch_row.proof_command).toContain('report:branch-review-readiness');
+    expect(payload.launch_action_branch_row.proof_command).toContain('check:branch-review-report');
     expect(payload.production_approval_branch_prerequisite.prerequisite).toBe('Canonical branch review');
+    expect(payload.production_approval_branch_prerequisite.proof_command).toContain('report:branch-review-readiness');
+    expect(payload.production_approval_branch_prerequisite.proof_command).toContain('check:branch-review-report');
     expect(payload.production_approval_request_branch_row.prerequisite).toBe('Canonical branch review');
+    expect(payload.production_approval_request_branch_row.proof_command).toContain('report:branch-review-readiness');
+    expect(payload.production_approval_request_branch_row.proof_command).toContain('check:branch-review-report');
     expect(payload.proof_boundary).toMatch(/does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|deploy|grant production approval/i);
     expect(payload.stop_gate).toMatch(/branch approval|canonical-head owner selection|merge approval|production approval|hosted\/live parity/i);
 

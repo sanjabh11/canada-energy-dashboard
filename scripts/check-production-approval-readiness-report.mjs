@@ -143,6 +143,16 @@ if (failures.length === 0) {
       'Corepack release-readiness request row must point to focused release-preflight proof before guarded release-readiness.',
     );
     assert(requestRowsByPrerequisite.get('Canonical branch review')?.request_phase === 'pre_request', 'Canonical branch review must be a pre-request row.');
+    assert(
+      /report:branch-review-readiness/.test(prerequisiteRowsByName.get('Canonical branch review')?.proof_command ?? '')
+        && /check:branch-review-report/.test(prerequisiteRowsByName.get('Canonical branch review')?.proof_command ?? ''),
+      'Canonical branch review prerequisite must point to the focused branch review report/check.',
+    );
+    assert(
+      /report:branch-review-readiness/.test(requestRowsByPrerequisite.get('Canonical branch review')?.proof_command ?? '')
+        && /check:branch-review-report/.test(requestRowsByPrerequisite.get('Canonical branch review')?.proof_command ?? ''),
+      'Canonical branch review request row must point to the focused branch review report/check.',
+    );
     assert(requestRowsByPrerequisite.get('Supabase advisor clearance')?.request_phase === 'pre_request', 'Supabase advisor clearance must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'pre_request', 'Buyer evidence hard gate must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.request_phase === 'owner_decision', 'Explicit owner approval must be an owner-decision row.');

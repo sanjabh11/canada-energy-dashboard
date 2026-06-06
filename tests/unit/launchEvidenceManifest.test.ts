@@ -439,7 +439,9 @@ describe('launch evidence manifest report', () => {
     expect(launchActionsByPhase.get('production_approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
     expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
     expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_boundary).toMatch(/guarded deploy completion|does not deploy/i);
-    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review').stop_gate).toMatch(/No checkout, merge, push/i);
+    const branchReviewAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review');
+    expect(branchReviewAction?.proof_command).toBe('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
+    expect(branchReviewAction?.stop_gate).toMatch(/No checkout, merge, push/i);
     const launchEvidenceValidationAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'launch_evidence_validation');
     expect(launchEvidenceValidationAction.proof_command).toBe('corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report');
     expect(launchEvidenceValidationAction.status).toBe('ready');
@@ -487,6 +489,7 @@ describe('launch evidence manifest report', () => {
       manifest.production_approval.prerequisite_queue.items,
       (item: {
         prerequisite: string;
+        proof_command?: string;
         proof_type?: string;
         proof_boundary?: string;
       }) => item.prerequisite,
@@ -499,6 +502,7 @@ describe('launch evidence manifest report', () => {
     expect(productionPrerequisitesByName.get('Corepack release-readiness')?.proof_boundary).toMatch(/does not grant owner approval|hosted\/live parity/i);
     expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_type).toBe('read_only_branch_review');
     expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_boundary).toMatch(/read-only|does not checkout/i);
+    expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_command).toBe('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_type).toBe('external_account_evidence');
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
     expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_type).toBe('retained_buyer_evidence_validation');
@@ -717,9 +721,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(20);
+    expect(manifest.implementation_decisions).toHaveLength(21);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(20);
+    expect(manifest.code_optimization_reviews).toHaveLength(21);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -797,6 +801,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
       'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad branch handles.',
+      'Leave launch action and production approval branch rows pointing only at unmerged-branch readiness commands.',
+      'Replace or remove branch-specific unmerged-branch packet evidence from the branch_review object.',
+      'Checkout, merge, push, discard, delete, or select canonical branch heads to clear branch review.',
+      'Duplicate branch scanning and canonical-head parsing in launch action or production approval rows.',
       'Leave launch evidence validation only as check:launch-evidence-manifest plus the production approval packet.',
       'Teach report-launch-evidence-manifest to self-certify launch evidence validation status.',
       'Duplicate validate_launch_evidence.py and manifest structural assertions in a new checker.',
@@ -1060,6 +1068,28 @@ describe('launch evidence manifest report', () => {
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
     ]));
+    const branchReviewProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    );
+    expect(branchReviewProofHandleDecision).toBeTruthy();
+    expect(branchReviewProofHandleDecision.chosen_variant).toBe('minimal focused branch proof-handle derivation');
+    expect(branchReviewProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'tests/unit/branchReviewReadiness.test.ts',
+    ]));
+    expect(branchReviewProofHandleDecision.proof_boundary).toMatch(/does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|grant production approval|hosted\/live parity/i);
+    const branchReviewProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    );
+    expect(branchReviewProofHandleReview).toBeTruthy();
+    expect(branchReviewProofHandleReview.policy).toBe('strict');
+    expect(branchReviewProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:branch-review-readiness',
+      'pnpm run check:branch-review-report',
+      'pnpm run check:production-approval-report -- --skip-probes',
+    ]));
     const launchEvidenceValidationReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT',
     );
@@ -1236,6 +1266,10 @@ describe('launch evidence manifest report', () => {
       ?? manifest.branch_review.top_review_packet.changed_supabase_function_rows?.[0];
 
     expect(manifest.branch_review.probe_status).toBe('pass');
+    expect(branchAction?.proof_command).toContain('report:branch-review-readiness');
+    expect(branchAction?.proof_command).toContain('check:branch-review-report');
+    expect(branchPrerequisite?.proof_command).toContain('report:branch-review-readiness');
+    expect(branchPrerequisite?.proof_command).toContain('check:branch-review-report');
     expect(manifest.branch_review.evidence).toContain('Branch review clearance');
     expect(manifest.branch_review.evidence).toContain('probe_status=pass');
     expect(manifest.branch_review.evidence_boundary).toMatch(/read-only branch probe execution does not clear/i);

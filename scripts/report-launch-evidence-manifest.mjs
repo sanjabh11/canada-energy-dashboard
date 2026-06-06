@@ -13,6 +13,7 @@ let skipProbes = false;
 const SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report';
 const RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report';
 const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND} && corepack pnpm run check:release-readiness`;
+const BRANCH_REVIEW_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -1318,7 +1319,7 @@ function buildLaunchActionQueue({
       blocker: `${branchReviewFirst ?? 'unknown'} review-first branch family/families; top=${branchTop}`,
       owner: 'operator',
       action: 'Run focused read-only branch reviews and choose canonical heads before any merge, push, discard, migration, or deploy discussion.',
-      proof_command: `corepack pnpm run report:unmerged-branch-readiness -- --branch ${branchTop} --max-files 8`,
+      proof_command: BRANCH_REVIEW_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('branch_review'),
       proof_boundary: launchActionProofBoundary('branch_review'),
       stop_gate: 'No checkout, merge, push, discard, migration, or production approval without explicit owner approval and release gates.',
@@ -1523,7 +1524,7 @@ function buildProductionApprovalPrerequisiteQueue({
         : `${branchReviewFirst ?? 'unknown'} review-first branch family/families; ${canonicalHeadDecisions.open_count ?? 'unknown'} canonical-head decision(s) remain`,
       needed: 'no review-first branch families and no unresolved split, local-only, origin-only, stale, aging, or unknown canonical-head decisions',
       owner: 'operator',
-      proof_command: 'corepack pnpm run report:unmerged-branch-readiness',
+      proof_command: BRANCH_REVIEW_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Canonical branch review'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Canonical branch review'),
       stop_gate: 'No checkout, merge, push, discard, migration, deploy, or production approval from branch review output without explicit owner approval and release gates.',
@@ -1630,7 +1631,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Corepack release-readiness':
       return 'Attach focused release-preflight report/check output plus Corepack-pinned release-readiness output and current Corepack/Git LFS probe evidence.';
     case 'Canonical branch review':
-      return 'Attach read-only unmerged-branch readiness output plus canonical-head owner decisions for review-first branch families.';
+      return 'Attach focused branch-review report/check output plus read-only unmerged-branch packet evidence and canonical-head owner decisions for review-first branch families.';
     case 'Supabase advisor clearance':
       return 'Attach authorized Supabase Security and Performance Advisor results plus a public-safe findings summary.';
     case 'Buyer evidence hard gate':
@@ -4472,6 +4473,18 @@ const releaseToolchainProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const branchReviewProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'tests/unit/branchReviewReadiness.test.ts',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const supabaseAdvisorReportFilesChanged = [
   'package.json',
   'scripts/report-supabase-advisor-readiness.mjs',
@@ -4621,6 +4634,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
+  ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
@@ -4727,6 +4741,18 @@ const releaseToolchainProofHandleTestsRun = [
   'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run report:release-preflight -- --skip-probes',
   'pnpm run check:release-preflight-report -- --skip-probes',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const branchReviewProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:branch-review-readiness',
+  'pnpm run report:branch-review-readiness -- --skip-probes',
+  'pnpm run check:branch-review-report',
   'pnpm run check:launch-action-report -- --skip-probes',
   'pnpm run check:production-approval-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
@@ -5021,6 +5047,19 @@ const safeFixImplementationDecisions = [
     reason: 'Operators still saw broad launch-evidence manifest handles on release-toolchain proof rows even after the focused release-preflight report/check existed, while the lane summary already pointed to the focused release preflight proof path.',
     proof_boundary: 'This record aligns release-toolchain proof handles only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused release-preflight proof handles, skipped-probe report/check success, launch action row output, production approval attachment text, or bare pnpm checks as Corepack release-readiness, clean source provenance, production approval, deployment, hosted/live parity, or owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    decision: 'Route launch action and production approval branch-review proof rows through the focused branch-review report/check while preserving read-only unmerged-branch packet evidence inside that report.',
+    acceptance_check: 'Branch-review action and Canonical branch review approval rows expose report:branch-review-readiness plus check:branch-review-report, while branch-specific unmerged-branch packet commands, canonical-head ledgers, and no-branch-mutation gates remain available inside branch_review evidence.',
+    chosen_variant: 'minimal focused branch proof-handle derivation',
+    repo_pattern_reused: 'Existing branch_review focused report/check commands, launch_action_queue branch_review row, production_approval Canonical branch review prerequisite/request rows, review-first packets, top branch packet, and focused checker conventions.',
+    files_changed: branchReviewProofHandleFilesChanged,
+    tests_run: branchReviewProofHandleTestsRun,
+    proof: 'The patch reuses the existing manifest branch_review data and focused report/check handle, then asserts that launch action, production approval prerequisite, production approval request, focused branch report, focused launch action, focused production approval, and commercial report outputs preserve focused branch review proof without clearing canonical-head decisions.',
+    reason: 'Operators still saw unmerged-branch-only handles on branch-review proof rows even after the focused branch-review report/check existed, while the lane summary already pointed to the focused branch review proof path.',
+    proof_boundary: 'This record aligns branch-review proof handles only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, clear branch review, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused branch-review proof handles, report/check success, branch inventory, review-first packets, canonical-head ledgers, launch action row output, or production approval attachment text as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -5402,6 +5441,34 @@ const safeFixRejectedVariants = [
     evidence: 'report-launch-evidence-manifest already emits release_preflight, toolchain_probe_ledger, clearance_matrix, launch_action_queue, and production_approval rows.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    variant: 'Leave launch action and production approval branch rows pointing only at unmerged-branch readiness commands.',
+    reason_rejected: 'Would keep active branch-review rows routed through branch inventory commands even though the focused branch-review report/check now exists and the lane summary already advertises it.',
+    tradeoff: 'No-code defer avoids touching proof rows, but it preserves operator ambiguity across launch action and production approval Canonical branch review prerequisites.',
+    evidence: 'The focused branch-review report/check already renders review queues, canonical-head decisions, clearance matrix, review-first packets, top branch packet, and production approval branch rows from one manifest source of truth.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    variant: 'Replace or remove branch-specific unmerged-branch packet evidence from the branch_review object.',
+    reason_rejected: 'Focused proof handles should narrow operator entry points without deleting the read-only branch packet evidence required to inspect review-first and Supabase-function risk.',
+    tradeoff: 'Removing packet commands would make the surface simpler, but it would weaken branch-specific review depth and canonical-head evidence.',
+    evidence: 'branch_review.review_first_packets, top_review_packet, clearance_matrix rows, and canonical_head_resolution_queue all intentionally preserve report:unmerged-branch-readiness commands as read-only branch packet evidence.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    variant: 'Checkout, merge, push, discard, delete, or select canonical branch heads to clear branch review.',
+    reason_rejected: 'Branch mutation and canonical-head decisions require explicit owner approval and clean release gates; this phase is proof-handle alignment only.',
+    tradeoff: 'Mutating branches could reduce blocker counts, but it would violate the safe-fix lane and risk unrelated owner work.',
+    evidence: 'The branch review queue, canonical-head decision ledger, and focused branch report all stop before checkout, merge, push, discard, delete, canonical-head selection, migration, deploy, or production approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    variant: 'Duplicate branch scanning and canonical-head parsing in launch action or production approval rows.',
+    reason_rejected: 'Duplicating branch logic would drift from the focused branch-review report/check and the manifest branch_review source of truth.',
+    tradeoff: 'Inline branch summaries could be more direct but would add another branch-critical contract to maintain.',
+    evidence: 'report-launch-evidence-manifest already emits branch_review.review_queue, canonical_head_decisions, clearance_matrix, review_first_packets, top_review_packet, launch_action_queue, and production_approval rows.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
     variant: 'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
     reason_rejected: 'Would keep the active external-account advisor blocker harder to inspect despite it being a pre-request production approval gate.',
@@ -5759,6 +5826,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing focused release-preflight report/check command across existing release-toolchain proof rows and validators, adds no dependency, no duplicate toolchain probe, no Corepack/Git LFS remediation, no source mutation, no release execution beyond the retained guarded command, and no deploy path.',
     tests_or_checks: releaseToolchainProofHandleTestsRun,
     remaining_risk: 'Corepack-pinned release-readiness remains blocked until Corepack is available and clean source provenance is proven; the staged workflow rename, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing focused branch-review report/check command across existing branch-review proof rows and validators, adds no dependency, no duplicate branch scanner, no checkout, no merge, no push, no canonical-head selection, no migration, and no deploy path.',
+    tests_or_checks: branchReviewProofHandleTestsRun,
+    remaining_risk: 'Branch review remains blocked until review-first branch families and canonical-head owner decisions are resolved; source provenance, Corepack-pinned release-readiness, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',

@@ -990,6 +990,13 @@ try {
       manifest.launch_action_queue.items.some((item) => item.proof_command.includes('check:post-deploy-live')),
       'Manifest launch action queue must include post-deploy live proof command.',
     );
+    const branchActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'branch_review');
+    assert(branchActionItem, 'Launch action queue must include a branch_review phase.');
+    assert(
+      branchActionItem.proof_command.includes('report:branch-review-readiness')
+        && branchActionItem.proof_command.includes('check:branch-review-report'),
+      'Branch review launch action must run the focused branch review report and checker.',
+    );
     assert(
       manifest.launch_action_queue.items.some((item) => /no checkout|no .*merge|no .*push|no .*deploy/i.test(item.stop_gate)),
       'Manifest launch action queue must preserve branch/deploy no-mutation stop gates.',
@@ -1081,6 +1088,7 @@ try {
     const liveProofItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Post-deploy live proof boundary');
     const launchEvidencePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Launch evidence validation');
     const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
+    const branchPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Canonical branch review');
     assert(launchEvidencePrerequisiteItem, 'Production approval prerequisite queue must include launch evidence validation.');
     assert(launchEvidencePrerequisiteItem.proof_command === 'corepack pnpm run check:launch-evidence-manifest', 'Launch evidence validation prerequisite must include the manifest validation proof command.');
     assert(launchEvidencePrerequisiteItem.status === 'ready', 'Launch evidence validation prerequisite must not be a circular self-blocker inside the request packet.');
@@ -1096,6 +1104,12 @@ try {
       'Corepack release-readiness prerequisite must run focused release-preflight proof before guarded release-readiness.',
     );
     assert(/probe ledger/i.test(releasePrerequisiteItem.stop_gate), 'Corepack release-readiness prerequisite must say the probe ledger is not approval evidence.');
+    assert(branchPrerequisiteItem, 'Production approval prerequisite queue must include Canonical branch review.');
+    assert(
+      branchPrerequisiteItem.proof_command.includes('report:branch-review-readiness')
+        && branchPrerequisiteItem.proof_command.includes('check:branch-review-report'),
+      'Canonical branch review prerequisite must run the focused branch review report and checker.',
+    );
     assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
     assert(ownerApprovalItem?.proof_command === 'corepack pnpm run check:production-deploy-request', 'Production approval prerequisite queue must include the deploy-request proof command.');
@@ -2230,6 +2244,34 @@ try {
         && branchReviewReportReview.tests_or_checks.some((check) => /report:branch-review-readiness/.test(check))
         && branchReviewReportReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check)),
       'Branch review focused report code optimization review must record focused branch review report and checker proof.',
+    );
+    const branchReviewProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES');
+    assert(branchReviewProofHandleDecision, 'Manifest must record the branch review proof-handle implementation decision.');
+    assert(
+      branchReviewProofHandleDecision?.chosen_variant === 'minimal focused branch proof-handle derivation',
+      'Branch review proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(branchReviewProofHandleDecision?.files_changed)
+        && branchReviewProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && branchReviewProofHandleDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && branchReviewProofHandleDecision.files_changed.includes('tests/unit/branchReviewReadiness.test.ts'),
+      'Branch review proof-handle decision must record manifest, production approval checker, and branch review test file changes.',
+    );
+    assert(
+      /does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|grant production approval|hosted\/live parity/i.test(branchReviewProofHandleDecision?.proof_boundary ?? ''),
+      'Branch review proof-handle decision must preserve branch non-mutation and no-approval boundaries.',
+    );
+    const branchReviewProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES');
+    assert(branchReviewProofHandleReview, 'Manifest must record the branch review proof-handle code optimization review.');
+    assert(branchReviewProofHandleReview?.policy === 'strict', 'Branch review proof-handle code optimization review must use strict policy.');
+    assert(branchReviewProofHandleReview?.verdict === 'pass', 'Branch review proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(branchReviewProofHandleReview?.tests_or_checks)
+        && branchReviewProofHandleReview.tests_or_checks.some((check) => /report:branch-review-readiness/.test(check))
+        && branchReviewProofHandleReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check))
+        && branchReviewProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
+      'Branch review proof-handle code optimization review must record focused branch and production approval checker proof.',
     );
     const launchEvidenceValidationReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT');
     assert(launchEvidenceValidationReportDecision, 'Manifest must record the launch evidence validation focused report implementation decision.');
