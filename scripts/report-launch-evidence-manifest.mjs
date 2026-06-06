@@ -2516,6 +2516,56 @@ function buildBuyerEvidenceAcquisitionMatrix(probe) {
   return { ...matrix, evidence: buyerEvidenceAcquisitionEvidence(matrix) };
 }
 
+function buyerEvidenceMinimumPacketEvidence(packet) {
+  const topBlocked = packet.items
+    .filter((item) => item.status !== 'ready')
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.lane}:${item.status}`)
+    .join(', ') || 'none';
+
+  return [
+    'Buyer evidence minimum packet handoff:',
+    `status=${packet.status}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `source=${packet.source}`,
+    `top_blocked=${topBlocked}`,
+    'approval_gate=handoff does not contact buyers, create accepted evidence, attach artifacts, validate 95%, or claim buyer acceptance',
+  ].join(' ');
+}
+
+function buildBuyerEvidenceMinimumPacket(acquisitionMatrix) {
+  const sourceRows = Array.isArray(acquisitionMatrix?.rows) ? acquisitionMatrix.rows : [];
+  const items = sourceRows.map((row) => ({
+    rank: row.rank,
+    lane: row.lane,
+    owner: row.owner,
+    source_requirement: row.source_requirement,
+    current: row.current,
+    required_artifact: row.required_artifact,
+    minimum_accepted_signal: row.minimum_accepted_signal,
+    evidence_root: row.evidence_root,
+    template_or_source_path: row.template_or_source_path,
+    validation_command: row.validation_command,
+    proof_type: row.proof_type,
+    proof_boundary: row.proof_boundary,
+    stop_gate: row.stop_gate,
+    status: row.status,
+    blocks_95_gate: row.blocks_buyer_gate === true,
+  }));
+  const packet = {
+    status: items.every((item) => item.status === 'ready') && items.length > 0 ? 'ready' : 'blocked',
+    proof_type: 'buyer_evidence_minimum_packet_handoff',
+    source: 'buyer_evidence.acquisition_matrix.rows',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.status !== 'ready').length,
+    proof_boundary: 'This minimum packet handoff is acquisition planning only; it does not contact buyers, create accepted evidence, attach retained artifacts, move confidence, validate 95%, claim buyer acceptance, or grant production approval.',
+    stop_gate: 'Do not mark buyer evidence ready from this handoff; require real anonymized buyer rows, retained redacted artifacts, strong commercial evidence, and validate:pilot-evidence --require-95.',
+    items,
+  };
+  return { ...packet, evidence: buyerEvidenceMinimumPacketEvidence(packet) };
+}
+
 function extractMarkdownSection(markdown, heading) {
   const start = markdown.indexOf(`## ${heading}`);
   if (start < 0) return '';
@@ -4327,6 +4377,7 @@ const pkg = packageMetadata();
 const gitStatus = gitStatusSummary();
 const buyerProbe = probeBuyerEvidence();
 const buyerEvidenceAcquisitionMatrix = buildBuyerEvidenceAcquisitionMatrix(buyerProbe);
+const buyerEvidenceMinimumPacket = buildBuyerEvidenceMinimumPacket(buyerEvidenceAcquisitionMatrix);
 const branchProbe = probeUnmergedBranches();
 const branchReviewQueue = branchReviewQueueForProbe(branchProbe);
 const canonicalHeadDecisions = buildCanonicalHeadDecisionLedger(branchReviewQueue);
@@ -4507,6 +4558,17 @@ const buyerEvidenceGateReportFilesChanged = [
   'scripts/check-commercial-source-docs.mjs',
   'tests/unit/buyerEvidenceGateReadiness.test.ts',
   'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const buyerEvidenceMinimumPacketHandoffFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-buyer-evidence-gate-readiness.mjs',
+  'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'tests/unit/buyerEvidenceGateReadiness.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
@@ -4991,6 +5053,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
   ...buyerEvidenceGateReportFilesChanged,
+  ...buyerEvidenceMinimumPacketHandoffFilesChanged,
   ...buyerEvidenceProofHandleFilesChanged,
   ...buyerEvidencePublicGateHandleFilesChanged,
   ...releasePreflightReportFilesChanged,
@@ -5068,6 +5131,20 @@ const buyerEvidenceGateReportTestsRun = [
   'pnpm run check:public-release-status',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const buyerEvidenceMinimumPacketHandoffTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-buyer-evidence-gate-readiness.mjs',
+  'node --check scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/buyerEvidenceGateReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+  'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
 ];
 
 const buyerEvidenceProofHandleTestsRun = [
@@ -5514,6 +5591,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
   ...buyerEvidenceGateReportTestsRun,
+  ...buyerEvidenceMinimumPacketHandoffTestsRun,
   ...buyerEvidenceProofHandleTestsRun,
   ...buyerEvidencePublicGateHandleTestsRun,
   ...releasePreflightReportTestsRun,
@@ -6163,6 +6241,19 @@ const safeFixImplementationDecisions = [
     reason: 'The commercial-launch progress contract requires the current bottleneck to include affected lane plus top three unblock options with tradeoff, expected time saved, and risk; string-only options under-reported that evidence.',
     proof_boundary: 'This record improves bottleneck detail visibility only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat structured bottleneck options, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    decision: 'Expose a minimum buyer-evidence packet handoff derived from the buyer acquisition matrix.',
+    acceptance_check: 'buyer_evidence.minimum_evidence_packet records source, status, item counts, blocker counts, owner/action rows, validation commands, proof boundaries, and 95%-gate blockers; report:buyer-evidence-gate-readiness renders it; and focused/broad checks reject missing handoff evidence.',
+    chosen_variant: 'minimal derived buyer evidence packet handoff',
+    repo_pattern_reused: 'Existing buyer_evidence.acquisition_matrix rows, focused buyer evidence gate report/check, broad manifest checker, progress digest current-phase ratchet, and launch manifest unit test contract.',
+    files_changed: buyerEvidenceMinimumPacketHandoffFilesChanged,
+    tests_run: buyerEvidenceMinimumPacketHandoffTestsRun,
+    proof: 'The patch derives the minimum packet from existing acquisition matrix rows, exposes it under buyer_evidence, renders it in the focused buyer report, and validates source linkage, row counts, validation commands, 95%-gate blockers, and no-buyer-proof boundaries without executing any buyer action.',
+    reason: 'The acquisition matrix had the required row data, but operators lacked a compact manifest-backed handoff that grouped the minimum evidence packet needed to start clearing the top buyer-evidence blocker.',
+    proof_boundary: 'This record improves buyer evidence handoff visibility only; it does not contact buyers, send outreach, create accepted evidence, attach retained artifacts, move confidence, validate 95%, clear buyer hard gates, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the minimum packet handoff, focused buyer report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as buyer acceptance, retained-artifact proof, validate:pilot-evidence --require-95 success, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7280,6 +7371,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing options could reduce blockers if authorized, but would exceed a report-contract safe fix and violate no-external-action boundaries.',
     evidence: 'The bottleneck options point at validate:pilot-evidence, release-readiness, production-approval, branch review, and Supabase advisor gates.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    variant: 'Leave the buyer evidence handoff implicit in acquisition matrix rows.',
+    reason_rejected: 'Operators would still need to infer the minimum evidence packet from a wide matrix instead of seeing a compact source-linked handoff for the top blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the highest-value buyer blocker less executable.',
+    evidence: 'report:buyer-evidence-gate-readiness already renders the matrix, but it has no dedicated minimum packet section or JSON object.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    variant: 'Create a separate buyer packet artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from buyer_evidence.acquisition_matrix.rows.',
+    tradeoff: 'A standalone artifact could be convenient, but it would increase drift risk and require extra output lifecycle management.',
+    evidence: 'The launch manifest already generates the acquisition matrix and focused buyer report from the same data source.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    variant: 'Generate buyer rows, retained artifacts, or run validate:pilot-evidence from the handoff phase.',
+    reason_rejected: 'Real buyer evidence, retained artifacts, and 95% validation require operator-owned accepted inputs outside this repo-side safe-fix phase.',
+    tradeoff: 'Executing buyer evidence work could clear the blocker only with real data and authorization, but local generation would fabricate proof or exceed scope.',
+    evidence: 'Buyer evidence stop gates require real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 before readiness changes.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7700,6 +7812,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: progressBottleneckDetailTestsRun,
     remaining_risk: 'Bottleneck options are now structured but remain reporting guidance only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact handoff from existing buyer acquisition matrix rows, renders it through the existing focused buyer report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, buyer contact, retained artifact mutation, validation execution, or launch-status changes.',
+    tests_or_checks: buyerEvidenceMinimumPacketHandoffTestsRun,
+    remaining_risk: 'The minimum packet handoff is operator guidance only; launch readiness still depends on real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, validate:pilot-evidence --require-95, source provenance cleanup, branch decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -7889,6 +8010,7 @@ const manifest = {
       buyerProbe.evidence,
       buyerProbe.reviewEvidence,
       buyerEvidenceAcquisitionMatrix.evidence,
+      buyerEvidenceMinimumPacket.evidence,
       buyerProbe.hardGateDeficits.remediation_queue.evidence,
       branchProbe.evidence,
       branchProbe.familyEvidence,
@@ -7959,6 +8081,7 @@ const manifest = {
     phase_f_gate: buyerProbe.phaseFGate,
     workspace_next_step: buyerProbe.workspaceNextStep,
     acquisition_matrix: buyerEvidenceAcquisitionMatrix,
+    minimum_evidence_packet: buyerEvidenceMinimumPacket,
     hard_gate_deficits: buyerProbe.hardGateDeficits,
     evidence: buyerProbe.reviewEvidence,
   },

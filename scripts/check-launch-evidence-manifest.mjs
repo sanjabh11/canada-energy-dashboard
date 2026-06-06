@@ -373,6 +373,48 @@ try {
         `Buyer evidence acquisition matrix must include lane: ${lane}.`,
       );
     }
+    assert(typeof manifest.buyer_evidence?.minimum_evidence_packet?.evidence === 'string', 'Manifest buyer_evidence.minimum_evidence_packet.evidence must be set.');
+    assert(manifest.buyer_evidence.minimum_evidence_packet.evidence.includes('Buyer evidence minimum packet handoff'), 'Manifest buyer evidence minimum packet must include a handoff marker.');
+    assert(manifest.buyer_evidence.minimum_evidence_packet.proof_type === 'buyer_evidence_minimum_packet_handoff', 'Manifest buyer evidence minimum packet must classify proof_type as buyer_evidence_minimum_packet_handoff.');
+    assert(manifest.buyer_evidence.minimum_evidence_packet.source === 'buyer_evidence.acquisition_matrix.rows', 'Manifest buyer evidence minimum packet must identify the acquisition matrix as its source.');
+    assert(
+      manifest.buyer_evidence.minimum_evidence_packet.item_count === manifest.buyer_evidence.acquisition_matrix.row_count,
+      'Buyer evidence minimum packet item_count must match acquisition matrix row_count.',
+    );
+    assert(
+      manifest.buyer_evidence.minimum_evidence_packet.blocked_count === manifest.buyer_evidence.acquisition_matrix.blocked_count,
+      'Buyer evidence minimum packet blocked_count must match acquisition matrix blocked_count.',
+    );
+    assert(Array.isArray(manifest.buyer_evidence.minimum_evidence_packet.items), 'Manifest buyer_evidence.minimum_evidence_packet.items must be a list.');
+    assert(
+      manifest.buyer_evidence.minimum_evidence_packet.items.length === manifest.buyer_evidence.acquisition_matrix.rows.length,
+      'Buyer evidence minimum packet items must match acquisition matrix row length.',
+    );
+    assert(typeof manifest.buyer_evidence.minimum_evidence_packet.proof_boundary === 'string' && /does not contact buyers|create accepted evidence|attach retained artifacts|validate 95%|grant production approval/i.test(manifest.buyer_evidence.minimum_evidence_packet.proof_boundary), 'Buyer evidence minimum packet proof_boundary must preserve acquisition-only semantics.');
+    assert(typeof manifest.buyer_evidence.minimum_evidence_packet.stop_gate === 'string' && /Do not mark buyer evidence ready|validate:pilot-evidence --require-95|real anonymized buyer rows/i.test(manifest.buyer_evidence.minimum_evidence_packet.stop_gate), 'Buyer evidence minimum packet stop_gate must require real retained buyer evidence before readiness.');
+    for (const [index, item] of (manifest.buyer_evidence.minimum_evidence_packet.items ?? []).entries()) {
+      assert(Number.isInteger(item.rank), `buyer_evidence.minimum_evidence_packet.items[${index}].rank must be an integer.`);
+      assert(typeof item.lane === 'string' && item.lane.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].lane must be set.`);
+      assert(typeof item.owner === 'string' && item.owner.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].owner must be set.`);
+      assert(typeof item.required_artifact === 'string' && item.required_artifact.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].required_artifact must be set.`);
+      assert(typeof item.minimum_accepted_signal === 'string' && item.minimum_accepted_signal.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].minimum_accepted_signal must be set.`);
+      assert(typeof item.validation_command === 'string' && item.validation_command.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].validation_command must be set.`);
+      assert(!/[<>]/.test(item.validation_command), `buyer_evidence.minimum_evidence_packet.items[${index}].validation_command must use shell-safe placeholders, not angle-bracket redirection placeholders.`);
+      assert(typeof item.blocks_95_gate === 'boolean', `buyer_evidence.minimum_evidence_packet.items[${index}].blocks_95_gate must be boolean.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].proof_type must be set.`);
+      assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `buyer_evidence.minimum_evidence_packet.items[${index}].proof_boundary must be set.`);
+      assert(typeof item.stop_gate === 'string' && /Do not/i.test(item.stop_gate), `buyer_evidence.minimum_evidence_packet.items[${index}].stop_gate must preserve an explicit stop gate.`);
+      if (buyerAcquisitionProofTypesByLane[item.lane]) {
+        assert(
+          item.proof_type === buyerAcquisitionProofTypesByLane[item.lane],
+          `buyer_evidence.minimum_evidence_packet.items[${index}] must classify ${item.lane} as ${buyerAcquisitionProofTypesByLane[item.lane]}.`,
+        );
+      }
+      if (item.lane === 'Retained-artifact 95% validation') {
+        assert(item.blocks_95_gate === true, 'Retained-artifact 95% validation minimum packet row must block the 95% gate until real retained artifacts pass.');
+        assert(item.validation_command.includes('validate:pilot-evidence'), 'Retained-artifact 95% validation minimum packet row must point to validate:pilot-evidence.');
+      }
+    }
     assert(typeof manifest.buyer_evidence?.hard_gate_deficits?.remediation_queue?.evidence === 'string', 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.evidence must be set.');
     assert(manifest.buyer_evidence.hard_gate_deficits.remediation_queue.evidence.includes('Buyer evidence remediation queue'), 'Manifest buyer evidence remediation queue evidence must include a queue marker.');
     assert(hasIntegerOrNull(manifest.buyer_evidence.hard_gate_deficits.remediation_queue?.open_count), 'Manifest buyer_evidence.hard_gate_deficits.remediation_queue.open_count must be an integer or null.');
@@ -2035,7 +2077,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL', 'Manifest progress_updates must expose the latest bottleneck-detail safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF', 'Manifest progress_updates must expose the latest buyer evidence minimum-packet handoff safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3338,6 +3380,39 @@ try {
         && progressBottleneckDetailReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && progressBottleneckDetailReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Progress bottleneck-detail code optimization review must record focused progress, manifest, and commercial report checks.',
+    );
+    const buyerEvidenceMinimumPacketHandoffDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF');
+    assert(buyerEvidenceMinimumPacketHandoffDecision, 'Manifest must record the buyer evidence minimum-packet handoff implementation decision.');
+    assert(
+      buyerEvidenceMinimumPacketHandoffDecision?.chosen_variant === 'minimal derived buyer evidence packet handoff',
+      'Buyer evidence minimum-packet handoff decision must record the minimal derived handoff variant.',
+    );
+    assert(
+      Array.isArray(buyerEvidenceMinimumPacketHandoffDecision?.files_changed)
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('scripts/report-buyer-evidence-gate-readiness.mjs')
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('scripts/check-buyer-evidence-gate-readiness-report.mjs')
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('tests/unit/buyerEvidenceGateReadiness.test.ts')
+        && buyerEvidenceMinimumPacketHandoffDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Buyer evidence minimum-packet handoff decision must record the manifest, focused report, checkers, and unit test files.',
+    );
+    assert(
+      /does not contact buyers|send outreach|create accepted evidence|attach retained artifacts|move confidence|validate 95%|production approval|hosted\/live parity|raise launch status/i.test(buyerEvidenceMinimumPacketHandoffDecision?.proof_boundary ?? ''),
+      'Buyer evidence minimum-packet handoff decision must preserve no-contact, no-evidence, no-validation, no-approval, no-live-proof, and no-readiness boundaries.',
+    );
+    const buyerEvidenceMinimumPacketHandoffReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF');
+    assert(buyerEvidenceMinimumPacketHandoffReview, 'Manifest must record the buyer evidence minimum-packet handoff code optimization review.');
+    assert(buyerEvidenceMinimumPacketHandoffReview?.policy === 'strict', 'Buyer evidence minimum-packet handoff code optimization review must use strict policy.');
+    assert(buyerEvidenceMinimumPacketHandoffReview?.verdict === 'pass', 'Buyer evidence minimum-packet handoff code optimization review must pass.');
+    assert(
+      Array.isArray(buyerEvidenceMinimumPacketHandoffReview?.tests_or_checks)
+        && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /report:buyer-evidence-gate-readiness -- --skip-probes/.test(check))
+        && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report -- --skip-probes/.test(check))
+        && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && buyerEvidenceMinimumPacketHandoffReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Buyer evidence minimum-packet handoff code optimization review must record focused buyer, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

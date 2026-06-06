@@ -159,7 +159,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-BOTTLENECK-DETAIL');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -268,6 +268,24 @@ describe('launch evidence manifest report', () => {
     expect(acquisitionRowsByLane.get('Utility forecast lane')?.validation_command).toContain('prepare:forecast-trust-report-artifact');
     expect(acquisitionRowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
     expect(acquisitionRowsByLane.get('Retained-artifact 95% validation')?.blocks_buyer_gate).toBe(true);
+    expect(manifest.buyer_evidence.minimum_evidence_packet.status).toBe('blocked');
+    expect(manifest.buyer_evidence.minimum_evidence_packet.proof_type).toBe('buyer_evidence_minimum_packet_handoff');
+    expect(manifest.buyer_evidence.minimum_evidence_packet.source).toBe('buyer_evidence.acquisition_matrix.rows');
+    expect(manifest.buyer_evidence.minimum_evidence_packet.item_count).toBe(manifest.buyer_evidence.acquisition_matrix.row_count);
+    expect(manifest.buyer_evidence.minimum_evidence_packet.blocked_count).toBe(manifest.buyer_evidence.acquisition_matrix.blocked_count);
+    expect(manifest.buyer_evidence.minimum_evidence_packet.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95%|grant production approval/i);
+    expect(manifest.buyer_evidence.minimum_evidence_packet.stop_gate).toMatch(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95/i);
+    const minimumPacketRowsByLane = mapBy(
+      manifest.buyer_evidence.minimum_evidence_packet.items,
+      (item: {
+        lane: string;
+        validation_command?: string;
+        blocks_95_gate?: boolean;
+      }) => item.lane,
+    );
+    expect(minimumPacketRowsByLane.get('Outreach response log intake')?.validation_command).toContain('plan:outreach-intake');
+    expect(minimumPacketRowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
+    expect(minimumPacketRowsByLane.get('Retained-artifact 95% validation')?.blocks_95_gate).toBe(true);
     expect(manifest.supabase_advisor.status).toBe('needs_remediation');
     expect(manifest.supabase_advisor.project_ref).toBe('qnymbecjgeaoxsfphrti');
     expect(manifest.supabase_advisor.cli_app_lint_status).toBe('watch');
@@ -858,9 +876,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(45);
+    expect(manifest.implementation_decisions).toHaveLength(46);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(45);
+    expect(manifest.code_optimization_reviews).toHaveLength(46);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2001,6 +2019,32 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
+    const buyerEvidenceMinimumPacketHandoffDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    );
+    expect(buyerEvidenceMinimumPacketHandoffDecision).toBeTruthy();
+    expect(buyerEvidenceMinimumPacketHandoffDecision.chosen_variant).toBe('minimal derived buyer evidence packet handoff');
+    expect(buyerEvidenceMinimumPacketHandoffDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-buyer-evidence-gate-readiness.mjs',
+      'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/buyerEvidenceGateReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(buyerEvidenceMinimumPacketHandoffDecision.proof_boundary).toMatch(/does not contact buyers|send outreach|create accepted evidence|attach retained artifacts|move confidence|validate 95%|production approval|hosted\/live parity|raise launch status/i);
+    const buyerEvidenceMinimumPacketHandoffReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-MINIMUM-PACKET-HANDOFF',
+    );
+    expect(buyerEvidenceMinimumPacketHandoffReview).toBeTruthy();
+    expect(buyerEvidenceMinimumPacketHandoffReview.policy).toBe('strict');
+    expect(buyerEvidenceMinimumPacketHandoffReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+      'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
     const tempRoot = makeTempRoot();
@@ -2198,6 +2242,26 @@ describe('launch evidence manifest report', () => {
     expect(rowsByLane.get('Strong commercial commitment')?.proof_boundary).toMatch(/signed agreement|paid pilot|invoice|PO|LOI|status-only labels/i);
     expect(rowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
     expect(rowsByLane.get('Retained-artifact 95% validation')?.proof_boundary).toMatch(/validation does not create buyer acceptance/i);
+    const minimumPacket = manifest.buyer_evidence.minimum_evidence_packet;
+    expect(minimumPacket.proof_type).toBe('buyer_evidence_minimum_packet_handoff');
+    expect(minimumPacket.source).toBe('buyer_evidence.acquisition_matrix.rows');
+    expect(minimumPacket.item_count).toBe(matrix.row_count);
+    expect(minimumPacket.blocked_count).toBe(matrix.blocked_count);
+    expect(minimumPacket.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|attach retained artifacts|validate 95%|grant production approval/i);
+    expect(minimumPacket.stop_gate).toMatch(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95/i);
+    const packetRowsByLane = mapBy(
+      minimumPacket.items,
+      (item: {
+        lane: string;
+        validation_command?: string;
+        blocks_95_gate?: boolean;
+        proof_type?: string;
+      }) => item.lane,
+    );
+    expect(packetRowsByLane.get('Outreach response log intake')?.validation_command).toContain('plan:outreach-intake');
+    expect(packetRowsByLane.get('Retained-artifact 95% validation')?.validation_command).toContain('validate:pilot-evidence');
+    expect(packetRowsByLane.get('Retained-artifact 95% validation')?.proof_type).toBe('retained_artifact_validation');
+    expect(packetRowsByLane.get('Retained-artifact 95% validation')?.blocks_95_gate).toBe(true);
   }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
 
   it('classifies buyer evidence remediation proof rows with explicit boundaries', () => {

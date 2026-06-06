@@ -46,6 +46,9 @@ describe('buyer evidence gate readiness report', () => {
     expect(stdout).toContain('Buyer Evidence Acquisition Matrix');
     expect(stdout).toContain('| Outreach response log intake |');
     expect(stdout).toContain('| Production pilot evidence register |');
+    expect(stdout).toContain('Minimum evidence packet:');
+    expect(stdout).toContain('Minimum Buyer Evidence Packet Handoff');
+    expect(stdout).toContain('Blocks 95 Gate');
     expect(stdout).toContain('Buyer Evidence Remediation Queue');
     expect(stdout).toContain('Buyer Accepted Evidence Required');
     expect(stdout).toContain('Retained Artifact Required');
@@ -88,6 +91,20 @@ describe('buyer evidence gate readiness report', () => {
     expect(payload.buyer_evidence.acquisition_matrix.rows.some(
       (item: { lane: string }) => item.lane === 'Production pilot evidence register',
     )).toBe(true);
+    expect(payload.minimum_evidence_packet.proof_type).toBe('buyer_evidence_minimum_packet_handoff');
+    expect(payload.minimum_evidence_packet.source).toBe('buyer_evidence.acquisition_matrix.rows');
+    expect(payload.minimum_evidence_packet.item_count).toBe(payload.buyer_evidence.acquisition_matrix.row_count);
+    expect(payload.minimum_evidence_packet.blocked_count).toBe(payload.buyer_evidence.acquisition_matrix.blocked_count);
+    expect(payload.minimum_evidence_packet.items.some(
+      (item: { lane: string; validation_command: string }) => item.lane === 'Outreach response log intake' && item.validation_command.includes('plan:outreach-intake'),
+    )).toBe(true);
+    expect(payload.minimum_evidence_packet.items.some(
+      (item: { lane: string; validation_command: string; blocks_95_gate: boolean }) => item.lane === 'Retained-artifact 95% validation'
+        && item.validation_command.includes('validate:pilot-evidence')
+        && item.blocks_95_gate === true,
+    )).toBe(true);
+    expect(payload.minimum_evidence_packet.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95|grant production approval/i);
+    expect(payload.minimum_evidence_packet.stop_gate).toMatch(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95/i);
     expect(payload.buyer_evidence.hard_gate_deficits.remediation_queue.items.some(
       (item: { buyer_accepted_evidence_required: boolean }) => item.buyer_accepted_evidence_required === true,
     )).toBe(true);

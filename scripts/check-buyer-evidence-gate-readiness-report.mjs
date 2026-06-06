@@ -93,6 +93,9 @@ if (failures.length === 0) {
     assertContains(stdout, '## Buyer Evidence Acquisition Matrix', 'Report must include the buyer acquisition matrix.');
     assertContains(stdout, '| Outreach response log intake |', 'Report must include the outreach intake acquisition row.');
     assertContains(stdout, '| Production pilot evidence register |', 'Report must include the production register acquisition row.');
+    assertContains(stdout, 'Minimum evidence packet:', 'Report must summarize the minimum buyer evidence packet handoff.');
+    assertContains(stdout, '## Minimum Buyer Evidence Packet Handoff', 'Report must include the minimum buyer evidence packet handoff.');
+    assertContains(stdout, 'Blocks 95 Gate', 'Report must expose whether each minimum packet row blocks the 95% gate.');
     assertContains(stdout, '## Buyer Evidence Remediation Queue', 'Report must include the buyer remediation queue.');
     assertContains(stdout, 'Buyer Accepted Evidence Required', 'Report must expose accepted-buyer-evidence requirements.');
     assertContains(stdout, 'Retained Artifact Required', 'Report must expose retained-artifact requirements.');
@@ -106,6 +109,7 @@ if (failures.length === 0) {
     const buyer = payload.buyer_evidence ?? {};
     const deficits = buyer.hard_gate_deficits ?? {};
     const acquisitionMatrix = buyer.acquisition_matrix ?? {};
+    const minimumPacket = payload.minimum_evidence_packet ?? {};
     const remediationQueue = deficits.remediation_queue ?? {};
     const requirements = (deficits.items ?? []).map((item) => item.requirement);
     const hardGateSkipped = deficits.status === 'skipped';
@@ -124,6 +128,16 @@ if (failures.length === 0) {
     assert(acquisitionMatrix.row_count === 10, 'acquisition_matrix.row_count must cover the ten buyer acquisition rows.');
     assert(acquisitionMatrix.rows.some((item) => item.lane === 'Outreach response log intake'), 'acquisition matrix must include outreach response log intake.');
     assert(acquisitionMatrix.rows.some((item) => item.lane === 'Production pilot evidence register'), 'acquisition matrix must include production pilot evidence register.');
+    assert(minimumPacket.proof_type === 'buyer_evidence_minimum_packet_handoff', 'minimum_evidence_packet must classify proof_type as buyer_evidence_minimum_packet_handoff.');
+    assert(minimumPacket.source === 'buyer_evidence.acquisition_matrix.rows', 'minimum_evidence_packet must record the acquisition matrix as its source.');
+    assert(minimumPacket.item_count === 10, 'minimum_evidence_packet.item_count must cover the ten buyer acquisition rows.');
+    assert(minimumPacket.blocked_count === acquisitionMatrix.blocked_count, 'minimum_evidence_packet.blocked_count must match the acquisition matrix blocked_count.');
+    assert(Array.isArray(minimumPacket.items), 'minimum_evidence_packet.items must be a list.');
+    assert(minimumPacket.items.some((item) => item.lane === 'Outreach response log intake' && /plan:outreach-intake/.test(item.validation_command ?? '')), 'minimum packet must include the outreach intake command.');
+    assert(minimumPacket.items.some((item) => item.lane === 'Production pilot evidence register' && /report:buyer-evidence-readiness/.test(item.validation_command ?? '')), 'minimum packet must include the production register readiness command.');
+    assert(minimumPacket.items.some((item) => item.lane === 'Retained-artifact 95% validation' && /validate:pilot-evidence/.test(item.validation_command ?? '') && item.blocks_95_gate === true), 'minimum packet must include the retained-artifact 95% validation blocker.');
+    assert(/does not contact buyers|create accepted evidence|attach retained artifacts|validate 95|grant production approval/i.test(minimumPacket.proof_boundary ?? ''), 'minimum packet proof boundary must preserve acquisition-only and no-approval semantics.');
+    assert(/Do not mark buyer evidence ready|validate:pilot-evidence --require-95|real anonymized buyer rows/i.test(minimumPacket.stop_gate ?? ''), 'minimum packet stop gate must require real retained buyer evidence before readiness.');
     assert(Array.isArray(remediationQueue.items), 'remediation_queue.items must be a list.');
     if (!hardGateSkipped) {
       assert(remediationQueue.items.some((item) => item.buyer_accepted_evidence_required === true), 'remediation queue must identify accepted-buyer-evidence requirements.');

@@ -152,6 +152,7 @@ function focusedPayload(manifest) {
     launch_decision: manifest.launch_decision ?? null,
     repo: manifest.repo ?? {},
     buyer_evidence: buyer,
+    minimum_evidence_packet: buyer.minimum_evidence_packet ?? null,
     launch_action_buyer_row: launchActionRow,
     production_approval_buyer_prerequisite: productionPrerequisiteRow,
     production_approval_request_buyer_row: productionRequestRow,
@@ -165,6 +166,7 @@ function renderMarkdown(payload) {
   const deficits = buyer.hard_gate_deficits ?? {};
   const remediationQueue = deficits.remediation_queue ?? {};
   const acquisitionMatrix = buyer.acquisition_matrix ?? {};
+  const minimumPacket = payload.minimum_evidence_packet ?? {};
   const launchRow = payload.launch_action_buyer_row ?? {};
   const productionPrerequisite = payload.production_approval_buyer_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_buyer_row ?? {};
@@ -191,6 +193,20 @@ function renderMarkdown(payload) {
     item.owner,
     item.proof_type,
     item.validation_command,
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const minimumPacketRows = (minimumPacket.items ?? []).map((item) => [
+    item.rank,
+    item.lane,
+    item.owner,
+    item.status,
+    item.required_artifact,
+    item.minimum_accepted_signal,
+    item.validation_command,
+    item.blocks_95_gate ? 'yes' : 'no',
+    item.proof_type,
     item.proof_boundary,
     item.stop_gate,
   ]);
@@ -257,6 +273,7 @@ function renderMarkdown(payload) {
     `Evidence root: \`${buyer.evidence_root ?? 'unknown'}\``,
     `Open hard-gate rows: \`${deficits.open_count ?? 'unknown'}/${deficits.total_count ?? 'unknown'}\``,
     `Acquisition matrix: \`${acquisitionMatrix.status ?? 'unknown'}\`, blocked \`${acquisitionMatrix.blocked_count ?? 'unknown'}/${acquisitionMatrix.row_count ?? 'unknown'}\``,
+    `Minimum evidence packet: \`${minimumPacket.status ?? 'unknown'}\`, blocked \`${minimumPacket.blocked_count ?? 'unknown'}/${minimumPacket.item_count ?? 'unknown'}\``,
     '',
     '## Decision Boundary',
     '',
@@ -289,6 +306,12 @@ function renderMarkdown(payload) {
     acquisitionMatrix.evidence ?? 'Buyer evidence acquisition matrix missing.',
     '',
     renderTable(['Rank', 'Lane', 'Source Requirement', 'Current', 'Required Artifact', 'Minimum Accepted Signal', 'Status', 'Owner', 'Proof Type', 'Validation Command', 'Proof Boundary', 'Stop Gate'], acquisitionRows),
+    '',
+    '## Minimum Buyer Evidence Packet Handoff',
+    '',
+    minimumPacket.evidence ?? 'Minimum buyer evidence packet handoff missing.',
+    '',
+    renderTable(['Rank', 'Lane', 'Owner', 'Status', 'Required Artifact', 'Minimum Accepted Signal', 'Validation Command', 'Blocks 95 Gate', 'Proof Type', 'Proof Boundary', 'Stop Gate'], minimumPacketRows),
     '',
     '## Buyer Evidence Remediation Queue',
     '',
