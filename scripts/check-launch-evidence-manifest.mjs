@@ -2835,6 +2835,41 @@ try {
         && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Adversarial review focused report code optimization review must record adversarial review report, public status, docs, and manifest checks.',
     );
+    const releasePreflightPublicCheckHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES');
+    assert(releasePreflightPublicCheckHandleDecision, 'Manifest must record the release preflight public checker handle implementation decision.');
+    assert(
+      releasePreflightPublicCheckHandleDecision?.chosen_variant === 'minimal public release-preflight checker alignment',
+      'Release preflight public checker handle decision must record the minimal public checker alignment variant.',
+    );
+    assert(
+      Array.isArray(releasePreflightPublicCheckHandleDecision?.files_changed)
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('public/status/release-health.json')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && releasePreflightPublicCheckHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Release preflight public checker handle decision must record public status, generator, manifest, and unit test files.',
+    );
+    assert(
+      /does not install Corepack|Git LFS|run full release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i.test(releasePreflightPublicCheckHandleDecision?.proof_boundary ?? ''),
+      'Release preflight public checker handle decision must preserve release non-execution, no-approval, no-live-proof, and no-readiness boundaries.',
+    );
+    const releasePreflightPublicCheckHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES');
+    assert(releasePreflightPublicCheckHandleReview, 'Manifest must record the release preflight public checker handle code optimization review.');
+    assert(releasePreflightPublicCheckHandleReview?.policy === 'strict', 'Release preflight public checker handle review must use strict policy.');
+    assert(releasePreflightPublicCheckHandleReview?.verdict === 'pass', 'Release preflight public checker handle review must pass.');
+    assert(
+      Array.isArray(releasePreflightPublicCheckHandleReview?.tests_or_checks)
+        && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /generate:public-release-status/.test(check))
+        && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /report:release-preflight -- --skip-probes/.test(check))
+        && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check))
+        && releasePreflightPublicCheckHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Release preflight public checker handle review must record public-status, focused release-preflight, and manifest checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

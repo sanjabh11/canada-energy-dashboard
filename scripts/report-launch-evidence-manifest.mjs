@@ -4440,6 +4440,18 @@ const releasePreflightSourceOfTruthHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releasePreflightPublicCheckHandleFilesChanged = [
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const strategyAuditSliceTimeoutFilesChanged = [
   'tests/unit/productionApprovalPacket.test.ts',
   'tests/unit/strategyCompletionAudit.test.ts',
@@ -4751,6 +4763,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...buyerEvidenceProofHandleFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
+  ...releasePreflightPublicCheckHandleFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
@@ -4840,6 +4853,17 @@ const releasePreflightSourceOfTruthHandleTestsRun = [
   'pnpm run check:commercial-source',
   'pnpm run check:public-release-status',
   'pnpm run check:release-preflight-report',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const releasePreflightPublicCheckHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run report:release-preflight -- --skip-probes',
+  'pnpm run check:release-preflight-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
@@ -5093,6 +5117,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...buyerEvidenceProofHandleTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
+  ...releasePreflightPublicCheckHandleTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
@@ -5529,6 +5554,19 @@ const safeFixImplementationDecisions = [
     reason: 'The adversarial review ledger is the claim-refutation surface for launch synthesis, but the public status handle still required operators to scan broad launch artifacts instead of using a focused challenge-lane report.',
     proof_boundary: 'This record improves adversarial review visibility only; it does not prove production approval, create buyer evidence, contact buyers, prove buyer acceptance, run release-readiness as clearance, authorize Supabase, clear Supabase advisor findings, approve branches, resolve source provenance, request owner approval, deploy, mutate live services, prove hosted/live parity, clear launch blockers, or raise launch status.',
     stop_gate: 'Do not treat the focused adversarial review report/check, public adversarial review handle, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    decision: 'Route every public release-preflight deficit, remediation, and clearance handle through the focused release-preflight report/check pair.',
+    acceptance_check: 'The release_toolchain_approval_deficit_ledger, release_preflight_remediation_queue, and release_preflight_clearance_matrix public status rows expose report:release-preflight plus check:release-preflight-report, and public-status generation/tests reject stale report-only manifest handles.',
+    chosen_variant: 'minimal public release-preflight checker alignment',
+    repo_pattern_reused: 'Existing focused release-preflight report/check scripts, public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, statusPagePosture tests, launch evidence manifest ledger, and commercial readiness checker.',
+    files_changed: releasePreflightPublicCheckHandleFilesChanged,
+    tests_run: releasePreflightPublicCheckHandleTestsRun,
+    proof: 'The patch updates the three stale public release-preflight command rows in RELEASE_HEALTH_EVIDENCE, the source public manifest, regenerated release-health JSON, generator validation, and status tests so each release-preflight public handle validates the focused wrapper instead of only rendering broad manifest output.',
+    reason: 'The release-preflight lane already has a focused structural checker, but three public status handles still pointed operators at report-only launch manifest output, leaving a weaker proof handle than adjacent public release gates.',
+    proof_boundary: 'This record aligns public release-preflight command handles only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
+    stop_gate: 'Do not treat focused release-preflight public handles, public release-status validation, generated status JSON, report/check success, skipped probes, or this code optimization ledger as release-readiness, production approval, deployment, hosted/live parity, source provenance cleanup, owner approval, or commercial-ready status.',
   },
 ];
 
@@ -6317,6 +6355,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A partial patch is smaller, but the next generate:public-release-status or source-doc check would expose stale command handles.',
     evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    variant: 'Leave the release-preflight public status rows on report:release-preflight plus report:launch-evidence-manifest.',
+    reason_rejected: 'Would preserve report-only public handles after the focused release-preflight checker already proves wrapper structure and no-execution boundaries.',
+    tradeoff: 'No-code defer avoids touching public status contracts, but keeps operator-facing release-preflight rows weaker than adjacent focused public handles.',
+    evidence: 'release_toolchain_approval_deficit_ledger, release_preflight_remediation_queue, and release_preflight_clearance_matrix were the only report-backed public status rows without a check command.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    variant: 'Point the public rows at check:release-readiness or production deploy request checks.',
+    reason_rejected: 'Those are execution and approval gates, while these public status rows are inspection handles for release-preflight blocker visibility.',
+    tradeoff: 'Execution commands would look stronger but would blur focused evidence visibility with actual release clearance and owner approval.',
+    evidence: 'The release-preflight report/check stop gate says focused report success does not run release-readiness, push, deploy, clear source provenance, or grant owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    variant: 'Add a new public release-preflight checker or duplicate validation logic inside the public status generator.',
+    reason_rejected: 'A new checker would duplicate the existing focused release-preflight report/check contract and increase drift risk.',
+    tradeoff: 'A generator-only check could be narrower, but the existing focused checker already covers the deficit ledger, clearance matrix, remediation queue, toolchain probe ledger, source boundary, and approval boundary.',
+    evidence: 'scripts/check-release-preflight-readiness-report.mjs already validates the focused release-preflight status, toolchain probe ledger, release deficits, clearance matrix, remediation queue, source provenance, production approval packet, and proof boundaries.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6601,6 +6660,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one thin focused report/check pair over existing manifest adversarial_reviews fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no gate parser or review builder, executes no external gate, and preserves blocked launch status.',
     tests_or_checks: adversarialReviewFocusedReportTestsRun,
     remaining_risk: 'The adversarial review ledger remains claim-refutation visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing focused release-preflight report/check across three stale public status command rows, adds no dependency, duplicates no release-preflight parser, executes no release-readiness or deploy command, and preserves blocked launch status.',
+    tests_or_checks: releasePreflightPublicCheckHandleTestsRun,
+    remaining_risk: 'Release readiness remains blocked until Corepack-pinned release-readiness, Git LFS push-path proof, clean source provenance, explicit owner production approval, guarded deploy, and post-deploy live proof are current.',
   },
 ];
 

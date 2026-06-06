@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(30);
+    expect(manifest.implementation_decisions).toHaveLength(31);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(30);
+    expect(manifest.code_optimization_reviews).toHaveLength(31);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1522,6 +1522,35 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:adversarial-review-report -- --skip-probes',
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const releasePreflightPublicCheckHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    );
+    expect(releasePreflightPublicCheckHandleDecision).toBeTruthy();
+    expect(releasePreflightPublicCheckHandleDecision.chosen_variant).toBe('minimal public release-preflight checker alignment');
+    expect(releasePreflightPublicCheckHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'scripts/generate-public-release-status.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(releasePreflightPublicCheckHandleDecision.proof_boundary).toMatch(/does not install Corepack|run full release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i);
+    const releasePreflightPublicCheckHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
+    );
+    expect(releasePreflightPublicCheckHandleReview).toBeTruthy();
+    expect(releasePreflightPublicCheckHandleReview.policy).toBe('strict');
+    expect(releasePreflightPublicCheckHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run generate:public-release-status',
+      'pnpm run check:public-release-status',
+      'pnpm run report:release-preflight -- --skip-probes',
+      'pnpm run check:release-preflight-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');

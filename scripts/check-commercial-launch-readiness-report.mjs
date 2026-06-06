@@ -496,6 +496,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal focused objective completion audit wrapper'), 'Code optimization report must record the selected minimal objective completion audit wrapper.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT'), 'Code optimization report must record the adversarial review focused report task.');
   assert(codeOptimizationSection.includes('minimal focused adversarial review wrapper'), 'Code optimization report must record the selected minimal adversarial review wrapper.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES'), 'Code optimization report must record the release preflight public checker handle task.');
+  assert(codeOptimizationSection.includes('minimal public release-preflight checker alignment'), 'Code optimization report must record the selected minimal release preflight public checker handle patch.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');

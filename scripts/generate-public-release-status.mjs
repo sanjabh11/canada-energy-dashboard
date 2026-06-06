@@ -95,19 +95,19 @@ const requiredItemContracts = [
     id: 'release_toolchain_approval_deficit_ledger',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
   },
   {
     id: 'release_preflight_remediation_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
   },
   {
     id: 'release_preflight_clearance_matrix',
     status: 'external_gate',
     proofBucket: 'local/source',
-    command: 'pnpm run report:release-preflight && pnpm run report:launch-evidence-manifest',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
   },
   {
     id: 'release_toolchain_probe_ledger',
@@ -382,6 +382,9 @@ function validateManifest(manifest) {
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval|deficit/i.test(`${releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? ''}\n${releaseToolchainApprovalDeficitLedger.nextAction ?? ''}`)) {
     failures.push('release_toolchain_approval_deficit_ledger must describe release toolchain and approval deficits.');
   }
+  if (!/report:release-preflight/.test(releaseToolchainApprovalDeficitLedger.command ?? '') || !/check:release-preflight-report/.test(releaseToolchainApprovalDeficitLedger.command ?? '')) {
+    failures.push('release_toolchain_approval_deficit_ledger must route through the focused release preflight report/check handles.');
+  }
   if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval|does not.*create launch readiness|does not prove production approval/i.test(releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? '')) {
     failures.push('release_toolchain_approval_deficit_ledger must preserve the non-execution, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
@@ -389,12 +392,18 @@ function validateManifest(manifest) {
   if (!/Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|explicit owner production approval/i.test(`${releasePreflightQueue.evidenceBoundary ?? ''}\n${releasePreflightQueue.nextAction ?? ''}`)) {
     failures.push('release_preflight_remediation_queue must describe the release-preflight remediation sequence.');
   }
+  if (!/report:release-preflight/.test(releasePreflightQueue.command ?? '') || !/check:release-preflight-report/.test(releasePreflightQueue.command ?? '')) {
+    failures.push('release_preflight_remediation_queue must route through the focused release preflight report/check handles.');
+  }
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
     failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
   }
   const releasePreflightClearanceMatrix = itemById.get('release_preflight_clearance_matrix') ?? {};
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval/i.test(`${releasePreflightClearanceMatrix.evidenceBoundary ?? ''}\n${releasePreflightClearanceMatrix.nextAction ?? ''}`)) {
     failures.push('release_preflight_clearance_matrix must describe every release preflight clearance row.');
+  }
+  if (!/report:release-preflight/.test(releasePreflightClearanceMatrix.command ?? '') || !/check:release-preflight-report/.test(releasePreflightClearanceMatrix.command ?? '')) {
+    failures.push('release_preflight_clearance_matrix must route through the focused release preflight report/check handles.');
   }
   if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval/i.test(releasePreflightClearanceMatrix.evidenceBoundary ?? '')) {
     failures.push('release_preflight_clearance_matrix must preserve the non-execution, no-live-proof, and no-approval boundary.');
