@@ -144,7 +144,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Adversarial review ledger',
     status: 'external_gate',
-    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+    command: 'pnpm run report:adversarial-review-readiness && pnpm run check:adversarial-review-report',
     evidenceBoundary: 'The adversarial review ledger maps buyer evidence, production approval, release toolchain, Supabase advisor clearance, and branch-risk challenge lanes, but it does not prove production approval, buyer acceptance, release readiness, Supabase clearance, branch approval, deployment, hosted/live parity, or commercial launch readiness.',
   },
   {

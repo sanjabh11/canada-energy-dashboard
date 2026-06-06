@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(29);
+    expect(manifest.implementation_decisions).toHaveLength(30);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(29);
+    expect(manifest.code_optimization_reviews).toHaveLength(30);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1486,6 +1486,40 @@ describe('launch evidence manifest report', () => {
     expect(objectiveCompletionAuditFocusedReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
       'pnpm run check:objective-completion-audit-report -- --skip-probes',
+      'pnpm run check:public-release-status',
+      'pnpm run check:commercial-source',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const adversarialReviewFocusedReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    );
+    expect(adversarialReviewFocusedReportDecision).toBeTruthy();
+    expect(adversarialReviewFocusedReportDecision.chosen_variant).toBe('minimal focused adversarial review wrapper');
+    expect(adversarialReviewFocusedReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'package.json',
+      'scripts/report-adversarial-review-readiness.mjs',
+      'scripts/check-adversarial-review-readiness-report.mjs',
+      'scripts/generate-public-release-status.mjs',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'scripts/check-commercial-source-docs.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(adversarialReviewFocusedReportDecision.proof_boundary).toMatch(/does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|raise launch status/i);
+    const adversarialReviewFocusedReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    );
+    expect(adversarialReviewFocusedReportReview).toBeTruthy();
+    expect(adversarialReviewFocusedReportReview.policy).toBe('strict');
+    expect(adversarialReviewFocusedReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:adversarial-review-readiness -- --skip-probes',
+      'pnpm run check:adversarial-review-report -- --skip-probes',
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

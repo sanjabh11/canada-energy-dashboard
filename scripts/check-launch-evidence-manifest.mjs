@@ -2797,6 +2797,44 @@ try {
         && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Objective completion audit focused report code optimization review must record objective completion audit report, public status, docs, and manifest checks.',
     );
+    const adversarialReviewFocusedReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT');
+    assert(adversarialReviewFocusedReportDecision, 'Manifest must record the adversarial review focused report implementation decision.');
+    assert(
+      adversarialReviewFocusedReportDecision?.chosen_variant === 'minimal focused adversarial review wrapper',
+      'Adversarial review focused report decision must record the chosen minimal wrapper variant.',
+    );
+    assert(
+      Array.isArray(adversarialReviewFocusedReportDecision?.files_changed)
+        && adversarialReviewFocusedReportDecision.files_changed.includes('package.json')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('scripts/report-adversarial-review-readiness.mjs')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('scripts/check-adversarial-review-readiness-report.mjs')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('public/status/release-health.json')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('scripts/check-commercial-source-docs.mjs')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && adversarialReviewFocusedReportDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Adversarial review focused report decision must record the focused report scripts, public status, docs, checker, and unit test files.',
+    );
+    assert(
+      /does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|raise launch status/i.test(adversarialReviewFocusedReportDecision?.proof_boundary ?? ''),
+      'Adversarial review focused report decision must preserve no-approval, no-buyer-proof, no-release-clearance, no-Supabase-clearance, no-branch-approval, no-deploy, and no-readiness boundaries.',
+    );
+    const adversarialReviewFocusedReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT');
+    assert(adversarialReviewFocusedReportReview, 'Manifest must record the adversarial review focused report code optimization review.');
+    assert(adversarialReviewFocusedReportReview?.policy === 'strict', 'Adversarial review focused report code optimization review must use strict policy.');
+    assert(adversarialReviewFocusedReportReview?.verdict === 'pass', 'Adversarial review focused report code optimization review must pass.');
+    assert(
+      Array.isArray(adversarialReviewFocusedReportReview?.tests_or_checks)
+        && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /report:adversarial-review-readiness/.test(check))
+        && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:adversarial-review-report/.test(check))
+        && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+        && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Adversarial review focused report code optimization review must record adversarial review report, public status, docs, and manifest checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

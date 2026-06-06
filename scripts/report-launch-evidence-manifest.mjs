@@ -4727,6 +4727,23 @@ const objectiveCompletionAuditFocusedReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const adversarialReviewFocusedReportFilesChanged = [
+  'package.json',
+  'scripts/report-adversarial-review-readiness.mjs',
+  'scripts/check-adversarial-review-readiness-report.mjs',
+  'scripts/generate-public-release-status.mjs',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'scripts/check-commercial-source-docs.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4755,6 +4772,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
+  ...adversarialReviewFocusedReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5056,6 +5074,18 @@ const objectiveCompletionAuditFocusedReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const adversarialReviewFocusedReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:adversarial-review-readiness -- --skip-probes',
+  'pnpm run check:adversarial-review-report -- --skip-probes',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run check:commercial-source',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5084,6 +5114,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
+  ...adversarialReviewFocusedReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5485,6 +5516,19 @@ const safeFixImplementationDecisions = [
     reason: 'The objective completion audit is the goal-level checklist, but the public status handle still required operators to scan broad launch artifacts instead of using a focused blocker/deliverable report.',
     proof_boundary: 'This record improves objective completion audit visibility only; it does not mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, approve branches, authorize Supabase, resolve source provenance, run release-readiness as clearance, request owner approval, deploy, mutate live services, prove hosted/live parity, prove production approval, prove buyer acceptance, or raise launch status.',
     stop_gate: 'Do not treat the focused objective completion audit report/check, public objective completion handle, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    decision: 'Expose adversarial review claim-refutation lanes through a focused report/check pair and public-safe handle.',
+    acceptance_check: 'Operators can run report:adversarial-review-readiness and check:adversarial-review-report to inspect adversarial_reviews lanes, proof types, findings, decisions, stop gates, public status handle, package-script handles, and no-readiness boundaries without broad-report scanning or clearing any blocker.',
+    chosen_variant: 'minimal focused adversarial review wrapper',
+    repo_pattern_reused: 'Existing manifest-backed focused report/check wrappers, adversarial_reviews manifest rows, public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, COMMERCIAL_SOURCE_OF_TRUTH public-handle notes, statusPagePosture tests, and launch evidence code-optimization ledger.',
+    files_changed: adversarialReviewFocusedReportFilesChanged,
+    tests_run: adversarialReviewFocusedReportTestsRun,
+    proof: 'The patch adds a thin adversarial-review report/check over existing adversarial_reviews manifest fields, routes the public adversarial_review_ledger handle through that report/check pair, and asserts package, public status, docs, manifest, and commercial report contracts without changing launch status.',
+    reason: 'The adversarial review ledger is the claim-refutation surface for launch synthesis, but the public status handle still required operators to scan broad launch artifacts instead of using a focused challenge-lane report.',
+    proof_boundary: 'This record improves adversarial review visibility only; it does not prove production approval, create buyer evidence, contact buyers, prove buyer acceptance, run release-readiness as clearance, authorize Supabase, clear Supabase advisor findings, approve branches, resolve source provenance, request owner approval, deploy, mutate live services, prove hosted/live parity, clear launch blockers, or raise launch status.',
+    stop_gate: 'Do not treat the focused adversarial review report/check, public adversarial review handle, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6245,6 +6289,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'A partial patch is smaller, but the next generate:public-release-status or source-doc check would expose stale command handles.',
     evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    variant: 'Leave adversarial_review_ledger discoverable only through broad manifest and commercial readiness reports.',
+    reason_rejected: 'Would keep the claim-refutation lanes weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
+    tradeoff: 'No-code defer avoids new scripts, but operators must scan broad launch artifacts to find challenge lanes, findings, decisions, and stop gates.',
+    evidence: 'adversarial_reviews is already a structured manifest field, and public status already exposes adversarial_review_ledger as a separate handle.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    variant: 'Run buyer validation, Supabase advisors, branch mutations, release-readiness, production deploy request, or live proof from the adversarial review report.',
+    reason_rejected: 'Those operations require retained buyer evidence, external authorization, owner decisions, clean source provenance, production approval, deploy context, or live-service access outside this safe report-wrapper phase.',
+    tradeoff: 'Direct execution could produce fresher refutation evidence, but it would violate the no-clearance boundary and risk overstating launch readiness.',
+    evidence: 'The adversarial review rows explicitly refute buyer, approval, release, Supabase, and branch claims while the underlying gates remain blocked or manual-stop elsewhere in the manifest.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    variant: 'Duplicate adversarial review construction or lane-specific gate parsing in the focused report.',
+    reason_rejected: 'Duplicating review construction would create another source of truth for claim-refutation lanes and stop gates.',
+    tradeoff: 'Inline construction could make the report standalone, but it would drift from the launch evidence manifest and its validators.',
+    evidence: 'report-launch-evidence-manifest already emits adversarial_reviews lane, finding, decision, proof type, proof boundary, and stop gate rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    variant: 'Patch only generated public/status/release-health.json or release posture text.',
+    reason_rejected: 'Generated-only or partial public-surface edits would drift from the generator, source manifest, docs checker, package scripts, and status posture tests.',
+    tradeoff: 'A partial patch is smaller, but the next generate:public-release-status or source-doc check would expose stale command handles.',
+    evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6520,6 +6592,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one thin focused report/check pair over existing manifest completion_audit fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no gate parser, executes no external gate, and preserves blocked launch status.',
     tests_or_checks: objectiveCompletionAuditFocusedReportTestsRun,
     remaining_risk: 'The objective completion audit remains evidence visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds one thin focused report/check pair over existing manifest adversarial_reviews fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no gate parser or review builder, executes no external gate, and preserves blocked launch status.',
+    tests_or_checks: adversarialReviewFocusedReportTestsRun,
+    remaining_risk: 'The adversarial review ledger remains claim-refutation visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

@@ -438,8 +438,8 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/Supabase clearance/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/permission to contact buyers/i);
     expect(adversarialReviewLedgerEvidence?.status).toBe('external_gate');
-    expect(adversarialReviewLedgerEvidence?.command).toContain('report:launch-evidence-manifest');
-    expect(adversarialReviewLedgerEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(adversarialReviewLedgerEvidence?.command).toContain('report:adversarial-review-readiness');
+    expect(adversarialReviewLedgerEvidence?.command).toContain('check:adversarial-review-report');
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/buyer evidence, production approval, release toolchain/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/Supabase advisor clearance/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/branch-risk challenge lanes/i);
@@ -785,8 +785,8 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditGate?.nextAction).toMatch(/post-deploy live proof gates/i);
     expect(adversarialReviewLedgerGate?.status).toBe('external_gate');
     expect(adversarialReviewLedgerGate?.proofBucket).toBe('repo artifact');
-    expect(adversarialReviewLedgerGate?.command).toContain('report:launch-evidence-manifest');
-    expect(adversarialReviewLedgerGate?.command).toContain('report:commercial-launch-readiness');
+    expect(adversarialReviewLedgerGate?.command).toContain('report:adversarial-review-readiness');
+    expect(adversarialReviewLedgerGate?.command).toContain('check:adversarial-review-report');
     expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/buyer evidence, production approval, release toolchain/i);
     expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/Supabase advisor clearance/i);
     expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/branch-risk challenge lanes/i);

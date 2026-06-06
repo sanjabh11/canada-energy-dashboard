@@ -65,7 +65,7 @@ const requiredItemContracts = [
     id: 'adversarial_review_ledger',
     status: 'external_gate',
     proofBucket: 'repo artifact',
-    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+    command: 'pnpm run report:adversarial-review-readiness && pnpm run check:adversarial-review-report',
   },
   {
     id: 'fix_report_blocker_map',
@@ -334,6 +334,9 @@ function validateManifest(manifest) {
   const adversarialReviewLedger = itemById.get('adversarial_review_ledger') ?? {};
   if (!/buyer evidence|production approval|release toolchain|Supabase advisor clearance|branch-risk|challenge lanes|claim-refutation/i.test(`${adversarialReviewLedger.evidenceBoundary ?? ''}\n${adversarialReviewLedger.nextAction ?? ''}`)) {
     failures.push('adversarial_review_ledger must describe the buyer, approval, release, Supabase, and branch challenge lanes.');
+  }
+  if (!/report:adversarial-review-readiness/.test(adversarialReviewLedger.command ?? '') || !/check:adversarial-review-report/.test(adversarialReviewLedger.command ?? '')) {
+    failures.push('adversarial_review_ledger must route through the focused adversarial review report/check handles.');
   }
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*release readiness|does not.*Supabase clearance|does not.*branch approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(adversarialReviewLedger.evidenceBoundary ?? '')) {
     failures.push('adversarial_review_ledger must preserve the no-approval, no-buyer-proof, no-release-readiness, no-Supabase-clearance, no-branch-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');

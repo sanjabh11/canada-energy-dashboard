@@ -125,6 +125,8 @@ const focusedProgressDigestReportPhrase = /report:progress-digest-readiness[\s\S
 const focusedProgressDigestCheckerPhrase = /check:progress-digest-report[\s\S]{0,620}(?:validates|current phase|target matrix|top unblock options|no-completion|no-readiness)/i;
 const focusedObjectiveCompletionAuditReportPhrase = /report:objective-completion-audit-readiness[\s\S]{0,620}(?:objective completion audit|deliverable rows|goal-blocking rows|launch evidence manifest)/i;
 const focusedObjectiveCompletionAuditCheckerPhrase = /check:objective-completion-audit-report[\s\S]{0,720}(?:validates|completion audit|deliverable rows|goal-blocking rows|no-completion|no-readiness)/i;
+const focusedAdversarialReviewReportPhrase = /report:adversarial-review-readiness[\s\S]{0,620}(?:adversarial review|claim-refutation|challenge lanes|launch evidence manifest)/i;
+const focusedAdversarialReviewCheckerPhrase = /check:adversarial-review-report[\s\S]{0,720}(?:validates|adversarial review|claim-refutation|challenge lanes|no-readiness)/i;
 const focusedLaunchActionReportPhrase = /report:launch-action-readiness[\s\S]{0,460}focused launch action report|focused launch action report[\s\S]{0,460}report:launch-action-readiness/i;
 const focusedLaunchActionCheckerPhrase = /check:launch-action-report[\s\S]{0,620}(?:validates|launch blocker action queue|lane status summary|does not.*launch readiness)/i;
 const publicStatusFocusedLaunchActionHandlePhrase = /focused launch action report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused launch action report/i;
@@ -616,6 +618,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:objective-completion-audit-report wired to the focused objective completion audit report checker.');
   }
 
+  if (packageScripts['report:adversarial-review-readiness'] !== 'node scripts/report-adversarial-review-readiness.mjs') {
+    failures.push('package.json must keep report:adversarial-review-readiness wired to the focused adversarial review report.');
+  }
+
+  if (packageScripts['check:adversarial-review-report'] !== 'node scripts/check-adversarial-review-readiness-report.mjs') {
+    failures.push('package.json must keep check:adversarial-review-report wired to the focused adversarial review report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -884,6 +894,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!focusedObjectiveCompletionAuditCheckerPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:objective-completion-audit-report and preserve its no-completion/no-readiness checker boundary.');
+  }
+
+  if (!focusedAdversarialReviewReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:adversarial-review-readiness as the focused adversarial review report.');
+  }
+
+  if (!focusedAdversarialReviewCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:adversarial-review-report and preserve its no-readiness checker boundary.');
   }
 
   if (!focusedLaunchActionReportPhrase.test(sourceDoc)) {
