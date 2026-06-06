@@ -13,6 +13,8 @@ let skipProbes = false;
 const SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report';
 const RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report';
 const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND} && corepack pnpm run check:release-readiness`;
+const LAUNCH_EVIDENCE_VALIDATION_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report';
+const LAUNCH_ACTION_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report';
 const BRANCH_REVIEW_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report';
 const SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report';
 const BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report';
@@ -1300,7 +1302,7 @@ function buildLaunchActionQueue({
       blocker: 'focused launch evidence validation must stay attached before a deploy approval request',
       owner: 'operator',
       action: 'Run the launch evidence manifest check and production approval packet while keeping structure validation separate from approval, buyer proof, deployment, and live parity.',
-      proof_command: 'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
+      proof_command: LAUNCH_EVIDENCE_VALIDATION_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('launch_evidence_validation'),
       proof_boundary: launchActionProofBoundary('launch_evidence_validation'),
       stop_gate: 'Do not treat launch evidence validation, generated manifests, public status JSON, or schema validation as production approval, buyer acceptance, deployment, or current hosted/live parity.',
@@ -4671,6 +4673,13 @@ const launchActionFinalProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const fixReportFocusedChecksFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4695,6 +4704,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...postDeployLiveProofReportFilesChanged,
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
+  ...fixReportFocusedChecksFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4954,6 +4964,14 @@ const launchActionFinalProofHandleTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const fixReportFocusedChecksTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run report:commercial-launch-readiness -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4978,6 +4996,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...postDeployLiveProofReportTestsRun,
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
+  ...fixReportFocusedChecksTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5327,6 +5346,19 @@ const safeFixImplementationDecisions = [
     reason: 'The launch action queue is the phase-wise execution entry point; leaving its final two lanes on raw deploy-request and live-proof commands while earlier lanes route through focused reports made the operator path inconsistent.',
     proof_boundary: 'This record aligns final launch-action proof handles only; it does not request owner approval, grant approval, run deploy-production.sh, run netlify deploy, push, mutate branches, clear source provenance, run post-deploy live proof, run browser smoke, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused final launch-action proof handles, skipped-probe report/check success, focused launch action output, or this code optimization ledger as owner approval, deployment permission, deploy completion, post-deploy live proof, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    decision: 'Align fix_report.current_required_checks with the focused lane report/check handles while retaining guarded raw execution gates.',
+    acceptance_check: 'The manifest Fix Report and commercial readiness Fix Report expose focused report/check handles for source provenance, launch evidence validation, launch action, release preflight, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof, while still listing the raw release-readiness, deploy-request, and post-deploy live gates for the eventual approved execution phase.',
+    chosen_variant: 'minimal focused fix-report check-list alignment',
+    repo_pattern_reused: 'Existing focused proof command constants, fix_report.current_required_checks rendering, launch evidence manifest checker, commercial readiness report checker, and launch manifest unit test contract.',
+    files_changed: fixReportFocusedChecksFilesChanged,
+    tests_run: fixReportFocusedChecksTestsRun,
+    proof: 'The patch reuses existing focused proof command constants in fix_report.current_required_checks and asserts those exact handles in the manifest checker, commercial readiness report checker, and launch evidence manifest unit test without changing lane statuses.',
+    reason: 'After focused lane reports were added, the top-level Fix Report still emphasized older broad/raw handles and did not present the safer inspection-first path now used by the launch action and completion audit surfaces.',
+    proof_boundary: 'This record aligns the Fix Report command list only; it does not run focused reports as clearance, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused Fix Report check list, skipped-probe report/check success, manifest validation, commercial report output, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -5975,6 +6007,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'Inline checks could make the launch action checker self-contained, but they would add a second source of truth for approval and live-proof sequencing.',
     evidence: 'report-launch-evidence-manifest already emits launch_action_queue, production_approval.prerequisite_queue, production_approval.request_packet, and post_deploy_live_proof.gate_queue.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    variant: 'Leave fix_report.current_required_checks on older broad and raw gate handles only.',
+    reason_rejected: 'Would keep the top-level Fix Report inconsistent with the focused launch action, completion audit, and lane-specific proof handles.',
+    tradeoff: 'No-code defer avoids touching report contracts, but it leaves operators without the inspection-first command path in the Fix Report.',
+    evidence: 'Focused source, validation, launch action, release, branch, Supabase, buyer, production approval, and post-deploy reports already exist and are validated elsewhere.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    variant: 'Replace all raw execution gates with focused report handles and drop release/deploy/live commands.',
+    reason_rejected: 'Focused handles are readiness inspection entry points; the Fix Report still needs to preserve the guarded final machine gates for the approved execution phase.',
+    tradeoff: 'All-focused commands would scan more consistently, but they would hide check:release-readiness, check:production-deploy-request, and check:post-deploy-live.',
+    evidence: 'Production approval and post-deploy queues intentionally retain raw execution gates downstream of focused report/check handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    variant: 'Run buyer validation, Supabase advisors, branch review mutations, release-readiness, deploy request, or live proof to clear the list.',
+    reason_rejected: 'Those operations require real retained buyer evidence, external authorization, owner branch decisions, clean source provenance, explicit production approval, deploy context, or live-service access outside this safe-fix phase.',
+    tradeoff: 'Direct execution could produce fresher evidence, but it would violate approval boundaries and risk overstating launch readiness.',
+    evidence: 'The manifest still marks buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain, production approval, and post-deploy live proof as blocked or manual-stop.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    variant: 'Duplicate focused command-list logic in the Markdown renderer instead of the manifest.',
+    reason_rejected: 'The structured launch evidence manifest is the source of truth for the commercial report and downstream validators.',
+    tradeoff: 'Renderer-only patch could change the visible report without changing JSON, but it would leave machine-readable evidence stale.',
+    evidence: 'report-commercial-launch-readiness renders fix_report.current_required_checks directly from the manifest.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6215,6 +6275,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: launchActionFinalProofHandleTestsRun,
     remaining_risk: 'Production approval remains a manual stop and post-deploy live proof remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, static parity, and hosted smoke are current.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only the existing manifest Fix Report command list plus checker/test assertions, reusing focused proof command constants without adding dependencies, duplicating lane parsers, executing external gates, or changing launch status.',
+    tests_or_checks: fixReportFocusedChecksTestsRun,
+    remaining_risk: 'The launch goal remains blocked until retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
+  },
 ];
 
 const manifest = {
@@ -6432,13 +6501,21 @@ const manifest = {
     files_changed_by_manifest_command: [],
     safe_fix_boundary: 'This manifest command is read-only unless --output is used to write the JSON file.',
     current_required_checks: [
+      SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
+      LAUNCH_EVIDENCE_VALIDATION_FOCUSED_PROOF_COMMAND,
+      LAUNCH_ACTION_FOCUSED_PROOF_COMMAND,
+      RELEASE_READINESS_FOCUSED_PROOF_COMMAND,
+      BRANCH_REVIEW_FOCUSED_PROOF_COMMAND,
+      SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND,
+      BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
+      PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND,
+      POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND,
       'corepack pnpm run report:buyer-evidence-readiness',
       'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
       'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
-      'corepack pnpm run report:branch-review-readiness',
-      'corepack pnpm run check:branch-review-report',
       'corepack pnpm run check:launch-evidence-manifest',
+      'corepack pnpm run check:commercial-launch-readiness-report',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',

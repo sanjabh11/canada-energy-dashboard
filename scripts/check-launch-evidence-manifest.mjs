@@ -1959,6 +1959,28 @@ try {
       manifest.fix_report.tests_run.some((check) => /test:e2e:preview/.test(check)),
       'Manifest fix_report.tests_run must record the production preview build gate.',
     );
+    assert(Array.isArray(manifest.fix_report.current_required_checks), 'Manifest fix_report.current_required_checks must be a list.');
+    const currentRequiredChecks = manifest.fix_report.current_required_checks;
+    for (const requiredCheck of [
+      'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
+      'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
+      'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report',
+      'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness',
+      'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report',
+      'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report',
+      'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
+      'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report',
+      'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
+      'corepack pnpm run check:commercial-launch-readiness-report',
+      'corepack pnpm run check:release-readiness',
+      'corepack pnpm run check:production-deploy-request',
+      'corepack pnpm run check:post-deploy-live',
+    ]) {
+      assert(
+        currentRequiredChecks.includes(requiredCheck),
+        `Manifest fix_report.current_required_checks must include ${requiredCheck}.`,
+      );
+    }
     assert(Array.isArray(manifest.implementation_decisions), 'Manifest implementation_decisions must be a list.');
     assert(Array.isArray(manifest.rejected_variants), 'Manifest rejected_variants must be a list.');
     assert(Array.isArray(manifest.code_optimization_reviews), 'Manifest code_optimization_reviews must be a list.');
@@ -2634,6 +2656,35 @@ try {
         && launchActionFinalProofHandleReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check))
         && launchActionFinalProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Final launch action proof-handle code optimization review must record focused launch action and manifest checker proof.',
+    );
+    const fixReportFocusedChecksDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS');
+    assert(fixReportFocusedChecksDecision, 'Manifest must record the Fix Report focused checks implementation decision.');
+    assert(
+      fixReportFocusedChecksDecision?.chosen_variant === 'minimal focused fix-report check-list alignment',
+      'Fix Report focused checks decision must record the chosen minimal command-list alignment variant.',
+    );
+    assert(
+      Array.isArray(fixReportFocusedChecksDecision?.files_changed)
+        && fixReportFocusedChecksDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && fixReportFocusedChecksDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && fixReportFocusedChecksDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && fixReportFocusedChecksDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Fix Report focused checks decision must record the manifest, checker, commercial report checker, and manifest unit test files.',
+    );
+    assert(
+      /does not run focused reports as clearance|contact buyers|authorize Supabase|mutate branches|resolve source provenance|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(fixReportFocusedChecksDecision?.proof_boundary ?? ''),
+      'Fix Report focused checks decision must preserve no-external-gate, no-approval, no-deploy, and no-readiness boundaries.',
+    );
+    const fixReportFocusedChecksReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS');
+    assert(fixReportFocusedChecksReview, 'Manifest must record the Fix Report focused checks code optimization review.');
+    assert(fixReportFocusedChecksReview?.policy === 'strict', 'Fix Report focused checks code optimization review must use strict policy.');
+    assert(fixReportFocusedChecksReview?.verdict === 'pass', 'Fix Report focused checks code optimization review must pass.');
+    assert(
+      Array.isArray(fixReportFocusedChecksReview?.tests_or_checks)
+        && fixReportFocusedChecksReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check))
+        && fixReportFocusedChecksReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report/.test(check))
+        && fixReportFocusedChecksReview.tests_or_checks.some((check) => /report:commercial-launch-readiness/.test(check)),
+      'Fix Report focused checks code optimization review must record manifest, commercial report checker, and commercial report proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

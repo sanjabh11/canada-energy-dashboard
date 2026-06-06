@@ -364,6 +364,7 @@ function assertReport(markdown, options = {}) {
   const productionApprovalSection = extractSection(markdown, 'Production Approval Prerequisite Queue');
   const productionApprovalRequestSection = extractSection(markdown, 'Production Approval Request Packet');
   const postDeployLiveProofSection = extractSection(markdown, 'Post-Deploy Live Proof Gate Queue');
+  const fixReportSection = extractSection(markdown, 'Fix Report');
   const completionAuditSection = extractSection(markdown, 'Objective Completion Audit');
   const adversarialSection = extractSection(markdown, 'Adversarial Review');
   const evidenceSection = extractSection(markdown, 'Evidence Validation');
@@ -421,6 +422,22 @@ function assertReport(markdown, options = {}) {
   assert(/pre_request|owner_decision|post_deploy_boundary/i.test(productionApprovalRequestSection), 'Production approval request packet must separate pre-request, owner-decision, and post-deploy phases.');
   assert(/does not grant owner approval|run deploys|mutate branches|hosted\/live parity/i.test(productionApprovalRequestSection), 'Production approval request packet must preserve no-approval and no-live-proof boundaries.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
+  for (const requiredCheck of [
+    'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
+    'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
+    'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report',
+    'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness',
+    'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report',
+    'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report',
+    'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
+    'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report',
+    'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
+    'corepack pnpm run check:commercial-launch-readiness-report',
+    'corepack pnpm run check:production-deploy-request',
+    'corepack pnpm run check:post-deploy-live',
+  ]) {
+    assert(fixReportSection.includes(requiredCheck), `Fix Report must include focused or guarded required check ${requiredCheck}.`);
+  }
   const codeOptimizationSection = extractSection(markdown, 'Code Optimization Report');
   assert(countDataRows(codeOptimizationSection) >= 3, 'Code optimization report must include implementation, rejected variant, and optimization review rows.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES'), 'Code optimization report must include the preview manifest TypeScript safe-fix task id.');
@@ -469,6 +486,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal focused completion audit proof-handle derivation'), 'Code optimization report must record the selected minimal completion audit proof-handle patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES'), 'Code optimization report must record the final launch action proof-handle task.');
   assert(codeOptimizationSection.includes('minimal focused final launch-action proof-handle derivation'), 'Code optimization report must record the selected minimal final launch action proof-handle patch.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS'), 'Code optimization report must record the Fix Report focused checks task.');
+  assert(codeOptimizationSection.includes('minimal focused fix-report check-list alignment'), 'Code optimization report must record the selected minimal Fix Report command-list alignment patch.');
   assert(codeOptimizationSection.includes('tests/unit/supabaseAdvisorReadiness.test.ts'), 'Code optimization report must record the Supabase advisor readiness test file change.');
   assert(codeOptimizationSection.includes('scripts/report-buyer-evidence-gate-readiness.mjs'), 'Code optimization report must record the buyer evidence gate focused report file change.');
   assert(codeOptimizationSection.includes('scripts/report-branch-review-readiness.mjs'), 'Code optimization report must record the branch review focused report file change.');
@@ -509,6 +528,7 @@ function assertReport(markdown, options = {}) {
   assert(/does not grant owner approval|run deploys|mutate Netlify|run browser smoke|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve post-deploy live proof boundaries.');
   assert(/does not contact buyers|authorize Supabase|checkout branches|install tools|run release-readiness as clearance|request owner approval|deploy|run live proof|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve completion audit proof-handle boundaries.');
   assert(/does not request owner approval|grant approval|run deploy-production\.sh|run netlify deploy|push|mutate branches|clear source provenance|run post-deploy live proof|run browser smoke|hosted\/live parity/i.test(codeOptimizationSection), 'Code optimization report must preserve final launch action proof-handle boundaries.');
+  assert(/does not run focused reports as clearance|contact buyers|authorize Supabase|mutate branches|resolve source provenance|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve Fix Report focused checks no-clearance, no-approval, no-deploy, and no-readiness boundaries.');
   assert(countDataRows(completionAuditSection) >= 15, 'Objective completion audit must include every required deliverable and unresolved launch gate.');
   assert(completionAuditSection.includes('Proof Type') && completionAuditSection.includes('Proof Boundary') && completionAuditSection.includes('Stop Gate'), 'Objective completion audit table must expose proof type, proof boundary, and stop gate columns.');
   assert(completionAuditSection.includes('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report'), 'Objective completion audit table must route buyer evidence next proof through the focused buyer gate handle.');

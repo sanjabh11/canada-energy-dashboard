@@ -740,9 +740,24 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(25);
+    expect(manifest.fix_report.current_required_checks).toEqual(expect.arrayContaining([
+      'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
+      'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
+      'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report',
+      'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness',
+      'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report',
+      'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report',
+      'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report',
+      'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report',
+      'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
+      'corepack pnpm run check:commercial-launch-readiness-report',
+      'corepack pnpm run check:release-readiness',
+      'corepack pnpm run check:production-deploy-request',
+      'corepack pnpm run check:post-deploy-live',
+    ]));
+    expect(manifest.implementation_decisions).toHaveLength(26);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(25);
+    expect(manifest.code_optimization_reviews).toHaveLength(26);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1355,6 +1370,28 @@ describe('launch evidence manifest report', () => {
       'pnpm run report:launch-action-readiness -- --skip-probes',
       'pnpm run check:launch-action-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const fixReportFocusedChecksDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    );
+    expect(fixReportFocusedChecksDecision).toBeTruthy();
+    expect(fixReportFocusedChecksDecision.chosen_variant).toBe('minimal focused fix-report check-list alignment');
+    expect(fixReportFocusedChecksDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(fixReportFocusedChecksDecision.proof_boundary).toMatch(/does not run focused reports as clearance|contact buyers|authorize Supabase|mutate branches|resolve source provenance|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const fixReportFocusedChecksReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-FIX-REPORT-FOCUSED-CHECKS',
+    );
+    expect(fixReportFocusedChecksReview).toBeTruthy();
+    expect(fixReportFocusedChecksReview.policy).toBe('strict');
+    expect(fixReportFocusedChecksReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm run report:commercial-launch-readiness -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
