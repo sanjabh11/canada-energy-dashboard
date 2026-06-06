@@ -80,6 +80,12 @@ describe('Supabase advisor readiness report', () => {
     expect(payload.launch_action_supabase_row.phase).toBe('supabase_advisor');
     expect(payload.production_approval_advisor_prerequisite.prerequisite).toBe('Supabase advisor clearance');
     expect(payload.production_approval_request_advisor_row.prerequisite).toBe('Supabase advisor clearance');
+    expect(payload.launch_action_supabase_row.proof_command).toContain('report:supabase-advisor-readiness');
+    expect(payload.launch_action_supabase_row.proof_command).toContain('check:supabase-advisor-report');
+    expect(payload.production_approval_advisor_prerequisite.proof_command).toContain('report:supabase-advisor-readiness');
+    expect(payload.production_approval_advisor_prerequisite.proof_command).toContain('check:supabase-advisor-report');
+    expect(payload.production_approval_request_advisor_row.proof_command).toContain('report:supabase-advisor-readiness');
+    expect(payload.production_approval_request_advisor_row.proof_command).toContain('check:supabase-advisor-report');
     expect(payload.proof_boundary).toMatch(/does not authorize connectors|rerun Security Advisor or Performance Advisor|record secrets/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|Supabase advisor clearance|production approval/i);
   });

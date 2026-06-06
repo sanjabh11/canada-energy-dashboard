@@ -119,6 +119,21 @@ if (failures.length === 0) {
     assert(payload.launch_action_supabase_row?.phase === 'supabase_advisor', 'Focused JSON must include the launch action Supabase row.');
     assert(payload.production_approval_advisor_prerequisite?.prerequisite === 'Supabase advisor clearance', 'Focused JSON must include the production approval Supabase prerequisite.');
     assert(payload.production_approval_request_advisor_row?.prerequisite === 'Supabase advisor clearance', 'Focused JSON must include the production approval request Supabase row.');
+    assert(
+      /report:supabase-advisor-readiness/.test(payload.launch_action_supabase_row?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(payload.launch_action_supabase_row?.proof_command ?? ''),
+      'Focused JSON launch action Supabase row must point to the focused Supabase advisor report/check.',
+    );
+    assert(
+      /report:supabase-advisor-readiness/.test(payload.production_approval_advisor_prerequisite?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(payload.production_approval_advisor_prerequisite?.proof_command ?? ''),
+      'Focused JSON production approval Supabase prerequisite must point to the focused Supabase advisor report/check.',
+    );
+    assert(
+      /report:supabase-advisor-readiness/.test(payload.production_approval_request_advisor_row?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(payload.production_approval_request_advisor_row?.proof_command ?? ''),
+      'Focused JSON production approval Supabase request row must point to the focused Supabase advisor report/check.',
+    );
     assert(/does not authorize connectors|access the dashboard|rerun Security Advisor or Performance Advisor|mutate the database|record secrets/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must preserve Supabase non-execution and no-secret semantics.');
     assert(/Do not treat this focused report|CLI app lint|permission-denied connector output|Supabase advisor clearance|production approval/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject clearance claims from the report itself.');
     for (const [index, item] of (deficits.items ?? []).entries()) {

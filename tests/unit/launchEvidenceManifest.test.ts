@@ -419,6 +419,7 @@ describe('launch evidence manifest report', () => {
       manifest.launch_action_queue.items,
       (item: {
         phase: string;
+        proof_command?: string;
         proof_type?: string;
         proof_boundary?: string;
       }) => item.phase,
@@ -432,6 +433,7 @@ describe('launch evidence manifest report', () => {
     expect(launchActionsByPhase.get('branch_review')?.proof_type).toBe('read_only_branch_review');
     expect(launchActionsByPhase.get('branch_review')?.proof_boundary).toMatch(/read-only|does not checkout/i);
     expect(launchActionsByPhase.get('supabase_advisor')?.proof_type).toBe('external_account_evidence');
+    expect(launchActionsByPhase.get('supabase_advisor')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(launchActionsByPhase.get('supabase_advisor')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_type).toBe('retained_buyer_evidence_validation');
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
@@ -504,6 +506,7 @@ describe('launch evidence manifest report', () => {
     expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_boundary).toMatch(/read-only|does not checkout/i);
     expect(productionPrerequisitesByName.get('Canonical branch review')?.proof_command).toBe('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_type).toBe('external_account_evidence');
+    expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
     expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_type).toBe('retained_buyer_evidence_validation');
     expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
@@ -527,6 +530,7 @@ describe('launch evidence manifest report', () => {
         request_phase?: string;
         evidence_to_attach?: string;
         blocks_request?: boolean;
+        proof_command?: string;
         status?: string;
         source_status?: string;
       }) => item.prerequisite,
@@ -543,6 +547,8 @@ describe('launch evidence manifest report', () => {
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.request_phase).toBe('post_deploy_boundary');
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.blocks_request).toBe(false);
     expect(productionRequestRowsByName.get('Clean source provenance')?.evidence_to_attach).toMatch(/source-provenance/i);
+    expect(productionRequestRowsByName.get('Supabase advisor clearance')?.evidence_to_attach).toMatch(/focused Supabase advisor report\/check/i);
+    expect(productionRequestRowsByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/validate:pilot-evidence/i);
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.current_source_live_proven).toBe(false);
@@ -721,9 +727,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(21);
+    expect(manifest.implementation_decisions).toHaveLength(22);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(21);
+    expect(manifest.code_optimization_reviews).toHaveLength(22);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -797,6 +803,10 @@ describe('launch evidence manifest report', () => {
       'Call Supabase connector or dashboard advisors from the focused report.',
       'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad Supabase advisor handles.',
+      'Leave launch action and production approval Supabase rows pointing only at dashboard or connector advisor review commands.',
+      'Call Supabase connector or dashboard advisors to clear the Supabase advisor blocker.',
+      'Treat CLI app lint, permission-denied connector output, or focused report/check success as Supabase advisor clearance.',
+      'Duplicate Supabase advisor clearance and remediation parsing in launch action or production approval rows.',
       'Leave branch review only inside the broad launch manifest, commercial launch report, and unmerged branch inventory.',
       'Duplicate branch inventory, family grouping, freshness, and focused packet parsing in a standalone implementation.',
       'Checkout, merge, push, discard, delete, or select canonical branch heads to clear the branch review blocker.',
@@ -1088,6 +1098,27 @@ describe('launch evidence manifest report', () => {
     expect(branchReviewProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:branch-review-readiness',
       'pnpm run check:branch-review-report',
+      'pnpm run check:production-approval-report -- --skip-probes',
+    ]));
+    const supabaseAdvisorProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    );
+    expect(supabaseAdvisorProofHandleDecision).toBeTruthy();
+    expect(supabaseAdvisorProofHandleDecision.chosen_variant).toBe('minimal focused Supabase advisor proof-handle derivation');
+    expect(supabaseAdvisorProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-supabase-advisor-readiness-report.mjs',
+      'tests/unit/supabaseAdvisorReadiness.test.ts',
+    ]));
+    expect(supabaseAdvisorProofHandleDecision.proof_boundary).toMatch(/does not authorize connectors|access dashboards|rerun Security Advisor|record secrets|grant production approval|hosted\/live parity/i);
+    const supabaseAdvisorProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    );
+    expect(supabaseAdvisorProofHandleReview).toBeTruthy();
+    expect(supabaseAdvisorProofHandleReview.policy).toBe('strict');
+    expect(supabaseAdvisorProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:supabase-advisor-readiness',
+      'pnpm run check:supabase-advisor-report',
       'pnpm run check:production-approval-report -- --skip-probes',
     ]));
     const launchEvidenceValidationReportDecision = manifest.implementation_decisions.find(

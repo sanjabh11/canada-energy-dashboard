@@ -141,6 +141,11 @@ if (failures.length === 0) {
       'Branch review row must point to the focused branch review report/check.',
     );
     assert(rowsByPhase.get('supabase_advisor')?.proof_type === 'external_account_evidence', 'Supabase row must keep external account proof type.');
+    assert(
+      /report:supabase-advisor-readiness/.test(rowsByPhase.get('supabase_advisor')?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(rowsByPhase.get('supabase_advisor')?.proof_command ?? ''),
+      'Supabase advisor row must point to the focused Supabase advisor report/check.',
+    );
     assert(rowsByPhase.get('buyer_evidence')?.proof_type === 'retained_buyer_evidence_validation', 'Buyer row must keep retained evidence proof type.');
     assert(rowsByPhase.get('production_approval')?.proof_type === 'manual_approval_gate', 'Production approval row must keep manual approval proof type.');
     assert(rowsByPhase.get('post_deploy_live_proof')?.proof_type === 'post_deploy_live_proof_gate', 'Post-deploy row must keep post-deploy proof type.');

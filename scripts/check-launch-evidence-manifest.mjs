@@ -997,6 +997,13 @@ try {
         && branchActionItem.proof_command.includes('check:branch-review-report'),
       'Branch review launch action must run the focused branch review report and checker.',
     );
+    const supabaseActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'supabase_advisor');
+    assert(supabaseActionItem, 'Launch action queue must include a supabase_advisor phase.');
+    assert(
+      supabaseActionItem.proof_command.includes('report:supabase-advisor-readiness')
+        && supabaseActionItem.proof_command.includes('check:supabase-advisor-report'),
+      'Supabase advisor launch action must run the focused Supabase advisor report and checker.',
+    );
     assert(
       manifest.launch_action_queue.items.some((item) => /no checkout|no .*merge|no .*push|no .*deploy/i.test(item.stop_gate)),
       'Manifest launch action queue must preserve branch/deploy no-mutation stop gates.',
@@ -1109,6 +1116,13 @@ try {
       branchPrerequisiteItem.proof_command.includes('report:branch-review-readiness')
         && branchPrerequisiteItem.proof_command.includes('check:branch-review-report'),
       'Canonical branch review prerequisite must run the focused branch review report and checker.',
+    );
+    const supabasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Supabase advisor clearance');
+    assert(supabasePrerequisiteItem, 'Production approval prerequisite queue must include Supabase advisor clearance.');
+    assert(
+      supabasePrerequisiteItem.proof_command.includes('report:supabase-advisor-readiness')
+        && supabasePrerequisiteItem.proof_command.includes('check:supabase-advisor-report'),
+      'Supabase advisor clearance prerequisite must run the focused Supabase advisor report and checker.',
     );
     assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
@@ -2272,6 +2286,34 @@ try {
         && branchReviewProofHandleReview.tests_or_checks.some((check) => /check:branch-review-report/.test(check))
         && branchReviewProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
       'Branch review proof-handle code optimization review must record focused branch and production approval checker proof.',
+    );
+    const supabaseAdvisorProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES');
+    assert(supabaseAdvisorProofHandleDecision, 'Manifest must record the Supabase advisor proof-handle implementation decision.');
+    assert(
+      supabaseAdvisorProofHandleDecision?.chosen_variant === 'minimal focused Supabase advisor proof-handle derivation',
+      'Supabase advisor proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(supabaseAdvisorProofHandleDecision?.files_changed)
+        && supabaseAdvisorProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && supabaseAdvisorProofHandleDecision.files_changed.includes('scripts/check-supabase-advisor-readiness-report.mjs')
+        && supabaseAdvisorProofHandleDecision.files_changed.includes('tests/unit/supabaseAdvisorReadiness.test.ts'),
+      'Supabase advisor proof-handle decision must record manifest, Supabase checker, and Supabase readiness test file changes.',
+    );
+    assert(
+      /does not authorize connectors|access dashboards|rerun Security Advisor|record secrets|grant production approval|hosted\/live parity/i.test(supabaseAdvisorProofHandleDecision?.proof_boundary ?? ''),
+      'Supabase advisor proof-handle decision must preserve external-account, no-secret, and no-approval boundaries.',
+    );
+    const supabaseAdvisorProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES');
+    assert(supabaseAdvisorProofHandleReview, 'Manifest must record the Supabase advisor proof-handle code optimization review.');
+    assert(supabaseAdvisorProofHandleReview?.policy === 'strict', 'Supabase advisor proof-handle code optimization review must use strict policy.');
+    assert(supabaseAdvisorProofHandleReview?.verdict === 'pass', 'Supabase advisor proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(supabaseAdvisorProofHandleReview?.tests_or_checks)
+        && supabaseAdvisorProofHandleReview.tests_or_checks.some((check) => /report:supabase-advisor-readiness/.test(check))
+        && supabaseAdvisorProofHandleReview.tests_or_checks.some((check) => /check:supabase-advisor-report/.test(check))
+        && supabaseAdvisorProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
+      'Supabase advisor proof-handle code optimization review must record focused Supabase and production approval checker proof.',
     );
     const launchEvidenceValidationReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT');
     assert(launchEvidenceValidationReportDecision, 'Manifest must record the launch evidence validation focused report implementation decision.');

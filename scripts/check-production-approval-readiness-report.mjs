@@ -154,6 +154,16 @@ if (failures.length === 0) {
       'Canonical branch review request row must point to the focused branch review report/check.',
     );
     assert(requestRowsByPrerequisite.get('Supabase advisor clearance')?.request_phase === 'pre_request', 'Supabase advisor clearance must be a pre-request row.');
+    assert(
+      /report:supabase-advisor-readiness/.test(prerequisiteRowsByName.get('Supabase advisor clearance')?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(prerequisiteRowsByName.get('Supabase advisor clearance')?.proof_command ?? ''),
+      'Supabase advisor clearance prerequisite must point to the focused Supabase advisor report/check.',
+    );
+    assert(
+      /report:supabase-advisor-readiness/.test(requestRowsByPrerequisite.get('Supabase advisor clearance')?.proof_command ?? '')
+        && /check:supabase-advisor-report/.test(requestRowsByPrerequisite.get('Supabase advisor clearance')?.proof_command ?? ''),
+      'Supabase advisor clearance request row must point to the focused Supabase advisor report/check.',
+    );
     assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'pre_request', 'Buyer evidence hard gate must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.request_phase === 'owner_decision', 'Explicit owner approval must be an owner-decision row.');
     assert(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.request_phase === 'post_deploy_boundary', 'Post-deploy live proof must be a post-deploy boundary row.');

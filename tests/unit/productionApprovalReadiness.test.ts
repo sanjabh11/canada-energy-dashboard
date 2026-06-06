@@ -114,6 +114,10 @@ describe('production approval readiness report', () => {
     expect(prerequisiteRows.get('Canonical branch review').proof_command).toContain('check:branch-review-report');
     expect(requestRows.get('Canonical branch review').proof_command).toContain('report:branch-review-readiness');
     expect(requestRows.get('Canonical branch review').proof_command).toContain('check:branch-review-report');
+    expect(prerequisiteRows.get('Supabase advisor clearance').proof_command).toContain('report:supabase-advisor-readiness');
+    expect(prerequisiteRows.get('Supabase advisor clearance').proof_command).toContain('check:supabase-advisor-report');
+    expect(requestRows.get('Supabase advisor clearance').proof_command).toContain('report:supabase-advisor-readiness');
+    expect(requestRows.get('Supabase advisor clearance').proof_command).toContain('check:supabase-advisor-report');
     expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('pre_request');
     expect(requestRows.get('Explicit owner production approval').request_phase).toBe('owner_decision');
     expect(requestRows.get('Post-deploy live proof boundary').request_phase).toBe('post_deploy_boundary');

@@ -14,6 +14,7 @@ const SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:source
 const RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report';
 const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND} && corepack pnpm run check:release-readiness`;
 const BRANCH_REVIEW_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report';
+const SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -1331,7 +1332,7 @@ function buildLaunchActionQueue({
       blocker: `${supabaseOpen} Supabase advisor clearance deficit(s) remain`,
       owner: 'account_admin',
       action: 'Repair Supabase connector or dashboard authorization, rerun security/performance advisors, and retain public-safe findings.',
-      proof_command: 'Supabase MCP or dashboard security/performance advisor review for qnymbecjgeaoxsfphrti',
+      proof_command: SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('supabase_advisor'),
       proof_boundary: launchActionProofBoundary('supabase_advisor'),
       stop_gate: 'Do not claim Supabase advisor clearance from CLI app lint, repo artifacts, or public status cards alone.',
@@ -1538,7 +1539,7 @@ function buildProductionApprovalPrerequisiteQueue({
         : `${supabaseAdvisor.clearanceDeficits?.open_count ?? 'unknown'} Supabase advisor clearance deficit(s) remain`,
       needed: 'authorized Security Advisor and Performance Advisor evidence plus public-safe findings record for the current project',
       owner: 'account_admin',
-      proof_command: 'Supabase dashboard or connector Security and Performance Advisor review for qnymbecjgeaoxsfphrti',
+      proof_command: SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Supabase advisor clearance'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Supabase advisor clearance'),
       stop_gate: 'Do not claim Supabase advisor clearance from CLI app lint, repo artifacts, public status cards, or permission-denied connector output.',
@@ -1633,7 +1634,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Canonical branch review':
       return 'Attach focused branch-review report/check output plus read-only unmerged-branch packet evidence and canonical-head owner decisions for review-first branch families.';
     case 'Supabase advisor clearance':
-      return 'Attach authorized Supabase Security and Performance Advisor results plus a public-safe findings summary.';
+      return 'Attach focused Supabase advisor report/check output plus authorized Supabase Security and Performance Advisor results and a public-safe findings summary.';
     case 'Buyer evidence hard gate':
       return 'Attach the validated buyer evidence register, accepted anonymized buyer rows, and retained redacted artifacts that pass validate:pilot-evidence --require-95.';
     case 'Explicit owner production approval':
@@ -4485,6 +4486,19 @@ const branchReviewProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const supabaseAdvisorProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-supabase-advisor-readiness-report.mjs',
+  'tests/unit/supabaseAdvisorReadiness.test.ts',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const supabaseAdvisorReportFilesChanged = [
   'package.json',
   'scripts/report-supabase-advisor-readiness.mjs',
@@ -4635,6 +4649,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceProofHandleFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
+  ...supabaseAdvisorProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
@@ -4759,6 +4774,18 @@ const branchReviewProofHandleTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const supabaseAdvisorProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/supabaseAdvisorReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:supabase-advisor-readiness',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes',
+  'pnpm run check:supabase-advisor-report',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const supabaseAdvisorReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/supabaseAdvisorReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -4871,6 +4898,9 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
+  ...releaseToolchainProofHandleTestsRun,
+  ...branchReviewProofHandleTestsRun,
+  ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
   ...launchEvidenceValidationReportTestsRun,
@@ -5060,6 +5090,19 @@ const safeFixImplementationDecisions = [
     reason: 'Operators still saw unmerged-branch-only handles on branch-review proof rows even after the focused branch-review report/check existed, while the lane summary already pointed to the focused branch review proof path.',
     proof_boundary: 'This record aligns branch-review proof handles only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, clear branch review, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused branch-review proof handles, report/check success, branch inventory, review-first packets, canonical-head ledgers, launch action row output, or production approval attachment text as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    decision: 'Route launch action and production approval Supabase advisor proof rows through the focused Supabase advisor report/check while preserving external-account advisor evidence requirements.',
+    acceptance_check: 'Supabase advisor action and Supabase advisor clearance approval rows expose report:supabase-advisor-readiness plus check:supabase-advisor-report, while connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and no-secret boundaries remain external-account prerequisites.',
+    chosen_variant: 'minimal focused Supabase advisor proof-handle derivation',
+    repo_pattern_reused: 'Existing supabase_advisor focused report/check commands, launch_action_queue supabase_advisor row, production_approval Supabase advisor prerequisite/request rows, clearance_deficits, remediation_queue, and focused checker conventions.',
+    files_changed: supabaseAdvisorProofHandleFilesChanged,
+    tests_run: supabaseAdvisorProofHandleTestsRun,
+    proof: 'The patch reuses the existing manifest Supabase advisor data and focused report/check handle, then asserts that launch action, production approval prerequisite, production approval request, focused Supabase report, focused launch action, focused production approval, and commercial report outputs preserve focused Supabase advisor proof without clearing external-account evidence rows.',
+    reason: 'Operators still saw dashboard-only proof handles on Supabase advisor proof rows even after the focused Supabase advisor report/check existed, while the focused report already separates local CLI lint from connector/dashboard advisor evidence.',
+    proof_boundary: 'This record aligns Supabase advisor proof handles only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, grant production approval, deploy, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused Supabase advisor proof handles, report/check success, skipped probes, CLI app lint output, launch action row output, or production approval attachment text as Supabase advisor clearance, database security clearance, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -5469,6 +5512,34 @@ const safeFixRejectedVariants = [
     evidence: 'report-launch-evidence-manifest already emits branch_review.review_queue, canonical_head_decisions, clearance_matrix, review_first_packets, top_review_packet, launch_action_queue, and production_approval rows.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    variant: 'Leave launch action and production approval Supabase rows pointing only at dashboard or connector advisor review commands.',
+    reason_rejected: 'Would keep active Supabase advisor rows routed directly to external-account evidence even though the focused Supabase advisor report/check now exists and preserves those external prerequisites.',
+    tradeoff: 'No-code defer avoids touching proof rows, but it preserves operator ambiguity across launch action and production approval Supabase advisor clearance prerequisites.',
+    evidence: 'The focused Supabase advisor report/check already renders connector permission, Security Advisor evidence, Performance Advisor evidence, public-safe findings, remediation queue, launch action row, and production approval Supabase rows from one manifest source of truth.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    variant: 'Call Supabase connector or dashboard advisors to clear the Supabase advisor blocker.',
+    reason_rejected: 'Connector authorization and dashboard advisor execution are external-account actions requiring credentials and explicit approval; this phase is proof-handle alignment only.',
+    tradeoff: 'Direct advisor execution could reduce blocker ambiguity if authorized, but it would cross the safe-fix stop gate and risk private findings or credentials.',
+    evidence: 'The Supabase advisor clearance deficit ledger marks connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and clearance claim rows as open.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    variant: 'Treat CLI app lint, permission-denied connector output, or focused report/check success as Supabase advisor clearance.',
+    reason_rejected: 'Local lint and focused report/check output are inspection evidence only; they do not substitute for authorized Supabase Security Advisor and Performance Advisor results.',
+    tradeoff: 'Treating local checks as clearance would make the gate appear easier to pass, but it would weaken database-security proof boundaries.',
+    evidence: 'launchActionProofBoundary, productionApprovalPrerequisiteProofBoundary, and supabaseAdvisorClearanceDeficits all reject CLI-only or permission-denied substitution for authorized advisor evidence.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    variant: 'Duplicate Supabase advisor clearance and remediation parsing in launch action or production approval rows.',
+    reason_rejected: 'Duplicating advisor logic would drift from the focused Supabase advisor report/check and the manifest supabase_advisor source of truth.',
+    tradeoff: 'Inline advisor summaries could be more direct but would add another external-account clearance contract to maintain.',
+    evidence: 'report-launch-evidence-manifest already emits supabase_advisor.clearance_deficits, remediation_queue, launch_action_queue, and production_approval rows.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
     variant: 'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
     reason_rejected: 'Would keep the active external-account advisor blocker harder to inspect despite it being a pre-request production approval gate.',
@@ -5835,6 +5906,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing focused branch-review report/check command across existing branch-review proof rows and validators, adds no dependency, no duplicate branch scanner, no checkout, no merge, no push, no canonical-head selection, no migration, and no deploy path.',
     tests_or_checks: branchReviewProofHandleTestsRun,
     remaining_risk: 'Branch review remains blocked until review-first branch families and canonical-head owner decisions are resolved; source provenance, Corepack-pinned release-readiness, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing focused Supabase advisor report/check command across existing Supabase advisor proof rows and validators, adds no dependency, no duplicate advisor parser, no connector authorization, no dashboard access, no advisor rerun, no database mutation, no secret handling, no production approval, and no deploy path.',
+    tests_or_checks: supabaseAdvisorProofHandleTestsRun,
+    remaining_risk: 'Supabase advisor clearance remains blocked until authorized connector or dashboard access, current Database Security Advisor evidence, current Database Performance Advisor evidence, public-safe findings, and manifest regeneration prove every advisor row; source provenance, Corepack-pinned release-readiness, branch review, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',

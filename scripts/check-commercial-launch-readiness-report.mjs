@@ -421,6 +421,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES'), 'Code optimization report must include the source provenance proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES'), 'Code optimization report must include the release toolchain proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT'), 'Code optimization report must include the Supabase advisor focused report safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-SUPABASE-ADVISOR-PROOF-HANDLES'), 'Code optimization report must include the Supabase advisor proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-FOCUSED-REPORT'), 'Code optimization report must include the branch review focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-PROOF-HANDLES'), 'Code optimization report must include the branch review proof-handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PACKET-SEQUENCING'), 'Code optimization report must include the production approval packet sequencing safe-fix task id.');
@@ -437,6 +438,7 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('minimal focused source proof-handle derivation'), 'Code optimization report must record the selected minimal source provenance proof-handle patch.');
   assert(codeOptimizationSection.includes('minimal focused release proof-handle derivation'), 'Code optimization report must record the selected minimal release toolchain proof-handle patch.');
   assert(codeOptimizationSection.includes('minimal focused branch proof-handle derivation'), 'Code optimization report must record the selected minimal branch review proof-handle patch.');
+  assert(codeOptimizationSection.includes('minimal focused Supabase advisor proof-handle derivation'), 'Code optimization report must record the selected minimal Supabase advisor proof-handle patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-FOCUSED-REPORT'), 'Code optimization report must record the launch evidence validation focused report task.');
   assert(codeOptimizationSection.includes('minimal focused validation wrapper and public handle alignment'), 'Code optimization report must record the selected minimal launch evidence validation wrapper patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-ACTION-VALIDATION-STATUS'), 'Code optimization report must record the launch action validation status task.');
