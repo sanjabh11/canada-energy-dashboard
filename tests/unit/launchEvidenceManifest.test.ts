@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1221,9 +1221,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(54);
+    expect(manifest.implementation_decisions).toHaveLength(55);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(54);
+    expect(manifest.code_optimization_reviews).toHaveLength(55);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2628,6 +2628,34 @@ describe('launch evidence manifest report', () => {
       'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
       'pnpm run report:objective-completion-audit-readiness -- --skip-probes --json',
       'pnpm run check:objective-completion-audit-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const adversarialReviewUnitContractDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT',
+    );
+    expect(adversarialReviewUnitContractDecision).toBeTruthy();
+    expect(adversarialReviewUnitContractDecision.chosen_variant).toBe('minimal focused adversarial review unit contract');
+    expect(adversarialReviewUnitContractDecision.files_changed).toEqual(expect.arrayContaining([
+      'tests/unit/adversarialReviewReadiness.test.ts',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(adversarialReviewUnitContractDecision.proof_boundary).toMatch(/does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|mark the launch goal complete|raise launch status/i);
+    const adversarialReviewUnitContractReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT',
+    );
+    expect(adversarialReviewUnitContractReview).toBeTruthy();
+    expect(adversarialReviewUnitContractReview.policy).toBe('strict');
+    expect(adversarialReviewUnitContractReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/adversarialReviewReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:adversarial-review-readiness -- --skip-probes',
+      'pnpm run report:adversarial-review-readiness -- --skip-probes --json',
+      'pnpm run check:adversarial-review-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

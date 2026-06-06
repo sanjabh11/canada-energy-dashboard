@@ -2631,7 +2631,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-UNIT-CONTRACT', 'Manifest progress_updates must expose the latest objective completion audit unit-contract safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT', 'Manifest progress_updates must expose the latest adversarial review unit-contract safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2646,7 +2646,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest objective completion audit unit-contract ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest adversarial review unit-contract ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4246,6 +4246,40 @@ try {
         && objectiveCompletionAuditUnitContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && objectiveCompletionAuditUnitContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Objective completion audit unit-contract code optimization review must record focused objective completion, progress, manifest, and commercial report checks.',
+    );
+    const adversarialReviewUnitContractDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT');
+    assert(adversarialReviewUnitContractDecision, 'Manifest must record the adversarial review unit-contract implementation decision.');
+    assert(
+      adversarialReviewUnitContractDecision?.chosen_variant === 'minimal focused adversarial review unit contract',
+      'Adversarial review unit-contract decision must record the minimal focused unit contract variant.',
+    );
+    assert(
+      Array.isArray(adversarialReviewUnitContractDecision?.files_changed)
+        && adversarialReviewUnitContractDecision.files_changed.includes('tests/unit/adversarialReviewReadiness.test.ts')
+        && adversarialReviewUnitContractDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && adversarialReviewUnitContractDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && adversarialReviewUnitContractDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && adversarialReviewUnitContractDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && adversarialReviewUnitContractDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Adversarial review unit-contract decision must record the focused unit test, manifest, progress, commercial checker, and launch manifest test files.',
+    );
+    assert(
+      /does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|mark the launch goal complete|raise launch status/i.test(adversarialReviewUnitContractDecision?.proof_boundary ?? ''),
+      'Adversarial review unit-contract decision must preserve no-approval, no-buyer-proof, no-release-clearance, no-Supabase-clearance, no-branch-approval, no-deploy, no-completion, and no-readiness boundaries.',
+    );
+    const adversarialReviewUnitContractReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT');
+    assert(adversarialReviewUnitContractReview, 'Manifest must record the adversarial review unit-contract code optimization review.');
+    assert(adversarialReviewUnitContractReview?.policy === 'strict', 'Adversarial review unit-contract code optimization review must use strict policy.');
+    assert(adversarialReviewUnitContractReview?.verdict === 'pass', 'Adversarial review unit-contract code optimization review must pass.');
+    assert(
+      Array.isArray(adversarialReviewUnitContractReview?.tests_or_checks)
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /vitest run tests\/unit\/adversarialReviewReadiness\.test\.ts tests\/unit\/launchEvidenceManifest\.test\.ts/.test(check))
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /report:adversarial-review-readiness -- --skip-probes/.test(check))
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:adversarial-review-report -- --skip-probes/.test(check))
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && adversarialReviewUnitContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Adversarial review unit-contract code optimization review must record focused adversarial review, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
