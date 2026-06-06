@@ -2133,6 +2133,40 @@ try {
         && buyerEvidenceProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
       'Buyer evidence proof-handle code optimization review must record focused buyer gate and production approval checker proof.',
     );
+    const buyerEvidencePublicGateHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-GATE-HANDLE');
+    assert(buyerEvidencePublicGateHandleDecision, 'Manifest must record the buyer evidence public gate handle implementation decision.');
+    assert(
+      buyerEvidencePublicGateHandleDecision?.chosen_variant === 'minimal public buyer evidence gate handle alignment',
+      'Buyer evidence public gate handle decision must record the chosen minimal public handle alignment variant.',
+    );
+    assert(
+      Array.isArray(buyerEvidencePublicGateHandleDecision?.files_changed)
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('public/status/release-health.json')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && buyerEvidencePublicGateHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Buyer evidence public gate handle decision must record docs, public status, release posture, generator, and unit test files.',
+    );
+    assert(
+      /does not contact buyers|create accepted evidence|move confidence|validate 95%|buyer proof|buyer acceptance|production approval|hosted\/live parity|raise launch status/i.test(buyerEvidencePublicGateHandleDecision?.proof_boundary ?? ''),
+      'Buyer evidence public gate handle decision must preserve no-contact, no-evidence, no-validation, no-buyer-proof, no-approval, and no-live-parity boundaries.',
+    );
+    const buyerEvidencePublicGateHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-GATE-HANDLE');
+    assert(buyerEvidencePublicGateHandleReview, 'Manifest must record the buyer evidence public gate handle code optimization review.');
+    assert(buyerEvidencePublicGateHandleReview?.policy === 'strict', 'Buyer evidence public gate handle review must use strict policy.');
+    assert(buyerEvidencePublicGateHandleReview?.verdict === 'pass', 'Buyer evidence public gate handle review must pass.');
+    assert(
+      Array.isArray(buyerEvidencePublicGateHandleReview?.tests_or_checks)
+        && buyerEvidencePublicGateHandleReview.tests_or_checks.some((check) => /generate:public-release-status/.test(check))
+        && buyerEvidencePublicGateHandleReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && buyerEvidencePublicGateHandleReview.tests_or_checks.some((check) => /report:buyer-evidence-gate-readiness -- --skip-probes/.test(check))
+        && buyerEvidencePublicGateHandleReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report -- --skip-probes/.test(check))
+        && buyerEvidencePublicGateHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Buyer evidence public gate handle review must record public-status, focused buyer gate, and manifest checks.',
+    );
     const releasePreflightDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT');
     assert(releasePreflightDecision, 'Manifest must record the release preflight focused report implementation decision.');
     assert(

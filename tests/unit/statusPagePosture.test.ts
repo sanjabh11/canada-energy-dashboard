@@ -656,10 +656,12 @@ describe('status page release posture', () => {
     expect(commands).toContain('check:production-deploy-request');
     expect(commands).toContain('DEPLOY CEIP PRODUCTION');
     expect(commands).toContain('check:post-deploy-live');
-    expect(commands).toContain('validate:pilot-evidence');
+    expect(commands).toContain('report:buyer-evidence-gate-readiness');
+    expect(commands).toContain('check:buyer-evidence-gate-report');
     expect(boundaries).toMatch(/not production approval|manual production stop/i);
     expect(boundaries).toMatch(/launch evidence validation/i);
     expect(boundaries).toMatch(/Deployment never raises market confidence/i);
+    expect(boundaries).toMatch(/validate:pilot-evidence --require-95/i);
   });
 
   it('defines a public-safe release status manifest for the status page', () => {
@@ -945,7 +947,12 @@ describe('status page release posture', () => {
     expect(reviewFirstPacketQueueGate?.evidenceBoundary).toMatch(/mutate Supabase/i);
     expect(reviewFirstPacketQueueGate?.nextAction).toMatch(/explicit owner approval and release gates/i);
     expect(buyerGate?.status).toBe('external_gate');
-    expect(buyerGate?.evidenceBoundary).toMatch(/No buyer-proven market confidence/i);
+    expect(buyerGate?.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(buyerGate?.command).toContain('check:buyer-evidence-gate-report');
+    expect(buyerGate?.evidenceBoundary).toMatch(/buyer evidence 95% public gate/i);
+    expect(buyerGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
+    expect(buyerGate?.evidenceBoundary).toMatch(/replace validate:pilot-evidence --require-95/i);
+    expect(buyerGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
     expect(buyerHardGateDeficitLedgerGate?.status).toBe('external_gate');
     expect(buyerHardGateDeficitLedgerGate?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerHardGateDeficitLedgerGate?.command).toContain('check:buyer-evidence-gate-report');

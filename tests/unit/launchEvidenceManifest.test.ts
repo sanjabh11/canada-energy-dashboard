@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(31);
+    expect(manifest.implementation_decisions).toHaveLength(32);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(31);
+    expect(manifest.code_optimization_reviews).toHaveLength(32);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -963,6 +963,36 @@ describe('launch evidence manifest report', () => {
       'pnpm run report:buyer-evidence-gate-readiness',
       'pnpm run check:buyer-evidence-gate-report',
       'pnpm run check:production-approval-report -- --skip-probes',
+    ]));
+    const buyerEvidencePublicGateHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-GATE-HANDLE',
+    );
+    expect(buyerEvidencePublicGateHandleDecision).toBeTruthy();
+    expect(buyerEvidencePublicGateHandleDecision.chosen_variant).toBe('minimal public buyer evidence gate handle alignment');
+    expect(buyerEvidencePublicGateHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'scripts/generate-public-release-status.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(buyerEvidencePublicGateHandleDecision.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|move confidence|validate 95%|buyer proof|buyer acceptance|production approval|hosted\/live parity|raise launch status/i);
+    const buyerEvidencePublicGateHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-GATE-HANDLE',
+    );
+    expect(buyerEvidencePublicGateHandleReview).toBeTruthy();
+    expect(buyerEvidencePublicGateHandleReview.policy).toBe('strict');
+    expect(buyerEvidencePublicGateHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run generate:public-release-status',
+      'pnpm run check:public-release-status',
+      'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+      'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     const releasePreflightDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',

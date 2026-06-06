@@ -378,7 +378,7 @@ export const DEPLOYMENT_APPROVAL_CHECKLIST: DeploymentApprovalChecklistItem[] = 
   {
     gate: 'Buyer-proven confidence',
     status: 'external_gate',
-    command: 'pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
-    evidenceBoundary: 'Deployment never raises market confidence; accepted buyer rows, reviewer feedback, commercial signal, and retained hashes are required.',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
+    evidenceBoundary: 'Deployment never raises market confidence; the focused buyer evidence gate report/check is an inspection handle only, and accepted buyer rows, reviewer feedback, commercial signal, retained hashes, and validate:pilot-evidence --require-95 are required before buyer confidence claims.',
   },
 ];

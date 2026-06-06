@@ -185,7 +185,7 @@ const requiredItemContracts = [
     id: 'buyer_evidence_gate',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
-    command: 'pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
   },
   {
     id: 'buyer_evidence_hard_gate_deficit_ledger',
@@ -488,6 +488,40 @@ function validateManifest(manifest) {
   }
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
+  }
+  const buyerEvidenceGate = itemById.get('buyer_evidence_gate') ?? {};
+  const buyerEvidenceGateText = `${buyerEvidenceGate.evidenceBoundary ?? ''}\n${buyerEvidenceGate.nextAction ?? ''}`;
+  for (const pattern of [
+    /buyer evidence 95%/i,
+    /accepted buyer rows/i,
+    /reviewer evidence/i,
+    /commercial signal/i,
+    /retained artifact hashes/i,
+    /95% validation/i,
+    /validate:pilot-evidence --require-95/i,
+  ]) {
+    if (!pattern.test(buyerEvidenceGateText)) {
+      failures.push('buyer_evidence_gate must describe accepted buyer rows, reviewer evidence, commercial signal, retained artifacts, and the 95% validation requirement.');
+      break;
+    }
+  }
+  if (!/report:buyer-evidence-gate-readiness/.test(buyerEvidenceGate.command ?? '') || !/check:buyer-evidence-gate-report/.test(buyerEvidenceGate.command ?? '')) {
+    failures.push('buyer_evidence_gate must route through the focused buyer evidence gate report/check handles before raw validation.');
+  }
+  for (const pattern of [
+    /does not contact buyers/i,
+    /does not create accepted evidence/i,
+    /does not move confidence/i,
+    /does not attach artifacts/i,
+    /does not validate 95/i,
+    /does not claim buyer acceptance/i,
+    /does not prove commercial readiness/i,
+    /does not replace validate:pilot-evidence --require-95/i,
+  ]) {
+    if (!pattern.test(buyerEvidenceGate.evidenceBoundary ?? '')) {
+      failures.push('buyer_evidence_gate must preserve the no-contact, no-buyer-proof, no-validation, no-readiness, and no-validator-replacement boundary.');
+      break;
+    }
   }
   const buyerHardGateDeficitLedger = itemById.get('buyer_evidence_hard_gate_deficit_ledger') ?? {};
   if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation|hard-gate/i.test(`${buyerHardGateDeficitLedger.evidenceBoundary ?? ''}\n${buyerHardGateDeficitLedger.nextAction ?? ''}`)) {

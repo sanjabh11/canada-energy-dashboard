@@ -264,9 +264,9 @@
       "label": "Buyer evidence 95% gate",
       "status": "external_gate",
       "proofBucket": "buyer evidence",
-      "command": "pnpm run validate:pilot-evidence -- path/to/register.csv --require-95 --evidence-root path/to/redacted-artifacts",
-      "evidenceBoundary": "No buyer-proven market confidence without accepted buyer rows, reviewer evidence, commercial signal, and retained artifact hashes.",
-      "nextAction": "Collect real anonymized buyer evidence and keep rehearsal rows at confidence_delta=0."
+      "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
+      "evidenceBoundary": "The buyer evidence 95% public gate points to the focused buyer evidence report/check so operators inspect accepted buyer rows, reviewer evidence, commercial signal, retained artifact hashes, and 95% validation deficits first; it does not contact buyers, does not create accepted evidence, does not move confidence, does not attach artifacts, does not validate 95%, does not claim buyer acceptance, does not prove commercial readiness, and does not replace validate:pilot-evidence --require-95.",
+      "nextAction": "Use the focused buyer evidence gate report/check to inspect deficits, collect real anonymized accepted buyer evidence, retain redacted artifact hashes, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims."
     },
     {
       "id": "buyer_evidence_hard_gate_deficit_ledger",
