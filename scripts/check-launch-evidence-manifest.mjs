@@ -3036,6 +3036,34 @@ try {
         && adversarialReviewFocusedReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Adversarial review focused report code optimization review must record adversarial review report, public status, docs, and manifest checks.',
     );
+    const launchManifestJsonAliasDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS');
+    assert(launchManifestJsonAliasDecision, 'Manifest must record the launch manifest JSON alias implementation decision.');
+    assert(
+      launchManifestJsonAliasDecision?.chosen_variant === 'minimal parser-only JSON alias',
+      'Launch manifest JSON alias decision must record the minimal parser-only alias variant.',
+    );
+    assert(
+      Array.isArray(launchManifestJsonAliasDecision?.files_changed)
+        && launchManifestJsonAliasDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && launchManifestJsonAliasDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && launchManifestJsonAliasDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Launch manifest JSON alias decision must record the manifest reporter, checker, and unit test files.',
+    );
+    assert(
+      /does not run missing checks as clearance|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(launchManifestJsonAliasDecision?.proof_boundary ?? ''),
+      'Launch manifest JSON alias decision must preserve no-clearance, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const launchManifestJsonAliasReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS');
+    assert(launchManifestJsonAliasReview, 'Manifest must record the launch manifest JSON alias code optimization review.');
+    assert(launchManifestJsonAliasReview?.policy === 'strict', 'Launch manifest JSON alias code optimization review must use strict policy.');
+    assert(launchManifestJsonAliasReview?.verdict === 'pass', 'Launch manifest JSON alias code optimization review must pass.');
+    assert(
+      Array.isArray(launchManifestJsonAliasReview?.tests_or_checks)
+        && launchManifestJsonAliasReview.tests_or_checks.some((check) => /report:launch-evidence-manifest -- --skip-probes --json/.test(check))
+        && launchManifestJsonAliasReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && launchManifestJsonAliasReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Launch manifest JSON alias code optimization review must record JSON alias, manifest checker, and commercial report checker proof.',
+    );
     const releasePreflightPublicCheckHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES');
     assert(releasePreflightPublicCheckHandleDecision, 'Manifest must record the release preflight public checker handle implementation decision.');
     assert(

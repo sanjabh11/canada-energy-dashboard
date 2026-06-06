@@ -29,6 +29,9 @@ for (let index = 0; index < args.length; index += 1) {
     skipProbes = true;
     continue;
   }
+  if (arg === '--json') {
+    continue;
+  }
   if (arg === '--help' || arg === '-h') {
     printUsage();
     process.exit(0);
@@ -57,6 +60,7 @@ function printUsage() {
 
 Options:
   --output <path>    Write the JSON manifest to a file instead of stdout only.
+  --json             Explicit JSON mode alias; the manifest is JSON by default.
   --skip-probes      Do not run local readiness probes; used by fast unit tests.
 `);
 }
@@ -4945,6 +4949,12 @@ const adversarialReviewFocusedReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchManifestJsonAliasFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4984,6 +4994,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...progressDigestFocusedReportFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
+  ...launchManifestJsonAliasFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5401,6 +5412,16 @@ const adversarialReviewFocusedReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const launchManifestJsonAliasTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-evidence-manifest -- --skip-probes --json',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5440,6 +5461,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...progressDigestFocusedReportTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
+  ...launchManifestJsonAliasTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5932,6 +5954,19 @@ const safeFixImplementationDecisions = [
     reason: 'The adversarial review ledger is the claim-refutation surface for launch synthesis, but the public status handle still required operators to scan broad launch artifacts instead of using a focused challenge-lane report.',
     proof_boundary: 'This record improves adversarial review visibility only; it does not prove production approval, create buyer evidence, contact buyers, prove buyer acceptance, run release-readiness as clearance, authorize Supabase, clear Supabase advisor findings, approve branches, resolve source provenance, request owner approval, deploy, mutate live services, prove hosted/live parity, clear launch blockers, or raise launch status.',
     stop_gate: 'Do not treat the focused adversarial review report/check, public adversarial review handle, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    decision: 'Accept --json as an explicit compatibility alias for the structured launch evidence manifest command.',
+    acceptance_check: 'report:launch-evidence-manifest accepts --skip-probes --json, emits the same schema-versioned JSON manifest, and the broad manifest checker records the compatibility decision without changing launch status or proof boundaries.',
+    chosen_variant: 'minimal parser-only JSON alias',
+    repo_pattern_reused: 'Existing focused report --json convention, report-launch-evidence-manifest default JSON output, launch manifest unit helper, and code-optimization ledger assertions.',
+    files_changed: launchManifestJsonAliasFilesChanged,
+    tests_run: launchManifestJsonAliasTestsRun,
+    proof: 'The patch accepts --json as a no-op alias for an already-JSON manifest and adds focused unit/checker coverage so operator tooling can use the same explicit JSON flag as focused reports without changing emitted content or execution gates.',
+    reason: 'Focused readiness reports expose --json, and operators or automation can reasonably pass --json to the top-level structured manifest; rejecting that flag creates a control-surface trap even though the command already emits JSON.',
+    proof_boundary: 'This record improves manifest command compatibility only; it does not run missing checks as clearance, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the --json alias, manifest JSON output, skipped-probe report generation, broad manifest validation, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
@@ -6906,6 +6941,27 @@ const safeFixRejectedVariants = [
     evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    variant: 'Leave report-launch-evidence-manifest rejecting --json.',
+    reason_rejected: 'Would keep the top-level structured manifest inconsistent with the focused report convention and preserve an avoidable operator/tooling failure path.',
+    tradeoff: 'No-code defer avoids a parser change, but the command already emits JSON, so accepting the explicit alias has lower operational friction without broad behavior change.',
+    evidence: 'report-progress-digest-readiness, report-objective-completion-audit-readiness, and report-adversarial-review-readiness all accept --json, while report-launch-evidence-manifest already emits JSON by default.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    variant: 'Add a second Markdown output mode to report-launch-evidence-manifest.',
+    reason_rejected: 'The manifest command is the structured JSON evidence artifact; Markdown rendering already belongs to report:commercial-launch-readiness and focused lane reports.',
+    tradeoff: 'A Markdown mode could be reader-friendly, but it would duplicate established report surfaces and increase validation scope for no launch-gate benefit.',
+    evidence: 'report-commercial-launch-readiness renders the final tables from the manifest, and focused reports render lane-specific Markdown/JSON payloads.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    variant: 'Change package or public status commands to add --json everywhere.',
+    reason_rejected: 'Package/public handles already work and changing them would broaden the phase beyond compatibility for direct manifest callers.',
+    tradeoff: 'Public handles could become more explicit, but the current status/report commands are established and do not need mutation to satisfy the alias contract.',
+    evidence: 'check:launch-evidence-manifest, check:commercial-launch-readiness-report, and public release-status validation already pass with the current package handles.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
     variant: 'Leave the release-preflight public status rows on report:release-preflight plus report:launch-evidence-manifest.',
     reason_rejected: 'Would preserve report-only public handles after the focused release-preflight checker already proves wrapper structure and no-execution boundaries.',
@@ -7334,6 +7390,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one thin focused report/check pair over existing manifest adversarial_reviews fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no gate parser or review builder, executes no external gate, and preserves blocked launch status.',
     tests_or_checks: adversarialReviewFocusedReportTestsRun,
     remaining_risk: 'The adversarial review ledger remains claim-refutation visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change accepts one no-op parser flag on the existing JSON manifest command and adds checker/unit coverage, with no new dependency, no new output mode, no package/public handle churn, no external gate execution, and no launch-status change.',
+    tests_or_checks: launchManifestJsonAliasTestsRun,
+    remaining_risk: 'The alias improves structured-manifest ergonomics only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',

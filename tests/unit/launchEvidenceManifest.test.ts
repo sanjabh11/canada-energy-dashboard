@@ -43,6 +43,16 @@ afterEach(() => {
 });
 
 describe('launch evidence manifest report', () => {
+  it('accepts --json as an explicit alias for the structured launch evidence manifest output', () => {
+    const stdout = runManifest(['--skip-probes', '--json']);
+    const manifest = JSON.parse(stdout);
+
+    expect(manifest.schema_version).toBe(1);
+    expect(manifest.launch_decision).toBe('blocked');
+    expect(manifest.repo.name).toBe('canada-energy-dashboard');
+    expect(manifest.fix_report.safe_fix_boundary).toContain('read-only unless --output is used');
+  }, LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS);
+
   it('emits a conservative blocked launch-evidence manifest that passes the orchestrator schema validator', () => {
     const stdout = runManifest(['--skip-probes']);
     const manifest = JSON.parse(stdout);
@@ -796,9 +806,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(40);
+    expect(manifest.implementation_decisions).toHaveLength(41);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(40);
+    expect(manifest.code_optimization_reviews).toHaveLength(41);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1719,6 +1729,27 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const launchManifestJsonAliasDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    );
+    expect(launchManifestJsonAliasDecision).toBeTruthy();
+    expect(launchManifestJsonAliasDecision.chosen_variant).toBe('minimal parser-only JSON alias');
+    expect(launchManifestJsonAliasDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(launchManifestJsonAliasDecision.proof_boundary).toMatch(/does not run missing checks as clearance|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const launchManifestJsonAliasReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-MANIFEST-JSON-ALIAS',
+    );
+    expect(launchManifestJsonAliasReview).toBeTruthy();
+    expect(launchManifestJsonAliasReview.policy).toBe('strict');
+    expect(launchManifestJsonAliasReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:launch-evidence-manifest -- --skip-probes --json',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
     const releasePreflightPublicCheckHandleDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-CHECK-HANDLES',
