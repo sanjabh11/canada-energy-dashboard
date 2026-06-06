@@ -96,6 +96,13 @@ if (failures.length === 0) {
     assertContains(stdout, 'corepack pnpm run check:live-static-parity', 'Report must include the live static parity proof command.');
     assertContains(stdout, 'corepack pnpm run test:browser:hosted:proof-packs', 'Report must include the hosted proof-pack smoke command.');
     assertContains(stdout, 'DEPLOY CEIP PRODUCTION', 'Report must preserve the explicit deploy phrase boundary.');
+    assertContains(stdout, '## Post-Deploy Live Proof Operator Handoff Packet', 'Report must include the post-deploy live proof operator handoff packet.');
+    assertContains(stdout, 'post_deploy_live_proof_operator_handoff_packet', 'Report must include the post-deploy operator handoff proof type.');
+    assertContains(stdout, 'post_deploy_live_proof.gate_queue.items', 'Report must expose the post-deploy operator packet source.');
+    assertContains(stdout, 'Execution Gate', 'Report must render post-deploy operator execution gates.');
+    assertContains(stdout, 'Can Execute From Packet', 'Report must render post-deploy operator non-execution boundaries.');
+    assertContains(stdout, 'Live Account Required', 'Report must render live-account gating.');
+    assertContains(stdout, 'Browser Smoke Required', 'Report must render browser-smoke gating.');
     assertContains(stdout, '## Launch Action Post-Deploy Row', 'Report must include the launch action post-deploy row.');
     assertContains(stdout, '## Production Approval Live Prerequisite', 'Report must include the production approval live prerequisite.');
     assertContains(stdout, '## Production Approval Request Live Row', 'Report must include the production approval request live row.');
@@ -105,6 +112,7 @@ if (failures.length === 0) {
   if (payload) {
     const postDeploy = payload.post_deploy_live_proof ?? {};
     const gateQueue = postDeploy.gate_queue ?? {};
+    const operatorHandoffPacket = postDeploy.operator_handoff_packet ?? gateQueue.operator_handoff_packet ?? {};
     const items = gateQueue.items ?? [];
     const gates = items.map((item) => item.gate);
     const gatesByName = new Map(items.map((item) => [item.gate, item]));
@@ -131,6 +139,55 @@ if (failures.length === 0) {
     assert(gatesByName.get('Guarded production deploy completion')?.approval_required === true, 'Guarded deploy completion must require approval.');
     assert(gatesByName.get('Guarded production deploy completion')?.approval_phrase === 'DEPLOY CEIP PRODUCTION', 'Guarded deploy completion must preserve the typed approval phrase.');
     assert(items.every((item) => item.status !== 'ready'), 'Post-deploy gate rows must remain non-ready until live proof is current.');
+    assert(operatorHandoffPacket.proof_type === 'post_deploy_live_proof_operator_handoff_packet', 'Focused JSON must include the post-deploy live proof operator handoff packet.');
+    assert(operatorHandoffPacket.source === 'post_deploy_live_proof.gate_queue.items', 'Post-deploy operator handoff packet must link to the gate queue.');
+    assert(['ready', 'blocked'].includes(operatorHandoffPacket.status), 'Post-deploy operator handoff packet status must be ready or blocked.');
+    assert(Array.isArray(operatorHandoffPacket.items), 'Post-deploy operator handoff packet items must be a list.');
+    assert(typeof operatorHandoffPacket.evidence === 'string' && /Post-deploy live proof operator handoff packet/i.test(operatorHandoffPacket.evidence), 'Post-deploy operator handoff packet evidence must be set.');
+    assert(typeof operatorHandoffPacket.proof_boundary === 'string' && /planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary), 'Post-deploy operator handoff packet proof_boundary must preserve planning-only live-proof boundaries.');
+    assert(typeof operatorHandoffPacket.stop_gate === 'string' && /Do not claim post-deploy live proof|run deploy-production\.sh|netlify deploy|hosted\/live parity/i.test(operatorHandoffPacket.stop_gate), 'Post-deploy operator handoff packet stop_gate must reject deploy and live-parity claims.');
+    assert(operatorHandoffPacket.item_count === items.length, 'Post-deploy operator handoff packet item_count must match gate queue items.');
+    assert(operatorHandoffPacket.blocked_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocks_live_proof_gate).length, 'Post-deploy operator handoff packet blocked_count must match blocked handoff rows.');
+    assert(operatorHandoffPacket.manual_approval_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'manual_approval_gate').length, 'Post-deploy operator manual_approval_count must match manual approval rows.');
+    assert(operatorHandoffPacket.approved_deploy_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'approved_deploy_execution').length, 'Post-deploy operator approved_deploy_count must match deploy rows.');
+    assert(operatorHandoffPacket.hosted_probe_count === (operatorHandoffPacket.items ?? []).filter((item) => ['hosted_metadata_probe', 'hosted_static_parity_probe'].includes(item.proof_type)).length, 'Post-deploy operator hosted_probe_count must match hosted probe rows.');
+    assert(operatorHandoffPacket.browser_smoke_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'hosted_browser_smoke').length, 'Post-deploy operator browser_smoke_count must match browser smoke rows.');
+    assert(operatorHandoffPacket.parity_claim_count === (operatorHandoffPacket.items ?? []).filter((item) => item.proof_type === 'post_deploy_parity_claim').length, 'Post-deploy operator parity_claim_count must match parity claim rows.');
+    assert(
+      JSON.stringify((operatorHandoffPacket.items ?? []).map((item) => item.gate)) === JSON.stringify(gates),
+      'Post-deploy operator handoff packet rows must preserve gate queue order.',
+    );
+    const operatorRowsByGate = new Map((operatorHandoffPacket.items ?? []).map((item) => [item.gate, item]));
+    for (const [index, item] of (operatorHandoffPacket.items ?? []).entries()) {
+      const gateRow = items[index] ?? {};
+      assert(Number.isInteger(item.rank), `operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.gate === gateRow.gate, `operator_handoff_packet.items[${index}].gate must match the gate queue row.`);
+      assert(item.owner === gateRow.owner, `operator_handoff_packet.items[${index}].owner must match the gate queue row.`);
+      assert(['ready', 'blocked', 'manual_stop'].includes(item.status), `operator_handoff_packet.items[${index}].status must be ready, blocked, or manual_stop.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(item.proof_command === gateRow.proof_command, `operator_handoff_packet.items[${index}].proof_command must match the gate queue row.`);
+      assert(item.proof_type === gateRow.proof_type, `operator_handoff_packet.items[${index}].proof_type must match the gate queue row.`);
+      assert(typeof item.approval_required === 'boolean', `operator_handoff_packet.items[${index}].approval_required must be boolean.`);
+      assert(typeof item.deploy_required === 'boolean', `operator_handoff_packet.items[${index}].deploy_required must be boolean.`);
+      assert(typeof item.live_account_required === 'boolean', `operator_handoff_packet.items[${index}].live_account_required must be boolean.`);
+      assert(typeof item.browser_smoke_required === 'boolean', `operator_handoff_packet.items[${index}].browser_smoke_required must be boolean.`);
+      assert(typeof item.blocks_live_proof_gate === 'boolean', `operator_handoff_packet.items[${index}].blocks_live_proof_gate must be boolean.`);
+      assert(item.blocks_live_proof_gate === (gateRow.status !== 'ready'), `operator_handoff_packet.items[${index}] must derive blocks_live_proof_gate from gate row status.`);
+      assert(item.can_execute_from_packet === false, `operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i.test(item.proof_boundary), `operator_handoff_packet.items[${index}].proof_boundary must preserve planning-only live-proof boundaries.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute deploy or live-proof work|claim hosted\/live parity|mark this row ready/i.test(item.stop_gate), `operator_handoff_packet.items[${index}].stop_gate must reject packet execution and live-proof claims.`);
+    }
+    assert(operatorRowsByGate.get('Production approval clearance')?.execution_gate === 'production_approval_clearance_first', 'Post-deploy operator approval row must use production_approval_clearance_first.');
+    assert(operatorRowsByGate.get('Guarded production deploy completion')?.execution_gate === 'approved_deploy_after_owner_phrase', 'Post-deploy operator deploy row must use approved_deploy_after_owner_phrase.');
+    assert(operatorRowsByGate.get('Guarded production deploy completion')?.approval_required === true, 'Post-deploy operator deploy row must preserve approval_required.');
+    assert(operatorRowsByGate.get('Guarded production deploy completion')?.approval_phrase === 'DEPLOY CEIP PRODUCTION', 'Post-deploy operator deploy row must preserve the typed approval phrase.');
+    assert(operatorRowsByGate.get('Guarded production deploy completion')?.deploy_required === true, 'Post-deploy operator deploy row must mark deploy_required.');
+    assert(operatorRowsByGate.get('Live public metadata')?.execution_gate === 'live_metadata_after_approved_deploy', 'Post-deploy operator metadata row must wait for approved deploy.');
+    assert(operatorRowsByGate.get('Live static dist parity')?.execution_gate === 'static_parity_after_metadata_and_build', 'Post-deploy operator static parity row must wait for metadata and build.');
+    assert(operatorRowsByGate.get('Hosted proof-pack route smoke')?.execution_gate === 'hosted_smoke_after_deploy', 'Post-deploy operator hosted smoke row must wait for deploy.');
+    assert(operatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required === true, 'Post-deploy operator hosted smoke row must mark browser_smoke_required.');
+    assert(operatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate === 'parity_claim_after_all_live_gates_pass', 'Post-deploy operator parity claim row must wait for all live gates.');
+    assert(operatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required === true, 'Post-deploy operator parity row must mark live_account_required.');
     assert(/does not grant owner approval|deploy|mutate Netlify|run browser smoke|prove hosted\/live parity/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must not imply approval, deploy, browser smoke, or live parity.');
     assert(/Do not treat this focused report|production approval|hosted parity|post-deploy live proof/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject live-proof claims from the report itself.');
     assert(payload.launch_action_post_deploy_row?.phase === 'post_deploy_live_proof', 'Focused report JSON must include the launch action post-deploy row.');
@@ -158,4 +215,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Post-deploy live proof readiness report check passed: focused post-deploy gate queue, production approval rows, package-script handles, and no-live-parity boundaries are consistent.');
+console.log('Post-deploy live proof readiness report check passed: focused post-deploy gate queue, operator handoff packet, production approval rows, package-script handles, and no-live-parity boundaries are consistent.');

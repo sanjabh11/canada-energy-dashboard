@@ -50,6 +50,12 @@ describe('post-deploy live proof readiness report', () => {
     expect(stdout).toContain('corepack pnpm run check:live-static-parity');
     expect(stdout).toContain('corepack pnpm run test:browser:hosted:proof-packs');
     expect(stdout).toContain('DEPLOY CEIP PRODUCTION');
+    expect(stdout).toContain('Post-Deploy Live Proof Operator Handoff Packet');
+    expect(stdout).toContain('post_deploy_live_proof_operator_handoff_packet');
+    expect(stdout).toContain('Execution Gate');
+    expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('Live Account Required');
+    expect(stdout).toContain('Browser Smoke Required');
     expect(stdout).toContain('Launch Action Post-Deploy Row');
     expect(stdout).toContain('Production Approval Live Prerequisite');
     expect(stdout).toContain('Production Approval Request Live Row');
@@ -89,6 +95,65 @@ describe('post-deploy live proof readiness report', () => {
     );
     expect(deployGate.approval_required).toBe(true);
     expect(deployGate.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
+    const operatorHandoffPacket = payload.post_deploy_live_proof.operator_handoff_packet;
+    expect(operatorHandoffPacket.proof_type).toBe('post_deploy_live_proof_operator_handoff_packet');
+    expect(operatorHandoffPacket.source).toBe('post_deploy_live_proof.gate_queue.items');
+    expect(operatorHandoffPacket.item_count).toBe(payload.post_deploy_live_proof.gate_queue.items.length);
+    expect(operatorHandoffPacket.blocked_count).toBe(
+      operatorHandoffPacket.items.filter((item: { blocks_live_proof_gate: boolean }) => item.blocks_live_proof_gate).length,
+    );
+    expect(operatorHandoffPacket.approved_deploy_count).toBe(
+      operatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'approved_deploy_execution').length,
+    );
+    expect(operatorHandoffPacket.hosted_probe_count).toBe(
+      operatorHandoffPacket.items.filter((item: { proof_type: string }) => ['hosted_metadata_probe', 'hosted_static_parity_probe'].includes(item.proof_type)).length,
+    );
+    expect(operatorHandoffPacket.browser_smoke_count).toBe(
+      operatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'hosted_browser_smoke').length,
+    );
+    expect(operatorHandoffPacket.items.map((item: { gate: string }) => item.gate)).toEqual(
+      payload.post_deploy_live_proof.gate_queue.items.map((item: { gate: string }) => item.gate),
+    );
+    expect(operatorHandoffPacket.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const operatorRowsByGate = new Map<string, {
+      execution_gate: string;
+      approval_required: boolean;
+      approval_phrase: string | null;
+      deploy_required: boolean;
+      live_account_required: boolean;
+      browser_smoke_required: boolean;
+      proof_command: string;
+      proof_boundary: string;
+      stop_gate: string;
+    }>(operatorHandoffPacket.items.map((item: {
+      gate: string;
+      execution_gate: string;
+      approval_required: boolean;
+      approval_phrase: string | null;
+      deploy_required: boolean;
+      live_account_required: boolean;
+      browser_smoke_required: boolean;
+      proof_command: string;
+      proof_boundary: string;
+      stop_gate: string;
+    }) => [item.gate, item]));
+    expect(operatorRowsByGate.get('Production approval clearance')?.execution_gate).toBe('production_approval_clearance_first');
+    expect(operatorRowsByGate.get('Guarded production deploy completion')?.execution_gate).toBe('approved_deploy_after_owner_phrase');
+    expect(operatorRowsByGate.get('Guarded production deploy completion')?.approval_required).toBe(true);
+    expect(operatorRowsByGate.get('Guarded production deploy completion')?.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
+    expect(operatorRowsByGate.get('Guarded production deploy completion')?.deploy_required).toBe(true);
+    expect(operatorRowsByGate.get('Live public metadata')?.execution_gate).toBe('live_metadata_after_approved_deploy');
+    expect(operatorRowsByGate.get('Live static dist parity')?.execution_gate).toBe('static_parity_after_metadata_and_build');
+    expect(operatorRowsByGate.get('Hosted proof-pack route smoke')?.execution_gate).toBe('hosted_smoke_after_deploy');
+    expect(operatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required).toBe(true);
+    expect(operatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate).toBe('parity_claim_after_all_live_gates_pass');
+    expect(operatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required).toBe(true);
+    for (const row of operatorHandoffPacket.items) {
+      const sourceRow = payload.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === row.gate);
+      expect(row.proof_command).toBe(sourceRow.proof_command);
+      expect(row.proof_boundary).toMatch(/planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i);
+      expect(row.stop_gate).toMatch(/Do not execute deploy or live-proof work|claim hosted\/live parity|mark this row ready/i);
+    }
     expect(payload.launch_action_post_deploy_row.phase).toBe('post_deploy_live_proof');
     expect(payload.production_approval_live_prerequisite.prerequisite).toBe('Post-deploy live proof boundary');
     expect(payload.production_approval_live_prerequisite.proof_command).toContain('report:post-deploy-live-proof-readiness');
@@ -112,6 +177,7 @@ describe('post-deploy live proof readiness report', () => {
     });
 
     expect(stdout).toContain('Post-deploy live proof readiness report check passed');
+    expect(stdout).toContain('operator handoff packet');
   });
 
   it('can fail as a machine post-deploy gate while live-proof blockers remain', () => {
@@ -129,9 +195,12 @@ describe('post-deploy live proof readiness report', () => {
       timeout,
     });
 
-    expect(result.status).toBe(json.post_deploy_live_proof.status === 'pass' ? 0 : 1);
+    const ready = json.post_deploy_live_proof.status === 'pass'
+      && json.post_deploy_live_proof.current_source_live_proven === true
+      && json.post_deploy_live_proof.operator_handoff_packet.status === 'ready';
+    expect(result.status).toBe(ready ? 0 : 1);
     expect(result.stdout).toContain('# CEIP Post-Deploy Live Proof Readiness Report');
-    if (json.post_deploy_live_proof.status !== 'pass') {
+    if (!ready) {
       expect(result.stderr).toContain('Post-deploy live proof remains blocked');
       expect(result.stderr).toContain('does not deploy or prove hosted/live parity');
     }

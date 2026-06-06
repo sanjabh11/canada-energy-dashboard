@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -837,6 +837,66 @@ describe('launch evidence manifest report', () => {
     expect(postDeployProofTypesByGate.get('Hosted proof-pack route smoke')?.proof_boundary).toMatch(/local smoke|constructed demos|skipped smoke/i);
     expect(postDeployProofTypesByGate.get('Current-source hosted parity claim')?.proof_type).toBe('post_deploy_parity_claim');
     expect(postDeployProofTypesByGate.get('Current-source hosted parity claim')?.proof_boundary).toMatch(/does not create live proof/i);
+    const postDeployOperatorHandoffPacket = manifest.post_deploy_live_proof.operator_handoff_packet;
+    expect(postDeployOperatorHandoffPacket).toEqual(manifest.post_deploy_live_proof.gate_queue.operator_handoff_packet);
+    expect(postDeployOperatorHandoffPacket.status).toBe('blocked');
+    expect(postDeployOperatorHandoffPacket.proof_type).toBe('post_deploy_live_proof_operator_handoff_packet');
+    expect(postDeployOperatorHandoffPacket.source).toBe('post_deploy_live_proof.gate_queue.items');
+    expect(postDeployOperatorHandoffPacket.evidence).toContain('Post-deploy live proof operator handoff packet');
+    expect(postDeployOperatorHandoffPacket.proof_boundary).toMatch(/planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i);
+    expect(postDeployOperatorHandoffPacket.stop_gate).toMatch(/Do not claim post-deploy live proof|run deploy-production\.sh|netlify deploy|hosted\/live parity/i);
+    expect(postDeployOperatorHandoffPacket.item_count).toBe(manifest.post_deploy_live_proof.gate_queue.items.length);
+    expect(postDeployOperatorHandoffPacket.blocked_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { blocks_live_proof_gate: boolean }) => item.blocks_live_proof_gate).length,
+    );
+    expect(postDeployOperatorHandoffPacket.manual_approval_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'manual_approval_gate').length,
+    );
+    expect(postDeployOperatorHandoffPacket.approved_deploy_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'approved_deploy_execution').length,
+    );
+    expect(postDeployOperatorHandoffPacket.hosted_probe_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { proof_type: string }) => ['hosted_metadata_probe', 'hosted_static_parity_probe'].includes(item.proof_type)).length,
+    );
+    expect(postDeployOperatorHandoffPacket.browser_smoke_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'hosted_browser_smoke').length,
+    );
+    expect(postDeployOperatorHandoffPacket.parity_claim_count).toBe(
+      postDeployOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'post_deploy_parity_claim').length,
+    );
+    expect(postDeployOperatorHandoffPacket.items.map((item: { gate: string }) => item.gate)).toEqual(
+      manifest.post_deploy_live_proof.gate_queue.items.map((item: { gate: string }) => item.gate),
+    );
+    expect(postDeployOperatorHandoffPacket.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const postDeployOperatorRowsByGate = mapBy(
+      postDeployOperatorHandoffPacket.items,
+      (item: {
+        gate: string;
+        execution_gate?: string;
+        approval_required?: boolean;
+        approval_phrase?: string | null;
+        deploy_required?: boolean;
+        live_account_required?: boolean;
+        browser_smoke_required?: boolean;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => item.gate,
+    );
+    expect(postDeployOperatorRowsByGate.get('Production approval clearance')?.execution_gate).toBe('production_approval_clearance_first');
+    expect(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.execution_gate).toBe('approved_deploy_after_owner_phrase');
+    expect(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.approval_required).toBe(true);
+    expect(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.approval_phrase).toBe('DEPLOY CEIP PRODUCTION');
+    expect(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.deploy_required).toBe(true);
+    expect(postDeployOperatorRowsByGate.get('Live public metadata')?.execution_gate).toBe('live_metadata_after_approved_deploy');
+    expect(postDeployOperatorRowsByGate.get('Live static dist parity')?.execution_gate).toBe('static_parity_after_metadata_and_build');
+    expect(postDeployOperatorRowsByGate.get('Hosted proof-pack route smoke')?.execution_gate).toBe('hosted_smoke_after_deploy');
+    expect(postDeployOperatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required).toBe(true);
+    expect(postDeployOperatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate).toBe('parity_claim_after_all_live_gates_pass');
+    expect(postDeployOperatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required).toBe(true);
+    for (const item of postDeployOperatorHandoffPacket.items) {
+      expect(item.proof_boundary).toMatch(/planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i);
+      expect(item.stop_gate).toMatch(/Do not execute deploy or live-proof work|claim hosted\/live parity|mark this row ready/i);
+    }
     expect(manifest.source_provenance.branch).toBeTruthy();
     expect(manifest.source_provenance.commit).toBeTruthy();
     expect(Number.isInteger(manifest.source_provenance.dirty_path_count)).toBe(true);
@@ -1016,9 +1076,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(50);
+    expect(manifest.implementation_decisions).toHaveLength(51);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(50);
+    expect(manifest.code_optimization_reviews).toHaveLength(51);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1097,6 +1157,9 @@ describe('launch evidence manifest report', () => {
       'Leave Supabase advisor operator actions implicit in clearance_deficits.remediation_queue rows.',
       'Call Supabase connector, access the dashboard, rerun advisors, mutate database state, or record advisor findings from the handoff phase.',
       'Create a separate Supabase advisor runbook artifact or file.',
+      'Leave post-deploy operator actions implicit in post_deploy_live_proof.gate_queue rows.',
+      'Run production deploy, live metadata, static parity, hosted smoke, or hosted parity checks from the handoff phase.',
+      'Create a separate post-deploy live-proof runbook artifact or file.',
       'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
@@ -2302,6 +2365,34 @@ describe('launch evidence manifest report', () => {
     expect(supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:supabase-advisor-readiness -- --skip-probes',
       'pnpm run check:supabase-advisor-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const postDeployLiveProofOperatorHandoffPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(postDeployLiveProofOperatorHandoffPacketDecision).toBeTruthy();
+    expect(postDeployLiveProofOperatorHandoffPacketDecision.chosen_variant).toBe('minimal derived post-deploy live-proof operator handoff packet');
+    expect(postDeployLiveProofOperatorHandoffPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-post-deploy-live-proof-readiness.mjs',
+      'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/postDeployLiveProofReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(postDeployLiveProofOperatorHandoffPacketDecision.proof_boundary).toMatch(/does not grant owner approval|run deploys|deploy-production\.sh|netlify deploy|push|rebuild|mutate Netlify|access live accounts|run browser smoke|request production approval|hosted\/live parity|raise launch status/i);
+    const postDeployLiveProofOperatorHandoffPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(postDeployLiveProofOperatorHandoffPacketReview).toBeTruthy();
+    expect(postDeployLiveProofOperatorHandoffPacketReview.policy).toBe('strict');
+    expect(postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:post-deploy-live-proof-readiness -- --skip-probes',
+      'pnpm run check:post-deploy-live-proof-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

@@ -161,6 +161,7 @@ function focusedPayload(manifest) {
 function renderMarkdown(payload) {
   const postDeployLiveProof = payload.post_deploy_live_proof ?? {};
   const gateQueue = postDeployLiveProof.gate_queue ?? {};
+  const operatorHandoffPacket = postDeployLiveProof.operator_handoff_packet ?? gateQueue.operator_handoff_packet ?? {};
   const gateRows = (gateQueue.items ?? []).map((item) => [
     item.rank,
     item.gate,
@@ -172,6 +173,25 @@ function renderMarkdown(payload) {
     item.proof_boundary,
     item.stop_gate,
     item.status,
+  ]);
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.gate,
+    item.owner,
+    item.status,
+    item.execution_gate,
+    item.proof_command,
+    item.proof_type,
+    item.approval_required ? 'yes' : 'no',
+    item.deploy_required ? 'yes' : 'no',
+    item.live_account_required ? 'yes' : 'no',
+    item.browser_smoke_required ? 'yes' : 'no',
+    item.blocks_live_proof_gate ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
+    item.approval_phrase ?? '-',
+    item.execution_command ?? '-',
+    item.proof_boundary,
+    item.stop_gate,
   ]);
   const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
     name,
@@ -241,6 +261,7 @@ function renderMarkdown(payload) {
     `- Gate queue status: \`${gateQueue.status ?? 'unknown'}\``,
     `- Full post-deploy command: \`${payload.package_script_handles?.check_post_deploy_live ?? 'corepack pnpm run check:post-deploy-live'}\``,
     `- Approval state: \`${payload.production_approval_request_packet?.status ?? 'unknown'}\``,
+    `- Operator handoff packet: \`${operatorHandoffPacket.status ?? 'unknown'}; blocked=${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}\``,
     `- Live proof evidence: ${postDeployLiveProof.evidence ?? 'No post-deploy live proof evidence captured.'}`,
     '',
     '## Post-Deploy Live Proof Gate Queue',
@@ -250,6 +271,20 @@ function renderMarkdown(payload) {
       gateRows.length > 0
         ? gateRows
         : [['n/a', 'none', 'post-deploy live proof queue missing', 'Regenerate launch evidence manifest before live parity claims.', 'operator', 'corepack pnpm run check:post-deploy-live', 'post_deploy_live_proof_gate', payload.proof_boundary, payload.stop_gate, 'missing']],
+    ),
+    '',
+    '## Post-Deploy Live Proof Operator Handoff Packet',
+    '',
+    operatorHandoffPacket.evidence ?? 'Post-deploy live proof operator handoff packet missing.',
+    '',
+    `Proof type: ${operatorHandoffPacket.proof_type ?? 'unknown'}`,
+    `Source: ${operatorHandoffPacket.source ?? 'unknown'}`,
+    `Boundary: ${operatorHandoffPacket.proof_boundary ?? 'unknown'}`,
+    `Stop gate: ${operatorHandoffPacket.stop_gate ?? 'unknown'}`,
+    '',
+    renderTable(
+      ['Rank', 'Gate', 'Owner', 'Status', 'Execution Gate', 'Proof Command', 'Proof Type', 'Approval Required', 'Deploy Required', 'Live Account Required', 'Browser Smoke Required', 'Blocks Live Proof Gate', 'Can Execute From Packet', 'Approval Phrase', 'Execution Command', 'Proof Boundary', 'Stop Gate'],
+      operatorHandoffRows,
     ),
     '',
     '## Package Script Handles',
@@ -301,7 +336,8 @@ if (values.has('output')) {
 process.stdout.write(output);
 
 const blocked = payload.post_deploy_live_proof?.status !== 'pass'
-  || payload.post_deploy_live_proof?.current_source_live_proven !== true;
+  || payload.post_deploy_live_proof?.current_source_live_proven !== true
+  || payload.post_deploy_live_proof?.operator_handoff_packet?.status !== 'ready';
 
 if (failOnBlocker && blocked) {
   console.error(`Post-deploy live proof remains ${payload.post_deploy_live_proof?.status ?? 'unknown'}; this report does not deploy or prove hosted/live parity.`);

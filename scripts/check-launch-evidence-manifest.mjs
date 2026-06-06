@@ -1608,6 +1608,71 @@ try {
       deployCompletionItem.stop_gate.includes('DEPLOY CEIP PRODUCTION'),
       'Guarded deploy completion stop gate must mention the exact typed approval phrase.',
     );
+    assert(typeof manifest.post_deploy_live_proof?.operator_handoff_packet?.evidence === 'string', 'Manifest post_deploy_live_proof.operator_handoff_packet.evidence must be set.');
+    assert(manifest.post_deploy_live_proof.operator_handoff_packet.evidence.includes('Post-deploy live proof operator handoff packet'), 'Manifest post-deploy operator handoff packet evidence must include a packet marker.');
+    assert(manifest.post_deploy_live_proof.operator_handoff_packet.proof_type === 'post_deploy_live_proof_operator_handoff_packet', 'Manifest post-deploy operator handoff packet proof_type must be post_deploy_live_proof_operator_handoff_packet.');
+    assert(manifest.post_deploy_live_proof.operator_handoff_packet.source === 'post_deploy_live_proof.gate_queue.items', 'Manifest post-deploy operator handoff packet must source gate queue items.');
+    assert(manifest.post_deploy_live_proof.operator_handoff_packet.status === (manifest.post_deploy_live_proof.gate_queue.status === 'pass' || manifest.post_deploy_live_proof.gate_queue.status === 'ready' ? 'ready' : 'blocked'), 'Post-deploy operator handoff packet status must derive from gate queue status.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.item_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.blocked_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.manual_approval_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.manual_approval_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.approved_deploy_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.approved_deploy_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.hosted_probe_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.hosted_probe_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.browser_smoke_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.browser_smoke_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.post_deploy_live_proof.operator_handoff_packet?.parity_claim_count), 'Manifest post_deploy_live_proof.operator_handoff_packet.parity_claim_count must be an integer or null.');
+    assert(Array.isArray(manifest.post_deploy_live_proof.operator_handoff_packet.items), 'Manifest post_deploy_live_proof.operator_handoff_packet.items must be a list.');
+    assert(
+      manifest.post_deploy_live_proof.operator_handoff_packet.item_count === manifest.post_deploy_live_proof.gate_queue.items.length,
+      'Post-deploy operator handoff packet item_count must match gate queue items length.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.operator_handoff_packet.blocked_count === manifest.post_deploy_live_proof.operator_handoff_packet.items.filter((item) => item.blocks_live_proof_gate).length,
+      'Post-deploy operator handoff packet blocked_count must match live-proof-blocking rows.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.operator_handoff_packet.approved_deploy_count === manifest.post_deploy_live_proof.operator_handoff_packet.items.filter((item) => item.proof_type === 'approved_deploy_execution').length,
+      'Post-deploy operator handoff packet approved_deploy_count must match deploy rows.',
+    );
+    assert(
+      manifest.post_deploy_live_proof.operator_handoff_packet.hosted_probe_count === manifest.post_deploy_live_proof.operator_handoff_packet.items.filter((item) => ['hosted_metadata_probe', 'hosted_static_parity_probe'].includes(item.proof_type)).length,
+      'Post-deploy operator handoff packet hosted_probe_count must match hosted probe rows.',
+    );
+    assert(
+      JSON.stringify((manifest.post_deploy_live_proof.operator_handoff_packet.items ?? []).map((item) => item.gate)) === JSON.stringify(liveProofGates),
+      'Post-deploy operator handoff packet must include exactly gate queue gates in order.',
+    );
+    assert(typeof manifest.post_deploy_live_proof.operator_handoff_packet.proof_boundary === 'string' && /planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i.test(manifest.post_deploy_live_proof.operator_handoff_packet.proof_boundary), 'Post-deploy operator handoff packet proof_boundary must preserve planning-only live-proof semantics.');
+    assert(typeof manifest.post_deploy_live_proof.operator_handoff_packet.stop_gate === 'string' && /Do not claim post-deploy live proof|run deploy-production\.sh|netlify deploy|hosted\/live parity/i.test(manifest.post_deploy_live_proof.operator_handoff_packet.stop_gate), 'Post-deploy operator handoff packet stop_gate must reject deploy and live-parity claims.');
+    const postDeployOperatorRowsByGate = new Map((manifest.post_deploy_live_proof.operator_handoff_packet.items ?? []).map((item) => [item.gate, item]));
+    for (const [index, item] of (manifest.post_deploy_live_proof.operator_handoff_packet.items ?? []).entries()) {
+      const gateRow = (manifest.post_deploy_live_proof.gate_queue.items ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `post_deploy_live_proof.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.gate === gateRow.gate, `post_deploy_live_proof.operator_handoff_packet.items[${index}].gate must match the gate queue row.`);
+      assert(item.owner === gateRow.owner, `post_deploy_live_proof.operator_handoff_packet.items[${index}].owner must match the gate queue row.`);
+      assert(['ready', 'blocked', 'manual_stop'].includes(item.status), `post_deploy_live_proof.operator_handoff_packet.items[${index}].status must be ready, blocked, or manual_stop.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `post_deploy_live_proof.operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(item.proof_command === gateRow.proof_command, `post_deploy_live_proof.operator_handoff_packet.items[${index}].proof_command must match the gate queue row.`);
+      assert(item.proof_type === gateRow.proof_type, `post_deploy_live_proof.operator_handoff_packet.items[${index}].proof_type must match the gate queue row.`);
+      assert(typeof item.approval_required === 'boolean', `post_deploy_live_proof.operator_handoff_packet.items[${index}].approval_required must be boolean.`);
+      assert(typeof item.deploy_required === 'boolean', `post_deploy_live_proof.operator_handoff_packet.items[${index}].deploy_required must be boolean.`);
+      assert(typeof item.live_account_required === 'boolean', `post_deploy_live_proof.operator_handoff_packet.items[${index}].live_account_required must be boolean.`);
+      assert(typeof item.browser_smoke_required === 'boolean', `post_deploy_live_proof.operator_handoff_packet.items[${index}].browser_smoke_required must be boolean.`);
+      assert(item.can_execute_from_packet === false, `post_deploy_live_proof.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.blocks_live_proof_gate === (gateRow.status !== 'ready'), `post_deploy_live_proof.operator_handoff_packet.items[${index}] must derive blocks_live_proof_gate from gate row status.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not grant owner approval|run deploys|mutate Netlify|access live accounts|run browser smoke|hosted\/live parity/i.test(item.proof_boundary), `post_deploy_live_proof.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute deploy or live-proof work|claim hosted\/live parity|mark this row ready/i.test(item.stop_gate), `post_deploy_live_proof.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+    }
+    assert(postDeployOperatorRowsByGate.get('Production approval clearance')?.execution_gate === 'production_approval_clearance_first', 'Post-deploy operator approval row must require production_approval_clearance_first.');
+    assert(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.execution_gate === 'approved_deploy_after_owner_phrase', 'Post-deploy operator deploy row must require approved_deploy_after_owner_phrase.');
+    assert(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.approval_required === true, 'Post-deploy operator deploy row must preserve approval_required.');
+    assert(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.approval_phrase === 'DEPLOY CEIP PRODUCTION', 'Post-deploy operator deploy row must preserve typed deploy phrase.');
+    assert(postDeployOperatorRowsByGate.get('Guarded production deploy completion')?.deploy_required === true, 'Post-deploy operator deploy row must mark deploy_required.');
+    assert(postDeployOperatorRowsByGate.get('Live public metadata')?.execution_gate === 'live_metadata_after_approved_deploy', 'Post-deploy operator metadata row must require live_metadata_after_approved_deploy.');
+    assert(postDeployOperatorRowsByGate.get('Live static dist parity')?.execution_gate === 'static_parity_after_metadata_and_build', 'Post-deploy operator static parity row must require static_parity_after_metadata_and_build.');
+    assert(postDeployOperatorRowsByGate.get('Hosted proof-pack route smoke')?.execution_gate === 'hosted_smoke_after_deploy', 'Post-deploy operator hosted smoke row must require hosted_smoke_after_deploy.');
+    assert(postDeployOperatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required === true, 'Post-deploy operator hosted smoke row must mark browser_smoke_required.');
+    assert(postDeployOperatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate === 'parity_claim_after_all_live_gates_pass', 'Post-deploy operator parity row must require parity_claim_after_all_live_gates_pass.');
+    assert(postDeployOperatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required === true, 'Post-deploy operator parity row must mark live_account_required.');
     assert(hasOpenGap(manifest, 'P1', 'stale/aging unmerged branches'), 'Manifest must keep the open P1 branch freshness review gap.');
     assert(hasOpenGap(manifest, 'P1', 'Supabase security/performance advisor clearance'), 'Manifest must keep the open P1 Supabase advisor clearance gap.');
     assert(typeof manifest.supabase_advisor?.evidence === 'string', 'Manifest must include supabase_advisor.evidence.');
@@ -2359,7 +2424,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest Supabase advisor operator handoff packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest post-deploy live-proof operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3835,6 +3900,41 @@ try {
         && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Supabase advisor operator handoff packet code optimization review must record focused Supabase, progress, manifest, and commercial report checks.',
+    );
+    const postDeployLiveProofOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET');
+    assert(postDeployLiveProofOperatorHandoffPacketDecision, 'Manifest must record the post-deploy live-proof operator handoff packet implementation decision.');
+    assert(
+      postDeployLiveProofOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived post-deploy live-proof operator handoff packet',
+      'Post-deploy live-proof operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(postDeployLiveProofOperatorHandoffPacketDecision?.files_changed)
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/report-post-deploy-live-proof-readiness.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/check-post-deploy-live-proof-readiness-report.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('tests/unit/postDeployLiveProofReadiness.test.ts')
+        && postDeployLiveProofOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Post-deploy live-proof operator handoff packet decision must record the manifest, focused post-deploy report, checkers, and unit test files.',
+    );
+    assert(
+      /does not grant owner approval|run deploys|deploy-production\.sh|netlify deploy|push|rebuild|mutate Netlify|access live accounts|run browser smoke|request production approval|hosted\/live parity|raise launch status/i.test(postDeployLiveProofOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Post-deploy live-proof operator handoff packet decision must preserve no-approval, no-deploy, no-production-mutation, no-live-account, no-browser-smoke, no-live-proof, and no-readiness boundaries.',
+    );
+    const postDeployLiveProofOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET');
+    assert(postDeployLiveProofOperatorHandoffPacketReview, 'Manifest must record the post-deploy live-proof operator handoff packet code optimization review.');
+    assert(postDeployLiveProofOperatorHandoffPacketReview?.policy === 'strict', 'Post-deploy live-proof operator handoff packet code optimization review must use strict policy.');
+    assert(postDeployLiveProofOperatorHandoffPacketReview?.verdict === 'pass', 'Post-deploy live-proof operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(postDeployLiveProofOperatorHandoffPacketReview?.tests_or_checks)
+        && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:post-deploy-live-proof-readiness -- --skip-probes/.test(check))
+        && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report -- --skip-probes/.test(check))
+        && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && postDeployLiveProofOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Post-deploy live-proof operator handoff packet code optimization review must record focused post-deploy, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

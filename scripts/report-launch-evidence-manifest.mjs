@@ -2022,6 +2022,91 @@ function postDeployLiveProofGateProofBoundary(gate) {
   }
 }
 
+function postDeployLiveProofOperatorExecutionGate(item) {
+  switch (item.gate) {
+    case 'Production approval clearance':
+      return 'production_approval_clearance_first';
+    case 'Guarded production deploy completion':
+      return 'approved_deploy_after_owner_phrase';
+    case 'Live public metadata':
+      return 'live_metadata_after_approved_deploy';
+    case 'Live static dist parity':
+      return 'static_parity_after_metadata_and_build';
+    case 'Hosted proof-pack route smoke':
+      return 'hosted_smoke_after_deploy';
+    case 'Current-source hosted parity claim':
+      return 'parity_claim_after_all_live_gates_pass';
+    default:
+      return 'post_deploy_live_proof_prerequisite_review';
+  }
+}
+
+function postDeployLiveProofOperatorEvidence(packet) {
+  if (packet.status === 'ready') {
+    return 'Post-deploy live proof operator handoff packet: status=ready source=post_deploy_live_proof.gate_queue.items open=0 approval_gate=owner approval, deploy authorization, and live proof evidence must remain attached before hosted/live parity claims';
+  }
+
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_live_proof_gate)
+    .slice(0, 6)
+    .map((item) => `${item.rank}:${item.gate}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Post-deploy live proof operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `deploy=${packet.approved_deploy_count}`,
+    `hosted_probe=${packet.hosted_probe_count}`,
+    `browser_smoke=${packet.browser_smoke_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is planning evidence only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, or prove hosted/live parity',
+  ].join(' ');
+}
+
+function buildPostDeployLiveProofOperatorHandoffPacket(gateQueue) {
+  const items = (gateQueue.items ?? []).map((item) => ({
+    rank: item.rank,
+    gate: item.gate,
+    owner: item.owner,
+    status: item.status === 'ready' ? 'ready' : item.status === 'manual_stop' ? 'manual_stop' : 'blocked',
+    current: item.current,
+    needed: item.needed,
+    execution_gate: postDeployLiveProofOperatorExecutionGate(item),
+    proof_command: item.proof_command,
+    proof_type: item.proof_type,
+    approval_required: item.approval_required === true,
+    approval_command: item.approval_command ?? null,
+    approval_phrase: item.approval_phrase ?? null,
+    execution_command: item.execution_command ?? null,
+    live_account_required: ['hosted_metadata_probe', 'hosted_static_parity_probe', 'hosted_browser_smoke', 'post_deploy_parity_claim'].includes(item.proof_type),
+    deploy_required: item.proof_type === 'approved_deploy_execution',
+    browser_smoke_required: item.proof_type === 'hosted_browser_smoke',
+    proof_boundary: `${item.proof_boundary} This post-deploy live proof operator handoff row is planning evidence only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, or prove hosted/live parity.`,
+    stop_gate: `${item.stop_gate} Do not execute deploy or live-proof work, claim hosted/live parity, or mark this row ready from the handoff packet itself.`,
+    blocks_live_proof_gate: item.status !== 'ready',
+    can_execute_from_packet: false,
+  }));
+  const packet = {
+    status: gateQueue.status === 'pass' || gateQueue.status === 'ready' ? 'ready' : 'blocked',
+    proof_type: 'post_deploy_live_proof_operator_handoff_packet',
+    source: 'post_deploy_live_proof.gate_queue.items',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_live_proof_gate).length,
+    manual_approval_count: items.filter((item) => item.proof_type === 'manual_approval_gate').length,
+    approved_deploy_count: items.filter((item) => item.proof_type === 'approved_deploy_execution').length,
+    hosted_probe_count: items.filter((item) => ['hosted_metadata_probe', 'hosted_static_parity_probe'].includes(item.proof_type)).length,
+    browser_smoke_count: items.filter((item) => item.proof_type === 'hosted_browser_smoke').length,
+    parity_claim_count: items.filter((item) => item.proof_type === 'post_deploy_parity_claim').length,
+    proof_boundary: 'This post-deploy live proof operator handoff packet is planning evidence only; it does not grant owner approval, run deploys, push, rebuild, mutate Netlify, access live accounts, run browser smoke, claim current-source hosted parity, request production approval, or raise launch status.',
+    stop_gate: 'Do not claim post-deploy live proof, run deploy-production.sh, netlify deploy, push, mutate production, access live accounts, run hosted browser smoke, request production approval, or present hosted/live parity from this handoff packet.',
+    items,
+  };
+  return { ...packet, evidence: postDeployLiveProofOperatorEvidence(packet) };
+}
+
 function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue, packageScripts }) {
   const approvalReady = productionApprovalPrerequisiteQueue.status === 'ready';
   const liveMetadataCommand = packageScriptCommand(packageScripts, 'check:live-public-metadata', 'corepack pnpm run check:live-public-metadata');
@@ -2114,9 +2199,11 @@ function buildPostDeployLiveProofGateQueue({ productionApprovalPrerequisiteQueue
     blocked_count: items.filter((item) => item.status !== 'ready').length,
     items,
   };
+  const operatorHandoffPacket = buildPostDeployLiveProofOperatorHandoffPacket(queue);
 
   return {
     ...queue,
+    operator_handoff_packet: operatorHandoffPacket,
     evidence: postDeployLiveProofGateEvidence(queue),
   };
 }
@@ -5419,6 +5506,17 @@ const postDeployLiveProofReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const postDeployLiveProofOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-post-deploy-live-proof-readiness.mjs',
+  'scripts/check-post-deploy-live-proof-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/postDeployLiveProofReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const postDeployProductionApprovalProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -5591,6 +5689,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...productionApprovalPacketSequencingFilesChanged,
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
+  ...postDeployLiveProofOperatorHandoffPacketFilesChanged,
   ...postDeployProductionApprovalProofHandleFilesChanged,
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
@@ -6018,6 +6117,23 @@ const postDeployLiveProofReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const postDeployLiveProofOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-post-deploy-live-proof-readiness.mjs',
+  'node --check scripts/check-post-deploy-live-proof-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/postDeployLiveProofReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:post-deploy-live-proof-readiness -- --skip-probes',
+  'pnpm run report:post-deploy-live-proof-readiness -- --skip-probes --json',
+  'pnpm run check:post-deploy-live-proof-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const postDeployProductionApprovalProofHandleTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -6200,6 +6316,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...productionApprovalPacketSequencingTestsRun,
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
+  ...postDeployLiveProofOperatorHandoffPacketTestsRun,
   ...postDeployProductionApprovalProofHandleTestsRun,
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
@@ -6887,6 +7004,19 @@ const safeFixImplementationDecisions = [
     reason: 'The Supabase remediation queue named the blocked advisor actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can authorize connectors, access dashboards, rerun advisors, mutate database state, record secrets, request approval, or prove live parity.',
     proof_boundary: 'This record improves Supabase advisor operator handoff visibility only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate database, run migrations, alter secrets, record secrets, clear advisor findings, request production approval, deploy, prove hosted/live parity, grant owner approval, or raise launch status.',
     stop_gate: 'Do not treat the Supabase advisor operator handoff packet, focused Supabase report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as connector authorization, Supabase advisor clearance, database security clearance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a post-deploy live-proof operator handoff packet derived from the post-deploy gate queue.',
+    acceptance_check: 'post_deploy_live_proof.operator_handoff_packet records source linkage, status, item counts, execution gates, proof commands, approval/deploy/live/browser flags, and non-executable packet rows; report:post-deploy-live-proof-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived post-deploy live-proof operator handoff packet',
+    repo_pattern_reused: 'Existing post_deploy_live_proof.gate_queue rows, post-deploy proof command/type helpers, focused post-deploy live-proof report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: postDeployLiveProofOperatorHandoffPacketFilesChanged,
+    tests_run: postDeployLiveProofOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing post_deploy_live_proof.gate_queue rows, assigns explicit execution gates for production approval clearance, guarded deploy completion, live metadata, static parity, hosted smoke, and hosted parity claim rows, marks every row non-executable from the packet, and validates source linkage, counts, commands, gates, approval/deploy/live/browser flags, and no-deploy/no-live-proof boundaries.',
+    reason: 'The post-deploy live-proof gate queue named the blocked live-proof actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can grant owner approval, deploy, mutate production, access live accounts, run hosted browser smoke, or prove hosted/live parity.',
+    proof_boundary: 'This record improves post-deploy live-proof operator handoff visibility only; it does not grant owner approval, run deploys, run deploy-production.sh, run netlify deploy, push, rebuild, mutate Netlify, access live accounts, run browser smoke, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
+    stop_gate: 'Do not treat the post-deploy live-proof operator handoff packet, focused post-deploy report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as production approval, deployment, live-account proof, browser-smoke proof, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -8109,6 +8239,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused Supabase advisor report already reads the manifest supabase_advisor object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave post-deploy operator actions implicit in post_deploy_live_proof.gate_queue rows.',
+    reason_rejected: 'Operators would still need to infer execution gates, deploy/live prerequisites, approval phrase handling, and no-live-action boundaries from individual gate rows instead of seeing a compact source-linked handoff for the final live-proof blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the post-deploy blocker less executable and easier to misread as ordinary runnable steps rather than an approval-gated handoff.',
+    evidence: 'post_deploy_live_proof.gate_queue.items already contains gates, owners, proof commands, proof types, approval phrase data, proof boundaries, and stop gates, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    variant: 'Run production deploy, live metadata, static parity, hosted smoke, or hosted parity checks from the handoff phase.',
+    reason_rejected: 'Deploy and live-proof execution require explicit owner approval, current release gates, production credentials, live targets, and a separate proof-capture phase.',
+    tradeoff: 'Executing live proof could reduce blockers only with explicit approval and working production access, but it would exceed this repo-side safe-fix boundary and risk mutating production or making unsupported hosted/live claims.',
+    evidence: 'Post-deploy gate stop gates require explicit owner approval, the typed deploy phrase, guarded deploy completion, live metadata, static parity, hosted proof-pack smoke, and final parity proof before any hosted/live claim.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate post-deploy live-proof runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from post_deploy_live_proof.gate_queue.items.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused post-deploy live-proof report already reads the manifest post_deploy_live_proof object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8574,6 +8725,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: supabaseAdvisorOperatorHandoffPacketTestsRun,
     remaining_risk: 'The Supabase advisor operator handoff packet is planning guidance only; launch readiness still depends on authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, clean source provenance, release-readiness, branch decisions, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact post-deploy live-proof operator handoff from existing post_deploy_live_proof.gate_queue rows, renders it through the existing focused post-deploy report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, deploy execution, Netlify mutation, live-account access, hosted browser smoke execution, approval request, or launch-status changes.',
+    tests_or_checks: postDeployLiveProofOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The post-deploy live-proof operator handoff packet is planning guidance only; launch readiness still depends on clean source provenance, release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, current live metadata, static parity, hosted proof-pack smoke, and final hosted/live parity proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8789,6 +8949,7 @@ const manifest = {
       productionApprovalPrerequisiteQueue.evidence,
       productionApprovalRequestPacket.evidence,
       postDeployLiveProofGateQueue.evidence,
+      postDeployLiveProofGateQueue.operator_handoff_packet.evidence,
     ],
     repo_artifact: [
       'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
@@ -8940,6 +9101,7 @@ const manifest = {
     status: postDeployLiveProofGateQueue.status,
     current_source_live_proven: false,
     gate_queue: postDeployLiveProofGateQueue,
+    operator_handoff_packet: postDeployLiveProofGateQueue.operator_handoff_packet,
     evidence: postDeployLiveProofGateQueue.evidence,
     stop_gate: 'This manifest does not prove hosted/live parity for current source; live parity requires an explicitly approved deploy followed by check:post-deploy-live.',
   },
