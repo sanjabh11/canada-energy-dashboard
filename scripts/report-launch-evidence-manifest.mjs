@@ -4963,6 +4963,14 @@ const progressDigestLatestRatchetFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressTargetMatrixStructureFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -5004,6 +5012,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...adversarialReviewFocusedReportFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
+  ...progressTargetMatrixStructureFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5444,6 +5453,19 @@ const progressDigestLatestRatchetTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const progressTargetMatrixStructureTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5485,6 +5507,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...adversarialReviewFocusedReportTestsRun,
   ...launchManifestJsonAliasTestsRun,
   ...progressDigestLatestRatchetTestsRun,
+  ...progressTargetMatrixStructureTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -6055,6 +6078,19 @@ const safeFixImplementationDecisions = [
     reason: 'The progress digest previously treated the older objective-completion audit row as current even after multiple later safe-fix phases, under-reporting active PhaseLoop progress.',
     proof_boundary: 'This record improves progress digest recency only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the latest-progress row, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    decision: 'Replace label-only progress target matrices with structured lane progress rows.',
+    acceptance_check: 'progress_updates target_matrix rows include lane, target_percent, current_percent, status, evidence, and confidence; report:progress-digest-readiness renders those rows readably; and focused/broad checks reject stale label-only current progress rows.',
+    chosen_variant: 'minimal structured target-matrix manifest patch',
+    repo_pattern_reused: 'Existing progress_updates schema field, focused progress digest renderer/checker, broad manifest checker, and launch manifest unit test contract.',
+    files_changed: progressTargetMatrixStructureFilesChanged,
+    tests_run: progressTargetMatrixStructureTestsRun,
+    proof: 'The patch keeps progress_updates as the single source of truth, changes target_matrix entries to structured lane rows, and updates focused/broad validation to assert lane weights, current percentages, status, evidence, and confidence.',
+    reason: 'The commercial-launch progress contract requires a target accomplishment matrix with lane, target percent, current percent, status, evidence, and confidence; string labels under-reported that evidence.',
+    proof_boundary: 'This record improves progress matrix structure only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat structured progress target rows, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7109,6 +7145,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Report-only derivation is narrower in one file, but weaker as schema-level evidence and less useful for external manifest consumers.',
     evidence: 'The launch evidence schema defines progress_updates as the progress reporting surface, and focused digest reports consume that surface.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    variant: 'Keep target_matrix as label-only strings and rely on report prose for details.',
+    reason_rejected: 'The progress contract requires lane, target percent, current percent, status, evidence, and confidence, so prose-only detail leaves the structured manifest weak.',
+    tradeoff: 'No-code defer preserves current tests, but keeps progress evidence below the skill contract.',
+    evidence: 'The current generated manifest target_matrix rows are plain strings such as safe fix lane and structured evidence manifest.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    variant: 'Add a separate progress_matrix top-level manifest artifact.',
+    reason_rejected: 'A new top-level artifact would create a second progress source instead of strengthening the existing schema field.',
+    tradeoff: 'A separate artifact could be easier to render, but would increase maintenance surface and weaken manifest consumer consistency.',
+    evidence: 'Focused progress digest reports already consume progress_updates.target_matrix.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    variant: 'Generate exact completion percentages from every historical safe-fix and audit lane.',
+    reason_rejected: 'Historical percentage reconstruction would require brittle inference and is unnecessary for the current contract gap.',
+    tradeoff: 'More granular percentages could be attractive, but would blur verified current evidence with inferred historical progress.',
+    evidence: 'The progress contract allows default pass/running/fail/pending mapping unless stronger evidence exists.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7502,23 +7559,171 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: progressDigestLatestRatchetTestsRun,
     remaining_risk: 'The progress digest is a visibility surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates existing progress_updates rows and existing renderer/checker tests only, with no new dependency, no extra artifact, no historical inference engine, and no launch-status change.',
+    tests_or_checks: progressTargetMatrixStructureTestsRun,
+    remaining_risk: 'The target matrix is now structured but remains a reporting surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
 const launchReadinessActiveBottleneck = 'Current blockers require retained buyer artifacts, owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof outside this read-only manifest run.';
 const latestSafeFixDecision = safeFixImplementationDecisions[safeFixImplementationDecisions.length - 1] ?? null;
+
+function progressMatrixRow({ lane, targetPercent, currentPercent, status, evidence, confidence }) {
+  return {
+    lane,
+    target_percent: targetPercent,
+    current_percent: currentPercent,
+    status,
+    evidence,
+    confidence,
+  };
+}
+
+const latestSafeFixTargetMatrix = [
+  progressMatrixRow({
+    lane: 'Repo Map',
+    targetPercent: 10,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: ['Repository stack, routes, docs, scripts, and proof artifacts are mapped in the launch evidence manifest.'],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Security',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Repo security evidence is present, but Supabase advisor clearance and buyer-grade security proof remain unresolved.'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Readiness',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Focused local checks pass, but source provenance, Corepack-pinned release-readiness, production approval, and post-deploy live proof remain open.'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Sellability',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Buyer-facing proof packs and outreach plan exist, but retained buyer artifacts and accepted commercial signal evidence are still missing.'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Market Pain Research',
+    targetPercent: 20,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: ['Top buyer pain points have source-backed entries in the structured launch evidence manifest.'],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Target Customers + Outreach',
+    targetPercent: 10,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Target segments and outreach scripts are present, but real outreach responses and retained buyer artifacts remain absent.'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Safe Fix Lane',
+    targetPercent: 10,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: [`Latest safe-fix task ${latestSafeFixDecision?.task_id ?? 'unknown'} recorded implementation, rejected-variant, and code optimization review evidence.`],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Synthesis + Validation',
+    targetPercent: 5,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Structured evidence manifest, commercial readiness report, progress digest, and validation gates remain blocked by explicit external evidence gaps.'],
+    confidence: 3,
+  }),
+];
+
+const objectiveCompletionTargetMatrix = [
+  progressMatrixRow({
+    lane: 'Repo Map',
+    targetPercent: 10,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: ['launch score', 'gap analysis', 'structured evidence manifest'],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Security',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['Supabase advisor clearance gate remains blocked.'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Readiness',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['release toolchain proof', 'production/live proof gate'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Sellability',
+    targetPercent: 15,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['buyer evidence gate', 'outreach plan'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Market Pain Research',
+    targetPercent: 20,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: ['market pain map'],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Target Customers + Outreach',
+    targetPercent: 10,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['target customer ranking', 'outreach plan'],
+    confidence: 3,
+  }),
+  progressMatrixRow({
+    lane: 'Safe Fix Lane',
+    targetPercent: 10,
+    currentPercent: 100,
+    status: 'pass',
+    evidence: ['fix report', 'code optimization report'],
+    confidence: 4,
+  }),
+  progressMatrixRow({
+    lane: 'Synthesis + Validation',
+    targetPercent: 5,
+    currentPercent: 45,
+    status: 'running',
+    evidence: ['ECC ledger', 'structured evidence manifest', 'blocked launch decision'],
+    confidence: 3,
+  }),
+];
+
 const latestSafeFixProgressUpdate = latestSafeFixDecision
   ? {
       phase: latestSafeFixDecision.task_id,
       accomplished: `Completed safe-fix phase: ${latestSafeFixDecision.decision} Chosen variant: ${latestSafeFixDecision.chosen_variant}.`,
-      target_matrix: [
-        'safe fix lane',
-        'code optimization report',
-        'structured evidence manifest',
-        'progress digest',
-        'commercial readiness report',
-        'blocked launch decision',
-      ],
+      target_matrix: latestSafeFixTargetMatrix,
       pending: launchReadinessPendingWork,
       bottleneck: launchReadinessActiveBottleneck,
       created_at: generatedAt,
@@ -7808,18 +8013,7 @@ const manifest = {
     {
       phase: 'objective completion audit',
       accomplished: 'Mapped required commercial launch deliverables to current manifest/report evidence, explicit proof boundaries, unresolved blocker gates, and next proof commands.',
-      target_matrix: [
-        'launch score',
-        'gap analysis',
-        'market pain map',
-        'target customer ranking',
-        'outreach plan',
-        'fix report',
-        'structured evidence manifest',
-        'ECC ledger',
-        'buyer evidence gate',
-        'production/live proof gate',
-      ],
+      target_matrix: objectiveCompletionTargetMatrix,
       pending: launchReadinessPendingWork,
       bottleneck: launchReadinessActiveBottleneck,
       created_at: generatedAt,

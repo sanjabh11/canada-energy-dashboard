@@ -197,6 +197,20 @@ function focusedPayload(manifest) {
   };
 }
 
+function formatTargetMatrixItem(item) {
+  if (typeof item === 'string') return item;
+  if (!item || typeof item !== 'object') return '';
+
+  const evidence = Array.isArray(item.evidence)
+    ? item.evidence.join(', ')
+    : String(item.evidence ?? '');
+  const confidence = item.confidence === undefined ? 'n/a' : item.confidence;
+  const targetPercent = item.target_percent === undefined ? 'n/a' : item.target_percent;
+  const currentPercent = item.current_percent === undefined ? 'n/a' : item.current_percent;
+
+  return `${item.lane ?? 'Unknown lane'} (${item.status ?? 'unknown'}; target ${targetPercent}%; current ${currentPercent}%; confidence ${confidence}): ${evidence}`;
+}
+
 function renderMarkdown(payload) {
   const progress = payload.progress_digest ?? {};
   const bottleneck = payload.bottleneck_digest ?? {};
@@ -204,7 +218,7 @@ function renderMarkdown(payload) {
     index + 1,
     item.phase,
     item.accomplished,
-    Array.isArray(item.target_matrix) ? item.target_matrix.join('; ') : '',
+    Array.isArray(item.target_matrix) ? item.target_matrix.map(formatTargetMatrixItem).join('; ') : '',
     item.pending,
     item.bottleneck,
     item.created_at,

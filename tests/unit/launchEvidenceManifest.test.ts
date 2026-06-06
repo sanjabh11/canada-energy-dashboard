@@ -12,12 +12,25 @@ const validatorPath = '/Users/sanjayb/.codex/skills/commercial-launch-readiness-
 const LAUNCH_READINESS_REPORT_CLI_TIMEOUT_MS = 180_000;
 const tempRoots: string[] = [];
 
+type ProgressTargetMatrixRow = {
+  lane: string;
+  target_percent?: number;
+  current_percent?: number;
+  status?: string;
+  evidence?: string[];
+  confidence?: number;
+};
+
 function mapBy<Value, Key>(items: readonly Value[], keyFor: (value: Value) => Key): Map<Key, Value> {
   const result = new Map<Key, Value>();
   for (const item of items) {
     result.set(keyFor(item), item);
   }
   return result;
+}
+
+function targetMatrixByLane(update: { target_matrix: ProgressTargetMatrixRow[] }) {
+  return mapBy(update.target_matrix, (row) => row.lane);
 }
 
 function makeTempRoot() {
@@ -146,19 +159,38 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
-    expect(manifest.progress_updates[0].target_matrix).toEqual(expect.arrayContaining([
-      'safe fix lane',
-      'code optimization report',
-      'progress digest',
+    const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
+    expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
+      target_percent: 10,
+      current_percent: 100,
+      status: 'pass',
+      confidence: 4,
+    });
+    expect(currentProgressMatrix.get('Safe Fix Lane')?.evidence).toEqual(expect.arrayContaining([
+      expect.stringMatching(/implementation|code optimization review/i),
+    ]));
+    expect(currentProgressMatrix.get('Synthesis + Validation')).toMatchObject({
+      target_percent: 5,
+      current_percent: 45,
+      status: 'running',
+      confidence: 3,
+    });
+    expect(currentProgressMatrix.get('Synthesis + Validation')?.evidence).toEqual(expect.arrayContaining([
+      expect.stringMatching(/structured evidence manifest|commercial readiness report|progress digest/i),
     ]));
     expect(manifest.progress_updates[0].bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     const objectiveCompletionProgressUpdate = manifest.progress_updates.find(
       (item: { phase?: string }) => item.phase === 'objective completion audit',
     );
     expect(objectiveCompletionProgressUpdate).toBeTruthy();
-    expect(objectiveCompletionProgressUpdate.target_matrix).toContain('structured evidence manifest');
+    const objectiveCompletionProgressMatrix = targetMatrixByLane(objectiveCompletionProgressUpdate);
+    expect(objectiveCompletionProgressMatrix.get('Synthesis + Validation')?.evidence).toEqual(expect.arrayContaining([
+      'ECC ledger',
+      'structured evidence manifest',
+      'blocked launch decision',
+    ]));
     expect(objectiveCompletionProgressUpdate.bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(manifest.bottleneck_log[0].root_cause).toBe('evidence gap');
     expect(manifest.bottleneck_log[0].top_unblock_options).toHaveLength(3);
@@ -817,9 +849,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(42);
+    expect(manifest.implementation_decisions).toHaveLength(43);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(42);
+    expect(manifest.code_optimization_reviews).toHaveLength(43);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1883,6 +1915,30 @@ describe('launch evidence manifest report', () => {
     expect(progressDigestLatestRatchetReview).toBeTruthy();
     expect(progressDigestLatestRatchetReview.policy).toBe('strict');
     expect(progressDigestLatestRatchetReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const progressTargetMatrixStructureDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    );
+    expect(progressTargetMatrixStructureDecision).toBeTruthy();
+    expect(progressTargetMatrixStructureDecision.chosen_variant).toBe('minimal structured target-matrix manifest patch');
+    expect(progressTargetMatrixStructureDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressTargetMatrixStructureDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const progressTargetMatrixStructureReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE',
+    );
+    expect(progressTargetMatrixStructureReview).toBeTruthy();
+    expect(progressTargetMatrixStructureReview.policy).toBe('strict');
+    expect(progressTargetMatrixStructureReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:progress-digest-readiness -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

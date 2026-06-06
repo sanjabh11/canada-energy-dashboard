@@ -68,6 +68,21 @@ function hasIntegerOrNull(value) {
   return value === null || Number.isInteger(value);
 }
 
+function targetMatrixHasLane(matrix, lane, predicate = () => true) {
+  return Array.isArray(matrix)
+    && matrix.some((item) => (
+      item
+      && typeof item === 'object'
+      && item.lane === lane
+      && Number.isFinite(item.target_percent)
+      && Number.isFinite(item.current_percent)
+      && typeof item.status === 'string'
+      && Array.isArray(item.evidence)
+      && Number.isFinite(item.confidence)
+      && predicate(item)
+    ));
+}
+
 function isBoolean(value) {
   return value === true || value === false;
 }
@@ -2003,21 +2018,29 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET', 'Manifest progress_updates must expose the latest safe-fix progress ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE', 'Manifest progress_updates must expose the latest structured target-matrix safe-fix ratchet as the current row.');
     assert(
-      Array.isArray(manifest.progress_updates[0]?.target_matrix)
-        && manifest.progress_updates[0].target_matrix.includes('safe fix lane')
-        && manifest.progress_updates[0].target_matrix.includes('code optimization report')
-        && manifest.progress_updates[0].target_matrix.includes('progress digest')
+      targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
+        item.target_percent === 10
+        && item.current_percent === 100
+        && item.status === 'pass'
+        && item.evidence.some((entry) => /implementation|code optimization review/i.test(entry))
+      ))
+        && targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Synthesis + Validation', (item) => (
+          item.target_percent === 5
+          && item.status === 'running'
+          && item.evidence.some((entry) => /structured evidence manifest|commercial readiness report|progress digest/i.test(entry))
+        ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest safe-fix progress ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest structured target-matrix progress ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
       && item.phase === 'objective completion audit'
-      && Array.isArray(item.target_matrix)
-      && item.target_matrix.includes('structured evidence manifest')
+      && targetMatrixHasLane(item.target_matrix, 'Synthesis + Validation', (matrixItem) => (
+        matrixItem.evidence.some((entry) => /structured evidence manifest|ECC ledger|blocked launch decision/i.test(entry))
+      ))
       && typeof item.bottleneck === 'string'
       && item.bottleneck.includes('retained buyer artifacts')
     )), 'Manifest progress_updates must describe the objective-completion audit and remaining evidence gates.');
@@ -3199,6 +3222,37 @@ try {
         && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Latest progress digest ratchet code optimization review must record focused progress, manifest, and commercial report checks.',
+    );
+    const progressTargetMatrixStructureDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE');
+    assert(progressTargetMatrixStructureDecision, 'Manifest must record the structured progress target-matrix implementation decision.');
+    assert(
+      progressTargetMatrixStructureDecision?.chosen_variant === 'minimal structured target-matrix manifest patch',
+      'Structured progress target-matrix decision must record the minimal structured manifest patch variant.',
+    );
+    assert(
+      Array.isArray(progressTargetMatrixStructureDecision?.files_changed)
+        && progressTargetMatrixStructureDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && progressTargetMatrixStructureDecision.files_changed.includes('scripts/report-progress-digest-readiness.mjs')
+        && progressTargetMatrixStructureDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && progressTargetMatrixStructureDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && progressTargetMatrixStructureDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Structured progress target-matrix decision must record the manifest, focused digest, checkers, and unit test files.',
+    );
+    assert(
+      /does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(progressTargetMatrixStructureDecision?.proof_boundary ?? ''),
+      'Structured progress target-matrix decision must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const progressTargetMatrixStructureReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-TARGET-MATRIX-STRUCTURE');
+    assert(progressTargetMatrixStructureReview, 'Manifest must record the structured progress target-matrix code optimization review.');
+    assert(progressTargetMatrixStructureReview?.policy === 'strict', 'Structured progress target-matrix code optimization review must use strict policy.');
+    assert(progressTargetMatrixStructureReview?.verdict === 'pass', 'Structured progress target-matrix code optimization review must pass.');
+    assert(
+      Array.isArray(progressTargetMatrixStructureReview?.tests_or_checks)
+        && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /report:progress-digest-readiness -- --skip-probes/.test(check))
+        && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && progressTargetMatrixStructureReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Structured progress target-matrix code optimization review must record focused progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
