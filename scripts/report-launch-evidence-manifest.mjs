@@ -10,6 +10,8 @@ const values = new Map();
 const failures = [];
 let skipProbes = false;
 
+const SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report';
+
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
   if (arg === '--') continue;
@@ -484,7 +486,7 @@ function releaseRemediationProofCommand(requirement) {
     case 'Git LFS push-path proof':
       return 'git lfs version';
     case 'Clean source provenance':
-      return 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness';
+      return SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND;
     case 'Explicit owner production approval':
       return 'corepack pnpm run check:production-deploy-request';
     default:
@@ -789,7 +791,7 @@ function buildObjectiveCompletionAudit({
       proof_type: 'source_provenance_approval_gate',
       proof_boundary: 'Source provenance rows classify dirty paths and owner decisions only; they do not commit, unstage, stash, revert, delete, clear provenance, deploy, or grant production approval.',
       stop_gate: 'Do not request deploy approval until source provenance is intentionally resolved and release gates pass.',
-      next_proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      next_proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
     }),
     objectiveCompletionItem({
       requirement: 'Branch canonical review gate',
@@ -1156,15 +1158,20 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     },
   ];
 
+  const itemsWithProofCommands = items.map((item) => ({
+    ...item,
+    proof_command: releaseRemediationProofCommand(item.requirement),
+  }));
+
   const deficits = {
-    status: items.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
+    status: itemsWithProofCommands.every((item) => item.status === 'pass') ? 'pass' : 'blocked',
     package_manager: packageManager || null,
     expected_pnpm_version: expectedVersion,
     corepack_probe: skipProbes ? 'skipped' : (corepackResult?.status === 0 ? 'pass' : 'fail'),
     git_lfs_probe: skipProbes ? 'skipped' : (gitLfsAvailable ? 'pass' : 'fail'),
-    open_count: items.filter((item) => item.status !== 'pass').length,
-    total_count: items.length,
-    items,
+    open_count: itemsWithProofCommands.filter((item) => item.status !== 'pass').length,
+    total_count: itemsWithProofCommands.length,
+    items: itemsWithProofCommands,
   };
 
   return {
@@ -1273,7 +1280,7 @@ function buildLaunchActionQueue({
       blocker: dirtyPathSummary,
       owner: 'operator',
       action: 'Resolve staged or unstaged source changes intentionally before any deploy approval request.',
-      proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('source_provenance'),
       proof_boundary: launchActionProofBoundary('source_provenance'),
       stop_gate: 'Do not commit, unstage, stash, revert, or delete unrelated user work without explicit owner intent.',
@@ -1474,7 +1481,7 @@ function buildProductionApprovalPrerequisiteQueue({
         : `${sourceProvenanceResolutionQueue.dirty_path_count ?? 'unknown'} dirty source-provenance decision(s) remain`,
       needed: 'clean worktree and no unresolved staged, unstaged, untracked, ignored, or renamed source decisions before a deploy approval request',
       owner: 'operator',
-      proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+      proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Clean source provenance'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Clean source provenance'),
       stop_gate: 'Do not commit, unstage, stash, revert, delete, rename, move, or clear source provenance without explicit owner intent.',
@@ -1615,7 +1622,7 @@ function productionApprovalRequestPhase(prerequisite) {
 function productionApprovalRequestAttachment(prerequisite) {
   switch (prerequisite) {
     case 'Clean source provenance':
-      return 'Attach the production approval packet source-provenance section showing no unresolved staged, unstaged, untracked, ignored, or renamed source decisions.';
+      return 'Attach the focused source-provenance report/check output plus the production approval packet source-provenance section showing no unresolved staged, unstaged, untracked, ignored, or renamed source decisions.';
     case 'Launch evidence validation':
       return 'Attach check:launch-evidence-manifest output plus the production approval packet validation section.';
     case 'Corepack release-readiness':
@@ -2817,7 +2824,7 @@ function buildSourceProvenanceResolutionQueue(status) {
     tracked: detail.tracked,
     ignored_by_rule: detail.ignored_by_rule,
     decision_required: sourceResolutionDecision(detail),
-    proof_command: 'corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
     proof_type: sourceResolutionProofType(detail),
     owner_decision_required: true,
     proof_boundary: sourceResolutionProofBoundary(detail),
@@ -2897,7 +2904,7 @@ function buildSourceProvenanceIsolationLedger(status) {
     ignored_by_rule: detail.ignored_by_rule,
     release_impact: sourceProvenanceIsolationReleaseImpact(detail),
     isolation_status: 'owner_decision_required',
-    proof_command: 'git status --porcelain=v1 && corepack pnpm run report:production-approval-packet -- --skip-release-readiness',
+    proof_command: `git status --porcelain=v1 && ${SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND}`,
     proof_type: sourceResolutionProofType(detail),
     proof_boundary: `${sourceResolutionProofBoundary(detail)} This isolation row is release-impact classification only; it does not clear source provenance or prove release-readiness.`,
     stop_gate: `${sourceResolutionStopGate(detail)} Do not treat this isolation ledger as clean-source, release-readiness, deploy, or production approval evidence.`,
@@ -4437,6 +4444,21 @@ const sourceProvenanceReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const sourceProvenanceProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-source-provenance-readiness.mjs',
+  'scripts/report-release-preflight-readiness.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-release-preflight-readiness-report.mjs',
+  'scripts/check-source-provenance-readiness-report.mjs',
+  'tests/unit/sourceProvenanceReadiness.test.ts',
+  'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const supabaseAdvisorReportFilesChanged = [
   'package.json',
   'scripts/report-supabase-advisor-readiness.mjs',
@@ -4584,6 +4606,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
+  ...sourceProvenanceProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
@@ -4670,6 +4693,17 @@ const sourceProvenanceReportTestsRun = [
   'pnpm run check:source-provenance-report',
   'pnpm run check:commercial-source',
   'pnpm run check:public-release-status',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const sourceProvenanceProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/releasePreflightReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run check:source-provenance-report -- --skip-probes',
+  'pnpm run check:release-preflight-report -- --skip-probes',
+  'pnpm run check:launch-action-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
@@ -4785,6 +4819,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
+  ...sourceProvenanceProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
   ...branchReviewReportTestsRun,
   ...launchEvidenceValidationReportTestsRun,
@@ -4935,6 +4970,19 @@ const safeFixImplementationDecisions = [
     reason: 'Source provenance was visible inside broad release and production approval reports but did not have a narrow operator handle for the current staged rename blocker.',
     proof_boundary: 'This record improves source-provenance evidence visibility only; it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused source-provenance report, check pass, JSON output, skipped probes, public status handle, or docs sync as clean source provenance, release-readiness, production approval, deployment, or hosted/live parity.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    decision: 'Route launch action, release preflight, source resolution/isolation, and production approval source proof rows to the focused source-provenance report and checker.',
+    acceptance_check: 'Source-provenance rows across launch action, release preflight, source resolution/isolation, and production approval prerequisites/request attachments all expose report:source-provenance-readiness plus check:source-provenance-report while preserving the production approval packet as an approval artifact.',
+    chosen_variant: 'minimal focused source proof-handle derivation',
+    repo_pattern_reused: 'Existing SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND, source_provenance, release_preflight, launch_action_queue, production_approval prerequisite/request rows, and focused checker conventions.',
+    files_changed: sourceProvenanceProofHandleFilesChanged,
+    tests_run: sourceProvenanceProofHandleTestsRun,
+    proof: 'The patch reuses the existing manifest source-provenance data and focused report/check handle, then asserts the focused command across source resolution, isolation ledger, release preflight, launch action, commercial report, and production approval source rows.',
+    reason: 'Operators still saw broad production approval packet handles on source-provenance rows even after the focused source-provenance report/check existed, which made the first open source gate harder to inspect directly.',
+    proof_boundary: 'This record aligns source-provenance proof handles only; it does not commit, unstage, stash, revert, delete, rename, move, mutate or clear source provenance, replace production approval request artifacts, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused source-provenance proof handles, skipped-probe report/check success, launch action row output, release preflight rows, or production approval attachment text as clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -5258,6 +5306,34 @@ const safeFixRejectedVariants = [
     reason_rejected: 'Operators would still discover stale broad commands from the public/source-of-truth surfaces.',
     tradeoff: 'Package-only is smaller but leaves machine-visible evidence handles inconsistent with the new focused report.',
     evidence: 'generate-public-release-status, RELEASE_HEALTH_EVIDENCE, COMMERCIAL_SOURCE_OF_TRUTH, and statusPagePosture tests assert exact operator-facing command handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    variant: 'Leave source-provenance action and release rows pointing at the broad production approval packet.',
+    reason_rejected: 'Would keep the first open source gate routed through a broader approval artifact even though the focused source-provenance report/check now exists.',
+    tradeoff: 'No-code defer avoids touching proof rows, but it preserves operator ambiguity across launch action, release preflight, source resolution, and production approval source prerequisites.',
+    evidence: 'The focused source-provenance report/check already renders dirty-path classification, isolation ledger, resolution queue, release source row, and production approval source rows from one manifest source of truth.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    variant: 'Replace the production approval packet as an approval-request artifact.',
+    reason_rejected: 'The production approval packet still owns approval-request sequencing and attachment context; source proof handles should narrow inspection without removing approval packet semantics.',
+    tradeoff: 'Replacing the packet would make source rows narrower but would blur the request packet boundary and risk dropping broader prerequisite evidence.',
+    evidence: 'production_approval.request_packet keeps the owner-decision, prerequisite, and post-deploy rows that are separate from source-provenance classification.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    variant: 'Automatically commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
+    reason_rejected: 'The staged rename is unrelated owner work and remains an explicit source-provenance decision item.',
+    tradeoff: 'Mutating the staged rename could clear the source gate locally, but it would violate the dirty-worktree and source-provenance owner-decision boundaries.',
+    evidence: 'git status shows .windsurf/workflows/master.md -> .devin/workflows/master.md staged before this phase, and the source resolution stop gate requires explicit owner intent before mutation.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    variant: 'Add a new source-provenance command instead of reusing the focused source-provenance report/check.',
+    reason_rejected: 'A new command would add another operator handle for the same manifest-backed source data and increase drift risk.',
+    tradeoff: 'A bespoke command could be even narrower, but it is unnecessary while report:source-provenance-readiness and check:source-provenance-report already cover the required rows.',
+    evidence: 'The sourceProvenanceReportTestsRun and focused checker already validate dirty paths, isolation, resolution, release preflight, and production approval source rows.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -5599,6 +5675,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds a thin manifest-backed source-provenance Markdown/JSON wrapper, structural checker, public/source-of-truth handle alignment, and focused tests without new dependencies, duplicated git classification, source mutation, release execution, deploy paths, or live-service access.',
     tests_or_checks: sourceProvenanceReportTestsRun,
     remaining_risk: 'Source provenance remains blocked until the owner intentionally resolves staged, unstaged, untracked, renamed, or ignored source rows; release-readiness, production approval, branch review, Supabase advisor clearance, buyer evidence, and post-deploy live proof also remain open gates.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing focused source-provenance report/check command across existing proof rows and validators, adds no dependency, no duplicate git parser, no source mutation, no approval-packet replacement, no release execution, and no deploy path.',
+    tests_or_checks: sourceProvenanceProofHandleTestsRun,
+    remaining_risk: 'The staged workflow rename still blocks source provenance until an owner decision; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',

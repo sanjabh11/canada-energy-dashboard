@@ -11,6 +11,7 @@ const tempRoots: string[] = [];
 
 type LaunchActionRow = {
   phase: string;
+  proof_command: string;
   proof_type: string;
   status: string;
 };
@@ -116,6 +117,8 @@ describe('launch action readiness report', () => {
     ]);
     expect(payload.first_open_action.status).not.toBe('ready');
     expect(rowsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
+    expect(rowsByPhase.get('source_provenance')?.proof_command).toContain('report:source-provenance-readiness');
+    expect(rowsByPhase.get('source_provenance')?.proof_command).toContain('check:source-provenance-report');
     expect(rowsByPhase.get('launch_evidence_validation')?.status).toBe('ready');
     expect(rowsByPhase.get('release_toolchain')?.proof_type).toBe('release_toolchain_and_gated_release');
     expect(rowsByPhase.get('branch_review')?.proof_type).toBe('read_only_branch_review');

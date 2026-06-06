@@ -115,9 +115,18 @@ if (failures.length === 0) {
     assert(isolationLedger.dirty_path_count === source.dirty_path_count, 'Isolation ledger dirty_path_count must match source provenance.');
     assert(resolutionQueue.dirty_path_count === source.dirty_path_count, 'Resolution queue dirty_path_count must match source provenance.');
     assert(Array.isArray(resolutionQueue.items), 'Resolution queue items must be a list.');
+    if ((resolutionQueue.items ?? []).length > 0) {
+      assert(/report:source-provenance-readiness/.test(resolutionQueue.items[0]?.proof_command ?? '') && /check:source-provenance-report/.test(resolutionQueue.items[0]?.proof_command ?? ''), 'Resolution queue proof command must point to the focused source provenance report/check.');
+    }
+    if ((isolationLedger.rows ?? []).length > 0) {
+      assert(/git status --porcelain=v1/.test(isolationLedger.rows[0]?.proof_command ?? '') && /report:source-provenance-readiness/.test(isolationLedger.rows[0]?.proof_command ?? '') && /check:source-provenance-report/.test(isolationLedger.rows[0]?.proof_command ?? ''), 'Isolation ledger proof command must include git status plus the focused source provenance report/check.');
+    }
     assert(payload.release_preflight_source_row?.requirement === 'Clean source provenance', 'Focused JSON must include the release preflight clean-source row.');
     assert(payload.production_approval_source_prerequisite?.prerequisite === 'Clean source provenance', 'Focused JSON must include the production approval clean-source prerequisite.');
     assert(payload.production_approval_request_source_row?.prerequisite === 'Clean source provenance', 'Focused JSON must include the production approval request clean-source row.');
+    assert(/report:source-provenance-readiness/.test(payload.release_preflight_source_row?.proof_command ?? '') && /check:source-provenance-report/.test(payload.release_preflight_source_row?.proof_command ?? ''), 'Release preflight clean-source row must point to the focused source provenance report/check.');
+    assert(/report:source-provenance-readiness/.test(payload.production_approval_source_prerequisite?.proof_command ?? '') && /check:source-provenance-report/.test(payload.production_approval_source_prerequisite?.proof_command ?? ''), 'Production approval source prerequisite must point to the focused source provenance report/check.');
+    assert(/report:source-provenance-readiness/.test(payload.production_approval_request_source_row?.proof_command ?? '') && /check:source-provenance-report/.test(payload.production_approval_request_source_row?.proof_command ?? ''), 'Production approval request source row must point to the focused source provenance report/check.');
     assert(/does not commit|clear source provenance|run release-readiness|push|deploy|grant owner approval/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must preserve source no-mutation and no-release semantics.');
     assert(/Do not treat this focused report|clean source provenance|production approval|hosted\/live parity/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject clearance claims from this report itself.');
     for (const [index, item] of (source.dirty_paths ?? []).entries()) {

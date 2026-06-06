@@ -617,7 +617,8 @@ describe('launch evidence manifest report', () => {
       expect(firstIsolationRow.release_impact).toMatch(/blocks clean source provenance|does not enter source by default|blocks release provenance/i);
       expect(firstIsolationRow.isolation_status).toBe('owner_decision_required');
       expect(firstIsolationRow.proof_command).toContain('git status --porcelain=v1');
-      expect(firstIsolationRow.proof_command).toContain('report:production-approval-packet');
+      expect(firstIsolationRow.proof_command).toContain('report:source-provenance-readiness');
+      expect(firstIsolationRow.proof_command).toContain('check:source-provenance-report');
       expect(firstIsolationRow.proof_boundary).toMatch(/release-impact classification only|does not clear source provenance/i);
       expect(firstIsolationRow.stop_gate).toMatch(/explicit owner intent|release-readiness|production approval/i);
       expect(firstIsolationRow.blocks_release_source_gate).toBe(true);
@@ -634,7 +635,8 @@ describe('launch evidence manifest report', () => {
       const firstSourceDecision = manifest.source_provenance.resolution_queue.items[0];
       expect(firstSourceDecision.source_status).toBeTruthy();
       expect(firstSourceDecision.decision_required).toMatch(/Decide|Confirm/i);
-      expect(firstSourceDecision.proof_command).toContain('report:production-approval-packet');
+      expect(firstSourceDecision.proof_command).toContain('report:source-provenance-readiness');
+      expect(firstSourceDecision.proof_command).toContain('check:source-provenance-report');
       expect(firstSourceDecision.proof_type).toBeTruthy();
       expect(firstSourceDecision.owner_decision_required).toBe(true);
       expect(firstSourceDecision.proof_boundary).toMatch(/does not.*(commit|rename|add|delete|mutate)|grant approval|clear provenance/i);
@@ -715,9 +717,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(18);
+    expect(manifest.implementation_decisions).toHaveLength(19);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(18);
+    expect(manifest.code_optimization_reviews).toHaveLength(19);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -779,6 +781,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate git status parsing and dirty-path classification in a standalone source-provenance implementation.',
       'Automatically commit, unstage, stash, revert, or rename paths to clear source provenance.',
       'Add package scripts only and leave docs, public status, release posture, and validators on broad source-provenance handles.',
+      'Leave source-provenance action and release rows pointing at the broad production approval packet.',
+      'Replace the production approval packet as an approval-request artifact.',
+      'Automatically commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
+      'Add a new source-provenance command instead of reusing the focused source-provenance report/check.',
       'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
       'Call Supabase connector or dashboard advisors from the focused report.',
       'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
@@ -963,6 +969,28 @@ describe('launch evidence manifest report', () => {
     expect(sourceProvenanceReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:source-provenance-readiness',
       'pnpm run check:source-provenance-report',
+    ]));
+    const sourceProvenanceProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    );
+    expect(sourceProvenanceProofHandleDecision).toBeTruthy();
+    expect(sourceProvenanceProofHandleDecision.chosen_variant).toBe('minimal focused source proof-handle derivation');
+    expect(sourceProvenanceProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-source-provenance-readiness.mjs',
+      'scripts/report-release-preflight-readiness.mjs',
+      'scripts/check-source-provenance-readiness-report.mjs',
+      'tests/unit/sourceProvenanceReadiness.test.ts',
+    ]));
+    expect(sourceProvenanceProofHandleDecision.proof_boundary).toMatch(/does not commit|clear source provenance|replace production approval request artifacts|run release-readiness|deploy|hosted\/live parity/i);
+    const sourceProvenanceProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES',
+    );
+    expect(sourceProvenanceProofHandleReview).toBeTruthy();
+    expect(sourceProvenanceProofHandleReview.policy).toBe('strict');
+    expect(sourceProvenanceProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run check:source-provenance-report -- --skip-probes',
+      'pnpm run check:release-preflight-report -- --skip-probes',
     ]));
     const supabaseAdvisorReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -1514,7 +1542,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('git status --porcelain=v1');
     expect(stdout).toContain('Do not request deploy approval');
     expect(stdout).toContain('This queue is a decision aid only');
-    expect(stdout).toContain('corepack pnpm run report:production-approval-packet -- --skip-release-readiness');
+    expect(stdout).toContain('corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report');
     expect(stdout).toContain('explicit owner intent');
     expect(stdout).toContain('| source_provenance |');
     expect(stdout).toContain('| launch_evidence_validation |');

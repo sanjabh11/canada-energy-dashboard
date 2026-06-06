@@ -75,6 +75,11 @@ describe('release preflight readiness report', () => {
     expect(payload.release_preflight.clearance_matrix.proof_type).toBe('release_preflight_clearance_matrix');
     expect(payload.source_provenance.resolution_queue.evidence).toContain('Source provenance resolution queue');
     expect(payload.source_provenance.resolution_queue.items[0].proof_type).toMatch(/source_rename_decision|staged_source_decision|unstaged_source_decision|untracked_source_decision/);
+    expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');
+    expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('check:source-provenance-report');
+    expect(payload.release_preflight.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
+    expect(payload.release_preflight.clearance_matrix.rows.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
+    expect(payload.release_preflight.remediation_queue.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
     expect(payload.production_approval_request_packet.proof_type).toBe('production_approval_request_packet');
     expect(payload.proof_boundary).toMatch(/does not install tools|run release-readiness|push|deploy/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|hosted\/live parity/i);

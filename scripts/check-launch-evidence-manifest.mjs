@@ -584,7 +584,7 @@ try {
       assert(isBoolean(item.ignored_by_rule), `source_provenance.isolation_ledger.rows[${index}].ignored_by_rule must be boolean.`);
       assert(typeof item.release_impact === 'string' && /blocks clean source provenance|does not enter source by default|blocks release provenance/i.test(item.release_impact), `source_provenance.isolation_ledger.rows[${index}].release_impact must describe release impact.`);
       assert(item.isolation_status === 'owner_decision_required', `source_provenance.isolation_ledger.rows[${index}].isolation_status must require owner decision.`);
-      assert(typeof item.proof_command === 'string' && item.proof_command.includes('git status --porcelain=v1') && item.proof_command.includes('report:production-approval-packet'), `source_provenance.isolation_ledger.rows[${index}].proof_command must include git status and production approval packet.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('git status --porcelain=v1') && item.proof_command.includes('report:source-provenance-readiness') && item.proof_command.includes('check:source-provenance-report'), `source_provenance.isolation_ledger.rows[${index}].proof_command must include git status and the focused source provenance report/check.`);
       assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `source_provenance.isolation_ledger.rows[${index}].proof_type must be set.`);
       assert(typeof item.proof_boundary === 'string' && /release-impact classification only|does not clear source provenance|release-readiness/i.test(item.proof_boundary), `source_provenance.isolation_ledger.rows[${index}].proof_boundary must preserve isolation-only semantics.`);
       assert(typeof item.stop_gate === 'string' && /Do not.*without explicit owner intent|clean-source|release-readiness|production approval/i.test(item.stop_gate), `source_provenance.isolation_ledger.rows[${index}].stop_gate must preserve owner-intent and no-approval boundaries.`);
@@ -620,7 +620,7 @@ try {
       assert(isBoolean(item.tracked), `source_provenance.resolution_queue.items[${index}].tracked must be boolean.`);
       assert(isBoolean(item.ignored_by_rule), `source_provenance.resolution_queue.items[${index}].ignored_by_rule must be boolean.`);
       assert(typeof item.decision_required === 'string' && /decide|confirm/i.test(item.decision_required), `source_provenance.resolution_queue.items[${index}].decision_required must describe the owner decision.`);
-      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:production-approval-packet'), `source_provenance.resolution_queue.items[${index}].proof_command must point to the production approval packet.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:source-provenance-readiness') && item.proof_command.includes('check:source-provenance-report'), `source_provenance.resolution_queue.items[${index}].proof_command must point to the focused source provenance report/check.`);
       assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `source_provenance.resolution_queue.items[${index}].proof_type must be set.`);
       assert(item.owner_decision_required === true, `source_provenance.resolution_queue.items[${index}].owner_decision_required must be true.`);
       assert(typeof item.proof_boundary === 'string' && item.proof_boundary.length > 0, `source_provenance.resolution_queue.items[${index}].proof_boundary must be set.`);
@@ -2111,6 +2111,33 @@ try {
         && sourceProvenanceReportReview.tests_or_checks.some((check) => /report:source-provenance-readiness/.test(check))
         && sourceProvenanceReportReview.tests_or_checks.some((check) => /check:source-provenance-report/.test(check)),
       'Source provenance focused report code optimization review must record focused source-provenance report and checker proof.',
+    );
+    const sourceProvenanceProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES');
+    assert(sourceProvenanceProofHandleDecision, 'Manifest must record the source provenance proof-handle implementation decision.');
+    assert(
+      sourceProvenanceProofHandleDecision?.chosen_variant === 'minimal focused source proof-handle derivation',
+      'Source provenance proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(sourceProvenanceProofHandleDecision?.files_changed)
+        && sourceProvenanceProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && sourceProvenanceProofHandleDecision.files_changed.includes('scripts/check-source-provenance-readiness-report.mjs')
+        && sourceProvenanceProofHandleDecision.files_changed.includes('tests/unit/sourceProvenanceReadiness.test.ts'),
+      'Source provenance proof-handle decision must record manifest, source checker, and source test file changes.',
+    );
+    assert(
+      /does not commit|clear source provenance|replace production approval request artifacts|run release-readiness|deploy|hosted\/live parity/i.test(sourceProvenanceProofHandleDecision?.proof_boundary ?? ''),
+      'Source provenance proof-handle decision must preserve no-mutation, approval-artifact, release, deploy, and live-parity boundaries.',
+    );
+    const sourceProvenanceProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PROOF-HANDLES');
+    assert(sourceProvenanceProofHandleReview, 'Manifest must record the source provenance proof-handle code optimization review.');
+    assert(sourceProvenanceProofHandleReview?.policy === 'strict', 'Source provenance proof-handle code optimization review must use strict policy.');
+    assert(sourceProvenanceProofHandleReview?.verdict === 'pass', 'Source provenance proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(sourceProvenanceProofHandleReview?.tests_or_checks)
+        && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
+        && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check)),
+      'Source provenance proof-handle code optimization review must record focused source and release-preflight checker proof.',
     );
     const supabaseAdvisorReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT');
     assert(supabaseAdvisorReportDecision, 'Manifest must record the Supabase advisor focused report implementation decision.');

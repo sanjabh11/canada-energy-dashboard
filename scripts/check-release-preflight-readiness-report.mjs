@@ -110,6 +110,9 @@ if (failures.length === 0) {
     const clearanceMatrix = releasePreflight.clearance_matrix ?? {};
     const remediationQueue = releasePreflight.remediation_queue ?? {};
     const requirements = (releasePreflight.items ?? []).map((item) => item.requirement);
+    const releaseItemsByRequirement = new Map((releasePreflight.items ?? []).map((item) => [item.requirement, item]));
+    const clearanceRowsByRequirement = new Map((clearanceMatrix.rows ?? []).map((item) => [item.requirement, item]));
+    const remediationRowsByRequirement = new Map((remediationQueue.items ?? []).map((item) => [item.requirement, item]));
 
     assert(payload.schema_version === 1, 'Focused release preflight JSON schema_version must be 1.');
     assert(payload.launch_decision === 'blocked', 'Focused release preflight JSON must preserve the blocked launch decision.');
@@ -126,6 +129,9 @@ if (failures.length === 0) {
     assert(Array.isArray(remediationQueue.items), 'remediation_queue.items must be an array.');
     assert(/does not install tools|clear source provenance|run release-readiness|push|deploy/i.test(remediationQueue.evidence ?? ''), 'remediation queue evidence must preserve non-execution semantics.');
     assert(payload.source_provenance?.resolution_queue, 'Focused report JSON must include source provenance resolution queue.');
+    assert(/report:source-provenance-readiness/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(releaseItemsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance release preflight row must point to the focused source provenance report/check.');
+    assert(/report:source-provenance-readiness/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance clearance row must point to the focused source provenance report/check.');
+    assert(/report:source-provenance-readiness/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance remediation row must point to the focused source provenance report/check.');
     assert(payload.production_approval_request_packet?.proof_type === 'production_approval_request_packet', 'Focused report JSON must include production approval request packet.');
     assert(/does not install tools|run release-readiness|clear source provenance|push|deploy/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must not imply release execution.');
     assert(/Do not treat this focused report|release-readiness|production approval|hosted\/live parity/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject readiness claims from the report itself.');
