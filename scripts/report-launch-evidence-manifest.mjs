@@ -4710,6 +4710,23 @@ const progressDigestFocusedReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const objectiveCompletionAuditFocusedReportFilesChanged = [
+  'package.json',
+  'scripts/report-objective-completion-audit-readiness.mjs',
+  'scripts/check-objective-completion-audit-readiness-report.mjs',
+  'scripts/generate-public-release-status.mjs',
+  'src/lib/releasePosture.ts',
+  'src/lib/publicReleaseStatusManifest.json',
+  'public/status/release-health.json',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'scripts/check-commercial-source-docs.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4737,6 +4754,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...fixReportFocusedChecksFilesChanged,
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
+  ...objectiveCompletionAuditFocusedReportFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5026,6 +5044,18 @@ const progressDigestFocusedReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const objectiveCompletionAuditFocusedReportTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
+  'pnpm run check:objective-completion-audit-report -- --skip-probes',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run check:commercial-source',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5053,6 +5083,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...fixReportFocusedChecksTestsRun,
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
+  ...objectiveCompletionAuditFocusedReportTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5441,6 +5472,19 @@ const safeFixImplementationDecisions = [
     reason: 'The commercial-launch skill requires progress updates and bottleneck logs, but the repo previously exposed those lanes only inside broad launch artifacts and public status report-only handles.',
     proof_boundary: 'This record improves progress and bottleneck evidence visibility only; it does not complete pending work, clear blockers, run missing checks as clearance, contact buyers, approve branches, authorize Supabase, resolve evidence gaps, request owner approval, deploy, mutate live services, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat the focused progress digest report/check, public progress or bottleneck handles, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    decision: 'Expose objective completion audit deliverable and blocker evidence through a focused report/check pair and public-safe handle.',
+    acceptance_check: 'Operators can run report:objective-completion-audit-readiness and check:objective-completion-audit-report to inspect completion_audit summary counts, deliverable rows, goal-blocking rows, public status handle, package-script handles, and no-completion boundaries without broad-report scanning or clearing any blocker.',
+    chosen_variant: 'minimal focused objective completion audit wrapper',
+    repo_pattern_reused: 'Existing manifest-backed focused report/check wrappers, completion_audit manifest rows, public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, COMMERCIAL_SOURCE_OF_TRUTH public-handle notes, statusPagePosture tests, and launch evidence code-optimization ledger.',
+    files_changed: objectiveCompletionAuditFocusedReportFilesChanged,
+    tests_run: objectiveCompletionAuditFocusedReportTestsRun,
+    proof: 'The patch adds a thin objective-completion report/check over existing completion_audit manifest fields, routes the public objective_completion_audit handle through that report/check pair, and asserts package, public status, docs, manifest, and commercial report contracts without changing launch status.',
+    reason: 'The objective completion audit is the goal-level checklist, but the public status handle still required operators to scan broad launch artifacts instead of using a focused blocker/deliverable report.',
+    proof_boundary: 'This record improves objective completion audit visibility only; it does not mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, approve branches, authorize Supabase, resolve source provenance, run release-readiness as clearance, request owner approval, deploy, mutate live services, prove hosted/live parity, prove production approval, prove buyer acceptance, or raise launch status.',
+    stop_gate: 'Do not treat the focused objective completion audit report/check, public objective completion handle, generated status JSON, manifest validation, source-of-truth docs, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6173,6 +6217,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'A separate artifact could be easier to archive, but it would drift from the structured launch evidence manifest.',
     evidence: 'check:launch-evidence-manifest already validates progress_updates and bottleneck_log as top-level schema evidence.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    variant: 'Leave objective_completion_audit discoverable only through broad manifest and commercial readiness reports.',
+    reason_rejected: 'Would keep the goal-completion blocker checklist weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
+    tradeoff: 'No-code defer avoids new scripts, but operators must scan broad launch artifacts to find deliverable rows and blocker rows.',
+    evidence: 'completion_audit is already a structured manifest field, and public status already exposes objective_completion_audit as a separate handle.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    variant: 'Run buyer validation, Supabase advisors, branch mutations, release-readiness, production deploy request, or live proof from the objective completion audit report.',
+    reason_rejected: 'Those operations require retained buyer evidence, external authorization, owner decisions, clean source provenance, production approval, deploy context, or live-service access outside this safe report-wrapper phase.',
+    tradeoff: 'Direct execution could produce fresher evidence, but it would violate the no-completion boundary and risk overstating launch readiness.',
+    evidence: 'The manifest completion audit explicitly marks buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain, and production/live proof as blocked or manual-stop.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    variant: 'Duplicate completion audit construction or lane-specific gate parsing in the focused report.',
+    reason_rejected: 'Duplicating gate construction would create another source of truth for buyer, source, branch, Supabase, release, approval, and live-proof state.',
+    tradeoff: 'Inline construction could make the report standalone, but it would drift from the launch evidence manifest and its validators.',
+    evidence: 'report-launch-evidence-manifest already emits completion_audit summary counts, deliverable rows, blocker rows, proof boundaries, stop gates, and next proof commands.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    variant: 'Patch only generated public/status/release-health.json or release posture text.',
+    reason_rejected: 'Generated-only or partial public-surface edits would drift from the generator, source manifest, docs checker, package scripts, and status posture tests.',
+    tradeoff: 'A partial patch is smaller, but the next generate:public-release-status or source-doc check would expose stale command handles.',
+    evidence: 'scripts/generate-public-release-status.mjs writes public/status/release-health.json from src/lib/publicReleaseStatusManifest.json and validates handle command contracts.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6439,6 +6511,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one thin focused report/check pair over existing manifest progress fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no blocker scanner, executes no external gate, and preserves blocked launch status.',
     tests_or_checks: progressDigestFocusedReportTestsRun,
     remaining_risk: 'The progress digest remains evidence visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds one thin focused report/check pair over existing manifest completion_audit fields, reuses public/source-of-truth status surfaces, adds no dependency, duplicates no gate parser, executes no external gate, and preserves blocked launch status.',
+    tests_or_checks: objectiveCompletionAuditFocusedReportTestsRun,
+    remaining_risk: 'The objective completion audit remains evidence visibility only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

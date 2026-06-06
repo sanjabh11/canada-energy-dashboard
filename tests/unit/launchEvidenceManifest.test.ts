@@ -755,9 +755,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(28);
+    expect(manifest.implementation_decisions).toHaveLength(29);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(28);
+    expect(manifest.code_optimization_reviews).toHaveLength(29);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1452,6 +1452,40 @@ describe('launch evidence manifest report', () => {
     expect(progressDigestReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:progress-digest-readiness -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:public-release-status',
+      'pnpm run check:commercial-source',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    );
+    expect(objectiveCompletionAuditFocusedReportDecision).toBeTruthy();
+    expect(objectiveCompletionAuditFocusedReportDecision.chosen_variant).toBe('minimal focused objective completion audit wrapper');
+    expect(objectiveCompletionAuditFocusedReportDecision.files_changed).toEqual(expect.arrayContaining([
+      'package.json',
+      'scripts/report-objective-completion-audit-readiness.mjs',
+      'scripts/check-objective-completion-audit-readiness-report.mjs',
+      'scripts/generate-public-release-status.mjs',
+      'src/lib/releasePosture.ts',
+      'src/lib/publicReleaseStatusManifest.json',
+      'public/status/release-health.json',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+      'scripts/check-commercial-source-docs.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/statusPagePosture.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(objectiveCompletionAuditFocusedReportDecision.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|approve branches|authorize Supabase|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i);
+    const objectiveCompletionAuditFocusedReportReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
+    );
+    expect(objectiveCompletionAuditFocusedReportReview).toBeTruthy();
+    expect(objectiveCompletionAuditFocusedReportReview.policy).toBe('strict');
+    expect(objectiveCompletionAuditFocusedReportReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
+      'pnpm run check:objective-completion-audit-report -- --skip-probes',
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

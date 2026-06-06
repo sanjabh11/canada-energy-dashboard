@@ -59,7 +59,7 @@ const requiredItemContracts = [
     id: 'objective_completion_audit',
     status: 'external_gate',
     proofBucket: 'repo artifact',
-    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+    command: 'pnpm run report:objective-completion-audit-readiness && pnpm run check:objective-completion-audit-report',
   },
   {
     id: 'adversarial_review_ledger',
@@ -324,6 +324,9 @@ function validateManifest(manifest) {
   const objectiveCompletionAudit = itemById.get('objective_completion_audit') ?? {};
   if (!/required launch deliverables|present report tables|blocked P0\/P1 gates|manual-stop rows|next proof commands|goal-completion blockers/i.test(`${objectiveCompletionAudit.evidenceBoundary ?? ''}\n${objectiveCompletionAudit.nextAction ?? ''}`)) {
     failures.push('objective_completion_audit must describe required launch deliverables, blocked gates, manual stops, next proof commands, and goal-completion blockers.');
+  }
+  if (!/report:objective-completion-audit-readiness/.test(objectiveCompletionAudit.command ?? '') || !/check:objective-completion-audit-report/.test(objectiveCompletionAudit.command ?? '')) {
+    failures.push('objective_completion_audit must route through the focused objective completion audit report/check handles.');
   }
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*commercial launch readiness|does not.*deployment|does not.*hosted\/live parity|does not.*Supabase clearance|does not.*branch approval|does not.*source readiness|does not.*permission to contact buyers/i.test(objectiveCompletionAudit.evidenceBoundary ?? '')) {
     failures.push('objective_completion_audit must preserve the no-readiness, no-buyer-proof, no-approval, no-live-proof, no-Supabase-clearance, no-branch-approval, no-source-readiness, and no-outreach-permission boundary.');

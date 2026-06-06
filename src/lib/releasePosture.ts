@@ -138,7 +138,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Objective completion audit',
     status: 'external_gate',
-    command: 'pnpm run report:launch-evidence-manifest && pnpm run report:commercial-launch-readiness',
+    command: 'pnpm run report:objective-completion-audit-readiness && pnpm run check:objective-completion-audit-report',
     evidenceBoundary: 'The objective completion audit maps required launch deliverables, present report tables, blocked P0/P1 gates, manual-stop rows, and next proof commands, but it does not prove production approval, buyer acceptance, commercial launch readiness, deployment, hosted/live parity, Supabase clearance, branch approval, source readiness, or permission to contact buyers.',
   },
   {

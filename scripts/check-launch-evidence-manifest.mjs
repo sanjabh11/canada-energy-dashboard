@@ -2759,6 +2759,44 @@ try {
         && progressDigestReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Progress digest focused report code optimization review must record progress report, public status, docs, and manifest checks.',
     );
+    const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT');
+    assert(objectiveCompletionAuditFocusedReportDecision, 'Manifest must record the objective completion audit focused report implementation decision.');
+    assert(
+      objectiveCompletionAuditFocusedReportDecision?.chosen_variant === 'minimal focused objective completion audit wrapper',
+      'Objective completion audit focused report decision must record the chosen minimal wrapper variant.',
+    );
+    assert(
+      Array.isArray(objectiveCompletionAuditFocusedReportDecision?.files_changed)
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('package.json')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('scripts/report-objective-completion-audit-readiness.mjs')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('scripts/check-objective-completion-audit-readiness-report.mjs')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('public/status/release-health.json')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('scripts/check-commercial-source-docs.mjs')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && objectiveCompletionAuditFocusedReportDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Objective completion audit focused report decision must record the focused report scripts, public status, docs, checker, and unit test files.',
+    );
+    assert(
+      /does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|approve branches|authorize Supabase|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|raise launch status/i.test(objectiveCompletionAuditFocusedReportDecision?.proof_boundary ?? ''),
+      'Objective completion audit focused report decision must preserve no-completion, no-clearance, no-external-action, no-deploy, and no-readiness boundaries.',
+    );
+    const objectiveCompletionAuditFocusedReportReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT');
+    assert(objectiveCompletionAuditFocusedReportReview, 'Manifest must record the objective completion audit focused report code optimization review.');
+    assert(objectiveCompletionAuditFocusedReportReview?.policy === 'strict', 'Objective completion audit focused report code optimization review must use strict policy.');
+    assert(objectiveCompletionAuditFocusedReportReview?.verdict === 'pass', 'Objective completion audit focused report code optimization review must pass.');
+    assert(
+      Array.isArray(objectiveCompletionAuditFocusedReportReview?.tests_or_checks)
+        && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /report:objective-completion-audit-readiness/.test(check))
+        && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /check:objective-completion-audit-report/.test(check))
+        && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+        && objectiveCompletionAuditFocusedReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Objective completion audit focused report code optimization review must record objective completion audit report, public status, docs, and manifest checks.',
+    );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {

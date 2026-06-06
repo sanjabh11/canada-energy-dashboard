@@ -123,6 +123,8 @@ const publicStatusProgressDigestHandlePhrase = /progress update digest[\s\S]{0,2
 const publicStatusBottleneckDigestHandlePhrase = /bottleneck log digest[\s\S]{0,260}public-safe predeploy handles|public release status[\s\S]{0,340}bottleneck log digest/i;
 const focusedProgressDigestReportPhrase = /report:progress-digest-readiness[\s\S]{0,520}(?:progress update|bottleneck log digest|launch evidence manifest)/i;
 const focusedProgressDigestCheckerPhrase = /check:progress-digest-report[\s\S]{0,620}(?:validates|current phase|target matrix|top unblock options|no-completion|no-readiness)/i;
+const focusedObjectiveCompletionAuditReportPhrase = /report:objective-completion-audit-readiness[\s\S]{0,620}(?:objective completion audit|deliverable rows|goal-blocking rows|launch evidence manifest)/i;
+const focusedObjectiveCompletionAuditCheckerPhrase = /check:objective-completion-audit-report[\s\S]{0,720}(?:validates|completion audit|deliverable rows|goal-blocking rows|no-completion|no-readiness)/i;
 const focusedLaunchActionReportPhrase = /report:launch-action-readiness[\s\S]{0,460}focused launch action report|focused launch action report[\s\S]{0,460}report:launch-action-readiness/i;
 const focusedLaunchActionCheckerPhrase = /check:launch-action-report[\s\S]{0,620}(?:validates|launch blocker action queue|lane status summary|does not.*launch readiness)/i;
 const publicStatusFocusedLaunchActionHandlePhrase = /focused launch action report\/check[\s\S]{0,460}public-safe handles|public release status[\s\S]{0,560}focused launch action report/i;
@@ -606,6 +608,14 @@ if (!existsSync(sourceDocPath)) {
     failures.push('package.json must keep check:progress-digest-report wired to the focused progress digest report checker.');
   }
 
+  if (packageScripts['report:objective-completion-audit-readiness'] !== 'node scripts/report-objective-completion-audit-readiness.mjs') {
+    failures.push('package.json must keep report:objective-completion-audit-readiness wired to the focused objective completion audit report.');
+  }
+
+  if (packageScripts['check:objective-completion-audit-report'] !== 'node scripts/check-objective-completion-audit-readiness-report.mjs') {
+    failures.push('package.json must keep check:objective-completion-audit-report wired to the focused objective completion audit report checker.');
+  }
+
   if (!existsSync(buyerEvidenceReadinessReportPath)) {
     failures.push('scripts/report-buyer-evidence-readiness.mjs is missing.');
   } else {
@@ -866,6 +876,14 @@ if (!existsSync(sourceDocPath)) {
 
   if (!focusedProgressDigestCheckerPhrase.test(sourceDoc)) {
     failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:progress-digest-report and preserve its no-completion/no-readiness checker boundary.');
+  }
+
+  if (!focusedObjectiveCompletionAuditReportPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention report:objective-completion-audit-readiness as the focused objective completion audit report.');
+  }
+
+  if (!focusedObjectiveCompletionAuditCheckerPhrase.test(sourceDoc)) {
+    failures.push('docs/COMMERCIAL_SOURCE_OF_TRUTH.md must mention check:objective-completion-audit-report and preserve its no-completion/no-readiness checker boundary.');
   }
 
   if (!focusedLaunchActionReportPhrase.test(sourceDoc)) {

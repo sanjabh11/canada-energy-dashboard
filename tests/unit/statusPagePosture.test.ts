@@ -428,8 +428,8 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/buyer acceptance/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
     expect(objectiveCompletionAuditEvidence?.status).toBe('external_gate');
-    expect(objectiveCompletionAuditEvidence?.command).toContain('report:launch-evidence-manifest');
-    expect(objectiveCompletionAuditEvidence?.command).toContain('report:commercial-launch-readiness');
+    expect(objectiveCompletionAuditEvidence?.command).toContain('report:objective-completion-audit-readiness');
+    expect(objectiveCompletionAuditEvidence?.command).toContain('check:objective-completion-audit-report');
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/required launch deliverables/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/blocked P0\/P1 gates/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/manual-stop rows/i);
@@ -774,7 +774,8 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationGate?.nextAction).toMatch(/before any deploy request/i);
     expect(objectiveCompletionAuditGate?.status).toBe('external_gate');
     expect(objectiveCompletionAuditGate?.proofBucket).toBe('repo artifact');
-    expect(objectiveCompletionAuditGate?.command).toContain('report:launch-evidence-manifest');
+    expect(objectiveCompletionAuditGate?.command).toContain('report:objective-completion-audit-readiness');
+    expect(objectiveCompletionAuditGate?.command).toContain('check:objective-completion-audit-report');
     expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/required launch deliverables/i);
     expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/blocked P0\/P1 gates/i);
     expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
