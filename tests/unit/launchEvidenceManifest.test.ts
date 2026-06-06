@@ -447,7 +447,7 @@ describe('launch evidence manifest report', () => {
     const releaseToolchainAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'release_toolchain');
     expect(releaseToolchainAction.blocker).toMatch(/release-toolchain probe/i);
     expect(releaseToolchainAction.action).toMatch(/Refresh the release toolchain probe ledger/i);
-    expect(releaseToolchainAction.proof_command).toBe('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
+    expect(releaseToolchainAction.proof_command).toBe('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(releaseToolchainAction.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
@@ -478,7 +478,7 @@ describe('launch evidence manifest report', () => {
     const releaseReadinessPrerequisite = manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Corepack release-readiness');
     expect(releaseReadinessPrerequisite.current).toMatch(/release-toolchain probe/i);
     expect(releaseReadinessPrerequisite.needed).toMatch(/Corepack\/Git LFS probe ledger/i);
-    expect(releaseReadinessPrerequisite.proof_command).toBe('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
+    expect(releaseReadinessPrerequisite.proof_command).toBe('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(releaseReadinessPrerequisite.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Explicit owner production approval').current).toBe('not granted by this manifest or report');
     expect(manifest.production_approval.prerequisite_queue.items.find((item: { prerequisite: string }) => item.prerequisite === 'Post-deploy live proof boundary').status).toBe('blocked');
@@ -717,9 +717,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(19);
+    expect(manifest.implementation_decisions).toHaveLength(20);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(19);
+    expect(manifest.code_optimization_reviews).toHaveLength(20);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -785,6 +785,10 @@ describe('launch evidence manifest report', () => {
       'Replace the production approval packet as an approval-request artifact.',
       'Automatically commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
       'Add a new source-provenance command instead of reusing the focused source-provenance report/check.',
+      'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
+      'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
+      'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
+      'Duplicate release preflight probing logic in launch action or production approval rows.',
       'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
       'Call Supabase connector or dashboard advisors from the focused report.',
       'Duplicate Supabase advisor clearance parsing in a standalone implementation.',
@@ -991,6 +995,28 @@ describe('launch evidence manifest report', () => {
     expect(sourceProvenanceProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run check:source-provenance-report -- --skip-probes',
       'pnpm run check:release-preflight-report -- --skip-probes',
+    ]));
+    const releaseToolchainProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    );
+    expect(releaseToolchainProofHandleDecision).toBeTruthy();
+    expect(releaseToolchainProofHandleDecision.chosen_variant).toBe('minimal focused release proof-handle derivation');
+    expect(releaseToolchainProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'tests/unit/productionApprovalReadiness.test.ts',
+    ]));
+    expect(releaseToolchainProofHandleDecision.proof_boundary).toMatch(/does not install Corepack|run full release-readiness|clear source provenance|deploy|hosted\/live parity/i);
+    const releaseToolchainProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    );
+    expect(releaseToolchainProofHandleReview).toBeTruthy();
+    expect(releaseToolchainProofHandleReview.policy).toBe('strict');
+    expect(releaseToolchainProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:release-preflight -- --skip-probes',
+      'pnpm run check:release-preflight-report -- --skip-probes',
+      'pnpm run check:production-approval-report -- --skip-probes',
     ]));
     const supabaseAdvisorReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -1607,7 +1633,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('corepack pnpm run check:launch-evidence-manifest');
     expect(stdout).toContain('does not grant owner approval');
     expect(stdout).toContain('Corepack/Git LFS probe ledger');
-    expect(stdout).toContain('corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness');
+    expect(stdout).toContain('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(stdout).toContain('| Explicit owner production approval |');
     expect(stdout).toContain('not granted by this manifest or report');
     expect(stdout).toContain('| Post-deploy live proof boundary |');

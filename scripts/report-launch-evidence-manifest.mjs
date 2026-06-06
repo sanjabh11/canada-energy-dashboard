@@ -11,6 +11,8 @@ const failures = [];
 let skipProbes = false;
 
 const SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report';
+const RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report';
+const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PROOF_COMMAND} && corepack pnpm run check:release-readiness`;
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -1304,7 +1306,7 @@ function buildLaunchActionQueue({
       blocker: `${releaseOpen} release-preflight deficit(s), ${releaseProbeOpen} release-toolchain probe(s) open; probe_status=${releaseProbeStatus}`,
       owner: 'operator',
       action: 'Refresh the release toolchain probe ledger from the intended release shell, then run the guarded release path only after source provenance is clean.',
-      proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      proof_command: RELEASE_READINESS_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('release_toolchain'),
       proof_boundary: launchActionProofBoundary('release_toolchain'),
       stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
@@ -1507,7 +1509,7 @@ function buildProductionApprovalPrerequisiteQueue({
         : `${releasePreflight.open_count ?? 'unknown'} release-preflight deficit(s); ${releaseProbeOpen} release-toolchain probe(s) open; probe_status=${releaseProbeStatus}`,
       needed: 'Corepack-pinned release-readiness, current Corepack/Git LFS probe ledger, Git LFS push-path proof, clean provenance, and owner-approval gate all current',
       owner: 'operator',
-      proof_command: 'corepack pnpm run report:launch-evidence-manifest && corepack pnpm run check:release-readiness',
+      proof_command: RELEASE_READINESS_FOCUSED_PROOF_COMMAND,
       proof_type: productionApprovalPrerequisiteProofType('Corepack release-readiness'),
       proof_boundary: productionApprovalPrerequisiteProofBoundary('Corepack release-readiness'),
       stop_gate: 'Do not treat the probe ledger, bare pnpm checks, skipped approval packets, or hook warnings as production approval evidence.',
@@ -1626,7 +1628,7 @@ function productionApprovalRequestAttachment(prerequisite) {
     case 'Launch evidence validation':
       return 'Attach check:launch-evidence-manifest output plus the production approval packet validation section.';
     case 'Corepack release-readiness':
-      return 'Attach Corepack-pinned release-readiness output plus current Corepack and Git LFS probe evidence.';
+      return 'Attach focused release-preflight report/check output plus Corepack-pinned release-readiness output and current Corepack/Git LFS probe evidence.';
     case 'Canonical branch review':
       return 'Attach read-only unmerged-branch readiness output plus canonical-head owner decisions for review-first branch families.';
     case 'Supabase advisor clearance':
@@ -4459,6 +4461,17 @@ const sourceProvenanceProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releaseToolchainProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const supabaseAdvisorReportFilesChanged = [
   'package.json',
   'scripts/report-supabase-advisor-readiness.mjs',
@@ -4607,6 +4620,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
+  ...releaseToolchainProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...branchReviewReportFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
@@ -4704,6 +4718,17 @@ const sourceProvenanceProofHandleTestsRun = [
   'pnpm run check:source-provenance-report -- --skip-probes',
   'pnpm run check:release-preflight-report -- --skip-probes',
   'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const releaseToolchainProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/productionApprovalReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:release-preflight -- --skip-probes',
+  'pnpm run check:release-preflight-report -- --skip-probes',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:production-approval-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
@@ -4983,6 +5008,19 @@ const safeFixImplementationDecisions = [
     reason: 'Operators still saw broad production approval packet handles on source-provenance rows even after the focused source-provenance report/check existed, which made the first open source gate harder to inspect directly.',
     proof_boundary: 'This record aligns source-provenance proof handles only; it does not commit, unstage, stash, revert, delete, rename, move, mutate or clear source provenance, replace production approval request artifacts, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused source-provenance proof handles, skipped-probe report/check success, launch action row output, release preflight rows, or production approval attachment text as clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    decision: 'Route launch action and production approval release-readiness proof rows through the focused release-preflight report/check before the guarded Corepack release-readiness command.',
+    acceptance_check: 'Release-toolchain action and Corepack release-readiness approval rows expose report:release-preflight plus check:release-preflight-report and still require check:release-readiness before any deploy approval request can treat the release path as proven.',
+    chosen_variant: 'minimal focused release proof-handle derivation',
+    repo_pattern_reused: 'Existing release_preflight report/check commands, launch_action_queue release_toolchain row, production_approval Corepack release-readiness prerequisite/request rows, and focused checker conventions.',
+    files_changed: releaseToolchainProofHandleFilesChanged,
+    tests_run: releaseToolchainProofHandleTestsRun,
+    proof: 'The patch reuses the existing release-preflight manifest data and focused report/check handle, then asserts that launch action, production approval prerequisite, production approval request, focused launch action, focused production approval, and commercial report outputs preserve both focused release-preflight proof and guarded release-readiness.',
+    reason: 'Operators still saw broad launch-evidence manifest handles on release-toolchain proof rows even after the focused release-preflight report/check existed, while the lane summary already pointed to the focused release preflight proof path.',
+    proof_boundary: 'This record aligns release-toolchain proof handles only; it does not install Corepack or Git LFS, run full release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused release-preflight proof handles, skipped-probe report/check success, launch action row output, production approval attachment text, or bare pnpm checks as Corepack release-readiness, clean source provenance, production approval, deployment, hosted/live parity, or owner approval.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
@@ -5336,6 +5374,34 @@ const safeFixRejectedVariants = [
     evidence: 'The sourceProvenanceReportTestsRun and focused checker already validate dirty paths, isolation, resolution, release preflight, and production approval source rows.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    variant: 'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
+    reason_rejected: 'Would keep active release-toolchain rows routed through broad launch evidence even though the focused release-preflight report/check now exists and the lane summary already advertises it.',
+    tradeoff: 'No-code defer avoids touching proof rows, but it preserves operator ambiguity across launch action and production approval Corepack release-readiness prerequisites.',
+    evidence: 'The focused release-preflight report/check already renders the release deficits, toolchain probe ledger, clearance matrix, remediation queue, source row, and production approval release row from one manifest source of truth.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    variant: 'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
+    reason_rejected: 'The focused release-preflight report/check improves visibility but does not execute the guarded Corepack-pinned release path.',
+    tradeoff: 'Focused-only proof handles would be shorter, but they would weaken the release-readiness and production approval boundary.',
+    evidence: 'The release preflight rows explicitly distinguish blocker inspection from Corepack-pinned release-readiness execution.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    variant: 'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
+    reason_rejected: 'Environment remediation and release execution are outside the safe-fix proof-handle phase and would blur local workaround evidence with release readiness.',
+    tradeoff: 'Direct remediation could move a blocker faster, but it requires owner/environment intent and clean provenance before release evidence should be accepted.',
+    evidence: 'The current release preflight keeps Corepack, source provenance, and owner approval as explicit blockers, while Git LFS is already probed separately.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    variant: 'Duplicate release preflight probing logic in launch action or production approval rows.',
+    reason_rejected: 'Duplicating probe logic would drift from the focused release-preflight report/check and the manifest release_preflight source of truth.',
+    tradeoff: 'Inline probe summaries could be more direct but would add another release-critical contract to maintain.',
+    evidence: 'report-launch-evidence-manifest already emits release_preflight, toolchain_probe_ledger, clearance_matrix, launch_action_queue, and production_approval rows.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',
     variant: 'Leave Supabase advisor clearance only inside the broad launch manifest and commercial launch report.',
     reason_rejected: 'Would keep the active external-account advisor blocker harder to inspect despite it being a pre-request production approval gate.',
@@ -5684,6 +5750,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing focused source-provenance report/check command across existing proof rows and validators, adds no dependency, no duplicate git parser, no source mutation, no approval-packet replacement, no release execution, and no deploy path.',
     tests_or_checks: sourceProvenanceProofHandleTestsRun,
     remaining_risk: 'The staged workflow rename still blocks source provenance until an owner decision; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing focused release-preflight report/check command across existing release-toolchain proof rows and validators, adds no dependency, no duplicate toolchain probe, no Corepack/Git LFS remediation, no source mutation, no release execution beyond the retained guarded command, and no deploy path.',
+    tests_or_checks: releaseToolchainProofHandleTestsRun,
+    remaining_risk: 'Corepack-pinned release-readiness remains blocked until Corepack is available and clean source provenance is proven; the staged workflow rename, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
   },
   {
     target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT',

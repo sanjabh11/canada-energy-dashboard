@@ -13,6 +13,7 @@ type ProductionApprovalRequestRow = {
   prerequisite: string;
   request_phase: string;
   blocks_request: boolean;
+  proof_command: string;
 };
 
 function makeTempRoot() {
@@ -61,6 +62,7 @@ describe('production approval readiness report', () => {
     expect(stdout).toContain('post_deploy_boundary');
     expect(stdout).toContain('Launch Action Production Approval Row');
     expect(stdout).toContain('Release Preflight Owner Approval Row');
+    expect(stdout).toContain('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('corepack pnpm run report:production-approval-packet');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
@@ -90,6 +92,10 @@ describe('production approval readiness report', () => {
       'Explicit owner production approval',
       'Post-deploy live proof boundary',
     ]);
+    const prerequisiteRows = new Map<string, { prerequisite: string; proof_command: string }>(payload.production_approval.prerequisite_queue.items.map((item: { prerequisite: string; proof_command: string }) => [
+      item.prerequisite,
+      item,
+    ]));
     const requestRows = new Map<string, ProductionApprovalRequestRow>(payload.production_approval.request_packet.items.map((item: ProductionApprovalRequestRow) => [
       item.prerequisite,
       item,
@@ -98,6 +104,12 @@ describe('production approval readiness report', () => {
     expect(payload.production_approval.request_packet.status).toBe('blocked');
     expect(payload.production_approval.request_packet.request_eligible).toBe(false);
     expect(requestRows.get('Clean source provenance').request_phase).toBe('pre_request');
+    expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('report:release-preflight');
+    expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('check:release-preflight-report');
+    expect(prerequisiteRows.get('Corepack release-readiness').proof_command).toContain('check:release-readiness');
+    expect(requestRows.get('Corepack release-readiness').proof_command).toContain('report:release-preflight');
+    expect(requestRows.get('Corepack release-readiness').proof_command).toContain('check:release-preflight-report');
+    expect(requestRows.get('Corepack release-readiness').proof_command).toContain('check:release-readiness');
     expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('pre_request');
     expect(requestRows.get('Explicit owner production approval').request_phase).toBe('owner_decision');
     expect(requestRows.get('Post-deploy live proof boundary').request_phase).toBe('post_deploy_boundary');

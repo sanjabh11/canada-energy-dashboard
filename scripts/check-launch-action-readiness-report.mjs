@@ -128,6 +128,12 @@ if (failures.length === 0) {
     assert(/report:source-provenance-readiness/.test(rowsByPhase.get('source_provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(rowsByPhase.get('source_provenance')?.proof_command ?? ''), 'Source provenance row must point to the focused source provenance report/check.');
     assert(rowsByPhase.get('launch_evidence_validation')?.status === 'ready', 'Launch evidence validation row must be ready after focused validation evidence is externalized.');
     assert(rowsByPhase.get('release_toolchain')?.proof_type === 'release_toolchain_and_gated_release', 'Release toolchain row must keep release proof type.');
+    assert(
+      /report:release-preflight/.test(rowsByPhase.get('release_toolchain')?.proof_command ?? '')
+        && /check:release-preflight-report/.test(rowsByPhase.get('release_toolchain')?.proof_command ?? '')
+        && /check:release-readiness/.test(rowsByPhase.get('release_toolchain')?.proof_command ?? ''),
+      'Release toolchain row must point to focused release-preflight proof before guarded release-readiness.',
+    );
     assert(rowsByPhase.get('branch_review')?.proof_type === 'read_only_branch_review', 'Branch review row must keep read-only proof type.');
     assert(rowsByPhase.get('supabase_advisor')?.proof_type === 'external_account_evidence', 'Supabase row must keep external account proof type.');
     assert(rowsByPhase.get('buyer_evidence')?.proof_type === 'retained_buyer_evidence_validation', 'Buyer row must keep retained evidence proof type.');

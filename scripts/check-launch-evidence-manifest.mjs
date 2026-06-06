@@ -979,7 +979,12 @@ try {
     const releaseActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'release_toolchain');
     assert(releaseActionItem, 'Launch action queue must include a release_toolchain phase.');
     assert(/release-toolchain probe/i.test(releaseActionItem.blocker), 'Release toolchain launch action must summarize toolchain probe ledger state.');
-    assert(releaseActionItem.proof_command.includes('report:launch-evidence-manifest') && releaseActionItem.proof_command.includes('check:release-readiness'), 'Release toolchain launch action must refresh the launch evidence manifest before release-readiness.');
+    assert(
+      releaseActionItem.proof_command.includes('report:release-preflight')
+        && releaseActionItem.proof_command.includes('check:release-preflight-report')
+        && releaseActionItem.proof_command.includes('check:release-readiness'),
+      'Release toolchain launch action must run focused release-preflight proof before guarded release-readiness.',
+    );
     assert(/probe ledger/i.test(releaseActionItem.stop_gate), 'Release toolchain launch action must say the probe ledger is not approval evidence.');
     assert(
       manifest.launch_action_queue.items.some((item) => item.proof_command.includes('check:post-deploy-live')),
@@ -1084,7 +1089,12 @@ try {
     assert(releasePrerequisiteItem, 'Production approval prerequisite queue must include Corepack release-readiness.');
     assert(/release-toolchain probe/i.test(releasePrerequisiteItem.current), 'Corepack release-readiness prerequisite must summarize toolchain probe ledger state.');
     assert(/Corepack\/Git LFS probe ledger/i.test(releasePrerequisiteItem.needed), 'Corepack release-readiness prerequisite must require the current Corepack/Git LFS probe ledger.');
-    assert(releasePrerequisiteItem.proof_command.includes('report:launch-evidence-manifest') && releasePrerequisiteItem.proof_command.includes('check:release-readiness'), 'Corepack release-readiness prerequisite must refresh launch evidence before release-readiness.');
+    assert(
+      releasePrerequisiteItem.proof_command.includes('report:release-preflight')
+        && releasePrerequisiteItem.proof_command.includes('check:release-preflight-report')
+        && releasePrerequisiteItem.proof_command.includes('check:release-readiness'),
+      'Corepack release-readiness prerequisite must run focused release-preflight proof before guarded release-readiness.',
+    );
     assert(/probe ledger/i.test(releasePrerequisiteItem.stop_gate), 'Corepack release-readiness prerequisite must say the probe ledger is not approval evidence.');
     assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
@@ -2138,6 +2148,34 @@ try {
         && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
         && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check)),
       'Source provenance proof-handle code optimization review must record focused source and release-preflight checker proof.',
+    );
+    const releaseToolchainProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES');
+    assert(releaseToolchainProofHandleDecision, 'Manifest must record the release toolchain proof-handle implementation decision.');
+    assert(
+      releaseToolchainProofHandleDecision?.chosen_variant === 'minimal focused release proof-handle derivation',
+      'Release toolchain proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(releaseToolchainProofHandleDecision?.files_changed)
+        && releaseToolchainProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && releaseToolchainProofHandleDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && releaseToolchainProofHandleDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts'),
+      'Release toolchain proof-handle decision must record manifest, production approval checker, and production approval test file changes.',
+    );
+    assert(
+      /does not install Corepack|run full release-readiness|clear source provenance|deploy|hosted\/live parity/i.test(releaseToolchainProofHandleDecision?.proof_boundary ?? ''),
+      'Release toolchain proof-handle decision must preserve toolchain, source, release, deploy, and live-parity boundaries.',
+    );
+    const releaseToolchainProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES');
+    assert(releaseToolchainProofHandleReview, 'Manifest must record the release toolchain proof-handle code optimization review.');
+    assert(releaseToolchainProofHandleReview?.policy === 'strict', 'Release toolchain proof-handle code optimization review must use strict policy.');
+    assert(releaseToolchainProofHandleReview?.verdict === 'pass', 'Release toolchain proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(releaseToolchainProofHandleReview?.tests_or_checks)
+        && releaseToolchainProofHandleReview.tests_or_checks.some((check) => /report:release-preflight -- --skip-probes/.test(check))
+        && releaseToolchainProofHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check))
+        && releaseToolchainProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
+      'Release toolchain proof-handle code optimization review must record focused release-preflight and production approval checker proof.',
     );
     const supabaseAdvisorReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-FOCUSED-REPORT');
     assert(supabaseAdvisorReportDecision, 'Manifest must record the Supabase advisor focused report implementation decision.');

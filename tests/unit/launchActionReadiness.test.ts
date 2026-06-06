@@ -121,6 +121,9 @@ describe('launch action readiness report', () => {
     expect(rowsByPhase.get('source_provenance')?.proof_command).toContain('check:source-provenance-report');
     expect(rowsByPhase.get('launch_evidence_validation')?.status).toBe('ready');
     expect(rowsByPhase.get('release_toolchain')?.proof_type).toBe('release_toolchain_and_gated_release');
+    expect(rowsByPhase.get('release_toolchain')?.proof_command).toContain('report:release-preflight');
+    expect(rowsByPhase.get('release_toolchain')?.proof_command).toContain('check:release-preflight-report');
+    expect(rowsByPhase.get('release_toolchain')?.proof_command).toContain('check:release-readiness');
     expect(rowsByPhase.get('branch_review')?.proof_type).toBe('read_only_branch_review');
     expect(rowsByPhase.get('supabase_advisor')?.proof_type).toBe('external_account_evidence');
     expect(rowsByPhase.get('buyer_evidence')?.proof_type).toBe('retained_buyer_evidence_validation');

@@ -112,6 +112,7 @@ if (failures.length === 0) {
     const prerequisiteItems = prerequisiteQueue.items ?? [];
     const requestItems = requestPacket.items ?? [];
     const prerequisites = prerequisiteItems.map((item) => item.prerequisite);
+    const prerequisiteRowsByName = new Map(prerequisiteItems.map((item) => [item.prerequisite, item]));
     const requestRowsByPrerequisite = new Map(requestItems.map((item) => [item.prerequisite, item]));
 
     assert(payload.schema_version === 1, 'Focused production approval JSON schema_version must be 1.');
@@ -129,6 +130,18 @@ if (failures.length === 0) {
     assert(requestRowsByPrerequisite.get('Clean source provenance')?.request_phase === 'pre_request', 'Clean source provenance must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Launch evidence validation')?.request_phase === 'pre_request', 'Launch evidence validation must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Corepack release-readiness')?.request_phase === 'pre_request', 'Corepack release-readiness must be a pre-request row.');
+    assert(
+      /report:release-preflight/.test(prerequisiteRowsByName.get('Corepack release-readiness')?.proof_command ?? '')
+        && /check:release-preflight-report/.test(prerequisiteRowsByName.get('Corepack release-readiness')?.proof_command ?? '')
+        && /check:release-readiness/.test(prerequisiteRowsByName.get('Corepack release-readiness')?.proof_command ?? ''),
+      'Corepack release-readiness prerequisite must point to focused release-preflight proof before guarded release-readiness.',
+    );
+    assert(
+      /report:release-preflight/.test(requestRowsByPrerequisite.get('Corepack release-readiness')?.proof_command ?? '')
+        && /check:release-preflight-report/.test(requestRowsByPrerequisite.get('Corepack release-readiness')?.proof_command ?? '')
+        && /check:release-readiness/.test(requestRowsByPrerequisite.get('Corepack release-readiness')?.proof_command ?? ''),
+      'Corepack release-readiness request row must point to focused release-preflight proof before guarded release-readiness.',
+    );
     assert(requestRowsByPrerequisite.get('Canonical branch review')?.request_phase === 'pre_request', 'Canonical branch review must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Supabase advisor clearance')?.request_phase === 'pre_request', 'Supabase advisor clearance must be a pre-request row.');
     assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'pre_request', 'Buyer evidence hard gate must be a pre-request row.');
