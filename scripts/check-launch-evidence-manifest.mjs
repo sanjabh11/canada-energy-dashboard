@@ -993,8 +993,16 @@ try {
     );
     assert(/probe ledger/i.test(releaseActionItem.stop_gate), 'Release toolchain launch action must say the probe ledger is not approval evidence.');
     assert(
-      manifest.launch_action_queue.items.some((item) => item.proof_command.includes('check:post-deploy-live')),
-      'Manifest launch action queue must include post-deploy live proof command.',
+      manifest.launch_action_queue.items.some((item) => item.phase === 'production_approval'
+        && item.proof_command.includes('report:production-approval-readiness')
+        && item.proof_command.includes('check:production-approval-report')),
+      'Manifest launch action queue production approval row must run the focused production approval report and checker.',
+    );
+    assert(
+      manifest.launch_action_queue.items.some((item) => item.phase === 'post_deploy_live_proof'
+        && item.proof_command.includes('report:post-deploy-live-proof-readiness')
+        && item.proof_command.includes('check:post-deploy-live-proof-report')),
+      'Manifest launch action queue post-deploy row must run the focused post-deploy live proof report and checker.',
     );
     const branchActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'branch_review');
     assert(branchActionItem, 'Launch action queue must include a branch_review phase.');
@@ -2595,6 +2603,37 @@ try {
         && completionAuditProofHandleReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report/.test(check))
         && completionAuditProofHandleReview.tests_or_checks.some((check) => /report:commercial-launch-readiness/.test(check)),
       'Completion audit proof-handle code optimization review must record manifest, commercial report checker, and commercial report proof.',
+    );
+    const launchActionFinalProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES');
+    assert(launchActionFinalProofHandleDecision, 'Manifest must record the final launch action proof-handle implementation decision.');
+    assert(
+      launchActionFinalProofHandleDecision?.chosen_variant === 'minimal focused final launch-action proof-handle derivation',
+      'Final launch action proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(launchActionFinalProofHandleDecision?.files_changed)
+        && launchActionFinalProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && launchActionFinalProofHandleDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && launchActionFinalProofHandleDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && launchActionFinalProofHandleDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionFinalProofHandleDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts')
+        && launchActionFinalProofHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Final launch action proof-handle decision must record the manifest, checkers, and focused unit test files.',
+    );
+    assert(
+      /does not request owner approval|grant approval|run deploy-production\.sh|run netlify deploy|push|mutate branches|clear source provenance|run post-deploy live proof|run browser smoke|hosted\/live parity|raise launch status/i.test(launchActionFinalProofHandleDecision?.proof_boundary ?? ''),
+      'Final launch action proof-handle decision must preserve no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const launchActionFinalProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES');
+    assert(launchActionFinalProofHandleReview, 'Manifest must record the final launch action proof-handle code optimization review.');
+    assert(launchActionFinalProofHandleReview?.policy === 'strict', 'Final launch action proof-handle code optimization review must use strict policy.');
+    assert(launchActionFinalProofHandleReview?.verdict === 'pass', 'Final launch action proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionFinalProofHandleReview?.tests_or_checks)
+        && launchActionFinalProofHandleReview.tests_or_checks.some((check) => /report:launch-action-readiness/.test(check))
+        && launchActionFinalProofHandleReview.tests_or_checks.some((check) => /check:launch-action-report/.test(check))
+        && launchActionFinalProofHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
+      'Final launch action proof-handle code optimization review must record focused launch action and manifest checker proof.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

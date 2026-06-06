@@ -155,7 +155,17 @@ if (failures.length === 0) {
       'Buyer evidence row must point to the focused buyer evidence gate report/check.',
     );
     assert(rowsByPhase.get('production_approval')?.proof_type === 'manual_approval_gate', 'Production approval row must keep manual approval proof type.');
+    assert(
+      /report:production-approval-readiness/.test(rowsByPhase.get('production_approval')?.proof_command ?? '')
+        && /check:production-approval-report/.test(rowsByPhase.get('production_approval')?.proof_command ?? ''),
+      'Production approval row must point to the focused production approval report/check.',
+    );
     assert(rowsByPhase.get('post_deploy_live_proof')?.proof_type === 'post_deploy_live_proof_gate', 'Post-deploy row must keep post-deploy proof type.');
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(rowsByPhase.get('post_deploy_live_proof')?.proof_command ?? '')
+        && /check:post-deploy-live-proof-report/.test(rowsByPhase.get('post_deploy_live_proof')?.proof_command ?? ''),
+      'Post-deploy row must point to the focused post-deploy live proof report/check.',
+    );
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
     assert(buyerLane?.status === 'blocked', 'Buyer evidence lane summary must remain blocked while hard-gate or acquisition evidence is skipped/open/non-ready.');
     assert(/open_hard_gate_rows=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose hard-gate open row count.');

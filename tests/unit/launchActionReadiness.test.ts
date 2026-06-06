@@ -134,7 +134,11 @@ describe('launch action readiness report', () => {
     expect(rowsByPhase.get('buyer_evidence')?.proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(rowsByPhase.get('buyer_evidence')?.proof_command).toContain('check:buyer-evidence-gate-report');
     expect(rowsByPhase.get('production_approval')?.proof_type).toBe('manual_approval_gate');
+    expect(rowsByPhase.get('production_approval')?.proof_command).toContain('report:production-approval-readiness');
+    expect(rowsByPhase.get('production_approval')?.proof_command).toContain('check:production-approval-report');
     expect(rowsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
+    expect(rowsByPhase.get('post_deploy_live_proof')?.proof_command).toContain('report:post-deploy-live-proof-readiness');
+    expect(rowsByPhase.get('post_deploy_live_proof')?.proof_command).toContain('check:post-deploy-live-proof-report');
     expect(lanes).toEqual(expect.arrayContaining([
       'source_provenance',
       'launch_evidence_validation',

@@ -16,7 +16,9 @@ const RELEASE_READINESS_FOCUSED_PROOF_COMMAND = `${RELEASE_PREFLIGHT_FOCUSED_PRO
 const BRANCH_REVIEW_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report';
 const SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report';
 const BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report';
-const PRODUCTION_AND_POST_DEPLOY_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report && corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report';
+const PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report';
+const POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report';
+const PRODUCTION_AND_POST_DEPLOY_FOCUSED_PROOF_COMMAND = `${PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND} && ${POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND}`;
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -1358,7 +1360,7 @@ function buildLaunchActionQueue({
       blocker: 'explicit owner production approval is not granted by this report',
       owner: 'owner',
       action: 'Request production deployment approval only after source provenance, release-readiness, branch review, and security/advisor gates are clean.',
-      proof_command: 'corepack pnpm run check:production-deploy-request',
+      proof_command: PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('production_approval'),
       proof_boundary: launchActionProofBoundary('production_approval'),
       stop_gate: 'Do not run deploy-production.sh or netlify deploy without explicit production approval.',
@@ -1370,7 +1372,7 @@ function buildLaunchActionQueue({
       blocker: 'current source is not live-proven by this manifest',
       owner: 'operator',
       action: 'After an explicitly approved deploy, prove live metadata, static parity, and hosted proof-pack route smoke.',
-      proof_command: 'corepack pnpm run check:post-deploy-live',
+      proof_command: POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND,
       proof_type: launchActionProofType('post_deploy_live_proof'),
       proof_boundary: launchActionProofBoundary('post_deploy_live_proof'),
       stop_gate: 'Do not present hosted/live parity for current source until the post-deploy live gate passes after the approved deploy.',
@@ -4660,6 +4662,15 @@ const completionAuditProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const launchActionFinalProofHandleFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'scripts/check-launch-action-readiness-report.mjs',
+  'tests/unit/launchActionReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4683,6 +4694,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...productionApprovalReportFilesChanged,
   ...postDeployLiveProofReportFilesChanged,
   ...completionAuditProofHandleFilesChanged,
+  ...launchActionFinalProofHandleFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -4933,6 +4945,15 @@ const completionAuditProofHandleTestsRun = [
   'pnpm run report:commercial-launch-readiness -- --skip-probes',
 ];
 
+const launchActionFinalProofHandleTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-action-readiness -- --skip-probes',
+  'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -4956,6 +4977,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...productionApprovalReportTestsRun,
   ...postDeployLiveProofReportTestsRun,
   ...completionAuditProofHandleTestsRun,
+  ...launchActionFinalProofHandleTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -5292,6 +5314,19 @@ const safeFixImplementationDecisions = [
     reason: 'The completion audit is the final operator-facing checklist for the broad goal, so its next proof handles should route through the lane-specific focused reports added in earlier phases instead of sending operators directly to raw validation, dashboard, release, deploy, or live-proof commands.',
     proof_boundary: 'This record aligns objective completion audit proof handles only; it does not contact buyers, create accepted evidence, run retained-artifact validation as clearance, authorize Supabase, access dashboards, checkout branches, merge, push, install tools, run release-readiness as clearance, request owner approval, deploy, run live proof, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused completion-audit proof handles, skipped-probe report/check success, manifest validation, commercial report output, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    decision: 'Route final launch action production approval and post-deploy live proof rows through their focused report/check handles.',
+    acceptance_check: 'The launch_action_queue production_approval row exposes report:production-approval-readiness plus check:production-approval-report, and the post_deploy_live_proof row exposes report:post-deploy-live-proof-readiness plus check:post-deploy-live-proof-report, while both rows remain manual_stop or blocked and downstream gate queues retain the raw deploy-request and post-deploy live commands.',
+    chosen_variant: 'minimal focused final launch-action proof-handle derivation',
+    repo_pattern_reused: 'Existing focused production approval report/check, focused post-deploy live proof report/check, launch_action_queue rows, focused launch action checker, and launch manifest unit contracts.',
+    files_changed: launchActionFinalProofHandleFilesChanged,
+    tests_run: launchActionFinalProofHandleTestsRun,
+    proof: 'The patch reuses existing focused production approval and post-deploy report/check handles in the launch action queue, then asserts those handles in the focused launch action report, launch evidence manifest checker, commercial launch report checker, and focused unit tests without changing final gate status.',
+    reason: 'The launch action queue is the phase-wise execution entry point; leaving its final two lanes on raw deploy-request and live-proof commands while earlier lanes route through focused reports made the operator path inconsistent.',
+    proof_boundary: 'This record aligns final launch-action proof handles only; it does not request owner approval, grant approval, run deploy-production.sh, run netlify deploy, push, mutate branches, clear source provenance, run post-deploy live proof, run browser smoke, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat focused final launch-action proof handles, skipped-probe report/check success, focused launch action output, or this code optimization ledger as owner approval, deployment permission, deploy completion, post-deploy live proof, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -5912,6 +5947,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'A smaller audit table is easier to scan, but it hides the active blockers and weakens the completion decision evidence.',
     evidence: 'check-launch-evidence-manifest and check-commercial-launch-readiness-report require the completion audit to include buyer, source, branch, Supabase, release, and production/live proof rows.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    variant: 'Leave final launch action rows pointing directly at check:production-deploy-request and check:post-deploy-live.',
+    reason_rejected: 'Would keep the phase-wise launch action queue inconsistent with the focused report/check wrappers already created for production approval and post-deploy proof.',
+    tradeoff: 'Raw commands are shorter, but they make the top-level execution queue look like it should jump directly to approval or live-proof gates.',
+    evidence: 'The focused launch action report already exposes production approval and post-deploy report handles in its lane summary, while the queue rows still used raw commands.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    variant: 'Run production deploy request or post-deploy live proof from the launch action report.',
+    reason_rejected: 'Approval request and live proof require clean source provenance, passing release gates, explicit owner approval, guarded deploy completion, and live context outside this safe-fix phase.',
+    tradeoff: 'Direct execution could produce fresher evidence, but it would violate no-deploy/no-live-proof boundaries and risk overstating launch readiness.',
+    evidence: 'production_approval.prerequisite_queue and post_deploy_live_proof.gate_queue remain blocked/manual-stop and preserve raw machine gates for the real execution phase.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    variant: 'Remove the raw deploy-request and post-deploy live commands from downstream gate queues.',
+    reason_rejected: 'Focused handles are inspection entry points; downstream production approval and post-deploy queues must still retain the actual guarded machine gates.',
+    tradeoff: 'Removing raw commands would make every surface consistently focused, but it would hide the final execution commands needed after approval.',
+    evidence: 'production_approval prerequisite/request rows and post_deploy_live_proof gate rows intentionally distinguish readiness inspection from deploy-request and live-proof execution.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    variant: 'Duplicate production approval or post-deploy gate construction in the launch action checker.',
+    reason_rejected: 'Duplicating final gate construction would drift from the focused production approval and post-deploy reports.',
+    tradeoff: 'Inline checks could make the launch action checker self-contained, but they would add a second source of truth for approval and live-proof sequencing.',
+    evidence: 'report-launch-evidence-manifest already emits launch_action_queue, production_approval.prerequisite_queue, production_approval.request_packet, and post_deploy_live_proof.gate_queue.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -6142,6 +6205,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates only objective completion audit next_proof_command values plus existing manifest/report checkers and the manifest unit test, reusing focused command constants without new dependencies, duplicate gate parsers, external account calls, release execution, deploy execution, or live-service mutation.',
     tests_or_checks: completionAuditProofHandleTestsRun,
     remaining_risk: 'The launch goal remains blocked until retained buyer evidence, source provenance, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change updates only the final launch action queue proof_command values plus existing checker/test assertions, reusing focused production approval and post-deploy report/check handles without new dependencies, duplicate final-gate parsers, owner approval requests, deploy execution, live-proof execution, or live-service mutation.',
+    tests_or_checks: launchActionFinalProofHandleTestsRun,
+    remaining_risk: 'Production approval remains a manual stop and post-deploy live proof remains blocked until source provenance, Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, live metadata, static parity, and hosted smoke are current.',
   },
 ];
 

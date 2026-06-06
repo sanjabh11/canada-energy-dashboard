@@ -446,8 +446,10 @@ describe('launch evidence manifest report', () => {
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
     expect(launchActionsByPhase.get('production_approval')?.proof_type).toBe('manual_approval_gate');
+    expect(launchActionsByPhase.get('production_approval')?.proof_command).toBe('corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report');
     expect(launchActionsByPhase.get('production_approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
     expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
+    expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
     expect(launchActionsByPhase.get('post_deploy_live_proof')?.proof_boundary).toMatch(/guarded deploy completion|does not deploy/i);
     const branchReviewAction = manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'branch_review');
     expect(branchReviewAction?.proof_command).toBe('corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report');
@@ -463,7 +465,7 @@ describe('launch evidence manifest report', () => {
     expect(releaseToolchainAction.stop_gate).toMatch(/probe ledger/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').stop_gate).toMatch(/Do not count templates/i);
     expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'buyer_evidence').status).toBe('blocked');
-    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run check:post-deploy-live');
+    expect(manifest.launch_action_queue.items.find((item: { phase: string }) => item.phase === 'post_deploy_live_proof').proof_command).toBe('corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report');
     expect(manifest.production_approval.status).toBe('blocked');
     expect(manifest.production_approval.explicit_owner_approval).toBe(false);
     expect(manifest.production_approval.evidence).toContain('Production approval prerequisite queue');
@@ -738,9 +740,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(24);
+    expect(manifest.implementation_decisions).toHaveLength(25);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(24);
+    expect(manifest.code_optimization_reviews).toHaveLength(25);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -857,6 +859,10 @@ describe('launch evidence manifest report', () => {
       'Run buyer validation, Supabase advisors, release-readiness, approval request, deploy, or post-deploy live proof from the completion audit phase.',
       'Duplicate gate parsing or remediation logic inside the completion audit checker.',
       'Remove or flatten unresolved blocker rows from the objective completion audit.',
+      'Leave final launch action rows pointing directly at check:production-deploy-request and check:post-deploy-live.',
+      'Run production deploy request or post-deploy live proof from the launch action report.',
+      'Remove the raw deploy-request and post-deploy live commands from downstream gate queues.',
+      'Duplicate production approval or post-deploy gate construction in the launch action checker.',
     ]));
     const approvalCircularityDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY',
@@ -1325,6 +1331,30 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
       'pnpm run report:commercial-launch-readiness -- --skip-probes',
+    ]));
+    const launchActionFinalProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    );
+    expect(launchActionFinalProofHandleDecision).toBeTruthy();
+    expect(launchActionFinalProofHandleDecision.chosen_variant).toBe('minimal focused final launch-action proof-handle derivation');
+    expect(launchActionFinalProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'scripts/check-launch-action-readiness-report.mjs',
+      'tests/unit/launchActionReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(launchActionFinalProofHandleDecision.proof_boundary).toMatch(/does not request owner approval|grant approval|run deploy-production\.sh|run netlify deploy|push|mutate branches|clear source provenance|run post-deploy live proof|run browser smoke|hosted\/live parity|raise launch status/i);
+    const launchActionFinalProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-FINAL-PROOF-HANDLES',
+    );
+    expect(launchActionFinalProofHandleReview).toBeTruthy();
+    expect(launchActionFinalProofHandleReview.policy).toBe('strict');
+    expect(launchActionFinalProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:launch-action-readiness -- --skip-probes',
+      'pnpm run check:launch-action-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
