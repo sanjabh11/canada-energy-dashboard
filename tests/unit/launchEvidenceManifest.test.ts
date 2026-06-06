@@ -145,10 +145,21 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.evidence).toContain('Branch clearance matrix skipped');
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
-    expect(manifest.progress_updates).toHaveLength(1);
-    expect(manifest.progress_updates[0].phase).toBe('objective completion audit');
-    expect(manifest.progress_updates[0].target_matrix).toContain('structured evidence manifest');
+    expect(manifest.progress_updates).toHaveLength(2);
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET');
+    expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
+    expect(manifest.progress_updates[0].target_matrix).toEqual(expect.arrayContaining([
+      'safe fix lane',
+      'code optimization report',
+      'progress digest',
+    ]));
     expect(manifest.progress_updates[0].bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
+    const objectiveCompletionProgressUpdate = manifest.progress_updates.find(
+      (item: { phase?: string }) => item.phase === 'objective completion audit',
+    );
+    expect(objectiveCompletionProgressUpdate).toBeTruthy();
+    expect(objectiveCompletionProgressUpdate.target_matrix).toContain('structured evidence manifest');
+    expect(objectiveCompletionProgressUpdate.bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(manifest.bottleneck_log[0].root_cause).toBe('evidence gap');
     expect(manifest.bottleneck_log[0].top_unblock_options).toHaveLength(3);
     expect(manifest.market_evidence_mode).toBe('mixed');
@@ -806,9 +817,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(41);
+    expect(manifest.implementation_decisions).toHaveLength(42);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(41);
+    expect(manifest.code_optimization_reviews).toHaveLength(42);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1852,6 +1863,30 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'node scripts/check-corepack-toolchain.mjs',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const progressDigestLatestRatchetDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    );
+    expect(progressDigestLatestRatchetDecision).toBeTruthy();
+    expect(progressDigestLatestRatchetDecision.chosen_variant).toBe('minimal latest-progress manifest row derivation');
+    expect(progressDigestLatestRatchetDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressDigestLatestRatchetDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i);
+    const progressDigestLatestRatchetReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    );
+    expect(progressDigestLatestRatchetReview).toBeTruthy();
+    expect(progressDigestLatestRatchetReview.policy).toBe('strict');
+    expect(progressDigestLatestRatchetReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 

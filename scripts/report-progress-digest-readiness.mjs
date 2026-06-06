@@ -146,6 +146,7 @@ function progressStatus(manifest) {
 
 function focusedPayload(manifest) {
   const progressUpdates = Array.isArray(manifest.progress_updates) ? manifest.progress_updates : [];
+  const currentProgressUpdate = progressUpdates[0] ?? null;
   const bottleneckLog = Array.isArray(manifest.bottleneck_log) ? manifest.bottleneck_log : [];
   const blockers = manifest.completion_audit?.items?.filter((item) => item?.blocks_goal_completion) ?? [];
 
@@ -159,10 +160,10 @@ function focusedPayload(manifest) {
       proof_type: 'progress_update_digest',
       update_count: progressUpdates.length,
       blocker_count: blockers.length,
-      current_phase: progressUpdates[0]?.phase ?? 'missing',
-      current_bottleneck: progressUpdates[0]?.bottleneck ?? 'missing',
-      pending: progressUpdates[0]?.pending ?? 'missing',
-      target_matrix_count: Array.isArray(progressUpdates[0]?.target_matrix) ? progressUpdates[0].target_matrix.length : 0,
+      current_phase: currentProgressUpdate?.phase ?? 'missing',
+      current_bottleneck: currentProgressUpdate?.bottleneck ?? 'missing',
+      pending: currentProgressUpdate?.pending ?? 'missing',
+      target_matrix_count: Array.isArray(currentProgressUpdate?.target_matrix) ? currentProgressUpdate.target_matrix.length : 0,
       evidence: progressUpdates.length > 0
         ? 'Progress digest is present and maps accomplished work, target matrix, pending work, and current bottleneck.'
         : 'Progress digest is missing from the launch evidence manifest.',

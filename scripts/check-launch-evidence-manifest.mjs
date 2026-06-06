@@ -2002,7 +2002,17 @@ try {
     assert(completionItemsByRequirement.get('Supabase advisor clearance gate')?.status === 'blocked', 'Completion audit must keep Supabase advisor clearance blocked.');
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
-    assert(manifest.progress_updates.length >= 1, 'Manifest progress_updates must record the objective-completion audit phase.');
+    assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET', 'Manifest progress_updates must expose the latest safe-fix progress ratchet as the current row.');
+    assert(
+      Array.isArray(manifest.progress_updates[0]?.target_matrix)
+        && manifest.progress_updates[0].target_matrix.includes('safe fix lane')
+        && manifest.progress_updates[0].target_matrix.includes('code optimization report')
+        && manifest.progress_updates[0].target_matrix.includes('progress digest')
+        && typeof manifest.progress_updates[0].bottleneck === 'string'
+        && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
+      'Manifest current progress row must describe the latest safe-fix progress ratchet and remaining evidence gates.',
+    );
     assert(manifest.progress_updates.some((item) => (
       item
       && item.phase === 'objective completion audit'
@@ -3158,6 +3168,37 @@ try {
         && releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks.some((check) => /check:release-preflight-report/.test(check))
         && releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Release toolchain Git LFS hook diagnostic review must record direct manifest, focused checker, and manifest checks.',
+    );
+    const progressDigestLatestRatchetDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET');
+    assert(progressDigestLatestRatchetDecision, 'Manifest must record the latest progress digest ratchet implementation decision.');
+    assert(
+      progressDigestLatestRatchetDecision?.chosen_variant === 'minimal latest-progress manifest row derivation',
+      'Latest progress digest ratchet decision must record the minimal latest-progress derivation variant.',
+    );
+    assert(
+      Array.isArray(progressDigestLatestRatchetDecision?.files_changed)
+        && progressDigestLatestRatchetDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && progressDigestLatestRatchetDecision.files_changed.includes('scripts/report-progress-digest-readiness.mjs')
+        && progressDigestLatestRatchetDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && progressDigestLatestRatchetDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && progressDigestLatestRatchetDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Latest progress digest ratchet decision must record the manifest, focused digest, checkers, and unit test files.',
+    );
+    assert(
+      /does not complete pending work|clear blockers|contact buyers|create accepted evidence|authorize Supabase|mutate branches|resolve source provenance|install tools|request owner approval|deploy|post-deploy live proof|hosted\/live parity|raise launch status/i.test(progressDigestLatestRatchetDecision?.proof_boundary ?? ''),
+      'Latest progress digest ratchet decision must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const progressDigestLatestRatchetReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET');
+    assert(progressDigestLatestRatchetReview, 'Manifest must record the latest progress digest ratchet code optimization review.');
+    assert(progressDigestLatestRatchetReview?.policy === 'strict', 'Latest progress digest ratchet code optimization review must use strict policy.');
+    assert(progressDigestLatestRatchetReview?.verdict === 'pass', 'Latest progress digest ratchet code optimization review must pass.');
+    assert(
+      Array.isArray(progressDigestLatestRatchetReview?.tests_or_checks)
+        && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /report:progress-digest-readiness -- --skip-probes/.test(check))
+        && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && progressDigestLatestRatchetReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Latest progress digest ratchet code optimization review must record focused progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

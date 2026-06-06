@@ -87,6 +87,9 @@ if (failures.length === 0) {
     assert(/does not .*clear blockers|contact buyers|approve branches|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness boundaries.');
     assertContains(stdout, '## Progress Summary', 'Report must include the progress summary.');
     assertContains(stdout, '## Progress Updates', 'Report must include progress update rows.');
+    assertContains(stdout, 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET', 'Report must expose the latest safe-fix progress phase as current evidence.');
+    assertContains(stdout, 'safe fix lane', 'Report must include latest safe-fix lane target matrix evidence.');
+    assertContains(stdout, 'code optimization report', 'Report must include latest code-optimization target matrix evidence.');
     assertContains(stdout, 'objective completion audit', 'Report must include the objective completion audit phase.');
     assertContains(stdout, 'structured evidence manifest', 'Report must include target matrix evidence.');
     assertContains(stdout, 'retained buyer artifacts', 'Report must include the active buyer-evidence bottleneck.');
@@ -107,9 +110,22 @@ if (failures.length === 0) {
     assert(payload.launch_decision === 'blocked', 'Focused progress digest JSON must preserve the blocked launch decision.');
     assert(payload.progress_digest?.proof_type === 'progress_update_digest', 'Focused JSON must include the progress update digest proof type.');
     assert(payload.progress_digest?.status === 'blocked', 'Focused progress digest must remain blocked while launch blockers remain open.');
-    assert(payload.progress_digest?.update_count >= 1, 'Focused progress digest must include at least one progress update.');
+    assert(payload.progress_digest?.update_count >= 2, 'Focused progress digest must include the latest safe-fix row and the objective-completion audit row.');
+    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET', 'Focused progress digest current phase must be the latest safe-fix progress ratchet.');
     assert(payload.progress_digest?.target_matrix_count >= 5, 'Focused progress digest must include the target matrix count.');
     assert(/retained buyer artifacts|guarded deploy\/live proof/i.test(payload.progress_digest?.current_bottleneck ?? ''), 'Focused progress digest must preserve the active evidence bottleneck.');
+    assert(
+      Array.isArray(payload.progress_updates)
+        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET')
+        && payload.progress_updates.some((item) => item?.phase === 'objective completion audit'),
+      'Focused progress digest must include both the latest safe-fix phase and the objective-completion audit history.',
+    );
+    assert(
+      Array.isArray(payload.progress_updates?.[0]?.target_matrix)
+        && payload.progress_updates[0].target_matrix.includes('safe fix lane')
+        && payload.progress_updates[0].target_matrix.includes('code optimization report'),
+      'Focused progress digest current row must include safe-fix and code-optimization target matrix entries.',
+    );
     assert(payload.bottleneck_digest?.proof_type === 'bottleneck_log_digest', 'Focused JSON must include the bottleneck log digest proof type.');
     assert(payload.bottleneck_digest?.status === 'blocked', 'Focused bottleneck digest must remain blocked while evidence gaps remain.');
     assert(payload.bottleneck_digest?.root_cause === 'evidence gap', 'Focused bottleneck digest must preserve the evidence-gap root cause.');

@@ -4955,6 +4955,14 @@ const launchManifestJsonAliasFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressDigestLatestRatchetFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const currentSafeFixFilesChanged = Array.from(new Set([
   ...safeFixFilesChanged,
   ...buyerEvidenceStarterBoundaryFilesChanged,
@@ -4995,6 +5003,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
+  ...progressDigestLatestRatchetFilesChanged,
 ]));
 
 const safeFixTestsRun = [
@@ -5422,6 +5431,19 @@ const launchManifestJsonAliasTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const progressDigestLatestRatchetTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const currentSafeFixTestsRun = Array.from(new Set([
   ...safeFixTestsRun,
   ...buyerEvidenceStarterBoundaryTestsRun,
@@ -5462,6 +5484,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
   ...launchManifestJsonAliasTestsRun,
+  ...progressDigestLatestRatchetTestsRun,
 ]));
 
 const safeFixImplementationDecisions = [
@@ -6019,6 +6042,19 @@ const safeFixImplementationDecisions = [
     reason: 'The manifest-level release-preflight report already separated Corepack, bare pnpm, and Git LFS context, but the standalone release gate still stopped with a terse ENOENT that hid the shell split operators need to remediate correctly.',
     proof_boundary: 'This record adds current-shell diagnostic visibility only; it does not install Corepack, enable Corepack, rewrite PATH, treat bare pnpm as Corepack evidence, run release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
     stop_gate: 'Do not treat Corepack checker diagnostics, matching bare pnpm version output, git-lfs context, skipped probes, or this code optimization ledger as Corepack-pinned release-readiness, source provenance cleanup, push-path proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    decision: 'Surface the latest safe-fix phase as the current progress digest row while retaining the objective-completion audit history.',
+    acceptance_check: 'report:progress-digest-readiness and check:progress-digest-report show CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET as the current phase, retain the objective completion audit row, and preserve blocked launch status plus active evidence bottlenecks.',
+    chosen_variant: 'minimal latest-progress manifest row derivation',
+    repo_pattern_reused: 'Existing safe-fix implementation decision ledger, progress_updates schema, focused progress digest report/check, broad manifest checker, and launch manifest unit test contract.',
+    files_changed: progressDigestLatestRatchetFilesChanged,
+    tests_run: progressDigestLatestRatchetTestsRun,
+    proof: 'The patch derives a latest safe-fix progress row from the current implementation decision ledger, prepends it to progress_updates, and asserts the current phase in focused and broad manifest checks without adding a new progress storage surface.',
+    reason: 'The progress digest previously treated the older objective-completion audit row as current even after multiple later safe-fix phases, under-reporting active PhaseLoop progress.',
+    proof_boundary: 'This record improves progress digest recency only; it does not complete pending work, clear blockers, contact buyers, create accepted evidence, authorize Supabase, mutate branches, resolve source provenance, install tools, request owner approval, deploy, run post-deploy live proof, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the latest-progress row, focused progress digest report/check, manifest validation, skipped probes, or this code optimization ledger as buyer evidence, Supabase advisor clearance, branch approval, source provenance cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7052,6 +7088,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Bare pnpm execution may be easier in this shell, but it would weaken every downstream approval and deployment proof row.',
     evidence: 'package.json pins packageManager=pnpm@10.23.0 and check:release-readiness starts with check-corepack-toolchain before any Corepack-pinned command chain runs.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    variant: 'Leave the progress digest anchored to the original objective-completion audit row.',
+    reason_rejected: 'The focused digest would keep reporting stale current-phase evidence after later safe-fix phases.',
+    tradeoff: 'No-code defer avoids manifest churn, but violates the progress-reporting contract for phase completion visibility.',
+    evidence: 'scripts/report-progress-digest-readiness.mjs reads progress_updates[0] as current_phase, current_bottleneck, pending, and target_matrix_count.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    variant: 'Refactor progress_updates into a generated full chronological history from git commits.',
+    reason_rejected: 'A broad history reconstruction would be brittle, noisy, and unnecessary for the current digest acceptance check.',
+    tradeoff: 'A full history could expose more context, but it would add parsing complexity and blur repo evidence with commit-message inference.',
+    evidence: 'The existing manifest already has a verified safe-fix implementation decision ledger that can supply the current phase without new external parsing.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    variant: 'Change the focused progress digest to search implementation_decisions directly.',
+    reason_rejected: 'That would create a second progress source and leave the structured progress_updates manifest field stale.',
+    tradeoff: 'Report-only derivation is narrower in one file, but weaker as schema-level evidence and less useful for external manifest consumers.',
+    evidence: 'The launch evidence schema defines progress_updates as the progress reporting surface, and focused digest reports consume that surface.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7436,7 +7493,37 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: releaseToolchainCorepackEnvDiagnosticTestsRun,
     remaining_risk: 'Release readiness remains blocked until Corepack is actually available in the release shell, Corepack-pinned release-readiness passes, source provenance is clean, Git LFS evidence is current for commit/push, branch review and Supabase advisor evidence clear, buyer evidence exists, owner approval is explicit, guarded deploy completes, and post-deploy live proof passes.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing safe-fix ledger and progress_updates manifest field, prepends one current progress row, and tightens focused/broad checks without adding dependencies, new artifacts, or launch-status changes.',
+    tests_or_checks: progressDigestLatestRatchetTestsRun,
+    remaining_risk: 'The progress digest is a visibility surface only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
+
+const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
+const launchReadinessActiveBottleneck = 'Current blockers require retained buyer artifacts, owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof outside this read-only manifest run.';
+const latestSafeFixDecision = safeFixImplementationDecisions[safeFixImplementationDecisions.length - 1] ?? null;
+const latestSafeFixProgressUpdate = latestSafeFixDecision
+  ? {
+      phase: latestSafeFixDecision.task_id,
+      accomplished: `Completed safe-fix phase: ${latestSafeFixDecision.decision} Chosen variant: ${latestSafeFixDecision.chosen_variant}.`,
+      target_matrix: [
+        'safe fix lane',
+        'code optimization report',
+        'structured evidence manifest',
+        'progress digest',
+        'commercial readiness report',
+        'blocked launch decision',
+      ],
+      pending: launchReadinessPendingWork,
+      bottleneck: launchReadinessActiveBottleneck,
+      created_at: generatedAt,
+    }
+  : null;
 
 const manifest = {
   schema_version: 1,
@@ -7717,6 +7804,7 @@ const manifest = {
     }),
   ],
   progress_updates: [
+    ...(latestSafeFixProgressUpdate ? [latestSafeFixProgressUpdate] : []),
     {
       phase: 'objective completion audit',
       accomplished: 'Mapped required commercial launch deliverables to current manifest/report evidence, explicit proof boundaries, unresolved blocker gates, and next proof commands.',
@@ -7732,8 +7820,8 @@ const manifest = {
         'buyer evidence gate',
         'production/live proof gate',
       ],
-      pending: 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.',
-      bottleneck: 'Current blockers require retained buyer artifacts, owner-side approval, authorized Supabase advisor evidence, branch decisions, and guarded deploy/live proof outside this read-only manifest run.',
+      pending: launchReadinessPendingWork,
+      bottleneck: launchReadinessActiveBottleneck,
       created_at: generatedAt,
     },
   ],
