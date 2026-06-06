@@ -44,6 +44,16 @@ async function runToolchainCheck(pathValue: string) {
 describe('Corepack toolchain check', () => {
   it('reports missing Corepack as a release-readiness toolchain blocker', async () => {
     const tempDir = mkdtempSync(path.join(tmpdir(), 'ceip-corepack-missing-'));
+    const fakePnpmPath = path.join(tempDir, 'pnpm');
+
+    writeExecutable(
+      fakePnpmPath,
+      [
+        '#!/bin/sh',
+        'echo "10.23.0"',
+        '',
+      ].join('\n'),
+    );
 
     try {
       const result = await runToolchainCheck(tempDir);
@@ -53,6 +63,12 @@ describe('Corepack toolchain check', () => {
       expect(result.stderr).toContain('Corepack executable was not found on PATH.');
       expect(result.stderr).toContain('CEIP release-readiness uses Corepack to honor the pinned packageManager pnpm@10.23.0.');
       expect(result.stderr).toContain('do not treat bare pnpm or a temporary local shim as release-readiness evidence.');
+      expect(result.stderr).toContain('Environment diagnostic:');
+      expect(result.stderr).toContain('- Expected package manager: pnpm@10.23.0.');
+      expect(result.stderr).toContain('- Current PATH corepack: missing.');
+      expect(result.stderr).toContain(`- Current PATH pnpm: ${fakePnpmPath}; bare pnpm 10.23.0 matches packageManager pin; bare pnpm does not satisfy Corepack.`);
+      expect(result.stderr).toContain('- Current PATH git-lfs: missing;');
+      expect(result.stderr).toContain('local pnpm and git-lfs diagnostics are shell context only');
       expect(result.stderr).toContain('Raw error: spawnSync corepack ENOENT');
     } finally {
       rmSync(tempDir, { recursive: true, force: true });

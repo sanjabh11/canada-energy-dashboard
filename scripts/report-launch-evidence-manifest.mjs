@@ -4588,6 +4588,13 @@ const releaseToolchainGitLfsHookDiagnosticFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releaseToolchainCorepackEnvDiagnosticFilesChanged = [
+  'scripts/check-corepack-toolchain.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'tests/unit/corepackToolchain.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const strategyAuditSliceTimeoutFilesChanged = [
   'tests/unit/productionApprovalPacket.test.ts',
   'tests/unit/strategyCompletionAudit.test.ts',
@@ -4910,6 +4917,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releasePreflightPublicCheckHandleFilesChanged,
   ...releaseToolchainPnpmDiagnosticFilesChanged,
   ...releaseToolchainGitLfsHookDiagnosticFilesChanged,
+  ...releaseToolchainCorepackEnvDiagnosticFilesChanged,
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
@@ -5041,6 +5049,15 @@ const releaseToolchainGitLfsHookDiagnosticTestsRun = [
   'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'node scripts/report-launch-evidence-manifest.mjs',
   'pnpm run check:release-preflight-report',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const releaseToolchainCorepackEnvDiagnosticTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'node scripts/check-corepack-toolchain.mjs (expected blocker output while Corepack is missing)',
+  'node scripts/report-launch-evidence-manifest.mjs',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
@@ -5307,6 +5324,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releasePreflightPublicCheckHandleTestsRun,
   ...releaseToolchainPnpmDiagnosticTestsRun,
   ...releaseToolchainGitLfsHookDiagnosticTestsRun,
+  ...releaseToolchainCorepackEnvDiagnosticTestsRun,
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
@@ -5809,6 +5827,19 @@ const safeFixImplementationDecisions = [
     reason: 'The commit hook emitted a real warning when git-lfs was absent from the Git hook PATH, while a PATH-injected release-preflight run could still pass git lfs version; operators need that hook-path risk visible before push or deploy evidence is trusted.',
     proof_boundary: 'This record adds Git LFS hook-path diagnostic visibility only; it does not rewrite hooks, install Git LFS, guarantee future commit or push hook PATH, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
     stop_gate: 'Do not treat Git LFS hook diagnostics, matching git-lfs version output, focused release-preflight report/check success, skipped probes, or this code optimization ledger as future commit-hook proof, push-path proof, source provenance cleanup, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    decision: 'Expose current-shell tool resolution inside the hard Corepack toolchain gate when Corepack is missing.',
+    acceptance_check: 'check:corepack-toolchain exits nonzero on missing Corepack while showing the expected pnpm packageManager pin, current PATH, current corepack resolution, bare pnpm version context, and git-lfs context without accepting bare pnpm as release evidence.',
+    chosen_variant: 'minimal Corepack environment diagnostic',
+    repo_pattern_reused: 'Existing check-corepack-toolchain hard gate, release_preflight non-clearance diagnostic language, and launch manifest code-optimization ledger contract.',
+    files_changed: releaseToolchainCorepackEnvDiagnosticFilesChanged,
+    tests_run: releaseToolchainCorepackEnvDiagnosticTestsRun,
+    proof: 'The patch adds environment diagnostics to the existing hard-failing Corepack checker and covers the missing-Corepack plus matching bare-pnpm case in the focused unit test without adding a release fallback.',
+    reason: 'The manifest-level release-preflight report already separated Corepack, bare pnpm, and Git LFS context, but the standalone release gate still stopped with a terse ENOENT that hid the shell split operators need to remediate correctly.',
+    proof_boundary: 'This record adds current-shell diagnostic visibility only; it does not install Corepack, enable Corepack, rewrite PATH, treat bare pnpm as Corepack evidence, run release-readiness, clear source provenance, push, deploy, grant owner approval, prove hosted/live parity, prove production approval, or raise launch status.',
+    stop_gate: 'Do not treat Corepack checker diagnostics, matching bare pnpm version output, git-lfs context, skipped probes, or this code optimization ledger as Corepack-pinned release-readiness, source provenance cleanup, push-path proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -6702,6 +6733,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'A third row could be more visible, but it would increase row-count churn and duplicate the Git LFS gate semantics.',
     evidence: 'The existing Git LFS push-path row already contains command, current, expected, proof boundary, stop gate, and diagnostic fields.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    variant: 'Install or enable Corepack from check-corepack-toolchain.',
+    reason_rejected: 'The checker is a release evidence gate, not an environment mutator; global toolchain changes require explicit owner intent.',
+    tradeoff: 'Automatic remediation could clear one workstation blocker, but it would hide environment truth and still would not clear source provenance, release-readiness, owner approval, deploy, or live proof.',
+    evidence: 'The Corepack checker and release-preflight proof boundaries both require Corepack-pinned evidence and reject tool installation as report/check side effect.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    variant: 'Treat matching bare pnpm as the release resolver when Corepack is missing.',
+    reason_rejected: 'Bare pnpm can match the packageManager version while bypassing the Corepack resolver contract used by release-readiness and deployment evidence.',
+    tradeoff: 'Fallback would make the current shell appear less blocked but would weaken reproducible release evidence.',
+    evidence: 'The current shell can expose pnpm 10.23.0 while corepack pnpm --version still fails with Corepack unavailable.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    variant: 'Leave check-corepack-toolchain with only the raw ENOENT message.',
+    reason_rejected: 'Operators would need to run separate shell probes to distinguish missing Corepack from missing pnpm, matching bare pnpm, or Git LFS PATH drift.',
+    tradeoff: 'No-code defer keeps the checker smaller, but leaves the first release gate less informative than the focused release-preflight report.',
+    evidence: 'The release-preflight report already exposes non-clearance bare pnpm and Git LFS diagnostics, while the standalone Corepack gate previously did not.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    variant: 'Rewrite release-readiness scripts to use bare pnpm instead of Corepack.',
+    reason_rejected: 'Changing the release runner would invert the repository packageManager contract and blur local workaround evidence with production release evidence.',
+    tradeoff: 'Bare pnpm execution may be easier in this shell, but it would weaken every downstream approval and deployment proof row.',
+    evidence: 'package.json pins packageManager=pnpm@10.23.0 and check:release-readiness starts with check-corepack-toolchain before any Corepack-pinned command chain runs.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -7031,6 +7090,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds hook-path diagnostic fields to the existing Git LFS toolchain row, reuses report/check/table contracts, and avoids hook mutation, global PATH mutation, new dependencies, new release gates, push execution, deploy execution, or launch-status changes.',
     tests_or_checks: releaseToolchainGitLfsHookDiagnosticTestsRun,
     remaining_risk: 'Git LFS hook execution still depends on the PATH used by future git commit and pre-push invocations; release readiness also remains blocked until Corepack, source provenance, branch review, Supabase advisor, buyer evidence, owner approval, guarded deploy, and post-deploy live proof are current.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change adds diagnostic lines to the existing hard Corepack checker and one focused unit assertion path, with no package-manager fallback, no tool installation, no PATH rewrite, no new dependency, no release execution, and no launch-status change.',
+    tests_or_checks: releaseToolchainCorepackEnvDiagnosticTestsRun,
+    remaining_risk: 'Release readiness remains blocked until Corepack is actually available in the release shell, Corepack-pinned release-readiness passes, source provenance is clean, Git LFS evidence is current for commit/push, branch review and Supabase advisor evidence clear, buyer evidence exists, owner approval is explicit, guarded deploy completes, and post-deploy live proof passes.',
   },
 ];
 

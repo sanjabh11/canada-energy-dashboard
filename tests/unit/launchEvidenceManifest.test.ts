@@ -788,9 +788,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(35);
+    expect(manifest.implementation_decisions).toHaveLength(36);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(35);
+    expect(manifest.code_optimization_reviews).toHaveLength(36);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1693,6 +1693,28 @@ describe('launch evidence manifest report', () => {
     expect(releaseToolchainGitLfsHookDiagnosticReview.tests_or_checks).toEqual(expect.arrayContaining([
       'node scripts/report-launch-evidence-manifest.mjs',
       'pnpm run check:release-preflight-report',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const releaseToolchainCorepackEnvDiagnosticDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    );
+    expect(releaseToolchainCorepackEnvDiagnosticDecision).toBeTruthy();
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.chosen_variant).toBe('minimal Corepack environment diagnostic');
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/check-corepack-toolchain.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'tests/unit/corepackToolchain.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.proof_boundary).toMatch(/does not install Corepack|enable Corepack|rewrite PATH|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i);
+    const releaseToolchainCorepackEnvDiagnosticReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
+    );
+    expect(releaseToolchainCorepackEnvDiagnosticReview).toBeTruthy();
+    expect(releaseToolchainCorepackEnvDiagnosticReview.policy).toBe('strict');
+    expect(releaseToolchainCorepackEnvDiagnosticReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'node scripts/check-corepack-toolchain.mjs (expected blocker output while Corepack is missing)',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
