@@ -95,8 +95,14 @@ describe('buyer evidence gate readiness report', () => {
       (item: { retained_artifact_required: boolean }) => item.retained_artifact_required === true,
     )).toBe(true);
     expect(payload.launch_action_buyer_row.phase).toBe('buyer_evidence');
+    expect(payload.launch_action_buyer_row.proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(payload.launch_action_buyer_row.proof_command).toContain('check:buyer-evidence-gate-report');
     expect(payload.production_approval_buyer_prerequisite.prerequisite).toBe('Buyer evidence hard gate');
+    expect(payload.production_approval_buyer_prerequisite.proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(payload.production_approval_buyer_prerequisite.proof_command).toContain('check:buyer-evidence-gate-report');
     expect(payload.production_approval_request_buyer_row.prerequisite).toBe('Buyer evidence hard gate');
+    expect(payload.production_approval_request_buyer_row.proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(payload.production_approval_request_buyer_row.proof_command).toContain('check:buyer-evidence-gate-report');
     expect(payload.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95|grant production approval/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|buyer-proven evidence|commercial-ready status|hosted\/live parity/i);
   });

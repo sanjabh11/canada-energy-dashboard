@@ -101,6 +101,8 @@ if (failures.length === 0) {
     assertContains(stdout, 'post_deploy_boundary', 'Report must include the post-deploy boundary phase.');
     assertContains(stdout, '## Launch Action Production Approval Row', 'Report must include the launch action production approval row.');
     assertContains(stdout, '## Release Preflight Owner Approval Row', 'Report must include the release preflight owner approval row.');
+    assertContains(stdout, 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Report must include the buyer evidence gate focused command.');
+    assertContains(stdout, 'corepack pnpm run check:buyer-evidence-gate-report', 'Report must include the buyer evidence gate checker command.');
     assertContains(stdout, 'corepack pnpm run check:production-deploy-request', 'Report must include the production deploy request command.');
     assertContains(stdout, 'corepack pnpm run report:production-approval-packet', 'Report must include the production approval packet command.');
   }
@@ -165,6 +167,16 @@ if (failures.length === 0) {
       'Supabase advisor clearance request row must point to the focused Supabase advisor report/check.',
     );
     assert(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.request_phase === 'pre_request', 'Buyer evidence hard gate must be a pre-request row.');
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(prerequisiteRowsByName.get('Buyer evidence hard gate')?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(prerequisiteRowsByName.get('Buyer evidence hard gate')?.proof_command ?? ''),
+      'Buyer evidence prerequisite must point to the focused buyer evidence gate report/check.',
+    );
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(requestRowsByPrerequisite.get('Buyer evidence hard gate')?.proof_command ?? ''),
+      'Buyer evidence request row must point to the focused buyer evidence gate report/check.',
+    );
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.request_phase === 'owner_decision', 'Explicit owner approval must be an owner-decision row.');
     assert(requestRowsByPrerequisite.get('Post-deploy live proof boundary')?.request_phase === 'post_deploy_boundary', 'Post-deploy live proof must be a post-deploy boundary row.');
     assert(requestRowsByPrerequisite.get('Explicit owner production approval')?.blocks_request === false, 'Owner decision row must not count as a pre-request blocker.');

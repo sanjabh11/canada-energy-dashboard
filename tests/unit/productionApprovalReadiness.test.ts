@@ -118,6 +118,10 @@ describe('production approval readiness report', () => {
     expect(prerequisiteRows.get('Supabase advisor clearance').proof_command).toContain('check:supabase-advisor-report');
     expect(requestRows.get('Supabase advisor clearance').proof_command).toContain('report:supabase-advisor-readiness');
     expect(requestRows.get('Supabase advisor clearance').proof_command).toContain('check:supabase-advisor-report');
+    expect(prerequisiteRows.get('Buyer evidence hard gate').proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(prerequisiteRows.get('Buyer evidence hard gate').proof_command).toContain('check:buyer-evidence-gate-report');
+    expect(requestRows.get('Buyer evidence hard gate').proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(requestRows.get('Buyer evidence hard gate').proof_command).toContain('check:buyer-evidence-gate-report');
     expect(requestRows.get('Buyer evidence hard gate').request_phase).toBe('pre_request');
     expect(requestRows.get('Explicit owner production approval').request_phase).toBe('owner_decision');
     expect(requestRows.get('Post-deploy live proof boundary').request_phase).toBe('post_deploy_boundary');

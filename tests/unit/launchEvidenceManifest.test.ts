@@ -436,6 +436,7 @@ describe('launch evidence manifest report', () => {
     expect(launchActionsByPhase.get('supabase_advisor')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(launchActionsByPhase.get('supabase_advisor')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_type).toBe('retained_buyer_evidence_validation');
+    expect(launchActionsByPhase.get('buyer_evidence')?.proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(launchActionsByPhase.get('buyer_evidence')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
     expect(launchActionsByPhase.get('production_approval')?.proof_type).toBe('manual_approval_gate');
     expect(launchActionsByPhase.get('production_approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
@@ -509,6 +510,7 @@ describe('launch evidence manifest report', () => {
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(productionPrerequisitesByName.get('Supabase advisor clearance')?.proof_boundary).toMatch(/authorized Supabase dashboard or connector/i);
     expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_type).toBe('retained_buyer_evidence_validation');
+    expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(productionPrerequisitesByName.get('Buyer evidence hard gate')?.proof_boundary).toMatch(/real anonymized accepted buyer rows|retained redacted artifacts/i);
     expect(productionPrerequisitesByName.get('Explicit owner production approval')?.proof_type).toBe('manual_approval');
     expect(productionPrerequisitesByName.get('Explicit owner production approval')?.proof_boundary).toMatch(/does not approve|deploy/i);
@@ -549,7 +551,9 @@ describe('launch evidence manifest report', () => {
     expect(productionRequestRowsByName.get('Clean source provenance')?.evidence_to_attach).toMatch(/source-provenance/i);
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.evidence_to_attach).toMatch(/focused Supabase advisor report\/check/i);
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/focused buyer-evidence hard-gate report\/check/i);
     expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/validate:pilot-evidence/i);
+    expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.proof_command).toBe('corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report');
     expect(manifest.post_deploy_live_proof.status).toBe('blocked');
     expect(manifest.post_deploy_live_proof.current_source_live_proven).toBe(false);
     expect(manifest.post_deploy_live_proof.evidence).toContain('Post-deploy live proof gate queue');
@@ -727,9 +731,9 @@ describe('launch evidence manifest report', () => {
       'pnpm run test:e2e:preview',
       'pnpm run test:strategy-audit-slice',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(22);
+    expect(manifest.implementation_decisions).toHaveLength(23);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(22);
+    expect(manifest.code_optimization_reviews).toHaveLength(23);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -778,6 +782,10 @@ describe('launch evidence manifest report', () => {
       'Duplicate buyer evidence readiness scanning in a standalone hard-gate implementation.',
       'Contact buyers, create evidence workspaces, or update pilot evidence registers from the focused report.',
       'Add package scripts only and leave public status, release posture, docs, and validators on broad buyer evidence handles.',
+      'Leave launch action and production approval buyer rows pointing only at raw validate:pilot-evidence placeholders.',
+      'Run validate:pilot-evidence or create/update buyer evidence artifacts to clear the buyer blocker.',
+      'Treat focused buyer gate report/check success as accepted buyer evidence or 95% validation.',
+      'Duplicate buyer evidence readiness or remediation parsing in launch action or production approval rows.',
       'Leave release preflight only inside the large launch manifest and commercial launch report.',
       'Duplicate release preflight probing logic in a new standalone implementation.',
       'Make the focused checker pass the release gate or install Corepack/Git LFS automatically.',
@@ -901,6 +909,28 @@ describe('launch evidence manifest report', () => {
     expect(buyerEvidenceGateReportReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:buyer-evidence-gate-readiness',
       'pnpm run check:buyer-evidence-gate-report',
+    ]));
+    const buyerEvidenceProofHandleDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES',
+    );
+    expect(buyerEvidenceProofHandleDecision).toBeTruthy();
+    expect(buyerEvidenceProofHandleDecision.chosen_variant).toBe('minimal focused buyer evidence proof-handle derivation');
+    expect(buyerEvidenceProofHandleDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'tests/unit/buyerEvidenceGateReadiness.test.ts',
+    ]));
+    expect(buyerEvidenceProofHandleDecision.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|run retained-artifact validation as clearance|validate 95%|grant production approval|hosted\/live parity/i);
+    const buyerEvidenceProofHandleReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES',
+    );
+    expect(buyerEvidenceProofHandleReview).toBeTruthy();
+    expect(buyerEvidenceProofHandleReview.policy).toBe('strict');
+    expect(buyerEvidenceProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:buyer-evidence-gate-readiness',
+      'pnpm run check:buyer-evidence-gate-report',
+      'pnpm run check:production-approval-report -- --skip-probes',
     ]));
     const releasePreflightDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT',
@@ -1646,7 +1676,7 @@ describe('launch evidence manifest report', () => {
     expect(stdout).toContain('release-toolchain probe(s) open');
     expect(stdout).toContain('focused launch evidence validation must stay attached before a deploy approval request');
     expect(stdout).toContain('Refresh the release toolchain probe ledger');
-    expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/);
+    expect(stdout).toMatch(/\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| blocked \|/);
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
     expect(stdout).toContain('Do not claim buyer-proven 95% confidence');
     expect(stdout).toContain('Buyer evidence review');

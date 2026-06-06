@@ -132,6 +132,21 @@ if (failures.length === 0) {
     assert(payload.launch_action_buyer_row?.phase === 'buyer_evidence', 'Focused JSON must include the launch action buyer row.');
     assert(payload.production_approval_buyer_prerequisite?.prerequisite === 'Buyer evidence hard gate', 'Focused JSON must include the production approval buyer prerequisite.');
     assert(payload.production_approval_request_buyer_row?.prerequisite === 'Buyer evidence hard gate', 'Focused JSON must include the production approval request buyer row.');
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(payload.launch_action_buyer_row?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(payload.launch_action_buyer_row?.proof_command ?? ''),
+      'Launch action buyer row must point to the focused buyer evidence gate report/check.',
+    );
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(payload.production_approval_buyer_prerequisite?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(payload.production_approval_buyer_prerequisite?.proof_command ?? ''),
+      'Production approval buyer prerequisite must point to the focused buyer evidence gate report/check.',
+    );
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(payload.production_approval_request_buyer_row?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(payload.production_approval_request_buyer_row?.proof_command ?? ''),
+      'Production approval buyer request row must point to the focused buyer evidence gate report/check.',
+    );
     assert(/does not contact buyers|create accepted evidence|move confidence|attach retained artifacts|validate 95|grant production approval/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must preserve buyer non-execution and no-approval semantics.');
     assert(/Do not treat this focused report|buyer-proven evidence|Phase F 95% validation|commercial-ready status|hosted\/live parity/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject buyer-proof and readiness claims from this report itself.');
     for (const [index, item] of (deficits.items ?? []).entries()) {

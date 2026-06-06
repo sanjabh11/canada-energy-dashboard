@@ -164,7 +164,7 @@ function assertReport(markdown, options = {}) {
   assert(markdown.includes('| production_approval |'), 'Report must include the production approval action phase.');
   assert(markdown.includes('| post_deploy_live_proof |'), 'Report must include the post-deploy live proof action phase.');
   assert(
-    /\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run validate:pilot-evidence -- path\/to\/register\.csv --require-95 --evidence-root path\/to\/redacted-artifacts \|[^|\n]+\| blocked \|/.test(markdown),
+    /\| 6 \| buyer_evidence \| (?:[1-9]\d*|unknown) buyer hard-gate deficit\(s\) remain \| buyer_operator \|[^|\n]+\| corepack pnpm run report:buyer-evidence-gate-readiness && corepack pnpm run check:buyer-evidence-gate-report \|[^|\n]+\| blocked \|/.test(markdown),
     'Report must keep buyer evidence action blocked while hard-gate deficits remain.',
   );
   assert(markdown.includes('corepack pnpm run check:post-deploy-live'), 'Report must include the post-deploy live proof command.');
@@ -414,6 +414,8 @@ function assertReport(markdown, options = {}) {
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BRANCH-REVIEW-QUEUE-STATUS'), 'Code optimization report must include the branch review queue status safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BUYER-EVIDENCE-STARTER-REGISTER-BOUNDARY'), 'Code optimization report must include the buyer evidence starter-register boundary safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BUYER-EVIDENCE-GATE-FOCUSED-REPORT'), 'Code optimization report must include the buyer evidence gate focused report safe-fix task id.');
+  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES'), 'Code optimization report must include the buyer evidence proof-handle safe-fix task id.');
+  assert(codeOptimizationSection.includes('minimal focused buyer evidence proof-handle derivation'), 'Code optimization report must include the buyer evidence proof-handle chosen variant.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT'), 'Code optimization report must include the release preflight focused report safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-RELEASE-PREFLIGHT-SOURCE-OF-TRUTH-HANDLES'), 'Code optimization report must include the release preflight source-of-truth handle safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-STRATEGY-AUDIT-SLICE-TIMEOUT-BUDGET'), 'Code optimization report must include the strategy audit slice timeout-budget safe-fix task id.');

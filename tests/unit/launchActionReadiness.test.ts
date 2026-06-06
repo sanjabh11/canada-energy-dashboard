@@ -131,6 +131,8 @@ describe('launch action readiness report', () => {
     expect(rowsByPhase.get('supabase_advisor')?.proof_command).toContain('report:supabase-advisor-readiness');
     expect(rowsByPhase.get('supabase_advisor')?.proof_command).toContain('check:supabase-advisor-report');
     expect(rowsByPhase.get('buyer_evidence')?.proof_type).toBe('retained_buyer_evidence_validation');
+    expect(rowsByPhase.get('buyer_evidence')?.proof_command).toContain('report:buyer-evidence-gate-readiness');
+    expect(rowsByPhase.get('buyer_evidence')?.proof_command).toContain('check:buyer-evidence-gate-report');
     expect(rowsByPhase.get('production_approval')?.proof_type).toBe('manual_approval_gate');
     expect(rowsByPhase.get('post_deploy_live_proof')?.proof_type).toBe('post_deploy_live_proof_gate');
     expect(lanes).toEqual(expect.arrayContaining([

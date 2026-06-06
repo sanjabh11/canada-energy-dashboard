@@ -972,6 +972,12 @@ try {
     assert(launchEvidenceActionItem.status === 'ready', 'Launch evidence validation action must not remain a self-blocking launch action row after focused validation evidence is externalized.');
     assert(/do not.*production approval.*buyer acceptance.*current hosted\/live parity/i.test(launchEvidenceActionItem.stop_gate), 'Launch evidence validation action must preserve the no-approval, no-buyer-proof, and no-live-parity boundary.');
     const buyerActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'buyer_evidence');
+    assert(buyerActionItem, 'Launch action queue must include a buyer_evidence phase.');
+    assert(
+      buyerActionItem.proof_command.includes('report:buyer-evidence-gate-readiness')
+        && buyerActionItem.proof_command.includes('check:buyer-evidence-gate-report'),
+      'Buyer evidence launch action must run the focused buyer evidence gate report and checker.',
+    );
     if (Number.isInteger(manifest.buyer_evidence?.hard_gate_deficits?.open_count) && manifest.buyer_evidence.hard_gate_deficits.open_count > 0) {
       assert(manifest.buyer_evidence.hard_gate_deficits.status !== 'pass', 'Buyer hard-gate deficits status must not pass while open deficits remain.');
       assert(buyerActionItem?.status !== 'ready', 'Buyer evidence launch action must not be ready while hard-gate deficits remain.');
@@ -1096,6 +1102,7 @@ try {
     const launchEvidencePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Launch evidence validation');
     const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
     const branchPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Canonical branch review');
+    const buyerPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Buyer evidence hard gate');
     assert(launchEvidencePrerequisiteItem, 'Production approval prerequisite queue must include launch evidence validation.');
     assert(launchEvidencePrerequisiteItem.proof_command === 'corepack pnpm run check:launch-evidence-manifest', 'Launch evidence validation prerequisite must include the manifest validation proof command.');
     assert(launchEvidencePrerequisiteItem.status === 'ready', 'Launch evidence validation prerequisite must not be a circular self-blocker inside the request packet.');
@@ -1123,6 +1130,12 @@ try {
       supabasePrerequisiteItem.proof_command.includes('report:supabase-advisor-readiness')
         && supabasePrerequisiteItem.proof_command.includes('check:supabase-advisor-report'),
       'Supabase advisor clearance prerequisite must run the focused Supabase advisor report and checker.',
+    );
+    assert(buyerPrerequisiteItem, 'Production approval prerequisite queue must include Buyer evidence hard gate.');
+    assert(
+      buyerPrerequisiteItem.proof_command.includes('report:buyer-evidence-gate-readiness')
+        && buyerPrerequisiteItem.proof_command.includes('check:buyer-evidence-gate-report'),
+      'Buyer evidence prerequisite must run the focused buyer evidence gate report and checker.',
     );
     assert(ownerApprovalItem?.status === 'manual_stop', 'Production approval prerequisite queue must keep explicit owner approval at manual_stop.');
     assert(ownerApprovalItem?.current === 'not granted by this manifest or report', 'Production approval prerequisite queue must not imply owner approval is granted.');
@@ -1190,6 +1203,14 @@ try {
         assert(item.source_status === 'ready', 'Launch evidence validation request row must inherit ready status from the externally validated prerequisite.');
         assert(item.blocks_request === false, 'Launch evidence validation request row must not circularly block the packet after external validation is attached.');
         assert(/does not grant approval|buyer acceptance|deployment|live parity/i.test(item.request_impact), 'Launch evidence validation request impact must preserve the no-approval and no-live-parity boundary.');
+      }
+      if (item.prerequisite === 'Buyer evidence hard gate') {
+        assert(
+          item.proof_command.includes('report:buyer-evidence-gate-readiness')
+            && item.proof_command.includes('check:buyer-evidence-gate-report'),
+          'Buyer evidence request row must run the focused buyer evidence gate report and checker.',
+        );
+        assert(/focused buyer-evidence hard-gate report\/check/i.test(item.evidence_to_attach), 'Buyer evidence request row must attach focused buyer evidence gate report/check output.');
       }
       if (item.prerequisite === 'Explicit owner production approval') {
         assert(item.request_phase === 'owner_decision', 'Explicit owner production approval request row must be owner_decision.');
@@ -2038,6 +2059,34 @@ try {
         && buyerEvidenceGateReportReview.tests_or_checks.some((check) => /report:buyer-evidence-gate-readiness/.test(check))
         && buyerEvidenceGateReportReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report/.test(check)),
       'Buyer evidence gate focused report code optimization review must record focused buyer gate report and checker proof.',
+    );
+    const buyerEvidenceProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES');
+    assert(buyerEvidenceProofHandleDecision, 'Manifest must record the buyer evidence proof-handle implementation decision.');
+    assert(
+      buyerEvidenceProofHandleDecision?.chosen_variant === 'minimal focused buyer evidence proof-handle derivation',
+      'Buyer evidence proof-handle decision must record the chosen minimal focused proof-handle variant.',
+    );
+    assert(
+      Array.isArray(buyerEvidenceProofHandleDecision?.files_changed)
+        && buyerEvidenceProofHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && buyerEvidenceProofHandleDecision.files_changed.includes('scripts/check-buyer-evidence-gate-readiness-report.mjs')
+        && buyerEvidenceProofHandleDecision.files_changed.includes('tests/unit/buyerEvidenceGateReadiness.test.ts'),
+      'Buyer evidence proof-handle decision must record manifest, buyer gate checker, and buyer evidence gate unit test file changes.',
+    );
+    assert(
+      /does not contact buyers|create accepted evidence|run retained-artifact validation as clearance|validate 95%|grant production approval|hosted\/live parity/i.test(buyerEvidenceProofHandleDecision?.proof_boundary ?? ''),
+      'Buyer evidence proof-handle decision must preserve no-contact, no-evidence, no-validation-clearance, no-approval, and no-live-parity boundaries.',
+    );
+    const buyerEvidenceProofHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PROOF-HANDLES');
+    assert(buyerEvidenceProofHandleReview, 'Manifest must record the buyer evidence proof-handle code optimization review.');
+    assert(buyerEvidenceProofHandleReview?.policy === 'strict', 'Buyer evidence proof-handle code optimization review must use strict policy.');
+    assert(buyerEvidenceProofHandleReview?.verdict === 'pass', 'Buyer evidence proof-handle code optimization review must pass.');
+    assert(
+      Array.isArray(buyerEvidenceProofHandleReview?.tests_or_checks)
+        && buyerEvidenceProofHandleReview.tests_or_checks.some((check) => /report:buyer-evidence-gate-readiness/.test(check))
+        && buyerEvidenceProofHandleReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report/.test(check))
+        && buyerEvidenceProofHandleReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check)),
+      'Buyer evidence proof-handle code optimization review must record focused buyer gate and production approval checker proof.',
     );
     const releasePreflightDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-FOCUSED-REPORT');
     assert(releasePreflightDecision, 'Manifest must record the release preflight focused report implementation decision.');

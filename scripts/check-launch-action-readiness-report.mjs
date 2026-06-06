@@ -103,6 +103,8 @@ if (failures.length === 0) {
     assertContains(stdout, 'corepack pnpm run report:source-provenance-readiness', 'Report must include the source provenance focused command.');
     assertContains(stdout, 'corepack pnpm run report:launch-evidence-validation-readiness', 'Report must include the launch evidence validation focused command.');
     assertContains(stdout, 'corepack pnpm run check:launch-evidence-validation-report', 'Report must include the launch evidence validation checker command.');
+    assertContains(stdout, 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Report must include the buyer evidence gate focused command.');
+    assertContains(stdout, 'corepack pnpm run check:buyer-evidence-gate-report', 'Report must include the buyer evidence gate checker command.');
     assertContains(stdout, 'corepack pnpm run report:production-approval-readiness', 'Report must include the production approval focused command.');
     assertContains(stdout, 'corepack pnpm run report:post-deploy-live-proof-readiness', 'Report must include the post-deploy focused command.');
   }
@@ -147,6 +149,11 @@ if (failures.length === 0) {
       'Supabase advisor row must point to the focused Supabase advisor report/check.',
     );
     assert(rowsByPhase.get('buyer_evidence')?.proof_type === 'retained_buyer_evidence_validation', 'Buyer row must keep retained evidence proof type.');
+    assert(
+      /report:buyer-evidence-gate-readiness/.test(rowsByPhase.get('buyer_evidence')?.proof_command ?? '')
+        && /check:buyer-evidence-gate-report/.test(rowsByPhase.get('buyer_evidence')?.proof_command ?? ''),
+      'Buyer evidence row must point to the focused buyer evidence gate report/check.',
+    );
     assert(rowsByPhase.get('production_approval')?.proof_type === 'manual_approval_gate', 'Production approval row must keep manual approval proof type.');
     assert(rowsByPhase.get('post_deploy_live_proof')?.proof_type === 'post_deploy_live_proof_gate', 'Post-deploy row must keep post-deploy proof type.');
     assert(lanes.includes('source_provenance') && lanes.includes('post_deploy_live_proof'), 'Lane status summary must include source and post-deploy lanes.');
