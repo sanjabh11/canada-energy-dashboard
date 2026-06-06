@@ -3805,6 +3805,134 @@ function branchClearanceMatrixEvidence(matrix) {
   ].join(' ');
 }
 
+function branchOperatorHandoffExecutionGate(row) {
+  switch (row.blocker_class) {
+    case 'review_first':
+      return 'read_only_focused_review_first';
+    case 'canonical_head_decision':
+      return 'owner_canonical_head_decision_first';
+    case 'drift_review':
+      return 'drift_review_first';
+    case 'focused_review':
+      return 'focused_branch_review_first';
+    default:
+      return 'branch_prerequisite_review';
+  }
+}
+
+function branchOperatorHandoffOwner(row) {
+  return row.blocker_class === 'canonical_head_decision' ? 'owner' : 'operator';
+}
+
+function branchOperatorHandoffAction(row) {
+  switch (row.blocker_class) {
+    case 'review_first':
+      return 'Run the focused read-only branch review command and attach the resulting packet before any merge, push, discard, migration, or deploy discussion.';
+    case 'canonical_head_decision':
+      return 'Record the explicit owner canonical-head decision after read-only branch review evidence is attached.';
+    case 'drift_review':
+      return 'Run or attach focused drift review evidence for this stale or aging branch family before treating it as launch-cleared.';
+    case 'focused_review':
+      return 'Attach focused branch review evidence before any branch action or production approval request.';
+    default:
+      return 'Review this branch prerequisite with read-only evidence and explicit owner gates.';
+  }
+}
+
+function branchOperatorHandoffEvidence(packet) {
+  if (packet.status === 'skipped') {
+    return 'Branch operator handoff packet skipped by --skip-probes; run corepack pnpm run report:branch-review-readiness without --skip-probes to populate read-only branch handoff rows.';
+  }
+  if (packet.status === 'ready') {
+    return 'Branch operator handoff packet: status=ready source=branch_review.clearance_matrix.rows blocked=0 approval_gate=owner approval, release gates, and production approval still apply before merge or deploy.';
+  }
+
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_branch_gate)
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.family}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Branch operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is read-only planning evidence only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, or prove hosted/live parity',
+  ].join(' ');
+}
+
+function buildBranchOperatorHandoffPacket(clearanceMatrix) {
+  if (clearanceMatrix.status === 'skipped') {
+    const packet = {
+      status: 'skipped',
+      proof_type: 'branch_operator_handoff_packet',
+      source: 'branch_review.clearance_matrix.rows',
+      item_count: 0,
+      blocked_count: 0,
+      review_first_count: null,
+      canonical_decision_count: null,
+      drift_review_count: null,
+      high_risk_count: null,
+      stale_or_aging_count: null,
+      proof_boundary: 'This branch operator handoff packet is read-only planning evidence only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, or prove hosted/live parity.',
+      stop_gate: 'Do not mark branch review clear, select canonical heads, merge, push, discard, delete, deploy, or request production approval from skipped branch handoff probes.',
+      items: [],
+    };
+    return { ...packet, evidence: branchOperatorHandoffEvidence(packet) };
+  }
+
+  const rows = clearanceMatrix.rows ?? [];
+  const items = rows.map((row) => {
+    const status = row.clearance_status === 'pass' ? 'ready' : 'blocked';
+    return {
+      rank: row.rank,
+      family: row.family,
+      review_ref: row.review_ref,
+      local_ref: row.local_ref,
+      origin_ref: row.origin_ref,
+      owner: branchOperatorHandoffOwner(row),
+      status,
+      clearance_status: row.clearance_status,
+      highest_risk: row.highest_risk,
+      priority: row.priority,
+      blocker_class: row.blocker_class,
+      local_origin_state: row.local_origin_state,
+      freshness: row.freshness,
+      age: row.age,
+      current: `${row.local_origin_state}; risk=${row.highest_risk}; freshness=${row.freshness}; blocker=${row.blocker_class}`,
+      needed: row.canonical_decision_needed,
+      action: branchOperatorHandoffAction(row),
+      execution_gate: branchOperatorHandoffExecutionGate(row),
+      proof_command: row.required_proof_command,
+      proof_type: row.proof_type,
+      read_only: true,
+      proof_boundary: `${row.proof_boundary} This branch operator handoff row is read-only planning evidence only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, or prove hosted/live parity.`,
+      stop_gate: `${row.stop_gate} Do not execute, mutate branch state, select canonical heads, request production approval, or mark this row ready from the handoff packet itself.`,
+      blocks_branch_gate: row.blocks_launch_clearance === true || status !== 'ready',
+      can_execute_from_packet: false,
+    };
+  });
+  const packet = {
+    status: items.every((item) => !item.blocks_branch_gate) ? 'ready' : 'blocked',
+    proof_type: 'branch_operator_handoff_packet',
+    source: 'branch_review.clearance_matrix.rows',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_branch_gate).length,
+    review_first_count: items.filter((item) => item.blocker_class === 'review_first').length,
+    canonical_decision_count: items.filter((item) => item.blocker_class === 'canonical_head_decision').length,
+    drift_review_count: items.filter((item) => item.blocker_class === 'drift_review').length,
+    high_risk_count: items.filter((item) => item.highest_risk === 'high').length,
+    stale_or_aging_count: items.filter((item) => ['stale', 'aging'].includes(item.freshness)).length,
+    proof_boundary: 'This branch operator handoff packet is read-only planning evidence only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, or prove hosted/live parity.',
+    stop_gate: 'Do not mark branch review clear, request production approval, merge, push, discard, delete, deploy, or claim hosted/live parity from this handoff; run each read-only proof command separately and record owner canonical-head decisions after release gates are clean.',
+    items,
+  };
+  return { ...packet, evidence: branchOperatorHandoffEvidence(packet) };
+}
+
 function buildBranchClearanceMatrix({ branchReviewStatus, branchReviewQueue, canonicalHeadDecisions }) {
   if (branchReviewQueue.status === 'skipped') {
     const matrix = {
@@ -4641,6 +4769,7 @@ const branchClearanceMatrix = buildBranchClearanceMatrix({
   branchReviewQueue,
   canonicalHeadDecisions,
 });
+const branchOperatorHandoffPacket = buildBranchOperatorHandoffPacket(branchClearanceMatrix);
 const topBranchReviewPacket = probeTopBranchReviewPacket(branchReviewQueue);
 const reviewFirstBranchPackets = probeReviewFirstBranchPackets(branchReviewQueue);
 const supabaseAdvisor = probeSupabaseAdvisorStatus();
@@ -4697,6 +4826,7 @@ const branchReviewEvidence = [
   canonicalHeadDecisions.evidence,
   canonicalHeadResolutionQueue.evidence,
   branchClearanceMatrix.evidence,
+  branchOperatorHandoffPacket.evidence,
   reviewFirstBranchPackets.evidence,
   topBranchReviewPacket.evidence,
   topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -4981,6 +5111,17 @@ const releaseOperatorHandoffPacketFilesChanged = [
   'scripts/check-progress-digest-readiness-report.mjs',
   'scripts/check-commercial-launch-readiness-report.mjs',
   'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const branchOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-branch-review-readiness.mjs',
+  'scripts/check-branch-review-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/branchReviewReadiness.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
@@ -5340,6 +5481,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceRenameSummaryFilesChanged,
   ...sourceOwnerDecisionPacketFilesChanged,
   ...releaseOperatorHandoffPacketFilesChanged,
+  ...branchOperatorHandoffPacketFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -5571,6 +5713,24 @@ const releaseOperatorHandoffPacketTestsRun = [
   'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run report:release-preflight -- --skip-probes',
   'pnpm run check:release-preflight-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const branchOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-branch-review-readiness.mjs',
+  'node --check scripts/check-branch-review-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:branch-review-readiness -- --skip-probes',
+  'pnpm run report:branch-review-readiness -- --json',
+  'pnpm run check:branch-review-report -- --skip-probes',
+  'pnpm run check:branch-review-report',
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
@@ -5912,6 +6072,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceRenameSummaryTestsRun,
   ...sourceOwnerDecisionPacketTestsRun,
   ...releaseOperatorHandoffPacketTestsRun,
+  ...branchOperatorHandoffPacketTestsRun,
   ...releaseToolchainProofHandleTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
@@ -6588,6 +6749,19 @@ const safeFixImplementationDecisions = [
     reason: 'The release remediation queue named the blocked actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can install tools, run release-readiness, clear source provenance, push, deploy, request approval, or prove live parity.',
     proof_boundary: 'This record improves release operator handoff visibility only; it does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
     stop_gate: 'Do not treat the release operator handoff packet, focused release report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as toolchain remediation, release-readiness, clean source provenance, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a branch operator handoff packet derived from the branch clearance matrix.',
+    acceptance_check: 'branch_review.operator_handoff_packet records source linkage, status, item counts, execution gates, proof commands, read-only flags, proof boundaries, and non-executable packet rows; report:branch-review-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived branch operator handoff packet',
+    repo_pattern_reused: 'Existing branch_review.clearance_matrix rows, branch proof command/type helpers, focused branch-review report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: branchOperatorHandoffPacketFilesChanged,
+    tests_run: branchOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing branch_review.clearance_matrix rows, assigns explicit execution gates for review-first, canonical-head decision, drift, and focused review rows, marks every row read-only and non-executable from the packet, and validates source linkage, counts, commands, gates, and no-branch-mutation boundaries.',
+    reason: 'The branch clearance matrix named blocked branch families, but operators lacked a compact packet that sequences the next read-only proof commands without implying that report generation can checkout, merge, push, discard, delete, select canonical heads, run migrations, deploy, request approval, or prove live parity.',
+    proof_boundary: 'This record improves branch operator handoff visibility only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
+    stop_gate: 'Do not treat the branch operator handoff packet, focused branch report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as branch approval, canonical-head owner selection, merge approval, source cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7768,6 +7942,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused release-preflight report already reads the manifest release_preflight object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave branch operator actions implicit in branch_review.clearance_matrix rows.',
+    reason_rejected: 'Operators would still need to infer execution gates and no-mutation boundaries from matrix rows instead of seeing a compact source-linked handoff for the active branch-review blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps branch review less executable and easier to misread as a clearance matrix rather than a guarded handoff.',
+    evidence: 'branch_review.clearance_matrix.rows already contains family, blocker_class, proof command, proof boundary, stop gate, and clearance status, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    variant: 'Checkout, merge, push, discard, delete, or select canonical heads from the handoff phase.',
+    reason_rejected: 'Branch mutation and canonical-head owner selection are explicitly blocked until read-only review evidence, owner decisions, clean release gates, and approval gates are complete.',
+    tradeoff: 'Executing branch operations could reduce branch backlog only after prerequisites pass, but it would exceed this safe-fix boundary and risk mutating owner branch state.',
+    evidence: 'Branch clearance matrix stop gates require read-only focused review evidence, canonical-head owner decisions, clean release gates, and explicit owner approval before branch mutation or production approval claims.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate branch runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from branch_review.clearance_matrix.rows.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused branch-review report already reads the manifest branch_review object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8215,6 +8410,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: releaseOperatorHandoffPacketTestsRun,
     remaining_risk: 'The release operator handoff packet is planning guidance only; launch readiness still depends on current Corepack proof, Git LFS proof, clean source provenance, guarded release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact branch operator handoff from existing branch_review.clearance_matrix rows, renders it through the existing focused branch report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, checkout execution, branch mutation, canonical-head selection, migration execution, approval request, deploy execution, or launch-status changes.',
+    tests_or_checks: branchOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The branch operator handoff packet is planning guidance only; launch readiness still depends on focused read-only branch reviews, explicit owner canonical-head decisions, clean source provenance, current release-readiness proof, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8413,6 +8617,8 @@ const manifest = {
       branchReviewQueue.evidence,
       canonicalHeadDecisions.evidence,
       canonicalHeadResolutionQueue.evidence,
+      branchClearanceMatrix.evidence,
+      branchOperatorHandoffPacket.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,
@@ -8529,6 +8735,7 @@ const manifest = {
     canonical_head_decisions: canonicalHeadDecisions,
     canonical_head_resolution_queue: canonicalHeadResolutionQueue,
     clearance_matrix: branchClearanceMatrix,
+    operator_handoff_packet: branchOperatorHandoffPacket,
     review_first_packets: reviewFirstBranchPackets,
     top_review_packet: topBranchReviewPacket,
     evidence: [
@@ -8539,6 +8746,7 @@ const manifest = {
       canonicalHeadDecisions.evidence,
       canonicalHeadResolutionQueue.evidence,
       branchClearanceMatrix.evidence,
+      branchOperatorHandoffPacket.evidence,
       reviewFirstBranchPackets.evidence,
       topBranchReviewPacket.evidence,
       topBranchReviewPacket.canonical_head_comparison?.evidence,

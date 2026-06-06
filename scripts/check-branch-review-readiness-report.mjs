@@ -94,6 +94,12 @@ if (failures.length === 0) {
     assertContains(stdout, '## Canonical Head Decisions', 'Report must include canonical-head decisions.');
     assertContains(stdout, '## Canonical Head Resolution Queue', 'Report must include canonical-head resolution queue.');
     assertContains(stdout, '## Branch Clearance Matrix', 'Report must include the branch clearance matrix.');
+    assertContains(stdout, '## Branch Operator Handoff Packet', 'Report must include the branch operator handoff packet.');
+    assertContains(stdout, 'branch_operator_handoff_packet', 'Report must include the branch operator handoff proof type.');
+    assertContains(stdout, 'branch_review.clearance_matrix.rows', 'Report must expose the branch operator handoff packet source.');
+    assertContains(stdout, 'Execution Gate', 'Report must render branch operator handoff execution gates.');
+    assertContains(stdout, 'Can Execute From Packet', 'Report must render branch operator packet execution boundaries.');
+    assertContains(stdout, 'read-only planning evidence only', 'Report must preserve the branch operator handoff planning-only boundary.');
     assertContains(stdout, '## Review-First Branch Packets', 'Report must include review-first branch packets.');
     assertContains(stdout, '## Top Branch Review Packet', 'Report must include the top branch review packet.');
     assertContains(stdout, '## Top Branch Changed Supabase Function Rows', 'Report must include top branch Supabase function impact rows.');
@@ -102,6 +108,13 @@ if (failures.length === 0) {
     assertContains(stdout, '## Production Approval Branch Prerequisite', 'Report must include the production approval branch prerequisite.');
     assertContains(stdout, '## Production Approval Request Branch Row', 'Report must include the production approval request branch row.');
     assert(/does not[ \s\S]{0,240}(grant production approval|prove hosted\/live parity)/i.test(stdout), 'Report must preserve no-approval and no-live-proof language.');
+    const markdownOperatorRows = payload?.branch_review?.operator_handoff_packet?.items ?? [];
+    if (markdownOperatorRows.some((item) => item.blocker_class === 'review_first')) {
+      assertContains(stdout, 'read_only_focused_review_first', 'Report must render review-first branch operator execution gates when present.');
+    }
+    if (markdownOperatorRows.some((item) => item.blocker_class === 'canonical_head_decision')) {
+      assertContains(stdout, 'owner_canonical_head_decision_first', 'Report must render owner canonical-head decision execution gates when present.');
+    }
   }
 
   if (payload) {
@@ -110,6 +123,7 @@ if (failures.length === 0) {
     const canonical = branch.canonical_head_decisions ?? {};
     const resolutionQueue = branch.canonical_head_resolution_queue ?? {};
     const clearanceMatrix = branch.clearance_matrix ?? {};
+    const operatorHandoffPacket = branch.operator_handoff_packet ?? {};
     const packetSet = branch.review_first_packets ?? {};
     const topPacket = branch.top_review_packet ?? {};
 
@@ -133,6 +147,13 @@ if (failures.length === 0) {
     assert(Array.isArray(resolutionQueue.items), 'canonical_head_resolution_queue.items must be a list.');
     assert(clearanceMatrix.proof_type === 'read_only_branch_clearance_matrix', 'Focused JSON must include the branch clearance matrix.');
     assert(Array.isArray(clearanceMatrix.rows), 'clearance_matrix.rows must be a list.');
+    assert(operatorHandoffPacket.proof_type === 'branch_operator_handoff_packet', 'Focused JSON must include the branch operator handoff packet.');
+    assert(operatorHandoffPacket.source === 'branch_review.clearance_matrix.rows', 'Branch operator handoff packet must link to branch_review.clearance_matrix.rows.');
+    assert(['ready', 'blocked', 'skipped'].includes(operatorHandoffPacket.status), 'Branch operator handoff packet status must be ready, blocked, or skipped.');
+    assert(Array.isArray(operatorHandoffPacket.items), 'branch operator handoff packet items must be a list.');
+    assert(typeof operatorHandoffPacket.evidence === 'string' && /Branch operator handoff packet/i.test(operatorHandoffPacket.evidence), 'Branch operator handoff packet evidence must be set.');
+    assert(typeof operatorHandoffPacket.proof_boundary === 'string' && /read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity/i.test(operatorHandoffPacket.proof_boundary), 'Branch operator handoff packet proof_boundary must preserve read-only branch planning boundaries.');
+    assert(typeof operatorHandoffPacket.stop_gate === 'string' && /Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i.test(operatorHandoffPacket.stop_gate), 'Branch operator handoff packet stop_gate must reject clearance, branch mutation, approval, and deploy claims.');
     assert(Array.isArray(packetSet.packets), 'review_first_packets.packets must be a list.');
     assert(topPacket && typeof topPacket === 'object', 'top_review_packet must be an object.');
     assert(payload.launch_action_branch_row?.phase === 'branch_review', 'Focused JSON must include the launch action branch row.');
@@ -146,6 +167,19 @@ if (failures.length === 0) {
       assert(reviewQueue.item_count === reviewQueue.items.length, 'review_queue.item_count must match item count when branch probes run.');
       assert(Number.isInteger(clearanceMatrix.family_count), 'clearance_matrix.family_count must be an integer when branch probes run.');
       assert(clearanceMatrix.family_count === clearanceMatrix.rows.length, 'clearance_matrix.family_count must match rows when branch probes run.');
+      const expectedOperatorStatus = (clearanceMatrix.rows ?? []).some((item) => item.blocks_launch_clearance === true || item.clearance_status !== 'pass') ? 'blocked' : 'ready';
+      assert(operatorHandoffPacket.status === expectedOperatorStatus, 'Branch operator handoff packet status must derive from clearance matrix row blockers.');
+      assert(operatorHandoffPacket.item_count === clearanceMatrix.rows.length, 'Branch operator handoff packet item_count must match clearance matrix rows.');
+      assert(operatorHandoffPacket.blocked_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocks_branch_gate).length, 'Branch operator handoff packet blocked_count must match blocked handoff rows.');
+      assert(operatorHandoffPacket.review_first_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocker_class === 'review_first').length, 'Branch operator handoff packet review_first_count must match review-first rows.');
+      assert(operatorHandoffPacket.canonical_decision_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocker_class === 'canonical_head_decision').length, 'Branch operator handoff packet canonical_decision_count must match canonical-head decision rows.');
+      assert(operatorHandoffPacket.drift_review_count === (operatorHandoffPacket.items ?? []).filter((item) => item.blocker_class === 'drift_review').length, 'Branch operator handoff packet drift_review_count must match drift review rows.');
+      assert(operatorHandoffPacket.high_risk_count === (operatorHandoffPacket.items ?? []).filter((item) => item.highest_risk === 'high').length, 'Branch operator handoff packet high_risk_count must match high-risk rows.');
+      assert(operatorHandoffPacket.stale_or_aging_count === (operatorHandoffPacket.items ?? []).filter((item) => ['stale', 'aging'].includes(item.freshness)).length, 'Branch operator handoff packet stale_or_aging_count must match stale or aging rows.');
+      assert(
+        JSON.stringify((operatorHandoffPacket.items ?? []).map((item) => item.family)) === JSON.stringify((clearanceMatrix.rows ?? []).map((item) => item.family)),
+        'Branch operator handoff packet rows must preserve clearance matrix row order.',
+      );
       assert(typeof topPacket.proof_boundary === 'string' && /read-only branch evidence|does not checkout|merge|push/i.test(topPacket.proof_boundary), 'top_review_packet.proof_boundary must preserve read-only branch semantics.');
       assert(Number.isInteger(topPacket.changed_supabase_function_count), 'top_review_packet.changed_supabase_function_count must be an integer when branch probes run.');
       assert(Array.isArray(topPacket.changed_supabase_functions), 'top_review_packet.changed_supabase_functions must be a list when branch probes run.');
@@ -153,6 +187,35 @@ if (failures.length === 0) {
       assert(topPacket.changed_supabase_function_rows.length === topPacket.changed_supabase_function_count, 'top_review_packet changed Supabase function rows must match changed_supabase_function_count.');
       if (topPacket.changed_supabase_function_count > 0) {
         assert((topPacket.categories ?? []).includes('supabase/database'), 'top_review_packet must include the supabase/database category when Supabase functions changed.');
+      }
+    } else {
+      assert(operatorHandoffPacket.status === 'skipped', 'Skipped branch probes must produce a skipped branch operator handoff packet.');
+      assert(operatorHandoffPacket.item_count === 0, 'Skipped branch operator handoff packet item_count must be zero.');
+      assert(operatorHandoffPacket.blocked_count === 0, 'Skipped branch operator handoff packet blocked_count must be zero.');
+    }
+
+    for (const [index, item] of (operatorHandoffPacket.items ?? []).entries()) {
+      const clearanceRow = (clearanceMatrix.rows ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.family === clearanceRow.family, `operator_handoff_packet.items[${index}].family must match the clearance matrix row.`);
+      assert(item.review_ref === clearanceRow.review_ref, `operator_handoff_packet.items[${index}].review_ref must match the clearance matrix row.`);
+      assert(['owner', 'operator'].includes(item.owner), `operator_handoff_packet.items[${index}].owner must be owner or operator.`);
+      assert(['ready', 'blocked'].includes(item.status), `operator_handoff_packet.items[${index}].status must be ready or blocked.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `operator_handoff_packet.items[${index}].action must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `operator_handoff_packet.items[${index}].proof_command must point at the read-only branch report.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `operator_handoff_packet.items[${index}].proof_type must be set.`);
+      assert(item.read_only === true, `operator_handoff_packet.items[${index}].read_only must be true.`);
+      assert(item.can_execute_from_packet === false, `operator_handoff_packet.items[${index}].can_execute_from_packet must be false.`);
+      assert(item.blocks_branch_gate === (clearanceRow.blocks_launch_clearance === true || clearanceRow.clearance_status !== 'pass'), `operator_handoff_packet.items[${index}].blocks_branch_gate must derive from the clearance matrix row.`);
+      assert(typeof item.proof_boundary === 'string' && /read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity/i.test(item.proof_boundary), `operator_handoff_packet.items[${index}].proof_boundary must preserve branch handoff boundaries.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute|mutate branch state|select canonical heads|request production approval|mark this row ready/i.test(item.stop_gate), `operator_handoff_packet.items[${index}].stop_gate must reject execution and approval claims.`);
+      if (item.blocker_class === 'review_first') {
+        assert(item.execution_gate === 'read_only_focused_review_first', `operator_handoff_packet.items[${index}] review-first rows must use the read_only_focused_review_first execution gate.`);
+      }
+      if (item.blocker_class === 'canonical_head_decision') {
+        assert(item.owner === 'owner', `operator_handoff_packet.items[${index}] canonical-head rows must be owner-gated.`);
+        assert(item.execution_gate === 'owner_canonical_head_decision_first', `operator_handoff_packet.items[${index}] canonical-head rows must use the owner_canonical_head_decision_first execution gate.`);
       }
     }
 
@@ -180,4 +243,4 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('Branch review readiness report check passed: focused branch status, review queue, canonical-head decisions, clearance matrix, review-first packets, top branch Supabase function impact rows, production approval rows, and no-branch-mutation boundaries are consistent.');
+console.log('Branch review readiness report check passed: focused branch status, review queue, canonical-head decisions, clearance matrix, operator handoff packet, review-first packets, top branch Supabase function impact rows, production approval rows, and no-branch-mutation boundaries are consistent.');

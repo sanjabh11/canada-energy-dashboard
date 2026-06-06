@@ -1958,6 +1958,98 @@ try {
         assert(row.proof_type === 'high_risk_branch_clearance_row', `branch_review.clearance_matrix.rows[${index}].proof_type must classify high-risk clearance rows.`);
       }
     }
+    assert(typeof manifest.branch_review?.operator_handoff_packet === 'object' && manifest.branch_review.operator_handoff_packet !== null, 'Manifest branch_review.operator_handoff_packet must be an object.');
+    assert(typeof manifest.branch_review.operator_handoff_packet.evidence === 'string' && manifest.branch_review.operator_handoff_packet.evidence.includes('Branch operator handoff packet'), 'Manifest branch operator handoff packet evidence must include a packet marker.');
+    assert(manifest.branch_review.operator_handoff_packet.proof_type === 'branch_operator_handoff_packet', 'Manifest branch operator handoff packet must classify proof_type as branch_operator_handoff_packet.');
+    assert(manifest.branch_review.operator_handoff_packet.source === 'branch_review.clearance_matrix.rows', 'Manifest branch operator handoff packet must source branch clearance matrix rows.');
+    assert(
+      manifest.branch_review.operator_handoff_packet.status === (manifest.branch_review.clearance_matrix.status === 'skipped'
+        ? 'skipped'
+        : (manifest.branch_review.clearance_matrix.rows ?? []).some((row) => row.blocks_launch_clearance === true || row.clearance_status !== 'pass') ? 'blocked' : 'ready'),
+      'Branch operator handoff packet status must derive from clearance matrix row blockers.',
+    );
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.item_count), 'Manifest branch_review.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.blocked_count), 'Manifest branch_review.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.review_first_count), 'Manifest branch_review.operator_handoff_packet.review_first_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.canonical_decision_count), 'Manifest branch_review.operator_handoff_packet.canonical_decision_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.drift_review_count), 'Manifest branch_review.operator_handoff_packet.drift_review_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.high_risk_count), 'Manifest branch_review.operator_handoff_packet.high_risk_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.branch_review.operator_handoff_packet?.stale_or_aging_count), 'Manifest branch_review.operator_handoff_packet.stale_or_aging_count must be an integer or null.');
+    assert(Array.isArray(manifest.branch_review.operator_handoff_packet.items), 'Manifest branch_review.operator_handoff_packet.items must be a list.');
+    assert(
+      manifest.branch_review.operator_handoff_packet.item_count === manifest.branch_review.clearance_matrix.rows.length,
+      'Branch operator handoff packet item_count must match clearance matrix rows length.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.blocked_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => item.blocks_branch_gate).length,
+      'Branch operator handoff packet blocked_count must match branch-blocking rows.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.review_first_count === null || manifest.branch_review.operator_handoff_packet.review_first_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => item.blocker_class === 'review_first').length,
+      'Branch operator handoff packet review_first_count must match review-first rows when probes run.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.canonical_decision_count === null || manifest.branch_review.operator_handoff_packet.canonical_decision_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => item.blocker_class === 'canonical_head_decision').length,
+      'Branch operator handoff packet canonical_decision_count must match canonical-head rows when probes run.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.drift_review_count === null || manifest.branch_review.operator_handoff_packet.drift_review_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => item.blocker_class === 'drift_review').length,
+      'Branch operator handoff packet drift_review_count must match drift rows when probes run.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.high_risk_count === null || manifest.branch_review.operator_handoff_packet.high_risk_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => item.highest_risk === 'high').length,
+      'Branch operator handoff packet high_risk_count must match high-risk rows when probes run.',
+    );
+    assert(
+      manifest.branch_review.operator_handoff_packet.stale_or_aging_count === null || manifest.branch_review.operator_handoff_packet.stale_or_aging_count === manifest.branch_review.operator_handoff_packet.items.filter((item) => ['stale', 'aging'].includes(item.freshness)).length,
+      'Branch operator handoff packet stale_or_aging_count must match stale or aging rows when probes run.',
+    );
+    assert(
+      JSON.stringify((manifest.branch_review.operator_handoff_packet.items ?? []).map((item) => item.family)) === JSON.stringify((manifest.branch_review.clearance_matrix.rows ?? []).map((item) => item.family)),
+      'Branch operator handoff packet must include exactly clearance matrix families in order.',
+    );
+    assert(
+      typeof manifest.branch_review.operator_handoff_packet.proof_boundary === 'string'
+        && /read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity/i.test(manifest.branch_review.operator_handoff_packet.proof_boundary),
+      'Manifest branch operator handoff packet proof_boundary must preserve planning-only branch boundaries.',
+    );
+    assert(
+      typeof manifest.branch_review.operator_handoff_packet.stop_gate === 'string'
+        && /Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i.test(manifest.branch_review.operator_handoff_packet.stop_gate),
+      'Manifest branch operator handoff packet stop_gate must reject branch clearance, mutation, approval, and deploy claims.',
+    );
+    for (const [index, item] of (manifest.branch_review.operator_handoff_packet.items ?? []).entries()) {
+      const clearanceRow = manifest.branch_review.clearance_matrix.rows[index] ?? {};
+      assert(Number.isInteger(item.rank), `branch_review.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.family === clearanceRow.family, `branch_review.operator_handoff_packet.items[${index}].family must match the clearance matrix row.`);
+      assert(item.review_ref === clearanceRow.review_ref, `branch_review.operator_handoff_packet.items[${index}].review_ref must match the clearance matrix row.`);
+      assert(['owner', 'operator'].includes(item.owner), `branch_review.operator_handoff_packet.items[${index}].owner must be owner or operator.`);
+      assert(['ready', 'blocked'].includes(item.status), `branch_review.operator_handoff_packet.items[${index}].status must be ready or blocked.`);
+      assert(item.clearance_status === clearanceRow.clearance_status, `branch_review.operator_handoff_packet.items[${index}].clearance_status must match the clearance matrix row.`);
+      assert(typeof item.current === 'string' && item.current.length > 0, `branch_review.operator_handoff_packet.items[${index}].current must be set.`);
+      assert(typeof item.needed === 'string' && item.needed.length > 0, `branch_review.operator_handoff_packet.items[${index}].needed must be set.`);
+      assert(typeof item.action === 'string' && item.action.length > 0, `branch_review.operator_handoff_packet.items[${index}].action must be set.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `branch_review.operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(typeof item.proof_command === 'string' && item.proof_command.includes('report:unmerged-branch-readiness'), `branch_review.operator_handoff_packet.items[${index}].proof_command must point to the focused branch report.`);
+      assert(typeof item.proof_type === 'string' && item.proof_type.length > 0, `branch_review.operator_handoff_packet.items[${index}].proof_type must be set.`);
+      assert(item.read_only === true, `branch_review.operator_handoff_packet.items[${index}].read_only must be true.`);
+      assert(typeof item.blocks_branch_gate === 'boolean', `branch_review.operator_handoff_packet.items[${index}].blocks_branch_gate must be boolean.`);
+      assert(typeof item.can_execute_from_packet === 'boolean', `branch_review.operator_handoff_packet.items[${index}].can_execute_from_packet must be boolean.`);
+      assert(item.can_execute_from_packet === false, `branch_review.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.blocks_branch_gate === (clearanceRow.blocks_launch_clearance === true || clearanceRow.clearance_status !== 'pass'), `branch_review.operator_handoff_packet.items[${index}] must derive blocks_branch_gate from clearance row status.`);
+      assert(
+        typeof item.proof_boundary === 'string' && /read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity/i.test(item.proof_boundary),
+        `branch_review.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only semantics.`,
+      );
+      assert(typeof item.stop_gate === 'string' && /Do not execute|mutate branch state|select canonical heads|request production approval|mark this row ready/i.test(item.stop_gate), `branch_review.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+      if (item.blocker_class === 'review_first') {
+        assert(item.execution_gate === 'read_only_focused_review_first', `branch_review.operator_handoff_packet.items[${index}] review-first rows must use read_only_focused_review_first.`);
+      }
+      if (item.blocker_class === 'canonical_head_decision') {
+        assert(item.owner === 'owner', `branch_review.operator_handoff_packet.items[${index}] canonical-head rows must be owner-gated.`);
+        assert(item.execution_gate === 'owner_canonical_head_decision_first', `branch_review.operator_handoff_packet.items[${index}] canonical-head rows must use owner_canonical_head_decision_first.`);
+      }
+    }
     assert(typeof manifest.branch_review?.review_first_packets?.evidence === 'string', 'Manifest branch_review.review_first_packets.evidence must be set.');
     assert(manifest.branch_review.review_first_packets.evidence.includes('Review-first branch packets'), 'Manifest branch_review.review_first_packets evidence must include a packet-set marker.');
     assert(hasIntegerOrNull(manifest.branch_review?.review_first_packets?.item_count), 'Manifest branch_review.review_first_packets.item_count must be an integer or null.');
@@ -2203,7 +2295,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest release operator handoff packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest branch operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3609,6 +3701,41 @@ try {
         && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && releaseOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Release operator handoff packet code optimization review must record focused release, progress, manifest, and commercial report checks.',
+    );
+    const branchOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET');
+    assert(branchOperatorHandoffPacketDecision, 'Manifest must record the branch operator handoff packet implementation decision.');
+    assert(
+      branchOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived branch operator handoff packet',
+      'Branch operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(branchOperatorHandoffPacketDecision?.files_changed)
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/report-branch-review-readiness.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/check-branch-review-readiness-report.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('tests/unit/branchReviewReadiness.test.ts')
+        && branchOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Branch operator handoff packet decision must record the manifest, focused branch report, checkers, and unit test files.',
+    );
+    assert(
+      /does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|hosted\/live parity|grant owner approval|raise launch status/i.test(branchOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Branch operator handoff packet decision must preserve no-branch-mutation, no-canonical-selection, no-migration, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const branchOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET');
+    assert(branchOperatorHandoffPacketReview, 'Manifest must record the branch operator handoff packet code optimization review.');
+    assert(branchOperatorHandoffPacketReview?.policy === 'strict', 'Branch operator handoff packet code optimization review must use strict policy.');
+    assert(branchOperatorHandoffPacketReview?.verdict === 'pass', 'Branch operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(branchOperatorHandoffPacketReview?.tests_or_checks)
+        && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:branch-review-readiness -- --skip-probes/.test(check))
+        && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:branch-review-report -- --skip-probes/.test(check))
+        && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Branch operator handoff packet code optimization review must record focused branch, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

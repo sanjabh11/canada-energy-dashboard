@@ -169,6 +169,7 @@ function renderMarkdown(payload) {
   const canonical = branch.canonical_head_decisions ?? {};
   const resolutionQueue = branch.canonical_head_resolution_queue ?? {};
   const clearanceMatrix = branch.clearance_matrix ?? {};
+  const operatorHandoffPacket = branch.operator_handoff_packet ?? {};
   const packetSet = branch.review_first_packets ?? {};
   const topPacket = branch.top_review_packet ?? {};
   const comparison = topPacket.canonical_head_comparison ?? {};
@@ -187,6 +188,7 @@ function renderMarkdown(payload) {
     ['Review-first queue', `${reviewQueue.review_first_count ?? 'unknown'} review-first; status=${reviewQueue.status ?? 'unknown'}`],
     ['Canonical-head decisions', `${canonical.open_count ?? 'unknown'}/${canonical.total_count ?? 'unknown'} open; status=${canonical.status ?? 'unknown'}`],
     ['Clearance matrix', `${clearanceMatrix.status ?? 'unknown'}; rows=${clearanceMatrix.family_count ?? 'unknown'}`],
+    ['Operator handoff packet', `${operatorHandoffPacket.status ?? 'unknown'}; blocked=${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}`],
     ['Top review ref', topPacket.branch ?? '<review-ref>'],
   ];
 
@@ -248,6 +250,27 @@ function renderMarkdown(payload) {
     item.required_proof_command,
     item.clearance_status,
     item.proof_type,
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.family,
+    item.review_ref,
+    item.owner,
+    item.status,
+    item.execution_gate,
+    item.blocker_class,
+    item.highest_risk,
+    item.local_origin_state,
+    item.freshness,
+    item.action,
+    item.proof_command,
+    item.proof_type,
+    item.read_only ? 'yes' : 'no',
+    item.blocks_branch_gate ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
     item.proof_boundary,
     item.stop_gate,
   ]);
@@ -383,6 +406,17 @@ function renderMarkdown(payload) {
     '',
     renderTable(['Rank', 'Family', 'Review Ref', 'Highest Risk', 'Priority', 'Blocker Class', 'Local/Origin State', 'Freshness', 'Canonical Decision Needed', 'Required Proof Command', 'Clearance Status', 'Proof Type', 'Proof Boundary', 'Stop Gate'], clearanceRows),
     '',
+    '## Branch Operator Handoff Packet',
+    '',
+    operatorHandoffPacket.evidence ?? 'Branch operator handoff packet missing.',
+    '',
+    `Proof type: ${operatorHandoffPacket.proof_type ?? 'unknown'}`,
+    `Source: ${operatorHandoffPacket.source ?? 'unknown'}`,
+    `Boundary: ${operatorHandoffPacket.proof_boundary ?? 'unknown'}`,
+    `Stop gate: ${operatorHandoffPacket.stop_gate ?? 'unknown'}`,
+    '',
+    renderTable(['Rank', 'Family', 'Review Ref', 'Owner', 'Status', 'Execution Gate', 'Blocker Class', 'Highest Risk', 'Local/Origin State', 'Freshness', 'Action', 'Proof Command', 'Proof Type', 'Read Only', 'Blocks Branch Gate', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'], operatorHandoffRows),
+    '',
     '## Review-First Branch Packets',
     '',
     packetSet.evidence ?? 'Review-first branch packets missing.',
@@ -462,7 +496,8 @@ const branchReady = branch.status === 'pass'
   && branch.review_queue?.status === 'pass'
   && branch.canonical_head_decisions?.status === 'pass'
   && branch.canonical_head_resolution_queue?.status === 'pass'
-  && branch.clearance_matrix?.status === 'pass';
+  && branch.clearance_matrix?.status === 'pass'
+  && branch.operator_handoff_packet?.status === 'ready';
 
 if (failOnBlocker && !branchReady) {
   console.error(`Branch review remains ${branch.status ?? 'unknown'}; this report does not checkout, merge, push, discard, select canonical heads, run migrations, deploy, or grant production approval.`);

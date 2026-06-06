@@ -158,8 +158,17 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.clearance_matrix.evidence).toContain('Branch clearance matrix skipped');
     expect(manifest.branch_review.clearance_matrix.proof_boundary).toMatch(/read-only branch-review evidence only|does not checkout|merge|push/i);
     expect(manifest.branch_review.clearance_matrix.rows).toEqual([]);
+    expect(manifest.branch_review.operator_handoff_packet.status).toBe('skipped');
+    expect(manifest.branch_review.operator_handoff_packet.proof_type).toBe('branch_operator_handoff_packet');
+    expect(manifest.branch_review.operator_handoff_packet.source).toBe('branch_review.clearance_matrix.rows');
+    expect(manifest.branch_review.operator_handoff_packet.item_count).toBe(0);
+    expect(manifest.branch_review.operator_handoff_packet.blocked_count).toBe(0);
+    expect(manifest.branch_review.operator_handoff_packet.items).toEqual([]);
+    expect(manifest.branch_review.operator_handoff_packet.evidence).toContain('Branch operator handoff packet skipped');
+    expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
+    expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-OPERATOR-HANDOFF-PACKET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -908,6 +917,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.evidence).toContain('Branch family review skipped');
     expect(manifest.branch_review.evidence).toContain('Branch freshness review skipped');
     expect(manifest.branch_review.evidence).toContain('Branch review queue skipped');
+    expect(manifest.branch_review.evidence).toContain('Branch operator handoff packet skipped');
     expect(manifest.branch_review.evidence).toContain('Review-first branch packets skipped');
     expect(manifest.branch_review.evidence).toContain('Top branch review packet skipped');
     expect(manifest.branch_review.evidence).toContain('Canonical head comparison skipped');
@@ -948,9 +958,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(48);
+    expect(manifest.implementation_decisions).toHaveLength(49);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(48);
+    expect(manifest.code_optimization_reviews).toHaveLength(49);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1023,6 +1033,9 @@ describe('launch evidence manifest report', () => {
       'Leave release operator actions implicit in release_preflight.remediation_queue rows.',
       'Install or enable Corepack, install Git LFS, or run release-readiness from the handoff phase.',
       'Create a separate release runbook artifact or file.',
+      'Leave branch operator actions implicit in branch_review.clearance_matrix rows.',
+      'Checkout, merge, push, discard, delete, or select canonical heads from the handoff phase.',
+      'Create a separate branch runbook artifact or file.',
       'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
@@ -2176,6 +2189,34 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
+    const branchOperatorHandoffPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(branchOperatorHandoffPacketDecision).toBeTruthy();
+    expect(branchOperatorHandoffPacketDecision.chosen_variant).toBe('minimal derived branch operator handoff packet');
+    expect(branchOperatorHandoffPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-branch-review-readiness.mjs',
+      'scripts/check-branch-review-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/branchReviewReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(branchOperatorHandoffPacketDecision.proof_boundary).toMatch(/does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity|grant owner approval|raise launch status/i);
+    const branchOperatorHandoffPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(branchOperatorHandoffPacketReview).toBeTruthy();
+    expect(branchOperatorHandoffPacketReview.policy).toBe('strict');
+    expect(branchOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:branch-review-readiness -- --skip-probes',
+      'pnpm run check:branch-review-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
     expect(manifest.ecc_ledger.decision).toBe('blocked');
 
     const tempRoot = makeTempRoot();
@@ -2205,6 +2246,8 @@ describe('launch evidence manifest report', () => {
     const firstCanonicalHeadResolution = branchCanonicalResolutionQueue.items[0];
     const branchClearanceMatrix = manifest.branch_review.clearance_matrix;
     const firstClearanceRow = branchClearanceMatrix.rows[0];
+    const branchOperatorHandoffPacket = manifest.branch_review.operator_handoff_packet;
+    const firstOperatorHandoffItem = branchOperatorHandoffPacket.items[0];
     const firstReviewFirstPacket = manifest.branch_review.review_first_packets.packets[0];
     const firstChangedFunctionRow = firstReviewFirstPacket?.changed_supabase_function_rows?.[0]
       ?? manifest.branch_review.top_review_packet.changed_supabase_function_rows?.[0];
@@ -2247,6 +2290,41 @@ describe('launch evidence manifest report', () => {
       expect(['blocked', 'review_required']).toContain(firstClearanceRow.clearance_status);
       if (firstClearanceRow.highest_risk === 'high') {
         expect(firstClearanceRow.proof_type).toBe('high_risk_branch_clearance_row');
+      }
+    }
+    expect(branchOperatorHandoffPacket.status).toBe(
+      branchClearanceMatrix.rows.some((row: { blocks_launch_clearance?: boolean; clearance_status?: string }) => row.blocks_launch_clearance === true || row.clearance_status !== 'pass')
+        ? 'blocked'
+        : 'ready',
+    );
+    expect(branchOperatorHandoffPacket.proof_type).toBe('branch_operator_handoff_packet');
+    expect(branchOperatorHandoffPacket.source).toBe('branch_review.clearance_matrix.rows');
+    expect(branchOperatorHandoffPacket.item_count).toBe(branchClearanceMatrix.rows.length);
+    expect(branchOperatorHandoffPacket.blocked_count).toBe(
+      branchOperatorHandoffPacket.items.filter((item: { blocks_branch_gate?: boolean }) => item.blocks_branch_gate).length,
+    );
+    expect(branchOperatorHandoffPacket.items.map((item: { family?: string }) => item.family)).toEqual(
+      branchClearanceMatrix.rows.map((item: { family?: string }) => item.family),
+    );
+    expect(branchOperatorHandoffPacket.evidence).toContain('Branch operator handoff packet');
+    expect(branchOperatorHandoffPacket.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
+    expect(branchOperatorHandoffPacket.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
+    expect(firstOperatorHandoffItem).toBeTruthy();
+    if (firstOperatorHandoffItem && firstClearanceRow) {
+      expect(firstOperatorHandoffItem.family).toBe(firstClearanceRow.family);
+      expect(firstOperatorHandoffItem.review_ref).toBe(firstClearanceRow.review_ref);
+      expect(firstOperatorHandoffItem.read_only).toBe(true);
+      expect(firstOperatorHandoffItem.can_execute_from_packet).toBe(false);
+      expect(firstOperatorHandoffItem.blocks_branch_gate).toBe(firstClearanceRow.blocks_launch_clearance === true || firstClearanceRow.clearance_status !== 'pass');
+      expect(firstOperatorHandoffItem.proof_command).toContain('report:unmerged-branch-readiness');
+      expect(firstOperatorHandoffItem.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
+      expect(firstOperatorHandoffItem.stop_gate).toMatch(/Do not execute|mutate branch state|select canonical heads|request production approval|mark this row ready/i);
+      if (firstOperatorHandoffItem.blocker_class === 'review_first') {
+        expect(firstOperatorHandoffItem.execution_gate).toBe('read_only_focused_review_first');
+      }
+      if (firstOperatorHandoffItem.blocker_class === 'canonical_head_decision') {
+        expect(firstOperatorHandoffItem.owner).toBe('owner');
+        expect(firstOperatorHandoffItem.execution_gate).toBe('owner_canonical_head_decision_first');
       }
     }
     expect(firstReviewItem).toBeTruthy();

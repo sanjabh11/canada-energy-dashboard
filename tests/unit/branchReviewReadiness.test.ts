@@ -44,6 +44,9 @@ describe('branch review readiness report', () => {
     expect(stdout).toContain('Canonical Head Decisions');
     expect(stdout).toContain('Canonical Head Resolution Queue');
     expect(stdout).toContain('Branch Clearance Matrix');
+    expect(stdout).toContain('Branch Operator Handoff Packet');
+    expect(stdout).toContain('branch_operator_handoff_packet');
+    expect(stdout).toContain('Can Execute From Packet');
     expect(stdout).toContain('Review-First Branch Packets');
     expect(stdout).toContain('Top Branch Review Packet');
     expect(stdout).toContain('Top Branch Changed Supabase Function Rows');
@@ -74,6 +77,11 @@ describe('branch review readiness report', () => {
     expect(Array.isArray(payload.branch_review.canonical_head_resolution_queue.items)).toBe(true);
     expect(payload.branch_review.clearance_matrix.proof_type).toBe('read_only_branch_clearance_matrix');
     expect(Array.isArray(payload.branch_review.clearance_matrix.rows)).toBe(true);
+    expect(payload.branch_review.operator_handoff_packet.proof_type).toBe('branch_operator_handoff_packet');
+    expect(payload.branch_review.operator_handoff_packet.source).toBe('branch_review.clearance_matrix.rows');
+    expect(Array.isArray(payload.branch_review.operator_handoff_packet.items)).toBe(true);
+    expect(payload.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
+    expect(payload.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(Array.isArray(payload.branch_review.review_first_packets.packets)).toBe(true);
     expect(payload.launch_action_branch_row.phase).toBe('branch_review');
     expect(payload.launch_action_branch_row.proof_command).toContain('report:branch-review-readiness');
@@ -91,6 +99,32 @@ describe('branch review readiness report', () => {
       expect(payload.branch_review.review_queue.item_count).toBe(payload.branch_review.review_queue.items.length);
       expect(payload.branch_review.clearance_matrix.family_count).toBe(payload.branch_review.clearance_matrix.rows.length);
       expect(payload.branch_review.review_queue.blocked_count).toBe(payload.branch_review.review_queue.review_first_count);
+      expect(payload.branch_review.operator_handoff_packet.status).toMatch(/blocked|ready/);
+      expect(payload.branch_review.operator_handoff_packet.item_count).toBe(payload.branch_review.clearance_matrix.rows.length);
+      expect(payload.branch_review.operator_handoff_packet.blocked_count).toBe(
+        payload.branch_review.operator_handoff_packet.items.filter((item: { blocks_branch_gate?: boolean }) => item.blocks_branch_gate).length,
+      );
+      expect(payload.branch_review.operator_handoff_packet.items.map((item: { family?: string }) => item.family)).toEqual(
+        payload.branch_review.clearance_matrix.rows.map((item: { family?: string }) => item.family),
+      );
+      for (const [index, item] of payload.branch_review.operator_handoff_packet.items.entries()) {
+        const clearanceRow = payload.branch_review.clearance_matrix.rows[index];
+        expect(item.family).toBe(clearanceRow.family);
+        expect(item.review_ref).toBe(clearanceRow.review_ref);
+        expect(item.read_only).toBe(true);
+        expect(item.can_execute_from_packet).toBe(false);
+        expect(item.blocks_branch_gate).toBe(clearanceRow.blocks_launch_clearance === true || clearanceRow.clearance_status !== 'pass');
+        expect(item.proof_command).toContain('report:unmerged-branch-readiness');
+        expect(item.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
+        expect(item.stop_gate).toMatch(/Do not execute|mutate branch state|select canonical heads|request production approval|mark this row ready/i);
+        if (item.blocker_class === 'review_first') {
+          expect(item.execution_gate).toBe('read_only_focused_review_first');
+        }
+        if (item.blocker_class === 'canonical_head_decision') {
+          expect(item.owner).toBe('owner');
+          expect(item.execution_gate).toBe('owner_canonical_head_decision_first');
+        }
+      }
       expect(payload.branch_review.top_review_packet.read_only).toBe(true);
       expect(payload.branch_review.top_review_packet.proof_boundary).toMatch(/read-only branch evidence|does not checkout|merge|push/i);
       expect(payload.branch_review.top_review_packet.changed_supabase_function_rows).toHaveLength(
@@ -142,7 +176,8 @@ describe('branch review readiness report', () => {
       && json.branch_review.review_queue.status === 'pass'
       && json.branch_review.canonical_head_decisions.status === 'pass'
       && json.branch_review.canonical_head_resolution_queue.status === 'pass'
-      && json.branch_review.clearance_matrix.status === 'pass';
+      && json.branch_review.clearance_matrix.status === 'pass'
+      && json.branch_review.operator_handoff_packet.status === 'ready';
     expect(result.status).toBe(ready ? 0 : 1);
     expect(result.stdout).toContain('# CEIP Branch Review Readiness Report');
     if (!ready) {
