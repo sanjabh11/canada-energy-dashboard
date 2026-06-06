@@ -426,6 +426,7 @@ describe('launch evidence manifest report', () => {
       manifest.launch_action_queue.items,
       (item: {
         phase: string;
+        blocker?: string;
         proof_command?: string;
         proof_type?: string;
         proof_boundary?: string;
@@ -433,6 +434,16 @@ describe('launch evidence manifest report', () => {
     );
     expect(launchActionsByPhase.get('source_provenance')?.proof_type).toBe('source_provenance_decision');
     expect(launchActionsByPhase.get('source_provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    const renameDirtyPath = manifest.source_provenance.dirty_paths.find((item: { old_path?: string }) => item.old_path);
+    if (renameDirtyPath) {
+      const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+      expect(launchActionsByPhase.get('source_provenance')?.blocker).toContain(renameSummary);
+      expect(launchActionsByPhase.get('source_provenance')?.blocker).toContain(renameDirtyPath.proof_type);
+      expect(launchActionsByPhase.get('source_provenance')?.blocker).toContain(renameDirtyPath.staging_state);
+      const releaseSourceRow = manifest.release_preflight.items.find((item: { requirement?: string }) => item.requirement === 'Clean source provenance');
+      expect(releaseSourceRow?.current).toContain(renameSummary);
+      expect(releaseSourceRow?.current).toContain(renameDirtyPath.proof_type);
+    }
     expect(launchActionsByPhase.get('launch_evidence_validation')?.proof_type).toBe('manifest_validation_and_approval_packet');
     expect(launchActionsByPhase.get('launch_evidence_validation')?.proof_boundary).toMatch(/structure and readiness reporting only|does not grant production approval/i);
     expect(launchActionsByPhase.get('release_toolchain')?.proof_type).toBe('release_toolchain_and_gated_release');
@@ -501,6 +512,7 @@ describe('launch evidence manifest report', () => {
       manifest.production_approval.prerequisite_queue.items,
       (item: {
         prerequisite: string;
+        current?: string;
         proof_command?: string;
         proof_type?: string;
         proof_boundary?: string;
@@ -508,6 +520,12 @@ describe('launch evidence manifest report', () => {
     );
     expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_type).toBe('source_provenance_decision');
     expect(productionPrerequisitesByName.get('Clean source provenance')?.proof_boundary).toMatch(/does not commit|clear provenance/i);
+    if (renameDirtyPath) {
+      const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+      expect(productionPrerequisitesByName.get('Clean source provenance')?.current).toContain(renameSummary);
+      expect(productionPrerequisitesByName.get('Clean source provenance')?.current).toContain(renameDirtyPath.proof_type);
+      expect(productionPrerequisitesByName.get('Clean source provenance')?.current).toContain(renameDirtyPath.staging_state);
+    }
     expect(productionPrerequisitesByName.get('Launch evidence validation')?.proof_type).toBe('manifest_validation');
     expect(productionPrerequisitesByName.get('Launch evidence validation')?.proof_boundary).toMatch(/structure only|does not grant production approval/i);
     expect(productionPrerequisitesByName.get('Corepack release-readiness')?.proof_type).toBe('gated_release_command');
@@ -538,6 +556,7 @@ describe('launch evidence manifest report', () => {
       productionRequestPacket.items,
       (item: {
         prerequisite: string;
+        current?: string;
         request_phase?: string;
         evidence_to_attach?: string;
         blocks_request?: boolean;
@@ -558,6 +577,12 @@ describe('launch evidence manifest report', () => {
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.request_phase).toBe('post_deploy_boundary');
     expect(productionRequestRowsByName.get('Post-deploy live proof boundary')?.blocks_request).toBe(false);
     expect(productionRequestRowsByName.get('Clean source provenance')?.evidence_to_attach).toMatch(/source-provenance/i);
+    if (renameDirtyPath) {
+      const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+      expect(productionRequestRowsByName.get('Clean source provenance')?.current).toContain(renameSummary);
+      expect(productionRequestRowsByName.get('Clean source provenance')?.current).toContain(renameDirtyPath.proof_type);
+      expect(productionRequestRowsByName.get('Clean source provenance')?.current).toContain(renameDirtyPath.staging_state);
+    }
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.evidence_to_attach).toMatch(/focused Supabase advisor report\/check/i);
     expect(productionRequestRowsByName.get('Supabase advisor clearance')?.proof_command).toBe('corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report');
     expect(productionRequestRowsByName.get('Buyer evidence hard gate')?.evidence_to_attach).toMatch(/focused buyer-evidence hard-gate report\/check/i);
@@ -755,9 +780,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(32);
+    expect(manifest.implementation_decisions).toHaveLength(33);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(32);
+    expect(manifest.code_optimization_reviews).toHaveLength(33);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1105,6 +1130,28 @@ describe('launch evidence manifest report', () => {
     expect(sourceProvenanceProofHandleReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run check:source-provenance-report -- --skip-probes',
       'pnpm run check:release-preflight-report -- --skip-probes',
+    ]));
+    const sourceProvenanceRenameSummaryDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    );
+    expect(sourceProvenanceRenameSummaryDecision).toBeTruthy();
+    expect(sourceProvenanceRenameSummaryDecision.chosen_variant).toBe('minimal source decision summary helper');
+    expect(sourceProvenanceRenameSummaryDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(sourceProvenanceRenameSummaryDecision.proof_boundary).toMatch(/does not commit|clear source provenance|run release-readiness|deploy|hosted\/live parity/i);
+    const sourceProvenanceRenameSummaryReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    );
+    expect(sourceProvenanceRenameSummaryReview).toBeTruthy();
+    expect(sourceProvenanceRenameSummaryReview.policy).toBe('strict');
+    expect(sourceProvenanceRenameSummaryReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:source-provenance-readiness -- --skip-probes',
+      'pnpm run check:source-provenance-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
     const releaseToolchainProofHandleDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',

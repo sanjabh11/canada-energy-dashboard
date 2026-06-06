@@ -1146,7 +1146,7 @@ function probeReleasePreflight({ packageManager, gitStatus }) {
     },
     {
       requirement: 'Clean source provenance',
-      current: gitStatus.isDirty ? `${gitStatus.dirtyLines.length} dirty path(s)` : 'clean worktree',
+      current: sourceDecisionSummary(gitStatus.dirtyDetails, gitStatus.dirtyLines.length),
       needed: 'branch main with clean worktree before deploy approval request',
       status: gitStatus.isDirty ? 'blocked' : 'pass',
       next_action: gitStatus.isDirty
@@ -1269,9 +1269,7 @@ function buildLaunchActionQueue({
   releasePreflight,
   gitStatus,
 }) {
-  const dirtyPathSummary = gitStatus.isDirty
-    ? `${gitStatus.dirtyLines.length} dirty path(s); first=${gitStatus.dirtyDetails[0]?.file_path ?? 'unknown'}`
-    : 'clean worktree';
+  const dirtyPathSummary = sourceDecisionSummary(gitStatus.dirtyDetails, gitStatus.dirtyLines.length);
   const branchReviewFirst = branchReviewQueue.review_first_count ?? null;
   const branchTop = branchReviewQueue.items?.[0]?.review_ref ?? '<review-ref>';
   const supabaseOpen = supabaseAdvisor.clearanceDeficits?.open_count ?? 'unknown';
@@ -1471,6 +1469,9 @@ function buildProductionApprovalPrerequisiteQueue({
   sourceProvenanceResolutionQueue,
 }) {
   const sourceReady = sourceProvenanceResolutionQueue.status === 'pass';
+  const sourceCurrent = sourceReady
+    ? 'source provenance queue passed'
+    : sourceDecisionSummary(sourceProvenanceResolutionQueue.items ?? [], sourceProvenanceResolutionQueue.dirty_path_count);
   const releaseReady = releasePreflight.status === 'pass';
   const releaseToolchainProbeLedger = releasePreflight.toolchain_probe_ledger ?? {};
   const releaseProbeOpen = releaseToolchainProbeLedger.open_count ?? 'unknown';
@@ -1486,9 +1487,7 @@ function buildProductionApprovalPrerequisiteQueue({
     {
       rank: 1,
       prerequisite: 'Clean source provenance',
-      current: sourceReady
-        ? 'source provenance queue passed'
-        : `${sourceProvenanceResolutionQueue.dirty_path_count ?? 'unknown'} dirty source-provenance decision(s) remain`,
+      current: sourceCurrent,
       needed: 'clean worktree and no unresolved staged, unstaged, untracked, ignored, or renamed source decisions before a deploy approval request',
       owner: 'operator',
       proof_command: SOURCE_PROVENANCE_FOCUSED_PROOF_COMMAND,
@@ -2687,6 +2686,26 @@ function classifyDirtyPath(statusLine) {
   };
 }
 
+function sourcePathDisplay(detail) {
+  if (!detail) return 'unknown';
+  if (detail.old_path) return `${detail.old_path} -> ${detail.file_path ?? 'unknown'}`;
+  return detail.file_path ?? 'unknown';
+}
+
+function sourceDecisionLabel(detail) {
+  if (!detail) return 'unknown source-provenance decision';
+  const status = detail.source_status ?? detail.status ?? 'changed';
+  const proofType = detail.proof_type ?? sourceResolutionProofType(detail);
+  const stagingState = detail.staging_state ?? 'unknown';
+  return `${status} ${sourcePathDisplay(detail)} (${proofType}; ${stagingState})`;
+}
+
+function sourceDecisionSummary(details, dirtyPathCount) {
+  const count = Number.isInteger(dirtyPathCount) ? dirtyPathCount : details?.length;
+  if (!count || count <= 0) return 'clean worktree';
+  return `${count} dirty path(s); first=${sourceDecisionLabel(details?.[0])}`;
+}
+
 function sourceProvenanceEvidence(status) {
   const summary = [
     'Source provenance:',
@@ -2809,7 +2828,7 @@ function sourceProvenanceResolutionEvidence(queue) {
 
   const topBlocked = queue.items
     .slice(0, 5)
-    .map((item) => `${item.file_path}:${item.staging_state}:${item.source_status}:${item.status}`)
+    .map((item) => `${sourceDecisionLabel(item)}:${item.status}`)
     .join(', ') || 'none';
 
   return [
@@ -2883,7 +2902,7 @@ function sourceProvenanceIsolationEvidence(ledger) {
 
   const topBlocking = ledger.rows
     .slice(0, 5)
-    .map((item) => `${item.file_path}:${item.proof_type}:${item.isolation_status}`)
+    .map((item) => `${sourceDecisionLabel(item)}:${item.isolation_status}`)
     .join(', ') || 'none';
 
   return [
@@ -4507,6 +4526,13 @@ const sourceProvenanceProofHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const sourceProvenanceRenameSummaryFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releaseToolchainProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -4781,6 +4807,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...strategyAuditSliceTimeoutFilesChanged,
   ...sourceProvenanceReportFilesChanged,
   ...sourceProvenanceProofHandleFilesChanged,
+  ...sourceProvenanceRenameSummaryFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -4923,6 +4950,15 @@ const sourceProvenanceProofHandleTestsRun = [
   'pnpm run check:source-provenance-report -- --skip-probes',
   'pnpm run check:release-preflight-report -- --skip-probes',
   'pnpm run check:launch-action-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const sourceProvenanceRenameSummaryTestsRun = [
+  'pnpm exec tsc -b --pretty false',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run check:source-provenance-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
@@ -5148,6 +5184,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...strategyAuditSliceTimeoutTestsRun,
   ...sourceProvenanceReportTestsRun,
   ...sourceProvenanceProofHandleTestsRun,
+  ...sourceProvenanceRenameSummaryTestsRun,
   ...releaseToolchainProofHandleTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
@@ -5347,6 +5384,19 @@ const safeFixImplementationDecisions = [
     reason: 'Operators still saw broad production approval packet handles on source-provenance rows even after the focused source-provenance report/check existed, which made the first open source gate harder to inspect directly.',
     proof_boundary: 'This record aligns source-provenance proof handles only; it does not commit, unstage, stash, revert, delete, rename, move, mutate or clear source provenance, replace production approval request artifacts, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
     stop_gate: 'Do not treat focused source-provenance proof handles, skipped-probe report/check success, launch action row output, release preflight rows, or production approval attachment text as clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    decision: 'Make source-provenance blocker summaries rename-aware by carrying the existing old_path -> file_path owner-decision detail into launch action, release preflight, and production approval rows.',
+    acceptance_check: 'When git status reports a staged rename, the source_provenance launch action blocker, Clean source provenance release-preflight row, production approval prerequisite, production approval request row, and source resolution/isolation evidence show the old path, new path, source_rename_decision proof type, and staged state.',
+    chosen_variant: 'minimal source decision summary helper',
+    repo_pattern_reused: 'Existing parsePorcelainStatusLine, classifyDirtyPath old_path capture, source_rename_decision proof type, source provenance resolution queue, release preflight source row, launch_action_queue source_provenance row, and production_approval source rows.',
+    files_changed: sourceProvenanceRenameSummaryFilesChanged,
+    tests_run: sourceProvenanceRenameSummaryTestsRun,
+    proof: 'The patch reuses existing dirtyDetails and resolution_queue items, adds no git mutation or new parser, and formats the first source-provenance decision as status old_path -> file_path (proof_type; staging_state) wherever high-level launch readiness rows previously showed only a count or new path.',
+    reason: 'The current top launch blocker was a staged rename, but the launch action row showed only first=.devin/workflows/master.md and the approval rows showed only a count, hiding the .windsurf -> .devin owner-decision context.',
+    proof_boundary: 'This record improves source-provenance blocker readability only; it does not commit, unstage, stash, revert, delete, rename, move, mutate source, clear source provenance, run release-readiness, push, deploy, grant owner approval, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat rename-aware blocker summaries, source-provenance report/check success, skipped probes, launch action output, release preflight rows, or production approval attachment text as clean source provenance, owner approval, release-readiness, deployment, hosted/live parity, or commercial-ready status.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
@@ -5890,6 +5940,27 @@ const safeFixRejectedVariants = [
     reason_rejected: 'A new command would add another operator handle for the same manifest-backed source data and increase drift risk.',
     tradeoff: 'A bespoke command could be even narrower, but it is unnecessary while report:source-provenance-readiness and check:source-provenance-report already cover the required rows.',
     evidence: 'The sourceProvenanceReportTestsRun and focused checker already validate dirty paths, isolation, resolution, release preflight, and production approval source rows.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    variant: 'Leave high-level source summaries as dirty counts or new-path-only labels.',
+    reason_rejected: 'Would keep the top launch-action and approval blockers from showing that the current dirty path is a staged .windsurf -> .devin rename owner-decision item.',
+    tradeoff: 'No-code defer avoids touching report text, but operators still need to open lower-level tables to understand the first source-provenance blocker.',
+    evidence: 'The source action blocker showed first=.devin/workflows/master.md while dirty_paths already carried old_path=.windsurf/workflows/master.md and proof_type=source_rename_decision.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    variant: 'Commit, unstage, stash, revert, delete, rename, or move the staged workflow rename.',
+    reason_rejected: 'Resolving the rename is an owner decision outside this safe reporting phase and would mutate unrelated staged work.',
+    tradeoff: 'Mutation could clear the local source blocker, but it would violate the dirty-worktree policy and erase the explicit owner-decision gate.',
+    evidence: 'git status shows a staged .windsurf/workflows/master.md -> .devin/workflows/master.md rename, and source stop gates require explicit owner intent before mutation.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    variant: 'Add a second git-status parser for launch-action and approval summaries.',
+    reason_rejected: 'The existing classifyDirtyPath output already has old_path, file_path, proof_type, and staging_state; a second parser would duplicate release-critical source provenance logic.',
+    tradeoff: 'A bespoke parser could format this one summary directly, but it would drift from the focused source-provenance report/check contract.',
+    evidence: 'report-launch-evidence-manifest already builds source_provenance.dirty_paths and source_provenance.resolution_queue from parsePorcelainStatusLine.',
   },
   {
     task_id: 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES',
@@ -6558,6 +6629,15 @@ const safeFixCodeOptimizationReviews = [
     minimality_score: 4,
     evidence: 'The selected change reuses the existing focused source-provenance report/check command across existing proof rows and validators, adds no dependency, no duplicate git parser, no source mutation, no approval-packet replacement, no release execution, and no deploy path.',
     tests_or_checks: sourceProvenanceProofHandleTestsRun,
+    remaining_risk: 'The staged workflow rename still blocks source provenance until an owner decision; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change reuses the existing old_path, file_path, proof_type, and staging_state fields from source_provenance.dirty_paths and resolution_queue items, adds no dependency, no duplicate git parser, no source mutation, no source cleanup, no release execution, no approval request, and no deploy path.',
+    tests_or_checks: sourceProvenanceRenameSummaryTestsRun,
     remaining_risk: 'The staged workflow rename still blocks source provenance until an owner decision; Corepack-pinned release-readiness, branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, deployment, and post-deploy live proof also remain open.',
   },
   {

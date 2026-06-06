@@ -966,6 +966,18 @@ try {
         `Manifest launch action queue must include phase: ${phase}.`,
       );
     }
+    const sourceActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'source_provenance');
+    assert(sourceActionItem, 'Launch action queue must include source_provenance.');
+    const renameDirtyPath = (manifest.source_provenance?.dirty_paths ?? []).find((item) => item.old_path);
+    if (renameDirtyPath) {
+      const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+      assert(sourceActionItem.blocker.includes(renameSummary), 'Source provenance launch action must expose staged rename old_path -> file_path.');
+      assert(sourceActionItem.blocker.includes(renameDirtyPath.proof_type), 'Source provenance launch action must expose the rename proof type.');
+      assert(sourceActionItem.blocker.includes(renameDirtyPath.staging_state), 'Source provenance launch action must expose the rename staging state.');
+      const releaseSourceRow = (manifest.release_preflight?.items ?? []).find((item) => item.requirement === 'Clean source provenance');
+      assert(releaseSourceRow?.current?.includes(renameSummary), 'Release preflight clean-source row must expose staged rename old_path -> file_path.');
+      assert(releaseSourceRow?.current?.includes(renameDirtyPath.proof_type), 'Release preflight clean-source row must expose source_rename_decision.');
+    }
     const launchEvidenceActionItem = manifest.launch_action_queue.items.find((item) => item.phase === 'launch_evidence_validation');
     assert(launchEvidenceActionItem, 'Launch action queue must include launch_evidence_validation.');
     assert(launchEvidenceActionItem.proof_command.includes('report:launch-evidence-validation-readiness') && launchEvidenceActionItem.proof_command.includes('check:launch-evidence-validation-report'), 'Launch evidence validation action must run the focused validation report and checker.');
@@ -1107,6 +1119,7 @@ try {
     }
     const ownerApprovalItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Explicit owner production approval');
     const liveProofItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Post-deploy live proof boundary');
+    const sourcePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Clean source provenance');
     const launchEvidencePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Launch evidence validation');
     const releasePrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Corepack release-readiness');
     const branchPrerequisiteItem = manifest.production_approval.prerequisite_queue.items.find((item) => item.prerequisite === 'Canonical branch review');
@@ -1126,6 +1139,12 @@ try {
       'Corepack release-readiness prerequisite must run focused release-preflight proof before guarded release-readiness.',
     );
     assert(/probe ledger/i.test(releasePrerequisiteItem.stop_gate), 'Corepack release-readiness prerequisite must say the probe ledger is not approval evidence.');
+    if (renameDirtyPath) {
+      const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+      assert(sourcePrerequisiteItem?.current?.includes(renameSummary), 'Clean source provenance prerequisite must expose staged rename old_path -> file_path.');
+      assert(sourcePrerequisiteItem?.current?.includes(renameDirtyPath.proof_type), 'Clean source provenance prerequisite must expose source_rename_decision.');
+      assert(sourcePrerequisiteItem?.current?.includes(renameDirtyPath.staging_state), 'Clean source provenance prerequisite must expose the rename staging state.');
+    }
     assert(branchPrerequisiteItem, 'Production approval prerequisite queue must include Canonical branch review.');
     assert(
       branchPrerequisiteItem.proof_command.includes('report:branch-review-readiness')
@@ -1211,6 +1230,12 @@ try {
         assert(item.source_status === 'ready', 'Launch evidence validation request row must inherit ready status from the externally validated prerequisite.');
         assert(item.blocks_request === false, 'Launch evidence validation request row must not circularly block the packet after external validation is attached.');
         assert(/does not grant approval|buyer acceptance|deployment|live parity/i.test(item.request_impact), 'Launch evidence validation request impact must preserve the no-approval and no-live-parity boundary.');
+      }
+      if (item.prerequisite === 'Clean source provenance' && renameDirtyPath) {
+        const renameSummary = `${renameDirtyPath.old_path} -> ${renameDirtyPath.file_path}`;
+        assert(item.current.includes(renameSummary), 'Clean source provenance request row must expose staged rename old_path -> file_path.');
+        assert(item.current.includes(renameDirtyPath.proof_type), 'Clean source provenance request row must expose source_rename_decision.');
+        assert(item.current.includes(renameDirtyPath.staging_state), 'Clean source provenance request row must expose the rename staging state.');
       }
       if (item.prerequisite === 'Buyer evidence hard gate') {
         assert(
@@ -2304,6 +2329,34 @@ try {
         && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
         && sourceProvenanceProofHandleReview.tests_or_checks.some((check) => /check:release-preflight-report -- --skip-probes/.test(check)),
       'Source provenance proof-handle code optimization review must record focused source and release-preflight checker proof.',
+    );
+    const sourceProvenanceRenameSummaryDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY');
+    assert(sourceProvenanceRenameSummaryDecision, 'Manifest must record the source provenance rename summary implementation decision.');
+    assert(
+      sourceProvenanceRenameSummaryDecision?.chosen_variant === 'minimal source decision summary helper',
+      'Source provenance rename summary decision must record the chosen minimal summary-helper variant.',
+    );
+    assert(
+      Array.isArray(sourceProvenanceRenameSummaryDecision?.files_changed)
+        && sourceProvenanceRenameSummaryDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && sourceProvenanceRenameSummaryDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && sourceProvenanceRenameSummaryDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Source provenance rename summary decision must record manifest, checker, and launch manifest test file changes.',
+    );
+    assert(
+      /does not commit|clear source provenance|run release-readiness|deploy|hosted\/live parity/i.test(sourceProvenanceRenameSummaryDecision?.proof_boundary ?? ''),
+      'Source provenance rename summary decision must preserve no-mutation, source, release, deploy, and live-parity boundaries.',
+    );
+    const sourceProvenanceRenameSummaryReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-RENAME-SUMMARY');
+    assert(sourceProvenanceRenameSummaryReview, 'Manifest must record the source provenance rename summary code optimization review.');
+    assert(sourceProvenanceRenameSummaryReview?.policy === 'strict', 'Source provenance rename summary code optimization review must use strict policy.');
+    assert(sourceProvenanceRenameSummaryReview?.verdict === 'pass', 'Source provenance rename summary code optimization review must pass.');
+    assert(
+      Array.isArray(sourceProvenanceRenameSummaryReview?.tests_or_checks)
+        && sourceProvenanceRenameSummaryReview.tests_or_checks.some((check) => /report:source-provenance-readiness -- --skip-probes/.test(check))
+        && sourceProvenanceRenameSummaryReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
+        && sourceProvenanceRenameSummaryReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check)),
+      'Source provenance rename summary code optimization review must record focused source and manifest checker proof.',
     );
     const releaseToolchainProofHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-PROOF-HANDLES');
     assert(releaseToolchainProofHandleDecision, 'Manifest must record the release toolchain proof-handle implementation decision.');
