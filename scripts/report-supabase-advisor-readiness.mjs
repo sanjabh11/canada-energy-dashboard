@@ -164,6 +164,7 @@ function renderMarkdown(payload) {
   const advisor = payload.supabase_advisor ?? {};
   const deficits = advisor.clearance_deficits ?? {};
   const remediationQueue = deficits.remediation_queue ?? {};
+  const operatorHandoffPacket = advisor.operator_handoff_packet ?? deficits.operator_handoff_packet ?? {};
   const launchRow = payload.launch_action_supabase_row ?? {};
   const productionPrerequisite = payload.production_approval_advisor_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_advisor_row ?? {};
@@ -189,6 +190,23 @@ function renderMarkdown(payload) {
     item.proof_command,
     item.proof_type,
     item.external_account_required ? 'yes' : 'no',
+    item.proof_boundary,
+    item.stop_gate,
+  ]);
+
+  const operatorHandoffRows = (operatorHandoffPacket.items ?? []).map((item) => [
+    item.rank,
+    item.requirement,
+    item.owner,
+    item.status,
+    item.execution_gate,
+    item.proof_command,
+    item.proof_type,
+    item.external_account_required ? 'yes' : 'no',
+    item.public_safe_record_required ? 'yes' : 'no',
+    item.secret_safe ? 'yes' : 'no',
+    item.blocks_advisor_gate ? 'yes' : 'no',
+    item.can_execute_from_packet ? 'yes' : 'no',
     item.proof_boundary,
     item.stop_gate,
   ]);
@@ -249,6 +267,7 @@ function renderMarkdown(payload) {
     `- Connector permission: \`${advisor.connector_permission ?? 'unknown'}\``,
     `- Database Security Advisor and Performance Advisor: \`${advisor.security_performance_advisors_status ?? 'unknown'}\``,
     `- Proof bucket: \`${advisor.proof_bucket ?? 'unknown'}\``,
+    `- Operator handoff packet: \`${operatorHandoffPacket.status ?? 'unknown'}; blocked=${operatorHandoffPacket.blocked_count ?? 'unknown'}/${operatorHandoffPacket.item_count ?? 'unknown'}\``,
     `- Docs reference: ${advisor.docs_reference ?? 'not recorded'}`,
     `- Next action: ${advisor.next_action ?? 'not recorded'}`,
     '',
@@ -269,6 +288,17 @@ function renderMarkdown(payload) {
     remediationQueue.evidence ?? 'Supabase advisor remediation queue missing.',
     '',
     renderTable(['Rank', 'Requirement', 'Status', 'Owner', 'Action', 'Proof Command', 'Proof Type', 'External Account Required', 'Proof Boundary', 'Stop Gate'], remediationRows),
+    '',
+    '## Supabase Advisor Operator Handoff Packet',
+    '',
+    operatorHandoffPacket.evidence ?? 'Supabase advisor operator handoff packet missing.',
+    '',
+    `Proof type: ${operatorHandoffPacket.proof_type ?? 'unknown'}`,
+    `Source: ${operatorHandoffPacket.source ?? 'unknown'}`,
+    `Boundary: ${operatorHandoffPacket.proof_boundary ?? 'unknown'}`,
+    `Stop gate: ${operatorHandoffPacket.stop_gate ?? 'unknown'}`,
+    '',
+    renderTable(['Rank', 'Requirement', 'Owner', 'Status', 'Execution Gate', 'Proof Command', 'Proof Type', 'External Account Required', 'Public-Safe Record Required', 'Secret Safe', 'Blocks Advisor Gate', 'Can Execute From Packet', 'Proof Boundary', 'Stop Gate'], operatorHandoffRows),
     '',
     '## Launch Action Supabase Row',
     '',
@@ -311,7 +341,8 @@ if (outputPath) {
 process.stdout.write(output);
 
 const advisorReady = payload.supabase_advisor?.status === 'verified'
-  && payload.supabase_advisor?.clearance_deficits?.status === 'pass';
+  && payload.supabase_advisor?.clearance_deficits?.status === 'pass'
+  && payload.supabase_advisor?.operator_handoff_packet?.status === 'ready';
 if (failOnBlocker && !advisorReady) {
   console.error(`Supabase advisor clearance remains ${payload.supabase_advisor?.status ?? 'unknown'}; this report does not authorize connectors, rerun advisors, clear findings, or grant production approval.`);
   process.exit(1);

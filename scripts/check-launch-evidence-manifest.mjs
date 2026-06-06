@@ -1745,6 +1745,70 @@ try {
       manifest.supabase_advisor.clearance_deficits.remediation_queue.items.some((item) => /Do not/.test(item.stop_gate)),
       'Supabase advisor remediation queue must preserve explicit stop gates.',
     );
+    assert(typeof manifest.supabase_advisor?.operator_handoff_packet?.evidence === 'string', 'Manifest supabase_advisor.operator_handoff_packet.evidence must be set.');
+    assert(manifest.supabase_advisor.operator_handoff_packet.evidence.includes('Supabase advisor operator handoff packet'), 'Manifest Supabase advisor operator handoff packet evidence must include a packet marker.');
+    assert(manifest.supabase_advisor.operator_handoff_packet.proof_type === 'supabase_advisor_operator_handoff_packet', 'Manifest Supabase advisor operator handoff packet must classify proof_type as supabase_advisor_operator_handoff_packet.');
+    assert(manifest.supabase_advisor.operator_handoff_packet.source === 'supabase_advisor.clearance_deficits.remediation_queue.items', 'Manifest Supabase advisor operator handoff packet must source remediation queue items.');
+    assert(manifest.supabase_advisor.operator_handoff_packet.status === (manifest.supabase_advisor.clearance_deficits.remediation_queue.status === 'pass' ? 'ready' : 'blocked'), 'Supabase advisor operator handoff packet status must derive from remediation queue status.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.item_count), 'Manifest supabase_advisor.operator_handoff_packet.item_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.blocked_count), 'Manifest supabase_advisor.operator_handoff_packet.blocked_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.external_account_count), 'Manifest supabase_advisor.operator_handoff_packet.external_account_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.repo_command_count), 'Manifest supabase_advisor.operator_handoff_packet.repo_command_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.retained_record_count), 'Manifest supabase_advisor.operator_handoff_packet.retained_record_count must be an integer or null.');
+    assert(hasIntegerOrNull(manifest.supabase_advisor.operator_handoff_packet?.account_admin_count), 'Manifest supabase_advisor.operator_handoff_packet.account_admin_count must be an integer or null.');
+    assert(Array.isArray(manifest.supabase_advisor.operator_handoff_packet.items), 'Manifest supabase_advisor.operator_handoff_packet.items must be a list.');
+    assert(
+      manifest.supabase_advisor.operator_handoff_packet.item_count === manifest.supabase_advisor.clearance_deficits.remediation_queue.items.length,
+      'Supabase advisor operator handoff packet item_count must match remediation queue items length.',
+    );
+    assert(
+      manifest.supabase_advisor.operator_handoff_packet.blocked_count === manifest.supabase_advisor.operator_handoff_packet.items.filter((item) => item.blocks_advisor_gate).length,
+      'Supabase advisor operator handoff packet blocked_count must match advisor-blocking rows.',
+    );
+    assert(
+      manifest.supabase_advisor.operator_handoff_packet.external_account_count === manifest.supabase_advisor.operator_handoff_packet.items.filter((item) => item.external_account_required).length,
+      'Supabase advisor operator handoff packet external_account_count must match external-account rows.',
+    );
+    assert(
+      manifest.supabase_advisor.operator_handoff_packet.repo_command_count === manifest.supabase_advisor.operator_handoff_packet.items.filter((item) => item.proof_type === 'repo_command').length,
+      'Supabase advisor operator handoff packet repo_command_count must match repo-command rows.',
+    );
+    assert(
+      manifest.supabase_advisor.operator_handoff_packet.retained_record_count === manifest.supabase_advisor.operator_handoff_packet.items.filter((item) => item.proof_type === 'retained_redacted_record').length,
+      'Supabase advisor operator handoff packet retained_record_count must match retained-record rows.',
+    );
+    assert(
+      JSON.stringify((manifest.supabase_advisor.operator_handoff_packet.items ?? []).map((item) => item.requirement)) === JSON.stringify(supabaseQueueRequirements),
+      'Supabase advisor operator handoff packet must include exactly remediation queue requirements in order.',
+    );
+    assert(typeof manifest.supabase_advisor.operator_handoff_packet.proof_boundary === 'string' && /planning evidence only|does not authorize connectors|access dashboards|rerun Security Advisor or Performance Advisor|mutate database|run migrations|record secrets|clear advisor findings|request production approval|deploy|hosted\/live parity/i.test(manifest.supabase_advisor.operator_handoff_packet.proof_boundary), 'Supabase advisor operator handoff packet proof_boundary must preserve planning-only external-account semantics.');
+    assert(typeof manifest.supabase_advisor.operator_handoff_packet.stop_gate === 'string' && /Do not claim Supabase advisor clearance|request production approval|run migrations|alter secrets|deploy|hosted\/live parity/i.test(manifest.supabase_advisor.operator_handoff_packet.stop_gate), 'Supabase advisor operator handoff packet stop_gate must reject clearance, secret, approval, deploy, and live-parity claims.');
+    const supabaseOperatorRowsByRequirement = new Map((manifest.supabase_advisor.operator_handoff_packet.items ?? []).map((item) => [item.requirement, item]));
+    for (const [index, item] of (manifest.supabase_advisor.operator_handoff_packet.items ?? []).entries()) {
+      const remediationRow = (manifest.supabase_advisor.clearance_deficits.remediation_queue.items ?? [])[index] ?? {};
+      assert(Number.isInteger(item.rank), `supabase_advisor.operator_handoff_packet.items[${index}].rank must be an integer.`);
+      assert(item.requirement === remediationRow.requirement, `supabase_advisor.operator_handoff_packet.items[${index}].requirement must match the remediation queue row.`);
+      assert(item.owner === remediationRow.owner, `supabase_advisor.operator_handoff_packet.items[${index}].owner must match the remediation queue row.`);
+      assert(['ready', 'blocked'].includes(item.status), `supabase_advisor.operator_handoff_packet.items[${index}].status must be ready or blocked.`);
+      assert(typeof item.execution_gate === 'string' && item.execution_gate.length > 0, `supabase_advisor.operator_handoff_packet.items[${index}].execution_gate must be set.`);
+      assert(item.proof_command === remediationRow.proof_command, `supabase_advisor.operator_handoff_packet.items[${index}].proof_command must match the remediation queue row.`);
+      assert(item.proof_type === remediationRow.proof_type, `supabase_advisor.operator_handoff_packet.items[${index}].proof_type must match the remediation queue row.`);
+      assert(item.external_account_required === remediationRow.external_account_required, `supabase_advisor.operator_handoff_packet.items[${index}].external_account_required must match the remediation queue row.`);
+      assert(typeof item.public_safe_record_required === 'boolean', `supabase_advisor.operator_handoff_packet.items[${index}].public_safe_record_required must be boolean.`);
+      assert(typeof item.secret_safe === 'boolean', `supabase_advisor.operator_handoff_packet.items[${index}].secret_safe must be boolean.`);
+      assert(typeof item.blocks_advisor_gate === 'boolean', `supabase_advisor.operator_handoff_packet.items[${index}].blocks_advisor_gate must be boolean.`);
+      assert(typeof item.can_execute_from_packet === 'boolean', `supabase_advisor.operator_handoff_packet.items[${index}].can_execute_from_packet must be boolean.`);
+      assert(item.can_execute_from_packet === false, `supabase_advisor.operator_handoff_packet.items[${index}] must not be executable from the packet.`);
+      assert(item.blocks_advisor_gate === (remediationRow.status !== 'ready'), `supabase_advisor.operator_handoff_packet.items[${index}] must derive blocks_advisor_gate from remediation row status.`);
+      assert(typeof item.proof_boundary === 'string' && /planning evidence only|does not authorize connectors|access dashboards|rerun advisors|mutate database|run migrations|record secrets|clear advisor findings|request production approval|deploy|hosted\/live parity/i.test(item.proof_boundary), `supabase_advisor.operator_handoff_packet.items[${index}] proof_boundary must preserve planning-only semantics.`);
+      assert(typeof item.stop_gate === 'string' && /Do not execute external-account work|persist secrets|claim clearance|mark this row ready/i.test(item.stop_gate), `supabase_advisor.operator_handoff_packet.items[${index}] stop_gate must reject packet execution.`);
+    }
+    assert(supabaseOperatorRowsByRequirement.get('CLI app lint freshness')?.execution_gate === 'repo_lint_freshness_first', 'Supabase operator CLI app lint row must require repo_lint_freshness_first.');
+    assert(supabaseOperatorRowsByRequirement.get('Connector project authorization')?.execution_gate === 'authorized_connector_or_dashboard_access_first', 'Supabase operator authorization row must require authorized_connector_or_dashboard_access_first.');
+    assert(supabaseOperatorRowsByRequirement.get('Security advisor evidence')?.execution_gate === 'security_advisor_after_authorization', 'Supabase operator Security Advisor row must require security_advisor_after_authorization.');
+    assert(supabaseOperatorRowsByRequirement.get('Performance advisor evidence')?.execution_gate === 'performance_advisor_after_authorization', 'Supabase operator Performance Advisor row must require performance_advisor_after_authorization.');
+    assert(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.execution_gate === 'public_safe_record_after_advisor_review', 'Supabase operator public-safe record row must require public_safe_record_after_advisor_review.');
+    assert(supabaseOperatorRowsByRequirement.get('Advisor clearance claim')?.execution_gate === 'clearance_claim_after_all_rows_pass', 'Supabase operator clearance claim row must require clearance_claim_after_all_rows_pass.');
     assert(typeof manifest.branch_review?.evidence === 'string', 'Manifest must include branch_review.evidence.');
     assert(typeof manifest.branch_review?.status === 'string', 'Manifest branch_review.status must be set.');
     assert(typeof manifest.branch_review?.probe_status === 'string', 'Manifest branch_review.probe_status must be set.');
@@ -2295,7 +2359,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest branch operator handoff packet safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET', 'Manifest progress_updates must expose the latest Supabase advisor operator handoff packet safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -3736,6 +3800,41 @@ try {
         && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && branchOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Branch operator handoff packet code optimization review must record focused branch, progress, manifest, and commercial report checks.',
+    );
+    const supabaseAdvisorOperatorHandoffPacketDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET');
+    assert(supabaseAdvisorOperatorHandoffPacketDecision, 'Manifest must record the Supabase advisor operator handoff packet implementation decision.');
+    assert(
+      supabaseAdvisorOperatorHandoffPacketDecision?.chosen_variant === 'minimal derived Supabase advisor operator handoff packet',
+      'Supabase advisor operator handoff packet decision must record the minimal derived packet variant.',
+    );
+    assert(
+      Array.isArray(supabaseAdvisorOperatorHandoffPacketDecision?.files_changed)
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/report-supabase-advisor-readiness.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/check-supabase-advisor-readiness-report.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('tests/unit/supabaseAdvisorReadiness.test.ts')
+        && supabaseAdvisorOperatorHandoffPacketDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Supabase advisor operator handoff packet decision must record the manifest, focused Supabase report, checkers, and unit test files.',
+    );
+    assert(
+      /does not authorize connectors|access dashboards|rerun Security Advisor or Performance Advisor|mutate database|run migrations|alter secrets|record secrets|clear advisor findings|request production approval|deploy|hosted\/live parity|grant owner approval|raise launch status/i.test(supabaseAdvisorOperatorHandoffPacketDecision?.proof_boundary ?? ''),
+      'Supabase advisor operator handoff packet decision must preserve no-connector, no-dashboard, no-advisor-rerun, no-database-mutation, no-secret, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const supabaseAdvisorOperatorHandoffPacketReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET');
+    assert(supabaseAdvisorOperatorHandoffPacketReview, 'Manifest must record the Supabase advisor operator handoff packet code optimization review.');
+    assert(supabaseAdvisorOperatorHandoffPacketReview?.policy === 'strict', 'Supabase advisor operator handoff packet code optimization review must use strict policy.');
+    assert(supabaseAdvisorOperatorHandoffPacketReview?.verdict === 'pass', 'Supabase advisor operator handoff packet code optimization review must pass.');
+    assert(
+      Array.isArray(supabaseAdvisorOperatorHandoffPacketReview?.tests_or_checks)
+        && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /report:supabase-advisor-readiness -- --skip-probes/.test(check))
+        && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:supabase-advisor-report -- --skip-probes/.test(check))
+        && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Supabase advisor operator handoff packet code optimization review must record focused Supabase, progress, manifest, and commercial report checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

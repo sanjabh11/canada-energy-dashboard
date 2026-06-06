@@ -45,6 +45,11 @@ describe('Supabase advisor readiness report', () => {
     expect(stdout).toContain('| Public-safe findings record |');
     expect(stdout).toContain('| Advisor clearance claim |');
     expect(stdout).toContain('Supabase Advisor Remediation Queue');
+    expect(stdout).toContain('Supabase Advisor Operator Handoff Packet');
+    expect(stdout).toContain('supabase_advisor_operator_handoff_packet');
+    expect(stdout).toContain('Execution Gate');
+    expect(stdout).toContain('Can Execute From Packet');
+    expect(stdout).toContain('Secret Safe');
     expect(stdout).toContain('Production Approval Supabase Prerequisite');
     expect(stdout).toContain('Production Approval Request Supabase Row');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
@@ -71,12 +76,65 @@ describe('Supabase advisor readiness report', () => {
       'Advisor clearance claim',
     ]);
     expect(payload.supabase_advisor.clearance_deficits.total_count).toBe(6);
-    expect(payload.supabase_advisor.clearance_deficits.remediation_queue.items.some(
+    const remediationQueue = payload.supabase_advisor.clearance_deficits.remediation_queue;
+    expect(remediationQueue.items.some(
       (item: { external_account_required: boolean }) => item.external_account_required === true,
     )).toBe(true);
-    expect(payload.supabase_advisor.clearance_deficits.remediation_queue.items.some(
+    expect(remediationQueue.items.some(
       (item: { proof_type: string }) => item.proof_type === 'retained_redacted_record',
     )).toBe(true);
+    const operatorHandoffPacket = payload.supabase_advisor.operator_handoff_packet;
+    expect(operatorHandoffPacket.proof_type).toBe('supabase_advisor_operator_handoff_packet');
+    expect(operatorHandoffPacket.source).toBe('supabase_advisor.clearance_deficits.remediation_queue.items');
+    expect(operatorHandoffPacket.item_count).toBe(remediationQueue.items.length);
+    expect(operatorHandoffPacket.blocked_count).toBe(
+      operatorHandoffPacket.items.filter((item: { blocks_advisor_gate: boolean }) => item.blocks_advisor_gate).length,
+    );
+    expect(operatorHandoffPacket.external_account_count).toBe(
+      operatorHandoffPacket.items.filter((item: { external_account_required: boolean }) => item.external_account_required).length,
+    );
+    expect(operatorHandoffPacket.repo_command_count).toBe(
+      operatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'repo_command').length,
+    );
+    expect(operatorHandoffPacket.retained_record_count).toBe(
+      operatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'retained_redacted_record').length,
+    );
+    expect(operatorHandoffPacket.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      remediationQueue.items.map((item: { requirement: string }) => item.requirement),
+    );
+    expect(operatorHandoffPacket.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const operatorRowsByRequirement = new Map<string, {
+      execution_gate: string;
+      proof_command: string;
+      proof_type: string;
+      proof_boundary: string;
+      stop_gate: string;
+      public_safe_record_required: boolean;
+      secret_safe: boolean;
+    }>(operatorHandoffPacket.items.map((item: {
+      requirement: string;
+      execution_gate: string;
+      proof_command: string;
+      proof_type: string;
+      proof_boundary: string;
+      stop_gate: string;
+      public_safe_record_required: boolean;
+      secret_safe: boolean;
+    }) => [item.requirement, item]));
+    expect(operatorRowsByRequirement.get('CLI app lint freshness')?.execution_gate).toBe('repo_lint_freshness_first');
+    expect(operatorRowsByRequirement.get('Connector project authorization')?.execution_gate).toBe('authorized_connector_or_dashboard_access_first');
+    expect(operatorRowsByRequirement.get('Security advisor evidence')?.execution_gate).toBe('security_advisor_after_authorization');
+    expect(operatorRowsByRequirement.get('Performance advisor evidence')?.execution_gate).toBe('performance_advisor_after_authorization');
+    expect(operatorRowsByRequirement.get('Public-safe findings record')?.execution_gate).toBe('public_safe_record_after_advisor_review');
+    expect(operatorRowsByRequirement.get('Advisor clearance claim')?.execution_gate).toBe('clearance_claim_after_all_rows_pass');
+    for (const row of operatorHandoffPacket.items) {
+      const sourceRow = remediationQueue.items.find((item: { requirement: string }) => item.requirement === row.requirement);
+      expect(row.proof_command).toBe(sourceRow.proof_command);
+      expect(row.proof_boundary).toMatch(/planning evidence only|does not authorize connectors|access dashboard|rerun advisors|mutate database|record secrets|request approval|deploy|hosted\/live parity/i);
+      expect(row.stop_gate).toMatch(/Do not|claim clearance|mark this row ready|advisor evidence|permission-denied|secrets/i);
+    }
+    expect(operatorRowsByRequirement.get('Public-safe findings record')?.public_safe_record_required).toBe(true);
+    expect(operatorRowsByRequirement.get('Public-safe findings record')?.secret_safe).toBe(true);
     expect(payload.launch_action_supabase_row.phase).toBe('supabase_advisor');
     expect(payload.production_approval_advisor_prerequisite.prerequisite).toBe('Supabase advisor clearance');
     expect(payload.production_approval_request_advisor_row.prerequisite).toBe('Supabase advisor clearance');
@@ -99,6 +157,7 @@ describe('Supabase advisor readiness report', () => {
     });
 
     expect(stdout).toContain('Supabase advisor readiness report check passed');
+    expect(stdout).toContain('operator handoff packet');
   });
 
   it('can fail as a machine advisor gate when clearance blockers remain', () => {
@@ -117,7 +176,8 @@ describe('Supabase advisor readiness report', () => {
     });
 
     const ready = json.supabase_advisor.status === 'verified'
-      && json.supabase_advisor.clearance_deficits.status === 'pass';
+      && json.supabase_advisor.clearance_deficits.status === 'pass'
+      && json.supabase_advisor.operator_handoff_packet.status === 'ready';
     expect(result.status).toBe(ready ? 0 : 1);
     expect(result.stdout).toContain('# CEIP Supabase Advisor Readiness Report');
     if (!ready) {

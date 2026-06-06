@@ -347,6 +347,86 @@ function buildSupabaseAdvisorRemediationQueue(deficits, advisor) {
   return { ...queue, evidence: supabaseAdvisorRemediationEvidence(queue) };
 }
 
+function supabaseAdvisorOperatorExecutionGate(item) {
+  switch (item.requirement) {
+    case 'CLI app lint freshness':
+      return 'repo_lint_freshness_first';
+    case 'Connector project authorization':
+      return 'authorized_connector_or_dashboard_access_first';
+    case 'Security advisor evidence':
+      return 'security_advisor_after_authorization';
+    case 'Performance advisor evidence':
+      return 'performance_advisor_after_authorization';
+    case 'Public-safe findings record':
+      return 'public_safe_record_after_advisor_review';
+    case 'Advisor clearance claim':
+      return 'clearance_claim_after_all_rows_pass';
+    default:
+      return 'supabase_advisor_prerequisite_review';
+  }
+}
+
+function supabaseAdvisorOperatorEvidence(packet) {
+  if (packet.status === 'ready') {
+    return 'Supabase advisor operator handoff packet: status=ready source=supabase_advisor.clearance_deficits.remediation_queue.items open=0 approval_gate=owner approval, release gates, and post-deploy live proof still apply before production deploy';
+  }
+
+  const topBlocked = packet.items
+    .filter((item) => item.blocks_advisor_gate)
+    .slice(0, 5)
+    .map((item) => `${item.rank}:${item.requirement}:${item.execution_gate}`)
+    .join(', ') || 'none';
+
+  return [
+    'Supabase advisor operator handoff packet:',
+    `status=${packet.status}`,
+    `source=${packet.source}`,
+    `items=${packet.item_count}`,
+    `blocked=${packet.blocked_count}`,
+    `external_account=${packet.external_account_count}`,
+    `top_execution_gates=${topBlocked}`,
+    'approval_gate=packet is planning evidence only; it does not authorize connectors, access dashboards, rerun advisors, mutate database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity',
+  ].join(' ');
+}
+
+function buildSupabaseAdvisorOperatorHandoffPacket(remediationQueue) {
+  const items = (remediationQueue.items ?? []).map((item) => ({
+    rank: item.rank,
+    requirement: item.requirement,
+    owner: item.owner,
+    status: item.status === 'ready' ? 'ready' : 'blocked',
+    deficit_status: item.deficit_status,
+    current: item.current,
+    needed: item.needed,
+    action: item.action,
+    execution_gate: supabaseAdvisorOperatorExecutionGate(item),
+    proof_command: item.proof_command,
+    proof_type: item.proof_type,
+    external_account_required: item.external_account_required,
+    public_safe_record_required: item.proof_type === 'retained_redacted_record',
+    secret_safe: item.proof_type !== 'retained_redacted_record' || /no secrets/i.test(item.proof_command),
+    proof_boundary: `${item.proof_boundary} This Supabase advisor operator handoff row is planning evidence only; it does not authorize connectors, access dashboards, rerun advisors, mutate database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity.`,
+    stop_gate: `${item.stop_gate} Do not execute external-account work, persist secrets, claim clearance, or mark this row ready from the handoff packet itself.`,
+    blocks_advisor_gate: item.status !== 'ready',
+    can_execute_from_packet: false,
+  }));
+  const packet = {
+    status: remediationQueue.status === 'pass' ? 'ready' : 'blocked',
+    proof_type: 'supabase_advisor_operator_handoff_packet',
+    source: 'supabase_advisor.clearance_deficits.remediation_queue.items',
+    item_count: items.length,
+    blocked_count: items.filter((item) => item.blocks_advisor_gate).length,
+    external_account_count: items.filter((item) => item.external_account_required).length,
+    repo_command_count: items.filter((item) => item.proof_type === 'repo_command').length,
+    retained_record_count: items.filter((item) => item.proof_type === 'retained_redacted_record').length,
+    account_admin_count: items.filter((item) => item.owner === 'account_admin').length,
+    proof_boundary: 'This Supabase advisor operator handoff packet is planning evidence only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity.',
+    stop_gate: 'Do not claim Supabase advisor clearance, request production approval, run migrations, alter secrets, deploy, or present hosted/live parity from this handoff; run authorized advisor proof and public-safe recording separately.',
+    items,
+  };
+  return { ...packet, evidence: supabaseAdvisorOperatorEvidence(packet) };
+}
+
 function supabaseAdvisorClearanceDeficits(advisor) {
   const connectorAuthorized = advisor.connectorPermission !== 'permission_denied';
   const advisorVerified = advisor.securityPerformanceAdvisorsStatus === 'verified';
@@ -428,10 +508,12 @@ function supabaseAdvisorClearanceDeficits(advisor) {
     total_count: items.length,
     items,
   };
+  const remediationQueue = buildSupabaseAdvisorRemediationQueue(deficits, advisor);
 
   return {
     ...deficits,
-    remediation_queue: buildSupabaseAdvisorRemediationQueue(deficits, advisor),
+    remediation_queue: remediationQueue,
+    operator_handoff_packet: buildSupabaseAdvisorOperatorHandoffPacket(remediationQueue),
     evidence: supabaseAdvisorClearanceDeficitEvidence(deficits),
   };
 }
@@ -5179,6 +5261,17 @@ const supabaseAdvisorReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const supabaseAdvisorOperatorHandoffPacketFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-supabase-advisor-readiness.mjs',
+  'scripts/check-supabase-advisor-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/supabaseAdvisorReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const branchReviewReportFilesChanged = [
   'package.json',
   'scripts/report-branch-review-readiness.mjs',
@@ -5486,6 +5579,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
+  ...supabaseAdvisorOperatorHandoffPacketFilesChanged,
   ...branchReviewReportFilesChanged,
   ...branchReviewSupabaseFunctionImpactFilesChanged,
   ...launchManifestBranchFunctionImpactFilesChanged,
@@ -5785,6 +5879,23 @@ const supabaseAdvisorReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const supabaseAdvisorOperatorHandoffPacketTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-supabase-advisor-readiness.mjs',
+  'node --check scripts/check-supabase-advisor-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/supabaseAdvisorReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes --json',
+  'pnpm run check:supabase-advisor-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const branchReviewReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6077,6 +6188,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
+  ...supabaseAdvisorOperatorHandoffPacketTestsRun,
   ...branchReviewReportTestsRun,
   ...branchReviewSupabaseFunctionImpactTestsRun,
   ...launchManifestBranchFunctionImpactTestsRun,
@@ -6762,6 +6874,19 @@ const safeFixImplementationDecisions = [
     reason: 'The branch clearance matrix named blocked branch families, but operators lacked a compact packet that sequences the next read-only proof commands without implying that report generation can checkout, merge, push, discard, delete, select canonical heads, run migrations, deploy, request approval, or prove live parity.',
     proof_boundary: 'This record improves branch operator handoff visibility only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, prove hosted/live parity, grant owner approval, or raise launch status.',
     stop_gate: 'Do not treat the branch operator handoff packet, focused branch report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as branch approval, canonical-head owner selection, merge approval, source cleanup, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    decision: 'Expose a Supabase advisor operator handoff packet derived from the Supabase advisor remediation queue.',
+    acceptance_check: 'supabase_advisor.operator_handoff_packet records source linkage, status, item counts, execution gates, proof commands, external-account flags, no-secret boundaries, and non-executable packet rows; report:supabase-advisor-readiness renders it; and focused/broad checks reject missing packet evidence.',
+    chosen_variant: 'minimal derived Supabase advisor operator handoff packet',
+    repo_pattern_reused: 'Existing supabase_advisor.clearance_deficits.remediation_queue rows, Supabase advisor proof command/type helpers, focused Supabase advisor report/check, progress digest current-phase ratchet, broad manifest checker, commercial report code-optimization section, and launch manifest unit test contract.',
+    files_changed: supabaseAdvisorOperatorHandoffPacketFilesChanged,
+    tests_run: supabaseAdvisorOperatorHandoffPacketTestsRun,
+    proof: 'The patch derives the packet from existing supabase_advisor.clearance_deficits.remediation_queue rows, assigns explicit execution gates for repo lint, connector authorization, Security Advisor, Performance Advisor, public-safe record, and clearance-claim rows, marks every row non-executable from the packet, and validates source linkage, counts, commands, gates, external-account flags, no-secret boundaries, and no-Supabase-execution boundaries.',
+    reason: 'The Supabase remediation queue named the blocked advisor actions, but operators lacked a compact packet that sequences the next proof commands without implying that report generation can authorize connectors, access dashboards, rerun advisors, mutate database state, record secrets, request approval, or prove live parity.',
+    proof_boundary: 'This record improves Supabase advisor operator handoff visibility only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate database, run migrations, alter secrets, record secrets, clear advisor findings, request production approval, deploy, prove hosted/live parity, grant owner approval, or raise launch status.',
+    stop_gate: 'Do not treat the Supabase advisor operator handoff packet, focused Supabase report/check, manifest validation, skipped probes, JSON output, or this code optimization ledger as connector authorization, Supabase advisor clearance, database security clearance, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -7963,6 +8088,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused branch-review report already reads the manifest branch_review object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    variant: 'Leave Supabase advisor operator actions implicit in clearance_deficits.remediation_queue rows.',
+    reason_rejected: 'Operators would still need to infer execution gates, external-account boundaries, and no-secret handling from individual remediation rows instead of seeing a compact source-linked handoff for the active Supabase advisor blocker.',
+    tradeoff: 'No-code defer avoids schema/report churn, but keeps the Supabase advisor blocker less executable and easier to misread as an ordinary checklist rather than an external-account gated handoff.',
+    evidence: 'supabase_advisor.clearance_deficits.remediation_queue.items already contains owners, proof commands, proof types, external-account flags, proof boundaries, and stop gates, but no dedicated operator_handoff_packet or focused report section surfaces execution_gate and can_execute_from_packet fields.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    variant: 'Call Supabase connector, access the dashboard, rerun advisors, mutate database state, or record advisor findings from the handoff phase.',
+    reason_rejected: 'Connector authorization, dashboard access, advisor reruns, database actions, and retained findings are external-account or secret-sensitive operations requiring owner-approved access and separate proof capture.',
+    tradeoff: 'Executing external advisor work could reduce blockers only with authorized access, but it would exceed this repo-side safe-fix boundary and risk leaking private account or finding data.',
+    evidence: 'Supabase advisor remediation stop gates require authorized connector/dashboard access, current Security and Performance Advisor evidence, and public-safe no-secret findings as separate proof rows before clearance claims.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    variant: 'Create a separate Supabase advisor runbook artifact or file.',
+    reason_rejected: 'A separate artifact would introduce another source of truth when the manifest can derive the handoff from supabase_advisor.clearance_deficits.remediation_queue.items.',
+    tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
+    evidence: 'The focused Supabase advisor report already reads the manifest supabase_advisor object and can render the derived handoff packet without a new artifact.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -8419,6 +8565,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: branchOperatorHandoffPacketTestsRun,
     remaining_risk: 'The branch operator handoff packet is planning guidance only; launch readiness still depends on focused read-only branch reviews, explicit owner canonical-head decisions, clean source provenance, current release-readiness proof, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 4,
+    evidence: 'The selected change derives a compact Supabase advisor operator handoff from existing supabase_advisor.clearance_deficits.remediation_queue rows, renders it through the existing focused Supabase report, and tightens existing checkers/tests without adding dependencies, a new scanner, a separate artifact, connector calls, dashboard access, advisor reruns, database mutation, migration execution, secret handling, approval request, deploy execution, or launch-status changes.',
+    tests_or_checks: supabaseAdvisorOperatorHandoffPacketTestsRun,
+    remaining_risk: 'The Supabase advisor operator handoff packet is planning guidance only; launch readiness still depends on authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, clean source provenance, release-readiness, branch decisions, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -8625,6 +8780,7 @@ const manifest = {
       supabaseAdvisor.evidence,
       supabaseAdvisor.clearanceDeficits.evidence,
       supabaseAdvisor.clearanceDeficits.remediation_queue.evidence,
+      supabaseAdvisor.clearanceDeficits.operator_handoff_packet.evidence,
       releasePreflight.evidence,
       releasePreflight.clearance_matrix.evidence,
       releasePreflight.remediation_queue.evidence,
@@ -8698,6 +8854,7 @@ const manifest = {
     docs_reference: supabaseAdvisor.docsReference,
     evidence_boundary: supabaseAdvisor.evidenceBoundary,
     next_action: supabaseAdvisor.nextAction,
+    operator_handoff_packet: supabaseAdvisor.clearanceDeficits.operator_handoff_packet,
     clearance_deficits: supabaseAdvisor.clearanceDeficits,
     evidence: supabaseAdvisor.evidence,
   },

@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BRANCH-OPERATOR-HANDOFF-PACKET');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -376,6 +376,64 @@ describe('launch evidence manifest report', () => {
     expect(supabaseDeficitsByRequirement.get('Advisor clearance claim')?.proof_boundary).toMatch(/only after every|public-safe evidence row passes/i);
     expect(supabaseActionsByRequirement.get('Advisor clearance claim')?.proof_type).toBe('repo_command');
     expect(supabaseActionsByRequirement.get('Advisor clearance claim')?.external_account_required).toBe(false);
+    const supabaseOperatorHandoffPacket = manifest.supabase_advisor.operator_handoff_packet;
+    expect(supabaseOperatorHandoffPacket).toEqual(manifest.supabase_advisor.clearance_deficits.operator_handoff_packet);
+    expect(supabaseOperatorHandoffPacket.status).toBe('blocked');
+    expect(supabaseOperatorHandoffPacket.proof_type).toBe('supabase_advisor_operator_handoff_packet');
+    expect(supabaseOperatorHandoffPacket.source).toBe('supabase_advisor.clearance_deficits.remediation_queue.items');
+    expect(supabaseOperatorHandoffPacket.evidence).toContain('Supabase advisor operator handoff packet');
+    expect(supabaseOperatorHandoffPacket.proof_boundary).toMatch(/planning evidence only|does not authorize connectors|access dashboards|rerun advisors|mutate the database|record secrets|request approval|deploy|hosted\/live parity/i);
+    expect(supabaseOperatorHandoffPacket.stop_gate).toMatch(/Do not mark Supabase advisor clear|request production approval|deploy|hosted\/live parity/i);
+    expect(supabaseOperatorHandoffPacket.item_count).toBe(manifest.supabase_advisor.clearance_deficits.remediation_queue.items.length);
+    expect(supabaseOperatorHandoffPacket.blocked_count).toBe(
+      supabaseOperatorHandoffPacket.items.filter((item: { blocks_advisor_gate: boolean }) => item.blocks_advisor_gate).length,
+    );
+    expect(supabaseOperatorHandoffPacket.external_account_count).toBe(
+      supabaseOperatorHandoffPacket.items.filter((item: { external_account_required: boolean }) => item.external_account_required).length,
+    );
+    expect(supabaseOperatorHandoffPacket.repo_command_count).toBe(
+      supabaseOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'repo_command').length,
+    );
+    expect(supabaseOperatorHandoffPacket.retained_record_count).toBe(
+      supabaseOperatorHandoffPacket.items.filter((item: { proof_type: string }) => item.proof_type === 'retained_redacted_record').length,
+    );
+    expect(supabaseOperatorHandoffPacket.account_admin_count).toBe(
+      supabaseOperatorHandoffPacket.items.filter((item: { owner: string }) => item.owner === 'account_admin').length,
+    );
+    expect(supabaseOperatorHandoffPacket.items.map((item: { requirement: string }) => item.requirement)).toEqual(
+      manifest.supabase_advisor.clearance_deficits.remediation_queue.items.map((item: { requirement: string }) => item.requirement),
+    );
+    expect(supabaseOperatorHandoffPacket.items.every((item: { can_execute_from_packet: boolean }) => item.can_execute_from_packet === false)).toBe(true);
+    const supabaseOperatorRowsByRequirement = mapBy(
+      supabaseOperatorHandoffPacket.items,
+      (item: {
+        requirement: string;
+        execution_gate?: string;
+        proof_type?: string;
+        external_account_required?: boolean;
+        public_safe_record_required?: boolean;
+        secret_safe?: boolean;
+        proof_boundary?: string;
+        stop_gate?: string;
+      }) => item.requirement,
+    );
+    expect(supabaseOperatorRowsByRequirement.get('CLI app lint freshness')?.execution_gate).toBe('repo_lint_freshness_first');
+    expect(supabaseOperatorRowsByRequirement.get('Connector project authorization')?.execution_gate).toBe('authorized_connector_or_dashboard_access_first');
+    expect(supabaseOperatorRowsByRequirement.get('Security advisor evidence')?.execution_gate).toBe('security_advisor_after_authorization');
+    expect(supabaseOperatorRowsByRequirement.get('Performance advisor evidence')?.execution_gate).toBe('performance_advisor_after_authorization');
+    expect(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.execution_gate).toBe('public_safe_record_after_advisor_review');
+    expect(supabaseOperatorRowsByRequirement.get('Advisor clearance claim')?.execution_gate).toBe('clearance_claim_after_all_rows_pass');
+    for (const requirement of ['Connector project authorization', 'Security advisor evidence', 'Performance advisor evidence']) {
+      const item = supabaseOperatorRowsByRequirement.get(requirement);
+      expect(item?.proof_type).toBe('external_account_evidence');
+      expect(item?.external_account_required).toBe(true);
+      expect(item?.proof_boundary).toMatch(/authorized|dashboard|connector|Advisor/i);
+      expect(item?.stop_gate).toMatch(/Do not|permission-denied|advisor evidence/i);
+    }
+    expect(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.proof_type).toBe('retained_redacted_record');
+    expect(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.public_safe_record_required).toBe(true);
+    expect(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.secret_safe).toBe(true);
+    expect(supabaseOperatorRowsByRequirement.get('Public-safe findings record')?.proof_boundary).toMatch(/retained redacted advisor summary|no secrets/i);
     expect(manifest.release_preflight.status).toBe('blocked');
     expect(manifest.release_preflight.package_manager).toBe('pnpm@10.23.0');
     expect(manifest.release_preflight.expected_pnpm_version).toBe('10.23.0');
@@ -958,9 +1016,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(49);
+    expect(manifest.implementation_decisions).toHaveLength(50);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(49);
+    expect(manifest.code_optimization_reviews).toHaveLength(50);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -1036,6 +1094,9 @@ describe('launch evidence manifest report', () => {
       'Leave branch operator actions implicit in branch_review.clearance_matrix rows.',
       'Checkout, merge, push, discard, delete, or select canonical heads from the handoff phase.',
       'Create a separate branch runbook artifact or file.',
+      'Leave Supabase advisor operator actions implicit in clearance_deficits.remediation_queue rows.',
+      'Call Supabase connector, access the dashboard, rerun advisors, mutate database state, or record advisor findings from the handoff phase.',
+      'Create a separate Supabase advisor runbook artifact or file.',
       'Leave launch action and production approval release rows pointing at broad launch manifest plus release-readiness only.',
       'Remove the guarded check:release-readiness command from release-toolchain proof rows.',
       'Install or shim Corepack/Git LFS, fall back to bare pnpm, or run release-readiness despite dirty source.',
@@ -2213,6 +2274,34 @@ describe('launch evidence manifest report', () => {
     expect(branchOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
       'pnpm run report:branch-review-readiness -- --skip-probes',
       'pnpm run check:branch-review-report -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const supabaseAdvisorOperatorHandoffPacketDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(supabaseAdvisorOperatorHandoffPacketDecision).toBeTruthy();
+    expect(supabaseAdvisorOperatorHandoffPacketDecision.chosen_variant).toBe('minimal derived Supabase advisor operator handoff packet');
+    expect(supabaseAdvisorOperatorHandoffPacketDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/report-supabase-advisor-readiness.mjs',
+      'scripts/check-supabase-advisor-readiness-report.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/supabaseAdvisorReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(supabaseAdvisorOperatorHandoffPacketDecision.proof_boundary).toMatch(/does not authorize connectors|access dashboards|rerun advisors|mutate database state|record secrets|grant owner approval|deploy|hosted\/live parity|raise launch status/i);
+    const supabaseAdvisorOperatorHandoffPacketReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-OPERATOR-HANDOFF-PACKET',
+    );
+    expect(supabaseAdvisorOperatorHandoffPacketReview).toBeTruthy();
+    expect(supabaseAdvisorOperatorHandoffPacketReview.policy).toBe('strict');
+    expect(supabaseAdvisorOperatorHandoffPacketReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm run report:supabase-advisor-readiness -- --skip-probes',
+      'pnpm run check:supabase-advisor-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
