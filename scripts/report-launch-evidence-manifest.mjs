@@ -5663,6 +5663,18 @@ const launchValidationProductionApprovalProofHandleFilesChanged = [
   'tests/unit/productionApprovalReadiness.test.ts',
 ];
 
+const launchEvidenceValidationPublicHandleLineageFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-launch-evidence-validation-readiness.mjs',
+  'scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceValidationReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const launchActionValidationStatusFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -6059,6 +6071,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...launchManifestBranchFunctionImpactFilesChanged,
   ...launchEvidenceValidationReportFilesChanged,
   ...launchValidationProductionApprovalProofHandleFilesChanged,
+  ...launchEvidenceValidationPublicHandleLineageFilesChanged,
   ...launchActionValidationStatusFilesChanged,
   ...launchActionReportFilesChanged,
   ...launchActionBuyerLaneStatusFilesChanged,
@@ -6532,6 +6545,24 @@ const launchValidationProductionApprovalProofHandleTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const launchEvidenceValidationPublicHandleLineageTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-launch-evidence-validation-readiness.mjs',
+  'node --check scripts/check-launch-evidence-validation-readiness-report.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:launch-evidence-validation-readiness -- --skip-probes',
+  'pnpm run report:launch-evidence-validation-readiness -- --skip-probes --json',
+  'pnpm run check:launch-evidence-validation-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const launchActionValidationStatusTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/launchActionReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6987,6 +7018,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...launchManifestBranchFunctionImpactTestsRun,
   ...launchEvidenceValidationReportTestsRun,
   ...launchValidationProductionApprovalProofHandleTestsRun,
+  ...launchEvidenceValidationPublicHandleLineageTestsRun,
   ...launchActionValidationStatusTestsRun,
   ...launchActionReportTestsRun,
   ...launchActionBuyerLaneStatusTestsRun,
@@ -7927,6 +7959,19 @@ const safeFixImplementationDecisions = [
     reason: 'Launch action readiness is the operator handoff for all unresolved launch blockers, and its public launch-action handles already existed, but the focused launch-action report did not show those handles in the same operator-facing form as adjacent focused blocker reports.',
     proof_boundary: 'This record improves launch-action handle discoverability only; it does not execute launch actions, commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, select canonical heads, contact buyers, authorize Supabase, request owner approval, grant owner approval, deploy, mutate live services, run browser smoke, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused launch-action handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as launch action execution, source readiness, release-readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deployment, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    decision: 'Expose launch evidence validation public-handle source lineage inside the focused validation report.',
+    acceptance_check: 'report:launch-evidence-validation-readiness renders the launch_evidence_validation_gate sourceManifestPath and sourceProofTypes; check:launch-evidence-validation-report validates the launch_action_queue.items[phase=launch_evidence_validation] lineage while validation remains a structure/proof-boundary gate and not production approval, source readiness, buyer acceptance, deployment, or hosted/live proof.',
+    chosen_variant: 'minimal focused validation public-handle lineage',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json launch_evidence_validation_gate handle, focused launch evidence validation report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: launchEvidenceValidationPublicHandleLineageFilesChanged,
+    tests_run: launchEvidenceValidationPublicHandleLineageTestsRun,
+    proof: 'The patch renders existing public validation handle sourceManifestPath and sourceProofTypes in the focused validation Markdown/JSON contract without changing public status JSON, self-certifying the manifest, clearing source provenance, running release-readiness, requesting owner approval, contacting buyers, accessing Supabase, deploying, proving hosted/live parity, or changing launch status.',
+    reason: 'The focused validation report already displayed the public validation gate id, but omitted the public handle lineage fields that identify the launch action row and proof types backing the handle.',
+    proof_boundary: 'This record improves launch-evidence validation handle lineage discoverability only; it does not self-certify the manifest, clear source provenance, run release-readiness, request owner approval, contact buyers, authorize Supabase, deploy, mutate live services, prove buyer acceptance, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused validation handle lineage, public status handle, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as production approval, buyer acceptance, clean source provenance, release-readiness, deployment, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -9541,6 +9586,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing real launch actions could reduce blockers only after owner-side inputs and approvals exist; doing it here would exceed the safe-fix boundary and risk unsupported launch-clearance or readiness claims.',
     evidence: 'The launch action queue marks source provenance, release toolchain, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof as blocked or manual-stop until their focused proof commands and owner gates actually pass.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Leave validation public-handle lineage visible only in src/lib/publicReleaseStatusManifest.json.',
+    reason_rejected: 'The focused validation report is the operator artifact for the validation gate and should show the handle source row and proof lineage without requiring a second file lookup.',
+    tradeoff: 'No-code defer avoids a small report/check update, but preserves a weaker handoff than adjacent focused blocker reports that render sourceManifestPath and sourceProofTypes.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains launch_evidence_validation_gate.sourceManifestPath and sourceProofTypes, but the focused report table did not render them.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Regenerate or add new public release-status validation rows.',
+    reason_rejected: 'The needed public validation handle already exists; changing generated public status would add churn without improving the focused validation report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local lineage gap.',
+    evidence: 'The existing launch_evidence_validation_gate row already points at report:launch-evidence-validation-readiness && check:launch-evidence-validation-report and carries sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Self-certify launch evidence validation, run release-readiness, request owner approval, contact buyers, access Supabase, deploy, or prove live parity from the report phase.',
+    reason_rejected: 'Those operations either create circular validation semantics or require owner/external/live gates outside this repo-side report lineage phase.',
+    tradeoff: 'Executing downstream gates could reduce blockers only after source, release, branch, Supabase, buyer, approval, and live contexts are available; doing it here would blur validation lineage with readiness proof.',
+    evidence: 'The focused validation report stop gate states that validation does not self-certify the manifest, clear source provenance, grant approval, create buyer acceptance, deploy, or prove hosted/live parity.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10167,6 +10233,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public launch-action handle data and existing launch-action report/check/test contracts, with no new dependency, no generated public-status churn, no new action-queue parser, no launch action execution, no source mutation, no release-readiness execution, no branch mutation, no buyer contact, no Supabase access, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
     tests_or_checks: launchActionPublicHandlesDigestTestsRun,
     remaining_risk: 'The launch-action handle digest remains operator guidance only; launch readiness still depends on explicit owner resolution of source provenance, current Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public validation handle lineage and existing launch evidence validation report/check/test contracts, with no new dependency, no generated public-status churn, no duplicate validator, no self-certification, no source mutation, no release-readiness execution, no approval request, no buyer contact, no Supabase access, no deploy execution, no live-proof execution, and no launch-status change.',
+    tests_or_checks: launchEvidenceValidationPublicHandleLineageTestsRun,
+    remaining_risk: 'The validation handle lineage remains operator guidance only; launch readiness still depends on clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

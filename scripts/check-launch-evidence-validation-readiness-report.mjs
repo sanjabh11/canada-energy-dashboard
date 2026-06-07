@@ -95,6 +95,9 @@ if (failures.length === 0) {
     assertContains(stdout, '## Production Approval Request Validation Row', 'Report must include the production approval request validation row.');
     assertContains(stdout, '## Public Release Status Handle', 'Report must include the public release status handle.');
     assertContains(stdout, 'launch_evidence_validation_gate', 'Report must expose the public validation gate id.');
+    assertContains(stdout, 'launch_action_queue.items[phase=launch_evidence_validation]', 'Report must expose validation gate source manifest lineage.');
+    assertContains(stdout, 'manifest_validation_and_approval_packet', 'Report must expose validation gate source proof lineage.');
+    assertContains(stdout, 'schema_validation', 'Report must expose schema validation proof lineage.');
     assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
   }
 
@@ -130,6 +133,9 @@ if (failures.length === 0) {
     );
     assert(/underlying check:launch-evidence-manifest result/i.test(requestRow.evidence_to_attach ?? ''), 'Production approval validation request row must retain the underlying manifest check attachment.');
     assert(publicGate.id === 'launch_evidence_validation_gate', 'Focused JSON must include the public validation gate handle.');
+    assert(publicGate.sourceManifestPath === 'launch_action_queue.items[phase=launch_evidence_validation]', 'Public validation gate handle must point at the launch action validation queue row.');
+    assert(Array.isArray(publicGate.sourceProofTypes) && publicGate.sourceProofTypes.includes('manifest_validation_and_approval_packet'), 'Public validation gate handle must expose approval-packet proof lineage.');
+    assert(Array.isArray(publicGate.sourceProofTypes) && publicGate.sourceProofTypes.includes('schema_validation'), 'Public validation gate handle must expose schema validation proof lineage.');
     assert(payload.package_script_handles?.check_launch_evidence_validation_report === 'corepack pnpm run check:launch-evidence-validation-report', 'Focused report must expose the validation checker command handle.');
     assert(/does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-self-certification, no-mutation, no-external-action, no-deploy, no-live-parity, and no-readiness semantics.');
     assert(/Do not treat this focused report|production approval|buyer acceptance|deployment approval|hosted\/live parity|source readiness|commercial-ready status/i.test(payload.stop_gate ?? ''), 'Focused stop gate must reject approval, buyer, deploy, live-parity, source, and readiness claims from this report itself.');

@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-ACTION-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest launch-action public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest launch evidence validation public-handle lineage ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4700,6 +4700,40 @@ try {
         && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && launchActionPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Launch-action public-handle digest code optimization review must record launch action, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const launchEvidenceValidationLineageDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE');
+    assert(launchEvidenceValidationLineageDecision, 'Manifest must record the launch evidence validation public-handle lineage implementation decision.');
+    assert(
+      launchEvidenceValidationLineageDecision?.chosen_variant === 'minimal focused validation public-handle lineage',
+      'Launch evidence validation public-handle lineage decision must record the minimal focused lineage variant.',
+    );
+    assert(
+      Array.isArray(launchEvidenceValidationLineageDecision?.files_changed)
+        && launchEvidenceValidationLineageDecision.files_changed.includes('scripts/report-launch-evidence-validation-readiness.mjs')
+        && launchEvidenceValidationLineageDecision.files_changed.includes('scripts/check-launch-evidence-validation-readiness-report.mjs')
+        && launchEvidenceValidationLineageDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && launchEvidenceValidationLineageDecision.files_changed.includes('tests/unit/launchEvidenceValidationReadiness.test.ts')
+        && launchEvidenceValidationLineageDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && launchEvidenceValidationLineageDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Launch evidence validation public-handle lineage decision must record focused validation, progress, and launch manifest contract files.',
+    );
+    assert(
+      /lineage discoverability only|does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|mutate live services|buyer acceptance|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(launchEvidenceValidationLineageDecision?.proof_boundary ?? ''),
+      'Launch evidence validation public-handle lineage decision must preserve no-self-certification, no-source, no-release, no-approval, no-external-action, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+    );
+    const launchEvidenceValidationLineageReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE');
+    assert(launchEvidenceValidationLineageReview, 'Manifest must record the launch evidence validation public-handle lineage code optimization review.');
+    assert(launchEvidenceValidationLineageReview?.policy === 'strict', 'Launch evidence validation public-handle lineage code optimization review must use strict policy.');
+    assert(launchEvidenceValidationLineageReview?.verdict === 'pass', 'Launch evidence validation public-handle lineage code optimization review must pass.');
+    assert(
+      Array.isArray(launchEvidenceValidationLineageReview?.tests_or_checks)
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:launch-evidence-validation-report -- --skip-probes/.test(check))
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Launch evidence validation public-handle lineage code optimization review must record validation, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LAUNCH-ACTION-PUBLIC-HANDLE-DIGEST');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1227,9 +1227,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(68);
+    expect(manifest.implementation_decisions).toHaveLength(69);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(68);
+    expect(manifest.code_optimization_reviews).toHaveLength(69);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2494,6 +2494,37 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/launchActionReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:launch-action-readiness -- --skip-probes --json',
       'pnpm run check:launch-action-report -- --skip-probes',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const launchEvidenceValidationLineageDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(launchEvidenceValidationLineageDecision).toBeTruthy();
+    expect(launchEvidenceValidationLineageDecision.chosen_variant).toBe('minimal focused validation public-handle lineage');
+    expect(launchEvidenceValidationLineageDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-launch-evidence-validation-readiness.mjs',
+      'scripts/check-launch-evidence-validation-readiness-report.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/launchEvidenceValidationReadiness.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(launchEvidenceValidationLineageDecision.proof_boundary).toMatch(/lineage discoverability only|does not self-certify|clear source provenance|run release-readiness|request owner approval|contact buyers|authorize Supabase|deploy|mutate live services|buyer acceptance|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const launchEvidenceValidationLineageReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(launchEvidenceValidationLineageReview).toBeTruthy();
+    expect(launchEvidenceValidationLineageReview.policy).toBe('strict');
+    expect(launchEvidenceValidationLineageReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-launch-evidence-validation-readiness.mjs',
+      'node --check scripts/check-launch-evidence-validation-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:launch-evidence-validation-readiness -- --skip-probes --json',
+      'pnpm run check:launch-evidence-validation-report -- --skip-probes',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

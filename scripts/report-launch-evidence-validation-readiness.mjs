@@ -283,10 +283,10 @@ function renderMarkdown(payload) {
     '## Public Release Status Handle',
     '',
     renderTable(
-      ['Id', 'Label', 'Status', 'Proof Bucket', 'Command', 'Evidence Boundary', 'Next Action'],
+      ['Id', 'Label', 'Status', 'Proof Bucket', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'],
       publicGate.id
-        ? [[publicGate.id, publicGate.label, publicGate.status, publicGate.proofBucket, publicGate.command, publicGate.evidenceBoundary, publicGate.nextAction]]
-        : [['launch_evidence_validation_gate', 'missing', 'external_gate', 'repo artifact', 'pnpm run check:launch-evidence-manifest', payload.proof_boundary, payload.stop_gate]],
+        ? [[publicGate.id, publicGate.label, publicGate.status, publicGate.proofBucket, publicGate.command, publicGate.sourceManifestPath, (publicGate.sourceProofTypes ?? []).join('; '), publicGate.evidenceBoundary, publicGate.nextAction]]
+        : [['launch_evidence_validation_gate', 'missing', 'external_gate', 'repo artifact', 'pnpm run check:launch-evidence-manifest', 'launch_action_queue.items[phase=launch_evidence_validation]', 'manifest_validation_and_approval_packet; manifest_validation; schema_validation', payload.proof_boundary, payload.stop_gate]],
     ),
     '',
     '## Package Script Handles',

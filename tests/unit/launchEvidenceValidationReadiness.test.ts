@@ -49,6 +49,9 @@ describe('launch evidence validation readiness report', () => {
     expect(stdout).toContain('Production Approval Request Validation Row');
     expect(stdout).toContain('Public Release Status Handle');
     expect(stdout).toContain('launch_evidence_validation_gate');
+    expect(stdout).toContain('launch_action_queue.items[phase=launch_evidence_validation]');
+    expect(stdout).toContain('manifest_validation_and_approval_packet');
+    expect(stdout).toContain('schema_validation');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -80,6 +83,9 @@ describe('launch evidence validation readiness report', () => {
     expect(payload.production_approval_request_validation_row.proof_command).toContain('check:launch-evidence-validation-report');
     expect(payload.production_approval_request_validation_row.evidence_to_attach).toMatch(/underlying check:launch-evidence-manifest result/i);
     expect(payload.public_status_validation_gate.id).toBe('launch_evidence_validation_gate');
+    expect(payload.public_status_validation_gate.sourceManifestPath).toBe('launch_action_queue.items[phase=launch_evidence_validation]');
+    expect(payload.public_status_validation_gate.sourceProofTypes).toContain('manifest_validation_and_approval_packet');
+    expect(payload.public_status_validation_gate.sourceProofTypes).toContain('schema_validation');
     expect(payload.package_script_handles.check_launch_evidence_validation_report).toBe('corepack pnpm run check:launch-evidence-validation-report');
     expect(payload.proof_boundary).toMatch(/does not self-certify|clear source provenance|request owner approval|contact buyers|deploy|hosted\/live parity|commercial launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|buyer acceptance|deployment approval|commercial-ready status/i);
