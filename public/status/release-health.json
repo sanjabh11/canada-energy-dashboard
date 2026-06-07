@@ -499,7 +499,12 @@
       "proofBucket": "external account",
       "command": "Supabase MCP security/performance advisors for qnymbecjgeaoxsfphrti",
       "evidenceBoundary": "CLI lint does not substitute for connector-backed advisors; current advisor evidence remains account-authorization dependent.",
-      "nextAction": "Fix Supabase connector or project authorization, then rerun security and performance advisors."
+      "nextAction": "Fix Supabase connector or project authorization, then rerun security and performance advisors.",
+      "sourceManifestPath": "supabase_advisor",
+      "sourceProofTypes": [
+        "repo_command",
+        "external_account_evidence"
+      ]
     },
     {
       "id": "supabase_advisor_clearance_deficit_ledger",
@@ -508,7 +513,13 @@
       "proofBucket": "external account",
       "command": "pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report",
       "evidenceBoundary": "The Supabase advisor clearance deficit ledger maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and the no-clearance claim row, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, record secrets, clear advisor findings, or claim advisor clearance. It does not grant production approval or create launch readiness, and it does not create advisor clearance.",
-      "nextAction": "Fix connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, and keep advisor clearance blocked until every deficit row passes."
+      "nextAction": "Fix connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, and keep advisor clearance blocked until every deficit row passes.",
+      "sourceManifestPath": "supabase_advisor.clearance_deficits",
+      "sourceProofTypes": [
+        "repo_command",
+        "external_account_evidence",
+        "retained_redacted_record"
+      ]
     },
     {
       "id": "supabase_advisor_operator_handoff_packet",
@@ -517,7 +528,14 @@
       "proofBucket": "external account",
       "command": "pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report",
       "evidenceBoundary": "The Supabase advisor operator handoff packet maps advisor remediation rows into non-executable operator, account-admin, security-owner, and owner execution gates, including repo_lint_freshness_first, authorized_connector_or_dashboard_access_first, security_advisor_after_authorization, performance_advisor_after_authorization, public_safe_record_after_advisor_review, clearance_claim_after_all_rows_pass, external-account flags, public-safe record flags, secret-safe flags, blocks_advisor_gate, and can_execute_from_packet=false. It does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity. It does not create or claim advisor clearance.",
-      "nextAction": "Use this packet as a Supabase advisor handoff only: run repo lint from an authenticated workstation, repair authorization externally, review advisors from an authorized account, record only public-safe findings without secrets, and regenerate the manifest after all rows pass."
+      "nextAction": "Use this packet as a Supabase advisor handoff only: run repo lint from an authenticated workstation, repair authorization externally, review advisors from an authorized account, record only public-safe findings without secrets, and regenerate the manifest after all rows pass.",
+      "sourceManifestPath": "supabase_advisor.operator_handoff_packet",
+      "sourceProofTypes": [
+        "supabase_advisor_operator_handoff_packet",
+        "repo_command",
+        "external_account_evidence",
+        "retained_redacted_record"
+      ]
     },
     {
       "id": "supabase_advisor_remediation_queue",
@@ -526,7 +544,13 @@
       "proofBucket": "external account",
       "command": "pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report",
       "evidenceBoundary": "The Supabase advisor remediation queue maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and no-clearance-claim rows, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, or record secrets. It does not create or claim advisor clearance.",
-      "nextAction": "Repair connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, then regenerate the launch evidence manifest."
+      "nextAction": "Repair connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, then regenerate the launch evidence manifest.",
+      "sourceManifestPath": "supabase_advisor.clearance_deficits.remediation_queue",
+      "sourceProofTypes": [
+        "repo_command",
+        "external_account_evidence",
+        "retained_redacted_record"
+      ]
     }
   ]
 }

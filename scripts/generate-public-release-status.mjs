@@ -869,6 +869,13 @@ function validateManifest(manifest) {
       'buyer_evidence_hard_gate',
     ],
   });
+  expectSourceLineage('supabase_advisor_access', {
+    sourceManifestPath: 'supabase_advisor',
+    sourceProofTypes: [
+      'repo_command',
+      'external_account_evidence',
+    ],
+  });
   const supabaseClearanceDeficitLedger = itemById.get('supabase_advisor_clearance_deficit_ledger') ?? {};
   if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance claim/i.test(`${supabaseClearanceDeficitLedger.evidenceBoundary ?? ''}\n${supabaseClearanceDeficitLedger.nextAction ?? ''}`)) {
     failures.push('supabase_advisor_clearance_deficit_ledger must describe Supabase advisor clearance deficits.');
@@ -876,6 +883,14 @@ function validateManifest(manifest) {
   if (!/does not.*authorize connectors|does not.*access the dashboard|does not.*rerun advisors|does not.*mutate the database|does not.*record secrets|does not.*clear advisor findings|does not.*claim advisor clearance|does not.*grant production approval|does not.*create launch readiness/i.test(supabaseClearanceDeficitLedger.evidenceBoundary ?? '')) {
     failures.push('supabase_advisor_clearance_deficit_ledger must preserve the no-access, no-secret, no-clearance, and no-approval boundary.');
   }
+  expectSourceLineage('supabase_advisor_clearance_deficit_ledger', {
+    sourceManifestPath: 'supabase_advisor.clearance_deficits',
+    sourceProofTypes: [
+      'repo_command',
+      'external_account_evidence',
+      'retained_redacted_record',
+    ],
+  });
   const supabaseOperatorHandoffPacket = itemById.get('supabase_advisor_operator_handoff_packet') ?? {};
   if (!/advisor remediation rows|operator|account-admin|security-owner|owner execution gates|repo_lint_freshness_first|authorized_connector_or_dashboard_access_first|security_advisor_after_authorization|performance_advisor_after_authorization|public_safe_record_after_advisor_review|clearance_claim_after_all_rows_pass|external-account flags|public-safe record flags|secret-safe flags|blocks_advisor_gate|can_execute_from_packet=false/i.test(`${supabaseOperatorHandoffPacket.evidenceBoundary ?? ''}\n${supabaseOperatorHandoffPacket.nextAction ?? ''}`)) {
     failures.push('supabase_advisor_operator_handoff_packet must describe advisor remediation rows, execution gates, external-account flags, public-safe flags, secret-safe flags, blocking rows, and non-executable packet semantics.');
@@ -886,6 +901,15 @@ function validateManifest(manifest) {
   if (!/does not.*authorize connectors|does not.*access dashboards|does not.*rerun Security Advisor|does not.*Performance Advisor|does not.*mutate the database|does not.*run migrations|does not.*record secrets|does not.*clear advisor findings|does not.*request production approval|does not.*deploy|does not.*hosted\/live parity|does not.*create or claim advisor clearance/i.test(supabaseOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('supabase_advisor_operator_handoff_packet must preserve the no-authorization, no-dashboard-access, no-advisor-rerun, no-db-mutation, no-secret, no-clearance, no-approval-request, no-deploy, and no-live-proof boundary.');
   }
+  expectSourceLineage('supabase_advisor_operator_handoff_packet', {
+    sourceManifestPath: 'supabase_advisor.operator_handoff_packet',
+    sourceProofTypes: [
+      'supabase_advisor_operator_handoff_packet',
+      'repo_command',
+      'external_account_evidence',
+      'retained_redacted_record',
+    ],
+  });
   const supabaseRemediationQueue = itemById.get('supabase_advisor_remediation_queue') ?? {};
   if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance-claim/i.test(`${supabaseRemediationQueue.evidenceBoundary ?? ''}\n${supabaseRemediationQueue.nextAction ?? ''}`)) {
     failures.push('supabase_advisor_remediation_queue must describe the Supabase advisor remediation sequence.');
@@ -893,6 +917,14 @@ function validateManifest(manifest) {
   if (!/does not.*authorize connectors|does not.*access the dashboard|does not.*rerun advisors|does not.*mutate the database|does not.*record secrets|does not.*claim advisor clearance/i.test(supabaseRemediationQueue.evidenceBoundary ?? '')) {
     failures.push('supabase_advisor_remediation_queue must preserve the no-access, no-secret, and no-clearance boundary.');
   }
+  expectSourceLineage('supabase_advisor_remediation_queue', {
+    sourceManifestPath: 'supabase_advisor.clearance_deficits.remediation_queue',
+    sourceProofTypes: [
+      'repo_command',
+      'external_account_evidence',
+      'retained_redacted_record',
+    ],
+  });
 
   const serialized = JSON.stringify(manifest);
   for (const rule of forbiddenPatterns) {
