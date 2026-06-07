@@ -741,6 +741,14 @@ function validateManifest(manifest) {
       break;
     }
   }
+  expectSourceLineage('buyer_evidence_gate', {
+    sourceManifestPath: 'buyer_evidence',
+    sourceProofTypes: [
+      'buyer_evidence_hard_gate',
+      'buyer_evidence_acquisition_matrix',
+      'buyer_evidence_minimum_packet_handoff',
+    ],
+  });
   const buyerHardGateDeficitLedger = itemById.get('buyer_evidence_hard_gate_deficit_ledger') ?? {};
   if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation|hard-gate/i.test(`${buyerHardGateDeficitLedger.evidenceBoundary ?? ''}\n${buyerHardGateDeficitLedger.nextAction ?? ''}`)) {
     failures.push('buyer_evidence_hard_gate_deficit_ledger must describe buyer hard-gate deficits.');
@@ -748,6 +756,12 @@ function validateManifest(manifest) {
   if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*attach artifacts|does not.*validate 95|does not.*claim buyer acceptance|does not.*create buyer proof|does not.*prove commercial readiness/i.test(buyerHardGateDeficitLedger.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_hard_gate_deficit_ledger must preserve the no-contact, no-buyer-proof, and no-commercial-readiness boundary.');
   }
+  expectSourceLineage('buyer_evidence_hard_gate_deficit_ledger', {
+    sourceManifestPath: 'buyer_evidence.hard_gate_deficits',
+    sourceProofTypes: [
+      'buyer_evidence_hard_gate',
+    ],
+  });
   const buyerAcquisitionMatrix = itemById.get('buyer_evidence_acquisition_matrix') ?? {};
   if (!/outreach intake|production pilot register|utility forecast|TIER or credit|billing or security|distinct proof-pack|accepted confidence|reviewer|retained artifact|95% validation/i.test(`${buyerAcquisitionMatrix.evidenceBoundary ?? ''}\n${buyerAcquisitionMatrix.nextAction ?? ''}`)) {
     failures.push('buyer_evidence_acquisition_matrix must describe the buyer-evidence acquisition rows.');
@@ -755,6 +769,21 @@ function validateManifest(manifest) {
   if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*attach artifacts|does not.*validate 95|does not.*claim buyer acceptance|does not.*create buyer proof|does not.*prove commercial readiness/i.test(buyerAcquisitionMatrix.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_acquisition_matrix must preserve the no-contact, no-buyer-proof, and no-commercial-readiness boundary.');
   }
+  expectSourceLineage('buyer_evidence_acquisition_matrix', {
+    sourceManifestPath: 'buyer_evidence.acquisition_matrix',
+    sourceProofTypes: [
+      'buyer_evidence_acquisition_matrix',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ],
+  });
   const buyerMinimumPacketHandoff = itemById.get('buyer_evidence_minimum_packet_handoff') ?? {};
   if (!/minimum buyer evidence packet|buyer_evidence\.acquisition_matrix\.rows|outreach intake|production pilot register|utility forecast|TIER or credit|billing or security|retained-artifact 95% validation|Blocks 95 Gate|validation commands|validate:pilot-evidence --require-95/i.test(`${buyerMinimumPacketHandoff.evidenceBoundary ?? ''}\n${buyerMinimumPacketHandoff.nextAction ?? ''}`)) {
     failures.push('buyer_evidence_minimum_packet_handoff must describe the minimum buyer evidence packet rows, validation commands, and 95% gate blockers.');
@@ -765,6 +794,21 @@ function validateManifest(manifest) {
   if (!/does not.*contact buyers|does not.*send outreach|does not.*create accepted evidence|does not.*move confidence|does not.*attach retained artifacts|does not.*validate 95|does not.*create buyer proof|does not.*claim buyer acceptance|does not.*grant production approval|does not.*deploy|does not.*hosted\/live parity|does not.*prove commercial readiness|does not.*create launch readiness/i.test(buyerMinimumPacketHandoff.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_minimum_packet_handoff must preserve the no-contact, no-buyer-proof, no-validation, no-approval, no-deploy, no-live-proof, and no-readiness boundary.');
   }
+  expectSourceLineage('buyer_evidence_minimum_packet_handoff', {
+    sourceManifestPath: 'buyer_evidence.minimum_evidence_packet',
+    sourceProofTypes: [
+      'buyer_evidence_minimum_packet_handoff',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ],
+  });
   const buyerRemediationQueue = itemById.get('buyer_evidence_remediation_queue') ?? {};
   if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation/i.test(`${buyerRemediationQueue.evidenceBoundary ?? ''}\n${buyerRemediationQueue.nextAction ?? ''}`)) {
     failures.push('buyer_evidence_remediation_queue must describe the buyer-evidence hard-gate remediation sequence.');
@@ -772,6 +816,12 @@ function validateManifest(manifest) {
   if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*validate 95|does not.*claim buyer acceptance/i.test(buyerRemediationQueue.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_remediation_queue must preserve the no-contact and no-buyer-proof boundary.');
   }
+  expectSourceLineage('buyer_evidence_remediation_queue', {
+    sourceManifestPath: 'buyer_evidence.hard_gate_deficits.remediation_queue',
+    sourceProofTypes: [
+      'buyer_evidence_hard_gate',
+    ],
+  });
   const supabaseClearanceDeficitLedger = itemById.get('supabase_advisor_clearance_deficit_ledger') ?? {};
   if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance claim/i.test(`${supabaseClearanceDeficitLedger.evidenceBoundary ?? ''}\n${supabaseClearanceDeficitLedger.nextAction ?? ''}`)) {
     failures.push('supabase_advisor_clearance_deficit_ledger must describe Supabase advisor clearance deficits.');

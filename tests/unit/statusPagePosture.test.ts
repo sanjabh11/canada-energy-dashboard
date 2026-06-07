@@ -923,12 +923,29 @@ describe('status page release posture', () => {
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerHardGateDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
+    expect(buyerHardGateDeficitLedgerEvidence?.sourceManifestPath).toBe('buyer_evidence.hard_gate_deficits');
+    expect(buyerHardGateDeficitLedgerEvidence?.sourceProofTypes).toEqual([
+      'buyer_evidence_hard_gate',
+    ]);
     expect(buyerAcquisitionMatrixEvidence?.status).toBe('external_gate');
     expect(buyerAcquisitionMatrixEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerAcquisitionMatrixEvidence?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerAcquisitionMatrixEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
+    expect(buyerAcquisitionMatrixEvidence?.sourceManifestPath).toBe('buyer_evidence.acquisition_matrix');
+    expect(buyerAcquisitionMatrixEvidence?.sourceProofTypes).toEqual([
+      'buyer_evidence_acquisition_matrix',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ]);
     expect(buyerMinimumPacketHandoffEvidence?.status).toBe('external_gate');
     expect(buyerMinimumPacketHandoffEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerMinimumPacketHandoffEvidence?.command).toContain('check:buyer-evidence-gate-report');
@@ -946,12 +963,29 @@ describe('status page release posture', () => {
     expect(buyerMinimumPacketHandoffEvidence?.evidenceBoundary).toMatch(/does not create buyer proof/i);
     expect(buyerMinimumPacketHandoffEvidence?.evidenceBoundary).toMatch(/does not prove commercial readiness/i);
     expect(buyerMinimumPacketHandoffEvidence?.evidenceBoundary).toMatch(/create launch readiness/i);
+    expect(buyerMinimumPacketHandoffEvidence?.sourceManifestPath).toBe('buyer_evidence.minimum_evidence_packet');
+    expect(buyerMinimumPacketHandoffEvidence?.sourceProofTypes).toEqual([
+      'buyer_evidence_minimum_packet_handoff',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ]);
     expect(buyerRemediationQueueEvidence?.status).toBe('external_gate');
     expect(buyerRemediationQueueEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerRemediationQueueEvidence?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/accepted buyer evidence, reviewer evidence, commercial signal/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerRemediationQueueEvidence?.evidenceBoundary).toMatch(/does not create accepted evidence, move confidence/i);
+    expect(buyerRemediationQueueEvidence?.sourceManifestPath).toBe('buyer_evidence.hard_gate_deficits.remediation_queue');
+    expect(buyerRemediationQueueEvidence?.sourceProofTypes).toEqual([
+      'buyer_evidence_hard_gate',
+    ]);
     expect(supabaseClearanceDeficitLedgerEvidence?.status).toBe('needs_remediation');
     expect(supabaseClearanceDeficitLedgerEvidence?.command).toContain('report:supabase-advisor-readiness');
     expect(supabaseClearanceDeficitLedgerEvidence?.command).toContain('check:supabase-advisor-report');
@@ -1525,6 +1559,12 @@ describe('status page release posture', () => {
     expect(buyerGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerGate?.evidenceBoundary).toMatch(/replace validate:pilot-evidence --require-95/i);
     expect(buyerGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
+    expect(buyerGate?.sourceManifestPath).toBe('buyer_evidence');
+    expect(buyerGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_hard_gate',
+      'buyer_evidence_acquisition_matrix',
+      'buyer_evidence_minimum_packet_handoff',
+    ]);
     expect(buyerHardGateDeficitLedgerGate?.status).toBe('external_gate');
     expect(buyerHardGateDeficitLedgerGate?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerHardGateDeficitLedgerGate?.command).toContain('check:buyer-evidence-gate-report');
@@ -1533,12 +1573,29 @@ describe('status page release posture', () => {
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerHardGateDeficitLedgerGate?.evidenceBoundary).toMatch(/prove commercial readiness/i);
     expect(buyerHardGateDeficitLedgerGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
+    expect(buyerHardGateDeficitLedgerGate?.sourceManifestPath).toBe('buyer_evidence.hard_gate_deficits');
+    expect(buyerHardGateDeficitLedgerGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_hard_gate',
+    ]);
     expect(buyerAcquisitionMatrixGate?.status).toBe('external_gate');
     expect(buyerAcquisitionMatrixGate?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerAcquisitionMatrixGate?.command).toContain('check:buyer-evidence-gate-report');
     expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/outreach intake, production pilot register, utility forecast/i);
     expect(buyerAcquisitionMatrixGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerAcquisitionMatrixGate?.nextAction).toMatch(/missing buyer-supplied rows/i);
+    expect(buyerAcquisitionMatrixGate?.sourceManifestPath).toBe('buyer_evidence.acquisition_matrix');
+    expect(buyerAcquisitionMatrixGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_acquisition_matrix',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ]);
     expect(buyerMinimumPacketHandoffGate?.status).toBe('external_gate');
     expect(buyerMinimumPacketHandoffGate?.proofBucket).toBe('buyer evidence');
     expect(buyerMinimumPacketHandoffGate?.command).toContain('report:buyer-evidence-gate-readiness');
@@ -1556,6 +1613,19 @@ describe('status page release posture', () => {
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/attach retained artifacts/i);
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/validate 95/i);
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/does not create buyer proof/i);
+    expect(buyerMinimumPacketHandoffGate?.sourceManifestPath).toBe('buyer_evidence.minimum_evidence_packet');
+    expect(buyerMinimumPacketHandoffGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_minimum_packet_handoff',
+      'outreach_intake_acquisition',
+      'production_register_acquisition',
+      'forecast_trust_artifact_preparation',
+      'retained_artifact_preparation',
+      'buyer_acceptance_report',
+      'retained_artifact_and_register_update',
+      'register_update',
+      'commercial_commitment_artifact',
+      'retained_artifact_validation',
+    ]);
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/grant production approval/i);
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(buyerMinimumPacketHandoffGate?.evidenceBoundary).toMatch(/does not prove commercial readiness/i);
@@ -1569,6 +1639,10 @@ describe('status page release posture', () => {
     expect(buyerRemediationQueueGate?.evidenceBoundary).toMatch(/retained artifacts, and 95% validation/i);
     expect(buyerRemediationQueueGate?.evidenceBoundary).toMatch(/does not contact buyers/i);
     expect(buyerRemediationQueueGate?.nextAction).toMatch(/validate:pilot-evidence --require-95/i);
+    expect(buyerRemediationQueueGate?.sourceManifestPath).toBe('buyer_evidence.hard_gate_deficits.remediation_queue');
+    expect(buyerRemediationQueueGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_hard_gate',
+    ]);
     expect(advisorGate?.status).toBe('needs_remediation');
     expect(advisorGate?.evidenceBoundary).toMatch(/does not substitute for connector-backed advisors/i);
     expect(supabaseClearanceDeficitLedgerGate?.status).toBe('needs_remediation');

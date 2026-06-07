@@ -53,6 +53,11 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('source_provenance.isolation_ledger', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.resolution_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.owner_decision_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('buyer_evidence', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('buyer_evidence.hard_gate_deficits', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('buyer_evidence.acquisition_matrix', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('buyer_evidence.minimum_evidence_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('buyer_evidence.hard_gate_deficits.remediation_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('launch_action_queue.items[phase=launch_evidence_validation]', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('completion_audit', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('adversarial_reviews', { exact: true })).toBeVisible();

@@ -377,7 +377,13 @@
       "proofBucket": "buyer evidence",
       "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
       "evidenceBoundary": "The buyer evidence 95% public gate points to the focused buyer evidence report/check so operators inspect accepted buyer rows, reviewer evidence, commercial signal, retained artifact hashes, and 95% validation deficits first; it does not contact buyers, does not create accepted evidence, does not move confidence, does not attach artifacts, does not validate 95%, does not claim buyer acceptance, does not prove commercial readiness, and does not replace validate:pilot-evidence --require-95.",
-      "nextAction": "Use the focused buyer evidence gate report/check to inspect deficits, collect real anonymized accepted buyer evidence, retain redacted artifact hashes, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims."
+      "nextAction": "Use the focused buyer evidence gate report/check to inspect deficits, collect real anonymized accepted buyer evidence, retain redacted artifact hashes, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims.",
+      "sourceManifestPath": "buyer_evidence",
+      "sourceProofTypes": [
+        "buyer_evidence_hard_gate",
+        "buyer_evidence_acquisition_matrix",
+        "buyer_evidence_minimum_packet_handoff"
+      ]
     },
     {
       "id": "buyer_evidence_hard_gate_deficit_ledger",
@@ -386,7 +392,11 @@
       "proofBucket": "buyer evidence",
       "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
       "evidenceBoundary": "The buyer evidence hard-gate deficit ledger maps accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation deficits, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.",
-      "nextAction": "Use the ledger to keep every buyer hard-gate deficit visible, collect real anonymized accepted buyer rows, reviewer notes, commercial signal, retained redacted artifacts, and rerun validate:pilot-evidence --require-95 before changing confidence or launch claims."
+      "nextAction": "Use the ledger to keep every buyer hard-gate deficit visible, collect real anonymized accepted buyer rows, reviewer notes, commercial signal, retained redacted artifacts, and rerun validate:pilot-evidence --require-95 before changing confidence or launch claims.",
+      "sourceManifestPath": "buyer_evidence.hard_gate_deficits",
+      "sourceProofTypes": [
+        "buyer_evidence_hard_gate"
+      ]
     },
     {
       "id": "buyer_evidence_acquisition_matrix",
@@ -395,7 +405,20 @@
       "proofBucket": "buyer evidence",
       "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
       "evidenceBoundary": "The buyer evidence acquisition matrix maps outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, distinct proof-pack, accepted confidence, reviewer, retained artifact, and 95% validation rows, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.",
-      "nextAction": "Use the matrix to collect the missing buyer-supplied rows, reviewer notes, retained redacted artifacts, and 95% validation inputs before changing buyer confidence or launch claims."
+      "nextAction": "Use the matrix to collect the missing buyer-supplied rows, reviewer notes, retained redacted artifacts, and 95% validation inputs before changing buyer confidence or launch claims.",
+      "sourceManifestPath": "buyer_evidence.acquisition_matrix",
+      "sourceProofTypes": [
+        "buyer_evidence_acquisition_matrix",
+        "outreach_intake_acquisition",
+        "production_register_acquisition",
+        "forecast_trust_artifact_preparation",
+        "retained_artifact_preparation",
+        "buyer_acceptance_report",
+        "retained_artifact_and_register_update",
+        "register_update",
+        "commercial_commitment_artifact",
+        "retained_artifact_validation"
+      ]
     },
     {
       "id": "buyer_evidence_minimum_packet_handoff",
@@ -404,7 +427,20 @@
       "proofBucket": "buyer evidence",
       "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
       "evidenceBoundary": "The minimum buyer evidence packet handoff maps buyer_evidence.acquisition_matrix.rows into outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, retained-artifact 95% validation, Blocks 95 Gate, and validation commands such as validate:pilot-evidence --require-95. It does not contact buyers, send outreach, move confidence, attach retained artifacts, validate 95%, claim buyer acceptance, grant production approval, deploy, or prove hosted/live parity. It does not create accepted evidence, does not create buyer proof, does not prove commercial readiness, and does not create launch readiness.",
-      "nextAction": "Use this handoff only to plan the minimum accepted buyer-evidence packet: collect real anonymized buyer rows, reviewer notes, commercial signal, retained redacted artifact hashes, and run validate:pilot-evidence --require-95 before changing buyer confidence, approval, or launch claims."
+      "nextAction": "Use this handoff only to plan the minimum accepted buyer-evidence packet: collect real anonymized buyer rows, reviewer notes, commercial signal, retained redacted artifact hashes, and run validate:pilot-evidence --require-95 before changing buyer confidence, approval, or launch claims.",
+      "sourceManifestPath": "buyer_evidence.minimum_evidence_packet",
+      "sourceProofTypes": [
+        "buyer_evidence_minimum_packet_handoff",
+        "outreach_intake_acquisition",
+        "production_register_acquisition",
+        "forecast_trust_artifact_preparation",
+        "retained_artifact_preparation",
+        "buyer_acceptance_report",
+        "retained_artifact_and_register_update",
+        "register_update",
+        "commercial_commitment_artifact",
+        "retained_artifact_validation"
+      ]
     },
     {
       "id": "buyer_evidence_remediation_queue",
@@ -413,7 +449,11 @@
       "proofBucket": "buyer evidence",
       "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
       "evidenceBoundary": "The buyer evidence remediation queue maps non-pass buyer hard-gate rows for accepted buyer evidence, reviewer evidence, commercial signal, retained artifacts, and 95% validation, but it does not contact buyers. It does not create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance.",
-      "nextAction": "Collect real anonymized accepted buyer rows, reviewer notes, commercial signal, and retained redacted artifacts, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims."
+      "nextAction": "Collect real anonymized accepted buyer rows, reviewer notes, commercial signal, and retained redacted artifacts, then rerun validate:pilot-evidence --require-95 before changing buyer confidence claims.",
+      "sourceManifestPath": "buyer_evidence.hard_gate_deficits.remediation_queue",
+      "sourceProofTypes": [
+        "buyer_evidence_hard_gate"
+      ]
     },
     {
       "id": "supabase_advisor_access",
