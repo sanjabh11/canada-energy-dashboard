@@ -613,6 +613,15 @@ function validateManifest(manifest) {
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');
   }
+  expectSourceLineage('unmerged_branch_review_queue', {
+    sourceManifestPath: 'branch_review.review_queue',
+    sourceProofTypes: [
+      'high_risk_read_only_branch_review',
+      'read_only_branch_review',
+      'canonical_head_read_only_branch_review',
+      'branch_review_backlog',
+    ],
+  });
   const branchFamilyFreshnessRollup = itemById.get('branch_family_freshness_rollup') ?? {};
   if (!/local-only|origin-only|matching|local-ahead|origin-ahead|diverged|stale|aging|fresh|high-risk|review-first|branch-family counts/i.test(`${branchFamilyFreshnessRollup.evidenceBoundary ?? ''}\n${branchFamilyFreshnessRollup.nextAction ?? ''}`)) {
     failures.push('branch_family_freshness_rollup must describe branch family state, freshness, high-risk, and review-first counts.');
@@ -620,6 +629,9 @@ function validateManifest(manifest) {
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select canonical heads|does not.*migrate|does not.*deploy|does not.*clear branch review|does not.*create launch evidence|does not.*prove current source readiness|does not.*prove production approval/i.test(branchFamilyFreshnessRollup.evidenceBoundary ?? '')) {
     failures.push('branch_family_freshness_rollup must preserve the no-mutation, no-clearance, no-launch-evidence, no-source-readiness, and no-approval boundary.');
   }
+  expectSourceLineage('branch_family_freshness_rollup', {
+    sourceManifestPath: 'branch_review',
+  });
   const topBranchReviewPacket = itemById.get('top_branch_review_packet') ?? {};
   if (!/highest-priority|focused read-only branch packet|local\/origin state|branch freshness|changed categories|changed Supabase function rows|canonical-head comparison/i.test(`${topBranchReviewPacket.evidenceBoundary ?? ''}\n${topBranchReviewPacket.nextAction ?? ''}`)) {
     failures.push('top_branch_review_packet must describe the focused top branch packet dimensions.');
@@ -665,6 +677,16 @@ function validateManifest(manifest) {
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*delete|does not.*select canonical heads|does not.*run migrations|does not.*mutate Supabase|does not.*deploy|does not.*request production approval|does not.*grant owner approval|does not.*hosted\/live parity|does not.*clear branch review|does not.*create launch evidence|does not.*prove production approval/i.test(branchOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('branch_operator_handoff_packet must preserve the no-mutation, no-execution, no-owner-approval, no-live-proof, no-clearance, no-launch-evidence, and no-approval boundary.');
   }
+  expectSourceLineage('branch_operator_handoff_packet', {
+    sourceManifestPath: 'branch_review.operator_handoff_packet',
+    sourceProofTypes: [
+      'branch_operator_handoff_packet',
+      'high_risk_branch_clearance_row',
+      'canonical_head_branch_clearance_row',
+      'drift_branch_clearance_row',
+      'branch_clearance_row',
+    ],
+  });
   const canonicalHeadQueue = itemById.get('canonical_head_decision_queue') ?? {};
   if (!/split|local-only|origin-only|stale|aging|unknown/i.test(`${canonicalHeadQueue.evidenceBoundary ?? ''}\n${canonicalHeadQueue.nextAction ?? ''}`)) {
     failures.push('canonical_head_decision_queue must describe canonical-head branch-family decisions.');
@@ -672,6 +694,15 @@ function validateManifest(manifest) {
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select a branch head|does not.*prove production approval/i.test(canonicalHeadQueue.evidenceBoundary ?? '')) {
     failures.push('canonical_head_decision_queue must preserve the no-mutation and no-approval boundary.');
   }
+  expectSourceLineage('canonical_head_decision_queue', {
+    sourceManifestPath: 'branch_review.canonical_head_decisions',
+    sourceProofTypes: [
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ],
+  });
   const canonicalHeadResolutionQueue = itemById.get('canonical_head_resolution_queue') ?? {};
   if (!/owner-decision actions|split|local-only|origin-only|stale|aging|unknown|branch-family/i.test(`${canonicalHeadResolutionQueue.evidenceBoundary ?? ''}\n${canonicalHeadResolutionQueue.nextAction ?? ''}`)) {
     failures.push('canonical_head_resolution_queue must describe canonical-head owner-decision actions.');
@@ -679,6 +710,16 @@ function validateManifest(manifest) {
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*delete|does not.*select canonical heads|does not.*migrate|does not.*deploy|does not.*grant production approval|does not.*clear branch review|does not.*prove production approval/i.test(canonicalHeadResolutionQueue.evidenceBoundary ?? '')) {
     failures.push('canonical_head_resolution_queue must preserve the no-mutation, no-clearance, and no-approval boundary.');
   }
+  expectSourceLineage('canonical_head_resolution_queue', {
+    sourceManifestPath: 'branch_review.canonical_head_resolution_queue',
+    sourceProofTypes: [
+      'canonical_head_resolution_queue',
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ],
+  });
   const reviewFirstPacketQueue = itemById.get('review_first_branch_packet_queue') ?? {};
   if (!/focused read-only branch packets|canonical-head state|changed Supabase function rows|drift risk/i.test(`${reviewFirstPacketQueue.evidenceBoundary ?? ''}\n${reviewFirstPacketQueue.nextAction ?? ''}`)) {
     failures.push('review_first_branch_packet_queue must describe review-first focused branch packets.');
@@ -686,6 +727,16 @@ function validateManifest(manifest) {
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*deploy|does not.*mutate Supabase|does not.*create production approval/i.test(reviewFirstPacketQueue.evidenceBoundary ?? '')) {
     failures.push('review_first_branch_packet_queue must preserve the no-mutation and no-approval boundary.');
   }
+  expectSourceLineage('review_first_branch_packet_queue', {
+    sourceManifestPath: 'branch_review.review_first_packets',
+    sourceProofTypes: [
+      'skipped_read_only_branch_packet_probe',
+      'empty_read_only_branch_packet_probe',
+      'high_risk_read_only_branch_packet',
+      'review_first_read_only_branch_packet',
+      'focused_read_only_branch_packet',
+    ],
+  });
   const launchQueue = itemById.get('launch_blocker_action_queue') ?? {};
   if (!/sequenced|source provenance|launch evidence validation|post-deploy/i.test(`${launchQueue.evidenceBoundary ?? ''}\n${launchQueue.nextAction ?? ''}`)) {
     failures.push('launch_blocker_action_queue must describe the sequenced launch blocker plan.');

@@ -797,6 +797,13 @@ describe('status page release posture', () => {
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/does not create launch evidence/i);
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/review-first packet evidence/i);
     expect(branchReviewEvidence?.evidenceBoundary).toMatch(/merges, checkouts, migrations, or deploys/i);
+    expect(branchReviewEvidence?.sourceManifestPath).toBe('branch_review.review_queue');
+    expect(branchReviewEvidence?.sourceProofTypes).toEqual([
+      'high_risk_read_only_branch_review',
+      'read_only_branch_review',
+      'canonical_head_read_only_branch_review',
+      'branch_review_backlog',
+    ]);
     expect(branchFamilyFreshnessRollupEvidence?.status).toBe('external_gate');
     expect(branchFamilyFreshnessRollupEvidence?.command).toContain('report:branch-review-readiness');
     expect(branchFamilyFreshnessRollupEvidence?.command).toContain('check:branch-review-report');
@@ -805,6 +812,7 @@ describe('status page release posture', () => {
     expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/review-first branch-family counts/i);
     expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(branchFamilyFreshnessRollupEvidence?.evidenceBoundary).toMatch(/prove production approval/i);
+    expect(branchFamilyFreshnessRollupEvidence?.sourceManifestPath).toBe('branch_review');
     expect(topBranchReviewPacketEvidence?.status).toBe('external_gate');
     expect(topBranchReviewPacketEvidence?.command).toContain('report:branch-review-readiness');
     expect(topBranchReviewPacketEvidence?.command).toContain('check:branch-review-report');
@@ -830,18 +838,41 @@ describe('status page release posture', () => {
     expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/mutate Supabase/i);
     expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/request production approval/i);
     expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/prove hosted\/live parity/i);
+    expect(branchOperatorHandoffPacketEvidence?.sourceManifestPath).toBe('branch_review.operator_handoff_packet');
+    expect(branchOperatorHandoffPacketEvidence?.sourceProofTypes).toEqual([
+      'branch_operator_handoff_packet',
+      'high_risk_branch_clearance_row',
+      'canonical_head_branch_clearance_row',
+      'drift_branch_clearance_row',
+      'branch_clearance_row',
+    ]);
     expect(canonicalHeadQueueEvidence?.status).toBe('external_gate');
     expect(canonicalHeadQueueEvidence?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadQueueEvidence?.command).toContain('check:branch-review-report');
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/split, local-only, origin-only, stale, aging, and unknown/i);
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(canonicalHeadQueueEvidence?.evidenceBoundary).toMatch(/select a branch head/i);
+    expect(canonicalHeadQueueEvidence?.sourceManifestPath).toBe('branch_review.canonical_head_decisions');
+    expect(canonicalHeadQueueEvidence?.sourceProofTypes).toEqual([
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ]);
     expect(canonicalHeadResolutionQueueEvidence?.status).toBe('external_gate');
     expect(canonicalHeadResolutionQueueEvidence?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadResolutionQueueEvidence?.command).toContain('check:branch-review-report');
     expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/owner-decision actions/i);
     expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
     expect(canonicalHeadResolutionQueueEvidence?.evidenceBoundary).toMatch(/prove production approval/i);
+    expect(canonicalHeadResolutionQueueEvidence?.sourceManifestPath).toBe('branch_review.canonical_head_resolution_queue');
+    expect(canonicalHeadResolutionQueueEvidence?.sourceProofTypes).toEqual([
+      'canonical_head_resolution_queue',
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ]);
     expect(reviewFirstPacketQueueEvidence?.status).toBe('external_gate');
     expect(reviewFirstPacketQueueEvidence?.command).toContain('report:branch-review-readiness');
     expect(reviewFirstPacketQueueEvidence?.command).toContain('check:branch-review-report');
@@ -849,6 +880,14 @@ describe('status page release posture', () => {
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/changed Supabase function rows/i);
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(reviewFirstPacketQueueEvidence?.evidenceBoundary).toMatch(/mutate Supabase/i);
+    expect(reviewFirstPacketQueueEvidence?.sourceManifestPath).toBe('branch_review.review_first_packets');
+    expect(reviewFirstPacketQueueEvidence?.sourceProofTypes).toEqual([
+      'skipped_read_only_branch_packet_probe',
+      'empty_read_only_branch_packet_probe',
+      'high_risk_read_only_branch_packet',
+      'review_first_read_only_branch_packet',
+      'focused_read_only_branch_packet',
+    ]);
     expect(launchQueueEvidence?.status).toBe('external_gate');
     expect(launchQueueEvidence?.command).toContain('report:launch-action-readiness');
     expect(launchQueueEvidence?.command).toContain('check:launch-action-report');
@@ -1734,6 +1773,13 @@ describe('status page release posture', () => {
     expect(branchReviewGate?.command).toContain('check:branch-review-report');
     expect(branchReviewGate?.evidenceBoundary).toMatch(/does not create launch evidence/i);
     expect(branchReviewGate?.evidenceBoundary).toMatch(/review-first packet summaries/i);
+    expect(branchReviewGate?.sourceManifestPath).toBe('branch_review.review_queue');
+    expect(branchReviewGate?.sourceProofTypes).toEqual([
+      'high_risk_read_only_branch_review',
+      'read_only_branch_review',
+      'canonical_head_read_only_branch_review',
+      'branch_review_backlog',
+    ]);
     expect(branchFamilyFreshnessRollupGate?.status).toBe('external_gate');
     expect(branchFamilyFreshnessRollupGate?.command).toContain('report:branch-review-readiness');
     expect(branchFamilyFreshnessRollupGate?.command).toContain('check:branch-review-report');
@@ -1744,6 +1790,7 @@ describe('status page release posture', () => {
     expect(branchFamilyFreshnessRollupGate?.evidenceBoundary).toMatch(/prove current source readiness/i);
     expect(branchFamilyFreshnessRollupGate?.nextAction).toMatch(/stale or aging high-risk branch families/i);
     expect(branchFamilyFreshnessRollupGate?.nextAction).toMatch(/explicit canonical-head owner decisions/i);
+    expect(branchFamilyFreshnessRollupGate?.sourceManifestPath).toBe('branch_review');
     expect(topBranchReviewPacketGate?.status).toBe('external_gate');
     expect(topBranchReviewPacketGate?.command).toContain('report:branch-review-readiness');
     expect(topBranchReviewPacketGate?.command).toContain('check:branch-review-report');
@@ -1784,6 +1831,14 @@ describe('status page release posture', () => {
     expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/clear branch review/i);
     expect(branchOperatorHandoffPacketGate?.nextAction).toMatch(/per-family operator handoff/i);
     expect(branchOperatorHandoffPacketGate?.nextAction).toMatch(/explicit owner canonical-head decisions/i);
+    expect(branchOperatorHandoffPacketGate?.sourceManifestPath).toBe('branch_review.operator_handoff_packet');
+    expect(branchOperatorHandoffPacketGate?.sourceProofTypes).toEqual([
+      'branch_operator_handoff_packet',
+      'high_risk_branch_clearance_row',
+      'canonical_head_branch_clearance_row',
+      'drift_branch_clearance_row',
+      'branch_clearance_row',
+    ]);
     expect(canonicalHeadQueueGate?.status).toBe('external_gate');
     expect(canonicalHeadQueueGate?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadQueueGate?.command).toContain('check:branch-review-report');
@@ -1791,6 +1846,13 @@ describe('status page release posture', () => {
     expect(canonicalHeadQueueGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(canonicalHeadQueueGate?.evidenceBoundary).toMatch(/prove production approval/i);
     expect(canonicalHeadQueueGate?.nextAction).toMatch(/choose canonical heads explicitly/i);
+    expect(canonicalHeadQueueGate?.sourceManifestPath).toBe('branch_review.canonical_head_decisions');
+    expect(canonicalHeadQueueGate?.sourceProofTypes).toEqual([
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ]);
     expect(canonicalHeadResolutionQueueGate?.status).toBe('external_gate');
     expect(canonicalHeadResolutionQueueGate?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadResolutionQueueGate?.command).toContain('check:branch-review-report');
@@ -1798,12 +1860,28 @@ describe('status page release posture', () => {
     expect(canonicalHeadResolutionQueueGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
     expect(canonicalHeadResolutionQueueGate?.evidenceBoundary).toMatch(/prove production approval/i);
     expect(canonicalHeadResolutionQueueGate?.nextAction).toMatch(/record explicit owner decisions/i);
+    expect(canonicalHeadResolutionQueueGate?.sourceManifestPath).toBe('branch_review.canonical_head_resolution_queue');
+    expect(canonicalHeadResolutionQueueGate?.sourceProofTypes).toEqual([
+      'canonical_head_resolution_queue',
+      'split_canonical_head_decision',
+      'local_only_canonical_head_decision',
+      'origin_only_canonical_head_decision',
+      'canonical_head_owner_decision',
+    ]);
     expect(reviewFirstPacketQueueGate?.status).toBe('external_gate');
     expect(reviewFirstPacketQueueGate?.command).toContain('report:branch-review-readiness');
     expect(reviewFirstPacketQueueGate?.command).toContain('check:branch-review-report');
     expect(reviewFirstPacketQueueGate?.evidenceBoundary).toMatch(/focused read-only branch packets/i);
     expect(reviewFirstPacketQueueGate?.evidenceBoundary).toMatch(/mutate Supabase/i);
     expect(reviewFirstPacketQueueGate?.nextAction).toMatch(/explicit owner approval and release gates/i);
+    expect(reviewFirstPacketQueueGate?.sourceManifestPath).toBe('branch_review.review_first_packets');
+    expect(reviewFirstPacketQueueGate?.sourceProofTypes).toEqual([
+      'skipped_read_only_branch_packet_probe',
+      'empty_read_only_branch_packet_probe',
+      'high_risk_read_only_branch_packet',
+      'review_first_read_only_branch_packet',
+      'focused_read_only_branch_packet',
+    ]);
     expect(buyerGate?.status).toBe('external_gate');
     expect(buyerGate?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerGate?.command).toContain('check:buyer-evidence-gate-report');

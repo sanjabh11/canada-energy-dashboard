@@ -80,8 +80,14 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('fix_report', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('progress_updates', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('bottleneck_log', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.review_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('branch_review.top_review_packet')).toBeVisible();
     await expect(publicReleaseStatus.getByText('read_only_branch_clearance_matrix')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.operator_handoff_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.canonical_head_decisions', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.canonical_head_resolution_queue', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.review_first_packets', { exact: true })).toBeVisible();
     await expect(releaseHealthEvidence).toBeVisible();
     await expect(releaseHealthEvidence.getByRole('heading', { name: 'Launch evidence validation gate' })).toBeVisible();
     await expect(releaseHealthEvidence.getByRole('heading', { name: 'Objective completion audit' })).toBeVisible();

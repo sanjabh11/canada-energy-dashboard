@@ -409,7 +409,14 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "High-risk unmerged branches are review queues; current launch evidence carries review-first packet summaries and canonical-head state, but this does not create launch evidence, buyer proof, production approval, merges, checkouts, migrations, or deploys.",
-      "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates."
+      "nextAction": "Review the review-first packets, choose canonical heads for split families, complete security and release checks, and merge only through normal release gates.",
+      "sourceManifestPath": "branch_review.review_queue",
+      "sourceProofTypes": [
+        "high_risk_read_only_branch_review",
+        "read_only_branch_review",
+        "canonical_head_read_only_branch_review",
+        "branch_review_backlog"
+      ]
     },
     {
       "id": "branch_family_freshness_rollup",
@@ -418,7 +425,8 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The branch family freshness rollup surfaces local-only, origin-only, matching, local-ahead, origin-ahead, diverged, stale, aging, fresh, high-risk, and review-first branch-family counts from read-only branch evidence, but it does not checkout, merge, push, discard, select canonical heads, migrate, deploy, or clear branch review. It does not create launch evidence, prove current source readiness, or prove production approval.",
-      "nextAction": "Use the rollup to prioritize stale or aging high-risk branch families for focused read-only packets and explicit canonical-head owner decisions before any merge, push, discard, migration, deploy, or production approval discussion."
+      "nextAction": "Use the rollup to prioritize stale or aging high-risk branch families for focused read-only packets and explicit canonical-head owner decisions before any merge, push, discard, migration, deploy, or production approval discussion.",
+      "sourceManifestPath": "branch_review"
     },
     {
       "id": "top_branch_review_packet",
@@ -455,7 +463,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The branch operator handoff packet maps branch clearance rows into operator or owner execution gates, including read-only focused review first, owner canonical-head decision first, blocking branch-gate rows, and can_execute_from_packet=false. It does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, prove hosted/live parity, or clear branch review. It does not create launch evidence or prove production approval.",
-      "nextAction": "Use this packet as the per-family operator handoff: run only read-only focused review commands, record explicit owner canonical-head decisions outside the packet, and keep every branch mutation, merge, push, migration, deploy, or approval request behind release gates."
+      "nextAction": "Use this packet as the per-family operator handoff: run only read-only focused review commands, record explicit owner canonical-head decisions outside the packet, and keep every branch mutation, merge, push, migration, deploy, or approval request behind release gates.",
+      "sourceManifestPath": "branch_review.operator_handoff_packet",
+      "sourceProofTypes": [
+        "branch_operator_handoff_packet",
+        "high_risk_branch_clearance_row",
+        "canonical_head_branch_clearance_row",
+        "drift_branch_clearance_row",
+        "branch_clearance_row"
+      ]
     },
     {
       "id": "canonical_head_decision_queue",
@@ -464,7 +480,14 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The canonical head decision queue surfaces split, local-only, origin-only, stale, aging, and unknown branch-family decisions before merge review, but it does not checkout, merge, push, discard, deploy, or select a branch head. It does not create launch evidence or prove production approval.",
-      "nextAction": "Use the ledger to choose canonical heads explicitly before any focused branch review, then rerun unmerged-branch readiness without checkout, merge, push, discard, migration, or deploy."
+      "nextAction": "Use the ledger to choose canonical heads explicitly before any focused branch review, then rerun unmerged-branch readiness without checkout, merge, push, discard, migration, or deploy.",
+      "sourceManifestPath": "branch_review.canonical_head_decisions",
+      "sourceProofTypes": [
+        "split_canonical_head_decision",
+        "local_only_canonical_head_decision",
+        "origin_only_canonical_head_decision",
+        "canonical_head_owner_decision"
+      ]
     },
     {
       "id": "canonical_head_resolution_queue",
@@ -473,7 +496,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The canonical head resolution queue maps owner-decision actions for split, local-only, origin-only, stale, aging, and unknown branch-family states, but it does not checkout, merge, push, discard, delete, select canonical heads, migrate, deploy, grant production approval, or clear branch review. It does not create launch evidence or prove production approval.",
-      "nextAction": "Use the queue to record explicit owner decisions for canonical branch heads, rerun focused read-only branch review, and keep every merge, push, discard, migration, deploy, or production approval decision behind release gates."
+      "nextAction": "Use the queue to record explicit owner decisions for canonical branch heads, rerun focused read-only branch review, and keep every merge, push, discard, migration, deploy, or production approval decision behind release gates.",
+      "sourceManifestPath": "branch_review.canonical_head_resolution_queue",
+      "sourceProofTypes": [
+        "canonical_head_resolution_queue",
+        "split_canonical_head_decision",
+        "local_only_canonical_head_decision",
+        "origin_only_canonical_head_decision",
+        "canonical_head_owner_decision"
+      ]
     },
     {
       "id": "review_first_branch_packet_queue",
@@ -482,7 +513,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The review-first branch packet queue surfaces focused read-only branch packets, canonical-head state, changed Supabase function rows, and drift risk before any branch decision, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, or select a canonical head. It does not create buyer proof or create production approval.",
-      "nextAction": "Run focused read-only packets for review-first families, inspect changed Supabase function rows, and keep every merge or deploy decision behind explicit owner approval and release gates."
+      "nextAction": "Run focused read-only packets for review-first families, inspect changed Supabase function rows, and keep every merge or deploy decision behind explicit owner approval and release gates.",
+      "sourceManifestPath": "branch_review.review_first_packets",
+      "sourceProofTypes": [
+        "skipped_read_only_branch_packet_probe",
+        "empty_read_only_branch_packet_probe",
+        "high_risk_read_only_branch_packet",
+        "review_first_read_only_branch_packet",
+        "focused_read_only_branch_packet"
+      ]
     },
     {
       "id": "buyer_evidence_gate",
