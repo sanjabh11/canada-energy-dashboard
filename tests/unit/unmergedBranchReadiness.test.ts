@@ -164,6 +164,12 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('require full release-readiness after any rebase or cherry-pick');
     expect(result.stdout).toContain('## Branch Review Queue');
     expect(result.stdout).toContain('| Rank | Family | Review ref | Priority | Reason | Review command | Stop/approval gate |');
+    expect(result.stdout).toContain('## Package Script Handles');
+    expect(result.stdout).toContain('| report_unmerged_branch_readiness | `corepack pnpm run report:unmerged-branch-readiness` |');
+    expect(result.stdout).toContain('| report_unmerged_branch_readiness_high_risk | `corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high` |');
+    expect(result.stdout).toContain('| check_unmerged_branch_readiness_report | `corepack pnpm run check:unmerged-branch-readiness-report` |');
+    expect(result.stdout).toContain('| report_branch_review_readiness | `corepack pnpm run report:branch-review-readiness` |');
+    expect(result.stdout).toContain('| check_branch_review_report | `corepack pnpm run check:branch-review-report` |');
     expect(result.stdout).toContain('| 1 | export-risk | export-risk | review_first_high_stale |');
     expect(result.stdout).toContain('high-risk launch surface; local ahead of origin by 1 commit(s); stale commit freshness');
     expect(result.stdout).toContain('corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 8');
@@ -200,6 +206,8 @@ describe('unmerged branch readiness report', () => {
     expect(result.stdout).toContain('| 1 | export-risk | export-risk | review_first_high_stale |');
     expect(result.stdout).toContain('## Focused Review Plan: export-risk');
     expect(result.stdout).toContain('Review command: `corepack pnpm run report:unmerged-branch-readiness -- --branch export-risk --max-files 10`');
+    expect(result.stdout).toContain('## Package Script Handles');
+    expect(result.stdout).toContain('corepack pnpm run check:unmerged-branch-readiness-report');
     expect(result.stdout).toContain('corepack pnpm run check:production-deploy-script');
     expect(result.stdout).toContain('corepack pnpm run report:supabase-app-lint');
     expect(result.stdout).toContain('No manual dashboard copy/paste');

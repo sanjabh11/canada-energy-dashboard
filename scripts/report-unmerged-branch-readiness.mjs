@@ -255,6 +255,15 @@ function tableText(items) {
   return items.map(commandText).join('; ');
 }
 
+const packageScriptHandles = {
+  report_unmerged_branch_readiness: 'corepack pnpm run report:unmerged-branch-readiness',
+  report_unmerged_branch_readiness_high_risk: 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+  check_unmerged_branch_readiness_report: 'corepack pnpm run check:unmerged-branch-readiness-report',
+  report_branch_review_readiness: 'corepack pnpm run report:branch-review-readiness',
+  check_branch_review_report: 'corepack pnpm run check:branch-review-report',
+  check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+};
+
 const categoryReviewPlans = {
   'edge-function-copy': {
     reviewFocus: 'Detached function copies can drift from configured Supabase entrypoints or invite manual dashboard copy/paste deploys.',
@@ -861,6 +870,15 @@ if (selectedBranch) {
   } else {
     for (const branch of focusedBranches) printFocusedReviewPlan(branch, '###');
   }
+}
+
+console.log('');
+console.log('## Package Script Handles');
+console.log('');
+console.log('| Handle | Command |');
+console.log('|---|---|');
+for (const [handle, command] of Object.entries(packageScriptHandles)) {
+  console.log(`| ${handle} | ${commandText(command)} |`);
 }
 
 if (failOnHighRisk && counts.high > 0) process.exit(1);

@@ -125,6 +125,12 @@ assertContains('Default report', report, '## Local/Origin Branch Families');
 assertContains('Default report', report, '## Branch Freshness Review');
 assertContains('Default report', report, '| Branch | Scope | Risk | Latest commit date | Age | Freshness | Stale-merge action |');
 assertContains('Default report', report, '## Branch Review Queue');
+assertContains('Default report', report, '## Package Script Handles');
+assertContains('Default report', report, '| report_unmerged_branch_readiness | `corepack pnpm run report:unmerged-branch-readiness` |');
+assertContains('Default report', report, '| report_unmerged_branch_readiness_high_risk | `corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high` |');
+assertContains('Default report', report, '| check_unmerged_branch_readiness_report | `corepack pnpm run check:unmerged-branch-readiness-report` |');
+assertContains('Default report', report, '| report_branch_review_readiness | `corepack pnpm run report:branch-review-readiness` |');
+assertContains('Default report', report, '| check_branch_review_report | `corepack pnpm run check:branch-review-report` |');
 if (report.includes('| stale |')) {
   assertContains('Default report', report, 'treat as stale review queue');
 }
@@ -177,6 +183,8 @@ if (branchRows.length > 0) {
   assertContains('Focused report', focused, `Review command: \`corepack pnpm run report:unmerged-branch-readiness -- --branch ${focusedCandidate.branch} --max-files ${maxFiles}\``);
   assertContains('Focused report', focused, '- Confidence boundary: this plan can make the branch reviewable, but it does not create buyer evidence or production approval.');
   assertContains('Focused report', focused, '| Area | Review focus | Suggested checks | Stop/approval gate |');
+  assertContains('Focused report', focused, '## Package Script Handles');
+  assertContains('Focused report', focused, 'corepack pnpm run check:unmerged-branch-readiness-report');
   assertContains('Focused report', focused, 'git diff --name-status');
   assertContains('Focused report', focused, 'corepack pnpm run check:production-deploy-script');
   assertContains('Focused report', focused, 'corepack pnpm run check:release-readiness');

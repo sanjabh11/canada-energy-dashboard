@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest progress digest public-handle lineage ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES', 'Manifest progress_updates must expose the latest unmerged branch package-handle ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest progress digest public-handle lineage ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest unmerged branch package-handle ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4838,6 +4838,45 @@ try {
         && progressDigestLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && progressDigestLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Progress digest public-handle lineage code optimization review must record backlog status, progress, focused suite, manifest, commercial report, and TypeScript checks.',
+    );
+    const unmergedBranchPackageHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES');
+    assert(unmergedBranchPackageHandlesDecision, 'Manifest must record the unmerged branch package-handle implementation decision.');
+    assert(
+      unmergedBranchPackageHandlesDecision?.chosen_variant === 'minimal unmerged branch package-handle digest',
+      'Unmerged branch package-handle decision must record the minimal package-handle digest variant.',
+    );
+    assert(
+      Array.isArray(unmergedBranchPackageHandlesDecision?.files_changed)
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/report-unmerged-branch-readiness.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/check-unmerged-branch-readiness-report.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('tests/unit/unmergedBranchReadiness.test.ts')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && unmergedBranchPackageHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Unmerged branch package-handle decision must record unmerged branch, manifest, progress, commercial report, and unit contract files.',
+    );
+    assert(
+      /package-handle discoverability only|does not checkout branches|merge branches|push branches|discard refs|select canonical heads|clear branch review|clear source provenance|run release-readiness as clearance|collect buyer evidence|contact buyers|authorize Supabase|request owner approval|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(unmergedBranchPackageHandlesDecision?.proof_boundary ?? ''),
+      'Unmerged branch package-handle decision must preserve no-checkout, no-merge, no-push, no-discard, no-canonical-selection, no-clearance, no-buyer, no-Supabase, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+    );
+    const unmergedBranchPackageHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES');
+    assert(unmergedBranchPackageHandlesReview, 'Manifest must record the unmerged branch package-handle code optimization review.');
+    assert(unmergedBranchPackageHandlesReview?.policy === 'strict', 'Unmerged branch package-handle code optimization review must use strict policy.');
+    assert(unmergedBranchPackageHandlesReview?.verdict === 'pass', 'Unmerged branch package-handle code optimization review must pass.');
+    assert(
+      Array.isArray(unmergedBranchPackageHandlesReview?.tests_or_checks)
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /report:unmerged-branch-readiness -- --focus-risk high/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:unmerged-branch-readiness-report/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:branch-review-report -- --skip-probes/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Unmerged branch package-handle code optimization review must record unmerged branch, branch wrapper, progress, focused suite, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

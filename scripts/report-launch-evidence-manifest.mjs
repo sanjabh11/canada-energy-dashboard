@@ -5917,6 +5917,18 @@ const progressDigestPublicHandleLineageFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const unmergedBranchPackageHandlesFilesChanged = [
+  'scripts/report-unmerged-branch-readiness.mjs',
+  'scripts/check-unmerged-branch-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/unmergedBranchReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const localProofPackBrowserSmokeFilesChanged = [
   'package.json',
   'playwright.config.ts',
@@ -6132,6 +6144,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...progressDigestFocusedReportFilesChanged,
   ...progressDigestUnitContractFilesChanged,
   ...progressDigestPublicHandleLineageFilesChanged,
+  ...unmergedBranchPackageHandlesFilesChanged,
   ...localProofPackBrowserSmokeFilesChanged,
   ...localProofPackSmokePublicHandleFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
@@ -6870,6 +6883,24 @@ const progressDigestPublicHandleLineageTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const unmergedBranchPackageHandlesTestsRun = [
+  'node --check scripts/report-unmerged-branch-readiness.mjs',
+  'node --check scripts/check-unmerged-branch-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/unmergedBranchReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+  'pnpm run check:unmerged-branch-readiness-report',
+  'pnpm run check:branch-review-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const localProofPackBrowserSmokeTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -7136,6 +7167,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...progressDigestFocusedReportTestsRun,
   ...progressDigestUnitContractTestsRun,
   ...progressDigestPublicHandleLineageTestsRun,
+  ...unmergedBranchPackageHandlesTestsRun,
   ...localProofPackBrowserSmokeTestsRun,
   ...localProofPackSmokePublicHandleTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
@@ -8111,6 +8143,19 @@ const safeFixImplementationDecisions = [
     reason: 'The focused progress digest report already displayed the public progress and bottleneck handle ids, but omitted the public handle lineage fields that identify the progress_updates and bottleneck_log manifest rows backing those handles.',
     proof_boundary: 'This record improves progress and bottleneck public-handle lineage discoverability only; it does not complete pending work, clear launch blockers, run missing checks as clearance, collect buyer evidence, contact buyers, prove buyer acceptance, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused progress handle lineage, bottleneck handle lineage, durable backlog artifact, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as pending-work completion, production approval, buyer acceptance, release readiness, source readiness, branch approval, Supabase advisor clearance, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES',
+    decision: 'Expose unmerged-branch readiness package-script handles inside the read-only branch inventory report.',
+    acceptance_check: 'report:unmerged-branch-readiness renders Package Script Handles for the default unmerged-branch report, high-risk focused queue, unmerged-branch checker, branch-review wrapper, branch-review checker, and launch-evidence manifest checker; check:unmerged-branch-readiness-report validates those handles while unmerged branch review remains read-only and not branch approval, merge permission, production approval, deployment, buyer evidence, or launch readiness.',
+    chosen_variant: 'minimal unmerged branch package-handle digest',
+    repo_pattern_reused: 'Existing unmerged branch readiness report/check/test contract, branch-review wrapper package-handle pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: unmergedBranchPackageHandlesFilesChanged,
+    tests_run: unmergedBranchPackageHandlesTestsRun,
+    proof: 'The patch renders existing package-script entrypoints in the unmerged-branch Markdown contract without changing branch refs, checking out branches, merging, pushing, discarding refs, running release-readiness as clearance, contacting buyers, authorizing Supabase, requesting owner approval, deploying, proving hosted/live parity, clearing branch review, or changing launch status.',
+    reason: 'The unmerged-branch report is the direct read-only inventory for local/origin split and stale branch risk, but unlike adjacent focused blocker reports it did not expose the exact package handles an operator should run next.',
+    proof_boundary: 'This record improves unmerged-branch package-handle discoverability only; it does not checkout branches, merge branches, push branches, discard refs, select canonical heads, clear branch review, clear source provenance, run release-readiness as clearance, collect buyer evidence, contact buyers, authorize Supabase, request owner approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the unmerged-branch package-handle digest, read-only branch inventory, focused review commands, branch-review wrapper, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as branch approval, canonical-head selection, source readiness, release readiness, Supabase advisor clearance, buyer acceptance, production approval, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
   },
 ];
 
@@ -9809,6 +9854,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing downstream gates could reduce blockers only after retained buyer artifacts, owner decisions, authorized Supabase advisor evidence, release tooling proof, explicit approval, and live contexts are available; doing it here would blur progress lineage with readiness proof.',
     evidence: 'The focused progress digest report stop gate states that the report does not complete pending work, clear blockers, authorize Supabase, deploy, or create hosted/live parity evidence.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES',
+    variant: 'Leave unmerged-branch package handles implicit in package.json and prose review commands.',
+    reason_rejected: 'The unmerged-branch report is the branch-risk operator artifact and should expose the exact follow-up package handles without requiring a separate package.json lookup.',
+    tradeoff: 'No-code defer avoids a small report/check update, but preserves a weaker handoff than adjacent blocker reports that render package-script handles.',
+    evidence: 'scripts/report-unmerged-branch-readiness.mjs already printed focused review commands but did not include a Package Script Handles section.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES',
+    variant: 'Add or regenerate public release-status rows for unmerged-branch readiness.',
+    reason_rejected: 'The branch-review wrapper already carries public status handles; this gap is a report-local package-handle handoff, not a public status data gap.',
+    tradeoff: 'Public status churn would touch generated artifacts and broaden the phase without improving the direct unmerged-branch inventory contract.',
+    evidence: 'The existing branch-review readiness report already exposes public branch-review handles and points to report:unmerged-branch-readiness package commands.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES',
+    variant: 'Use unmerged-branch package handles to approve branches, select canonical heads, merge, push, discard refs, run release-readiness as clearance, request production approval, deploy, or clear launch blockers.',
+    reason_rejected: 'Branch approval, canonical-head selection, merge/push/discard actions, release clearance, production approval, deployment, and launch blocker clearance require owner decisions and evidence outside this read-only package-handle phase.',
+    tradeoff: 'Executing downstream branch decisions could reduce blockers only after explicit owner review; doing it here would blur read-only inventory with branch mutation and launch readiness proof.',
+    evidence: 'The unmerged-branch report decision boundary states that it does not merge, checkout, deploy, run migrations, contact buyers, or mutate branch state.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10471,6 +10537,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public progress and bottleneck handle lineage, existing progress digest report/check/test contracts, and the ECC dynamic-workflow backlog artifact pattern, with no new dependency, no generated public-status churn, no duplicate progress store, no proof command execution as clearance, no blocker clearance, no buyer contact, no Supabase access, no branch/source mutation, no release-readiness execution, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
     tests_or_checks: progressDigestPublicHandleLineageTestsRun,
     remaining_risk: 'The progress and bottleneck handle lineage remains operator guidance only; launch readiness still depends on retained buyer evidence, clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses the existing unmerged-branch report/check/test contracts and branch-review package-handle pattern, with no new dependency, no generated public-status churn, no branch checkout, no merge, no push, no discard, no canonical-head selection, no release-readiness execution as clearance, no buyer contact, no Supabase access, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
+    tests_or_checks: unmergedBranchPackageHandlesTestsRun,
+    remaining_risk: 'The unmerged-branch package-handle digest remains operator guidance only; launch readiness still depends on owner canonical-head decisions, focused read-only branch review completion, clean source provenance, Corepack-pinned release-readiness, authorized Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
