@@ -58,6 +58,15 @@ describe('release preflight readiness report', () => {
     expect(stdout).toContain('Source Provenance Boundary');
     expect(stdout).toContain('Production Approval Request Boundary');
     expect(stdout).toContain('does not grant owner approval');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('release_toolchain_approval_deficit_ledger');
+    expect(stdout).toContain('release_preflight_remediation_queue');
+    expect(stdout).toContain('release_operator_handoff_packet');
+    expect(stdout).toContain('release_preflight_clearance_matrix');
+    expect(stdout).toContain('release_toolchain_probe_ledger');
+    expect(stdout).toContain('Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run report:release-preflight');
+    expect(stdout).toContain('corepack pnpm run check:release-preflight-report');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -128,6 +137,19 @@ describe('release preflight readiness report', () => {
     expect(payload.release_preflight.clearance_matrix.rows.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
     expect(payload.release_preflight.remediation_queue.items.find((item: { requirement: string }) => item.requirement === 'Clean source provenance')?.proof_command).toContain('report:source-provenance-readiness');
     expect(payload.production_approval_request_packet.proof_type).toBe('production_approval_request_packet');
+    expect(payload.public_status_handles.release_toolchain_approval_deficit_ledger.id).toBe('release_toolchain_approval_deficit_ledger');
+    expect(payload.public_status_handles.release_preflight_remediation_queue.id).toBe('release_preflight_remediation_queue');
+    expect(payload.public_status_handles.release_operator_handoff_packet.id).toBe('release_operator_handoff_packet');
+    expect(payload.public_status_handles.release_preflight_clearance_matrix.id).toBe('release_preflight_clearance_matrix');
+    expect(payload.public_status_handles.release_toolchain_probe_ledger.id).toBe('release_toolchain_probe_ledger');
+    expect(payload.public_status_handles.release_operator_handoff_packet.command).toContain('report:release-preflight');
+    expect(payload.public_status_handles.release_operator_handoff_packet.command).toContain('check:release-preflight-report');
+    expect(payload.public_status_handles.release_operator_handoff_packet.sourceManifestPath).toBe('release_preflight.operator_handoff_packet');
+    expect(payload.public_status_handles.release_toolchain_probe_ledger.sourceProofTypes).toContain('corepack_pnpm_toolchain_probe');
+    expect(payload.package_script_handles.report_release_preflight).toBe('corepack pnpm run report:release-preflight');
+    expect(payload.package_script_handles.check_release_preflight_report).toBe('corepack pnpm run check:release-preflight-report');
+    expect(payload.package_script_handles.check_release_readiness).toBe('corepack pnpm run check:release-readiness');
+    expect(payload.package_script_handles.check_corepack_toolchain).toBe('corepack pnpm run check:corepack-toolchain');
     expect(payload.proof_boundary).toMatch(/does not install tools|run release-readiness|push|deploy/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|hosted\/live parity/i);
   });

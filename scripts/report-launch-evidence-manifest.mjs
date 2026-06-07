@@ -5465,6 +5465,18 @@ const sourceProvenancePublicHandlesDigestFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const releasePreflightPublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-release-preflight-readiness.mjs',
+  'scripts/check-release-preflight-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/releasePreflightReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releaseOperatorHandoffPacketFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/report-release-preflight-readiness.mjs',
@@ -5959,6 +5971,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceRenameSummaryFilesChanged,
   ...sourceOwnerDecisionPacketFilesChanged,
   ...sourceProvenancePublicHandlesDigestFilesChanged,
+  ...releasePreflightPublicHandlesDigestFilesChanged,
   ...releaseOperatorHandoffPacketFilesChanged,
   ...branchOperatorHandoffPacketFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
@@ -6211,6 +6224,24 @@ const sourceProvenancePublicHandlesDigestTestsRun = [
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const releasePreflightPublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-release-preflight-readiness.mjs',
+  'node --check scripts/check-release-preflight-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:release-preflight -- --skip-probes',
+  'pnpm run report:release-preflight -- --skip-probes --json',
+  'pnpm run check:release-preflight-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
   'pnpm exec tsc -b --pretty false',
 ];
 
@@ -6754,6 +6785,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceRenameSummaryTestsRun,
   ...sourceOwnerDecisionPacketTestsRun,
   ...sourceProvenancePublicHandlesDigestTestsRun,
+  ...releasePreflightPublicHandlesDigestTestsRun,
   ...releaseOperatorHandoffPacketTestsRun,
   ...branchOperatorHandoffPacketTestsRun,
   ...releaseToolchainProofHandleTestsRun,
@@ -7612,6 +7644,19 @@ const safeFixImplementationDecisions = [
     reason: 'The first launch blocker is source provenance, and the public source handles already existed, but the focused source report did not show those handles or package commands in the same operator-facing form as newer focused reports.',
     proof_boundary: 'This record improves source-provenance handle discoverability only; it does not commit, unstage, stash, revert, delete, rename, move, choose owner intent, clear source provenance, run release-readiness, push, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused source handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, or this code optimization record as owner approval, source cleanup, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing release-preflight public status handles and package script handles inside the focused release-preflight report.',
+    acceptance_check: 'report:release-preflight renders Public Release Status Handles and Package Script Handles for release_toolchain_approval_deficit_ledger, release_preflight_remediation_queue, release_operator_handoff_packet, release_preflight_clearance_matrix, and release_toolchain_probe_ledger; check:release-preflight-report validates those handles while release status remains blocked until release gates actually pass.',
+    chosen_variant: 'minimal focused release handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json release handles, focused source/progress report handle sections, release-preflight report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: releasePreflightPublicHandlesDigestFilesChanged,
+    tests_run: releasePreflightPublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public release-preflight handle rows into the focused release-preflight JSON/Markdown payload and adds package handles for the focused release report/check, guarded release-readiness, Corepack toolchain check, and launch evidence manifest commands without changing public status JSON, toolchain probes, source provenance, release-readiness execution, production approval, deploy state, or launch status.',
+    reason: 'Release toolchain is the next code-addressable launch blocker after source provenance, and its public release handles already existed, but the focused release-preflight report did not show those handles or package commands in the same operator-facing form as source provenance and progress digest reports.',
+    proof_boundary: 'This record improves release-preflight handle discoverability only; it does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused release handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as Corepack clearance, Git LFS push-path proof, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9079,6 +9124,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Mutating the staged rename could reduce the first blocker, but it would violate the safe-fix boundary and dirty-worktree policy.',
     evidence: 'git status and the source owner decision packet classify .windsurf/workflows/master.md -> .devin/workflows/master.md as a staged-only source_rename_decision requiring owner intent.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave release public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused release-preflight report is the operator artifact for the release-toolchain blocker and should show the same handles during continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the release blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains release_toolchain_approval_deficit_ledger, release_preflight_remediation_queue, release_operator_handoff_packet, release_preflight_clearance_matrix, and release_toolchain_probe_ledger handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status release rows.',
+    reason_rejected: 'The needed public release handles already exist; changing generated public status would add churn without improving the focused release-preflight report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public release rows already point at report:release-preflight && check:release-preflight-report and carry sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST',
+    variant: 'Install Corepack or Git LFS, run release-readiness, clear source provenance, request approval, or deploy from the report phase.',
+    reason_rejected: 'Tool installation, release-readiness execution, source cleanup, owner approval, and deployment are gated operations outside this repo-side report-contract phase.',
+    tradeoff: 'Executing real release gates could reduce blockers only after prerequisites and explicit approvals pass, but would exceed the safe-fix boundary and risk unsupported readiness claims.',
+    evidence: 'Release-preflight stop gates require Corepack pnpm proof, Git LFS proof, clean source provenance, guarded release-readiness, and explicit owner approval as separate proof rows before any deploy or readiness claim.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9642,6 +9708,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public source handle data and existing source report/check/test contracts, with no new dependency, no generated public-status churn, no new source parser, no source mutation, no branch mutation, no release-readiness execution, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: sourceProvenancePublicHandlesDigestTestsRun,
     remaining_risk: 'The source handle digest remains operator guidance only; launch readiness still depends on explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public release handle data and existing release preflight report/check/test contracts, with no new dependency, no generated public-status churn, no new toolchain parser, no Corepack or Git LFS installation, no source mutation, no release-readiness execution, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: releasePreflightPublicHandlesDigestTestsRun,
+    remaining_risk: 'The release handle digest remains operator guidance only; launch readiness still depends on current Corepack proof, Git LFS proof, explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, guarded release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

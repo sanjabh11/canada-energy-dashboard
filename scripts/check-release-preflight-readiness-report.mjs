@@ -117,6 +117,16 @@ if (failures.length === 0) {
     assertContains(stdout, '## Production Approval Request Boundary', 'Report must include production approval request boundary evidence.');
     assertContains(stdout, 'Production approval request packet', 'Report must include production approval request packet evidence.');
     assertContains(stdout, 'does not grant owner approval', 'Report must preserve production approval boundary text.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public release-preflight handles.');
+    assertContains(stdout, 'release_toolchain_approval_deficit_ledger', 'Report must include the release deficit ledger public handle.');
+    assertContains(stdout, 'release_preflight_remediation_queue', 'Report must include the release remediation queue public handle.');
+    assertContains(stdout, 'release_operator_handoff_packet', 'Report must include the release operator handoff public handle.');
+    assertContains(stdout, 'release_preflight_clearance_matrix', 'Report must include the release clearance matrix public handle.');
+    assertContains(stdout, 'release_toolchain_probe_ledger', 'Report must include the release toolchain probe public handle.');
+    assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
+    assertContains(stdout, 'corepack pnpm run report:release-preflight', 'Report must include the focused release-preflight package report handle.');
+    assertContains(stdout, 'corepack pnpm run check:release-preflight-report', 'Report must include the focused release-preflight package check handle.');
+    assertContains(stdout, 'corepack pnpm run check:release-readiness', 'Report must include the guarded release-readiness package handle.');
   }
 
   if (payload) {
@@ -194,6 +204,18 @@ if (failures.length === 0) {
     assert(/report:source-provenance-readiness/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(clearanceRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance clearance row must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? '') && /check:source-provenance-report/.test(remediationRowsByRequirement.get('Clean source provenance')?.proof_command ?? ''), 'Clean source provenance remediation row must point to the focused source provenance report/check.');
     assert(payload.production_approval_request_packet?.proof_type === 'production_approval_request_packet', 'Focused report JSON must include production approval request packet.');
+    assert(payload.public_status_handles?.release_toolchain_approval_deficit_ledger?.id === 'release_toolchain_approval_deficit_ledger', 'Focused JSON must include the release deficit ledger public handle.');
+    assert(payload.public_status_handles?.release_preflight_remediation_queue?.id === 'release_preflight_remediation_queue', 'Focused JSON must include the release remediation queue public handle.');
+    assert(payload.public_status_handles?.release_operator_handoff_packet?.id === 'release_operator_handoff_packet', 'Focused JSON must include the release operator handoff public handle.');
+    assert(payload.public_status_handles?.release_preflight_clearance_matrix?.id === 'release_preflight_clearance_matrix', 'Focused JSON must include the release clearance matrix public handle.');
+    assert(payload.public_status_handles?.release_toolchain_probe_ledger?.id === 'release_toolchain_probe_ledger', 'Focused JSON must include the release toolchain probe public handle.');
+    assert(/report:release-preflight/.test(payload.public_status_handles?.release_operator_handoff_packet?.command ?? '') && /check:release-preflight-report/.test(payload.public_status_handles?.release_operator_handoff_packet?.command ?? ''), 'Release operator handoff public handle must point at the focused release report/check.');
+    assert(/release_preflight\.operator_handoff_packet/.test(payload.public_status_handles?.release_operator_handoff_packet?.sourceManifestPath ?? ''), 'Release operator handoff public handle must point at release_preflight.operator_handoff_packet.');
+    assert(Array.isArray(payload.public_status_handles?.release_toolchain_probe_ledger?.sourceProofTypes) && payload.public_status_handles.release_toolchain_probe_ledger.sourceProofTypes.includes('corepack_pnpm_toolchain_probe'), 'Release toolchain probe public handle must expose Corepack probe lineage.');
+    assert(payload.package_script_handles?.report_release_preflight === 'corepack pnpm run report:release-preflight', 'Focused JSON must include the release preflight report package handle.');
+    assert(payload.package_script_handles?.check_release_preflight_report === 'corepack pnpm run check:release-preflight-report', 'Focused JSON must include the release preflight checker package handle.');
+    assert(payload.package_script_handles?.check_release_readiness === 'corepack pnpm run check:release-readiness', 'Focused JSON must include the guarded release-readiness package handle.');
+    assert(payload.package_script_handles?.check_corepack_toolchain === 'corepack pnpm run check:corepack-toolchain', 'Focused JSON must include the Corepack toolchain package handle.');
     assert(/does not install tools|run release-readiness|clear source provenance|push|deploy/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must not imply release execution.');
     assert(/Do not treat this focused report|release-readiness|production approval|hosted\/live parity/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject readiness claims from the report itself.');
   }

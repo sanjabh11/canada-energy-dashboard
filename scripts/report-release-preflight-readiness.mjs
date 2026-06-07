@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -108,6 +108,16 @@ function runManifest() {
   }
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function cell(value) {
   const text = String(value ?? '-')
     .replace(/\r?\n/g, ' ')
@@ -141,6 +151,21 @@ function focusedPayload(manifest) {
       resolution_queue: manifest.source_provenance?.resolution_queue ?? null,
     },
     production_approval_request_packet: manifest.production_approval?.request_packet ?? null,
+    public_status_handles: {
+      release_toolchain_approval_deficit_ledger: readPublicStatusHandle('release_toolchain_approval_deficit_ledger'),
+      release_preflight_remediation_queue: readPublicStatusHandle('release_preflight_remediation_queue'),
+      release_operator_handoff_packet: readPublicStatusHandle('release_operator_handoff_packet'),
+      release_preflight_clearance_matrix: readPublicStatusHandle('release_preflight_clearance_matrix'),
+      release_toolchain_probe_ledger: readPublicStatusHandle('release_toolchain_probe_ledger'),
+    },
+    package_script_handles: {
+      report_release_preflight: 'corepack pnpm run report:release-preflight',
+      check_release_preflight_report: 'corepack pnpm run check:release-preflight-report',
+      check_release_readiness: 'corepack pnpm run check:release-readiness',
+      check_corepack_toolchain: 'corepack pnpm run check:corepack-toolchain',
+      report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
+      check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+    },
     proof_boundary: 'Focused release-preflight evidence only; this report does not install tools, run release-readiness, clear source provenance, push, deploy, grant owner approval, or prove hosted/live parity.',
     stop_gate: 'Do not treat this focused report, bare pnpm checks, skipped probes, package metadata, or local hook output as release-readiness, production approval, or current hosted/live parity.',
   };
@@ -154,6 +179,19 @@ function renderMarkdown(payload) {
   const operatorHandoffPacket = releasePreflight.operator_handoff_packet ?? {};
   const requestPacket = payload.production_approval_request_packet ?? {};
   const sourceQueue = payload.source_provenance?.resolution_queue ?? {};
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes) ? item.sourceProofTypes.join(', ') : '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
+  const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
+    name,
+    command,
+  ]);
 
   const probeRows = (toolchainLedger.items ?? []).map((item) => [
     item.label,
@@ -326,6 +364,14 @@ function renderMarkdown(payload) {
     requestPacket.stop_gate ?? 'Production approval request packet stop gate missing.',
     '',
     renderTable(['Rank', 'Prerequisite', 'Phase', 'Status', 'Blocks Request', 'Proof Command', 'Request Impact'], requestRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
+    '',
+    '## Package Script Handles',
+    '',
+    renderTable(['Handle', 'Command'], scriptRows),
   ].join('\n')}\n`;
 }
 
