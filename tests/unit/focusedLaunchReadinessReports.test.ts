@@ -32,6 +32,12 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('progress_digest: pass');
     expect(stdout).toContain('objective_completion_audit: pass');
     expect(stdout).toContain('adversarial_review: pass');
+    expect(stdout).toContain('## Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run check:focused-launch-readiness-reports');
+    expect(stdout).toContain('corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes');
+    expect(stdout).toContain('corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --json');
+    expect(stdout).toContain('corepack pnpm run report:launch-evidence-manifest');
+    expect(stdout).toContain('corepack pnpm run check:commercial-launch-readiness-report');
   });
 
   it('emits structured JSON for operator handoff and automation logs', () => {
@@ -66,6 +72,12 @@ describe('focused launch readiness report suite', () => {
     expect(payload.checks.every((item: { status: string; command: string }) => (
       item.status === 'pass' && item.command.includes('--skip-probes')
     ))).toBe(true);
+    expect(payload.package_script_handles.check_focused_launch_readiness_reports).toBe('corepack pnpm run check:focused-launch-readiness-reports');
+    expect(payload.package_script_handles.check_focused_launch_readiness_reports_skip_probes).toBe('corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes');
+    expect(payload.package_script_handles.check_focused_launch_readiness_reports_json).toBe('corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --json');
+    expect(payload.package_script_handles.report_launch_evidence_manifest).toBe('corepack pnpm run report:launch-evidence-manifest');
+    expect(payload.package_script_handles.check_launch_evidence_manifest).toBe('corepack pnpm run check:launch-evidence-manifest');
+    expect(payload.package_script_handles.check_commercial_launch_readiness_report).toBe('corepack pnpm run check:commercial-launch-readiness-report');
     expect(payload.proof_boundary).toMatch(/does not clear source provenance|run release-readiness|authorize Supabase|contact buyers|deploy|hosted\/live parity|launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
   });

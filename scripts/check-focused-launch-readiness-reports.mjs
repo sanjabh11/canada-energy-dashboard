@@ -112,6 +112,16 @@ const focusedChecks = [
 
 const proofBoundary = 'Aggregate focused-readiness report contract check only; it does not clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, or create launch readiness.';
 const stopGate = 'Do not treat this suite, passing focused report checks, skipped probes, generated manifests, or public status handles as commercial-ready status, buyer acceptance, source readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, or current hosted/live proof.';
+const packageScriptHandles = {
+  check_focused_launch_readiness_reports: 'corepack pnpm run check:focused-launch-readiness-reports',
+  check_focused_launch_readiness_reports_skip_probes: 'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  check_focused_launch_readiness_reports_json: 'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+  report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
+  check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+  report_progress_digest_readiness: 'corepack pnpm run report:progress-digest-readiness',
+  check_progress_digest_report: 'corepack pnpm run check:progress-digest-report',
+  check_commercial_launch_readiness_report: 'corepack pnpm run check:commercial-launch-readiness-report',
+};
 
 function compactOutput(value, maxLength = 1200) {
   const text = String(value ?? '').trim().replace(/\s+/g, ' ');
@@ -160,6 +170,7 @@ const payload = {
   pass_count: results.filter((item) => item.status === 'pass').length,
   fail_count: failedResults.length + failures.length,
   checks: results,
+  package_script_handles: packageScriptHandles,
   proof_boundary: proofBoundary,
   stop_gate: stopGate,
 };
@@ -192,6 +203,11 @@ if (jsonOutput) {
         if (item.stdout_summary) console.log(`  stdout: ${item.stdout_summary}`);
         if (item.error) console.log(`  error: ${item.error}`);
       }
+    }
+    console.log('');
+    console.log('## Package Script Handles');
+    for (const [name, command] of Object.entries(packageScriptHandles)) {
+      console.log(`- ${name}: ${command}`);
     }
   }
 }

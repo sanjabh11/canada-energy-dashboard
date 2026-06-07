@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1228,9 +1228,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(74);
+    expect(manifest.implementation_decisions).toHaveLength(75);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(74);
+    expect(manifest.code_optimization_reviews).toHaveLength(75);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2697,6 +2697,37 @@ describe('launch evidence manifest report', () => {
 	      'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
 	      'pnpm run check:progress-digest-report -- --skip-probes',
 	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+	      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+	      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+	      'pnpm exec tsc -b --pretty false',
+	    ]));
+	    const focusedSuitePackageHandlesDecision = manifest.implementation_decisions.find(
+	      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES',
+	    );
+	    expect(focusedSuitePackageHandlesDecision).toBeTruthy();
+	    expect(focusedSuitePackageHandlesDecision.chosen_variant).toBe('minimal aggregate suite package-handle digest');
+	    expect(focusedSuitePackageHandlesDecision.files_changed).toEqual(expect.arrayContaining([
+	      'scripts/check-focused-launch-readiness-reports.mjs',
+	      'scripts/report-launch-evidence-manifest.mjs',
+	      'scripts/check-launch-evidence-manifest.mjs',
+	      'scripts/check-progress-digest-readiness-report.mjs',
+	      'scripts/check-commercial-launch-readiness-report.mjs',
+	      'tests/unit/focusedLaunchReadinessReports.test.ts',
+	      'tests/unit/progressDigestReadiness.test.ts',
+	      'tests/unit/launchEvidenceManifest.test.ts',
+	    ]));
+	    expect(focusedSuitePackageHandlesDecision.proof_boundary).toMatch(/package-handle discoverability only|does not run focused reports as clearance|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|create buyer proof|request or grant owner approval|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+	    const focusedSuitePackageHandlesReview = manifest.code_optimization_reviews.find(
+	      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES',
+	    );
+	    expect(focusedSuitePackageHandlesReview).toBeTruthy();
+	    expect(focusedSuitePackageHandlesReview.policy).toBe('strict');
+	    expect(focusedSuitePackageHandlesReview.tests_or_checks).toEqual(expect.arrayContaining([
+	      'node --check scripts/check-focused-launch-readiness-reports.mjs',
+	      'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+	      'pnpm run check:progress-digest-report -- --skip-probes',
 	      'pnpm run check:launch-evidence-manifest -- --skip-probes',
 	      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 	      'pnpm exec tsc -b --pretty false',

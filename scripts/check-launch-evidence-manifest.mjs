@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT', 'Manifest progress_updates must expose the latest buyer evidence readiness report-contract ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES', 'Manifest progress_updates must expose the latest focused suite package-handle ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest buyer evidence readiness report-contract ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest focused suite package-handle ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4909,19 +4909,57 @@ try {
 	    assert(buyerEvidenceReadinessReportContractReview, 'Manifest must record the buyer evidence readiness report-contract code optimization review.');
 	    assert(buyerEvidenceReadinessReportContractReview?.policy === 'strict', 'Buyer evidence readiness report-contract code optimization review must use strict policy.');
 	    assert(buyerEvidenceReadinessReportContractReview?.verdict === 'pass', 'Buyer evidence readiness report-contract code optimization review must pass.');
-	    assert(
-	      Array.isArray(buyerEvidenceReadinessReportContractReview?.tests_or_checks)
-	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /report:buyer-evidence-readiness/.test(check))
-	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:buyer-evidence-readiness-report/.test(check))
+		    assert(
+		      Array.isArray(buyerEvidenceReadinessReportContractReview?.tests_or_checks)
+		        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /report:buyer-evidence-readiness/.test(check))
+		        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:buyer-evidence-readiness-report/.test(check))
 	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report -- --skip-probes/.test(check))
 	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
 	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
 	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
 	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
-	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
-	      'Buyer evidence readiness report-contract code optimization review must record readiness, gate, progress, focused suite, manifest, commercial report, and TypeScript checks.',
-	    );
-	    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
+		        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+		      'Buyer evidence readiness report-contract code optimization review must record readiness, gate, progress, focused suite, manifest, commercial report, and TypeScript checks.',
+		    );
+		    const focusedSuitePackageHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES');
+		    assert(focusedSuitePackageHandlesDecision, 'Manifest must record the focused suite package-handle implementation decision.');
+		    assert(
+		      focusedSuitePackageHandlesDecision?.chosen_variant === 'minimal aggregate suite package-handle digest',
+		      'Focused suite package-handle decision must record the minimal aggregate package-handle digest variant.',
+		    );
+		    assert(
+		      Array.isArray(focusedSuitePackageHandlesDecision?.files_changed)
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('scripts/check-focused-launch-readiness-reports.mjs')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('tests/unit/focusedLaunchReadinessReports.test.ts')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+		        && focusedSuitePackageHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+		      'Focused suite package-handle decision must record aggregate checker, manifest, progress, commercial report, and unit contract files.',
+		    );
+		    assert(
+		      /package-handle discoverability only|does not run focused reports as clearance|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|create buyer proof|request or grant owner approval|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(focusedSuitePackageHandlesDecision?.proof_boundary ?? ''),
+		      'Focused suite package-handle decision must preserve no-clearance, no-release, no-branch, no-Supabase, no-buyer, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+		    );
+		    const focusedSuitePackageHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES');
+		    assert(focusedSuitePackageHandlesReview, 'Manifest must record the focused suite package-handle code optimization review.');
+		    assert(focusedSuitePackageHandlesReview?.policy === 'strict', 'Focused suite package-handle code optimization review must use strict policy.');
+		    assert(focusedSuitePackageHandlesReview?.verdict === 'pass', 'Focused suite package-handle code optimization review must pass.');
+		    assert(
+		      Array.isArray(focusedSuitePackageHandlesReview?.tests_or_checks)
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check-focused-launch-readiness-reports\.mjs/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /focusedLaunchReadinessReports\.test\.ts/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes --json/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+		      'Focused suite package-handle code optimization review must record aggregate checker, progress, focused suite, manifest, commercial report, JSON, and TypeScript checks.',
+		    );
+		    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
       'buyer evidence': 'buyer_evidence_adversarial_review',
