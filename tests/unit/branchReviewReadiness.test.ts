@@ -54,6 +54,18 @@ describe('branch review readiness report', () => {
     expect(stdout).toContain('Launch Action Branch Row');
     expect(stdout).toContain('Production Approval Branch Prerequisite');
     expect(stdout).toContain('Production Approval Request Branch Row');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('unmerged_branch_review_queue');
+    expect(stdout).toContain('branch_family_freshness_rollup');
+    expect(stdout).toContain('top_branch_review_packet');
+    expect(stdout).toContain('branch_clearance_matrix');
+    expect(stdout).toContain('branch_operator_handoff_packet');
+    expect(stdout).toContain('canonical_head_decision_queue');
+    expect(stdout).toContain('canonical_head_resolution_queue');
+    expect(stdout).toContain('review_first_branch_packet_queue');
+    expect(stdout).toContain('Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run report:branch-review-readiness');
+    expect(stdout).toContain('corepack pnpm run check:branch-review-report');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -92,6 +104,23 @@ describe('branch review readiness report', () => {
     expect(payload.production_approval_request_branch_row.prerequisite).toBe('Canonical branch review');
     expect(payload.production_approval_request_branch_row.proof_command).toContain('report:branch-review-readiness');
     expect(payload.production_approval_request_branch_row.proof_command).toContain('check:branch-review-report');
+    expect(payload.public_status_handles.unmerged_branch_review_queue.id).toBe('unmerged_branch_review_queue');
+    expect(payload.public_status_handles.branch_family_freshness_rollup.id).toBe('branch_family_freshness_rollup');
+    expect(payload.public_status_handles.top_branch_review_packet.id).toBe('top_branch_review_packet');
+    expect(payload.public_status_handles.branch_clearance_matrix.id).toBe('branch_clearance_matrix');
+    expect(payload.public_status_handles.branch_operator_handoff_packet.id).toBe('branch_operator_handoff_packet');
+    expect(payload.public_status_handles.canonical_head_decision_queue.id).toBe('canonical_head_decision_queue');
+    expect(payload.public_status_handles.canonical_head_resolution_queue.id).toBe('canonical_head_resolution_queue');
+    expect(payload.public_status_handles.review_first_branch_packet_queue.id).toBe('review_first_branch_packet_queue');
+    expect(payload.public_status_handles.branch_operator_handoff_packet.command).toContain('report:branch-review-readiness');
+    expect(payload.public_status_handles.branch_operator_handoff_packet.command).toContain('check:branch-review-report');
+    expect(payload.public_status_handles.branch_operator_handoff_packet.sourceManifestPath).toBe('branch_review.operator_handoff_packet');
+    expect(payload.public_status_handles.unmerged_branch_review_queue.sourceProofTypes).toContain('read_only_branch_review');
+    expect(payload.public_status_handles.branch_clearance_matrix.sourceProofType).toBe('read_only_branch_clearance_matrix');
+    expect(payload.package_script_handles.report_branch_review_readiness).toBe('corepack pnpm run report:branch-review-readiness');
+    expect(payload.package_script_handles.check_branch_review_report).toBe('corepack pnpm run check:branch-review-report');
+    expect(payload.package_script_handles.report_unmerged_branch_readiness).toBe('corepack pnpm run report:unmerged-branch-readiness');
+    expect(payload.package_script_handles.report_unmerged_branch_readiness_high_risk).toBe('corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high');
     expect(payload.proof_boundary).toMatch(/does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|deploy|grant production approval/i);
     expect(payload.stop_gate).toMatch(/branch approval|canonical-head owner selection|merge approval|production approval|hosted\/live parity/i);
 

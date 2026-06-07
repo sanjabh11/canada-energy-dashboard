@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -108,6 +108,16 @@ function runManifest() {
   }
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function cell(value) {
   const text = String(value ?? '-')
     .replace(/\r?\n/g, ' ')
@@ -155,6 +165,24 @@ function focusedPayload(manifest) {
     launch_action_branch_row: launchActionRow,
     production_approval_branch_prerequisite: productionPrerequisiteRow,
     production_approval_request_branch_row: productionRequestRow,
+    public_status_handles: {
+      unmerged_branch_review_queue: readPublicStatusHandle('unmerged_branch_review_queue'),
+      branch_family_freshness_rollup: readPublicStatusHandle('branch_family_freshness_rollup'),
+      top_branch_review_packet: readPublicStatusHandle('top_branch_review_packet'),
+      branch_clearance_matrix: readPublicStatusHandle('branch_clearance_matrix'),
+      branch_operator_handoff_packet: readPublicStatusHandle('branch_operator_handoff_packet'),
+      canonical_head_decision_queue: readPublicStatusHandle('canonical_head_decision_queue'),
+      canonical_head_resolution_queue: readPublicStatusHandle('canonical_head_resolution_queue'),
+      review_first_branch_packet_queue: readPublicStatusHandle('review_first_branch_packet_queue'),
+    },
+    package_script_handles: {
+      report_branch_review_readiness: 'corepack pnpm run report:branch-review-readiness',
+      check_branch_review_report: 'corepack pnpm run check:branch-review-report',
+      report_unmerged_branch_readiness: 'corepack pnpm run report:unmerged-branch-readiness',
+      report_unmerged_branch_readiness_high_risk: 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+      report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
+      check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+    },
     proof_boundary: 'Focused branch-review evidence only; this report does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, create launch evidence, create buyer proof, grant production approval, or prove hosted/live parity.',
     stop_gate: 'Do not treat this focused report, branch inventory, review queue, canonical-head ledger, clearance matrix, focused packet, skipped probes, public status handle, or check pass as branch approval, canonical-head owner selection, merge approval, release readiness, production approval, commercial-ready status, or hosted/live parity.',
   };
@@ -176,6 +204,21 @@ function renderMarkdown(payload) {
   const launchRow = payload.launch_action_branch_row ?? {};
   const productionPrerequisite = payload.production_approval_branch_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_branch_row ?? {};
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes)
+      ? item.sourceProofTypes.join(', ')
+      : item?.sourceProofType ?? '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
+  const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
+    name,
+    command,
+  ]);
 
   const summaryRows = [
     ['Branch review status', branch.status],
@@ -462,6 +505,14 @@ function renderMarkdown(payload) {
     '## Production Approval Request Branch Row',
     '',
     renderTable(['Prerequisite', 'Request Phase', 'Source Status', 'Status', 'Blocks Request', 'Evidence To Attach', 'Request Impact'], requestRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
+    '',
+    '## Package Script Handles',
+    '',
+    renderTable(['Handle', 'Command'], scriptRows),
   ].join('\n')}\n`;
 }
 

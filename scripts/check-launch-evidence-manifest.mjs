@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest release-preflight public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest branch-review public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest release-preflight public-handle digest ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest branch-review public-handle digest ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4496,6 +4496,40 @@ try {
         && releasePublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && releasePublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Release preflight public-handle digest code optimization review must record release, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const branchPublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST');
+    assert(branchPublicHandlesDecision, 'Manifest must record the branch review public-handle digest implementation decision.');
+    assert(
+      branchPublicHandlesDecision?.chosen_variant === 'minimal focused branch handle digest',
+      'Branch review public-handle digest decision must record the minimal focused branch handle digest variant.',
+    );
+    assert(
+      Array.isArray(branchPublicHandlesDecision?.files_changed)
+        && branchPublicHandlesDecision.files_changed.includes('scripts/report-branch-review-readiness.mjs')
+        && branchPublicHandlesDecision.files_changed.includes('scripts/check-branch-review-readiness-report.mjs')
+        && branchPublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && branchPublicHandlesDecision.files_changed.includes('tests/unit/branchReviewReadiness.test.ts')
+        && branchPublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && branchPublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Branch review public-handle digest decision must record focused branch, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(branchPublicHandlesDecision?.proof_boundary ?? ''),
+      'Branch review public-handle digest decision must preserve no-checkout, no-branch-mutation, no-migration, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const branchPublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST');
+    assert(branchPublicHandlesReview, 'Manifest must record the branch review public-handle digest code optimization review.');
+    assert(branchPublicHandlesReview?.policy === 'strict', 'Branch review public-handle digest code optimization review must use strict policy.');
+    assert(branchPublicHandlesReview?.verdict === 'pass', 'Branch review public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(branchPublicHandlesReview?.tests_or_checks)
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /check:branch-review-report -- --skip-probes/.test(check))
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && branchPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Branch review public-handle digest code optimization review must record branch, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

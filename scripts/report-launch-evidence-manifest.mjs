@@ -5499,6 +5499,18 @@ const branchOperatorHandoffPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const branchReviewPublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-branch-review-readiness.mjs',
+  'scripts/check-branch-review-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/branchReviewReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releaseToolchainProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -5974,6 +5986,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...releasePreflightPublicHandlesDigestFilesChanged,
   ...releaseOperatorHandoffPacketFilesChanged,
   ...branchOperatorHandoffPacketFilesChanged,
+  ...branchReviewPublicHandlesDigestFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
   ...branchReviewProofHandleFilesChanged,
   ...supabaseAdvisorProofHandleFilesChanged,
@@ -6276,6 +6289,24 @@ const branchOperatorHandoffPacketTestsRun = [
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const branchReviewPublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-branch-review-readiness.mjs',
+  'node --check scripts/check-branch-review-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:branch-review-readiness -- --skip-probes',
+  'pnpm run report:branch-review-readiness -- --skip-probes --json',
+  'pnpm run check:branch-review-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
   'pnpm exec tsc -b --pretty false',
 ];
 
@@ -6788,6 +6819,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...releasePreflightPublicHandlesDigestTestsRun,
   ...releaseOperatorHandoffPacketTestsRun,
   ...branchOperatorHandoffPacketTestsRun,
+  ...branchReviewPublicHandlesDigestTestsRun,
   ...releaseToolchainProofHandleTestsRun,
   ...branchReviewProofHandleTestsRun,
   ...supabaseAdvisorProofHandleTestsRun,
@@ -7657,6 +7689,19 @@ const safeFixImplementationDecisions = [
     reason: 'Release toolchain is the next code-addressable launch blocker after source provenance, and its public release handles already existed, but the focused release-preflight report did not show those handles or package commands in the same operator-facing form as source provenance and progress digest reports.',
     proof_boundary: 'This record improves release-preflight handle discoverability only; it does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused release handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as Corepack clearance, Git LFS push-path proof, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing branch-review public status handles and package script handles inside the focused branch-review report.',
+    acceptance_check: 'report:branch-review-readiness renders Public Release Status Handles and Package Script Handles for unmerged_branch_review_queue, branch_family_freshness_rollup, top_branch_review_packet, branch_clearance_matrix, branch_operator_handoff_packet, canonical_head_decision_queue, canonical_head_resolution_queue, and review_first_branch_packet_queue; check:branch-review-report validates those handles while branch review remains blocked until read-only review and owner decisions actually pass.',
+    chosen_variant: 'minimal focused branch handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json branch handles, focused source/release/progress report handle sections, branch-review report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: branchReviewPublicHandlesDigestFilesChanged,
+    tests_run: branchReviewPublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public branch-review handle rows into the focused branch-review JSON/Markdown payload and adds package handles for the focused branch report/check, unmerged branch readiness reports, and launch evidence manifest commands without changing public status JSON, branch inventory, canonical-head decisions, branch state, production approval, deploy state, or launch status.',
+    reason: 'Branch review is the next repo-addressable launch blocker after source and release gates, and its public branch handles already existed, but the focused branch-review report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, and progress digest reports.',
+    proof_boundary: 'This record improves branch-review handle discoverability only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused branch handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9145,6 +9190,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing real release gates could reduce blockers only after prerequisites and explicit approvals pass, but would exceed the safe-fix boundary and risk unsupported readiness claims.',
     evidence: 'Release-preflight stop gates require Corepack pnpm proof, Git LFS proof, clean source provenance, guarded release-readiness, and explicit owner approval as separate proof rows before any deploy or readiness claim.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave branch public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused branch-review report is the operator artifact for the branch blocker and should show the same handles during continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the branch blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains unmerged_branch_review_queue, branch_family_freshness_rollup, top_branch_review_packet, branch_clearance_matrix, branch_operator_handoff_packet, canonical_head_decision_queue, canonical_head_resolution_queue, and review_first_branch_packet_queue handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status branch rows.',
+    reason_rejected: 'The needed public branch handles already exist; changing generated public status would add churn without improving the focused branch-review report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public branch rows already point at report:branch-review-readiness && check:branch-review-report and carry sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    variant: 'Checkout, merge, push, discard, delete, select canonical heads, run migrations, or deploy from the report phase.',
+    reason_rejected: 'Branch mutation, canonical-head owner selection, migrations, and deploys are gated operations outside this repo-side report-contract phase.',
+    tradeoff: 'Executing branch operations could reduce branch backlog only after review and owner gates pass, but would exceed the safe-fix boundary and risk unsupported branch-clearance or readiness claims.',
+    evidence: 'Branch review stop gates require read-only focused packets, canonical-head owner decisions, clean release gates, and explicit owner approval before branch mutation, migration, deploy, or production approval claims.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9717,6 +9783,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public release handle data and existing release preflight report/check/test contracts, with no new dependency, no generated public-status churn, no new toolchain parser, no Corepack or Git LFS installation, no source mutation, no release-readiness execution, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: releasePreflightPublicHandlesDigestTestsRun,
     remaining_risk: 'The release handle digest remains operator guidance only; launch readiness still depends on current Corepack proof, Git LFS proof, explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, guarded release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public branch handle data and existing branch review report/check/test contracts, with no new dependency, no generated public-status churn, no new branch scanner, no checkout, no merge, no push, no canonical-head selection, no migration execution, no Supabase mutation, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: branchReviewPublicHandlesDigestTestsRun,
+    remaining_risk: 'The branch handle digest remains operator guidance only; launch readiness still depends on read-only review-first packets, explicit owner canonical-head decisions, current release-readiness proof, clean source provenance, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

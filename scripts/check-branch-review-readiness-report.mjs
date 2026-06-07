@@ -108,6 +108,19 @@ if (failures.length === 0) {
     assertContains(stdout, '## Production Approval Branch Prerequisite', 'Report must include the production approval branch prerequisite.');
     assertContains(stdout, '## Production Approval Request Branch Row', 'Report must include the production approval request branch row.');
     assert(/does not[ \s\S]{0,240}(grant production approval|prove hosted\/live parity)/i.test(stdout), 'Report must preserve no-approval and no-live-proof language.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public branch-review handles.');
+    assertContains(stdout, 'unmerged_branch_review_queue', 'Report must include the unmerged branch review queue public handle.');
+    assertContains(stdout, 'branch_family_freshness_rollup', 'Report must include the branch family freshness public handle.');
+    assertContains(stdout, 'top_branch_review_packet', 'Report must include the top branch packet public handle.');
+    assertContains(stdout, 'branch_clearance_matrix', 'Report must include the branch clearance matrix public handle.');
+    assertContains(stdout, 'branch_operator_handoff_packet', 'Report must include the branch operator handoff public handle.');
+    assertContains(stdout, 'canonical_head_decision_queue', 'Report must include the canonical-head decision public handle.');
+    assertContains(stdout, 'canonical_head_resolution_queue', 'Report must include the canonical-head resolution public handle.');
+    assertContains(stdout, 'review_first_branch_packet_queue', 'Report must include the review-first packet queue public handle.');
+    assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
+    assertContains(stdout, 'corepack pnpm run report:branch-review-readiness', 'Report must include the focused branch review package report handle.');
+    assertContains(stdout, 'corepack pnpm run check:branch-review-report', 'Report must include the focused branch review package check handle.');
+    assertContains(stdout, 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high', 'Report must include the high-risk unmerged branch report package handle.');
     const markdownOperatorRows = payload?.branch_review?.operator_handoff_packet?.items ?? [];
     if (markdownOperatorRows.some((item) => item.blocker_class === 'review_first')) {
       assertContains(stdout, 'read_only_focused_review_first', 'Report must render review-first branch operator execution gates when present.');
@@ -159,6 +172,22 @@ if (failures.length === 0) {
     assert(payload.launch_action_branch_row?.phase === 'branch_review', 'Focused JSON must include the launch action branch row.');
     assert(payload.production_approval_branch_prerequisite?.prerequisite === 'Canonical branch review', 'Focused JSON must include the production approval branch prerequisite.');
     assert(payload.production_approval_request_branch_row?.prerequisite === 'Canonical branch review', 'Focused JSON must include the production approval request branch row.');
+    assert(payload.public_status_handles?.unmerged_branch_review_queue?.id === 'unmerged_branch_review_queue', 'Focused JSON must include the unmerged branch review queue public handle.');
+    assert(payload.public_status_handles?.branch_family_freshness_rollup?.id === 'branch_family_freshness_rollup', 'Focused JSON must include the branch family freshness public handle.');
+    assert(payload.public_status_handles?.top_branch_review_packet?.id === 'top_branch_review_packet', 'Focused JSON must include the top branch packet public handle.');
+    assert(payload.public_status_handles?.branch_clearance_matrix?.id === 'branch_clearance_matrix', 'Focused JSON must include the branch clearance matrix public handle.');
+    assert(payload.public_status_handles?.branch_operator_handoff_packet?.id === 'branch_operator_handoff_packet', 'Focused JSON must include the branch operator handoff public handle.');
+    assert(payload.public_status_handles?.canonical_head_decision_queue?.id === 'canonical_head_decision_queue', 'Focused JSON must include the canonical-head decision public handle.');
+    assert(payload.public_status_handles?.canonical_head_resolution_queue?.id === 'canonical_head_resolution_queue', 'Focused JSON must include the canonical-head resolution public handle.');
+    assert(payload.public_status_handles?.review_first_branch_packet_queue?.id === 'review_first_branch_packet_queue', 'Focused JSON must include the review-first branch packet queue public handle.');
+    assert(/report:branch-review-readiness/.test(payload.public_status_handles?.branch_operator_handoff_packet?.command ?? '') && /check:branch-review-report/.test(payload.public_status_handles?.branch_operator_handoff_packet?.command ?? ''), 'Branch operator handoff public handle must point at the focused branch report/check.');
+    assert(/branch_review\.operator_handoff_packet/.test(payload.public_status_handles?.branch_operator_handoff_packet?.sourceManifestPath ?? ''), 'Branch operator handoff public handle must point at branch_review.operator_handoff_packet.');
+    assert(Array.isArray(payload.public_status_handles?.unmerged_branch_review_queue?.sourceProofTypes) && payload.public_status_handles.unmerged_branch_review_queue.sourceProofTypes.includes('read_only_branch_review'), 'Unmerged branch public handle must expose read-only branch review lineage.');
+    assert(payload.public_status_handles?.branch_clearance_matrix?.sourceProofType === 'read_only_branch_clearance_matrix', 'Branch clearance public handle must expose the clearance matrix proof type.');
+    assert(payload.package_script_handles?.report_branch_review_readiness === 'corepack pnpm run report:branch-review-readiness', 'Focused JSON must include the branch review report package handle.');
+    assert(payload.package_script_handles?.check_branch_review_report === 'corepack pnpm run check:branch-review-report', 'Focused JSON must include the branch review checker package handle.');
+    assert(payload.package_script_handles?.report_unmerged_branch_readiness === 'corepack pnpm run report:unmerged-branch-readiness', 'Focused JSON must include the unmerged branch readiness package handle.');
+    assert(payload.package_script_handles?.report_unmerged_branch_readiness_high_risk === 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high', 'Focused JSON must include the high-risk branch readiness package handle.');
     assert(/does not checkout|merge|push|discard|select canonical heads|run migrations|mutate Supabase|deploy|grant production approval/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must preserve branch non-mutation and no-approval semantics.');
     assert(/Do not treat this focused report|branch approval|canonical-head owner selection|merge approval|release readiness|production approval|hosted\/live parity/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject clearance claims from this report itself.');
 

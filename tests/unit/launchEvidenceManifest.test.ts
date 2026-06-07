@@ -169,7 +169,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-RELEASE-PREFLIGHT-PUBLIC-HANDLE-DIGEST');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1226,9 +1226,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(62);
+    expect(manifest.implementation_decisions).toHaveLength(63);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(62);
+    expect(manifest.code_optimization_reviews).toHaveLength(63);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2307,6 +2307,37 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/releasePreflightReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:release-preflight -- --skip-probes --json',
       'pnpm run check:release-preflight-report -- --skip-probes',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const branchReviewPublicHandleDigestDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(branchReviewPublicHandleDigestDecision).toBeTruthy();
+    expect(branchReviewPublicHandleDigestDecision.chosen_variant).toBe('minimal focused branch handle digest');
+    expect(branchReviewPublicHandleDigestDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-branch-review-readiness.mjs',
+      'scripts/check-branch-review-readiness-report.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/branchReviewReadiness.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(branchReviewPublicHandleDigestDecision.proof_boundary).toMatch(/handle discoverability only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|request production approval|grant owner approval|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const branchReviewPublicHandleDigestReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(branchReviewPublicHandleDigestReview).toBeTruthy();
+    expect(branchReviewPublicHandleDigestReview.policy).toBe('strict');
+    expect(branchReviewPublicHandleDigestReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-branch-review-readiness.mjs',
+      'node --check scripts/check-branch-review-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/branchReviewReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:branch-review-readiness -- --skip-probes --json',
+      'pnpm run check:branch-review-report -- --skip-probes',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
