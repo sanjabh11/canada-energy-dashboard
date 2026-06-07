@@ -184,6 +184,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.',
   },
   {
+    label: 'Source owner decision packet',
+    status: 'external_gate',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
+    evidenceBoundary: 'The source owner decision packet maps source_provenance.resolution_queue.items into owner-decision rows with recommended owner options such as commit_as_intentional_change, unstage_for_later_review, and stash_or_revert_with_owner_approval, but it does not commit, unstage, stash, revert, delete, rename, move, choose owner intent, clear source provenance, run release-readiness, push, deploy, request production approval, grant approval, or prove hosted/live parity. It does not prove current local cleanliness or production approval.',
+  },
+  {
     label: 'Release toolchain and approval deficit ledger',
     status: 'external_gate',
     command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',

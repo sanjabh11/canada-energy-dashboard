@@ -92,6 +92,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
   },
   {
+    id: 'source_owner_decision_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
+  },
+  {
     id: 'release_toolchain_approval_deficit_ledger',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -425,6 +431,16 @@ function validateManifest(manifest) {
   }
   if (!/does not.*commit|does not.*unstage|does not.*clear source provenance|does not.*prove current local cleanliness/i.test(sourceResolutionQueue.evidenceBoundary ?? '')) {
     failures.push('source_provenance_resolution_queue must preserve the non-mutation and non-cleanliness boundary.');
+  }
+  const sourceOwnerDecisionPacket = itemById.get('source_owner_decision_packet') ?? {};
+  if (!/source owner decision packet|source_provenance\.resolution_queue\.items|recommended owner options|commit_as_intentional_change|unstage_for_later_review|stash_or_revert_with_owner_approval|owner-decision/i.test(`${sourceOwnerDecisionPacket.evidenceBoundary ?? ''}\n${sourceOwnerDecisionPacket.nextAction ?? ''}`)) {
+    failures.push('source_owner_decision_packet must describe owner-decision rows, recommended owner options, and source resolution queue provenance.');
+  }
+  if (!/report:source-provenance-readiness/.test(sourceOwnerDecisionPacket.command ?? '') || !/check:source-provenance-report/.test(sourceOwnerDecisionPacket.command ?? '')) {
+    failures.push('source_owner_decision_packet must route through the focused source provenance report/check handles.');
+  }
+  if (!/does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*delete|does not.*rename|does not.*move|does not.*choose owner intent|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*request production approval|does not.*grant approval|does not.*hosted\/live parity|does not.*prove current local cleanliness|does not.*production approval/i.test(sourceOwnerDecisionPacket.evidenceBoundary ?? '')) {
+    failures.push('source_owner_decision_packet must preserve the no-mutation, no-owner-intent, no-release-execution, no-approval, no-live-proof, and non-cleanliness boundary.');
   }
   const releaseToolchainApprovalDeficitLedger = itemById.get('release_toolchain_approval_deficit_ledger') ?? {};
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval|deficit/i.test(`${releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? ''}\n${releaseToolchainApprovalDeficitLedger.nextAction ?? ''}`)) {

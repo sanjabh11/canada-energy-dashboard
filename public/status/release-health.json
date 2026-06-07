@@ -125,6 +125,15 @@
       "nextAction": "Use the queue to identify owner decisions, keep unrelated user work untouched, and rerun the approval packet only after explicit owner intent resolves every source-provenance row."
     },
     {
+      "id": "source_owner_decision_packet",
+      "label": "Source owner decision packet",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report",
+      "evidenceBoundary": "The source owner decision packet maps source_provenance.resolution_queue.items into owner-decision rows with recommended owner options such as commit_as_intentional_change, unstage_for_later_review, and stash_or_revert_with_owner_approval, but it does not commit, unstage, stash, revert, delete, rename, move, choose owner intent, clear source provenance, run release-readiness, push, deploy, request production approval, grant approval, or prove hosted/live parity. It does not prove current local cleanliness or production approval.",
+      "nextAction": "Use this packet as decision support only: record explicit owner intent for each source row, keep unrelated user work untouched, then rerun the focused source provenance report/check and approval packet after every owner-decision row is resolved."
+    },
+    {
       "id": "release_toolchain_approval_deficit_ledger",
       "label": "Release toolchain and approval deficit ledger",
       "status": "external_gate",

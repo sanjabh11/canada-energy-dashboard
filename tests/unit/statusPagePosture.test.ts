@@ -100,6 +100,22 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'source_owner_decision_packet',
+    releaseHealthLabel: 'Source owner decision packet',
+    boundaryPatterns: [
+      /source owner decision packet/i,
+      /source_provenance\.resolution_queue\.items/i,
+      /recommended owner options/i,
+      /commit_as_intentional_change/i,
+      /unstage_for_later_review/i,
+      /stash_or_revert_with_owner_approval/i,
+      /does not commit, unstage, stash, revert/i,
+      /choose owner intent/i,
+      /does not prove current local cleanliness/i,
+      /production approval/i,
+    ],
+  },
+  {
     publicId: 'release_preflight_remediation_queue',
     releaseHealthLabel: 'Release preflight remediation queue',
     boundaryPatterns: [
@@ -540,6 +556,7 @@ describe('status page release posture', () => {
     const sourceEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Current source CI gate');
     const sourceIsolationLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance isolation ledger');
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
+    const sourceOwnerDecisionPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source owner decision packet');
     const releaseToolchainApprovalDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release toolchain and approval deficit ledger');
     const releasePreflightQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight remediation queue');
     const releaseOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release operator handoff packet');
@@ -571,7 +588,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(43);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(44);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -650,6 +667,19 @@ describe('status page release posture', () => {
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/prove current local cleanliness/i);
+    expect(sourceOwnerDecisionPacketEvidence?.status).toBe('external_gate');
+    expect(sourceOwnerDecisionPacketEvidence?.command).toContain('report:source-provenance-readiness');
+    expect(sourceOwnerDecisionPacketEvidence?.command).toContain('check:source-provenance-report');
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/source owner decision packet/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/source_provenance\.resolution_queue\.items/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/recommended owner options/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/commit_as_intentional_change/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/unstage_for_later_review/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/stash_or_revert_with_owner_approval/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/choose owner intent/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/production approval/i);
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.status).toBe('external_gate');
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.command).toContain('report:release-preflight');
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.command).toContain('check:release-preflight-report');
@@ -973,6 +1003,7 @@ describe('status page release posture', () => {
     const bottleneckLogDigestGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'bottleneck_log_digest');
     const sourceIsolationLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_isolation_ledger');
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
+    const sourceOwnerDecisionPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_owner_decision_packet');
     const releaseToolchainApprovalDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_approval_deficit_ledger');
     const releasePreflightQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_remediation_queue');
     const releaseOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_operator_handoff_packet');
@@ -1031,6 +1062,7 @@ describe('status page release posture', () => {
       'progress_update_digest',
       'bottleneck_log_digest',
       'source_provenance_resolution_queue',
+      'source_owner_decision_packet',
       'release_toolchain_approval_deficit_ledger',
       'release_preflight_remediation_queue',
       'release_operator_handoff_packet',
@@ -1079,6 +1111,28 @@ describe('status page release posture', () => {
     expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/tracked, untracked, ignored, staged-only/i);
     expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceIsolationLedgerGate?.nextAction).toMatch(/explicit owner intent/i);
+    expect(sourceResolutionQueueGate?.status).toBe('external_gate');
+    expect(sourceResolutionQueueGate?.command).toContain('report:source-provenance-readiness');
+    expect(sourceResolutionQueueGate?.command).toContain('check:source-provenance-report');
+    expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
+    expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceOwnerDecisionPacketGate?.status).toBe('external_gate');
+    expect(sourceOwnerDecisionPacketGate?.proofBucket).toBe('local/source');
+    expect(sourceOwnerDecisionPacketGate?.command).toContain('report:source-provenance-readiness');
+    expect(sourceOwnerDecisionPacketGate?.command).toContain('check:source-provenance-report');
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/source owner decision packet/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/source_provenance\.resolution_queue\.items/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/recommended owner options/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/commit_as_intentional_change/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/unstage_for_later_review/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/stash_or_revert_with_owner_approval/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/choose owner intent/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/production approval/i);
+    expect(sourceOwnerDecisionPacketGate?.nextAction).toMatch(/decision support only/i);
+    expect(sourceOwnerDecisionPacketGate?.nextAction).toMatch(/explicit owner intent/i);
     expect(launchEvidenceValidationGate?.status).toBe('external_gate');
     expect(launchEvidenceValidationGate?.proofBucket).toBe('repo artifact');
     expect(launchEvidenceValidationGate?.command).toContain('report:launch-evidence-validation-readiness');
