@@ -196,6 +196,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The release preflight remediation queue sequences Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, or deploy. It does not prove production approval.',
   },
   {
+    label: 'Release operator handoff packet',
+    status: 'external_gate',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
+    evidenceBoundary: 'The focused release preflight report/check maps release remediation rows into non-executable operator or owner execution gates, including toolchain_probe_first, after_corepack_git_lfs_and_clean_source, owner_source_decision_first, manual_stop_after_all_prerequisites, blocks_release_gate, and can_execute_from_packet=false. It does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity. It does not prove production approval or create launch readiness.',
+  },
+  {
     label: 'Release preflight clearance matrix',
     status: 'external_gate',
     command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',

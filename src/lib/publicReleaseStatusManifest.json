@@ -143,6 +143,15 @@
       "nextAction": "Expose Corepack and Git LFS in the release shell, clean source provenance through explicit owner decisions, then rerun the guarded release-readiness path before any deploy approval request."
     },
     {
+      "id": "release_operator_handoff_packet",
+      "label": "Release operator handoff packet",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
+      "evidenceBoundary": "The release operator handoff packet maps release remediation rows into non-executable operator or owner execution gates, including toolchain_probe_first, after_corepack_git_lfs_and_clean_source, owner_source_decision_first, manual_stop_after_all_prerequisites, blocks_release_gate, and can_execute_from_packet=false. It does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity. It does not prove production approval or create launch readiness.",
+      "nextAction": "Use this packet as a release-operator handoff only: expose Corepack in the release shell, keep Git LFS current, resolve source provenance by owner intent, and run each proof command separately before any deploy approval request."
+    },
+    {
       "id": "release_preflight_clearance_matrix",
       "label": "Release preflight clearance matrix",
       "status": "external_gate",

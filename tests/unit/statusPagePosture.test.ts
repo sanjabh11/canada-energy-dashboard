@@ -110,6 +110,22 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'release_operator_handoff_packet',
+    releaseHealthLabel: 'Release operator handoff packet',
+    boundaryPatterns: [
+      /release remediation rows/i,
+      /operator or owner execution gates/i,
+      /toolchain_probe_first/i,
+      /after_corepack_git_lfs_and_clean_source/i,
+      /owner_source_decision_first/i,
+      /manual_stop_after_all_prerequisites/i,
+      /can_execute_from_packet=false/i,
+      /does not install Corepack/i,
+      /request production approval/i,
+      /hosted\/live parity/i,
+    ],
+  },
+  {
     publicId: 'release_preflight_clearance_matrix',
     releaseHealthLabel: 'Release preflight clearance matrix',
     boundaryPatterns: [
@@ -414,6 +430,7 @@ describe('status page release posture', () => {
     const sourceResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Source provenance resolution queue');
     const releaseToolchainApprovalDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release toolchain and approval deficit ledger');
     const releasePreflightQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight remediation queue');
+    const releaseOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release operator handoff packet');
     const releasePreflightClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release preflight clearance matrix');
     const releaseToolchainProbeEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Release toolchain probe ledger');
     const branchReviewEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Unmerged branch review queue');
@@ -437,7 +454,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(37);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(38);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -529,6 +546,19 @@ describe('status page release posture', () => {
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver, release-readiness execution/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Git LFS push-path proof/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/does not install tools, clear source provenance, run release-readiness/i);
+    expect(releaseOperatorHandoffPacketEvidence?.status).toBe('external_gate');
+    expect(releaseOperatorHandoffPacketEvidence?.command).toContain('report:release-preflight');
+    expect(releaseOperatorHandoffPacketEvidence?.command).toContain('check:release-preflight-report');
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/release remediation rows/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/operator or owner execution gates/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/toolchain_probe_first/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/after_corepack_git_lfs_and_clean_source/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/owner_source_decision_first/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/manual_stop_after_all_prerequisites/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/does not install Corepack/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/request production approval/i);
+    expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(releasePreflightClearanceMatrixEvidence?.status).toBe('external_gate');
     expect(releasePreflightClearanceMatrixEvidence?.command).toContain('report:release-preflight');
     expect(releasePreflightClearanceMatrixEvidence?.command).toContain('check:release-preflight-report');
@@ -726,6 +756,7 @@ describe('status page release posture', () => {
     const sourceResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance_resolution_queue');
     const releaseToolchainApprovalDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_approval_deficit_ledger');
     const releasePreflightQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_remediation_queue');
+    const releaseOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_operator_handoff_packet');
     const releasePreflightClearanceMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_preflight_clearance_matrix');
     const releaseToolchainProbeGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'release_toolchain_probe_ledger');
     const launchQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'launch_blocker_action_queue');
@@ -778,6 +809,7 @@ describe('status page release posture', () => {
       'source_provenance_resolution_queue',
       'release_toolchain_approval_deficit_ledger',
       'release_preflight_remediation_queue',
+      'release_operator_handoff_packet',
       'release_preflight_clearance_matrix',
       'release_toolchain_probe_ledger',
       'launch_blocker_action_queue',
@@ -902,6 +934,21 @@ describe('status page release posture', () => {
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/Corepack pnpm resolver/i);
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releasePreflightQueueGate?.nextAction).toMatch(/guarded release-readiness path/i);
+    expect(releaseOperatorHandoffPacketGate?.status).toBe('external_gate');
+    expect(releaseOperatorHandoffPacketGate?.command).toContain('report:release-preflight');
+    expect(releaseOperatorHandoffPacketGate?.command).toContain('check:release-preflight-report');
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/release remediation rows/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/operator or owner execution gates/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/toolchain_probe_first/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/after_corepack_git_lfs_and_clean_source/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/owner_source_decision_first/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/manual_stop_after_all_prerequisites/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/does not install Corepack/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/request production approval/i);
+    expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/create launch readiness/i);
+    expect(releaseOperatorHandoffPacketGate?.nextAction).toMatch(/release-operator handoff/i);
+    expect(releaseOperatorHandoffPacketGate?.nextAction).toMatch(/each proof command separately/i);
     expect(releasePreflightClearanceMatrixGate?.status).toBe('external_gate');
     expect(releasePreflightClearanceMatrixGate?.command).toContain('report:release-preflight');
     expect(releasePreflightClearanceMatrixGate?.command).toContain('check:release-preflight-report');

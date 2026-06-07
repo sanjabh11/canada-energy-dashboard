@@ -104,6 +104,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
   },
   {
+    id: 'release_operator_handoff_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:release-preflight && pnpm run check:release-preflight-report',
+  },
+  {
     id: 'release_preflight_clearance_matrix',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -409,6 +415,16 @@ function validateManifest(manifest) {
   }
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
     failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
+  }
+  const releaseOperatorHandoffPacket = itemById.get('release_operator_handoff_packet') ?? {};
+  if (!/release remediation rows|operator|owner|execution gates|toolchain_probe_first|after_corepack_git_lfs_and_clean_source|owner_source_decision_first|manual_stop_after_all_prerequisites|blocks_release_gate|can_execute_from_packet=false/i.test(`${releaseOperatorHandoffPacket.evidenceBoundary ?? ''}\n${releaseOperatorHandoffPacket.nextAction ?? ''}`)) {
+    failures.push('release_operator_handoff_packet must describe release remediation rows, execution gates, blocking rows, and non-executable packet semantics.');
+  }
+  if (!/report:release-preflight/.test(releaseOperatorHandoffPacket.command ?? '') || !/check:release-preflight-report/.test(releaseOperatorHandoffPacket.command ?? '')) {
+    failures.push('release_operator_handoff_packet must route through the focused release preflight report/check handles.');
+  }
+  if (!/does not.*install Corepack|does not.*enable Corepack|does not.*install Git LFS|does not.*run release-readiness|does not.*clear source provenance|does not.*push|does not.*deploy|does not.*request production approval|does not.*grant owner approval|does not.*hosted\/live parity|does not.*prove production approval|does not.*create launch readiness/i.test(releaseOperatorHandoffPacket.evidenceBoundary ?? '')) {
+    failures.push('release_operator_handoff_packet must preserve the no-install, no-release-execution, no-source-clearance, no-push, no-deploy, no-approval-request, no-owner-approval, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
   const releasePreflightClearanceMatrix = itemById.get('release_preflight_clearance_matrix') ?? {};
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval/i.test(`${releasePreflightClearanceMatrix.evidenceBoundary ?? ''}\n${releasePreflightClearanceMatrix.nextAction ?? ''}`)) {
