@@ -232,6 +232,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The focused branch review report/check maps read-only branch review rows, review-first families, canonical-head decisions, stale or aging drift review, and release-gate dependencies, but it does not checkout, merge, push, discard, select canonical heads, run migrations, deploy, grant production approval, or clear branch review. It does not create launch evidence or prove production approval.',
   },
   {
+    label: 'Branch operator handoff packet',
+    status: 'external_gate',
+    command: 'pnpm run report:branch-review-readiness && pnpm run check:branch-review-report',
+    evidenceBoundary: 'The focused branch review report/check maps branch clearance rows into operator or owner execution gates, including read-only focused review first, owner canonical-head decision first, blocking branch-gate rows, and can_execute_from_packet=false. It does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, prove hosted/live parity, or clear branch review. It does not create launch evidence or prove production approval.',
+  },
+  {
     label: 'Canonical head decision queue',
     status: 'external_gate',
     command: 'pnpm run report:branch-review-readiness && pnpm run check:branch-review-report',

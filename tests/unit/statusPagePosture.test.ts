@@ -235,6 +235,20 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'branch_operator_handoff_packet',
+    releaseHealthLabel: 'Branch operator handoff packet',
+    boundaryPatterns: [
+      /operator or owner execution gates/i,
+      /read-only focused review first/i,
+      /owner canonical-head decision first/i,
+      /can_execute_from_packet=false/i,
+      /does not checkout, merge, push, discard, delete/i,
+      /mutate Supabase/i,
+      /request production approval/i,
+      /prove hosted\/live parity/i,
+    ],
+  },
+  {
     publicId: 'canonical_head_decision_queue',
     releaseHealthLabel: 'Canonical head decision queue',
     boundaryPatterns: [
@@ -406,6 +420,7 @@ describe('status page release posture', () => {
     const branchFamilyFreshnessRollupEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch family freshness rollup');
     const topBranchReviewPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Top branch review packet');
     const branchClearanceMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch clearance matrix');
+    const branchOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Branch operator handoff packet');
     const canonicalHeadQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head decision queue');
     const canonicalHeadResolutionQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Canonical head resolution queue');
     const reviewFirstPacketQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Review-first branch packet queue');
@@ -422,7 +437,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(36);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(37);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -556,6 +571,17 @@ describe('status page release posture', () => {
     expect(branchClearanceMatrixEvidence?.evidenceBoundary).toMatch(/read-only branch review rows/i);
     expect(branchClearanceMatrixEvidence?.evidenceBoundary).toMatch(/canonical-head decisions/i);
     expect(branchClearanceMatrixEvidence?.evidenceBoundary).toMatch(/prove production approval/i);
+    expect(branchOperatorHandoffPacketEvidence?.status).toBe('external_gate');
+    expect(branchOperatorHandoffPacketEvidence?.command).toContain('report:branch-review-readiness');
+    expect(branchOperatorHandoffPacketEvidence?.command).toContain('check:branch-review-report');
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/operator or owner execution gates/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/read-only focused review first/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/owner canonical-head decision first/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/mutate Supabase/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/request production approval/i);
+    expect(branchOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/prove hosted\/live parity/i);
     expect(canonicalHeadQueueEvidence?.status).toBe('external_gate');
     expect(canonicalHeadQueueEvidence?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadQueueEvidence?.command).toContain('check:branch-review-report');
@@ -711,6 +737,7 @@ describe('status page release posture', () => {
     const branchFamilyFreshnessRollupGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_family_freshness_rollup');
     const topBranchReviewPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'top_branch_review_packet');
     const branchClearanceMatrixGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_clearance_matrix');
+    const branchOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_operator_handoff_packet');
     const canonicalHeadQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_decision_queue');
     const canonicalHeadResolutionQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'canonical_head_resolution_queue');
     const reviewFirstPacketQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'review_first_branch_packet_queue');
@@ -762,6 +789,7 @@ describe('status page release posture', () => {
       'branch_family_freshness_rollup',
       'top_branch_review_packet',
       'branch_clearance_matrix',
+      'branch_operator_handoff_packet',
       'canonical_head_decision_queue',
       'canonical_head_resolution_queue',
       'review_first_branch_packet_queue',
@@ -958,6 +986,19 @@ describe('status page release posture', () => {
     expect(branchClearanceMatrixGate?.evidenceBoundary).toMatch(/canonical-head decisions/i);
     expect(branchClearanceMatrixGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(branchClearanceMatrixGate?.nextAction).toMatch(/release gates before any merge/i);
+    expect(branchOperatorHandoffPacketGate?.status).toBe('external_gate');
+    expect(branchOperatorHandoffPacketGate?.command).toContain('report:branch-review-readiness');
+    expect(branchOperatorHandoffPacketGate?.command).toContain('check:branch-review-report');
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/operator or owner execution gates/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/read-only focused review first/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/owner canonical-head decision first/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard, delete/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/mutate Supabase/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/request production approval/i);
+    expect(branchOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/clear branch review/i);
+    expect(branchOperatorHandoffPacketGate?.nextAction).toMatch(/per-family operator handoff/i);
+    expect(branchOperatorHandoffPacketGate?.nextAction).toMatch(/explicit owner canonical-head decisions/i);
     expect(canonicalHeadQueueGate?.status).toBe('external_gate');
     expect(canonicalHeadQueueGate?.command).toContain('report:branch-review-readiness');
     expect(canonicalHeadQueueGate?.command).toContain('check:branch-review-report');

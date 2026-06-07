@@ -242,6 +242,15 @@
       "nextAction": "Use the matrix to keep branch blockers visible; run focused read-only branch packets, record canonical-head owner decisions, and rerun release gates before any merge, push, discard, migration, deploy, or production approval discussion."
     },
     {
+      "id": "branch_operator_handoff_packet",
+      "label": "Branch operator handoff packet",
+      "status": "external_gate",
+      "proofBucket": "local/source",
+      "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
+      "evidenceBoundary": "The branch operator handoff packet maps branch clearance rows into operator or owner execution gates, including read-only focused review first, owner canonical-head decision first, blocking branch-gate rows, and can_execute_from_packet=false. It does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, prove hosted/live parity, or clear branch review. It does not create launch evidence or prove production approval.",
+      "nextAction": "Use this packet as the per-family operator handoff: run only read-only focused review commands, record explicit owner canonical-head decisions outside the packet, and keep every branch mutation, merge, push, migration, deploy, or approval request behind release gates."
+    },
+    {
       "id": "canonical_head_decision_queue",
       "label": "Canonical head decision queue",
       "status": "external_gate",

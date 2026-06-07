@@ -170,6 +170,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:branch-review-readiness && pnpm run check:branch-review-report',
   },
   {
+    id: 'branch_operator_handoff_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:branch-review-readiness && pnpm run check:branch-review-report',
+  },
+  {
     id: 'canonical_head_decision_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -445,6 +451,16 @@ function validateManifest(manifest) {
   }
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select canonical heads|does not.*run migrations|does not.*deploy|does not.*grant production approval|does not.*clear branch review|does not.*prove production approval/i.test(branchClearanceMatrix.evidenceBoundary ?? '')) {
     failures.push('branch_clearance_matrix must preserve the no-mutation, no-clearance, and no-approval boundary.');
+  }
+  const branchOperatorHandoffPacket = itemById.get('branch_operator_handoff_packet') ?? {};
+  if (!/operator|owner|execution gates|read-only focused review first|owner canonical-head decision first|blocking branch-gate rows|can_execute_from_packet=false/i.test(`${branchOperatorHandoffPacket.evidenceBoundary ?? ''}\n${branchOperatorHandoffPacket.nextAction ?? ''}`)) {
+    failures.push('branch_operator_handoff_packet must describe operator and owner execution gates, blocking branch rows, and non-executable packet semantics.');
+  }
+  if (!/report:branch-review-readiness/.test(branchOperatorHandoffPacket.command ?? '') || !/check:branch-review-report/.test(branchOperatorHandoffPacket.command ?? '')) {
+    failures.push('branch_operator_handoff_packet must route through the focused branch review report/check handles.');
+  }
+  if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*delete|does not.*select canonical heads|does not.*run migrations|does not.*mutate Supabase|does not.*deploy|does not.*request production approval|does not.*grant owner approval|does not.*hosted\/live parity|does not.*clear branch review|does not.*create launch evidence|does not.*prove production approval/i.test(branchOperatorHandoffPacket.evidenceBoundary ?? '')) {
+    failures.push('branch_operator_handoff_packet must preserve the no-mutation, no-execution, no-owner-approval, no-live-proof, no-clearance, no-launch-evidence, and no-approval boundary.');
   }
   const canonicalHeadQueue = itemById.get('canonical_head_decision_queue') ?? {};
   if (!/split|local-only|origin-only|stale|aging|unknown/i.test(`${canonicalHeadQueue.evidenceBoundary ?? ''}\n${canonicalHeadQueue.nextAction ?? ''}`)) {
