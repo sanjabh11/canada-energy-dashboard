@@ -2364,24 +2364,31 @@ describe('launch evidence manifest report', () => {
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
     );
     expect(releaseToolchainCorepackEnvDiagnosticDecision).toBeTruthy();
-    expect(releaseToolchainCorepackEnvDiagnosticDecision.chosen_variant).toBe('minimal Corepack environment diagnostic');
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.chosen_variant).toBe('minimal Corepack candidate diagnostic');
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.acceptance_check).toMatch(/installed Corepack candidates outside PATH|PATH-only.*retry examples/i);
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.proof).toMatch(/Homebrew Node locations|executable Corepack candidates|pinned pnpm version/i);
     expect(releaseToolchainCorepackEnvDiagnosticDecision.files_changed).toEqual(expect.arrayContaining([
       'scripts/check-corepack-toolchain.mjs',
       'scripts/report-launch-evidence-manifest.mjs',
       'tests/unit/corepackToolchain.test.ts',
       'tests/unit/launchEvidenceManifest.test.ts',
     ]));
-    expect(releaseToolchainCorepackEnvDiagnosticDecision.proof_boundary).toMatch(/does not install Corepack|enable Corepack|rewrite PATH|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i);
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.proof_boundary).toMatch(/does not install Corepack|enable Corepack globally|create a shim|rewrite PATH|treat bare pnpm as Corepack evidence|run release-readiness|clear source provenance|push|deploy|hosted\/live parity|production approval|raise launch status/i);
+    expect(releaseToolchainCorepackEnvDiagnosticDecision.stop_gate).toMatch(/candidate Corepack paths|PATH-only.*retry examples/i);
     const releaseToolchainCorepackEnvDiagnosticReview = manifest.code_optimization_reviews.find(
       (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-RELEASE-TOOLCHAIN-COREPACK-ENV-DIAGNOSTIC',
     );
     expect(releaseToolchainCorepackEnvDiagnosticReview).toBeTruthy();
     expect(releaseToolchainCorepackEnvDiagnosticReview.policy).toBe('strict');
     expect(releaseToolchainCorepackEnvDiagnosticReview.tests_or_checks).toEqual(expect.arrayContaining([
-      'pnpm exec vitest run tests/unit/corepackToolchain.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'node --check scripts/check-corepack-toolchain.mjs',
+      'pnpm exec vitest run tests/unit/corepackToolchain.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/releasePreflightReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'node scripts/check-corepack-toolchain.mjs',
+      'PATH="/opt/homebrew/Cellar/node@22/22.22.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:$PATH" pnpm run check:corepack-toolchain',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
     ]));
+    expect(releaseToolchainCorepackEnvDiagnosticReview.evidence).toMatch(/installed Corepack candidate discovery|PATH-only retry examples|no shim creation/i);
     const progressDigestLatestRatchetDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-LATEST-RATCHET',
     );

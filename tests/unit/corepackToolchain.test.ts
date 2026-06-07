@@ -11,7 +11,7 @@ function writeExecutable(filePath: string, content: string) {
   chmodSync(filePath, 0o755);
 }
 
-async function runToolchainCheck(pathValue: string) {
+async function runToolchainCheck(pathValue: string, envOverrides: Record<string, string> = {}) {
   return await new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
     const child = spawn(process.execPath, [scriptPath], {
       cwd: process.cwd(),
@@ -19,6 +19,7 @@ async function runToolchainCheck(pathValue: string) {
         ...process.env,
         FORCE_COLOR: '0',
         PATH: pathValue,
+        ...envOverrides,
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -101,6 +102,57 @@ describe('Corepack toolchain check', () => {
       expect(result.stdout).toContain('Corepack toolchain check passed: pnpm@10.23.0 is available.');
     } finally {
       rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('suggests installed Corepack candidates without accepting bare pnpm as release evidence', async () => {
+    const pathDir = mkdtempSync(path.join(tmpdir(), 'ceip-corepack-path-'));
+    const candidateDir = mkdtempSync(path.join(tmpdir(), 'ceip-corepack-candidate-'));
+    const fakePnpmPath = path.join(pathDir, 'pnpm');
+    const fakeCorepackPath = path.join(candidateDir, 'corepack');
+
+    writeExecutable(
+      fakePnpmPath,
+      [
+        '#!/bin/sh',
+        'echo "10.23.0"',
+        '',
+      ].join('\n'),
+    );
+    writeExecutable(
+      fakeCorepackPath,
+      [
+        '#!/bin/sh',
+        'if [ "$1" = "pnpm" ] && [ "$2" = "--version" ]; then',
+        '  echo "10.23.0"',
+        '  exit 0',
+        'fi',
+        'echo "Unexpected corepack command: $*"',
+        'exit 2',
+        '',
+      ].join('\n'),
+    );
+
+    try {
+      const result = await runToolchainCheck(pathDir, {
+        CEIP_COREPACK_CANDIDATE_DIRS: candidateDir,
+      });
+
+      expect(result.status).toBe(1);
+      expect(result.stdout).toBe('');
+      expect(result.stderr).toContain('Corepack executable was not found on PATH.');
+      expect(result.stderr).toContain('- Installed Corepack candidates outside current PATH:');
+      expect(result.stderr).toContain(`${fakeCorepackPath}; resolves pinned pnpm 10.23.0.`);
+      expect(result.stderr).toContain('PATH-only retry example: PATH="');
+      expect(result.stderr).toContain(':$PATH" corepack pnpm --version');
+      expect(result.stderr).toContain('PATH-only check example: PATH="');
+      expect(result.stderr).toContain(':$PATH" corepack pnpm run check:corepack-toolchain');
+      expect(result.stderr).toContain('a PATH-only retry can help prove the current release shell');
+      expect(result.stderr).toContain('does not install Corepack, run release-readiness, clear source provenance');
+      expect(result.stderr).toContain('bare pnpm 10.23.0 matches packageManager pin; bare pnpm does not satisfy Corepack');
+    } finally {
+      rmSync(pathDir, { recursive: true, force: true });
+      rmSync(candidateDir, { recursive: true, force: true });
     }
   });
 });

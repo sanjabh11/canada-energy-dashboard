@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import {
+  accessSync,
+  constants,
+  readdirSync,
+  readFileSync,
+  statSync,
+} from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -60,6 +66,127 @@ function commandVersion(command, args) {
   };
 }
 
+function commandVersionWithPathPrefix(command, args, pathPrefix) {
+  const result = spawnSync(command, args, {
+    cwd: repoRoot,
+    encoding: 'utf8',
+    env: {
+      ...process.env,
+      FORCE_COLOR: '0',
+      PATH: [pathPrefix, process.env.PATH || ''].filter(Boolean).join(path.delimiter),
+    },
+  });
+  return {
+    status: typeof result.status === 'number' ? result.status : result.error ? 1 : 0,
+    output: compactOutput(result),
+  };
+}
+
+function isExecutable(filePath) {
+  try {
+    accessSync(filePath, constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function listDirectory(directoryPath) {
+  try {
+    return readdirSync(directoryPath, { withFileTypes: true });
+  } catch {
+    return [];
+  }
+}
+
+function safeStat(filePath) {
+  try {
+    return statSync(filePath);
+  } catch {
+    return null;
+  }
+}
+
+function splitPathList(value) {
+  return String(value ?? '')
+    .split(path.delimiter)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function currentPathDirectories() {
+  return new Set(splitPathList(process.env.PATH));
+}
+
+function corepackCandidatePaths() {
+  const candidates = new Set();
+  const explicitDirs = splitPathList(process.env.CEIP_COREPACK_CANDIDATE_DIRS);
+
+  for (const directoryPath of explicitDirs) {
+    candidates.add(path.join(directoryPath, 'corepack'));
+  }
+
+  for (const directoryPath of ['/opt/homebrew/bin', '/usr/local/bin', '/usr/bin']) {
+    candidates.add(path.join(directoryPath, 'corepack'));
+  }
+
+  for (const cellarPath of ['/opt/homebrew/Cellar', '/usr/local/Cellar']) {
+    for (const packageEntry of listDirectory(cellarPath)) {
+      if (!packageEntry.isDirectory() || !/^node(?:@|$)/.test(packageEntry.name)) continue;
+      const packagePath = path.join(cellarPath, packageEntry.name);
+      for (const versionEntry of listDirectory(packagePath)) {
+        if (!versionEntry.isDirectory()) continue;
+        candidates.add(path.join(packagePath, versionEntry.name, 'bin', 'corepack'));
+      }
+    }
+  }
+
+  const pathDirs = currentPathDirectories();
+  return [...candidates]
+    .filter((candidatePath) => {
+      const stats = safeStat(candidatePath);
+      return Boolean(stats?.isFile() && isExecutable(candidatePath));
+    })
+    .filter((candidatePath) => !pathDirs.has(path.dirname(candidatePath)))
+    .sort();
+}
+
+function corepackCandidateDiagnostics(expectedVersion) {
+  const candidates = corepackCandidatePaths();
+  if (candidates.length === 0) {
+    return [
+      '- Installed Corepack candidates outside current PATH: none found in checked Homebrew/Node locations.',
+    ];
+  }
+
+  const diagnostics = candidates.slice(0, 6).map((candidatePath) => {
+    const candidateDir = path.dirname(candidatePath);
+    const result = commandVersionWithPathPrefix('corepack', ['pnpm', '--version'], candidateDir);
+    const output = result.status === 0
+      ? result.output.split(/\r?\n/).at(-1)?.trim() ?? result.output
+      : result.output;
+    const compactCandidateOutput = output.length > 240 ? `${output.slice(0, 240)}...` : output;
+    const status = result.status === 0 && output === expectedVersion
+      ? `resolves pinned pnpm ${expectedVersion}`
+      : `does not currently prove pinned pnpm ${expectedVersion}: ${compactCandidateOutput}`;
+    return { candidatePath, status };
+  });
+  const matching = diagnostics.find((item) => item.status.startsWith('resolves pinned pnpm'));
+  const lines = [
+    '- Installed Corepack candidates outside current PATH:',
+    ...diagnostics.map((item) => `  - ${item.candidatePath}; ${item.status}.`),
+  ];
+
+  if (matching) {
+    const candidateDir = path.dirname(matching.candidatePath);
+    lines.push(`- PATH-only retry example: PATH="${candidateDir}:$PATH" corepack pnpm --version`);
+    lines.push(`- PATH-only check example: PATH="${candidateDir}:$PATH" corepack pnpm run check:corepack-toolchain`);
+    lines.push('- Boundary: a PATH-only retry can help prove the current release shell, but it does not install Corepack, run release-readiness, clear source provenance, push, deploy, or grant production approval.');
+  }
+
+  return lines;
+}
+
 function currentPathToolchainDiagnostic() {
   const barePnpm = commandVersion('pnpm', ['--version']);
   const barePnpmVersion = barePnpm.status === 0
@@ -80,6 +207,7 @@ function currentPathToolchainDiagnostic() {
     `- Current PATH corepack: ${commandPath('corepack')}.`,
     `- Current PATH pnpm: ${commandPath('pnpm')}; ${barePnpmCurrent}.`,
     `- Current PATH git-lfs: ${commandPath('git-lfs')}; ${gitLfsCurrent}.`,
+    ...corepackCandidateDiagnostics(expectedPnpmVersion),
     '- Boundary: local pnpm and git-lfs diagnostics are shell context only; they do not satisfy the Corepack resolver gate, run release-readiness, clear source provenance, push, deploy, or grant production approval.',
   ];
 }
