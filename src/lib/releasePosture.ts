@@ -11,6 +11,9 @@ export interface ReleaseHealthEvidenceItem {
   status: ReleasePostureItem['status'];
   command: string;
   evidenceBoundary: string;
+  sourceManifestPath?: string;
+  sourceProofType?: string;
+  sourceProofTypes?: string[];
   publicReference?: {
     label: string;
     url: string;
@@ -134,36 +137,56 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     status: 'external_gate',
     command: 'pnpm run report:launch-evidence-validation-readiness && pnpm run check:launch-evidence-validation-report',
     evidenceBoundary: 'Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.',
+    sourceManifestPath: 'launch_action_queue.items[phase=launch_evidence_validation]',
+    sourceProofTypes: [
+      'manifest_validation_and_approval_packet',
+      'manifest_validation',
+      'schema_validation',
+    ],
   },
   {
     label: 'Objective completion audit',
     status: 'external_gate',
     command: 'pnpm run report:objective-completion-audit-readiness && pnpm run check:objective-completion-audit-report',
     evidenceBoundary: 'The objective completion audit maps required launch deliverables, present report tables, blocked P0/P1 gates, manual-stop rows, and next proof commands, but it does not prove production approval, buyer acceptance, commercial launch readiness, deployment, hosted/live parity, Supabase clearance, branch approval, source readiness, or permission to contact buyers.',
+    sourceManifestPath: 'completion_audit',
+    sourceProofType: 'completion_audit_current_state',
   },
   {
     label: 'Adversarial review ledger',
     status: 'external_gate',
     command: 'pnpm run report:adversarial-review-readiness && pnpm run check:adversarial-review-report',
     evidenceBoundary: 'The adversarial review ledger maps buyer evidence, production approval, release toolchain, Supabase advisor clearance, and branch-risk challenge lanes, but it does not prove production approval, buyer acceptance, release readiness, Supabase clearance, branch approval, deployment, hosted/live parity, or commercial launch readiness.',
+    sourceManifestPath: 'adversarial_reviews',
+    sourceProofTypes: [
+      'buyer_evidence_adversarial_review',
+      'production_approval_adversarial_review',
+      'release_toolchain_adversarial_review',
+      'external_advisor_adversarial_review',
+      'branch_risk_adversarial_review',
+    ],
   },
   {
     label: 'Fix report blocker map',
     status: 'external_gate',
     command: 'pnpm run report:commercial-launch-readiness && pnpm run check:commercial-launch-readiness-report && pnpm run report:launch-evidence-manifest && pnpm run check:launch-evidence-manifest',
     evidenceBoundary: 'The fix report blocker map summarizes files changed, tests run, required checks, unresolved blockers, and approval gates from the launch evidence manifest, but it does not modify files, run missing checks, clear buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain, production approval, deployment, hosted/live parity, or commercial launch readiness. It does not prove production approval.',
+    sourceManifestPath: 'fix_report',
+    sourceProofType: 'fix_report_blocker_map',
   },
   {
     label: 'Progress update digest',
     status: 'external_gate',
     command: 'pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report',
     evidenceBoundary: 'The progress update digest summarizes accomplished work, target matrix, pending work, current bottleneck, and phase progress from the launch evidence manifest, but it does not complete pending work, clear blockers, run checks, contact buyers, approve branches, deploy, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.',
+    sourceManifestPath: 'progress_updates',
   },
   {
     label: 'Bottleneck log digest',
     status: 'external_gate',
     command: 'pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report',
     evidenceBoundary: 'The bottleneck log digest summarizes the blocked task or subtask, elapsed time, last update, root cause, and top unblock options from the launch evidence manifest, but it does not resolve evidence gaps, collect buyer artifacts, authorize Supabase advisors, choose branch heads, approve deploys, mutate live services, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.',
+    sourceManifestPath: 'bottleneck_log',
   },
   {
     label: 'Current source CI gate',

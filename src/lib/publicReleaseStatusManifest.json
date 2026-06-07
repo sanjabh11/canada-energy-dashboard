@@ -68,7 +68,13 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:launch-evidence-validation-readiness && pnpm run check:launch-evidence-validation-report",
       "evidenceBoundary": "Launch evidence validation checks manifest structure and proof-boundary consistency only; it does not prove production approval, buyer acceptance, commercial readiness, deployment, or current hosted/live parity.",
-      "nextAction": "Keep check:launch-evidence-manifest passing before any deploy request, then use the production approval packet to verify source provenance, release readiness, and owner approval gates."
+      "nextAction": "Keep check:launch-evidence-manifest passing before any deploy request, then use the production approval packet to verify source provenance, release readiness, and owner approval gates.",
+      "sourceManifestPath": "launch_action_queue.items[phase=launch_evidence_validation]",
+      "sourceProofTypes": [
+        "manifest_validation_and_approval_packet",
+        "manifest_validation",
+        "schema_validation"
+      ]
     },
     {
       "id": "objective_completion_audit",
@@ -77,7 +83,9 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:objective-completion-audit-readiness && pnpm run check:objective-completion-audit-report",
       "evidenceBoundary": "The objective completion audit maps required launch deliverables, present report tables, blocked P0/P1 gates, manual-stop rows, and next proof commands, but it does not prove production approval, buyer acceptance, commercial launch readiness, deployment, hosted/live parity, Supabase clearance, branch approval, source readiness, or permission to contact buyers.",
-      "nextAction": "Use the audit to keep goal-completion blockers visible, then clear buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, and post-deploy live proof gates before any readiness or completion claim."
+      "nextAction": "Use the audit to keep goal-completion blockers visible, then clear buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, and post-deploy live proof gates before any readiness or completion claim.",
+      "sourceManifestPath": "completion_audit",
+      "sourceProofType": "completion_audit_current_state"
     },
     {
       "id": "adversarial_review_ledger",
@@ -86,7 +94,15 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:adversarial-review-readiness && pnpm run check:adversarial-review-report",
       "evidenceBoundary": "The adversarial review ledger maps buyer evidence, production approval, release toolchain, Supabase advisor clearance, and branch-risk challenge lanes, but it does not prove production approval, buyer acceptance, release readiness, Supabase clearance, branch approval, deployment, hosted/live parity, or commercial launch readiness.",
-      "nextAction": "Use the ledger to keep claim-refutation lanes visible, then clear each underlying buyer, source, branch, Supabase, release, production approval, and post-deploy proof gate before changing launch claims."
+      "nextAction": "Use the ledger to keep claim-refutation lanes visible, then clear each underlying buyer, source, branch, Supabase, release, production approval, and post-deploy proof gate before changing launch claims.",
+      "sourceManifestPath": "adversarial_reviews",
+      "sourceProofTypes": [
+        "buyer_evidence_adversarial_review",
+        "production_approval_adversarial_review",
+        "release_toolchain_adversarial_review",
+        "external_advisor_adversarial_review",
+        "branch_risk_adversarial_review"
+      ]
     },
     {
       "id": "fix_report_blocker_map",
@@ -95,7 +111,9 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:commercial-launch-readiness && pnpm run check:commercial-launch-readiness-report && pnpm run report:launch-evidence-manifest && pnpm run check:launch-evidence-manifest",
       "evidenceBoundary": "The fix report blocker map summarizes files changed, tests run, required checks, unresolved blockers, and approval gates from the launch evidence manifest, but it does not modify files, run missing checks, clear buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain, production approval, deployment, hosted/live parity, or commercial launch readiness. It does not prove production approval.",
-      "nextAction": "Use the map to prioritize remaining blockers, then run and clear each underlying required check and owner-side gate before changing readiness, approval, or launch claims."
+      "nextAction": "Use the map to prioritize remaining blockers, then run and clear each underlying required check and owner-side gate before changing readiness, approval, or launch claims.",
+      "sourceManifestPath": "fix_report",
+      "sourceProofType": "fix_report_blocker_map"
     },
     {
       "id": "progress_update_digest",
@@ -104,7 +122,8 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report",
       "evidenceBoundary": "The progress update digest summarizes accomplished work, target matrix, pending work, current bottleneck, and phase progress from the launch evidence manifest, but it does not complete pending work, clear blockers, run checks, contact buyers, approve branches, deploy, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.",
-      "nextAction": "Use the digest to keep phase progress visible, then clear the pending buyer evidence, source provenance, branch review, Supabase advisor, release, production approval, and post-deploy proof gates before changing readiness claims."
+      "nextAction": "Use the digest to keep phase progress visible, then clear the pending buyer evidence, source provenance, branch review, Supabase advisor, release, production approval, and post-deploy proof gates before changing readiness claims.",
+      "sourceManifestPath": "progress_updates"
     },
     {
       "id": "bottleneck_log_digest",
@@ -113,7 +132,8 @@
       "proofBucket": "repo artifact",
       "command": "pnpm run report:progress-digest-readiness && pnpm run check:progress-digest-report",
       "evidenceBoundary": "The bottleneck log digest summarizes the blocked task or subtask, elapsed time, last update, root cause, and top unblock options from the launch evidence manifest, but it does not resolve evidence gaps, collect buyer artifacts, authorize Supabase advisors, choose branch heads, approve deploys, mutate live services, prove hosted/live parity, or create commercial launch readiness. It does not prove production approval.",
-      "nextAction": "Use the digest to choose the next safe unblock path, then collect owner-side evidence or run the specific required proof commands before changing approval, live parity, or launch claims."
+      "nextAction": "Use the digest to choose the next safe unblock path, then collect owner-side evidence or run the specific required proof commands before changing approval, live parity, or launch claims.",
+      "sourceManifestPath": "bottleneck_log"
     },
     {
       "id": "source_provenance_resolution_queue",

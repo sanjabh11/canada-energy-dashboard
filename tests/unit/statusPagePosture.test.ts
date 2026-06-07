@@ -606,6 +606,12 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/buyer acceptance/i);
     expect(launchEvidenceValidationEvidence?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
+    expect(launchEvidenceValidationEvidence?.sourceManifestPath).toBe('launch_action_queue.items[phase=launch_evidence_validation]');
+    expect(launchEvidenceValidationEvidence?.sourceProofTypes).toEqual([
+      'manifest_validation_and_approval_packet',
+      'manifest_validation',
+      'schema_validation',
+    ]);
     expect(objectiveCompletionAuditEvidence?.status).toBe('external_gate');
     expect(objectiveCompletionAuditEvidence?.command).toContain('report:objective-completion-audit-readiness');
     expect(objectiveCompletionAuditEvidence?.command).toContain('check:objective-completion-audit-report');
@@ -616,6 +622,8 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/Supabase clearance/i);
     expect(objectiveCompletionAuditEvidence?.evidenceBoundary).toMatch(/permission to contact buyers/i);
+    expect(objectiveCompletionAuditEvidence?.sourceManifestPath).toBe('completion_audit');
+    expect(objectiveCompletionAuditEvidence?.sourceProofType).toBe('completion_audit_current_state');
     expect(adversarialReviewLedgerEvidence?.status).toBe('external_gate');
     expect(adversarialReviewLedgerEvidence?.command).toContain('report:adversarial-review-readiness');
     expect(adversarialReviewLedgerEvidence?.command).toContain('check:adversarial-review-report');
@@ -623,6 +631,14 @@ describe('status page release posture', () => {
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/Supabase advisor clearance/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/branch-risk challenge lanes/i);
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(adversarialReviewLedgerEvidence?.sourceManifestPath).toBe('adversarial_reviews');
+    expect(adversarialReviewLedgerEvidence?.sourceProofTypes).toEqual([
+      'buyer_evidence_adversarial_review',
+      'production_approval_adversarial_review',
+      'release_toolchain_adversarial_review',
+      'external_advisor_adversarial_review',
+      'branch_risk_adversarial_review',
+    ]);
     expect(fixReportBlockerMapEvidence?.status).toBe('external_gate');
     expect(fixReportBlockerMapEvidence?.command).toContain('report:commercial-launch-readiness');
     expect(fixReportBlockerMapEvidence?.command).toContain('check:commercial-launch-readiness-report');
@@ -633,6 +649,8 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/does not modify files/i);
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/run missing checks/i);
     expect(fixReportBlockerMapEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
+    expect(fixReportBlockerMapEvidence?.sourceManifestPath).toBe('fix_report');
+    expect(fixReportBlockerMapEvidence?.sourceProofType).toBe('fix_report_blocker_map');
     expect(adversarialReviewLedgerEvidence?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(progressUpdateDigestEvidence?.status).toBe('external_gate');
     expect(progressUpdateDigestEvidence?.command).toContain('report:progress-digest-readiness');
@@ -642,6 +660,7 @@ describe('status page release posture', () => {
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not complete pending work/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/contact buyers/i);
     expect(progressUpdateDigestEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(progressUpdateDigestEvidence?.sourceManifestPath).toBe('progress_updates');
     expect(bottleneckLogDigestEvidence?.status).toBe('external_gate');
     expect(bottleneckLogDigestEvidence?.command).toContain('report:progress-digest-readiness');
     expect(bottleneckLogDigestEvidence?.command).toContain('check:progress-digest-report');
@@ -650,6 +669,7 @@ describe('status page release posture', () => {
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/does not resolve evidence gaps/i);
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/authorize Supabase advisors/i);
     expect(bottleneckLogDigestEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(bottleneckLogDigestEvidence?.sourceManifestPath).toBe('bottleneck_log');
     expect(sourceEvidence?.status).toBe('watch');
     expect(sourceEvidence?.command).toContain('gh run list');
     expect(sourceEvidence?.publicReference).toBeUndefined();
@@ -1140,6 +1160,12 @@ describe('status page release posture', () => {
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/manifest structure and proof-boundary consistency/i);
     expect(launchEvidenceValidationGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(launchEvidenceValidationGate?.nextAction).toMatch(/before any deploy request/i);
+    expect(launchEvidenceValidationGate?.sourceManifestPath).toBe('launch_action_queue.items[phase=launch_evidence_validation]');
+    expect(launchEvidenceValidationGate?.sourceProofTypes).toEqual([
+      'manifest_validation_and_approval_packet',
+      'manifest_validation',
+      'schema_validation',
+    ]);
     expect(objectiveCompletionAuditGate?.status).toBe('external_gate');
     expect(objectiveCompletionAuditGate?.proofBucket).toBe('repo artifact');
     expect(objectiveCompletionAuditGate?.command).toContain('report:objective-completion-audit-readiness');
@@ -1151,6 +1177,8 @@ describe('status page release posture', () => {
     expect(objectiveCompletionAuditGate?.evidenceBoundary).toMatch(/source readiness/i);
     expect(objectiveCompletionAuditGate?.nextAction).toMatch(/goal-completion blockers visible/i);
     expect(objectiveCompletionAuditGate?.nextAction).toMatch(/post-deploy live proof gates/i);
+    expect(objectiveCompletionAuditGate?.sourceManifestPath).toBe('completion_audit');
+    expect(objectiveCompletionAuditGate?.sourceProofType).toBe('completion_audit_current_state');
     expect(adversarialReviewLedgerGate?.status).toBe('external_gate');
     expect(adversarialReviewLedgerGate?.proofBucket).toBe('repo artifact');
     expect(adversarialReviewLedgerGate?.command).toContain('report:adversarial-review-readiness');
@@ -1162,6 +1190,14 @@ describe('status page release posture', () => {
     expect(adversarialReviewLedgerGate?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(adversarialReviewLedgerGate?.nextAction).toMatch(/claim-refutation lanes visible/i);
     expect(adversarialReviewLedgerGate?.nextAction).toMatch(/post-deploy proof gate/i);
+    expect(adversarialReviewLedgerGate?.sourceManifestPath).toBe('adversarial_reviews');
+    expect(adversarialReviewLedgerGate?.sourceProofTypes).toEqual([
+      'buyer_evidence_adversarial_review',
+      'production_approval_adversarial_review',
+      'release_toolchain_adversarial_review',
+      'external_advisor_adversarial_review',
+      'branch_risk_adversarial_review',
+    ]);
     expect(fixReportBlockerMapGate?.status).toBe('external_gate');
     expect(fixReportBlockerMapGate?.proofBucket).toBe('repo artifact');
     expect(fixReportBlockerMapGate?.command).toContain('report:commercial-launch-readiness');
@@ -1176,6 +1212,8 @@ describe('status page release posture', () => {
     expect(fixReportBlockerMapGate?.evidenceBoundary).toMatch(/commercial launch readiness/i);
     expect(fixReportBlockerMapGate?.nextAction).toMatch(/prioritize remaining blockers/i);
     expect(fixReportBlockerMapGate?.nextAction).toMatch(/owner-side gate/i);
+    expect(fixReportBlockerMapGate?.sourceManifestPath).toBe('fix_report');
+    expect(fixReportBlockerMapGate?.sourceProofType).toBe('fix_report_blocker_map');
     expect(progressUpdateDigestGate?.status).toBe('external_gate');
     expect(progressUpdateDigestGate?.proofBucket).toBe('repo artifact');
     expect(progressUpdateDigestGate?.command).toContain('report:progress-digest-readiness');
@@ -1186,6 +1224,7 @@ describe('status page release posture', () => {
     expect(progressUpdateDigestGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(progressUpdateDigestGate?.nextAction).toMatch(/phase progress visible/i);
     expect(progressUpdateDigestGate?.nextAction).toMatch(/post-deploy proof gates/i);
+    expect(progressUpdateDigestGate?.sourceManifestPath).toBe('progress_updates');
     expect(bottleneckLogDigestGate?.status).toBe('external_gate');
     expect(bottleneckLogDigestGate?.proofBucket).toBe('repo artifact');
     expect(bottleneckLogDigestGate?.command).toContain('report:progress-digest-readiness');
@@ -1197,6 +1236,7 @@ describe('status page release posture', () => {
     expect(bottleneckLogDigestGate?.evidenceBoundary).toMatch(/does not prove production approval/i);
     expect(bottleneckLogDigestGate?.nextAction).toMatch(/next safe unblock path/i);
     expect(bottleneckLogDigestGate?.nextAction).toMatch(/specific required proof commands/i);
+    expect(bottleneckLogDigestGate?.sourceManifestPath).toBe('bottleneck_log');
     expect(sourceResolutionQueueGate?.status).toBe('external_gate');
     expect(sourceResolutionQueueGate?.command).toContain('report:source-provenance-readiness');
     expect(sourceResolutionQueueGate?.command).toContain('check:source-provenance-report');

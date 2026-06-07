@@ -356,6 +356,21 @@ function validateManifest(manifest) {
       }
     }
   }
+  function expectSourceLineage(id, { sourceManifestPath, sourceProofType, sourceProofTypes = [] }) {
+    const item = itemById.get(id) ?? {};
+    if (sourceManifestPath && item.sourceManifestPath !== sourceManifestPath) {
+      failures.push(`${id} must map back to ${sourceManifestPath}.`);
+    }
+    if (sourceProofType && item.sourceProofType !== sourceProofType) {
+      failures.push(`${id} sourceProofType must be ${sourceProofType}.`);
+    }
+    const actualProofTypes = item.sourceProofTypes ?? [];
+    for (const proofType of sourceProofTypes) {
+      if (!actualProofTypes.includes(proofType)) {
+        failures.push(`${id} sourceProofTypes must include ${proofType}.`);
+      }
+    }
+  }
 
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
@@ -375,6 +390,14 @@ function validateManifest(manifest) {
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*deployment|current hosted\/live parity/i.test(launchEvidenceValidationGate.evidenceBoundary ?? '')) {
     failures.push('launch_evidence_validation_gate must preserve the no-approval, no-buyer-proof, no-deploy, and no-live-parity boundary.');
   }
+  expectSourceLineage('launch_evidence_validation_gate', {
+    sourceManifestPath: 'launch_action_queue.items[phase=launch_evidence_validation]',
+    sourceProofTypes: [
+      'manifest_validation_and_approval_packet',
+      'manifest_validation',
+      'schema_validation',
+    ],
+  });
   const objectiveCompletionAudit = itemById.get('objective_completion_audit') ?? {};
   if (!/required launch deliverables|present report tables|blocked P0\/P1 gates|manual-stop rows|next proof commands|goal-completion blockers/i.test(`${objectiveCompletionAudit.evidenceBoundary ?? ''}\n${objectiveCompletionAudit.nextAction ?? ''}`)) {
     failures.push('objective_completion_audit must describe required launch deliverables, blocked gates, manual stops, next proof commands, and goal-completion blockers.');
@@ -385,6 +408,10 @@ function validateManifest(manifest) {
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*commercial launch readiness|does not.*deployment|does not.*hosted\/live parity|does not.*Supabase clearance|does not.*branch approval|does not.*source readiness|does not.*permission to contact buyers/i.test(objectiveCompletionAudit.evidenceBoundary ?? '')) {
     failures.push('objective_completion_audit must preserve the no-readiness, no-buyer-proof, no-approval, no-live-proof, no-Supabase-clearance, no-branch-approval, no-source-readiness, and no-outreach-permission boundary.');
   }
+  expectSourceLineage('objective_completion_audit', {
+    sourceManifestPath: 'completion_audit',
+    sourceProofType: 'completion_audit_current_state',
+  });
   const adversarialReviewLedger = itemById.get('adversarial_review_ledger') ?? {};
   if (!/buyer evidence|production approval|release toolchain|Supabase advisor clearance|branch-risk|challenge lanes|claim-refutation/i.test(`${adversarialReviewLedger.evidenceBoundary ?? ''}\n${adversarialReviewLedger.nextAction ?? ''}`)) {
     failures.push('adversarial_review_ledger must describe the buyer, approval, release, Supabase, and branch challenge lanes.');
@@ -395,6 +422,16 @@ function validateManifest(manifest) {
   if (!/does not prove production approval|does not.*buyer acceptance|does not.*release readiness|does not.*Supabase clearance|does not.*branch approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(adversarialReviewLedger.evidenceBoundary ?? '')) {
     failures.push('adversarial_review_ledger must preserve the no-approval, no-buyer-proof, no-release-readiness, no-Supabase-clearance, no-branch-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('adversarial_review_ledger', {
+    sourceManifestPath: 'adversarial_reviews',
+    sourceProofTypes: [
+      'buyer_evidence_adversarial_review',
+      'production_approval_adversarial_review',
+      'release_toolchain_adversarial_review',
+      'external_advisor_adversarial_review',
+      'branch_risk_adversarial_review',
+    ],
+  });
   const fixReportBlockerMap = itemById.get('fix_report_blocker_map') ?? {};
   if (!/files changed|tests run|required checks|unresolved blockers|approval gates|owner-side gate/i.test(`${fixReportBlockerMap.evidenceBoundary ?? ''}\n${fixReportBlockerMap.nextAction ?? ''}`)) {
     failures.push('fix_report_blocker_map must describe files changed, tests run, required checks, unresolved blockers, approval gates, and owner-side gate sequencing.');
@@ -405,6 +442,10 @@ function validateManifest(manifest) {
   if (!/does not.*modify files|does not.*run missing checks|does not.*clear buyer evidence|does not.*source provenance|does not.*branch review|does not.*Supabase advisor clearance|does not.*release toolchain|does not.*production approval|does not.*deployment|does not.*hosted\/live parity|does not.*commercial launch readiness/i.test(fixReportBlockerMap.evidenceBoundary ?? '')) {
     failures.push('fix_report_blocker_map must preserve the no-mutation, no-check-execution, no-clearance, no-approval, no-deploy, no-live-proof, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('fix_report_blocker_map', {
+    sourceManifestPath: 'fix_report',
+    sourceProofType: 'fix_report_blocker_map',
+  });
   const progressUpdateDigest = itemById.get('progress_update_digest') ?? {};
   if (!/accomplished work|target matrix|pending work|current bottleneck|phase progress|progress visible/i.test(`${progressUpdateDigest.evidenceBoundary ?? ''}\n${progressUpdateDigest.nextAction ?? ''}`)) {
     failures.push('progress_update_digest must describe accomplished work, target matrix, pending work, current bottleneck, and phase progress.');
@@ -415,6 +456,9 @@ function validateManifest(manifest) {
   if (!/does not.*complete pending work|does not.*clear blockers|does not.*run checks|does not.*contact buyers|does not.*approve branches|does not.*deploy|does not.*hosted\/live parity|does not.*commercial launch readiness|does not prove production approval/i.test(progressUpdateDigest.evidenceBoundary ?? '')) {
     failures.push('progress_update_digest must preserve the no-completion, no-check-execution, no-buyer-contact, no-branch-approval, no-deploy, no-live-proof, no-launch-readiness, and no-approval boundary.');
   }
+  expectSourceLineage('progress_update_digest', {
+    sourceManifestPath: 'progress_updates',
+  });
   const bottleneckLogDigest = itemById.get('bottleneck_log_digest') ?? {};
   if (!/blocked task or subtask|elapsed time|last update|root cause|top unblock options|evidence gaps/i.test(`${bottleneckLogDigest.evidenceBoundary ?? ''}\n${bottleneckLogDigest.nextAction ?? ''}`)) {
     failures.push('bottleneck_log_digest must describe the blocked task/subtask, elapsed time, last update, root cause, top unblock options, and evidence-gap context.');
@@ -425,6 +469,9 @@ function validateManifest(manifest) {
   if (!/does not.*resolve evidence gaps|does not.*collect buyer artifacts|does not.*authorize Supabase advisors|does not.*choose branch heads|does not.*approve deploys|does not.*mutate live services|does not.*hosted\/live parity|does not.*commercial launch readiness|does not prove production approval/i.test(bottleneckLogDigest.evidenceBoundary ?? '')) {
     failures.push('bottleneck_log_digest must preserve the no-resolution, no-buyer-proof, no-Supabase-authorization, no-branch-selection, no-deploy-approval, no-live-mutation, no-live-proof, no-launch-readiness, and no-approval boundary.');
   }
+  expectSourceLineage('bottleneck_log_digest', {
+    sourceManifestPath: 'bottleneck_log',
+  });
   const sourceResolutionQueue = itemById.get('source_provenance_resolution_queue') ?? {};
   if (!/staged-only|unstaged-only|mixed|renamed/i.test(`${sourceResolutionQueue.evidenceBoundary ?? ''}\n${sourceResolutionQueue.nextAction ?? ''}`)) {
     failures.push('source_provenance_resolution_queue must describe staged, unstaged, mixed, or renamed source decisions.');
