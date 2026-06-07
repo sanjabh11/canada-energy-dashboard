@@ -38,6 +38,15 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes --json');
     expect(stdout).toContain('corepack pnpm run report:launch-evidence-manifest');
     expect(stdout).toContain('corepack pnpm run check:commercial-launch-readiness-report');
+    expect(stdout).toContain('## Blocking Gate Handles');
+    expect(stdout).toMatch(/not executed by this aggregate suite|do not treat their presence/i);
+    expect(stdout).toContain('corepack pnpm run report:buyer-evidence-readiness');
+    expect(stdout).toContain('corepack pnpm run check:buyer-evidence-readiness-report');
+    expect(stdout).toContain('corepack pnpm run report:production-approval-packet');
+    expect(stdout).toContain('corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high');
+    expect(stdout).toContain('corepack pnpm run check:release-readiness');
+    expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
+    expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
   });
 
   it('emits structured JSON for operator handoff and automation logs', () => {
@@ -78,6 +87,14 @@ describe('focused launch readiness report suite', () => {
     expect(payload.package_script_handles.report_launch_evidence_manifest).toBe('corepack pnpm run report:launch-evidence-manifest');
     expect(payload.package_script_handles.check_launch_evidence_manifest).toBe('corepack pnpm run check:launch-evidence-manifest');
     expect(payload.package_script_handles.check_commercial_launch_readiness_report).toBe('corepack pnpm run check:commercial-launch-readiness-report');
+    expect(payload.blocking_gate_handles.report_buyer_evidence_readiness).toBe('corepack pnpm run report:buyer-evidence-readiness');
+    expect(payload.blocking_gate_handles.check_buyer_evidence_readiness_report).toBe('corepack pnpm run check:buyer-evidence-readiness-report');
+    expect(payload.blocking_gate_handles.report_production_approval_packet).toBe('corepack pnpm run report:production-approval-packet');
+    expect(payload.blocking_gate_handles.report_unmerged_branch_readiness_high_risk).toBe('corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high');
+    expect(payload.blocking_gate_handles.check_release_readiness).toBe('corepack pnpm run check:release-readiness');
+    expect(payload.blocking_gate_handles.check_production_deploy_request).toBe('corepack pnpm run check:production-deploy-request');
+    expect(payload.blocking_gate_handles.check_post_deploy_live).toBe('corepack pnpm run check:post-deploy-live');
+    expect(payload.blocking_gate_boundary).toMatch(/not executed by this aggregate suite|release-readiness|production deploy approval|post-deploy live proof|buyer evidence|branch approval|source cleanup|launch readiness/i);
     expect(payload.proof_boundary).toMatch(/does not clear source provenance|run release-readiness|authorize Supabase|contact buyers|deploy|hosted\/live parity|launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);
   });

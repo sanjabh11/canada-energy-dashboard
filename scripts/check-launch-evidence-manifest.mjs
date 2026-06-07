@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES', 'Manifest progress_updates must expose the latest focused suite package-handle ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES', 'Manifest progress_updates must expose the latest focused suite blocking-gate handle ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4958,6 +4958,48 @@ try {
 		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
 		        && focusedSuitePackageHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
 		      'Focused suite package-handle code optimization review must record aggregate checker, progress, focused suite, manifest, commercial report, JSON, and TypeScript checks.',
+		    );
+		    const focusedSuiteBlockingGateHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES');
+		    assert(focusedSuiteBlockingGateHandlesDecision, 'Manifest must record the focused suite blocking-gate handle implementation decision.');
+		    assert(
+		      focusedSuiteBlockingGateHandlesDecision?.chosen_variant === 'minimal separate blocking-gate handle digest',
+		      'Focused suite blocking-gate handle decision must record the minimal separate blocking-gate handle digest variant.',
+		    );
+		    assert(
+		      /Blocking Gate Handles|buyer evidence readiness|production approval packet|release-readiness|post-deploy live proof/i.test(focusedSuiteBlockingGateHandlesDecision?.acceptance_check ?? ''),
+		      'Focused suite blocking-gate handle decision must require buyer, approval, release, and live gate handle visibility.',
+		    );
+		    assert(
+		      Array.isArray(focusedSuiteBlockingGateHandlesDecision?.files_changed)
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('scripts/check-focused-launch-readiness-reports.mjs')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('tests/unit/focusedLaunchReadinessReports.test.ts')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+		        && focusedSuiteBlockingGateHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+		      'Focused suite blocking-gate handle decision must record aggregate checker, manifest, progress, commercial report, and unit contract files.',
+		    );
+		    assert(
+		      /blocking-gate handle discoverability only|does not execute blocking gate commands|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|create buyer proof|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(focusedSuiteBlockingGateHandlesDecision?.proof_boundary ?? ''),
+		      'Focused suite blocking-gate handle decision must preserve no-execution, no-clearance, no-release, no-branch, no-Supabase, no-buyer, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+		    );
+		    const focusedSuiteBlockingGateHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES');
+		    assert(focusedSuiteBlockingGateHandlesReview, 'Manifest must record the focused suite blocking-gate handle code optimization review.');
+		    assert(focusedSuiteBlockingGateHandlesReview?.policy === 'strict', 'Focused suite blocking-gate handle code optimization review must use strict policy.');
+		    assert(focusedSuiteBlockingGateHandlesReview?.verdict === 'pass', 'Focused suite blocking-gate handle code optimization review must pass.');
+		    assert(
+		      Array.isArray(focusedSuiteBlockingGateHandlesReview?.tests_or_checks)
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check-focused-launch-readiness-reports\.mjs/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /focusedLaunchReadinessReports\.test\.ts/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes --json/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+		      'Focused suite blocking-gate handle code optimization review must record aggregate checker, progress, focused suite, manifest, commercial report, JSON, and TypeScript checks.',
 		    );
 		    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

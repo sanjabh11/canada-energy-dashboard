@@ -122,6 +122,19 @@ const packageScriptHandles = {
   check_progress_digest_report: 'corepack pnpm run check:progress-digest-report',
   check_commercial_launch_readiness_report: 'corepack pnpm run check:commercial-launch-readiness-report',
 };
+const blockingGateHandles = {
+  report_buyer_evidence_readiness: 'corepack pnpm run report:buyer-evidence-readiness',
+  check_buyer_evidence_readiness_report: 'corepack pnpm run check:buyer-evidence-readiness-report',
+  report_production_approval_packet: 'corepack pnpm run report:production-approval-packet',
+  report_unmerged_branch_readiness: 'corepack pnpm run report:unmerged-branch-readiness',
+  report_unmerged_branch_readiness_high_risk: 'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
+  check_unmerged_branch_readiness_report: 'corepack pnpm run check:unmerged-branch-readiness-report',
+  check_release_readiness: 'corepack pnpm run check:release-readiness',
+  check_production_deploy_request: 'corepack pnpm run check:production-deploy-request',
+  check_post_deploy_live: 'corepack pnpm run check:post-deploy-live',
+  validate_launch_evidence_schema: 'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
+};
+const blockingGateBoundary = 'Blocking gate handles are listed for operator sequencing only and are not executed by this aggregate suite; do not treat their presence, skipped probes, or focused report pass status as release-readiness, production deploy approval, post-deploy live proof, buyer evidence, branch approval, source cleanup, or launch readiness.';
 
 function compactOutput(value, maxLength = 1200) {
   const text = String(value ?? '').trim().replace(/\s+/g, ' ');
@@ -171,6 +184,8 @@ const payload = {
   fail_count: failedResults.length + failures.length,
   checks: results,
   package_script_handles: packageScriptHandles,
+  blocking_gate_handles: blockingGateHandles,
+  blocking_gate_boundary: blockingGateBoundary,
   proof_boundary: proofBoundary,
   stop_gate: stopGate,
 };
@@ -207,6 +222,13 @@ if (jsonOutput) {
     console.log('');
     console.log('## Package Script Handles');
     for (const [name, command] of Object.entries(packageScriptHandles)) {
+      console.log(`- ${name}: ${command}`);
+    }
+    console.log('');
+    console.log('## Blocking Gate Handles');
+    console.log('');
+    console.log(blockingGateBoundary);
+    for (const [name, command] of Object.entries(blockingGateHandles)) {
       console.log(`- ${name}: ${command}`);
     }
   }

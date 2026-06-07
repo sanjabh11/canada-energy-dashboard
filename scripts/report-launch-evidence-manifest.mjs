@@ -6077,6 +6077,17 @@ const focusedLaunchReadinessSuitePackageHandlesFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged = [
+  'scripts/check-focused-launch-readiness-reports.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/focusedLaunchReadinessReports.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const launchManifestJsonAliasFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -6184,6 +6195,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...focusedLaunchReadinessReportSuiteFilesChanged,
   ...focusedLaunchReadinessSuiteHandoffSurfacesFilesChanged,
   ...focusedLaunchReadinessSuitePackageHandlesFilesChanged,
+  ...focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
@@ -6306,6 +6318,21 @@ const buyerEvidenceReadinessReportContractTestsRun = [
 ];
 
 const focusedLaunchReadinessSuitePackageHandlesTestsRun = [
+  'node --check scripts/check-focused-launch-readiness-reports.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun = [
   'node --check scripts/check-focused-launch-readiness-reports.mjs',
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -7186,6 +7213,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...buyerEvidencePublicHandlesDigestTestsRun,
   ...buyerEvidenceReadinessReportContractTestsRun,
   ...focusedLaunchReadinessSuitePackageHandlesTestsRun,
+  ...focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
@@ -8249,6 +8277,19 @@ const safeFixImplementationDecisions = [
     reason: 'The aggregate suite is now listed as a required Fix Report gate, but its output previously showed individual check results without the exact package handles operators should use for repeatable suite, manifest, progress, and commercial validation handoff.',
     proof_boundary: 'This record improves focused launch-readiness suite package-handle discoverability only; it does not run focused reports as clearance, clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, create buyer proof, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused suite package-handle digest, aggregate suite pass, skipped-probe output, JSON output, manifest validation, progress digest, commercial report validation, or this code optimization record as source readiness, release-readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+    decision: 'Expose non-executed blocking gate handles in the aggregate focused launch-readiness suite output.',
+    acceptance_check: 'check:focused-launch-readiness-reports renders Blocking Gate Handles for buyer evidence readiness, production approval packet, unmerged-branch inventory, release-readiness, production deploy request, post-deploy live proof, and launch-evidence schema validation while keeping those commands separate from passing focused report checks and preserving blocked launch status.',
+    chosen_variant: 'minimal separate blocking-gate handle digest',
+    repo_pattern_reused: 'Existing aggregate focused-readiness checker, manifest current_required_checks list, buyer evidence readiness report/check contract, unmerged-branch package-handle digest, production approval packet command, progress digest current-phase ratchet, broad manifest checker, commercial readiness report checker, and focused suite unit contract.',
+    files_changed: focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged,
+    tests_run: focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
+    proof: 'The patch renders non-executed blocking gate handles in Markdown and JSON without adding dependencies, changing public status data, running release-readiness, running production deploy checks, running post-deploy live proof, contacting buyers, authorizing Supabase, mutating source or branches, requesting approval, deploying, proving hosted/live parity, or changing launch status.',
+    reason: 'The aggregate suite now exposes repeatable package handles, but operators also need to see the still-blocked launch gates that are intentionally outside the passing focused report contract so a green suite is not mistaken for release, deploy, live, branch, source, or buyer clearance.',
+    proof_boundary: 'This record improves focused launch-readiness blocking-gate handle discoverability only; it does not execute blocking gate commands, clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, create buyer proof, request or grant owner approval, run production deploy checks as clearance, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat blocking gate handles, aggregate suite pass, skipped-probe output, JSON output, buyer evidence readiness handles, production approval packet handles, unmerged-branch inventory handles, release-readiness handles, production deploy request handles, post-deploy live handles, schema validation handles, manifest validation, progress digest, commercial report validation, or this code optimization record as source readiness, release-readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10010,6 +10051,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Using aggregate checker pass as clearance would simplify status reporting but would blur report-contract health with commercial launch readiness.',
     evidence: 'The aggregate suite proof boundary says it does not clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, or create launch readiness.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+    variant: 'Leave blocking gate handles visible only in the launch evidence manifest Fix Report required-check list.',
+    reason_rejected: 'The Fix Report list exists, but the aggregate focused suite is the operator-facing handoff after a passing suite and should make the still-blocked launch gates visible without requiring a separate manifest lookup.',
+    tradeoff: 'No-code defer avoids a small checker/test update, but preserves a control-surface gap where a green focused suite can hide the commands that remain outside the suite and still block launch.',
+    evidence: 'fix_report.current_required_checks already lists buyer evidence readiness, production approval packet, unmerged-branch readiness, release-readiness, production deploy request, post-deploy live proof, and launch evidence schema validation commands.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+    variant: 'Run release-readiness, production-deploy request, post-deploy live proof, buyer evidence validation, branch mutation, or Supabase advisor work from the aggregate suite.',
+    reason_rejected: 'Those commands are intentionally blocked or external-gated; executing them from a passing focused report suite would conflate contract validation with release, deploy, live, source, branch, Supabase, and buyer clearance.',
+    tradeoff: 'Running more gates could expose current failures, but it would exceed the safe-fix report-contract phase and risks implying clearance from commands that require owner decisions, external access, or retained buyer proof.',
+    evidence: 'The manifest launch decision remains blocked by source provenance owner decision, release toolchain proof, branch review, Supabase advisor clearance, buyer evidence, production approval, and post-deploy live proof gates.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+    variant: 'Add or regenerate public release-status rows for the aggregate blocking gate handle digest.',
+    reason_rejected: 'The needed gate rows already exist in individual public status handles or manifest-required checks; changing public status data would broaden the phase without improving the direct aggregate suite contract.',
+    tradeoff: 'Public status churn would be more visible externally, but it would touch generated/source-of-truth surfaces and duplicate lane-specific handles already maintained elsewhere.',
+    evidence: 'Individual focused reports already expose public handles for source, release, branch, Supabase, buyer, production approval, post-deploy live proof, launch action, validation, progress, objective completion, and adversarial review lanes.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10699,6 +10761,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change updates the existing aggregate focused-readiness checker and unit/manifest/report contracts only, with no new dependency, no public status churn, no proof-command execution as clearance, no external-account call, no source or branch mutation, no buyer contact, no owner approval request, no deploy execution, no live proof execution, and no launch-status change.',
     tests_or_checks: focusedLaunchReadinessSuitePackageHandlesTestsRun,
     remaining_risk: 'The focused suite package-handle digest remains operator guidance only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change updates the existing aggregate focused-readiness checker and unit/manifest/report contracts only, with no new dependency, no public status churn, no release-readiness execution, no production deploy request execution, no post-deploy live proof execution, no external-account call, no source or branch mutation, no buyer contact, no owner approval request, no deploy execution, no live proof execution, and no launch-status change.',
+    tests_or_checks: focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
+    remaining_risk: 'The focused suite blocking-gate handle digest remains operator guidance only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

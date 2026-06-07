@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-PACKAGE-HANDLES');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1228,9 +1228,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(75);
+    expect(manifest.implementation_decisions).toHaveLength(76);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(75);
+    expect(manifest.code_optimization_reviews).toHaveLength(76);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2723,6 +2723,38 @@ describe('launch evidence manifest report', () => {
 	    expect(focusedSuitePackageHandlesReview).toBeTruthy();
 	    expect(focusedSuitePackageHandlesReview.policy).toBe('strict');
 	    expect(focusedSuitePackageHandlesReview.tests_or_checks).toEqual(expect.arrayContaining([
+	      'node --check scripts/check-focused-launch-readiness-reports.mjs',
+	      'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+	      'pnpm run check:progress-digest-report -- --skip-probes',
+	      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+	      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+	      'pnpm exec tsc -b --pretty false',
+	    ]));
+	    const focusedSuiteBlockingGateHandlesDecision = manifest.implementation_decisions.find(
+	      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+	    );
+	    expect(focusedSuiteBlockingGateHandlesDecision).toBeTruthy();
+	    expect(focusedSuiteBlockingGateHandlesDecision.chosen_variant).toBe('minimal separate blocking-gate handle digest');
+	    expect(focusedSuiteBlockingGateHandlesDecision.acceptance_check).toMatch(/Blocking Gate Handles|buyer evidence readiness|production approval packet|release-readiness|post-deploy live proof/i);
+	    expect(focusedSuiteBlockingGateHandlesDecision.files_changed).toEqual(expect.arrayContaining([
+	      'scripts/check-focused-launch-readiness-reports.mjs',
+	      'scripts/report-launch-evidence-manifest.mjs',
+	      'scripts/check-launch-evidence-manifest.mjs',
+	      'scripts/check-progress-digest-readiness-report.mjs',
+	      'scripts/check-commercial-launch-readiness-report.mjs',
+	      'tests/unit/focusedLaunchReadinessReports.test.ts',
+	      'tests/unit/progressDigestReadiness.test.ts',
+	      'tests/unit/launchEvidenceManifest.test.ts',
+	    ]));
+	    expect(focusedSuiteBlockingGateHandlesDecision.proof_boundary).toMatch(/blocking-gate handle discoverability only|does not execute blocking gate commands|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|create buyer proof|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+	    const focusedSuiteBlockingGateHandlesReview = manifest.code_optimization_reviews.find(
+	      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES',
+	    );
+	    expect(focusedSuiteBlockingGateHandlesReview).toBeTruthy();
+	    expect(focusedSuiteBlockingGateHandlesReview.policy).toBe('strict');
+	    expect(focusedSuiteBlockingGateHandlesReview.tests_or_checks).toEqual(expect.arrayContaining([
 	      'node --check scripts/check-focused-launch-readiness-reports.mjs',
 	      'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
 	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
