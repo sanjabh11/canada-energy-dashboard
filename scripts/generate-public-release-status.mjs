@@ -236,6 +236,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
   },
   {
+    id: 'buyer_evidence_minimum_packet_handoff',
+    status: 'external_gate',
+    proofBucket: 'buyer evidence',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
+  },
+  {
     id: 'buyer_evidence_remediation_queue',
     status: 'external_gate',
     proofBucket: 'buyer evidence',
@@ -638,6 +644,16 @@ function validateManifest(manifest) {
   }
   if (!/does not.*contact buyers|does not.*create accepted evidence|does not.*move confidence|does not.*attach artifacts|does not.*validate 95|does not.*claim buyer acceptance|does not.*create buyer proof|does not.*prove commercial readiness/i.test(buyerAcquisitionMatrix.evidenceBoundary ?? '')) {
     failures.push('buyer_evidence_acquisition_matrix must preserve the no-contact, no-buyer-proof, and no-commercial-readiness boundary.');
+  }
+  const buyerMinimumPacketHandoff = itemById.get('buyer_evidence_minimum_packet_handoff') ?? {};
+  if (!/minimum buyer evidence packet|buyer_evidence\.acquisition_matrix\.rows|outreach intake|production pilot register|utility forecast|TIER or credit|billing or security|retained-artifact 95% validation|Blocks 95 Gate|validation commands|validate:pilot-evidence --require-95/i.test(`${buyerMinimumPacketHandoff.evidenceBoundary ?? ''}\n${buyerMinimumPacketHandoff.nextAction ?? ''}`)) {
+    failures.push('buyer_evidence_minimum_packet_handoff must describe the minimum buyer evidence packet rows, validation commands, and 95% gate blockers.');
+  }
+  if (!/report:buyer-evidence-gate-readiness/.test(buyerMinimumPacketHandoff.command ?? '') || !/check:buyer-evidence-gate-report/.test(buyerMinimumPacketHandoff.command ?? '')) {
+    failures.push('buyer_evidence_minimum_packet_handoff must route through the focused buyer evidence gate report/check handles.');
+  }
+  if (!/does not.*contact buyers|does not.*send outreach|does not.*create accepted evidence|does not.*move confidence|does not.*attach retained artifacts|does not.*validate 95|does not.*create buyer proof|does not.*claim buyer acceptance|does not.*grant production approval|does not.*deploy|does not.*hosted\/live parity|does not.*prove commercial readiness|does not.*create launch readiness/i.test(buyerMinimumPacketHandoff.evidenceBoundary ?? '')) {
+    failures.push('buyer_evidence_minimum_packet_handoff must preserve the no-contact, no-buyer-proof, no-validation, no-approval, no-deploy, no-live-proof, and no-readiness boundary.');
   }
   const buyerRemediationQueue = itemById.get('buyer_evidence_remediation_queue') ?? {};
   if (!/accepted buyer evidence|reviewer evidence|commercial signal|retained artifacts|95% validation/i.test(`${buyerRemediationQueue.evidenceBoundary ?? ''}\n${buyerRemediationQueue.nextAction ?? ''}`)) {

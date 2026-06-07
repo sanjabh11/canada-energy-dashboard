@@ -341,6 +341,15 @@
       "nextAction": "Use the matrix to collect the missing buyer-supplied rows, reviewer notes, retained redacted artifacts, and 95% validation inputs before changing buyer confidence or launch claims."
     },
     {
+      "id": "buyer_evidence_minimum_packet_handoff",
+      "label": "Buyer evidence minimum packet handoff",
+      "status": "external_gate",
+      "proofBucket": "buyer evidence",
+      "command": "pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report",
+      "evidenceBoundary": "The minimum buyer evidence packet handoff maps buyer_evidence.acquisition_matrix.rows into outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, retained-artifact 95% validation, Blocks 95 Gate, and validation commands such as validate:pilot-evidence --require-95. It does not contact buyers, send outreach, move confidence, attach retained artifacts, validate 95%, claim buyer acceptance, grant production approval, deploy, or prove hosted/live parity. It does not create accepted evidence, does not create buyer proof, does not prove commercial readiness, and does not create launch readiness.",
+      "nextAction": "Use this handoff only to plan the minimum accepted buyer-evidence packet: collect real anonymized buyer rows, reviewer notes, commercial signal, retained redacted artifact hashes, and run validate:pilot-evidence --require-95 before changing buyer confidence, approval, or launch claims."
+    },
+    {
       "id": "buyer_evidence_remediation_queue",
       "label": "Buyer evidence remediation queue",
       "status": "external_gate",

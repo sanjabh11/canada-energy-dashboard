@@ -322,6 +322,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The buyer evidence acquisition matrix maps outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, distinct proof-pack, accepted confidence, reviewer, retained artifact, and 95% validation rows, but it does not contact buyers, create accepted evidence, move confidence, attach artifacts, validate 95%, or claim buyer acceptance. It does not create buyer proof or prove commercial readiness.',
   },
   {
+    label: 'Buyer evidence minimum packet handoff',
+    status: 'external_gate',
+    command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
+    evidenceBoundary: 'The focused buyer evidence gate report/check maps buyer_evidence.acquisition_matrix.rows into a minimum buyer evidence packet handoff across outreach intake, production pilot register, utility forecast, TIER or credit, billing or security, retained-artifact 95% validation, Blocks 95 Gate, and validation commands such as validate:pilot-evidence --require-95. It does not contact buyers, send outreach, move confidence, attach retained artifacts, validate 95%, claim buyer acceptance, grant production approval, deploy, or prove hosted/live parity. It does not create accepted evidence, does not create buyer proof, does not prove commercial readiness, and does not create launch readiness.',
+  },
+  {
     label: 'Buyer evidence remediation queue',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-gate-readiness && pnpm run check:buyer-evidence-gate-report',
