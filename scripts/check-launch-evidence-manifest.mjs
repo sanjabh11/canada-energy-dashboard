@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest production approval public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest post-deploy live-proof public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4632,6 +4632,40 @@ try {
         && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Production approval public-handle digest code optimization review must record production approval, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const postDeployPublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-PUBLIC-HANDLE-DIGEST');
+    assert(postDeployPublicHandlesDecision, 'Manifest must record the post-deploy live-proof public-handle digest implementation decision.');
+    assert(
+      postDeployPublicHandlesDecision?.chosen_variant === 'minimal focused post-deploy live-proof handle digest',
+      'Post-deploy live-proof public-handle digest decision must record the minimal focused post-deploy live-proof handle digest variant.',
+    );
+    assert(
+      Array.isArray(postDeployPublicHandlesDecision?.files_changed)
+        && postDeployPublicHandlesDecision.files_changed.includes('scripts/report-post-deploy-live-proof-readiness.mjs')
+        && postDeployPublicHandlesDecision.files_changed.includes('scripts/check-post-deploy-live-proof-readiness-report.mjs')
+        && postDeployPublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && postDeployPublicHandlesDecision.files_changed.includes('tests/unit/postDeployLiveProofReadiness.test.ts')
+        && postDeployPublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && postDeployPublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Post-deploy live-proof public-handle digest decision must record focused post-deploy, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not request owner approval|grant owner approval|run deploy-production|run Netlify deploy|push|rebuild|mutate Netlify|access live accounts|run live metadata checks as clearance|run live static parity as clearance|run hosted browser smoke|prove current-source hosted parity|mark the launch goal complete|raise launch status/i.test(postDeployPublicHandlesDecision?.proof_boundary ?? ''),
+      'Post-deploy live-proof public-handle digest decision must preserve no-approval, no-deploy, no-Netlify-mutation, no-live-account, no-live-check-clearance, no-browser-smoke, no-parity, no-goal-completion, and no-readiness boundaries.',
+    );
+    const postDeployPublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-PUBLIC-HANDLE-DIGEST');
+    assert(postDeployPublicHandlesReview, 'Manifest must record the post-deploy live-proof public-handle digest code optimization review.');
+    assert(postDeployPublicHandlesReview?.policy === 'strict', 'Post-deploy live-proof public-handle digest code optimization review must use strict policy.');
+    assert(postDeployPublicHandlesReview?.verdict === 'pass', 'Post-deploy live-proof public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(postDeployPublicHandlesReview?.tests_or_checks)
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:post-deploy-live-proof-report -- --skip-probes/.test(check))
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && postDeployPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Post-deploy live-proof public-handle digest code optimization review must record post-deploy, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

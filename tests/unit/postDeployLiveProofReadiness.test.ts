@@ -56,6 +56,11 @@ describe('post-deploy live proof readiness report', () => {
     expect(stdout).toContain('Can Execute From Packet');
     expect(stdout).toContain('Live Account Required');
     expect(stdout).toContain('Browser Smoke Required');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('post_deploy_live_proof_gate_queue');
+    expect(stdout).toContain('post_deploy_live_proof_operator_handoff_packet');
+    expect(stdout).toContain('deployed_artifact_live_parity');
+    expect(stdout).toContain('current_source_live_parity');
     expect(stdout).toContain('Launch Action Post-Deploy Row');
     expect(stdout).toContain('Production Approval Live Prerequisite');
     expect(stdout).toContain('Production Approval Request Live Row');
@@ -148,6 +153,18 @@ describe('post-deploy live proof readiness report', () => {
     expect(operatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required).toBe(true);
     expect(operatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate).toBe('parity_claim_after_all_live_gates_pass');
     expect(operatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required).toBe(true);
+    expect(payload.public_status_handles.post_deploy_live_proof_gate_queue.id).toBe('post_deploy_live_proof_gate_queue');
+    expect(payload.public_status_handles.post_deploy_live_proof_operator_handoff_packet.id).toBe('post_deploy_live_proof_operator_handoff_packet');
+    expect(payload.public_status_handles.deployed_artifact_live_parity.id).toBe('deployed_artifact_live_parity');
+    expect(payload.public_status_handles.current_source_live_parity.id).toBe('current_source_live_parity');
+    expect(payload.public_status_handles.post_deploy_live_proof_gate_queue.command).toContain('report:post-deploy-live-proof-readiness');
+    expect(payload.public_status_handles.post_deploy_live_proof_gate_queue.command).toContain('check:post-deploy-live-proof-report');
+    expect(payload.public_status_handles.post_deploy_live_proof_operator_handoff_packet.sourceManifestPath).toBe('post_deploy_live_proof.operator_handoff_packet');
+    expect(payload.public_status_handles.deployed_artifact_live_parity.command).toBe('pnpm run check:post-deploy-live');
+    expect(payload.public_status_handles.current_source_live_parity.command).toContain('report:production-approval-packet');
+    expect(payload.public_status_handles.current_source_live_parity.command).toContain('check:post-deploy-live');
+    expect(payload.public_status_handles.post_deploy_live_proof_operator_handoff_packet.sourceProofTypes).toContain('post_deploy_live_proof_operator_handoff_packet');
+    expect(payload.public_status_handles.current_source_live_parity.sourceProofTypes).toContain('post_deploy_parity_claim');
     for (const row of operatorHandoffPacket.items) {
       const sourceRow = payload.post_deploy_live_proof.gate_queue.items.find((item: { gate: string }) => item.gate === row.gate);
       expect(row.proof_command).toBe(sourceRow.proof_command);

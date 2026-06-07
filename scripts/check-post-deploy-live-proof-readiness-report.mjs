@@ -103,6 +103,11 @@ if (failures.length === 0) {
     assertContains(stdout, 'Can Execute From Packet', 'Report must render post-deploy operator non-execution boundaries.');
     assertContains(stdout, 'Live Account Required', 'Report must render live-account gating.');
     assertContains(stdout, 'Browser Smoke Required', 'Report must render browser-smoke gating.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public post-deploy live-proof handles.');
+    assertContains(stdout, 'post_deploy_live_proof_gate_queue', 'Report must include the post-deploy gate queue public handle.');
+    assertContains(stdout, 'post_deploy_live_proof_operator_handoff_packet', 'Report must include the post-deploy operator handoff public handle.');
+    assertContains(stdout, 'deployed_artifact_live_parity', 'Report must include the deployed artifact live parity public handle.');
+    assertContains(stdout, 'current_source_live_parity', 'Report must include the current source live parity public handle.');
     assertContains(stdout, '## Launch Action Post-Deploy Row', 'Report must include the launch action post-deploy row.');
     assertContains(stdout, '## Production Approval Live Prerequisite', 'Report must include the production approval live prerequisite.');
     assertContains(stdout, '## Production Approval Request Live Row', 'Report must include the production approval request live row.');
@@ -188,6 +193,20 @@ if (failures.length === 0) {
     assert(operatorRowsByGate.get('Hosted proof-pack route smoke')?.browser_smoke_required === true, 'Post-deploy operator hosted smoke row must mark browser_smoke_required.');
     assert(operatorRowsByGate.get('Current-source hosted parity claim')?.execution_gate === 'parity_claim_after_all_live_gates_pass', 'Post-deploy operator parity claim row must wait for all live gates.');
     assert(operatorRowsByGate.get('Current-source hosted parity claim')?.live_account_required === true, 'Post-deploy operator parity row must mark live_account_required.');
+    assert(payload.public_status_handles?.post_deploy_live_proof_gate_queue?.id === 'post_deploy_live_proof_gate_queue', 'Focused JSON must include the post-deploy gate queue public handle.');
+    assert(payload.public_status_handles?.post_deploy_live_proof_operator_handoff_packet?.id === 'post_deploy_live_proof_operator_handoff_packet', 'Focused JSON must include the post-deploy operator handoff public handle.');
+    assert(payload.public_status_handles?.deployed_artifact_live_parity?.id === 'deployed_artifact_live_parity', 'Focused JSON must include the deployed artifact live parity public handle.');
+    assert(payload.public_status_handles?.current_source_live_parity?.id === 'current_source_live_parity', 'Focused JSON must include the current source live parity public handle.');
+    assert(
+      /report:post-deploy-live-proof-readiness/.test(payload.public_status_handles?.post_deploy_live_proof_gate_queue?.command ?? '')
+        && /check:post-deploy-live-proof-report/.test(payload.public_status_handles?.post_deploy_live_proof_gate_queue?.command ?? ''),
+      'Post-deploy gate queue public handle must point at the focused post-deploy report/check.',
+    );
+    assert(payload.public_status_handles?.post_deploy_live_proof_operator_handoff_packet?.sourceManifestPath === 'post_deploy_live_proof.operator_handoff_packet', 'Post-deploy operator handoff public handle must point at post_deploy_live_proof.operator_handoff_packet.');
+    assert(payload.public_status_handles?.deployed_artifact_live_parity?.command === 'pnpm run check:post-deploy-live', 'Deployed artifact live parity public handle must point at check:post-deploy-live.');
+    assert(/report:production-approval-packet/.test(payload.public_status_handles?.current_source_live_parity?.command ?? '') && /check:post-deploy-live/.test(payload.public_status_handles?.current_source_live_parity?.command ?? ''), 'Current source live parity public handle must point at production approval packet and post-deploy live check.');
+    assert(Array.isArray(payload.public_status_handles?.post_deploy_live_proof_operator_handoff_packet?.sourceProofTypes) && payload.public_status_handles.post_deploy_live_proof_operator_handoff_packet.sourceProofTypes.includes('post_deploy_live_proof_operator_handoff_packet'), 'Post-deploy operator handoff public handle must expose operator handoff lineage.');
+    assert(Array.isArray(payload.public_status_handles?.current_source_live_parity?.sourceProofTypes) && payload.public_status_handles.current_source_live_parity.sourceProofTypes.includes('post_deploy_parity_claim'), 'Current source live parity public handle must expose parity claim lineage.');
     assert(/does not grant owner approval|deploy|mutate Netlify|run browser smoke|prove hosted\/live parity/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must not imply approval, deploy, browser smoke, or live parity.');
     assert(/Do not treat this focused report|production approval|hosted parity|post-deploy live proof/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject live-proof claims from the report itself.');
     assert(payload.launch_action_post_deploy_row?.phase === 'post_deploy_live_proof', 'Focused report JSON must include the launch action post-deploy row.');

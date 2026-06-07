@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -127,6 +128,16 @@ function findByKey(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function focusedPayload(manifest) {
   const postDeployLiveProof = manifest.post_deploy_live_proof ?? {};
   const gateQueue = postDeployLiveProof.gate_queue ?? {};
@@ -142,6 +153,12 @@ function focusedPayload(manifest) {
     launch_decision: manifest.launch_decision ?? null,
     repo: manifest.repo ?? {},
     post_deploy_live_proof: postDeployLiveProof,
+    public_status_handles: {
+      post_deploy_live_proof_gate_queue: readPublicStatusHandle('post_deploy_live_proof_gate_queue'),
+      post_deploy_live_proof_operator_handoff_packet: readPublicStatusHandle('post_deploy_live_proof_operator_handoff_packet'),
+      deployed_artifact_live_parity: readPublicStatusHandle('deployed_artifact_live_parity'),
+      current_source_live_parity: readPublicStatusHandle('current_source_live_parity'),
+    },
     package_script_handles: {
       check_post_deploy_live: gateByName.get('Current-source hosted parity claim')?.proof_command ?? 'corepack pnpm run check:post-deploy-live',
       check_live_public_metadata: gateByName.get('Live public metadata')?.proof_command ?? 'corepack pnpm run check:live-public-metadata',
@@ -196,6 +213,17 @@ function renderMarkdown(payload) {
   const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
     name,
     command,
+  ]);
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes)
+      ? item.sourceProofTypes.join(', ')
+      : item?.sourceProofType ?? '',
+    item?.evidenceBoundary,
+    item?.nextAction,
   ]);
   const launchActionRow = payload.launch_action_post_deploy_row
     ? [[
@@ -286,6 +314,10 @@ function renderMarkdown(payload) {
       ['Rank', 'Gate', 'Owner', 'Status', 'Execution Gate', 'Proof Command', 'Proof Type', 'Approval Required', 'Deploy Required', 'Live Account Required', 'Browser Smoke Required', 'Blocks Live Proof Gate', 'Can Execute From Packet', 'Approval Phrase', 'Execution Command', 'Proof Boundary', 'Stop Gate'],
       operatorHandoffRows,
     ),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
     '',
     '## Package Script Handles',
     '',
