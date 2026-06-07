@@ -341,6 +341,15 @@
       "nextAction": "Fix connector or dashboard authorization, rerun Security and Performance Advisors from an authorized account, retain public-safe findings without secrets, and keep advisor clearance blocked until every deficit row passes."
     },
     {
+      "id": "supabase_advisor_operator_handoff_packet",
+      "label": "Supabase advisor operator handoff packet",
+      "status": "needs_remediation",
+      "proofBucket": "external account",
+      "command": "pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report",
+      "evidenceBoundary": "The Supabase advisor operator handoff packet maps advisor remediation rows into non-executable operator, account-admin, security-owner, and owner execution gates, including repo_lint_freshness_first, authorized_connector_or_dashboard_access_first, security_advisor_after_authorization, performance_advisor_after_authorization, public_safe_record_after_advisor_review, clearance_claim_after_all_rows_pass, external-account flags, public-safe record flags, secret-safe flags, blocks_advisor_gate, and can_execute_from_packet=false. It does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity. It does not create or claim advisor clearance.",
+      "nextAction": "Use this packet as a Supabase advisor handoff only: run repo lint from an authenticated workstation, repair authorization externally, review advisors from an authorized account, record only public-safe findings without secrets, and regenerate the manifest after all rows pass."
+    },
+    {
       "id": "supabase_advisor_remediation_queue",
       "label": "Supabase advisor remediation queue",
       "status": "needs_remediation",

@@ -236,6 +236,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
   },
   {
+    id: 'supabase_advisor_operator_handoff_packet',
+    status: 'needs_remediation',
+    proofBucket: 'external account',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
+  },
+  {
     id: 'supabase_advisor_remediation_queue',
     status: 'needs_remediation',
     proofBucket: 'external account',
@@ -598,6 +604,16 @@ function validateManifest(manifest) {
   }
   if (!/does not.*authorize connectors|does not.*access the dashboard|does not.*rerun advisors|does not.*mutate the database|does not.*record secrets|does not.*clear advisor findings|does not.*claim advisor clearance|does not.*grant production approval|does not.*create launch readiness/i.test(supabaseClearanceDeficitLedger.evidenceBoundary ?? '')) {
     failures.push('supabase_advisor_clearance_deficit_ledger must preserve the no-access, no-secret, no-clearance, and no-approval boundary.');
+  }
+  const supabaseOperatorHandoffPacket = itemById.get('supabase_advisor_operator_handoff_packet') ?? {};
+  if (!/advisor remediation rows|operator|account-admin|security-owner|owner execution gates|repo_lint_freshness_first|authorized_connector_or_dashboard_access_first|security_advisor_after_authorization|performance_advisor_after_authorization|public_safe_record_after_advisor_review|clearance_claim_after_all_rows_pass|external-account flags|public-safe record flags|secret-safe flags|blocks_advisor_gate|can_execute_from_packet=false/i.test(`${supabaseOperatorHandoffPacket.evidenceBoundary ?? ''}\n${supabaseOperatorHandoffPacket.nextAction ?? ''}`)) {
+    failures.push('supabase_advisor_operator_handoff_packet must describe advisor remediation rows, execution gates, external-account flags, public-safe flags, secret-safe flags, blocking rows, and non-executable packet semantics.');
+  }
+  if (!/report:supabase-advisor-readiness/.test(supabaseOperatorHandoffPacket.command ?? '') || !/check:supabase-advisor-report/.test(supabaseOperatorHandoffPacket.command ?? '')) {
+    failures.push('supabase_advisor_operator_handoff_packet must route through the focused Supabase advisor report/check handles.');
+  }
+  if (!/does not.*authorize connectors|does not.*access dashboards|does not.*rerun Security Advisor|does not.*Performance Advisor|does not.*mutate the database|does not.*run migrations|does not.*record secrets|does not.*clear advisor findings|does not.*request production approval|does not.*deploy|does not.*hosted\/live parity|does not.*create or claim advisor clearance/i.test(supabaseOperatorHandoffPacket.evidenceBoundary ?? '')) {
+    failures.push('supabase_advisor_operator_handoff_packet must preserve the no-authorization, no-dashboard-access, no-advisor-rerun, no-db-mutation, no-secret, no-clearance, no-approval-request, no-deploy, and no-live-proof boundary.');
   }
   const supabaseRemediationQueue = itemById.get('supabase_advisor_remediation_queue') ?? {};
   if (!/CLI lint freshness|connector authorization|Security Advisor evidence|Performance Advisor evidence|public-safe findings|no-clearance-claim/i.test(`${supabaseRemediationQueue.evidenceBoundary ?? ''}\n${supabaseRemediationQueue.nextAction ?? ''}`)) {

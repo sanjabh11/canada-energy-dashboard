@@ -322,6 +322,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The Supabase advisor clearance deficit ledger maps CLI lint freshness, connector authorization, Security Advisor evidence, Performance Advisor evidence, public-safe findings, and the no-clearance claim row, but it does not authorize connectors, access the dashboard, rerun advisors, mutate the database, record secrets, clear advisor findings, or claim advisor clearance. It does not grant production approval or create launch readiness, and it does not create advisor clearance.',
   },
   {
+    label: 'Supabase advisor operator handoff packet',
+    status: 'needs_remediation',
+    command: 'pnpm run report:supabase-advisor-readiness && pnpm run check:supabase-advisor-report',
+    evidenceBoundary: 'The focused Supabase advisor report/check maps advisor remediation rows into non-executable operator, account-admin, security-owner, and owner execution gates, including repo_lint_freshness_first, authorized_connector_or_dashboard_access_first, security_advisor_after_authorization, performance_advisor_after_authorization, public_safe_record_after_advisor_review, clearance_claim_after_all_rows_pass, external-account flags, public-safe record flags, secret-safe flags, blocks_advisor_gate, and can_execute_from_packet=false. It does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, request production approval, deploy, or prove hosted/live parity. It does not create or claim advisor clearance.',
+  },
+  {
     label: 'Buyer evidence scan',
     status: 'external_gate',
     command: 'pnpm run report:buyer-evidence-readiness',

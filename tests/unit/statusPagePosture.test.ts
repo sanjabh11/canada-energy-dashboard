@@ -343,6 +343,26 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'supabase_advisor_operator_handoff_packet',
+    releaseHealthLabel: 'Supabase advisor operator handoff packet',
+    boundaryPatterns: [
+      /advisor remediation rows/i,
+      /operator, account-admin, security-owner, and owner execution gates/i,
+      /repo_lint_freshness_first/i,
+      /authorized_connector_or_dashboard_access_first/i,
+      /security_advisor_after_authorization/i,
+      /performance_advisor_after_authorization/i,
+      /public_safe_record_after_advisor_review/i,
+      /clearance_claim_after_all_rows_pass/i,
+      /external-account flags/i,
+      /secret-safe flags/i,
+      /can_execute_from_packet=false/i,
+      /does not authorize connectors/i,
+      /record secrets/i,
+      /hosted\/live parity/i,
+    ],
+  },
+  {
     publicId: 'supabase_advisor_remediation_queue',
     releaseHealthLabel: 'Supabase advisor remediation queue',
     boundaryPatterns: [
@@ -450,11 +470,12 @@ describe('status page release posture', () => {
     const buyerAcquisitionMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence acquisition matrix');
     const buyerRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence remediation queue');
     const supabaseClearanceDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor clearance deficit ledger');
+    const supabaseOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor operator handoff packet');
     const supabaseRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase advisor remediation queue');
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(38);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(39);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -694,6 +715,23 @@ describe('status page release posture', () => {
     expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/public-safe findings/i);
     expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not authorize connectors, access the dashboard/i);
     expect(supabaseClearanceDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not grant production approval/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.status).toBe('needs_remediation');
+    expect(supabaseOperatorHandoffPacketEvidence?.command).toContain('report:supabase-advisor-readiness');
+    expect(supabaseOperatorHandoffPacketEvidence?.command).toContain('check:supabase-advisor-report');
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/advisor remediation rows/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/operator, account-admin, security-owner, and owner execution gates/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/repo_lint_freshness_first/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/authorized_connector_or_dashboard_access_first/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/security_advisor_after_authorization/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/performance_advisor_after_authorization/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/public_safe_record_after_advisor_review/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/clearance_claim_after_all_rows_pass/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/external-account flags/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/secret-safe flags/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/does not authorize connectors/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/record secrets/i);
+    expect(supabaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(supabaseRemediationQueueEvidence?.status).toBe('needs_remediation');
     expect(supabaseRemediationQueueEvidence?.command).toContain('report:supabase-advisor-readiness');
     expect(supabaseRemediationQueueEvidence?.command).toContain('check:supabase-advisor-report');
@@ -778,6 +816,7 @@ describe('status page release posture', () => {
     const buyerRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'buyer_evidence_remediation_queue');
     const advisorGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_access');
     const supabaseClearanceDeficitLedgerGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_clearance_deficit_ledger');
+    const supabaseOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_operator_handoff_packet');
     const supabaseRemediationQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'supabase_advisor_remediation_queue');
 
     expect(PUBLIC_RELEASE_STATUS_MANIFEST.schemaVersion).toBe('ceip.public-release-status.v1');
@@ -831,6 +870,7 @@ describe('status page release posture', () => {
       'buyer_evidence_remediation_queue',
       'supabase_advisor_access',
       'supabase_advisor_clearance_deficit_ledger',
+      'supabase_advisor_operator_handoff_packet',
       'supabase_advisor_remediation_queue',
     ]);
     expect(currentSourceParityGate?.status).toBe('external_gate');
@@ -1103,6 +1143,26 @@ describe('status page release posture', () => {
     expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/does not authorize connectors/i);
     expect(supabaseClearanceDeficitLedgerGate?.evidenceBoundary).toMatch(/does not grant production approval/i);
     expect(supabaseClearanceDeficitLedgerGate?.nextAction).toMatch(/without secrets/i);
+    expect(supabaseOperatorHandoffPacketGate?.status).toBe('needs_remediation');
+    expect(supabaseOperatorHandoffPacketGate?.command).toContain('report:supabase-advisor-readiness');
+    expect(supabaseOperatorHandoffPacketGate?.command).toContain('check:supabase-advisor-report');
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/advisor remediation rows/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/operator, account-admin, security-owner, and owner execution gates/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/repo_lint_freshness_first/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/authorized_connector_or_dashboard_access_first/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/security_advisor_after_authorization/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/performance_advisor_after_authorization/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/public_safe_record_after_advisor_review/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/clearance_claim_after_all_rows_pass/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/external-account flags/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/public-safe record flags/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/secret-safe flags/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/does not authorize connectors/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/record secrets/i);
+    expect(supabaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/create or claim advisor clearance/i);
+    expect(supabaseOperatorHandoffPacketGate?.nextAction).toMatch(/Supabase advisor handoff/i);
+    expect(supabaseOperatorHandoffPacketGate?.nextAction).toMatch(/public-safe findings without secrets/i);
     expect(supabaseRemediationQueueGate?.status).toBe('needs_remediation');
     expect(supabaseRemediationQueueGate?.command).toContain('report:supabase-advisor-readiness');
     expect(supabaseRemediationQueueGate?.command).toContain('check:supabase-advisor-report');
