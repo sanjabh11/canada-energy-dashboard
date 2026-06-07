@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest launch evidence validation public-handle lineage ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest objective completion audit public-handle lineage ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4734,6 +4734,40 @@ try {
         && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && launchEvidenceValidationLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Launch evidence validation public-handle lineage code optimization review must record validation, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const objectiveCompletionAuditLineageDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE');
+    assert(objectiveCompletionAuditLineageDecision, 'Manifest must record the objective completion audit public-handle lineage implementation decision.');
+    assert(
+      objectiveCompletionAuditLineageDecision?.chosen_variant === 'minimal focused objective completion public-handle lineage',
+      'Objective completion audit public-handle lineage decision must record the minimal focused lineage variant.',
+    );
+    assert(
+      Array.isArray(objectiveCompletionAuditLineageDecision?.files_changed)
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('scripts/report-objective-completion-audit-readiness.mjs')
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('scripts/check-objective-completion-audit-readiness-report.mjs')
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('tests/unit/objectiveCompletionAuditReadiness.test.ts')
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && objectiveCompletionAuditLineageDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Objective completion audit public-handle lineage decision must record focused objective completion, progress, and launch manifest contract files.',
+    );
+    assert(
+      /lineage discoverability only|does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|buyer acceptance|hosted\/live parity|raise launch status/i.test(objectiveCompletionAuditLineageDecision?.proof_boundary ?? ''),
+      'Objective completion audit public-handle lineage decision must preserve no-goal-completion, no-clearance, no-buyer, no-Supabase, no-branch, no-source, no-release, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const objectiveCompletionAuditLineageReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE');
+    assert(objectiveCompletionAuditLineageReview, 'Manifest must record the objective completion audit public-handle lineage code optimization review.');
+    assert(objectiveCompletionAuditLineageReview?.policy === 'strict', 'Objective completion audit public-handle lineage code optimization review must use strict policy.');
+    assert(objectiveCompletionAuditLineageReview?.verdict === 'pass', 'Objective completion audit public-handle lineage code optimization review must pass.');
+    assert(
+      Array.isArray(objectiveCompletionAuditLineageReview?.tests_or_checks)
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:objective-completion-audit-report -- --skip-probes/.test(check))
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Objective completion audit public-handle lineage code optimization review must record objective completion, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

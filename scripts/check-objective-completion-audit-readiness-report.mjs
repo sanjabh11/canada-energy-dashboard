@@ -103,6 +103,8 @@ if (failures.length === 0) {
     assertContains(stdout, 'corepack pnpm run report:production-approval-readiness && corepack pnpm run check:production-approval-report && corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report', 'Report must keep production/live next proof on focused approval and live-proof handles.');
     assertContains(stdout, '## Public Release Status Handle', 'Report must include the public status handle.');
     assertContains(stdout, 'objective_completion_audit', 'Report must expose the public objective completion audit handle.');
+    assertContains(stdout, 'Source Manifest Path', 'Report must label public objective completion source manifest lineage.');
+    assertContains(stdout, '| objective_completion_audit | external_gate | completion_audit | completion_audit_current_state |', 'Report must expose the objective completion public handle source manifest path and proof type.');
     assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
     assertContains(stdout, 'corepack pnpm run report:objective-completion-audit-readiness', 'Report must include the focused objective completion report command.');
     assertContains(stdout, 'corepack pnpm run check:objective-completion-audit-report', 'Report must include the focused objective completion checker command.');
@@ -133,6 +135,8 @@ if (failures.length === 0) {
       assert(blockerNames.has(requirement), `Focused JSON must include blocker row: ${requirement}.`);
     }
     assert(payload.public_status_handle?.id === 'objective_completion_audit', 'Focused JSON must include the public objective completion audit handle.');
+    assert(payload.public_status_handle?.sourceManifestPath === 'completion_audit', 'Focused JSON public objective completion audit handle must expose sourceManifestPath=completion_audit.');
+    assert(payload.public_status_handle?.sourceProofType === 'completion_audit_current_state', 'Focused JSON public objective completion audit handle must expose sourceProofType=completion_audit_current_state.');
     assert(/report:objective-completion-audit-readiness/.test(payload.package_script_handles?.report_objective_completion_audit_readiness ?? ''), 'Focused JSON must expose the objective completion audit report script handle.');
     assert(/check:objective-completion-audit-report/.test(payload.package_script_handles?.check_objective_completion_audit_report ?? ''), 'Focused JSON must expose the objective completion audit checker script handle.');
     assert(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|production approval|buyer acceptance|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-completion, no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness semantics.');

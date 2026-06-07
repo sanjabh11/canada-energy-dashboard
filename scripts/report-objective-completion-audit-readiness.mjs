@@ -192,14 +192,22 @@ function itemRows(items) {
   ]);
 }
 
+function sourceProofTypeText(handle) {
+  const proofType = handle?.sourceProofType ?? handle?.sourceProofTypes;
+  return Array.isArray(proofType) ? proofType.join(', ') : proofType;
+}
+
 function renderMarkdown(payload) {
   const audit = payload.objective_completion_audit ?? {};
+  const publicHandle = payload.public_status_handle ?? {};
   const publicRows = [[
-    payload.public_status_handle?.id,
-    payload.public_status_handle?.status,
-    payload.public_status_handle?.command,
-    payload.public_status_handle?.evidenceBoundary,
-    payload.public_status_handle?.nextAction,
+    publicHandle.id,
+    publicHandle.status,
+    publicHandle.sourceManifestPath,
+    sourceProofTypeText(publicHandle),
+    publicHandle.command,
+    publicHandle.evidenceBoundary,
+    publicHandle.nextAction,
   ]];
   const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
     name,
@@ -241,7 +249,7 @@ function renderMarkdown(payload) {
     '',
     '## Public Release Status Handle',
     '',
-    renderTable(['Handle', 'Status', 'Command', 'Evidence Boundary', 'Next Action'], publicRows),
+    renderTable(['Handle', 'Status', 'Source Manifest Path', 'Source Proof Type', 'Command', 'Evidence Boundary', 'Next Action'], publicRows),
     '',
     '## Package Script Handles',
     '',

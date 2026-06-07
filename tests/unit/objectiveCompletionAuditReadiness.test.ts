@@ -55,6 +55,8 @@ describe('objective completion audit readiness report', () => {
     expect(stdout).toContain('Production approval and live proof gate');
     expect(stdout).toContain('## Public Release Status Handle');
     expect(stdout).toContain('objective_completion_audit');
+    expect(stdout).toContain('Source Manifest Path');
+    expect(stdout).toContain('| objective_completion_audit | external_gate | completion_audit | completion_audit_current_state |');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -106,6 +108,8 @@ describe('objective completion audit readiness report', () => {
     expect(payload.blocker_items.find((item: { requirement: string }) => item.requirement === 'Buyer evidence hard gate')?.next_proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(payload.blocker_items.find((item: { requirement: string }) => item.requirement === 'Production approval and live proof gate')?.next_proof_command).toContain('report:post-deploy-live-proof-readiness');
     expect(payload.public_status_handle.id).toBe('objective_completion_audit');
+    expect(payload.public_status_handle.sourceManifestPath).toBe('completion_audit');
+    expect(payload.public_status_handle.sourceProofType).toBe('completion_audit_current_state');
     expect(payload.package_script_handles.report_objective_completion_audit_readiness).toBe('corepack pnpm run report:objective-completion-audit-readiness');
     expect(payload.package_script_handles.check_objective_completion_audit_report).toBe('corepack pnpm run check:objective-completion-audit-report');
     expect(payload.proof_boundary).toMatch(/does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i);

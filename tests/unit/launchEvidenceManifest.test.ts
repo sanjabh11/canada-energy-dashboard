@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-VALIDATION-PUBLIC-HANDLE-LINEAGE');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1227,9 +1227,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(69);
+    expect(manifest.implementation_decisions).toHaveLength(70);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(69);
+    expect(manifest.code_optimization_reviews).toHaveLength(70);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2525,6 +2525,37 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/launchEvidenceValidationReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:launch-evidence-validation-readiness -- --skip-probes --json',
       'pnpm run check:launch-evidence-validation-report -- --skip-probes',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const objectiveCompletionAuditLineageDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(objectiveCompletionAuditLineageDecision).toBeTruthy();
+    expect(objectiveCompletionAuditLineageDecision.chosen_variant).toBe('minimal focused objective completion public-handle lineage');
+    expect(objectiveCompletionAuditLineageDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-objective-completion-audit-readiness.mjs',
+      'scripts/check-objective-completion-audit-readiness-report.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(objectiveCompletionAuditLineageDecision.proof_boundary).toMatch(/lineage discoverability only|does not mark the launch goal complete|clear P0\/P1 blockers|collect buyer evidence|contact buyers|authorize Supabase|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|buyer acceptance|hosted\/live parity|raise launch status/i);
+    const objectiveCompletionAuditLineageReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(objectiveCompletionAuditLineageReview).toBeTruthy();
+    expect(objectiveCompletionAuditLineageReview.policy).toBe('strict');
+    expect(objectiveCompletionAuditLineageReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-objective-completion-audit-readiness.mjs',
+      'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:objective-completion-audit-readiness -- --skip-probes --json',
+      'pnpm run check:objective-completion-audit-report -- --skip-probes',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

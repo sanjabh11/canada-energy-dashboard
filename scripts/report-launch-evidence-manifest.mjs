@@ -5953,6 +5953,18 @@ const objectiveCompletionAuditUnitContractFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const objectiveCompletionAuditPublicHandleLineageFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-objective-completion-audit-readiness.mjs',
+  'scripts/check-objective-completion-audit-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/objectiveCompletionAuditReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const adversarialReviewFocusedReportFilesChanged = [
   'package.json',
   'scripts/report-adversarial-review-readiness.mjs',
@@ -6095,6 +6107,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...localProofPackSmokePublicHandleFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...objectiveCompletionAuditUnitContractFilesChanged,
+  ...objectiveCompletionAuditPublicHandleLineageFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
   ...adversarialReviewUnitContractFilesChanged,
   ...focusedLaunchReadinessReportSuiteFilesChanged,
@@ -6868,6 +6881,24 @@ const objectiveCompletionAuditUnitContractTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const objectiveCompletionAuditPublicHandleLineageTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-objective-completion-audit-readiness.mjs',
+  'node --check scripts/check-objective-completion-audit-readiness-report.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/objectiveCompletionAuditReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:objective-completion-audit-readiness -- --skip-probes',
+  'pnpm run report:objective-completion-audit-readiness -- --skip-probes --json',
+  'pnpm run check:objective-completion-audit-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const adversarialReviewFocusedReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -7042,6 +7073,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...localProofPackSmokePublicHandleTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...objectiveCompletionAuditUnitContractTestsRun,
+  ...objectiveCompletionAuditPublicHandleLineageTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
   ...adversarialReviewUnitContractTestsRun,
   ...focusedLaunchReadinessReportSuiteTestsRun,
@@ -7972,6 +8004,19 @@ const safeFixImplementationDecisions = [
     reason: 'The focused validation report already displayed the public validation gate id, but omitted the public handle lineage fields that identify the launch action row and proof types backing the handle.',
     proof_boundary: 'This record improves launch-evidence validation handle lineage discoverability only; it does not self-certify the manifest, clear source provenance, run release-readiness, request owner approval, contact buyers, authorize Supabase, deploy, mutate live services, prove buyer acceptance, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused validation handle lineage, public status handle, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as production approval, buyer acceptance, clean source provenance, release-readiness, deployment, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    decision: 'Expose objective completion audit public-handle source lineage inside the focused objective completion report.',
+    acceptance_check: 'report:objective-completion-audit-readiness renders objective_completion_audit sourceManifestPath=completion_audit and sourceProofType=completion_audit_current_state; check:objective-completion-audit-report validates that lineage while the objective completion audit remains blocked until buyer evidence, source provenance, branch review, Supabase advisor, release toolchain, production approval, and post-deploy live proof gates actually pass.',
+    chosen_variant: 'minimal focused objective completion public-handle lineage',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json objective_completion_audit handle, focused objective completion audit report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: objectiveCompletionAuditPublicHandleLineageFilesChanged,
+    tests_run: objectiveCompletionAuditPublicHandleLineageTestsRun,
+    proof: 'The patch renders existing public objective completion handle sourceManifestPath and sourceProofType in the focused objective completion Markdown/JSON contract without changing public status JSON, marking the goal complete, clearing blockers, collecting buyer evidence, contacting buyers, authorizing Supabase, approving branches, resolving source provenance, running release-readiness as clearance, requesting owner approval, deploying, proving hosted/live parity, or changing launch status.',
+    reason: 'The focused objective completion report already displayed the public objective completion handle id, but omitted the public handle lineage fields that identify the completion_audit manifest row and proof type backing the handle.',
+    proof_boundary: 'This record improves objective-completion public-handle lineage discoverability only; it does not mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, grant owner approval, deploy, mutate live services, prove buyer acceptance, prove hosted/live parity, or raise launch status.',
+    stop_gate: 'Do not treat the focused objective completion handle lineage, public status handle, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as launch-goal completion, production approval, buyer acceptance, source readiness, branch approval, Supabase advisor clearance, release-readiness, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9607,6 +9652,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing downstream gates could reduce blockers only after source, release, branch, Supabase, buyer, approval, and live contexts are available; doing it here would blur validation lineage with readiness proof.',
     evidence: 'The focused validation report stop gate states that validation does not self-certify the manifest, clear source provenance, grant approval, create buyer acceptance, deploy, or prove hosted/live parity.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Leave objective completion public-handle lineage visible only in src/lib/publicReleaseStatusManifest.json.',
+    reason_rejected: 'The focused objective completion report is the operator artifact for goal-completion blockers and should show the handle source row and proof lineage without requiring a second file lookup.',
+    tradeoff: 'No-code defer avoids a small report/check update, but preserves a weaker handoff than adjacent focused reports that render public handle lineage.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains objective_completion_audit.sourceManifestPath and sourceProofType, but the focused report table did not render them.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Regenerate or add new public release-status objective completion rows.',
+    reason_rejected: 'The needed public objective completion handle already exists; changing generated public status would add churn without improving the focused objective completion report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local lineage gap.',
+    evidence: 'The existing objective_completion_audit row already points at report:objective-completion-audit-readiness && check:objective-completion-audit-report and carries sourceManifestPath/sourceProofType.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Mark the launch goal complete, clear P0/P1 blockers, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request approval, deploy, or prove live parity from the report phase.',
+    reason_rejected: 'Goal completion, blocker clearance, buyer proof, external account work, branch/source decisions, release approval, production approval, deploy execution, and live parity require evidence and owner gates outside this repo-side report lineage phase.',
+    tradeoff: 'Executing downstream gates could reduce blockers only after retained buyer artifacts, owner decisions, authorized Supabase advisor evidence, release tooling proof, explicit approval, and live contexts are available; doing it here would blur objective-completion lineage with readiness proof.',
+    evidence: 'The focused objective completion report stop gate states that the audit does not mark the launch goal complete, clear blockers, grant approval, deploy, or create hosted/live parity evidence.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10242,6 +10308,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public validation handle lineage and existing launch evidence validation report/check/test contracts, with no new dependency, no generated public-status churn, no duplicate validator, no self-certification, no source mutation, no release-readiness execution, no approval request, no buyer contact, no Supabase access, no deploy execution, no live-proof execution, and no launch-status change.',
     tests_or_checks: launchEvidenceValidationPublicHandleLineageTestsRun,
     remaining_risk: 'The validation handle lineage remains operator guidance only; launch readiness still depends on clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public objective completion handle lineage and existing objective completion report/check/test contracts, with no new dependency, no generated public-status churn, no duplicate completion engine, no goal-completion claim, no blocker clearance, no buyer contact, no Supabase access, no branch/source mutation, no release-readiness execution, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
+    tests_or_checks: objectiveCompletionAuditPublicHandleLineageTestsRun,
+    remaining_risk: 'The objective completion handle lineage remains operator guidance only; launch readiness still depends on retained buyer evidence, clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
