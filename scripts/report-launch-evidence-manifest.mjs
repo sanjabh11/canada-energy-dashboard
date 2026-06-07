@@ -5783,6 +5783,15 @@ const progressDigestFocusedReportFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressDigestUnitContractFilesChanged = [
+  'tests/unit/progressDigestReadiness.test.ts',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const objectiveCompletionAuditFocusedReportFilesChanged = [
   'package.json',
   'scripts/report-objective-completion-audit-readiness.mjs',
@@ -5918,6 +5927,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...fixReportFocusedChecksFilesChanged,
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
+  ...progressDigestUnitContractFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...objectiveCompletionAuditUnitContractFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
@@ -6452,6 +6462,21 @@ const progressDigestFocusedReportTestsRun = [
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
+const progressDigestUnitContractTestsRun = [
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run report:progress-digest-readiness -- --skip-probes --json',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const objectiveCompletionAuditFocusedReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6617,6 +6642,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...fixReportFocusedChecksTestsRun,
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
+  ...progressDigestUnitContractTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...objectiveCompletionAuditUnitContractTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
@@ -7365,6 +7391,19 @@ const safeFixImplementationDecisions = [
     reason: 'The adversarial review ledger is required for launch synthesis, but the focused report/check pair lacked a file-level unit contract even though adjacent focused readiness reports are covered by dedicated tests.',
     proof_boundary: 'This record improves adversarial review test coverage only; it does not prove production approval, create buyer evidence, contact buyers, prove buyer acceptance, run release-readiness as clearance, authorize Supabase, clear Supabase advisor findings, approve branches, resolve source provenance, request owner approval, deploy, mutate live services, prove hosted/live parity, clear launch blockers, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the adversarial review unit test, focused report/check success, skipped-probe manifest output, JSON payload, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    decision: 'Add focused unit-test coverage for the progress digest readiness report and checker.',
+    acceptance_check: 'tests/unit/progressDigestReadiness.test.ts validates Markdown rendering, JSON payload structure, focused checker success, and fail-on-blocker behavior for progress, activities remaining, bottleneck, public handle, package handle, and no-readiness surfaces without clearing launch blockers.',
+    chosen_variant: 'minimal focused progress digest unit contract',
+    repo_pattern_reused: 'Existing focused readiness report unit-test pattern, progress digest report/check pair, broad launch manifest checker, commercial readiness report checker, and launch manifest code-optimization ledger.',
+    files_changed: progressDigestUnitContractFilesChanged,
+    tests_run: progressDigestUnitContractTestsRun,
+    proof: 'The patch adds a dedicated unit test for report:progress-digest-readiness and check:progress-digest-report, covering progress summary, progress updates, activities remaining, bottleneck log, public/package handles, no-readiness boundaries, and fail-on-blocker behavior while leaving the manifest launch decision blocked.',
+    reason: 'The progress digest is required by the long-running launch-readiness operating contract, but the focused report/check pair lacked a file-level unit contract even though adjacent focused readiness reports are covered by dedicated tests.',
+    proof_boundary: 'This record improves progress digest test coverage only; it does not complete pending work, clear blockers, run missing checks as clearance, contact buyers, create accepted evidence, approve branches, authorize Supabase, resolve evidence gaps, request owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the progress digest unit test, focused report/check success, skipped-probe manifest output, JSON payload, public handles, bottleneck options, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -8301,6 +8340,27 @@ const safeFixRejectedVariants = [
     evidence: 'The adversarial review report explicitly preserves no-approval, no-buyer-proof, no-release-clearance, no-Supabase-clearance, no-branch-approval, no-deploy, no-live-parity, and no-readiness boundaries.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    variant: 'Rely on the focused progress digest checker without a dedicated unit test file.',
+    reason_rejected: 'The checker validates the CLI contract, but the repo would still lack a focused Vitest contract for Markdown output, JSON output, activities remaining, bottleneck details, handles, and fail-on-blocker behavior.',
+    tradeoff: 'No-code defer avoids one test file, but keeps the long-running progress reporting surface less protected than adjacent focused readiness reports.',
+    evidence: 'Focused reports such as objective completion, adversarial review, production approval, post-deploy live proof, launch action, buyer, source, release, branch, and Supabase lanes all have dedicated unit contracts.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    variant: 'Patch progress digest report behavior while adding the test.',
+    reason_rejected: 'Current report and checker behavior already expose progress updates, activities remaining, bottleneck log, public handles, package handles, and no-readiness boundaries; this phase only needs missing test coverage.',
+    tradeoff: 'Behavior edits could look more substantial, but would increase blast radius without evidence of a report defect.',
+    evidence: 'check:progress-digest-report already passes against the current report contract and broad manifest checks already assert the focused report decision.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    variant: 'Use progress digest unit coverage to clear blockers or mark the launch goal complete.',
+    reason_rejected: 'Unit coverage proves the progress visibility surface shape only; it does not produce retained buyer evidence, clean source provenance, branch clearance, Supabase advisor clearance, release-readiness, owner approval, deploy completion, or hosted/live parity.',
+    tradeoff: 'Relaxing blockers would make tests greener for the wrong reason and violate the progress digest proof boundary.',
+    evidence: 'The progress digest report explicitly preserves no-completion, no-clearance, no-external-action, no-approval, no-deploy, no-live-parity, and no-readiness boundaries.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
     variant: 'Leave adversarial_review_ledger discoverable only through broad manifest and commercial readiness reports.',
     reason_rejected: 'Would keep the claim-refutation lanes weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
@@ -9201,6 +9261,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one focused Vitest contract for the existing adversarial review report/check pair and updates only the manifest/checker/test ledger, with no report behavior changes, new dependencies, external-account calls, source cleanup, release execution, approval request, deploy execution, or launch-status change.',
     tests_or_checks: adversarialReviewUnitContractTestsRun,
     remaining_risk: 'The adversarial review ledger remains claim-refutation visibility and test coverage only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds one focused Vitest contract for the existing progress digest report/check pair and updates only the manifest/checker/test ledger, with no report behavior changes, new dependencies, external-account calls, source cleanup, release execution, approval request, deploy execution, or launch-status change.',
+    tests_or_checks: progressDigestUnitContractTestsRun,
+    remaining_risk: 'The progress digest remains visibility and test coverage only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

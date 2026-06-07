@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "ceip-progress-digest-unit-contract",
+  "goal": "CEIP progress digest unit contract: add focused Vitest coverage for report-progress-digest-readiness and check-progress-digest-readiness-report while preserving blocked launch status and without touching staged rename, branches, Supabase, buyer evidence, deployment, production approval state, live services, or secrets",
+  "repoRoot": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "mode": "manual",
+  "maxConcurrency": 4,
+  "maxAgents": 64,
+  "tokenWarning": {
+    "risk": "low",
+    "estimatedAgentRuns": 4,
+    "estimatedReviewRuns": 2,
+    "estimatedTotalRuns": 6,
+    "warning": "Scoped run; still verify before exporting worker plans."
+  },
+  "createdAt": "2026-06-07T02:41:18.870Z",
+  "updatedAt": "2026-06-07T02:53:17.817Z"
+}

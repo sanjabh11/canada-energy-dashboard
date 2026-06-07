@@ -2631,7 +2631,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT', 'Manifest progress_updates must expose the latest adversarial review unit-contract safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT', 'Manifest progress_updates must expose the latest progress digest unit-contract safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2646,7 +2646,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest adversarial review unit-contract ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest progress digest unit-contract ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -3611,6 +3611,39 @@ try {
         && progressDigestReportReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
         && progressDigestReportReview.tests_or_checks.some((check) => /check:launch-evidence-manifest/.test(check)),
       'Progress digest focused report code optimization review must record progress report, public status, docs, and manifest checks.',
+    );
+    const progressDigestUnitContractDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT');
+    assert(progressDigestUnitContractDecision, 'Manifest must record the progress digest unit-contract implementation decision.');
+    assert(
+      progressDigestUnitContractDecision?.chosen_variant === 'minimal focused progress digest unit contract',
+      'Progress digest unit-contract decision must record the minimal focused unit contract variant.',
+    );
+    assert(
+      Array.isArray(progressDigestUnitContractDecision?.files_changed)
+        && progressDigestUnitContractDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && progressDigestUnitContractDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && progressDigestUnitContractDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && progressDigestUnitContractDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && progressDigestUnitContractDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && progressDigestUnitContractDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Progress digest unit-contract decision must record the focused unit test, manifest, progress checker, commercial checker, and launch manifest test files.',
+    );
+    assert(
+      /does not complete pending work|clear blockers|run missing checks as clearance|contact buyers|create accepted evidence|approve branches|authorize Supabase|resolve evidence gaps|request owner approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(progressDigestUnitContractDecision?.proof_boundary ?? ''),
+      'Progress digest unit-contract decision must preserve no-completion, no-clearance, no-external-action, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const progressDigestUnitContractReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT');
+    assert(progressDigestUnitContractReview, 'Manifest must record the progress digest unit-contract code optimization review.');
+    assert(progressDigestUnitContractReview?.policy === 'strict', 'Progress digest unit-contract code optimization review must use strict policy.');
+    assert(progressDigestUnitContractReview?.verdict === 'pass', 'Progress digest unit-contract code optimization review must pass.');
+    assert(
+      Array.isArray(progressDigestUnitContractReview?.tests_or_checks)
+        && progressDigestUnitContractReview.tests_or_checks.some((check) => /vitest run tests\/unit\/progressDigestReadiness\.test\.ts tests\/unit\/launchEvidenceManifest\.test\.ts/.test(check))
+        && progressDigestUnitContractReview.tests_or_checks.some((check) => /report:progress-digest-readiness -- --skip-probes/.test(check))
+        && progressDigestUnitContractReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && progressDigestUnitContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && progressDigestUnitContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Progress digest unit-contract code optimization review must record focused progress, manifest, and commercial report checks.',
     );
     const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT');
     assert(objectiveCompletionAuditFocusedReportDecision, 'Manifest must record the objective completion audit focused report implementation decision.');

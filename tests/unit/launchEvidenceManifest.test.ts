@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-UNIT-CONTRACT');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1221,9 +1221,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(55);
+    expect(manifest.implementation_decisions).toHaveLength(56);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(55);
+    expect(manifest.code_optimization_reviews).toHaveLength(56);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2094,6 +2094,33 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:public-release-status',
       'pnpm run check:commercial-source',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
+    ]));
+    const progressDigestUnitContractDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    );
+    expect(progressDigestUnitContractDecision).toBeTruthy();
+    expect(progressDigestUnitContractDecision.chosen_variant).toBe('minimal focused progress digest unit contract');
+    expect(progressDigestUnitContractDecision.files_changed).toEqual(expect.arrayContaining([
+      'tests/unit/progressDigestReadiness.test.ts',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressDigestUnitContractDecision.proof_boundary).toMatch(/does not complete pending work|clear blockers|run missing checks as clearance|contact buyers|create accepted evidence|approve branches|authorize Supabase|resolve evidence gaps|request owner approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const progressDigestUnitContractReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT',
+    );
+    expect(progressDigestUnitContractReview).toBeTruthy();
+    expect(progressDigestUnitContractReview.policy).toBe('strict');
+    expect(progressDigestUnitContractReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:progress-digest-readiness -- --skip-probes',
+      'pnpm run report:progress-digest-readiness -- --skip-probes --json',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
     ]));
     const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT',
