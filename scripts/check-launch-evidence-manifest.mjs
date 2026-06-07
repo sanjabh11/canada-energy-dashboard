@@ -2631,7 +2631,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE', 'Manifest progress_updates must expose the latest local proof-pack browser smoke safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE', 'Manifest progress_updates must expose the latest local proof-pack smoke public-handle safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2646,7 +2646,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest local proof-pack browser smoke ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest local proof-pack smoke public-handle ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -3679,6 +3679,48 @@ try {
         && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Local proof-pack browser smoke code optimization review must record local browser, progress, manifest, and commercial report checks.',
+    );
+    const localProofPackSmokePublicHandleDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE');
+    assert(localProofPackSmokePublicHandleDecision, 'Manifest must record the local proof-pack smoke public-handle implementation decision.');
+    assert(
+      localProofPackSmokePublicHandleDecision?.chosen_variant === 'minimal public local proof-pack smoke handle',
+      'Local proof-pack smoke public-handle decision must record the minimal public status handle variant.',
+    );
+    assert(
+      Array.isArray(localProofPackSmokePublicHandleDecision?.files_changed)
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('src/lib/publicReleaseStatusManifest.json')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('src/lib/releasePosture.ts')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('public/status/release-health.json')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('scripts/generate-public-release-status.mjs')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('tests/unit/statusPagePosture.test.ts')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts')
+        && localProofPackSmokePublicHandleDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts'),
+      'Local proof-pack smoke public-handle decision must record public status, release posture, generated status, docs, manifest, checker, and unit test files.',
+    );
+    assert(
+      /does not satisfy Corepack-pinned release-readiness|run hosted proof-pack smoke|deploy|mutate Netlify|prove post-deploy live parity|clear source provenance|select canonical branches|authorize Supabase|contact buyers|create accepted buyer evidence|grant production approval|mark the launch goal complete|raise launch status/i.test(localProofPackSmokePublicHandleDecision?.proof_boundary ?? ''),
+      'Local proof-pack smoke public-handle decision must preserve no-release-readiness, no-hosted-smoke, no-deploy, no-live-proof, no-source-clearance, no-external-action, no-approval, and no-readiness boundaries.',
+    );
+    const localProofPackSmokePublicHandleReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE');
+    assert(localProofPackSmokePublicHandleReview, 'Manifest must record the local proof-pack smoke public-handle code optimization review.');
+    assert(localProofPackSmokePublicHandleReview?.policy === 'strict', 'Local proof-pack smoke public-handle code optimization review must use strict policy.');
+    assert(localProofPackSmokePublicHandleReview?.verdict === 'pass', 'Local proof-pack smoke public-handle code optimization review must pass.');
+    assert(
+      Array.isArray(localProofPackSmokePublicHandleReview?.tests_or_checks)
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /generate:public-release-status/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /check:public-release-status/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /vitest run tests\/unit\/statusPagePosture\.test\.ts tests\/unit\/launchEvidenceManifest\.test\.ts tests\/unit\/progressDigestReadiness\.test\.ts/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /test:browser:local:proof-packs/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && localProofPackSmokePublicHandleReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Local proof-pack smoke public-handle code optimization review must record public status, docs, progress, manifest, and commercial report checks.',
     );
     const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT');
     assert(objectiveCompletionAuditFocusedReportDecision, 'Manifest must record the objective completion audit focused report implementation decision.');

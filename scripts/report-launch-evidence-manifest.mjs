@@ -5803,6 +5803,21 @@ const localProofPackBrowserSmokeFilesChanged = [
   'tests/unit/progressDigestReadiness.test.ts',
 ];
 
+const localProofPackSmokePublicHandleFilesChanged = [
+  'src/lib/publicReleaseStatusManifest.json',
+  'src/lib/releasePosture.ts',
+  'public/status/release-health.json',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'scripts/generate-public-release-status.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/statusPagePosture.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const objectiveCompletionAuditFocusedReportFilesChanged = [
   'package.json',
   'scripts/report-objective-completion-audit-readiness.mjs',
@@ -5940,6 +5955,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...progressDigestFocusedReportFilesChanged,
   ...progressDigestUnitContractFilesChanged,
   ...localProofPackBrowserSmokeFilesChanged,
+  ...localProofPackSmokePublicHandleFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...objectiveCompletionAuditUnitContractFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
@@ -6502,6 +6518,23 @@ const localProofPackBrowserSmokeTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const localProofPackSmokePublicHandleTestsRun = [
+  'node --check scripts/generate-public-release-status.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm run generate:public-release-status',
+  'pnpm run check:public-release-status',
+  'pnpm run check:commercial-source',
+  'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run test:browser:local:proof-packs',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const objectiveCompletionAuditFocusedReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6669,6 +6702,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...progressDigestFocusedReportTestsRun,
   ...progressDigestUnitContractTestsRun,
   ...localProofPackBrowserSmokeTestsRun,
+  ...localProofPackSmokePublicHandleTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...objectiveCompletionAuditUnitContractTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
@@ -7443,6 +7477,19 @@ const safeFixImplementationDecisions = [
     reason: 'The current Codex shell lacks Corepack, so the default release-oriented Playwright webServer command cannot run local proof-pack smoke; a named local-only script lets operators collect browser evidence while preserving the Corepack-pinned release-readiness blocker.',
     proof_boundary: 'This record improves local browser smoke evidence only; it does not install Corepack, satisfy Corepack-pinned release-readiness, clear source provenance, select canonical branches, authorize Supabase, contact buyers, create accepted buyer evidence, request owner approval, deploy, mutate Netlify, run hosted proof-pack smoke, prove post-deploy live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the local proof-pack browser smoke command, Playwright report output, local preview build, manifest ledger, skipped probes, or this code optimization record as production approval, release-readiness, hosted proof-pack smoke, deployment approval, hosted/live parity, buyer acceptance, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE',
+    decision: 'Expose the local proof-pack browser smoke command through public-safe status and source-of-truth handles.',
+    acceptance_check: 'local_proof_pack_browser_smoke appears in src/lib/publicReleaseStatusManifest.json, generated public/status/release-health.json, RELEASE_HEALTH_EVIDENCE, status posture tests, and COMMERCIAL_SOURCE_OF_TRUTH with the local/browser proof bucket and no-release/no-hosted-proof boundary.',
+    chosen_variant: 'minimal public local proof-pack smoke handle',
+    repo_pattern_reused: 'Existing public release-status generator contract, RELEASE_HEALTH_EVIDENCE handles, generated release-health JSON sync guard, source-of-truth public-handle notes, statusPagePosture tests, and launch manifest code-optimization ledger.',
+    files_changed: localProofPackSmokePublicHandleFilesChanged,
+    tests_run: localProofPackSmokePublicHandleTestsRun,
+    proof: 'The patch adds local_proof_pack_browser_smoke as a public-safe local/browser status item, mirrors it in RELEASE_HEALTH_EVIDENCE, documents test:browser:local:proof-packs in COMMERCIAL_SOURCE_OF_TRUTH, and validates the generated /status/release-health.json sync contract without changing the hosted proof or release-readiness gates.',
+    reason: 'The previous phase created a local-only proof-pack browser smoke command, but public status and source-of-truth docs did not expose a safe handle for operators to find that local evidence path while the Corepack release gate remained blocked.',
+    proof_boundary: 'This record improves local browser smoke discoverability only; it does not satisfy Corepack-pinned release-readiness, run hosted proof-pack smoke, deploy, mutate Netlify, prove post-deploy live parity, clear source provenance, select canonical branches, authorize Supabase, contact buyers, create accepted buyer evidence, grant production approval, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the local proof-pack smoke public handle, public release status sync, source-of-truth docs, status posture tests, local preview output, skipped probes, or this code optimization record as production approval, release-readiness, hosted proof-pack smoke, deployment approval, hosted/live parity, buyer acceptance, or commercial-ready status.',
   },
 ];
 
@@ -8421,6 +8468,27 @@ const safeFixRejectedVariants = [
     evidence: 'test:browser:hosted:proof-packs already skips the webServer and targets production, while test:browser:phase6 uses the default Corepack webServer path.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE',
+    variant: 'Leave the local proof-pack smoke command discoverable only in package.json.',
+    reason_rejected: 'Package scripts are not the public launch-status or source-of-truth surfaces operators use to distinguish local proof from hosted/live proof.',
+    tradeoff: 'No-code defer avoids status and docs edits, but leaves the local browser evidence path invisible in /status/release-health.json and RELEASE_HEALTH_EVIDENCE.',
+    evidence: 'The public release status already exposes adjacent proof handles for post-deploy live proof, progress digest, release preflight, source provenance, branch review, Supabase advisor, and buyer evidence lanes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE',
+    variant: 'Classify local proof-pack smoke as release readiness, hosted proof, or current hosted/live parity.',
+    reason_rejected: 'Local Chromium evidence does not satisfy the Corepack-pinned release shell, guarded deploy, hosted proof-pack smoke, post-deploy live parity, production approval, or buyer evidence gates.',
+    tradeoff: 'A stronger-looking status would reduce perceived blockers but would violate the hosted/live and local/source proof bucket separation.',
+    evidence: 'The post-deploy live proof gate remains external and routes hosted proof-pack smoke through check:post-deploy-live only after explicit owner approval and guarded deploy completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE',
+    variant: 'Run hosted proof-pack smoke, deployment, or production approval checks from this public-handle phase.',
+    reason_rejected: 'Hosted proof-pack smoke and deploy checks require clean source provenance, Corepack release-readiness, explicit owner approval, guarded deploy completion, and live artifact context outside this local status-handle phase.',
+    tradeoff: 'Running live gates could produce stronger evidence, but would bypass manual approval and mutate or inspect live production surfaces without the required prerequisites.',
+    evidence: 'Production approval and post-deploy live proof remain manual or external gates in the launch action queue, production approval request packet, and post-deploy live proof gate queue.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
     variant: 'Leave adversarial_review_ledger discoverable only through broad manifest and commercial readiness reports.',
     reason_rejected: 'Would keep the claim-refutation lanes weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
@@ -9339,6 +9407,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one opt-in PLAYWRIGHT_WEBSERVER_COMMAND override and one local proof-pack smoke script that reuses the existing Phase 6 browser route test and /tmp report convention, while preserving corepack pnpm run test:e2e:preview as the default Playwright webServer command and avoiding production, hosted, branch, Supabase, buyer, deploy, or approval mutations.',
     tests_or_checks: localProofPackBrowserSmokeTestsRun,
     remaining_risk: 'Local proof-pack smoke remains local browser evidence only; launch readiness still depends on Corepack availability, clean source provenance, release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, hosted proof-pack smoke, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses the existing public release-status manifest, generated public JSON, RELEASE_HEALTH_EVIDENCE, source-of-truth docs, status posture tests, and launch evidence ledger, with no new dependency, no new report wrapper, no release-readiness execution, no hosted browser smoke, no live service mutation, no buyer contact, and no launch-status change.',
+    tests_or_checks: localProofPackSmokePublicHandleTestsRun,
+    remaining_risk: 'Local proof-pack smoke public visibility remains local/browser evidence only; launch readiness still depends on Corepack availability, clean source provenance, release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, hosted proof-pack smoke, and post-deploy live proof.',
   },
 ];
 

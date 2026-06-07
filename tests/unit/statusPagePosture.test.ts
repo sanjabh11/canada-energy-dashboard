@@ -179,6 +179,18 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'local_proof_pack_browser_smoke',
+    releaseHealthLabel: 'Local proof-pack browser smoke',
+    boundaryPatterns: [
+      /local proof-pack browser smoke/i,
+      /local preview/i,
+      /does not.*satisfy Corepack-pinned release-readiness/i,
+      /hosted proof-pack smoke/i,
+      /post-deploy live parity/i,
+      /production approval/i,
+    ],
+  },
+  {
     publicId: 'unmerged_branch_review_queue',
     releaseHealthLabel: 'Unmerged branch review queue',
     boundaryPatterns: [
@@ -401,6 +413,7 @@ describe('status page release posture', () => {
     const productionApprovalQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval prerequisite queue');
     const productionApprovalRequestPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval request packet');
     const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
+    const localProofPackSmokeEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Local proof-pack browser smoke');
     const buyerHardGateDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence hard-gate deficit ledger');
     const buyerAcquisitionMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence acquisition matrix');
     const buyerRemediationQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence remediation queue');
@@ -409,7 +422,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(35);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(36);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -590,6 +603,14 @@ describe('status page release posture', () => {
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
+    expect(localProofPackSmokeEvidence?.status).toBe('external_gate');
+    expect(localProofPackSmokeEvidence?.command).toContain('test:browser:local:proof-packs');
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/local proof-pack browser smoke/i);
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/local preview/i);
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/does not.*satisfy Corepack-pinned release-readiness/i);
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/hosted proof-pack smoke/i);
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/post-deploy live parity/i);
+    expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/production approval/i);
     expect(buyerHardGateDeficitLedgerEvidence?.status).toBe('external_gate');
     expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('check:buyer-evidence-gate-report');
@@ -685,6 +706,7 @@ describe('status page release posture', () => {
     const productionApprovalQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_prerequisite_queue');
     const productionApprovalRequestPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_request_packet');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
+    const localProofPackSmokeGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'local_proof_pack_browser_smoke');
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const branchFamilyFreshnessRollupGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_family_freshness_rollup');
     const topBranchReviewPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'top_branch_review_packet');
@@ -735,6 +757,7 @@ describe('status page release posture', () => {
       'production_approval_prerequisite_queue',
       'production_approval_request_packet',
       'post_deploy_live_proof_gate_queue',
+      'local_proof_pack_browser_smoke',
       'unmerged_branch_review_queue',
       'branch_family_freshness_rollup',
       'top_branch_review_packet',
@@ -894,6 +917,15 @@ describe('status page release posture', () => {
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueGate?.nextAction).toMatch(/check:post-deploy-live passes/i);
+    expect(localProofPackSmokeGate?.status).toBe('external_gate');
+    expect(localProofPackSmokeGate?.proofBucket).toBe('local/browser');
+    expect(localProofPackSmokeGate?.command).toContain('test:browser:local:proof-packs');
+    expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/local proof-pack browser smoke/i);
+    expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/local preview/i);
+    expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/does not.*satisfy Corepack-pinned release-readiness/i);
+    expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/hosted proof-pack smoke/i);
+    expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/post-deploy live parity/i);
+    expect(localProofPackSmokeGate?.nextAction).toMatch(/check:post-deploy-live/i);
     expect(branchReviewGate?.status).toBe('external_gate');
     expect(branchReviewGate?.command).toContain('report:branch-review-readiness');
     expect(branchReviewGate?.command).toContain('check:branch-review-report');

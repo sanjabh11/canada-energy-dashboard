@@ -140,6 +140,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
   },
   {
+    id: 'local_proof_pack_browser_smoke',
+    status: 'external_gate',
+    proofBucket: 'local/browser',
+    command: 'pnpm run test:browser:local:proof-packs',
+  },
+  {
     id: 'unmerged_branch_review_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -488,6 +494,16 @@ function validateManifest(manifest) {
   }
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
+  }
+  const localProofPackBrowserSmoke = itemById.get('local_proof_pack_browser_smoke') ?? {};
+  if (!/local proof-pack browser smoke|Chromium|local preview|\/tmp\/ceip-local-proof-packs/i.test(`${localProofPackBrowserSmoke.evidenceBoundary ?? ''}\n${localProofPackBrowserSmoke.nextAction ?? ''}`)) {
+    failures.push('local_proof_pack_browser_smoke must describe local Chromium proof-pack smoke and /tmp Playwright report evidence.');
+  }
+  if (!/test:browser:local:proof-packs/.test(localProofPackBrowserSmoke.command ?? '')) {
+    failures.push('local_proof_pack_browser_smoke must route through the local proof-pack browser smoke script.');
+  }
+  if (!/does not.*Corepack-pinned release-readiness|does not.*deploy|does not.*mutate Netlify|does not.*hosted proof-pack smoke|does not.*post-deploy live parity|does not.*buyer evidence|does not.*production approval|does not.*launch readiness/i.test(localProofPackBrowserSmoke.evidenceBoundary ?? '')) {
+    failures.push('local_proof_pack_browser_smoke must preserve the no-release-readiness, no-deploy, no-hosted-smoke, no-live-proof, no-buyer-proof, no-approval, and no-launch-readiness boundary.');
   }
   const buyerEvidenceGate = itemById.get('buyer_evidence_gate') ?? {};
   const buyerEvidenceGateText = `${buyerEvidenceGate.evidenceBoundary ?? ''}\n${buyerEvidenceGate.nextAction ?? ''}`;
