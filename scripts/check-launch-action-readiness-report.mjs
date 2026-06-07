@@ -114,6 +114,10 @@ if (failures.length === 0) {
     assertContains(stdout, 'corepack pnpm run check:buyer-evidence-gate-report', 'Report must include the buyer evidence gate checker command.');
     assertContains(stdout, 'corepack pnpm run report:production-approval-readiness', 'Report must include the production approval focused command.');
     assertContains(stdout, 'corepack pnpm run report:post-deploy-live-proof-readiness', 'Report must include the post-deploy focused command.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public launch action handles.');
+    assertContains(stdout, 'launch_blocker_action_queue', 'Report must expose the public launch blocker action queue handle.');
+    assertContains(stdout, 'launch_action_operator_handoff_packet', 'Report must expose the public launch action operator handoff packet handle.');
+    assertContains(stdout, 'launch_action_queue.operator_handoff_packet', 'Report must expose operator handoff public source lineage.');
   }
 
   if (payload) {
@@ -235,6 +239,16 @@ if (failures.length === 0) {
     assert(/acquisition_status=/.test(buyerLane?.current ?? ''), 'Buyer evidence lane summary must expose acquisition matrix status.');
     assert(payload.package_script_handles?.check_launch_action_report === 'corepack pnpm run check:launch-action-report', 'Focused report must expose the launch action checker command handle.');
     assert(payload.package_script_handles?.check_launch_evidence_validation_report === 'corepack pnpm run check:launch-evidence-validation-report', 'Focused report must expose the launch evidence validation checker command handle.');
+    assert(payload.public_status_handles?.launch_blocker_action_queue?.id === 'launch_blocker_action_queue', 'Focused report must include the public launch blocker action queue handle.');
+    assert(payload.public_status_handles?.launch_action_operator_handoff_packet?.id === 'launch_action_operator_handoff_packet', 'Focused report must include the public launch action operator handoff packet handle.');
+    assert(
+      /report:launch-action-readiness/.test(payload.public_status_handles?.launch_blocker_action_queue?.command ?? '')
+        && /check:launch-action-report/.test(payload.public_status_handles?.launch_blocker_action_queue?.command ?? ''),
+      'Launch blocker action queue public handle must point at the focused launch action report/check.',
+    );
+    assert(payload.public_status_handles?.launch_blocker_action_queue?.sourceManifestPath === 'launch_action_queue', 'Launch blocker action queue public handle must point at launch_action_queue.');
+    assert(payload.public_status_handles?.launch_action_operator_handoff_packet?.sourceManifestPath === 'launch_action_queue.operator_handoff_packet', 'Launch action operator handoff public handle must point at launch_action_queue.operator_handoff_packet.');
+    assert(Array.isArray(payload.public_status_handles?.launch_action_operator_handoff_packet?.sourceProofTypes) && payload.public_status_handles.launch_action_operator_handoff_packet.sourceProofTypes.includes('launch_action_operator_handoff_packet'), 'Launch action operator handoff public handle must expose operator handoff lineage.');
     assert(/does not commit|clear source provenance|checkout branches|merge|push|contact buyers|authorize Supabase|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must not imply mutation, external action, deploy, live parity, or launch readiness.');
     assert(/Do not treat this focused report|clean source provenance|production approval|commercial-ready status/i.test(payload.stop_gate ?? ''), 'Focused stop gate must reject readiness claims from the report itself.');
   }

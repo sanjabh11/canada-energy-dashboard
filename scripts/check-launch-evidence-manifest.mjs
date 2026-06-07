@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest post-deploy live-proof public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-ACTION-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest launch-action public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4666,6 +4666,40 @@ try {
         && postDeployPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && postDeployPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Post-deploy live-proof public-handle digest code optimization review must record post-deploy, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const launchActionPublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-ACTION-PUBLIC-HANDLE-DIGEST');
+    assert(launchActionPublicHandlesDecision, 'Manifest must record the launch-action public-handle digest implementation decision.');
+    assert(
+      launchActionPublicHandlesDecision?.chosen_variant === 'minimal focused launch-action handle digest',
+      'Launch-action public-handle digest decision must record the minimal focused launch-action handle digest variant.',
+    );
+    assert(
+      Array.isArray(launchActionPublicHandlesDecision?.files_changed)
+        && launchActionPublicHandlesDecision.files_changed.includes('scripts/report-launch-action-readiness.mjs')
+        && launchActionPublicHandlesDecision.files_changed.includes('scripts/check-launch-action-readiness-report.mjs')
+        && launchActionPublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && launchActionPublicHandlesDecision.files_changed.includes('tests/unit/launchActionReadiness.test.ts')
+        && launchActionPublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && launchActionPublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Launch-action public-handle digest decision must record focused launch-action, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not execute launch actions|commit|unstage|stash|revert|clear source provenance|run release-readiness|checkout branches|merge|push|select canonical heads|contact buyers|authorize Supabase|request owner approval|grant owner approval|deploy|mutate live services|browser smoke|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(launchActionPublicHandlesDecision?.proof_boundary ?? ''),
+      'Launch-action public-handle digest decision must preserve no-execution, no-source-mutation, no-release, no-branch, no-external-action, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+    );
+    const launchActionPublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-ACTION-PUBLIC-HANDLE-DIGEST');
+    assert(launchActionPublicHandlesReview, 'Manifest must record the launch-action public-handle digest code optimization review.');
+    assert(launchActionPublicHandlesReview?.policy === 'strict', 'Launch-action public-handle digest code optimization review must use strict policy.');
+    assert(launchActionPublicHandlesReview?.verdict === 'pass', 'Launch-action public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(launchActionPublicHandlesReview?.tests_or_checks)
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:launch-action-report -- --skip-probes/.test(check))
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && launchActionPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Launch-action public-handle digest code optimization review must record launch action, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

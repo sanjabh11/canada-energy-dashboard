@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -123,6 +124,16 @@ function renderTable(headers, rows) {
   ].join('\n');
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function firstOpenAction(items) {
   return (items ?? []).find((item) => item?.status !== 'ready') ?? null;
 }
@@ -198,6 +209,10 @@ function focusedPayload(manifest) {
         proof_command: 'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
       },
     ],
+    public_status_handles: {
+      launch_blocker_action_queue: readPublicStatusHandle('launch_blocker_action_queue'),
+      launch_action_operator_handoff_packet: readPublicStatusHandle('launch_action_operator_handoff_packet'),
+    },
     package_script_handles: {
       report_launch_action_readiness: 'corepack pnpm run report:launch-action-readiness',
       check_launch_action_report: 'corepack pnpm run check:launch-action-report',
@@ -255,6 +270,15 @@ function renderMarkdown(payload) {
     item.current,
     item.proof_command,
   ]);
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    (item?.sourceProofTypes ?? []).join('; '),
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
   const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
     name,
     command,
@@ -309,6 +333,10 @@ function renderMarkdown(payload) {
     '## Lane Status Summary',
     '',
     renderTable(['Lane', 'Status', 'Current', 'Focused Proof Command'], laneRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
     '',
     '## Package Script Handles',
     '',

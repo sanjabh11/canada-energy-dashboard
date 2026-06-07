@@ -102,6 +102,10 @@ describe('launch action readiness report', () => {
     expect(stdout).toContain('corepack pnpm run check:launch-evidence-validation-report');
     expect(stdout).toContain('corepack pnpm run report:production-approval-readiness');
     expect(stdout).toContain('corepack pnpm run report:post-deploy-live-proof-readiness');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('launch_blocker_action_queue');
+    expect(stdout).toContain('launch_action_operator_handoff_packet');
+    expect(stdout).toContain('launch_action_queue.operator_handoff_packet');
     expect(stdout).toContain('| buyer_evidence | blocked |');
     expect(stdout).toContain('hard_gate_status=skipped');
     expect(stdout).toContain('acquisition_status=blocked');
@@ -238,6 +242,13 @@ describe('launch action readiness report', () => {
     expect(buyerLane?.proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(payload.package_script_handles.check_launch_action_report).toBe('corepack pnpm run check:launch-action-report');
     expect(payload.package_script_handles.check_launch_evidence_validation_report).toBe('corepack pnpm run check:launch-evidence-validation-report');
+    expect(payload.public_status_handles.launch_blocker_action_queue.id).toBe('launch_blocker_action_queue');
+    expect(payload.public_status_handles.launch_action_operator_handoff_packet.id).toBe('launch_action_operator_handoff_packet');
+    expect(payload.public_status_handles.launch_blocker_action_queue.command).toContain('report:launch-action-readiness');
+    expect(payload.public_status_handles.launch_blocker_action_queue.command).toContain('check:launch-action-report');
+    expect(payload.public_status_handles.launch_blocker_action_queue.sourceManifestPath).toBe('launch_action_queue');
+    expect(payload.public_status_handles.launch_action_operator_handoff_packet.sourceManifestPath).toBe('launch_action_queue.operator_handoff_packet');
+    expect(payload.public_status_handles.launch_action_operator_handoff_packet.sourceProofTypes).toContain('launch_action_operator_handoff_packet');
     expect(payload.proof_boundary).toMatch(/does not commit|clear source provenance|contact buyers|authorize Supabase|deploy|commercial launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|commercial-ready status/i);
   });
