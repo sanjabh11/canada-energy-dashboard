@@ -7,6 +7,7 @@ const baseUrl = process.env.TEST_BASE_URL || `http://127.0.0.1:${defaultPort}`;
 // scripts to lower it with PLAYWRIGHT_WEBSERVER_TIMEOUT_MS when needed.
 const webServerTimeoutMs = Number(process.env.PLAYWRIGHT_WEBSERVER_TIMEOUT_MS || '1200000');
 const skipWebServer = process.env.PLAYWRIGHT_SKIP_WEBSERVER === 'true';
+const webServerCommand = process.env.PLAYWRIGHT_WEBSERVER_COMMAND || 'corepack pnpm run test:e2e:preview';
 
 /**
  * Playwright Configuration for Component Tests
@@ -93,10 +94,9 @@ export default defineConfig({
           ]
     ),
   ],
-
   // Run local preview server unless a hosted/deployed URL is being tested.
   webServer: skipWebServer ? undefined : {
-    command: 'corepack pnpm run test:e2e:preview',
+    command: webServerCommand,
     env: {
       VITE_ENABLE_EDGE_FETCH: process.env.VITE_ENABLE_EDGE_FETCH ?? 'true',
       VITE_ALLOW_LOCAL_EDGE_FETCH: process.env.VITE_ALLOW_LOCAL_EDGE_FETCH ?? 'true',

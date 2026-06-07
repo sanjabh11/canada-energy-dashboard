@@ -168,7 +168,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1221,9 +1221,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(56);
+    expect(manifest.implementation_decisions).toHaveLength(57);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(56);
+    expect(manifest.code_optimization_reviews).toHaveLength(57);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2118,6 +2118,34 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:progress-digest-readiness -- --skip-probes',
       'pnpm run report:progress-digest-readiness -- --skip-probes --json',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+    ]));
+    const localProofPackBrowserSmokeDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    );
+    expect(localProofPackBrowserSmokeDecision).toBeTruthy();
+    expect(localProofPackBrowserSmokeDecision.chosen_variant).toBe('minimal local Playwright webServer override and proof-pack smoke handle');
+    expect(localProofPackBrowserSmokeDecision.files_changed).toEqual(expect.arrayContaining([
+      'package.json',
+      'playwright.config.ts',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/launchEvidenceManifest.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+    ]));
+    expect(localProofPackBrowserSmokeDecision.proof_boundary).toMatch(/does not install Corepack|satisfy Corepack-pinned release-readiness|clear source provenance|select canonical branches|authorize Supabase|contact buyers|create accepted buyer evidence|request owner approval|deploy|mutate Netlify|run hosted proof-pack smoke|prove post-deploy live parity|mark the launch goal complete|raise launch status/i);
+    const localProofPackBrowserSmokeReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    );
+    expect(localProofPackBrowserSmokeReview).toBeTruthy();
+    expect(localProofPackBrowserSmokeReview.policy).toBe('strict');
+    expect(localProofPackBrowserSmokeReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run test:browser:local:proof-packs',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

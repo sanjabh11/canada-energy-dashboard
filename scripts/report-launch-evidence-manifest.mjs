@@ -5792,6 +5792,17 @@ const progressDigestUnitContractFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const localProofPackBrowserSmokeFilesChanged = [
+  'package.json',
+  'playwright.config.ts',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const objectiveCompletionAuditFocusedReportFilesChanged = [
   'package.json',
   'scripts/report-objective-completion-audit-readiness.mjs',
@@ -5928,6 +5939,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
   ...progressDigestUnitContractFilesChanged,
+  ...localProofPackBrowserSmokeFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
   ...objectiveCompletionAuditUnitContractFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
@@ -6477,6 +6489,19 @@ const progressDigestUnitContractTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const localProofPackBrowserSmokeTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run test:browser:local:proof-packs',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const objectiveCompletionAuditFocusedReportTestsRun = [
   'pnpm exec tsc -b --pretty false',
   'pnpm exec vitest run tests/unit/statusPagePosture.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
@@ -6643,6 +6668,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
   ...progressDigestUnitContractTestsRun,
+  ...localProofPackBrowserSmokeTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
   ...objectiveCompletionAuditUnitContractTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
@@ -7404,6 +7430,19 @@ const safeFixImplementationDecisions = [
     reason: 'The progress digest is required by the long-running launch-readiness operating contract, but the focused report/check pair lacked a file-level unit contract even though adjacent focused readiness reports are covered by dedicated tests.',
     proof_boundary: 'This record improves progress digest test coverage only; it does not complete pending work, clear blockers, run missing checks as clearance, contact buyers, create accepted evidence, approve branches, authorize Supabase, resolve evidence gaps, request owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the progress digest unit test, focused report/check success, skipped-probe manifest output, JSON payload, public handles, bottleneck options, or this code optimization ledger as launch-goal completion, production approval, buyer evidence, release readiness, branch approval, Supabase advisor clearance, source readiness, deployment approval, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    decision: 'Add an explicit local-only proof-pack browser smoke command without weakening the Corepack release gate.',
+    acceptance_check: 'test:browser:local:proof-packs runs the six buyer-facing proof-pack route smoke checks through Playwright with generated reports under /tmp while playwright.config.ts keeps Corepack as the default webServer command.',
+    chosen_variant: 'minimal local Playwright webServer override and proof-pack smoke handle',
+    repo_pattern_reused: 'Existing phase6 browser smoke route markers, Playwright /tmp report conventions, test:e2e:preview build/preview command, proof-pack route grep used by hosted proof-pack smoke, and launch manifest code-optimization ledger.',
+    files_changed: localProofPackBrowserSmokeFilesChanged,
+    tests_run: localProofPackBrowserSmokeTestsRun,
+    proof: 'The patch adds PLAYWRIGHT_WEBSERVER_COMMAND as an opt-in local override, keeps the default webServer command as corepack pnpm run test:e2e:preview, and adds test:browser:local:proof-packs for local Chromium smoke of /utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, /pilot-readiness, /ga-ici-5cp, and /byo-csv-proof.',
+    reason: 'The current Codex shell lacks Corepack, so the default release-oriented Playwright webServer command cannot run local proof-pack smoke; a named local-only script lets operators collect browser evidence while preserving the Corepack-pinned release-readiness blocker.',
+    proof_boundary: 'This record improves local browser smoke evidence only; it does not install Corepack, satisfy Corepack-pinned release-readiness, clear source provenance, select canonical branches, authorize Supabase, contact buyers, create accepted buyer evidence, request owner approval, deploy, mutate Netlify, run hosted proof-pack smoke, prove post-deploy live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the local proof-pack browser smoke command, Playwright report output, local preview build, manifest ledger, skipped probes, or this code optimization record as production approval, release-readiness, hosted proof-pack smoke, deployment approval, hosted/live parity, buyer acceptance, or commercial-ready status.',
   },
 ];
 
@@ -8361,6 +8400,27 @@ const safeFixRejectedVariants = [
     evidence: 'The progress digest report explicitly preserves no-completion, no-clearance, no-external-action, no-approval, no-deploy, no-live-parity, and no-readiness boundaries.',
   },
   {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    variant: 'Replace the default Playwright webServer command with bare pnpm.',
+    reason_rejected: 'The default webServer participates in release-facing browser checks and must keep Corepack as the hard release-shell evidence gate.',
+    tradeoff: 'Bare pnpm would make local smoke easier in this Codex shell, but it would blur local convenience with Corepack-pinned release-readiness.',
+    evidence: 'check-corepack-toolchain and release-preflight evidence explicitly reject bare pnpm as Corepack release evidence while Corepack is unavailable.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    variant: 'Run hosted proof-pack smoke or post-deploy live proof from this phase.',
+    reason_rejected: 'Hosted proof-pack smoke is a post-deploy gate that requires explicit owner approval, guarded deploy completion, and current live artifact context.',
+    tradeoff: 'Hosted smoke would be stronger evidence, but running it here would bypass the manual production approval and deploy sequence.',
+    evidence: 'The post-deploy live proof gate remains blocked and routes hosted proof-pack smoke through check:post-deploy-live only after approved deploy completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    variant: 'Skip a local proof-pack smoke command and rely on existing broad browser scripts.',
+    reason_rejected: 'The existing proof-pack smoke grep is hosted-only and the broad local phase6 script is harder to run in this Corepack-missing shell without an explicit local webServer override.',
+    tradeoff: 'No-code defer avoids one script and one config variable, but leaves local proof-pack browser evidence less accessible while the release shell is blocked on Corepack.',
+    evidence: 'test:browser:hosted:proof-packs already skips the webServer and targets production, while test:browser:phase6 uses the default Corepack webServer path.',
+  },
+  {
     task_id: 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-FOCUSED-REPORT',
     variant: 'Leave adversarial_review_ledger discoverable only through broad manifest and commercial readiness reports.',
     reason_rejected: 'Would keep the claim-refutation lanes weaker than the focused lane-report pattern now used by the other launch-readiness blockers.',
@@ -9270,6 +9330,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change adds one focused Vitest contract for the existing progress digest report/check pair and updates only the manifest/checker/test ledger, with no report behavior changes, new dependencies, external-account calls, source cleanup, release execution, approval request, deploy execution, or launch-status change.',
     tests_or_checks: progressDigestUnitContractTestsRun,
     remaining_risk: 'The progress digest remains visibility and test coverage only; launch readiness still depends on retained buyer evidence, source provenance cleanup, branch owner decisions, Supabase advisor clearance, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds one opt-in PLAYWRIGHT_WEBSERVER_COMMAND override and one local proof-pack smoke script that reuses the existing Phase 6 browser route test and /tmp report convention, while preserving corepack pnpm run test:e2e:preview as the default Playwright webServer command and avoiding production, hosted, branch, Supabase, buyer, deploy, or approval mutations.',
+    tests_or_checks: localProofPackBrowserSmokeTestsRun,
+    remaining_risk: 'Local proof-pack smoke remains local browser evidence only; launch readiness still depends on Corepack availability, clean source provenance, release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, hosted proof-pack smoke, and post-deploy live proof.',
   },
 ];
 

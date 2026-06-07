@@ -2631,7 +2631,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-UNIT-CONTRACT', 'Manifest progress_updates must expose the latest progress digest unit-contract safe-fix ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE', 'Manifest progress_updates must expose the latest local proof-pack browser smoke safe-fix ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2646,7 +2646,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest progress digest unit-contract ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest local proof-pack browser smoke ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -3644,6 +3644,41 @@ try {
         && progressDigestUnitContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && progressDigestUnitContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
       'Progress digest unit-contract code optimization review must record focused progress, manifest, and commercial report checks.',
+    );
+    const localProofPackBrowserSmokeDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE');
+    assert(localProofPackBrowserSmokeDecision, 'Manifest must record the local proof-pack browser smoke implementation decision.');
+    assert(
+      localProofPackBrowserSmokeDecision?.chosen_variant === 'minimal local Playwright webServer override and proof-pack smoke handle',
+      'Local proof-pack browser smoke decision must record the minimal local webServer override variant.',
+    );
+    assert(
+      Array.isArray(localProofPackBrowserSmokeDecision?.files_changed)
+        && localProofPackBrowserSmokeDecision.files_changed.includes('package.json')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('playwright.config.ts')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts')
+        && localProofPackBrowserSmokeDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts'),
+      'Local proof-pack browser smoke decision must record the package script, Playwright config, manifest, progress checker, commercial checker, and unit test files.',
+    );
+    assert(
+      /does not install Corepack|satisfy Corepack-pinned release-readiness|clear source provenance|select canonical branches|authorize Supabase|contact buyers|create accepted buyer evidence|request owner approval|deploy|mutate Netlify|run hosted proof-pack smoke|prove post-deploy live parity|mark the launch goal complete|raise launch status/i.test(localProofPackBrowserSmokeDecision?.proof_boundary ?? ''),
+      'Local proof-pack browser smoke decision must preserve no-Corepack-clearance, no-source-clearance, no-external-action, no-approval, no-deploy, no-hosted-smoke, no-live-proof, and no-readiness boundaries.',
+    );
+    const localProofPackBrowserSmokeReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LOCAL-PROOF-PACK-BROWSER-SMOKE');
+    assert(localProofPackBrowserSmokeReview, 'Manifest must record the local proof-pack browser smoke code optimization review.');
+    assert(localProofPackBrowserSmokeReview?.policy === 'strict', 'Local proof-pack browser smoke code optimization review must use strict policy.');
+    assert(localProofPackBrowserSmokeReview?.verdict === 'pass', 'Local proof-pack browser smoke code optimization review must pass.');
+    assert(
+      Array.isArray(localProofPackBrowserSmokeReview?.tests_or_checks)
+        && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /test:browser:local:proof-packs/.test(check))
+        && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /vitest run tests\/unit\/launchEvidenceManifest\.test\.ts tests\/unit\/progressDigestReadiness\.test\.ts/.test(check))
+        && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && localProofPackBrowserSmokeReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check)),
+      'Local proof-pack browser smoke code optimization review must record local browser, progress, manifest, and commercial report checks.',
     );
     const objectiveCompletionAuditFocusedReportDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-FOCUSED-REPORT');
     assert(objectiveCompletionAuditFocusedReportDecision, 'Manifest must record the objective completion audit focused report implementation decision.');
