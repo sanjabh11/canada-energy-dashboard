@@ -681,12 +681,21 @@ describe('status page release posture', () => {
     expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/tracked, untracked, ignored, staged-only/i);
     expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceIsolationLedgerEvidence?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceIsolationLedgerEvidence?.sourceManifestPath).toBe('source_provenance.isolation_ledger');
+    expect(sourceIsolationLedgerEvidence?.sourceProofTypes).toEqual([
+      'source_provenance_isolation_ledger',
+      'source_rename_decision',
+    ]);
     expect(sourceResolutionQueueEvidence?.status).toBe('external_gate');
     expect(sourceResolutionQueueEvidence?.command).toContain('report:source-provenance-readiness');
     expect(sourceResolutionQueueEvidence?.command).toContain('check:source-provenance-report');
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceResolutionQueueEvidence?.evidenceBoundary).toMatch(/prove current local cleanliness/i);
+    expect(sourceResolutionQueueEvidence?.sourceManifestPath).toBe('source_provenance.resolution_queue');
+    expect(sourceResolutionQueueEvidence?.sourceProofTypes).toEqual([
+      'source_rename_decision',
+    ]);
     expect(sourceOwnerDecisionPacketEvidence?.status).toBe('external_gate');
     expect(sourceOwnerDecisionPacketEvidence?.command).toContain('report:source-provenance-readiness');
     expect(sourceOwnerDecisionPacketEvidence?.command).toContain('check:source-provenance-report');
@@ -700,6 +709,11 @@ describe('status page release posture', () => {
     expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/choose owner intent/i);
     expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
     expect(sourceOwnerDecisionPacketEvidence?.evidenceBoundary).toMatch(/production approval/i);
+    expect(sourceOwnerDecisionPacketEvidence?.sourceManifestPath).toBe('source_provenance.owner_decision_packet');
+    expect(sourceOwnerDecisionPacketEvidence?.sourceProofTypes).toEqual([
+      'source_owner_decision_packet',
+      'source_rename_decision',
+    ]);
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.status).toBe('external_gate');
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.command).toContain('report:release-preflight');
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.command).toContain('check:release-preflight-report');
@@ -1125,18 +1139,31 @@ describe('status page release posture', () => {
     expect(provenanceGate?.command).toContain('check:source-provenance-report');
     expect(provenanceGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(provenanceGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(provenanceGate?.sourceManifestPath).toBe('source_provenance');
+    expect(provenanceGate?.sourceProofTypes).toEqual([
+      'source_rename_decision',
+    ]);
     expect(sourceIsolationLedgerGate?.status).toBe('external_gate');
     expect(sourceIsolationLedgerGate?.command).toContain('report:source-provenance-readiness');
     expect(sourceIsolationLedgerGate?.command).toContain('check:source-provenance-report');
     expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/tracked, untracked, ignored, staged-only/i);
     expect(sourceIsolationLedgerGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceIsolationLedgerGate?.nextAction).toMatch(/explicit owner intent/i);
+    expect(sourceIsolationLedgerGate?.sourceManifestPath).toBe('source_provenance.isolation_ledger');
+    expect(sourceIsolationLedgerGate?.sourceProofTypes).toEqual([
+      'source_provenance_isolation_ledger',
+      'source_rename_decision',
+    ]);
     expect(sourceResolutionQueueGate?.status).toBe('external_gate');
     expect(sourceResolutionQueueGate?.command).toContain('report:source-provenance-readiness');
     expect(sourceResolutionQueueGate?.command).toContain('check:source-provenance-report');
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/does not commit, unstage, stash, revert/i);
     expect(sourceResolutionQueueGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
+    expect(sourceResolutionQueueGate?.sourceManifestPath).toBe('source_provenance.resolution_queue');
+    expect(sourceResolutionQueueGate?.sourceProofTypes).toEqual([
+      'source_rename_decision',
+    ]);
     expect(sourceOwnerDecisionPacketGate?.status).toBe('external_gate');
     expect(sourceOwnerDecisionPacketGate?.proofBucket).toBe('local/source');
     expect(sourceOwnerDecisionPacketGate?.command).toContain('report:source-provenance-readiness');
@@ -1151,6 +1178,11 @@ describe('status page release posture', () => {
     expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/choose owner intent/i);
     expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/does not prove current local cleanliness/i);
     expect(sourceOwnerDecisionPacketGate?.evidenceBoundary).toMatch(/production approval/i);
+    expect(sourceOwnerDecisionPacketGate?.sourceManifestPath).toBe('source_provenance.owner_decision_packet');
+    expect(sourceOwnerDecisionPacketGate?.sourceProofTypes).toEqual([
+      'source_owner_decision_packet',
+      'source_rename_decision',
+    ]);
     expect(sourceOwnerDecisionPacketGate?.nextAction).toMatch(/decision support only/i);
     expect(sourceOwnerDecisionPacketGate?.nextAction).toMatch(/explicit owner intent/i);
     expect(launchEvidenceValidationGate?.status).toBe('external_gate');

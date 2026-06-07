@@ -376,6 +376,12 @@ function validateManifest(manifest) {
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');
   }
+  expectSourceLineage('source_provenance', {
+    sourceManifestPath: 'source_provenance',
+    sourceProofTypes: [
+      'source_rename_decision',
+    ],
+  });
   const sourceIsolationLedger = itemById.get('source_provenance_isolation_ledger') ?? {};
   if (!/tracked|untracked|ignored|staged-only|unstaged-only|mixed|rename|release-blocking/i.test(`${sourceIsolationLedger.evidenceBoundary ?? ''}\n${sourceIsolationLedger.nextAction ?? ''}`)) {
     failures.push('source_provenance_isolation_ledger must describe dirty source path isolation dimensions.');
@@ -383,6 +389,13 @@ function validateManifest(manifest) {
   if (!/does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*delete|does not.*rename|does not.*move|does not.*clear source provenance|does not.*run release-readiness|does not.*deploy|does not.*grant approval|does not.*prove current local cleanliness|does not.*production approval/i.test(sourceIsolationLedger.evidenceBoundary ?? '')) {
     failures.push('source_provenance_isolation_ledger must preserve the no-mutation, no-release-execution, non-cleanliness, and no-approval boundary.');
   }
+  expectSourceLineage('source_provenance_isolation_ledger', {
+    sourceManifestPath: 'source_provenance.isolation_ledger',
+    sourceProofTypes: [
+      'source_provenance_isolation_ledger',
+      'source_rename_decision',
+    ],
+  });
   const launchEvidenceValidationGate = itemById.get('launch_evidence_validation_gate') ?? {};
   if (!/manifest structure|proof-boundary consistency|check:launch-evidence-manifest/i.test(`${launchEvidenceValidationGate.evidenceBoundary ?? ''}\n${launchEvidenceValidationGate.nextAction ?? ''}`)) {
     failures.push('launch_evidence_validation_gate must describe the launch evidence manifest structure and proof-boundary check.');
@@ -479,6 +492,12 @@ function validateManifest(manifest) {
   if (!/does not.*commit|does not.*unstage|does not.*clear source provenance|does not.*prove current local cleanliness/i.test(sourceResolutionQueue.evidenceBoundary ?? '')) {
     failures.push('source_provenance_resolution_queue must preserve the non-mutation and non-cleanliness boundary.');
   }
+  expectSourceLineage('source_provenance_resolution_queue', {
+    sourceManifestPath: 'source_provenance.resolution_queue',
+    sourceProofTypes: [
+      'source_rename_decision',
+    ],
+  });
   const sourceOwnerDecisionPacket = itemById.get('source_owner_decision_packet') ?? {};
   if (!/source owner decision packet|source_provenance\.resolution_queue\.items|recommended owner options|commit_as_intentional_change|unstage_for_later_review|stash_or_revert_with_owner_approval|owner-decision/i.test(`${sourceOwnerDecisionPacket.evidenceBoundary ?? ''}\n${sourceOwnerDecisionPacket.nextAction ?? ''}`)) {
     failures.push('source_owner_decision_packet must describe owner-decision rows, recommended owner options, and source resolution queue provenance.');
@@ -489,6 +508,13 @@ function validateManifest(manifest) {
   if (!/does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*delete|does not.*rename|does not.*move|does not.*choose owner intent|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*request production approval|does not.*grant approval|does not.*hosted\/live parity|does not.*prove current local cleanliness|does not.*production approval/i.test(sourceOwnerDecisionPacket.evidenceBoundary ?? '')) {
     failures.push('source_owner_decision_packet must preserve the no-mutation, no-owner-intent, no-release-execution, no-approval, no-live-proof, and non-cleanliness boundary.');
   }
+  expectSourceLineage('source_owner_decision_packet', {
+    sourceManifestPath: 'source_provenance.owner_decision_packet',
+    sourceProofTypes: [
+      'source_owner_decision_packet',
+      'source_rename_decision',
+    ],
+  });
   const releaseToolchainApprovalDeficitLedger = itemById.get('release_toolchain_approval_deficit_ledger') ?? {};
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval|deficit/i.test(`${releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? ''}\n${releaseToolchainApprovalDeficitLedger.nextAction ?? ''}`)) {
     failures.push('release_toolchain_approval_deficit_ledger must describe release toolchain and approval deficits.');

@@ -199,18 +199,32 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     status: 'external_gate',
     command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
     evidenceBoundary: 'The source provenance isolation ledger classifies dirty source paths by tracked, untracked, ignored, staged-only, unstaged-only, mixed, rename or move, and release-blocking state, but it does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, deploy, or grant approval. It does not prove current local cleanliness or production approval.',
+    sourceManifestPath: 'source_provenance.isolation_ledger',
+    sourceProofTypes: [
+      'source_provenance_isolation_ledger',
+      'source_rename_decision',
+    ],
   },
   {
     label: 'Source provenance resolution queue',
     status: 'external_gate',
     command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
     evidenceBoundary: 'The source provenance resolution queue classifies staged-only, unstaged-only, mixed, untracked, ignored, and renamed source decisions, but it does not commit, unstage, stash, revert, delete, rename, move, or clear source provenance. It does not prove current local cleanliness or grant production approval.',
+    sourceManifestPath: 'source_provenance.resolution_queue',
+    sourceProofTypes: [
+      'source_rename_decision',
+    ],
   },
   {
     label: 'Source owner decision packet',
     status: 'external_gate',
     command: 'pnpm run report:source-provenance-readiness && pnpm run check:source-provenance-report',
     evidenceBoundary: 'The source owner decision packet maps source_provenance.resolution_queue.items into owner-decision rows with recommended owner options such as commit_as_intentional_change, unstage_for_later_review, and stash_or_revert_with_owner_approval, but it does not commit, unstage, stash, revert, delete, rename, move, choose owner intent, clear source provenance, run release-readiness, push, deploy, request production approval, grant approval, or prove hosted/live parity. It does not prove current local cleanliness or production approval.',
+    sourceManifestPath: 'source_provenance.owner_decision_packet',
+    sourceProofTypes: [
+      'source_owner_decision_packet',
+      'source_rename_decision',
+    ],
   },
   {
     label: 'Release toolchain and approval deficit ledger',
