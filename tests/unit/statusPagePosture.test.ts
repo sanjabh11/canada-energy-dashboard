@@ -247,6 +247,29 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
     ],
   },
   {
+    publicId: 'post_deploy_live_proof_operator_handoff_packet',
+    releaseHealthLabel: 'Post-deploy live proof operator handoff packet',
+    boundaryPatterns: [
+      /post-deploy live proof gate queue rows/i,
+      /operator execution gates/i,
+      /production_approval_clearance_first/i,
+      /approved_deploy_after_owner_phrase/i,
+      /live_metadata_after_approved_deploy/i,
+      /static_parity_after_metadata_and_build/i,
+      /hosted_smoke_after_deploy/i,
+      /parity_claim_after_all_live_gates_pass/i,
+      /approval_required/i,
+      /deploy_required/i,
+      /live_account_required/i,
+      /browser_smoke_required/i,
+      /blocks_live_proof_gate/i,
+      /can_execute_from_packet=false/i,
+      /does not grant owner approval/i,
+      /run browser smoke/i,
+      /current hosted\/live parity/i,
+    ],
+  },
+  {
     publicId: 'local_proof_pack_browser_smoke',
     releaseHealthLabel: 'Local proof-pack browser smoke',
     boundaryPatterns: [
@@ -519,6 +542,7 @@ describe('status page release posture', () => {
     const productionApprovalRequestPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval request packet');
     const productionApprovalOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Production approval operator handoff packet');
     const postDeployQueueEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof gate queue');
+    const postDeployOperatorHandoffPacketEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Post-deploy live proof operator handoff packet');
     const localProofPackSmokeEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Local proof-pack browser smoke');
     const buyerHardGateDeficitLedgerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence hard-gate deficit ledger');
     const buyerAcquisitionMatrixEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence acquisition matrix');
@@ -529,7 +553,7 @@ describe('status page release posture', () => {
     const buyerEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Buyer evidence scan');
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
-    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(41);
+    expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(42);
     expect(deployEvidence?.status).toBe('verified');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
     expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
@@ -781,6 +805,27 @@ describe('status page release posture', () => {
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.status).toBe('external_gate');
+    expect(postDeployOperatorHandoffPacketEvidence?.command).toContain('report:post-deploy-live-proof-readiness');
+    expect(postDeployOperatorHandoffPacketEvidence?.command).toContain('check:post-deploy-live-proof-report');
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/post-deploy live proof gate queue rows/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/operator execution gates/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/production_approval_clearance_first/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/approved_deploy_after_owner_phrase/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/live_metadata_after_approved_deploy/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/static_parity_after_metadata_and_build/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted_smoke_after_deploy/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/parity_claim_after_all_live_gates_pass/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/approval_required/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/deploy_required/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/live_account_required/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/browser_smoke_required/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/blocks_live_proof_gate/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/does not grant owner approval/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/run deploys/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/run browser smoke/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
     expect(localProofPackSmokeEvidence?.status).toBe('external_gate');
     expect(localProofPackSmokeEvidence?.command).toContain('test:browser:local:proof-packs');
     expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/local proof-pack browser smoke/i);
@@ -904,6 +949,7 @@ describe('status page release posture', () => {
     const productionApprovalRequestPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_request_packet');
     const productionApprovalOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'production_approval_operator_handoff_packet');
     const postDeployQueueGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_gate_queue');
+    const postDeployOperatorHandoffPacketGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'post_deploy_live_proof_operator_handoff_packet');
     const localProofPackSmokeGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'local_proof_pack_browser_smoke');
     const branchReviewGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'unmerged_branch_review_queue');
     const branchFamilyFreshnessRollupGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'branch_family_freshness_rollup');
@@ -960,6 +1006,7 @@ describe('status page release posture', () => {
       'production_approval_request_packet',
       'production_approval_operator_handoff_packet',
       'post_deploy_live_proof_gate_queue',
+      'post_deploy_live_proof_operator_handoff_packet',
       'local_proof_pack_browser_smoke',
       'unmerged_branch_review_queue',
       'branch_family_freshness_rollup',
@@ -1196,6 +1243,34 @@ describe('status page release posture', () => {
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueGate?.nextAction).toMatch(/check:post-deploy-live passes/i);
+    expect(postDeployOperatorHandoffPacketGate?.status).toBe('external_gate');
+    expect(postDeployOperatorHandoffPacketGate?.proofBucket).toBe('hosted/live');
+    expect(postDeployOperatorHandoffPacketGate?.command).toContain('report:post-deploy-live-proof-readiness');
+    expect(postDeployOperatorHandoffPacketGate?.command).toContain('check:post-deploy-live-proof-report');
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/post-deploy live proof gate queue rows/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/operator execution gates/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/production_approval_clearance_first/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/approved_deploy_after_owner_phrase/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/live_metadata_after_approved_deploy/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/static_parity_after_metadata_and_build/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/hosted_smoke_after_deploy/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/parity_claim_after_all_live_gates_pass/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/approval_required/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/deploy_required/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/live_account_required/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/browser_smoke_required/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/blocks_live_proof_gate/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/can_execute_from_packet=false/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/does not grant owner approval/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/run deploys/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/run deploy-production\.sh/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/netlify deploy/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/run browser smoke/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
+    expect(postDeployOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/prove production approval/i);
+    expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/post-deploy operator handoff/i);
+    expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/run each live proof command separately/i);
+    expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/check:post-deploy-live/i);
     expect(localProofPackSmokeGate?.status).toBe('external_gate');
     expect(localProofPackSmokeGate?.proofBucket).toBe('local/browser');
     expect(localProofPackSmokeGate?.command).toContain('test:browser:local:proof-packs');

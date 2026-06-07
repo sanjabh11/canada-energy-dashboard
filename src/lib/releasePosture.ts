@@ -298,6 +298,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The post-deploy live proof gate queue sequences production approval clearance, guarded deploy completion, live public metadata, live static dist parity, hosted proof-pack route smoke, and current-source hosted parity claim; it does not prove current hosted/live parity, deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke.',
   },
   {
+    label: 'Post-deploy live proof operator handoff packet',
+    status: 'external_gate',
+    command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
+    evidenceBoundary: 'The focused post-deploy live proof report/check maps post-deploy live proof gate queue rows into non-executable operator execution gates, including production_approval_clearance_first, approved_deploy_after_owner_phrase, live_metadata_after_approved_deploy, static_parity_after_metadata_and_build, hosted_smoke_after_deploy, parity_claim_after_all_live_gates_pass, approval_required, deploy_required, live_account_required, browser_smoke_required, blocks_live_proof_gate, and can_execute_from_packet=false. It does not grant owner approval, run deploys, run deploy-production.sh, run netlify deploy, push, rebuild, mutate Netlify, access live accounts, or run browser smoke. It does not prove current hosted/live parity, does not prove production approval, and does not create launch readiness.',
+  },
+  {
     label: 'Local proof-pack browser smoke',
     status: 'external_gate',
     command: 'pnpm run test:browser:local:proof-packs',

@@ -158,6 +158,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
   },
   {
+    id: 'post_deploy_live_proof_operator_handoff_packet',
+    status: 'external_gate',
+    proofBucket: 'hosted/live',
+    command: 'pnpm run report:post-deploy-live-proof-readiness && pnpm run check:post-deploy-live-proof-report',
+  },
+  {
     id: 'local_proof_pack_browser_smoke',
     status: 'external_gate',
     proofBucket: 'local/browser',
@@ -564,6 +570,16 @@ function validateManifest(manifest) {
   }
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
+  }
+  const postDeployOperatorHandoffPacket = itemById.get('post_deploy_live_proof_operator_handoff_packet') ?? {};
+  if (!/post-deploy live proof gate queue rows|operator execution gates|production_approval_clearance_first|approved_deploy_after_owner_phrase|live_metadata_after_approved_deploy|static_parity_after_metadata_and_build|hosted_smoke_after_deploy|parity_claim_after_all_live_gates_pass|approval_required|deploy_required|live_account_required|browser_smoke_required|blocks_live_proof_gate|can_execute_from_packet=false/i.test(`${postDeployOperatorHandoffPacket.evidenceBoundary ?? ''}\n${postDeployOperatorHandoffPacket.nextAction ?? ''}`)) {
+    failures.push('post_deploy_live_proof_operator_handoff_packet must describe post-deploy rows, execution gates, approval/deploy/live/browser flags, blocking rows, and non-executable packet semantics.');
+  }
+  if (!/report:post-deploy-live-proof-readiness/.test(postDeployOperatorHandoffPacket.command ?? '') || !/check:post-deploy-live-proof-report/.test(postDeployOperatorHandoffPacket.command ?? '')) {
+    failures.push('post_deploy_live_proof_operator_handoff_packet must route through the focused post-deploy live proof report/check handles.');
+  }
+  if (!/does not.*grant owner approval|does not.*run deploys|does not.*deploy-production\.sh|does not.*netlify deploy|does not.*push|does not.*rebuild|does not.*mutate Netlify|does not.*access live accounts|does not.*run browser smoke|does not.*prove current hosted\/live parity|does not prove production approval|does not.*create launch readiness/i.test(postDeployOperatorHandoffPacket.evidenceBoundary ?? '')) {
+    failures.push('post_deploy_live_proof_operator_handoff_packet must preserve the no-approval, no-deploy, no-live-account, no-browser-smoke, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
   const localProofPackBrowserSmoke = itemById.get('local_proof_pack_browser_smoke') ?? {};
   if (!/local proof-pack browser smoke|Chromium|local preview|\/tmp\/ceip-local-proof-packs/i.test(`${localProofPackBrowserSmoke.evidenceBoundary ?? ''}\n${localProofPackBrowserSmoke.nextAction ?? ''}`)) {
