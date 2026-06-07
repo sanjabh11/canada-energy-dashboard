@@ -59,6 +59,9 @@ describe('adversarial review readiness report', () => {
     expect(stdout).toContain('branch_risk_adversarial_review');
     expect(stdout).toContain('## Public Release Status Handle');
     expect(stdout).toContain('adversarial_review_ledger');
+    expect(stdout).toContain('Source Manifest Path');
+    expect(stdout).toContain('adversarial_reviews');
+    expect(stdout).toContain('buyer_evidence_adversarial_review, production_approval_adversarial_review, release_toolchain_adversarial_review, external_advisor_adversarial_review, branch_risk_adversarial_review');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -102,6 +105,14 @@ describe('adversarial review readiness report', () => {
       && /Do not/i.test(item.stop_gate ?? '')
     ))).toBe(true);
     expect(payload.public_status_handle.id).toBe('adversarial_review_ledger');
+    expect(payload.public_status_handle.sourceManifestPath).toBe('adversarial_reviews');
+    expect(payload.public_status_handle.sourceProofTypes).toEqual(expect.arrayContaining([
+      'buyer_evidence_adversarial_review',
+      'production_approval_adversarial_review',
+      'release_toolchain_adversarial_review',
+      'external_advisor_adversarial_review',
+      'branch_risk_adversarial_review',
+    ]));
     expect(payload.package_script_handles.report_adversarial_review_readiness).toBe('corepack pnpm run report:adversarial-review-readiness');
     expect(payload.package_script_handles.check_adversarial_review_report).toBe('corepack pnpm run check:adversarial-review-report');
     expect(payload.proof_boundary).toMatch(/does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|commercial launch readiness/i);

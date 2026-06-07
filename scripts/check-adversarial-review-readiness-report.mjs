@@ -105,6 +105,9 @@ if (failures.length === 0) {
     assertContains(stdout, 'branch_risk_adversarial_review', 'Report must include branch risk adversarial proof type.');
     assertContains(stdout, '## Public Release Status Handle', 'Report must include the public status handle.');
     assertContains(stdout, 'adversarial_review_ledger', 'Report must expose the public adversarial review ledger handle.');
+    assertContains(stdout, 'Source Manifest Path', 'Report must label public adversarial review source manifest lineage.');
+    assertContains(stdout, 'adversarial_reviews', 'Report must expose the adversarial review public handle source manifest path.');
+    assertContains(stdout, 'buyer_evidence_adversarial_review, production_approval_adversarial_review, release_toolchain_adversarial_review, external_advisor_adversarial_review, branch_risk_adversarial_review', 'Report must expose the adversarial review public handle proof type lineage.');
     assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
     assertContains(stdout, 'corepack pnpm run report:adversarial-review-readiness', 'Report must include the focused adversarial report command.');
     assertContains(stdout, 'corepack pnpm run check:adversarial-review-report', 'Report must include the focused adversarial checker command.');
@@ -130,6 +133,16 @@ if (failures.length === 0) {
       assert(lanes.has(lane), `Focused JSON must include adversarial lane: ${lane}.`);
     }
     assert(payload.public_status_handle?.id === 'adversarial_review_ledger', 'Focused JSON must include the public adversarial review ledger handle.');
+    assert(payload.public_status_handle?.sourceManifestPath === 'adversarial_reviews', 'Focused JSON public adversarial review handle must expose sourceManifestPath=adversarial_reviews.');
+    assert(
+      Array.isArray(payload.public_status_handle?.sourceProofTypes)
+        && payload.public_status_handle.sourceProofTypes.includes('buyer_evidence_adversarial_review')
+        && payload.public_status_handle.sourceProofTypes.includes('production_approval_adversarial_review')
+        && payload.public_status_handle.sourceProofTypes.includes('release_toolchain_adversarial_review')
+        && payload.public_status_handle.sourceProofTypes.includes('external_advisor_adversarial_review')
+        && payload.public_status_handle.sourceProofTypes.includes('branch_risk_adversarial_review'),
+      'Focused JSON public adversarial review handle must expose every core adversarial proof lineage type.',
+    );
     assert(/report:adversarial-review-readiness/.test(payload.package_script_handles?.report_adversarial_review_readiness ?? ''), 'Focused JSON must expose the adversarial review report script handle.');
     assert(/check:adversarial-review-report/.test(payload.package_script_handles?.check_adversarial_review_report ?? ''), 'Focused JSON must expose the adversarial review checker script handle.');
     assert(/does not prove production approval|create buyer evidence|contact buyers|prove buyer acceptance|run release-readiness as clearance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|request owner approval|deploy|hosted\/live parity|clear launch blockers|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve no-approval, no-buyer-proof, no-release-clearance, no-Supabase-clearance, no-branch-approval, no-deploy, no-live-parity, and no-readiness semantics.');

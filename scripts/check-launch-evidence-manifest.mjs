@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-OBJECTIVE-COMPLETION-AUDIT-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest objective completion audit public-handle lineage ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE', 'Manifest progress_updates must expose the latest adversarial review public-handle lineage ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4768,6 +4768,40 @@ try {
         && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && objectiveCompletionAuditLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Objective completion audit public-handle lineage code optimization review must record objective completion, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const adversarialReviewLineageDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    assert(adversarialReviewLineageDecision, 'Manifest must record the adversarial review public-handle lineage implementation decision.');
+    assert(
+      adversarialReviewLineageDecision?.chosen_variant === 'minimal focused adversarial review public-handle lineage',
+      'Adversarial review public-handle lineage decision must record the minimal focused lineage variant.',
+    );
+    assert(
+      Array.isArray(adversarialReviewLineageDecision?.files_changed)
+        && adversarialReviewLineageDecision.files_changed.includes('scripts/report-adversarial-review-readiness.mjs')
+        && adversarialReviewLineageDecision.files_changed.includes('scripts/check-adversarial-review-readiness-report.mjs')
+        && adversarialReviewLineageDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && adversarialReviewLineageDecision.files_changed.includes('tests/unit/adversarialReviewReadiness.test.ts')
+        && adversarialReviewLineageDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && adversarialReviewLineageDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Adversarial review public-handle lineage decision must record focused adversarial, progress, and launch manifest contract files.',
+    );
+    assert(
+      /lineage discoverability only|does not generate new review findings|clear launch blockers|create buyer evidence|contact buyers|buyer acceptance|authorize Supabase|clear Supabase advisor findings|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(adversarialReviewLineageDecision?.proof_boundary ?? ''),
+      'Adversarial review public-handle lineage decision must preserve no-new-review, no-clearance, no-buyer, no-Supabase, no-branch, no-source, no-release, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+    );
+    const adversarialReviewLineageReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    assert(adversarialReviewLineageReview, 'Manifest must record the adversarial review public-handle lineage code optimization review.');
+    assert(adversarialReviewLineageReview?.policy === 'strict', 'Adversarial review public-handle lineage code optimization review must use strict policy.');
+    assert(adversarialReviewLineageReview?.verdict === 'pass', 'Adversarial review public-handle lineage code optimization review must pass.');
+    assert(
+      Array.isArray(adversarialReviewLineageReview?.tests_or_checks)
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /check:adversarial-review-report -- --skip-probes/.test(check))
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && adversarialReviewLineageReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Adversarial review public-handle lineage code optimization review must record adversarial, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
