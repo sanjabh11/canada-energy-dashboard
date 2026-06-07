@@ -504,6 +504,7 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     status: 'external_gate',
     command: 'pnpm run test:browser:local:proof-packs',
     evidenceBoundary: 'The local proof-pack browser smoke runs Chromium checks for /utility-demand-forecast, /forecast-benchmarking, /regulatory-filing, /pilot-readiness, /ga-ici-5cp, and /byo-csv-proof against a local preview with Playwright reports under /tmp/ceip-local-proof-packs-*. It is local evidence only. It does not create buyer evidence, satisfy Corepack-pinned release-readiness, deploy, mutate Netlify, run hosted proof-pack smoke, prove post-deploy live parity, grant production approval, or create launch readiness.',
+    sourceManifestPath: 'implementation_decisions[task_id=CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE]',
   },
   {
     label: 'Buyer evidence hard-gate deficit ledger',

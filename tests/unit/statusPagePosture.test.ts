@@ -1069,6 +1069,7 @@ describe('status page release posture', () => {
     expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/hosted proof-pack smoke/i);
     expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/post-deploy live parity/i);
     expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/production approval/i);
+    expect(localProofPackSmokeEvidence?.sourceManifestPath).toBe('implementation_decisions[task_id=CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE]');
     expect(buyerHardGateDeficitLedgerEvidence?.status).toBe('external_gate');
     expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('report:buyer-evidence-gate-readiness');
     expect(buyerHardGateDeficitLedgerEvidence?.command).toContain('check:buyer-evidence-gate-report');
@@ -1768,6 +1769,7 @@ describe('status page release posture', () => {
     expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/hosted proof-pack smoke/i);
     expect(localProofPackSmokeGate?.evidenceBoundary).toMatch(/post-deploy live parity/i);
     expect(localProofPackSmokeGate?.nextAction).toMatch(/check:post-deploy-live/i);
+    expect(localProofPackSmokeGate?.sourceManifestPath).toBe('implementation_decisions[task_id=CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE]');
     expect(branchReviewGate?.status).toBe('external_gate');
     expect(branchReviewGate?.command).toContain('report:branch-review-readiness');
     expect(branchReviewGate?.command).toContain('check:branch-review-report');

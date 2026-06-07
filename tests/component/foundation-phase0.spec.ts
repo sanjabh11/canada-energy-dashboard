@@ -49,6 +49,7 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('phase progress').first()).toBeVisible();
     await expect(publicReleaseStatus.getByText('top unblock options').first()).toBeVisible();
     await expect(publicReleaseStatus.getByText('Manifest lineage').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('implementation_decisions[task_id=CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE]', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.isolation_ledger', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.resolution_queue', { exact: true })).toBeVisible();

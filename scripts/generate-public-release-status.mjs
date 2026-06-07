@@ -896,6 +896,9 @@ function validateManifest(manifest) {
   if (!/does not.*Corepack-pinned release-readiness|does not.*deploy|does not.*mutate Netlify|does not.*hosted proof-pack smoke|does not.*post-deploy live parity|does not.*buyer evidence|does not.*production approval|does not.*launch readiness/i.test(localProofPackBrowserSmoke.evidenceBoundary ?? '')) {
     failures.push('local_proof_pack_browser_smoke must preserve the no-release-readiness, no-deploy, no-hosted-smoke, no-live-proof, no-buyer-proof, no-approval, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('local_proof_pack_browser_smoke', {
+    sourceManifestPath: 'implementation_decisions[task_id=CEIP-SAFE-FIX-LOCAL-PROOF-PACK-SMOKE-PUBLIC-HANDLE]',
+  });
   const buyerEvidenceGate = itemById.get('buyer_evidence_gate') ?? {};
   const buyerEvidenceGateText = `${buyerEvidenceGate.evidenceBoundary ?? ''}\n${buyerEvidenceGate.nextAction ?? ''}`;
   for (const pattern of [
