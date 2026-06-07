@@ -52,6 +52,14 @@ describe('Supabase advisor readiness report', () => {
     expect(stdout).toContain('Secret Safe');
     expect(stdout).toContain('Production Approval Supabase Prerequisite');
     expect(stdout).toContain('Production Approval Request Supabase Row');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('supabase_advisor_access');
+    expect(stdout).toContain('supabase_advisor_clearance_deficit_ledger');
+    expect(stdout).toContain('supabase_advisor_operator_handoff_packet');
+    expect(stdout).toContain('supabase_advisor_remediation_queue');
+    expect(stdout).toContain('Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run report:supabase-advisor-readiness');
+    expect(stdout).toContain('corepack pnpm run check:supabase-advisor-report');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -138,6 +146,18 @@ describe('Supabase advisor readiness report', () => {
     expect(payload.launch_action_supabase_row.phase).toBe('supabase_advisor');
     expect(payload.production_approval_advisor_prerequisite.prerequisite).toBe('Supabase advisor clearance');
     expect(payload.production_approval_request_advisor_row.prerequisite).toBe('Supabase advisor clearance');
+    expect(payload.public_status_handles.supabase_advisor_access.id).toBe('supabase_advisor_access');
+    expect(payload.public_status_handles.supabase_advisor_clearance_deficit_ledger.id).toBe('supabase_advisor_clearance_deficit_ledger');
+    expect(payload.public_status_handles.supabase_advisor_operator_handoff_packet.id).toBe('supabase_advisor_operator_handoff_packet');
+    expect(payload.public_status_handles.supabase_advisor_remediation_queue.id).toBe('supabase_advisor_remediation_queue');
+    expect(payload.public_status_handles.supabase_advisor_operator_handoff_packet.command).toContain('report:supabase-advisor-readiness');
+    expect(payload.public_status_handles.supabase_advisor_operator_handoff_packet.command).toContain('check:supabase-advisor-report');
+    expect(payload.public_status_handles.supabase_advisor_operator_handoff_packet.sourceManifestPath).toBe('supabase_advisor.operator_handoff_packet');
+    expect(payload.public_status_handles.supabase_advisor_access.sourceProofTypes).toContain('external_account_evidence');
+    expect(payload.public_status_handles.supabase_advisor_remediation_queue.sourceProofTypes).toContain('retained_redacted_record');
+    expect(payload.package_script_handles.report_supabase_advisor_readiness).toBe('corepack pnpm run report:supabase-advisor-readiness');
+    expect(payload.package_script_handles.check_supabase_advisor_report).toBe('corepack pnpm run check:supabase-advisor-report');
+    expect(payload.package_script_handles.check_supabase_app_lint).toBe('corepack pnpm run check:supabase-app-lint');
     expect(payload.launch_action_supabase_row.proof_command).toContain('report:supabase-advisor-readiness');
     expect(payload.launch_action_supabase_row.proof_command).toContain('check:supabase-advisor-report');
     expect(payload.production_approval_advisor_prerequisite.proof_command).toContain('report:supabase-advisor-readiness');

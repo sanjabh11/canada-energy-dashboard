@@ -104,6 +104,15 @@ if (failures.length === 0) {
     assertContains(stdout, 'Secret Safe', 'Report must render Supabase advisor no-secret handling.');
     assertContains(stdout, '## Production Approval Supabase Prerequisite', 'Report must include the production approval Supabase prerequisite.');
     assertContains(stdout, '## Production Approval Request Supabase Row', 'Report must include the production approval request Supabase row.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public Supabase advisor handles.');
+    assertContains(stdout, 'supabase_advisor_access', 'Report must include the Supabase advisor access public handle.');
+    assertContains(stdout, 'supabase_advisor_clearance_deficit_ledger', 'Report must include the Supabase advisor clearance deficit ledger public handle.');
+    assertContains(stdout, 'supabase_advisor_operator_handoff_packet', 'Report must include the Supabase advisor operator handoff public handle.');
+    assertContains(stdout, 'supabase_advisor_remediation_queue', 'Report must include the Supabase advisor remediation queue public handle.');
+    assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
+    assertContains(stdout, 'corepack pnpm run report:supabase-advisor-readiness', 'Report must include the focused Supabase advisor report package handle.');
+    assertContains(stdout, 'corepack pnpm run check:supabase-advisor-report', 'Report must include the focused Supabase advisor checker package handle.');
+    assertContains(stdout, 'corepack pnpm run check:supabase-app-lint', 'Report must include the Supabase app lint package handle.');
     assert(/does not[\s\S]{0,240}grant production approval/i.test(stdout), 'Report must preserve production approval boundary text.');
   }
 
@@ -143,6 +152,17 @@ if (failures.length === 0) {
     assert(payload.launch_action_supabase_row?.phase === 'supabase_advisor', 'Focused JSON must include the launch action Supabase row.');
     assert(payload.production_approval_advisor_prerequisite?.prerequisite === 'Supabase advisor clearance', 'Focused JSON must include the production approval Supabase prerequisite.');
     assert(payload.production_approval_request_advisor_row?.prerequisite === 'Supabase advisor clearance', 'Focused JSON must include the production approval request Supabase row.');
+    assert(payload.public_status_handles?.supabase_advisor_access?.id === 'supabase_advisor_access', 'Focused JSON must include the Supabase advisor access public handle.');
+    assert(payload.public_status_handles?.supabase_advisor_clearance_deficit_ledger?.id === 'supabase_advisor_clearance_deficit_ledger', 'Focused JSON must include the Supabase advisor clearance deficit public handle.');
+    assert(payload.public_status_handles?.supabase_advisor_operator_handoff_packet?.id === 'supabase_advisor_operator_handoff_packet', 'Focused JSON must include the Supabase advisor operator handoff public handle.');
+    assert(payload.public_status_handles?.supabase_advisor_remediation_queue?.id === 'supabase_advisor_remediation_queue', 'Focused JSON must include the Supabase advisor remediation queue public handle.');
+    assert(/report:supabase-advisor-readiness/.test(payload.public_status_handles?.supabase_advisor_operator_handoff_packet?.command ?? '') && /check:supabase-advisor-report/.test(payload.public_status_handles?.supabase_advisor_operator_handoff_packet?.command ?? ''), 'Supabase advisor operator handoff public handle must point at the focused Supabase report/check.');
+    assert(/supabase_advisor\.operator_handoff_packet/.test(payload.public_status_handles?.supabase_advisor_operator_handoff_packet?.sourceManifestPath ?? ''), 'Supabase advisor operator handoff public handle must point at supabase_advisor.operator_handoff_packet.');
+    assert(Array.isArray(payload.public_status_handles?.supabase_advisor_access?.sourceProofTypes) && payload.public_status_handles.supabase_advisor_access.sourceProofTypes.includes('external_account_evidence'), 'Supabase advisor access public handle must expose external-account evidence lineage.');
+    assert(Array.isArray(payload.public_status_handles?.supabase_advisor_remediation_queue?.sourceProofTypes) && payload.public_status_handles.supabase_advisor_remediation_queue.sourceProofTypes.includes('retained_redacted_record'), 'Supabase advisor remediation public handle must expose retained-record lineage.');
+    assert(payload.package_script_handles?.report_supabase_advisor_readiness === 'corepack pnpm run report:supabase-advisor-readiness', 'Focused JSON must include the Supabase advisor report package handle.');
+    assert(payload.package_script_handles?.check_supabase_advisor_report === 'corepack pnpm run check:supabase-advisor-report', 'Focused JSON must include the Supabase advisor checker package handle.');
+    assert(payload.package_script_handles?.check_supabase_app_lint === 'corepack pnpm run check:supabase-app-lint', 'Focused JSON must include the Supabase app lint package handle.');
     assert(
       /report:supabase-advisor-readiness/.test(payload.launch_action_supabase_row?.proof_command ?? '')
         && /check:supabase-advisor-report/.test(payload.launch_action_supabase_row?.proof_command ?? ''),

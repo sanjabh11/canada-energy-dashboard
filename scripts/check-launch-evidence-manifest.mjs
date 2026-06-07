@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BRANCH-REVIEW-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest branch-review public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest Supabase advisor public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest branch-review public-handle digest ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest Supabase advisor public-handle digest ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4530,6 +4530,40 @@ try {
         && branchPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && branchPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Branch review public-handle digest code optimization review must record branch, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const supabasePublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST');
+    assert(supabasePublicHandlesDecision, 'Manifest must record the Supabase advisor public-handle digest implementation decision.');
+    assert(
+      supabasePublicHandlesDecision?.chosen_variant === 'minimal focused Supabase advisor handle digest',
+      'Supabase advisor public-handle digest decision must record the minimal focused Supabase advisor handle digest variant.',
+    );
+    assert(
+      Array.isArray(supabasePublicHandlesDecision?.files_changed)
+        && supabasePublicHandlesDecision.files_changed.includes('scripts/report-supabase-advisor-readiness.mjs')
+        && supabasePublicHandlesDecision.files_changed.includes('scripts/check-supabase-advisor-readiness-report.mjs')
+        && supabasePublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && supabasePublicHandlesDecision.files_changed.includes('tests/unit/supabaseAdvisorReadiness.test.ts')
+        && supabasePublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && supabasePublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Supabase advisor public-handle digest decision must record focused Supabase, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not authorize connectors|access dashboards|rerun Security Advisor or Performance Advisor|mutate the database|run migrations|record secrets|clear advisor findings|request production approval|grant owner approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(supabasePublicHandlesDecision?.proof_boundary ?? ''),
+      'Supabase advisor public-handle digest decision must preserve no-authorization, no-dashboard, no-advisor-rerun, no-database-mutation, no-secret, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const supabasePublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST');
+    assert(supabasePublicHandlesReview, 'Manifest must record the Supabase advisor public-handle digest code optimization review.');
+    assert(supabasePublicHandlesReview?.policy === 'strict', 'Supabase advisor public-handle digest code optimization review must use strict policy.');
+    assert(supabasePublicHandlesReview?.verdict === 'pass', 'Supabase advisor public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(supabasePublicHandlesReview?.tests_or_checks)
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:supabase-advisor-report -- --skip-probes/.test(check))
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && supabasePublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Supabase advisor public-handle digest code optimization review must record Supabase, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

@@ -5576,6 +5576,18 @@ const supabaseAdvisorOperatorHandoffPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const supabaseAdvisorPublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-supabase-advisor-readiness.mjs',
+  'scripts/check-supabase-advisor-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/supabaseAdvisorReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const branchReviewReportFilesChanged = [
   'package.json',
   'scripts/report-branch-review-readiness.mjs',
@@ -5992,6 +6004,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...supabaseAdvisorProofHandleFilesChanged,
   ...supabaseAdvisorReportFilesChanged,
   ...supabaseAdvisorOperatorHandoffPacketFilesChanged,
+  ...supabaseAdvisorPublicHandlesDigestFilesChanged,
   ...branchReviewReportFilesChanged,
   ...branchReviewSupabaseFunctionImpactFilesChanged,
   ...launchManifestBranchFunctionImpactFilesChanged,
@@ -6372,6 +6385,24 @@ const supabaseAdvisorOperatorHandoffPacketTestsRun = [
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const supabaseAdvisorPublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-supabase-advisor-readiness.mjs',
+  'node --check scripts/check-supabase-advisor-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/supabaseAdvisorReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes',
+  'pnpm run report:supabase-advisor-readiness -- --skip-probes --json',
+  'pnpm run check:supabase-advisor-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
   'pnpm exec tsc -b --pretty false',
 ];
 
@@ -6825,6 +6856,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...supabaseAdvisorProofHandleTestsRun,
   ...supabaseAdvisorReportTestsRun,
   ...supabaseAdvisorOperatorHandoffPacketTestsRun,
+  ...supabaseAdvisorPublicHandlesDigestTestsRun,
   ...branchReviewReportTestsRun,
   ...branchReviewSupabaseFunctionImpactTestsRun,
   ...launchManifestBranchFunctionImpactTestsRun,
@@ -7702,6 +7734,19 @@ const safeFixImplementationDecisions = [
     reason: 'Branch review is the next repo-addressable launch blocker after source and release gates, and its public branch handles already existed, but the focused branch-review report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, and progress digest reports.',
     proof_boundary: 'This record improves branch-review handle discoverability only; it does not checkout, merge, push, discard, delete, select canonical heads, run migrations, mutate Supabase, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused branch handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as branch approval, canonical-head owner selection, merge approval, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing Supabase advisor public status handles and package script handles inside the focused Supabase advisor report.',
+    acceptance_check: 'report:supabase-advisor-readiness renders Public Release Status Handles and Package Script Handles for supabase_advisor_access, supabase_advisor_clearance_deficit_ledger, supabase_advisor_operator_handoff_packet, and supabase_advisor_remediation_queue; check:supabase-advisor-report validates those handles while Supabase advisor clearance remains blocked until authorized advisor evidence and public-safe findings actually pass.',
+    chosen_variant: 'minimal focused Supabase advisor handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json Supabase advisor handles, focused source/release/branch/progress report handle sections, Supabase advisor report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: supabaseAdvisorPublicHandlesDigestFilesChanged,
+    tests_run: supabaseAdvisorPublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public Supabase advisor handle rows into the focused Supabase advisor JSON/Markdown payload and adds package handles for the focused Supabase advisor report/check, local app lint, and launch evidence manifest commands without changing public status JSON, connector authorization, dashboard access, advisor reruns, database state, production approval, deploy state, or launch status.',
+    reason: 'Supabase advisor clearance is a blocked launch lane with public advisor handles already present, but the focused Supabase advisor report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, and progress digest reports.',
+    proof_boundary: 'This record improves Supabase advisor handle discoverability only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, request production approval, grant owner approval, deploy, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused Supabase advisor handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as Supabase advisor clearance, database security clearance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9211,6 +9256,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing branch operations could reduce branch backlog only after review and owner gates pass, but would exceed the safe-fix boundary and risk unsupported branch-clearance or readiness claims.',
     evidence: 'Branch review stop gates require read-only focused packets, canonical-head owner decisions, clean release gates, and explicit owner approval before branch mutation, migration, deploy, or production approval claims.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave Supabase advisor public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused Supabase advisor report is the operator artifact for the advisor blocker and should show the same handles during continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the Supabase blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains supabase_advisor_access, supabase_advisor_clearance_deficit_ledger, supabase_advisor_operator_handoff_packet, and supabase_advisor_remediation_queue handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status Supabase advisor rows.',
+    reason_rejected: 'The needed public Supabase advisor handles already exist; changing generated public status would add churn without improving the focused Supabase advisor report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public Supabase advisor rows already point at report:supabase-advisor-readiness && check:supabase-advisor-report or advisor access proof, and carry sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST',
+    variant: 'Authorize connectors, access dashboards, rerun advisors, run migrations, record secrets, clear findings, request approval, or deploy from the report phase.',
+    reason_rejected: 'External account authorization, dashboard advisor review, database mutation, secret handling, approval, and deploy are gated operations outside this repo-side report-contract phase.',
+    tradeoff: 'Executing real Supabase advisor work could reduce the blocker only after account access and explicit approvals are available, but would exceed the safe-fix boundary and risk unsupported advisor-clearance or readiness claims.',
+    evidence: 'Supabase advisor stop gates require authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, and regenerated manifest evidence before any clearance, approval, migration, deploy, or readiness claim.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9792,6 +9858,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public branch handle data and existing branch review report/check/test contracts, with no new dependency, no generated public-status churn, no new branch scanner, no checkout, no merge, no push, no canonical-head selection, no migration execution, no Supabase mutation, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: branchReviewPublicHandlesDigestTestsRun,
     remaining_risk: 'The branch handle digest remains operator guidance only; launch readiness still depends on read-only review-first packets, explicit owner canonical-head decisions, current release-readiness proof, clean source provenance, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public Supabase advisor handle data and existing Supabase advisor report/check/test contracts, with no new dependency, no generated public-status churn, no new advisor scanner, no connector authorization, no dashboard access, no Security Advisor or Performance Advisor rerun, no database mutation, no migration execution, no secret handling, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: supabaseAdvisorPublicHandlesDigestTestsRun,
+    remaining_risk: 'The Supabase advisor handle digest remains operator guidance only; launch readiness still depends on authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, clean source provenance, release-readiness, branch decisions, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

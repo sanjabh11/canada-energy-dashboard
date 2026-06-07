@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -128,6 +128,16 @@ function findByName(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function focusedPayload(manifest) {
   const advisor = manifest.supabase_advisor ?? {};
   const productionPrerequisiteRow = findByName(
@@ -155,6 +165,19 @@ function focusedPayload(manifest) {
     launch_action_supabase_row: launchActionRow,
     production_approval_advisor_prerequisite: productionPrerequisiteRow,
     production_approval_request_advisor_row: productionRequestRow,
+    public_status_handles: {
+      supabase_advisor_access: readPublicStatusHandle('supabase_advisor_access'),
+      supabase_advisor_clearance_deficit_ledger: readPublicStatusHandle('supabase_advisor_clearance_deficit_ledger'),
+      supabase_advisor_operator_handoff_packet: readPublicStatusHandle('supabase_advisor_operator_handoff_packet'),
+      supabase_advisor_remediation_queue: readPublicStatusHandle('supabase_advisor_remediation_queue'),
+    },
+    package_script_handles: {
+      report_supabase_advisor_readiness: 'corepack pnpm run report:supabase-advisor-readiness',
+      check_supabase_advisor_report: 'corepack pnpm run check:supabase-advisor-report',
+      check_supabase_app_lint: 'corepack pnpm run check:supabase-app-lint',
+      report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
+      check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+    },
     proof_boundary: 'Focused Supabase advisor evidence only; this report does not authorize connectors, access the dashboard, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, grant production approval, deploy, or prove hosted/live parity.',
     stop_gate: 'Do not treat this focused report, CLI app lint, permission-denied connector output, public status cards, generated manifests, skipped probes, or remediation queues as Supabase advisor clearance, production approval, database security clearance, release-readiness, or hosted/live parity.',
   };
@@ -168,6 +191,21 @@ function renderMarkdown(payload) {
   const launchRow = payload.launch_action_supabase_row ?? {};
   const productionPrerequisite = payload.production_approval_advisor_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_advisor_row ?? {};
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes)
+      ? item.sourceProofTypes.join(', ')
+      : item?.sourceProofType ?? '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
+  const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
+    name,
+    command,
+  ]);
 
   const deficitRows = (deficits.items ?? []).map((item) => [
     item.requirement,
@@ -311,6 +349,14 @@ function renderMarkdown(payload) {
     '## Production Approval Request Supabase Row',
     '',
     renderTable(['Prerequisite', 'Request Phase', 'Source Status', 'Status', 'Blocks Request', 'Evidence To Attach', 'Request Impact'], requestRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
+    '',
+    '## Package Script Handles',
+    '',
+    renderTable(['Handle', 'Command'], scriptRows),
   ].join('\n')}\n`;
 }
 
