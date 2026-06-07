@@ -856,6 +856,17 @@ describe('status page release posture', () => {
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(launchQueueEvidence?.evidenceBoundary).toMatch(/create launch readiness/i);
+    expect(launchQueueEvidence?.sourceManifestPath).toBe('launch_action_queue');
+    expect(launchQueueEvidence?.sourceProofTypes).toEqual([
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(launchActionOperatorHandoffPacketEvidence?.status).toBe('external_gate');
     expect(launchActionOperatorHandoffPacketEvidence?.command).toContain('report:launch-action-readiness');
     expect(launchActionOperatorHandoffPacketEvidence?.command).toContain('check:launch-action-report');
@@ -877,6 +888,18 @@ describe('status page release posture', () => {
     expect(launchActionOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/request owner approval/i);
     expect(launchActionOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(launchActionOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/raise launch status/i);
+    expect(launchActionOperatorHandoffPacketEvidence?.sourceManifestPath).toBe('launch_action_queue.operator_handoff_packet');
+    expect(launchActionOperatorHandoffPacketEvidence?.sourceProofTypes).toEqual([
+      'launch_action_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalQueueEvidence?.status).toBe('external_gate');
     expect(productionApprovalQueueEvidence?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalQueueEvidence?.command).toContain('check:production-approval-report');
@@ -1512,6 +1535,17 @@ describe('status page release posture', () => {
     expect(launchQueueGate?.evidenceBoundary).toMatch(/does not deploy, merge, contact buyers/i);
     expect(launchQueueGate?.evidenceBoundary).toMatch(/prove launch evidence validation/i);
     expect(launchQueueGate?.nextAction).toMatch(/Work the queue in order/i);
+    expect(launchQueueGate?.sourceManifestPath).toBe('launch_action_queue');
+    expect(launchQueueGate?.sourceProofTypes).toEqual([
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(launchActionOperatorHandoffPacketGate?.status).toBe('external_gate');
     expect(launchActionOperatorHandoffPacketGate?.command).toContain('report:launch-action-readiness');
     expect(launchActionOperatorHandoffPacketGate?.command).toContain('check:launch-action-report');
@@ -1540,6 +1574,18 @@ describe('status page release posture', () => {
     expect(launchActionOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/raise launch status/i);
     expect(launchActionOperatorHandoffPacketGate?.nextAction).toMatch(/launch-operator handoff/i);
     expect(launchActionOperatorHandoffPacketGate?.nextAction).toMatch(/run each proof command separately/i);
+    expect(launchActionOperatorHandoffPacketGate?.sourceManifestPath).toBe('launch_action_queue.operator_handoff_packet');
+    expect(launchActionOperatorHandoffPacketGate?.sourceProofTypes).toEqual([
+      'launch_action_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ]);
     expect(productionApprovalQueueGate?.status).toBe('external_gate');
     expect(productionApprovalQueueGate?.command).toContain('report:production-approval-readiness');
     expect(productionApprovalQueueGate?.command).toContain('check:production-approval-report');

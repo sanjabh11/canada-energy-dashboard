@@ -693,6 +693,19 @@ function validateManifest(manifest) {
   if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*prove launch evidence validation|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
     failures.push('launch_blocker_action_queue must preserve the non-execution, non-validation, and launch boundary.');
   }
+  expectSourceLineage('launch_blocker_action_queue', {
+    sourceManifestPath: 'launch_action_queue',
+    sourceProofTypes: [
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ],
+  });
   const launchActionOperatorHandoffPacket = itemById.get('launch_action_operator_handoff_packet') ?? {};
   if (!/source provenance|launch evidence validation|release toolchain|branch review|Supabase advisor|buyer evidence|production approval|post-deploy live proof|execution gates|resolve_source_provenance_first|attach_launch_validation_evidence|release_toolchain_after_clean_source|read_only_branch_review_before_approval|supabase_advisor_after_authorization|buyer_evidence_before_approval|owner_approval_after_all_prelaunch_gates|post_deploy_proof_after_approved_deploy|blocks_launch_clearance|can_execute_from_packet=false/i.test(`${launchActionOperatorHandoffPacket.evidenceBoundary ?? ''}\n${launchActionOperatorHandoffPacket.nextAction ?? ''}`)) {
     failures.push('launch_action_operator_handoff_packet must describe launch action rows, execution gates, launch-blocking rows, and non-executable packet semantics.');
@@ -703,6 +716,20 @@ function validateManifest(manifest) {
   if (!/does not.*execute queue rows|does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*clear source provenance|does not.*run release-readiness|does not.*checkout branches|does not.*merge|does not.*push|does not.*contact buyers|does not.*access Supabase|does not.*request owner approval|does not.*deploy|does not.*mutate live services|does not.*run browser smoke|does not.*hosted\/live parity|does not.*raise launch status/i.test(launchActionOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('launch_action_operator_handoff_packet must preserve the no-queue-execution, no-source-mutation, no-release-readiness, no-branch-mutation, no-external-action, no-approval-request, no-deploy, no-live-proof, and no-launch-status boundary.');
   }
+  expectSourceLineage('launch_action_operator_handoff_packet', {
+    sourceManifestPath: 'launch_action_queue.operator_handoff_packet',
+    sourceProofTypes: [
+      'launch_action_operator_handoff_packet',
+      'source_provenance_decision',
+      'manifest_validation_and_approval_packet',
+      'release_toolchain_and_gated_release',
+      'read_only_branch_review',
+      'external_account_evidence',
+      'retained_buyer_evidence_validation',
+      'manual_approval_gate',
+      'post_deploy_live_proof_gate',
+    ],
+  });
   const productionApprovalQueue = itemById.get('production_approval_prerequisite_queue') ?? {};
   if (!/clean source provenance|launch evidence validation|Corepack release-readiness|explicit owner approval|post-deploy live proof/i.test(`${productionApprovalQueue.evidenceBoundary ?? ''}\n${productionApprovalQueue.nextAction ?? ''}`)) {
     failures.push('production_approval_prerequisite_queue must describe the approval prerequisite sequence.');
