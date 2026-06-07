@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest buyer evidence public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest production approval public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4598,6 +4598,40 @@ try {
         && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && buyerPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Buyer evidence public-handle digest code optimization review must record buyer, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const productionApprovalPublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST');
+    assert(productionApprovalPublicHandlesDecision, 'Manifest must record the production approval public-handle digest implementation decision.');
+    assert(
+      productionApprovalPublicHandlesDecision?.chosen_variant === 'minimal focused production approval handle digest',
+      'Production approval public-handle digest decision must record the minimal focused production approval handle digest variant.',
+    );
+    assert(
+      Array.isArray(productionApprovalPublicHandlesDecision?.files_changed)
+        && productionApprovalPublicHandlesDecision.files_changed.includes('scripts/report-production-approval-readiness.mjs')
+        && productionApprovalPublicHandlesDecision.files_changed.includes('scripts/check-production-approval-readiness-report.mjs')
+        && productionApprovalPublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && productionApprovalPublicHandlesDecision.files_changed.includes('tests/unit/productionApprovalReadiness.test.ts')
+        && productionApprovalPublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && productionApprovalPublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Production approval public-handle digest decision must record focused production approval, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not request owner approval|grant owner approval|run deploy-production|run Netlify deploy|push|merge|mutate branches|contact buyers|access Supabase|clear source provenance|run release-readiness|run check:production-deploy-request as clearance|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(productionApprovalPublicHandlesDecision?.proof_boundary ?? ''),
+      'Production approval public-handle digest decision must preserve no-approval-request, no-deploy, no-source-or-branch-mutation, no-buyer-contact, no-Supabase, no-release-readiness, no-deploy-request-clearance, no-live-proof, and no-readiness boundaries.',
+    );
+    const productionApprovalPublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST');
+    assert(productionApprovalPublicHandlesReview, 'Manifest must record the production approval public-handle digest code optimization review.');
+    assert(productionApprovalPublicHandlesReview?.policy === 'strict', 'Production approval public-handle digest code optimization review must use strict policy.');
+    assert(productionApprovalPublicHandlesReview?.verdict === 'pass', 'Production approval public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(productionApprovalPublicHandlesReview?.tests_or_checks)
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:production-approval-report -- --skip-probes/.test(check))
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && productionApprovalPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Production approval public-handle digest code optimization review must record production approval, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

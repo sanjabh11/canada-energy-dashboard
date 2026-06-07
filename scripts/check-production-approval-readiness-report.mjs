@@ -108,6 +108,10 @@ if (failures.length === 0) {
     assertContains(stdout, 'planning evidence only', 'Report must preserve planning-only operator handoff boundaries.');
     assertContains(stdout, '## Launch Action Production Approval Row', 'Report must include the launch action production approval row.');
     assertContains(stdout, '## Release Preflight Owner Approval Row', 'Report must include the release preflight owner approval row.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public production approval handles.');
+    assertContains(stdout, 'production_approval_prerequisite_queue', 'Report must include the production approval prerequisite queue public handle.');
+    assertContains(stdout, 'production_approval_request_packet', 'Report must include the production approval request packet public handle.');
+    assertContains(stdout, 'production_approval_operator_handoff_packet', 'Report must include the production approval operator handoff public handle.');
     assertContains(stdout, 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Report must include the buyer evidence gate focused command.');
     assertContains(stdout, 'corepack pnpm run check:buyer-evidence-gate-report', 'Report must include the buyer evidence gate checker command.');
     assertContains(stdout, 'corepack pnpm run check:production-deploy-request', 'Report must include the production deploy request command.');
@@ -265,6 +269,23 @@ if (failures.length === 0) {
     assert(operatorRowsByPrerequisite.get('Post-deploy live proof boundary')?.post_deploy_boundary === true, 'Operator handoff post-deploy row must set post_deploy_boundary.');
     assert(payload.launch_action_production_approval_row?.phase === 'production_approval', 'Focused report JSON must include the launch action production approval row.');
     assert(payload.release_preflight_owner_approval_row?.requirement === 'Explicit owner production approval', 'Focused report JSON must include the release preflight owner approval row.');
+    assert(payload.public_status_handles?.production_approval_prerequisite_queue?.id === 'production_approval_prerequisite_queue', 'Focused JSON must include the production approval prerequisite queue public handle.');
+    assert(payload.public_status_handles?.production_approval_request_packet?.id === 'production_approval_request_packet', 'Focused JSON must include the production approval request packet public handle.');
+    assert(payload.public_status_handles?.production_approval_operator_handoff_packet?.id === 'production_approval_operator_handoff_packet', 'Focused JSON must include the production approval operator handoff public handle.');
+    assert(
+      /report:production-approval-readiness/.test(payload.public_status_handles?.production_approval_prerequisite_queue?.command ?? '')
+        && /check:production-approval-report/.test(payload.public_status_handles?.production_approval_prerequisite_queue?.command ?? ''),
+      'Production approval prerequisite queue public handle must point at the focused production approval report/check.',
+    );
+    assert(
+      /report:production-approval-readiness/.test(payload.public_status_handles?.production_approval_request_packet?.command ?? '')
+        && /check:production-approval-report/.test(payload.public_status_handles?.production_approval_request_packet?.command ?? '')
+        && /check:production-deploy-request/.test(payload.public_status_handles?.production_approval_request_packet?.command ?? ''),
+      'Production approval request packet public handle must point at the focused report/check and guarded deploy-request check.',
+    );
+    assert(payload.public_status_handles?.production_approval_operator_handoff_packet?.sourceManifestPath === 'production_approval.operator_handoff_packet', 'Production approval operator handoff public handle must point at production_approval.operator_handoff_packet.');
+    assert(Array.isArray(payload.public_status_handles?.production_approval_request_packet?.sourceProofTypes) && payload.public_status_handles.production_approval_request_packet.sourceProofTypes.includes('production_approval_request_packet'), 'Production approval request packet public handle must expose request packet lineage.');
+    assert(Array.isArray(payload.public_status_handles?.production_approval_operator_handoff_packet?.sourceProofTypes) && payload.public_status_handles.production_approval_operator_handoff_packet.sourceProofTypes.includes('production_approval_operator_handoff_packet'), 'Production approval operator handoff public handle must expose operator handoff lineage.');
     assert(payload.package_script_handles?.check_production_deploy_request === 'corepack pnpm run check:production-deploy-request', 'Focused report must expose the production deploy request command handle.');
     assert(/does not grant owner approval|request owner approval|run deploys|clear source provenance|prove hosted\/live parity/i.test(payload.proof_boundary ?? ''), 'Focused report proof boundary must not imply approval, deploy, source clearance, or live parity.');
     assert(/Do not treat this focused report|production approval|deploy authorization|commercial-ready status/i.test(payload.stop_gate ?? ''), 'Focused report stop gate must reject approval and readiness claims from the report itself.');

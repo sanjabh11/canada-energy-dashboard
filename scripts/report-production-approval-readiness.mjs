@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
 
 const repoRoot = process.cwd();
 const args = process.argv.slice(2);
@@ -127,6 +128,16 @@ function findByKey(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function focusedPayload(manifest) {
   const productionApproval = manifest.production_approval ?? {};
   const prerequisiteQueue = productionApproval.prerequisite_queue ?? {};
@@ -140,6 +151,11 @@ function focusedPayload(manifest) {
     launch_decision: manifest.launch_decision ?? null,
     repo: manifest.repo ?? {},
     production_approval: productionApproval,
+    public_status_handles: {
+      production_approval_prerequisite_queue: readPublicStatusHandle('production_approval_prerequisite_queue'),
+      production_approval_request_packet: readPublicStatusHandle('production_approval_request_packet'),
+      production_approval_operator_handoff_packet: readPublicStatusHandle('production_approval_operator_handoff_packet'),
+    },
     package_script_handles: {
       report_production_approval_packet: 'corepack pnpm run report:production-approval-packet',
       check_production_deploy_request: 'corepack pnpm run check:production-deploy-request',
@@ -236,6 +252,17 @@ function renderMarkdown(payload) {
     name,
     command,
   ]);
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes)
+      ? item.sourceProofTypes.join(', ')
+      : item?.sourceProofType ?? '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
 
   return `${[
     '# CEIP Production Approval Readiness Report',
@@ -309,6 +336,10 @@ function renderMarkdown(payload) {
       ['Requirement', 'Current', 'Needed', 'Proof Type', 'Proof Boundary', 'Stop Gate', 'Status'],
       releaseOwnerRows,
     ),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
     '',
     '## Package Script Handles',
     '',

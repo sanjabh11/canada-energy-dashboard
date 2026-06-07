@@ -86,6 +86,10 @@ describe('production approval readiness report', () => {
     expect(stdout).toContain('planning evidence only');
     expect(stdout).toContain('Launch Action Production Approval Row');
     expect(stdout).toContain('Release Preflight Owner Approval Row');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('production_approval_prerequisite_queue');
+    expect(stdout).toContain('production_approval_request_packet');
+    expect(stdout).toContain('production_approval_operator_handoff_packet');
     expect(stdout).toContain('corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness');
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('corepack pnpm run report:production-approval-packet');
@@ -198,6 +202,15 @@ describe('production approval readiness report', () => {
     }
     expect(payload.launch_action_production_approval_row.phase).toBe('production_approval');
     expect(payload.release_preflight_owner_approval_row.requirement).toBe('Explicit owner production approval');
+    expect(payload.public_status_handles.production_approval_prerequisite_queue.id).toBe('production_approval_prerequisite_queue');
+    expect(payload.public_status_handles.production_approval_request_packet.id).toBe('production_approval_request_packet');
+    expect(payload.public_status_handles.production_approval_operator_handoff_packet.id).toBe('production_approval_operator_handoff_packet');
+    expect(payload.public_status_handles.production_approval_prerequisite_queue.command).toContain('report:production-approval-readiness');
+    expect(payload.public_status_handles.production_approval_prerequisite_queue.command).toContain('check:production-approval-report');
+    expect(payload.public_status_handles.production_approval_request_packet.command).toContain('check:production-deploy-request');
+    expect(payload.public_status_handles.production_approval_operator_handoff_packet.sourceManifestPath).toBe('production_approval.operator_handoff_packet');
+    expect(payload.public_status_handles.production_approval_request_packet.sourceProofTypes).toContain('production_approval_request_packet');
+    expect(payload.public_status_handles.production_approval_operator_handoff_packet.sourceProofTypes).toContain('production_approval_operator_handoff_packet');
     expect(payload.package_script_handles.check_production_deploy_request).toBe('corepack pnpm run check:production-deploy-request');
     expect(payload.proof_boundary).toMatch(/does not grant owner approval|run deploys|clear source provenance|hosted\/live parity/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|production approval|deploy authorization|commercial-ready status/i);

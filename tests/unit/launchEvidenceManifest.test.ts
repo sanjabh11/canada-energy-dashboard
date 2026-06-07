@@ -169,7 +169,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1226,9 +1226,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(65);
+    expect(manifest.implementation_decisions).toHaveLength(66);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(65);
+    expect(manifest.code_optimization_reviews).toHaveLength(66);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2400,6 +2400,37 @@ describe('launch evidence manifest report', () => {
       'pnpm exec vitest run tests/unit/buyerEvidenceGateReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
       'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes --json',
       'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const productionApprovalPublicHandleDigestDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(productionApprovalPublicHandleDigestDecision).toBeTruthy();
+    expect(productionApprovalPublicHandleDigestDecision.chosen_variant).toBe('minimal focused production approval handle digest');
+    expect(productionApprovalPublicHandleDigestDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-production-approval-readiness.mjs',
+      'scripts/check-production-approval-readiness-report.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/productionApprovalReadiness.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(productionApprovalPublicHandleDigestDecision.proof_boundary).toMatch(/handle discoverability only|does not request owner approval|grant owner approval|run deploy-production|run Netlify deploy|push|merge|mutate branches|contact buyers|access Supabase|clear source provenance|run release-readiness|run check:production-deploy-request as clearance|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const productionApprovalPublicHandleDigestReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(productionApprovalPublicHandleDigestReview).toBeTruthy();
+    expect(productionApprovalPublicHandleDigestReview.policy).toBe('strict');
+    expect(productionApprovalPublicHandleDigestReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-production-approval-readiness.mjs',
+      'node --check scripts/check-production-approval-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/productionApprovalReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:production-approval-readiness -- --skip-probes --json',
+      'pnpm run check:production-approval-report -- --skip-probes',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',

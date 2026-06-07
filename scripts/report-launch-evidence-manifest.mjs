@@ -5780,6 +5780,18 @@ const productionApprovalOperatorHandoffPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const productionApprovalPublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-production-approval-readiness.mjs',
+  'scripts/check-production-approval-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/productionApprovalReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const postDeployProductionApprovalProofHandleFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -6032,6 +6044,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...postDeployLiveProofReportFilesChanged,
   ...postDeployLiveProofOperatorHandoffPacketFilesChanged,
   ...productionApprovalOperatorHandoffPacketFilesChanged,
+  ...productionApprovalPublicHandlesDigestFilesChanged,
   ...postDeployProductionApprovalProofHandleFilesChanged,
   ...completionAuditProofHandleFilesChanged,
   ...launchActionFinalProofHandleFilesChanged,
@@ -6610,6 +6623,24 @@ const productionApprovalOperatorHandoffPacketTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const productionApprovalPublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-production-approval-readiness.mjs',
+  'node --check scripts/check-production-approval-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/productionApprovalReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:production-approval-readiness -- --skip-probes',
+  'pnpm run report:production-approval-readiness -- --skip-probes --json',
+  'pnpm run check:production-approval-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const postDeployProductionApprovalProofHandleTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -6903,6 +6934,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...postDeployLiveProofReportTestsRun,
   ...postDeployLiveProofOperatorHandoffPacketTestsRun,
   ...productionApprovalOperatorHandoffPacketTestsRun,
+  ...productionApprovalPublicHandlesDigestTestsRun,
   ...postDeployProductionApprovalProofHandleTestsRun,
   ...completionAuditProofHandleTestsRun,
   ...launchActionFinalProofHandleTestsRun,
@@ -7792,6 +7824,19 @@ const safeFixImplementationDecisions = [
     reason: 'Buyer evidence is a blocked launch lane with public buyer evidence handles already present, but the focused buyer evidence report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, Supabase advisor, and progress digest reports.',
     proof_boundary: 'This record improves buyer evidence handle discoverability only; it does not contact buyers, send outreach, create accepted evidence, move confidence, attach retained artifacts, validate 95%, create buyer proof, claim buyer acceptance, request production approval, grant owner approval, deploy, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused buyer evidence handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as buyer-proven evidence, retained-artifact validation, Phase F 95% proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing production approval public status handles inside the focused production approval report.',
+    acceptance_check: 'report:production-approval-readiness renders Public Release Status Handles for production_approval_prerequisite_queue, production_approval_request_packet, and production_approval_operator_handoff_packet; check:production-approval-report validates those handles while production approval remains manual-stop until pre-request gates, explicit owner approval, guarded deployment, and post-deploy live proof actually pass.',
+    chosen_variant: 'minimal focused production approval handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json production approval handles, focused source/release/branch/Supabase/buyer/progress report handle sections, production approval report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: productionApprovalPublicHandlesDigestFilesChanged,
+    tests_run: productionApprovalPublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public production approval handle rows into the focused production approval JSON/Markdown payload without changing public status JSON, requesting owner approval, running deploy checks as clearance, deploying, mutating source, contacting buyers, accessing Supabase, running release-readiness, proving hosted/live parity, or changing launch status.',
+    reason: 'Production approval is a manual-stop launch lane with public production approval handles already present, but the focused production approval report did not show those handles in the same operator-facing form as source provenance, release preflight, branch review, Supabase advisor, buyer evidence, and progress digest reports.',
+    proof_boundary: 'This record improves production approval handle discoverability only; it does not request owner approval, grant owner approval, run deploy-production, run Netlify deploy, push, merge, mutate branches, contact buyers, access Supabase, clear source provenance, run release-readiness, run check:production-deploy-request as clearance, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused production approval handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as production approval, deploy authorization, clean source provenance, release-readiness, buyer acceptance, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9343,6 +9388,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing real buyer evidence work could reduce the blocker only with real buyer-supplied rows and retained artifacts, but local generation would fabricate proof or exceed the safe-fix boundary.',
     evidence: 'Buyer evidence stop gates require real anonymized accepted buyer rows, reviewer evidence, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 before any buyer confidence, approval, deploy, or readiness claim.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave production approval public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused production approval report is the operator artifact for the manual-stop approval lane and should show the same handles during continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the approval blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains production_approval_prerequisite_queue, production_approval_request_packet, and production_approval_operator_handoff_packet handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status production approval rows.',
+    reason_rejected: 'The needed public production approval handles already exist; changing generated public status would add churn without improving the focused production approval report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public production approval rows already point at report:production-approval-readiness && check:production-approval-report, and the request packet row also points at check:production-deploy-request for the guarded approval path.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    variant: 'Request owner approval, run deploy-production, run Netlify deploy, push, merge, contact buyers, access Supabase, run release-readiness, or run production-deploy request checks as clearance from the report phase.',
+    reason_rejected: 'Approval requests, deploy execution, source or branch mutation, buyer contact, Supabase access, release-readiness, and deploy-request clearance require prerequisite proof and explicit owner gates outside this repo-side report-contract phase.',
+    tradeoff: 'Executing approval or deploy work could reduce the blocker only after source, release, branch, Supabase, buyer, owner-approval, and live-proof gates pass; doing it here would exceed the safe-fix boundary and risk unsupported approval/deploy/readiness claims.',
+    evidence: 'Production approval stop gates require clean source provenance, launch evidence validation attachment, Corepack-pinned release-readiness, canonical branch review, Supabase advisor clearance, buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof before production approval or deploy authorization can be claimed.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9942,6 +10008,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public buyer evidence handle data and existing buyer evidence gate report/check/test contracts, with no new dependency, no generated public-status churn, no new buyer parser, no buyer contact, no outreach send, no evidence generation, no retained artifact mutation, no 95% validator execution, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: buyerEvidencePublicHandlesDigestTestsRun,
     remaining_risk: 'The buyer evidence handle digest remains operator guidance only; launch readiness still depends on real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, validate:pilot-evidence --require-95, clean source provenance, release-readiness, branch decisions, Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PRODUCTION-APPROVAL-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public production approval handle data and existing production approval report/check/test contracts, with no new dependency, no generated public-status churn, no new approval parser, no owner approval request, no deploy execution, no production-deploy request clearance, no source mutation, no branch mutation, no buyer contact, no Supabase access, no release-readiness execution, no hosted/live proof execution, and no launch-status change.',
+    tests_or_checks: productionApprovalPublicHandlesDigestTestsRun,
+    remaining_risk: 'The production approval handle digest remains operator guidance only; launch readiness still depends on clean source provenance, current launch evidence validation attachment, Corepack-pinned release-readiness, branch decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
