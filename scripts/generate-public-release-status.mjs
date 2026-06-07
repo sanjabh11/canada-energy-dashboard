@@ -128,6 +128,12 @@ const requiredItemContracts = [
     command: 'pnpm run report:launch-action-readiness && pnpm run check:launch-action-report',
   },
   {
+    id: 'launch_action_operator_handoff_packet',
+    status: 'external_gate',
+    proofBucket: 'local/source',
+    command: 'pnpm run report:launch-action-readiness && pnpm run check:launch-action-report',
+  },
+  {
     id: 'production_approval_prerequisite_queue',
     status: 'external_gate',
     proofBucket: 'local/source',
@@ -511,6 +517,16 @@ function validateManifest(manifest) {
   }
   if (!/does not deploy|does not.*merge|does not.*contact buyers|does not.*prove launch evidence validation|does not.*launch/i.test(launchQueue.evidenceBoundary ?? '')) {
     failures.push('launch_blocker_action_queue must preserve the non-execution, non-validation, and launch boundary.');
+  }
+  const launchActionOperatorHandoffPacket = itemById.get('launch_action_operator_handoff_packet') ?? {};
+  if (!/source provenance|launch evidence validation|release toolchain|branch review|Supabase advisor|buyer evidence|production approval|post-deploy live proof|execution gates|resolve_source_provenance_first|attach_launch_validation_evidence|release_toolchain_after_clean_source|read_only_branch_review_before_approval|supabase_advisor_after_authorization|buyer_evidence_before_approval|owner_approval_after_all_prelaunch_gates|post_deploy_proof_after_approved_deploy|blocks_launch_clearance|can_execute_from_packet=false/i.test(`${launchActionOperatorHandoffPacket.evidenceBoundary ?? ''}\n${launchActionOperatorHandoffPacket.nextAction ?? ''}`)) {
+    failures.push('launch_action_operator_handoff_packet must describe launch action rows, execution gates, launch-blocking rows, and non-executable packet semantics.');
+  }
+  if (!/report:launch-action-readiness/.test(launchActionOperatorHandoffPacket.command ?? '') || !/check:launch-action-report/.test(launchActionOperatorHandoffPacket.command ?? '')) {
+    failures.push('launch_action_operator_handoff_packet must route through the focused launch action report/check handles.');
+  }
+  if (!/does not.*execute queue rows|does not.*commit|does not.*unstage|does not.*stash|does not.*revert|does not.*clear source provenance|does not.*run release-readiness|does not.*checkout branches|does not.*merge|does not.*push|does not.*contact buyers|does not.*access Supabase|does not.*request owner approval|does not.*deploy|does not.*mutate live services|does not.*run browser smoke|does not.*hosted\/live parity|does not.*raise launch status/i.test(launchActionOperatorHandoffPacket.evidenceBoundary ?? '')) {
+    failures.push('launch_action_operator_handoff_packet must preserve the no-queue-execution, no-source-mutation, no-release-readiness, no-branch-mutation, no-external-action, no-approval-request, no-deploy, no-live-proof, and no-launch-status boundary.');
   }
   const productionApprovalQueue = itemById.get('production_approval_prerequisite_queue') ?? {};
   if (!/clean source provenance|launch evidence validation|Corepack release-readiness|explicit owner approval|post-deploy live proof/i.test(`${productionApprovalQueue.evidenceBoundary ?? ''}\n${productionApprovalQueue.nextAction ?? ''}`)) {

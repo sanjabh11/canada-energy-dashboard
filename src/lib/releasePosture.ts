@@ -268,6 +268,12 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     evidenceBoundary: 'The launch blocker action queue sequences source provenance, launch evidence validation, release toolchain, branch review, Supabase advisor access, buyer evidence, production approval, and post-deploy live proof; it does not deploy, merge, contact buyers, mutate branches, clear blockers, prove launch evidence validation, or create launch readiness, and it does not create launch readiness.',
   },
   {
+    label: 'Launch action operator handoff packet',
+    status: 'external_gate',
+    command: 'pnpm run report:launch-action-readiness && pnpm run check:launch-action-report',
+    evidenceBoundary: 'The focused launch action report/check maps source provenance, launch evidence validation, release toolchain, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof queue rows into non-executable execution gates, including resolve_source_provenance_first, attach_launch_validation_evidence, release_toolchain_after_clean_source, read_only_branch_review_before_approval, supabase_advisor_after_authorization, buyer_evidence_before_approval, owner_approval_after_all_prelaunch_gates, post_deploy_proof_after_approved_deploy, blocks_launch_clearance, and can_execute_from_packet=false. It does not execute queue rows, commit, unstage, stash, revert, clear source provenance, run release-readiness, checkout branches, merge, push, contact buyers, access Supabase, request owner approval, deploy, mutate live services, run browser smoke, prove hosted/live parity, or raise launch status. It does not create launch readiness.',
+  },
+  {
     label: 'Production approval prerequisite queue',
     status: 'external_gate',
     command: 'pnpm run report:production-approval-readiness && pnpm run check:production-approval-report',
