@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES', 'Manifest progress_updates must expose the latest focused suite blocking-gate handle ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK', 'Manifest progress_updates must expose the latest launch evidence schema package-check ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2707,6 +2707,7 @@ try {
       'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report',
       'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'corepack pnpm run check:commercial-launch-readiness-report',
+      'corepack pnpm run check:launch-evidence-schema',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
@@ -5000,6 +5001,53 @@ try {
 		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
 		        && focusedSuiteBlockingGateHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
 		      'Focused suite blocking-gate handle code optimization review must record aggregate checker, progress, focused suite, manifest, commercial report, JSON, and TypeScript checks.',
+		    );
+		    const launchEvidenceSchemaPackageCheckDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK');
+		    assert(launchEvidenceSchemaPackageCheckDecision, 'Manifest must record the launch evidence schema package-check implementation decision.');
+		    assert(
+		      launchEvidenceSchemaPackageCheckDecision?.chosen_variant === 'minimal validator wrapper package check',
+		      'Launch evidence schema package-check decision must record the minimal validator wrapper variant.',
+		    );
+		    assert(
+		      /check:launch-evidence-schema|validate_launch_evidence\.py|VALID|Fix Report required checks/i.test(launchEvidenceSchemaPackageCheckDecision?.acceptance_check ?? ''),
+		      'Launch evidence schema package-check decision must require package-level schema validation and required-check exposure.',
+		    );
+		    assert(
+		      Array.isArray(launchEvidenceSchemaPackageCheckDecision?.files_changed)
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('package.json')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/check-launch-evidence-schema.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/check-focused-launch-readiness-reports.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('docs/COMMERCIAL_SOURCE_OF_TRUTH.md')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('tests/unit/focusedLaunchReadinessReports.test.ts')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+		        && launchEvidenceSchemaPackageCheckDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+		      'Launch evidence schema package-check decision must record package, wrapper, aggregate checker, manifest, progress, commercial report, and unit contract files.',
+		    );
+		    assert(
+		      /schema validation command discoverability only|does not make schema validation a commercial-ready claim|clear buyer evidence|clear source provenance|run release-readiness|approve branches|authorize Supabase|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(launchEvidenceSchemaPackageCheckDecision?.proof_boundary ?? ''),
+		      'Launch evidence schema package-check decision must preserve no-readiness, no-clearance, no-release, no-branch, no-Supabase, no-approval, no-deploy, no-live-proof, no-completion boundaries.',
+		    );
+		    const launchEvidenceSchemaPackageCheckReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK');
+		    assert(launchEvidenceSchemaPackageCheckReview, 'Manifest must record the launch evidence schema package-check code optimization review.');
+		    assert(launchEvidenceSchemaPackageCheckReview?.policy === 'strict', 'Launch evidence schema package-check code optimization review must use strict policy.');
+		    assert(launchEvidenceSchemaPackageCheckReview?.verdict === 'pass', 'Launch evidence schema package-check code optimization review must pass.');
+		    assert(
+		      Array.isArray(launchEvidenceSchemaPackageCheckReview?.tests_or_checks)
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check-launch-evidence-schema\.mjs/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /focusedLaunchReadinessReports\.test\.ts/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:launch-evidence-schema -- --skip-probes/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:commercial-source/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes --json/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+		      'Launch evidence schema package-check code optimization review must record wrapper, schema, focused suite, progress, manifest, commercial report, JSON, and TypeScript checks.',
 		    );
 		    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

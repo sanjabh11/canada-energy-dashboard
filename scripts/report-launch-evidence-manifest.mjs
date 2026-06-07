@@ -22,6 +22,7 @@ const PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:prod
 const POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND = 'corepack pnpm run report:post-deploy-live-proof-readiness && corepack pnpm run check:post-deploy-live-proof-report';
 const PRODUCTION_AND_POST_DEPLOY_FOCUSED_PROOF_COMMAND = `${PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND} && ${POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND}`;
 const FOCUSED_LAUNCH_READINESS_REPORT_SUITE_CHECK_COMMAND = 'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes';
+const LAUNCH_EVIDENCE_SCHEMA_CHECK_COMMAND = 'corepack pnpm run check:launch-evidence-schema';
 
 for (let index = 0; index < args.length; index += 1) {
   const arg = args[index];
@@ -6072,6 +6073,7 @@ const focusedLaunchReadinessSuitePackageHandlesFilesChanged = [
   'scripts/check-launch-evidence-manifest.mjs',
   'scripts/check-progress-digest-readiness-report.mjs',
   'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'tests/unit/focusedLaunchReadinessReports.test.ts',
   'tests/unit/progressDigestReadiness.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
@@ -6083,6 +6085,21 @@ const focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged = [
   'scripts/check-launch-evidence-manifest.mjs',
   'scripts/check-progress-digest-readiness-report.mjs',
   'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'tests/unit/focusedLaunchReadinessReports.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
+const launchEvidenceSchemaPackageCheckFilesChanged = [
+  'package.json',
+  'scripts/check-launch-evidence-schema.mjs',
+  'scripts/check-focused-launch-readiness-reports.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
   'tests/unit/focusedLaunchReadinessReports.test.ts',
   'tests/unit/progressDigestReadiness.test.ts',
   'tests/unit/launchEvidenceManifest.test.ts',
@@ -6196,6 +6213,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...focusedLaunchReadinessSuiteHandoffSurfacesFilesChanged,
   ...focusedLaunchReadinessSuitePackageHandlesFilesChanged,
   ...focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged,
+  ...launchEvidenceSchemaPackageCheckFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
@@ -6339,6 +6357,24 @@ const focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun = [
   'node --check scripts/check-progress-digest-readiness-report.mjs',
   'node --check scripts/check-commercial-launch-readiness-report.mjs',
   'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const launchEvidenceSchemaPackageCheckTestsRun = [
+  'node --check scripts/check-launch-evidence-schema.mjs',
+  'node --check scripts/check-focused-launch-readiness-reports.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:launch-evidence-schema -- --skip-probes',
+  'pnpm run check:commercial-source',
   'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
   'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
   'pnpm run check:progress-digest-report -- --skip-probes',
@@ -7214,6 +7250,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...buyerEvidenceReadinessReportContractTestsRun,
   ...focusedLaunchReadinessSuitePackageHandlesTestsRun,
   ...focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
+  ...launchEvidenceSchemaPackageCheckTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
@@ -8290,6 +8327,19 @@ const safeFixImplementationDecisions = [
     reason: 'The aggregate suite now exposes repeatable package handles, but operators also need to see the still-blocked launch gates that are intentionally outside the passing focused report contract so a green suite is not mistaken for release, deploy, live, branch, source, or buyer clearance.',
     proof_boundary: 'This record improves focused launch-readiness blocking-gate handle discoverability only; it does not execute blocking gate commands, clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, create buyer proof, request or grant owner approval, run production deploy checks as clearance, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat blocking gate handles, aggregate suite pass, skipped-probe output, JSON output, buyer evidence readiness handles, production approval packet handles, unmerged-branch inventory handles, release-readiness handles, production deploy request handles, post-deploy live handles, schema validation handles, manifest validation, progress digest, commercial report validation, or this code optimization record as source readiness, release-readiness, branch approval, Supabase advisor clearance, buyer acceptance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+    decision: 'Add a package-level launch evidence schema validation wrapper around the orchestrator validator.',
+    acceptance_check: 'check:launch-evidence-schema generates the current launch evidence manifest into a temporary JSON file, runs validate_launch_evidence.py --require-repo-exists, reports VALID, and is exposed from the focused suite blocking-gate handles and Fix Report required checks without clearing launch blockers.',
+    chosen_variant: 'minimal validator wrapper package check',
+    repo_pattern_reused: 'Existing report-launch-evidence-manifest --output contract, existing check-launch-evidence-manifest validator invocation, existing focused suite blocking-gate handle section, progress digest current-phase ratchet, broad manifest checker, and commercial readiness report checker.',
+    files_changed: launchEvidenceSchemaPackageCheckFilesChanged,
+    tests_run: launchEvidenceSchemaPackageCheckTestsRun,
+    proof: 'The patch adds a thin Node wrapper that writes the generated manifest to a temp file and calls the existing orchestrator validate_launch_evidence.py with --require-repo-exists, then exposes the wrapper as a package command and manifest required check without duplicating schema rules, changing launch status, running release-readiness, requesting approval, deploying, or proving hosted/live parity.',
+    reason: 'The manifest and aggregate suite already referenced schema validation, but the operator-facing required check still exposed a raw placeholder command with <manifest> instead of a repeatable package script that generates and validates the current manifest in one step.',
+    proof_boundary: 'This record improves launch evidence schema validation command discoverability only; it does not make schema validation a commercial-ready claim, clear buyer evidence, clear source provenance, run release-readiness, approve branches, authorize Supabase, request or grant owner approval, run production deploy checks as clearance, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat check:launch-evidence-schema, validate_launch_evidence.py VALID output, temporary manifest generation, focused suite output, broad manifest validation, progress digest, commercial report validation, or this code optimization record as buyer acceptance, clean source provenance, release-readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10072,6 +10122,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Public status churn would be more visible externally, but it would touch generated/source-of-truth surfaces and duplicate lane-specific handles already maintained elsewhere.',
     evidence: 'Individual focused reports already expose public handles for source, release, branch, Supabase, buyer, production approval, post-deploy live proof, launch action, validation, progress, objective completion, and adversarial review lanes.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+    variant: 'Leave schema validation as a raw validate_launch_evidence.py <manifest> placeholder in the Fix Report.',
+    reason_rejected: 'The raw placeholder is accurate but not a directly executable package command, so operators must manually generate a manifest path before running the validator.',
+    tradeoff: 'No-code defer avoids one wrapper script, but preserves a weaker required-check contract than adjacent package-level launch readiness checks.',
+    evidence: 'fix_report.current_required_checks listed python3 validate_launch_evidence.py <manifest> while package.json had no check:launch-evidence-schema entrypoint.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+    variant: 'Duplicate validate_launch_evidence.py schema rules in a new JavaScript checker.',
+    reason_rejected: 'Duplicating schema rules would create drift against the orchestrator validator and broaden maintenance risk without improving launch readiness.',
+    tradeoff: 'A JavaScript-only checker could avoid Python, but the orchestrator already defines the authoritative schema validator and check-launch-evidence-manifest already uses it.',
+    evidence: '/Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py is the skill-owned schema validator and check-launch-evidence-manifest invokes it with --require-repo-exists.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+    variant: 'Treat schema validation as launch clearance or chain it into release-readiness, production deploy request, post-deploy live proof, buyer evidence validation, branch mutation, or Supabase advisor work.',
+    reason_rejected: 'Schema validation proves manifest shape and boundary consistency only; release, deploy, live, buyer, branch, Supabase, approval, and source gates require separate owner/external/runtime evidence.',
+    tradeoff: 'Chaining more gates could look closer to launch completion, but would exceed this safe repo-side wrapper phase and risk unsupported readiness claims.',
+    evidence: 'The launch evidence manifest remains blocked by buyer evidence, source provenance owner decision, release toolchain proof, branch review, Supabase advisor clearance, production approval, and post-deploy live proof gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10771,6 +10842,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
     remaining_risk: 'The focused suite blocking-gate handle digest remains operator guidance only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds one thin wrapper around the existing report --output and orchestrator validate_launch_evidence.py contracts, with no duplicated schema implementation, no new dependency, no public status churn, no release-readiness execution, no production deploy request execution, no post-deploy live proof execution, no external-account call, no source or branch mutation, no buyer contact, no owner approval request, no deploy execution, no live proof execution, and no launch-status change.',
+    tests_or_checks: launchEvidenceSchemaPackageCheckTestsRun,
+    remaining_risk: 'The launch evidence schema package check proves generated-manifest schema shape only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -11189,7 +11269,7 @@ const manifest = {
       'production approval prerequisite queue synthesis',
       'production approval request packet synthesis',
       'post-deploy live proof gate queue synthesis',
-      'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
+      LAUNCH_EVIDENCE_SCHEMA_CHECK_COMMAND,
     ],
     unresolved_blockers: [
       'Real buyer evidence and retained redacted artifacts are absent.',

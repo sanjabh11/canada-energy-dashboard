@@ -50,6 +50,7 @@
     "check:phase-f-minimum-intake-bundle": "node scripts/check-phase-f-minimum-intake-bundle.mjs",
     "check:phase-f-evidence-workspace": "node scripts/check-phase-f-evidence-workspace.mjs",
     "check:launch-evidence-manifest": "node scripts/check-launch-evidence-manifest.mjs",
+    "check:launch-evidence-schema": "node scripts/check-launch-evidence-schema.mjs",
     "check:commercial-launch-readiness-report": "node scripts/check-commercial-launch-readiness-report.mjs",
     "check:unmerged-branch-readiness-report": "node scripts/check-unmerged-branch-readiness-report.mjs",
     "check:branch-review-report": "node scripts/check-branch-review-readiness-report.mjs",

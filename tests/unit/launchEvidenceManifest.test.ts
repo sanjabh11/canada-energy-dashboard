@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1224,13 +1224,14 @@ describe('launch evidence manifest report', () => {
 	      'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
 	      'corepack pnpm run check:buyer-evidence-readiness-report',
 	      'corepack pnpm run check:commercial-launch-readiness-report',
+      'corepack pnpm run check:launch-evidence-schema',
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(76);
+    expect(manifest.implementation_decisions).toHaveLength(77);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(76);
+    expect(manifest.code_optimization_reviews).toHaveLength(77);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2712,6 +2713,7 @@ describe('launch evidence manifest report', () => {
 	      'scripts/check-launch-evidence-manifest.mjs',
 	      'scripts/check-progress-digest-readiness-report.mjs',
 	      'scripts/check-commercial-launch-readiness-report.mjs',
+      'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
 	      'tests/unit/focusedLaunchReadinessReports.test.ts',
 	      'tests/unit/progressDigestReadiness.test.ts',
 	      'tests/unit/launchEvidenceManifest.test.ts',
@@ -2757,6 +2759,42 @@ describe('launch evidence manifest report', () => {
 	    expect(focusedSuiteBlockingGateHandlesReview.tests_or_checks).toEqual(expect.arrayContaining([
 	      'node --check scripts/check-focused-launch-readiness-reports.mjs',
 	      'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+	      'pnpm run check:progress-digest-report -- --skip-probes',
+	      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+	      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+	      'pnpm exec tsc -b --pretty false',
+	    ]));
+	    const launchEvidenceSchemaPackageCheckDecision = manifest.implementation_decisions.find(
+	      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+	    );
+	    expect(launchEvidenceSchemaPackageCheckDecision).toBeTruthy();
+	    expect(launchEvidenceSchemaPackageCheckDecision.chosen_variant).toBe('minimal validator wrapper package check');
+	    expect(launchEvidenceSchemaPackageCheckDecision.acceptance_check).toMatch(/check:launch-evidence-schema|validate_launch_evidence\.py|VALID|Fix Report required checks/i);
+	    expect(launchEvidenceSchemaPackageCheckDecision.files_changed).toEqual(expect.arrayContaining([
+	      'package.json',
+	      'scripts/check-launch-evidence-schema.mjs',
+	      'scripts/check-focused-launch-readiness-reports.mjs',
+	      'scripts/report-launch-evidence-manifest.mjs',
+	      'scripts/check-launch-evidence-manifest.mjs',
+	      'scripts/check-progress-digest-readiness-report.mjs',
+	      'scripts/check-commercial-launch-readiness-report.mjs',
+	      'tests/unit/focusedLaunchReadinessReports.test.ts',
+	      'tests/unit/progressDigestReadiness.test.ts',
+	      'tests/unit/launchEvidenceManifest.test.ts',
+	    ]));
+	    expect(launchEvidenceSchemaPackageCheckDecision.proof_boundary).toMatch(/schema validation command discoverability only|does not make schema validation a commercial-ready claim|clear buyer evidence|clear source provenance|run release-readiness|approve branches|authorize Supabase|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+	    const launchEvidenceSchemaPackageCheckReview = manifest.code_optimization_reviews.find(
+	      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK',
+	    );
+	    expect(launchEvidenceSchemaPackageCheckReview).toBeTruthy();
+	    expect(launchEvidenceSchemaPackageCheckReview.policy).toBe('strict');
+	    expect(launchEvidenceSchemaPackageCheckReview.tests_or_checks).toEqual(expect.arrayContaining([
+	      'node --check scripts/check-launch-evidence-schema.mjs',
+	      'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+	      'pnpm run check:launch-evidence-schema -- --skip-probes',
+      'pnpm run check:commercial-source',
 	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
 	      'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
 	      'pnpm run check:progress-digest-report -- --skip-probes',

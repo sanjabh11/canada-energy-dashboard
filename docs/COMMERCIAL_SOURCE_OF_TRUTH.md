@@ -161,7 +161,7 @@ Before asking for explicit production approval, generate the current approval pa
 ```bash
 corepack pnpm run report:production-approval-packet
 corepack pnpm --silent run report:launch-evidence-manifest -- --output /tmp/ceip-launch-evidence.json
-python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py /tmp/ceip-launch-evidence.json --require-repo-exists
+corepack pnpm run check:launch-evidence-schema
 corepack pnpm run report:commercial-launch-readiness -- --output /tmp/ceip-commercial-launch-readiness.md
 corepack pnpm run report:launch-action-readiness
 corepack pnpm run check:launch-action-report

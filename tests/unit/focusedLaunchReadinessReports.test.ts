@@ -47,6 +47,8 @@ describe('focused launch readiness report suite', () => {
     expect(stdout).toContain('corepack pnpm run check:release-readiness');
     expect(stdout).toContain('corepack pnpm run check:production-deploy-request');
     expect(stdout).toContain('corepack pnpm run check:post-deploy-live');
+    expect(stdout).toContain('corepack pnpm run check:launch-evidence-schema');
+    expect(stdout).toContain('validate_launch_evidence.py <manifest>');
   });
 
   it('emits structured JSON for operator handoff and automation logs', () => {
@@ -94,6 +96,8 @@ describe('focused launch readiness report suite', () => {
     expect(payload.blocking_gate_handles.check_release_readiness).toBe('corepack pnpm run check:release-readiness');
     expect(payload.blocking_gate_handles.check_production_deploy_request).toBe('corepack pnpm run check:production-deploy-request');
     expect(payload.blocking_gate_handles.check_post_deploy_live).toBe('corepack pnpm run check:post-deploy-live');
+    expect(payload.blocking_gate_handles.check_launch_evidence_schema).toBe('corepack pnpm run check:launch-evidence-schema');
+    expect(payload.blocking_gate_handles.validate_launch_evidence_schema).toContain('validate_launch_evidence.py <manifest>');
     expect(payload.blocking_gate_boundary).toMatch(/not executed by this aggregate suite|release-readiness|production deploy approval|post-deploy live proof|buyer evidence|branch approval|source cleanup|launch readiness/i);
     expect(payload.proof_boundary).toMatch(/does not clear source provenance|run release-readiness|authorize Supabase|contact buyers|deploy|hosted\/live parity|launch readiness/i);
     expect(payload.stop_gate).toMatch(/Do not treat this suite|commercial-ready status|buyer acceptance|production approval|deploy authorization|current hosted\/live proof/i);

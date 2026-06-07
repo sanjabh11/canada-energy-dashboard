@@ -132,6 +132,7 @@ const blockingGateHandles = {
   check_release_readiness: 'corepack pnpm run check:release-readiness',
   check_production_deploy_request: 'corepack pnpm run check:production-deploy-request',
   check_post_deploy_live: 'corepack pnpm run check:post-deploy-live',
+  check_launch_evidence_schema: 'corepack pnpm run check:launch-evidence-schema',
   validate_launch_evidence_schema: 'python3 /Users/sanjayb/.codex/skills/commercial-launch-readiness-orchestrator/scripts/validate_launch_evidence.py <manifest>',
 };
 const blockingGateBoundary = 'Blocking gate handles are listed for operator sequencing only and are not executed by this aggregate suite; do not treat their presence, skipped probes, or focused report pass status as release-readiness, production deploy approval, post-deploy live proof, buyer evidence, branch approval, source cleanup, or launch readiness.';
