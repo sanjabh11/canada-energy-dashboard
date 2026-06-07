@@ -32,7 +32,16 @@
       "proofBucket": "hosted/live",
       "command": "pnpm run report:production-approval-packet && pnpm run check:post-deploy-live",
       "evidenceBoundary": "Current source does not prove production parity from local checks, CI, launch evidence validation, or the last approved artifact; it requires clean provenance, launch evidence validation, explicit owner approval, guarded deploy, and post-deploy live parity.",
-      "nextAction": "Clear source provenance, keep launch evidence validation passing, request explicit owner approval, deploy through the guarded production path, then rerun post-deploy live checks."
+      "nextAction": "Clear source provenance, keep launch evidence validation passing, request explicit owner approval, deploy through the guarded production path, then rerun post-deploy live checks.",
+      "sourceManifestPath": "post_deploy_live_proof",
+      "sourceProofTypes": [
+        "manual_approval_gate",
+        "approved_deploy_execution",
+        "hosted_metadata_probe",
+        "hosted_static_parity_probe",
+        "hosted_browser_smoke",
+        "post_deploy_parity_claim"
+      ]
     },
     {
       "id": "current_source_release_gate",
@@ -41,7 +50,16 @@
       "proofBucket": "local/source",
       "command": "pnpm run check:release-readiness && gh run list --repo sanjabh11/canada-energy-dashboard --limit 5",
       "evidenceBoundary": "Local, launch-evidence, and CI checks must be refreshed for the current SHA; a source check does not prove production deploy parity.",
-      "nextAction": "Run source, launch-evidence, and CI checks before any approval packet or release request."
+      "nextAction": "Run source, launch-evidence, and CI checks before any approval packet or release request.",
+      "sourceManifestPath": "release_preflight.clearance_matrix",
+      "sourceProofTypes": [
+        "release_preflight_clearance_matrix",
+        "package_manager_pin",
+        "toolchain_probe",
+        "gated_release_command",
+        "source_provenance_decision",
+        "manual_approval"
+      ]
     },
     {
       "id": "source_provenance",

@@ -57,7 +57,7 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('release_preflight.items', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('release_preflight.remediation_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('release_preflight.operator_handoff_packet', { exact: true })).toBeVisible();
-    await expect(publicReleaseStatus.getByText('release_preflight.clearance_matrix', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.clearance_matrix', { exact: true })).toHaveCount(2);
     await expect(publicReleaseStatus.getByText('release_preflight.toolchain_probe_ledger', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('buyer_evidence', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('buyer_evidence.hard_gate_deficits', { exact: true })).toBeVisible();
@@ -74,6 +74,7 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('production_approval.prerequisite_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('production_approval.request_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('production_approval.operator_handoff_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('post_deploy_live_proof', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('post_deploy_live_proof.gate_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('post_deploy_live_proof.operator_handoff_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('completion_audit', { exact: true })).toBeVisible();

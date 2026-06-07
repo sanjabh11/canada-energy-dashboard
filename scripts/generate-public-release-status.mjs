@@ -372,6 +372,29 @@ function validateManifest(manifest) {
     }
   }
 
+  expectSourceLineage('current_source_live_parity', {
+    sourceManifestPath: 'post_deploy_live_proof',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
+  });
+  expectSourceLineage('current_source_release_gate', {
+    sourceManifestPath: 'release_preflight.clearance_matrix',
+    sourceProofTypes: [
+      'release_preflight_clearance_matrix',
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ],
+  });
+
   const sourceProvenance = itemById.get('source_provenance') ?? {};
   if (!/staged-only|unstaged-only|mixed/i.test(`${sourceProvenance.evidenceBoundary ?? ''}\n${sourceProvenance.nextAction ?? ''}`)) {
     failures.push('source_provenance must describe staged-only, unstaged-only, or mixed source blockers.');

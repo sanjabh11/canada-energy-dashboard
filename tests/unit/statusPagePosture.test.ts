@@ -599,6 +599,15 @@ describe('status page release posture', () => {
     expect(currentSourceParityEvidence?.command).toContain('report:production-approval-packet');
     expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/launch evidence validation passes/i);
     expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/owner approval is explicit/i);
+    expect(currentSourceParityEvidence?.sourceManifestPath).toBe('post_deploy_live_proof');
+    expect(currentSourceParityEvidence?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(launchEvidenceValidationEvidence?.status).toBe('external_gate');
     expect(launchEvidenceValidationEvidence?.command).toContain('report:launch-evidence-validation-readiness');
     expect(launchEvidenceValidationEvidence?.command).toContain('check:launch-evidence-validation-report');
@@ -1345,8 +1354,26 @@ describe('status page release posture', () => {
     expect(currentSourceParityGate?.evidenceBoundary).toMatch(/does not prove production parity/i);
     expect(currentSourceParityGate?.evidenceBoundary).toMatch(/launch evidence validation/i);
     expect(currentSourceParityGate?.nextAction).toMatch(/post-deploy live checks/i);
+    expect(currentSourceParityGate?.sourceManifestPath).toBe('post_deploy_live_proof');
+    expect(currentSourceParityGate?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(sourceGate?.status).toBe('watch');
     expect(sourceGate?.evidenceBoundary).toMatch(/does not prove production deploy parity/i);
+    expect(sourceGate?.sourceManifestPath).toBe('release_preflight.clearance_matrix');
+    expect(sourceGate?.sourceProofTypes).toEqual([
+      'release_preflight_clearance_matrix',
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(provenanceGate?.command).toContain('report:source-provenance-readiness');
     expect(provenanceGate?.command).toContain('check:source-provenance-report');
     expect(provenanceGate?.evidenceBoundary).toMatch(/staged-only, unstaged-only, mixed/i);

@@ -131,6 +131,15 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
     status: 'external_gate',
     command: 'pnpm run report:production-approval-packet && pnpm run check:post-deploy-live',
     evidenceBoundary: 'Current source is not live-proven until source provenance is clean, launch evidence validation passes, owner approval is explicit, the guarded production deploy runs, and post-deploy live parity passes.',
+    sourceManifestPath: 'post_deploy_live_proof',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
   },
   {
     label: 'Launch evidence validation gate',
