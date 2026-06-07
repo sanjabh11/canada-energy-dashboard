@@ -312,6 +312,28 @@ const StatusPage: React.FC = () => {
                     <span className={getPublicStatusBadge(item.status)}>{item.status.replace(/_/g, ' ').toUpperCase()}</span>
                   </div>
                   <p className="mt-4 text-sm leading-6 text-slate-600">{item.evidenceBoundary}</p>
+                  {(item.sourceManifestPath || item.sourceProofType || item.sourceProofTypes?.length) ? (
+                    <div className="mt-4 break-words rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600">
+                      <span className="font-semibold text-slate-900">Manifest lineage:</span>{' '}
+                      {item.sourceManifestPath ? (
+                        <code className="break-words font-mono text-slate-800">{item.sourceManifestPath}</code>
+                      ) : null}
+                      {item.sourceProofType ? (
+                        <>
+                          {' '}
+                          <span className="text-slate-400">/</span>{' '}
+                          <code className="break-words font-mono text-slate-800">{item.sourceProofType}</code>
+                        </>
+                      ) : null}
+                      {item.sourceProofTypes?.length ? (
+                        <>
+                          {' '}
+                          <span className="text-slate-400">/</span>{' '}
+                          <code className="break-words font-mono text-slate-800">{item.sourceProofTypes.join(', ')}</code>
+                        </>
+                      ) : null}
+                    </div>
+                  ) : null}
                   <div className="mt-4 rounded-lg bg-slate-950 px-3 py-2 font-mono text-xs leading-5 text-slate-100">
                     {item.command}
                   </div>

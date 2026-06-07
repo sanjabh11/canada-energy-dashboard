@@ -48,6 +48,9 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('claim-refutation lanes').first()).toBeVisible();
     await expect(publicReleaseStatus.getByText('phase progress').first()).toBeVisible();
     await expect(publicReleaseStatus.getByText('top unblock options').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('Manifest lineage').first()).toBeVisible();
+    await expect(publicReleaseStatus.getByText('branch_review.top_review_packet')).toBeVisible();
+    await expect(publicReleaseStatus.getByText('read_only_branch_clearance_matrix')).toBeVisible();
     await expect(releaseHealthEvidence).toBeVisible();
     await expect(releaseHealthEvidence.getByRole('heading', { name: 'Launch evidence validation gate' })).toBeVisible();
     await expect(releaseHealthEvidence.getByRole('heading', { name: 'Objective completion audit' })).toBeVisible();

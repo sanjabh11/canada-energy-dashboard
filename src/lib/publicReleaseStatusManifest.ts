@@ -10,6 +10,9 @@ export interface PublicReleaseStatusManifestItem {
   command: string;
   evidenceBoundary: string;
   nextAction: string;
+  sourceManifestPath?: string;
+  sourceProofType?: string;
+  sourceProofTypes?: string[];
 }
 
 export interface PublicReleaseStatusManifest {

@@ -275,7 +275,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The top branch review packet surfaces the current highest-priority focused read-only branch packet, local/origin state, branch freshness, changed categories, changed Supabase function rows, and canonical-head comparison, but it does not checkout, merge, push, discard, migrate, deploy, mutate Supabase, select a canonical head, or clear branch review. It does not create launch evidence or prove production approval.",
-      "nextAction": "Use the launch evidence manifest to identify the current top review ref, run the focused read-only packet, inspect changed Supabase function rows and canonical-head comparison, then keep every merge, push, discard, migration, deploy, or production approval decision behind explicit owner approval and release gates."
+      "nextAction": "Use the launch evidence manifest to identify the current top review ref, run the focused read-only packet, inspect changed Supabase function rows and canonical-head comparison, then keep every merge, push, discard, migration, deploy, or production approval decision behind explicit owner approval and release gates.",
+      "sourceManifestPath": "branch_review.top_review_packet",
+      "sourceProofTypes": [
+        "skipped_read_only_branch_packet_probe",
+        "empty_read_only_branch_packet_probe",
+        "high_risk_read_only_branch_packet",
+        "review_first_read_only_branch_packet",
+        "focused_read_only_branch_packet"
+      ]
     },
     {
       "id": "branch_clearance_matrix",
@@ -284,7 +292,9 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:branch-review-readiness && pnpm run check:branch-review-report",
       "evidenceBoundary": "The branch clearance matrix maps read-only branch review rows, review-first families, canonical-head decisions, stale or aging drift review, and release-gate dependencies, but it does not checkout, merge, push, discard, select canonical heads, run migrations, deploy, grant production approval, or clear branch review. It does not create launch evidence or prove production approval.",
-      "nextAction": "Use the matrix to keep branch blockers visible; run focused read-only branch packets, record canonical-head owner decisions, and rerun release gates before any merge, push, discard, migration, deploy, or production approval discussion."
+      "nextAction": "Use the matrix to keep branch blockers visible; run focused read-only branch packets, record canonical-head owner decisions, and rerun release gates before any merge, push, discard, migration, deploy, or production approval discussion.",
+      "sourceManifestPath": "branch_review.clearance_matrix",
+      "sourceProofType": "read_only_branch_clearance_matrix"
     },
     {
       "id": "branch_operator_handoff_packet",

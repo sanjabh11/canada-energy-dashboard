@@ -504,12 +504,33 @@ function validateManifest(manifest) {
   if (!/highest-priority|focused read-only branch packet|local\/origin state|branch freshness|changed categories|changed Supabase function rows|canonical-head comparison/i.test(`${topBranchReviewPacket.evidenceBoundary ?? ''}\n${topBranchReviewPacket.nextAction ?? ''}`)) {
     failures.push('top_branch_review_packet must describe the focused top branch packet dimensions.');
   }
+  if (topBranchReviewPacket.sourceManifestPath !== 'branch_review.top_review_packet') {
+    failures.push('top_branch_review_packet must map back to branch_review.top_review_packet.');
+  }
+  const topBranchProofTypes = topBranchReviewPacket.sourceProofTypes ?? [];
+  for (const proofType of [
+    'skipped_read_only_branch_packet_probe',
+    'empty_read_only_branch_packet_probe',
+    'high_risk_read_only_branch_packet',
+    'review_first_read_only_branch_packet',
+    'focused_read_only_branch_packet',
+  ]) {
+    if (!topBranchProofTypes.includes(proofType)) {
+      failures.push(`top_branch_review_packet sourceProofTypes must include ${proofType}.`);
+    }
+  }
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*migrate|does not.*deploy|does not.*mutate Supabase|does not.*select a canonical head|does not.*clear branch review|does not.*create launch evidence|does not.*prove production approval/i.test(topBranchReviewPacket.evidenceBoundary ?? '')) {
     failures.push('top_branch_review_packet must preserve the no-mutation, no-clearance, no-launch-evidence, and no-approval boundary.');
   }
   const branchClearanceMatrix = itemById.get('branch_clearance_matrix') ?? {};
   if (!/read-only branch review rows|review-first families|canonical-head decisions|stale or aging|release-gate/i.test(`${branchClearanceMatrix.evidenceBoundary ?? ''}\n${branchClearanceMatrix.nextAction ?? ''}`)) {
     failures.push('branch_clearance_matrix must describe branch review rows, review-first families, canonical-head decisions, freshness drift, and release-gate dependencies.');
+  }
+  if (branchClearanceMatrix.sourceManifestPath !== 'branch_review.clearance_matrix') {
+    failures.push('branch_clearance_matrix must map back to branch_review.clearance_matrix.');
+  }
+  if (branchClearanceMatrix.sourceProofType !== 'read_only_branch_clearance_matrix') {
+    failures.push('branch_clearance_matrix sourceProofType must be read_only_branch_clearance_matrix.');
   }
   if (!/does not.*checkout|does not.*merge|does not.*push|does not.*discard|does not.*select canonical heads|does not.*run migrations|does not.*deploy|does not.*grant production approval|does not.*clear branch review|does not.*prove production approval/i.test(branchClearanceMatrix.evidenceBoundary ?? '')) {
     failures.push('branch_clearance_matrix must preserve the no-mutation, no-clearance, and no-approval boundary.');

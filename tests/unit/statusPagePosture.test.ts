@@ -1392,6 +1392,14 @@ describe('status page release posture', () => {
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/highest-priority focused read-only branch packet/i);
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/changed Supabase function rows/i);
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/canonical-head comparison/i);
+    expect(topBranchReviewPacketGate?.sourceManifestPath).toBe('branch_review.top_review_packet');
+    expect(topBranchReviewPacketGate?.sourceProofTypes).toEqual([
+      'skipped_read_only_branch_packet_probe',
+      'empty_read_only_branch_packet_probe',
+      'high_risk_read_only_branch_packet',
+      'review_first_read_only_branch_packet',
+      'focused_read_only_branch_packet',
+    ]);
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(topBranchReviewPacketGate?.evidenceBoundary).toMatch(/clear branch review/i);
     expect(topBranchReviewPacketGate?.nextAction).toMatch(/current top review ref/i);
@@ -1401,6 +1409,8 @@ describe('status page release posture', () => {
     expect(branchClearanceMatrixGate?.command).toContain('check:branch-review-report');
     expect(branchClearanceMatrixGate?.evidenceBoundary).toMatch(/read-only branch review rows/i);
     expect(branchClearanceMatrixGate?.evidenceBoundary).toMatch(/canonical-head decisions/i);
+    expect(branchClearanceMatrixGate?.sourceManifestPath).toBe('branch_review.clearance_matrix');
+    expect(branchClearanceMatrixGate?.sourceProofType).toBe('read_only_branch_clearance_matrix');
     expect(branchClearanceMatrixGate?.evidenceBoundary).toMatch(/does not checkout, merge, push, discard/i);
     expect(branchClearanceMatrixGate?.nextAction).toMatch(/release gates before any merge/i);
     expect(branchOperatorHandoffPacketGate?.status).toBe('external_gate');
