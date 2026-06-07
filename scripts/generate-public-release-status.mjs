@@ -775,6 +775,17 @@ function validateManifest(manifest) {
   if (!/does not prove current hosted\/live parity|does not.*deploy|does not.*rebuild|does not.*run browser smoke/i.test(postDeployQueue.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_gate_queue must preserve the no-live-parity and no-live-mutation boundary.');
   }
+  expectSourceLineage('post_deploy_live_proof_gate_queue', {
+    sourceManifestPath: 'post_deploy_live_proof.gate_queue',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
+  });
   const postDeployOperatorHandoffPacket = itemById.get('post_deploy_live_proof_operator_handoff_packet') ?? {};
   if (!/post-deploy live proof gate queue rows|operator execution gates|production_approval_clearance_first|approved_deploy_after_owner_phrase|live_metadata_after_approved_deploy|static_parity_after_metadata_and_build|hosted_smoke_after_deploy|parity_claim_after_all_live_gates_pass|approval_required|deploy_required|live_account_required|browser_smoke_required|blocks_live_proof_gate|can_execute_from_packet=false/i.test(`${postDeployOperatorHandoffPacket.evidenceBoundary ?? ''}\n${postDeployOperatorHandoffPacket.nextAction ?? ''}`)) {
     failures.push('post_deploy_live_proof_operator_handoff_packet must describe post-deploy rows, execution gates, approval/deploy/live/browser flags, blocking rows, and non-executable packet semantics.');
@@ -785,6 +796,18 @@ function validateManifest(manifest) {
   if (!/does not.*grant owner approval|does not.*run deploys|does not.*deploy-production\.sh|does not.*netlify deploy|does not.*push|does not.*rebuild|does not.*mutate Netlify|does not.*access live accounts|does not.*run browser smoke|does not.*prove current hosted\/live parity|does not prove production approval|does not.*create launch readiness/i.test(postDeployOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('post_deploy_live_proof_operator_handoff_packet must preserve the no-approval, no-deploy, no-live-account, no-browser-smoke, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('post_deploy_live_proof_operator_handoff_packet', {
+    sourceManifestPath: 'post_deploy_live_proof.operator_handoff_packet',
+    sourceProofTypes: [
+      'post_deploy_live_proof_operator_handoff_packet',
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
+  });
   const localProofPackBrowserSmoke = itemById.get('local_proof_pack_browser_smoke') ?? {};
   if (!/local proof-pack browser smoke|Chromium|local preview|\/tmp\/ceip-local-proof-packs/i.test(`${localProofPackBrowserSmoke.evidenceBoundary ?? ''}\n${localProofPackBrowserSmoke.nextAction ?? ''}`)) {
     failures.push('local_proof_pack_browser_smoke must describe local Chromium proof-pack smoke and /tmp Playwright report evidence.');

@@ -959,6 +959,15 @@ describe('status page release posture', () => {
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/live public metadata, live static dist parity, hosted proof-pack route smoke/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueEvidence?.evidenceBoundary).toMatch(/mutate Netlify/i);
+    expect(postDeployQueueEvidence?.sourceManifestPath).toBe('post_deploy_live_proof.gate_queue');
+    expect(postDeployQueueEvidence?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(postDeployOperatorHandoffPacketEvidence?.status).toBe('external_gate');
     expect(postDeployOperatorHandoffPacketEvidence?.command).toContain('report:post-deploy-live-proof-readiness');
     expect(postDeployOperatorHandoffPacketEvidence?.command).toContain('check:post-deploy-live-proof-report');
@@ -980,6 +989,16 @@ describe('status page release posture', () => {
     expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/run deploys/i);
     expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/run browser smoke/i);
     expect(postDeployOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/current hosted\/live parity/i);
+    expect(postDeployOperatorHandoffPacketEvidence?.sourceManifestPath).toBe('post_deploy_live_proof.operator_handoff_packet');
+    expect(postDeployOperatorHandoffPacketEvidence?.sourceProofTypes).toEqual([
+      'post_deploy_live_proof_operator_handoff_packet',
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(localProofPackSmokeEvidence?.status).toBe('external_gate');
     expect(localProofPackSmokeEvidence?.command).toContain('test:browser:local:proof-packs');
     expect(localProofPackSmokeEvidence?.evidenceBoundary).toMatch(/local proof-pack browser smoke/i);
@@ -1608,6 +1627,15 @@ describe('status page release posture', () => {
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/hosted proof-pack route smoke/i);
     expect(postDeployQueueGate?.evidenceBoundary).toMatch(/does not prove current hosted\/live parity/i);
     expect(postDeployQueueGate?.nextAction).toMatch(/check:post-deploy-live passes/i);
+    expect(postDeployQueueGate?.sourceManifestPath).toBe('post_deploy_live_proof.gate_queue');
+    expect(postDeployQueueGate?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(postDeployOperatorHandoffPacketGate?.status).toBe('external_gate');
     expect(postDeployOperatorHandoffPacketGate?.proofBucket).toBe('hosted/live');
     expect(postDeployOperatorHandoffPacketGate?.command).toContain('report:post-deploy-live-proof-readiness');
@@ -1636,6 +1664,16 @@ describe('status page release posture', () => {
     expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/post-deploy operator handoff/i);
     expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/run each live proof command separately/i);
     expect(postDeployOperatorHandoffPacketGate?.nextAction).toMatch(/check:post-deploy-live/i);
+    expect(postDeployOperatorHandoffPacketGate?.sourceManifestPath).toBe('post_deploy_live_proof.operator_handoff_packet');
+    expect(postDeployOperatorHandoffPacketGate?.sourceProofTypes).toEqual([
+      'post_deploy_live_proof_operator_handoff_packet',
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(localProofPackSmokeGate?.status).toBe('external_gate');
     expect(localProofPackSmokeGate?.proofBucket).toBe('local/browser');
     expect(localProofPackSmokeGate?.command).toContain('test:browser:local:proof-packs');
