@@ -120,7 +120,7 @@ if (failures.length === 0) {
     assert(/does not .*clear blockers|contact buyers|approve branches|authorize Supabase|deploy|hosted\/live parity|commercial launch readiness/i.test(stdout), 'Report must preserve no-clearance, no-external-action, no-deploy, no-live-parity, and no-readiness boundaries.');
     assertContains(stdout, '## Progress Summary', 'Report must include the progress summary.');
     assertContains(stdout, '## Progress Updates', 'Report must include progress update rows.');
-    assertContains(stdout, 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE', 'Report must expose the latest adversarial review public-handle lineage phase as current evidence.');
+    assertContains(stdout, 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE', 'Report must expose the latest progress digest public-handle lineage phase as current evidence.');
     assertContains(stdout, 'Safe Fix Lane', 'Report must include latest safe-fix lane target matrix evidence.');
     assertContains(stdout, 'code optimization review evidence', 'Report must include latest code-optimization target matrix evidence.');
     assertContains(stdout, 'objective completion audit', 'Report must include the objective completion audit phase.');
@@ -143,6 +143,9 @@ if (failures.length === 0) {
     assertContains(stdout, '## Public Release Status Handles', 'Report must include public status handles.');
     assertContains(stdout, 'progress_update_digest', 'Report must expose the public progress digest handle.');
     assertContains(stdout, 'bottleneck_log_digest', 'Report must expose the public bottleneck digest handle.');
+    assertContains(stdout, 'Source Manifest Path', 'Report must label public progress and bottleneck source manifest lineage.');
+    assertContains(stdout, '| progress_update_digest | external_gate | progress_updates |', 'Report must expose the progress update public handle source manifest path.');
+    assertContains(stdout, '| bottleneck_log_digest | external_gate | bottleneck_log |', 'Report must expose the bottleneck public handle source manifest path.');
     assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
     assertContains(stdout, 'corepack pnpm run report:progress-digest-readiness', 'Report must include the focused progress report command.');
     assertContains(stdout, 'corepack pnpm run check:progress-digest-report', 'Report must include the focused progress checker command.');
@@ -154,14 +157,14 @@ if (failures.length === 0) {
     assert(payload.progress_digest?.proof_type === 'progress_update_digest', 'Focused JSON must include the progress update digest proof type.');
     assert(payload.progress_digest?.status === 'blocked', 'Focused progress digest must remain blocked while launch blockers remain open.');
     assert(payload.progress_digest?.update_count >= 2, 'Focused progress digest must include the latest safe-fix row and the objective-completion audit row.');
-    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE', 'Focused progress digest current phase must be the latest adversarial review public-handle lineage ratchet.');
+    assert(payload.progress_digest?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE', 'Focused progress digest current phase must be the latest progress digest public-handle lineage ratchet.');
     assert(payload.progress_digest?.target_matrix_count >= 5, 'Focused progress digest must include the target matrix count.');
     assert(/retained buyer artifacts|guarded deploy\/live proof/i.test(payload.progress_digest?.current_bottleneck ?? ''), 'Focused progress digest must preserve the active evidence bottleneck.');
     assert(
       Array.isArray(payload.progress_updates)
-        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE')
+        && payload.progress_updates.some((item) => item?.phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE')
         && payload.progress_updates.some((item) => item?.phase === 'objective completion audit'),
-      'Focused progress digest must include the latest adversarial review public-handle lineage phase and objective-completion audit history.',
+      'Focused progress digest must include the latest progress digest public-handle lineage phase and objective-completion audit history.',
     );
     assert(
       targetMatrixHasLane(payload.progress_updates?.[0]?.target_matrix, 'Safe Fix Lane', (item) => (
@@ -185,7 +188,7 @@ if (failures.length === 0) {
     );
     assert(payload.activities_remaining?.proof_type === 'activities_remaining_digest', 'Focused JSON must include the activities remaining digest proof type.');
     assert(payload.activities_remaining?.status === 'blocked', 'Focused activities remaining digest must stay blocked while actions remain.');
-    assert(payload.activities_remaining?.current_phase === 'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE', 'Focused activities remaining digest must bind to the latest current phase.');
+    assert(payload.activities_remaining?.current_phase === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE', 'Focused activities remaining digest must bind to the latest current phase.');
     assert(payload.activities_remaining?.current_phase_action_count >= 7, 'Focused activities remaining digest must count unresolved launch action queue rows.');
     assert(payload.activities_remaining?.next_phase_action_count >= 10, 'Focused activities remaining digest must count production approval and post-deploy action rows.');
     assert(payload.activities_remaining?.completion_blocker_count >= 4, 'Focused activities remaining digest must count objective-completion blockers.');
@@ -221,6 +224,8 @@ if (failures.length === 0) {
     );
     assert(payload.public_status_handles?.progress_update_digest?.id === 'progress_update_digest', 'Focused JSON must include the public progress digest handle.');
     assert(payload.public_status_handles?.bottleneck_log_digest?.id === 'bottleneck_log_digest', 'Focused JSON must include the public bottleneck digest handle.');
+    assert(payload.public_status_handles?.progress_update_digest?.sourceManifestPath === 'progress_updates', 'Focused JSON public progress digest handle must expose sourceManifestPath=progress_updates.');
+    assert(payload.public_status_handles?.bottleneck_log_digest?.sourceManifestPath === 'bottleneck_log', 'Focused JSON public bottleneck digest handle must expose sourceManifestPath=bottleneck_log.');
     assert(/report:progress-digest-readiness/.test(payload.package_script_handles?.report_progress_digest_readiness ?? ''), 'Focused JSON must expose the progress report script handle.');
     assert(/check:progress-digest-report/.test(payload.package_script_handles?.check_progress_digest_report ?? ''), 'Focused JSON must expose the progress checker script handle.');
     assert(/does not complete pending work|clear blockers|contact buyers|approve branches|authorize Supabase|resolve evidence gaps|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i.test(payload.proof_boundary ?? ''), 'Focused proof boundary must preserve progress and bottleneck no-clearance semantics.');

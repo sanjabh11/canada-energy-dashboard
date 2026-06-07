@@ -5901,6 +5901,22 @@ const progressDigestUnitContractFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const progressDigestPublicHandleLineageFilesChanged = [
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/README.md',
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/backlog.jsonl',
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/claims.jsonl',
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/results.jsonl',
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/workflow.js',
+  '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/workflow.json',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-progress-digest-readiness.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const localProofPackBrowserSmokeFilesChanged = [
   'package.json',
   'playwright.config.ts',
@@ -6115,6 +6131,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...publicFixReportCommandFilesChanged,
   ...progressDigestFocusedReportFilesChanged,
   ...progressDigestUnitContractFilesChanged,
+  ...progressDigestPublicHandleLineageFilesChanged,
   ...localProofPackBrowserSmokeFilesChanged,
   ...localProofPackSmokePublicHandleFilesChanged,
   ...objectiveCompletionAuditFocusedReportFilesChanged,
@@ -6835,6 +6852,24 @@ const progressDigestUnitContractTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const progressDigestPublicHandleLineageTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-progress-digest-readiness.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'node --check .dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/workflow.js',
+  'node /Users/sanjayb/.codex/plugins/cache/local-codex-marketplace/everything-claude-code/1.9.0/skills/dynamic-workflow-backlog/scripts/dynamic-workflow-backlog.js status --run .dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation',
+  'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:progress-digest-readiness -- --skip-probes',
+  'pnpm run report:progress-digest-readiness -- --skip-probes --json',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const localProofPackBrowserSmokeTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -7100,6 +7135,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...publicFixReportCommandTestsRun,
   ...progressDigestFocusedReportTestsRun,
   ...progressDigestUnitContractTestsRun,
+  ...progressDigestPublicHandleLineageTestsRun,
   ...localProofPackBrowserSmokeTestsRun,
   ...localProofPackSmokePublicHandleTestsRun,
   ...objectiveCompletionAuditFocusedReportTestsRun,
@@ -8062,6 +8098,19 @@ const safeFixImplementationDecisions = [
     reason: 'The focused adversarial review report already displayed the public adversarial review handle id, but omitted the public handle lineage fields that identify the adversarial_reviews manifest row and the five proof types backing the handle.',
     proof_boundary: 'This record improves adversarial-review public-handle lineage discoverability only; it does not generate new review findings, clear launch blockers, create buyer evidence, contact buyers, prove buyer acceptance, authorize Supabase, clear Supabase advisor findings, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused adversarial review handle lineage, public status handle, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as production approval, buyer acceptance, release readiness, source readiness, branch approval, Supabase advisor clearance, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    decision: 'Expose progress and bottleneck public-handle source lineage inside the focused progress digest report.',
+    acceptance_check: 'report:progress-digest-readiness renders progress_update_digest sourceManifestPath=progress_updates and bottleneck_log_digest sourceManifestPath=bottleneck_log; check:progress-digest-report validates both lineage values while the progress digest remains a visibility surface and not pending-work completion, blocker clearance, production approval, buyer acceptance, Supabase clearance, deployment, hosted/live proof, or goal completion.',
+    chosen_variant: 'minimal focused progress digest public-handle lineage',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json progress_update_digest and bottleneck_log_digest handles, focused progress digest report/check pattern, dynamic-workflow backlog artifact pattern, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: progressDigestPublicHandleLineageFilesChanged,
+    tests_run: progressDigestPublicHandleLineageTestsRun,
+    proof: 'The patch renders existing public progress and bottleneck handle sourceManifestPath values in the focused progress Markdown/JSON contract and creates the automode-required durable backlog artifact without changing public status JSON, completing pending work, clearing blockers, running proof commands as clearance, contacting buyers, authorizing Supabase, approving branches, resolving source provenance, requesting owner approval, deploying, proving hosted/live parity, or changing launch status.',
+    reason: 'The focused progress digest report already displayed the public progress and bottleneck handle ids, but omitted the public handle lineage fields that identify the progress_updates and bottleneck_log manifest rows backing those handles.',
+    proof_boundary: 'This record improves progress and bottleneck public-handle lineage discoverability only; it does not complete pending work, clear launch blockers, run missing checks as clearance, collect buyer evidence, contact buyers, prove buyer acceptance, authorize Supabase, approve branches, resolve source provenance, run release-readiness as clearance, request owner approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused progress handle lineage, bottleneck handle lineage, durable backlog artifact, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as pending-work completion, production approval, buyer acceptance, release readiness, source readiness, branch approval, Supabase advisor clearance, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
   },
 ];
 
@@ -9739,6 +9788,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing downstream gates could reduce blockers only after retained buyer artifacts, owner decisions, authorized Supabase advisor evidence, release tooling proof, explicit approval, and live contexts are available; doing it here would blur adversarial lineage with readiness proof.',
     evidence: 'The focused adversarial review report stop gate states that the report does not prove production approval, create buyer evidence, grant release or Supabase clearance, deploy, or create hosted/live parity evidence.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Leave progress and bottleneck public-handle lineage visible only in src/lib/publicReleaseStatusManifest.json.',
+    reason_rejected: 'The focused progress digest report is the operator artifact for phase progress and bottlenecks and should show the handle source rows without requiring a second file lookup.',
+    tradeoff: 'No-code defer avoids a small report/check update, but preserves a weaker handoff than adjacent focused reports that render public handle lineage.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains progress_update_digest.sourceManifestPath and bottleneck_log_digest.sourceManifestPath, but the focused report table did not render them.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Regenerate or add new public release-status progress digest rows.',
+    reason_rejected: 'The needed public progress and bottleneck handles already exist; changing generated public status would add churn without improving the focused progress digest report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local lineage gap.',
+    evidence: 'The existing progress_update_digest and bottleneck_log_digest rows already point at report:progress-digest-readiness && check:progress-digest-report and carry sourceManifestPath values.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    variant: 'Use progress lineage to complete pending work, clear launch blockers, run missing checks as clearance, collect buyer evidence, contact buyers, authorize Supabase, approve branches, resolve source provenance, request approval, deploy, or prove live parity from the report phase.',
+    reason_rejected: 'Pending-work completion, blocker clearance, proof command execution, buyer proof, external account work, branch/source decisions, release approval, production approval, deploy execution, and live parity require evidence and owner gates outside this repo-side report lineage phase.',
+    tradeoff: 'Executing downstream gates could reduce blockers only after retained buyer artifacts, owner decisions, authorized Supabase advisor evidence, release tooling proof, explicit approval, and live contexts are available; doing it here would blur progress lineage with readiness proof.',
+    evidence: 'The focused progress digest report stop gate states that the report does not complete pending work, clear blockers, authorize Supabase, deploy, or create hosted/live parity evidence.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10392,6 +10462,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public adversarial review handle lineage and existing adversarial review report/check/test contracts, with no new dependency, no generated public-status churn, no duplicate review generator, no new review findings, no blocker clearance, no buyer contact, no Supabase access, no branch/source mutation, no release-readiness execution, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
     tests_or_checks: adversarialReviewPublicHandleLineageTestsRun,
     remaining_risk: 'The adversarial review handle lineage remains operator guidance only; launch readiness still depends on retained buyer evidence, clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public progress and bottleneck handle lineage, existing progress digest report/check/test contracts, and the ECC dynamic-workflow backlog artifact pattern, with no new dependency, no generated public-status churn, no duplicate progress store, no proof command execution as clearance, no blocker clearance, no buyer contact, no Supabase access, no branch/source mutation, no release-readiness execution, no approval request, no deploy execution, no live-proof execution, and no launch-status change.',
+    tests_or_checks: progressDigestPublicHandleLineageTestsRun,
+    remaining_risk: 'The progress and bottleneck handle lineage remains operator guidance only; launch readiness still depends on retained buyer evidence, clean source provenance, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

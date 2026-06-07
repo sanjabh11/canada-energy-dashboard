@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "name": "ceip-launch-readiness-proof-lineage-continuation",
+  "goal": "Continue CEIP commercial launch readiness proof-lineage safe-fix ratchets without deploy, branch mutation, external account access, buyer contact, or clearing launch blockers.",
+  "repoRoot": "/Users/sanjayb/minimax/canada-energy-dashboard",
+  "mode": "manual",
+  "maxConcurrency": 4,
+  "maxAgents": 64,
+  "tokenWarning": {
+    "risk": "low",
+    "estimatedAgentRuns": 4,
+    "estimatedReviewRuns": 2,
+    "estimatedTotalRuns": 6,
+    "warning": "Scoped run; still verify before exporting worker plans."
+  },
+  "createdAt": "2026-06-07T12:06:03.766Z",
+  "updatedAt": "2026-06-07T12:18:34.956Z"
+}

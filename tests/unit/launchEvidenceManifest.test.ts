@@ -170,7 +170,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1227,9 +1227,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(71);
+    expect(manifest.implementation_decisions).toHaveLength(72);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(71);
+    expect(manifest.code_optimization_reviews).toHaveLength(72);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2589,6 +2589,39 @@ describe('launch evidence manifest report', () => {
       'pnpm run check:adversarial-review-report -- --skip-probes',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const progressDigestLineageDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(progressDigestLineageDecision).toBeTruthy();
+    expect(progressDigestLineageDecision.chosen_variant).toBe('minimal focused progress digest public-handle lineage');
+    expect(progressDigestLineageDecision.files_changed).toEqual(expect.arrayContaining([
+      '.dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation/backlog.jsonl',
+      'scripts/report-progress-digest-readiness.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'scripts/report-launch-evidence-manifest.mjs',
+      'scripts/check-launch-evidence-manifest.mjs',
+      'scripts/check-commercial-launch-readiness-report.mjs',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(progressDigestLineageDecision.proof_boundary).toMatch(/lineage discoverability only|does not complete pending work|clear launch blockers|run missing checks as clearance|collect buyer evidence|contact buyers|buyer acceptance|authorize Supabase|approve branches|resolve source provenance|run release-readiness as clearance|request owner approval|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const progressDigestLineageReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
+    );
+    expect(progressDigestLineageReview).toBeTruthy();
+    expect(progressDigestLineageReview.policy).toBe('strict');
+    expect(progressDigestLineageReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-progress-digest-readiness.mjs',
+      'node --check scripts/check-progress-digest-readiness-report.mjs',
+      'node /Users/sanjayb/.codex/plugins/cache/local-codex-marketplace/everything-claude-code/1.9.0/skills/dynamic-workflow-backlog/scripts/dynamic-workflow-backlog.js status --run .dynamic-workflows/ceip-launch-readiness-proof-lineage-continuation',
+      'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:progress-digest-readiness -- --skip-probes --json',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
       'pnpm exec tsc -b --pretty false',

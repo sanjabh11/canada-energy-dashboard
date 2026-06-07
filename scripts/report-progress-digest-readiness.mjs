@@ -316,6 +316,7 @@ function renderMarkdown(payload) {
   const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
     id,
     item?.status,
+    item?.sourceManifestPath,
     item?.command,
     item?.evidenceBoundary,
     item?.nextAction,
@@ -383,7 +384,7 @@ function renderMarkdown(payload) {
     '',
     '## Public Release Status Handles',
     '',
-    renderTable(['Handle', 'Status', 'Command', 'Evidence Boundary', 'Next Action'], publicRows),
+    renderTable(['Handle', 'Status', 'Source Manifest Path', 'Command', 'Evidence Boundary', 'Next Action'], publicRows),
     '',
     '## Package Script Handles',
     '',

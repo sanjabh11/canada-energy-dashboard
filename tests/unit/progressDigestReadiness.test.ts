@@ -42,7 +42,7 @@ describe('progress digest readiness report', () => {
     expect(stdout).toMatch(/clear blockers[\s\S]*contact buyers[\s\S]*authorize Supabase[\s\S]*deploy[\s\S]*hosted\/live parity/i);
     expect(stdout).toContain('## Progress Summary');
     expect(stdout).toContain('## Progress Updates');
-    expect(stdout).toContain('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    expect(stdout).toContain('CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE');
     expect(stdout).toContain('objective completion audit');
     expect(stdout).toContain('Safe Fix Lane');
     expect(stdout).toContain('code optimization review evidence');
@@ -62,6 +62,9 @@ describe('progress digest readiness report', () => {
     expect(stdout).toContain('## Public Release Status Handles');
     expect(stdout).toContain('progress_update_digest');
     expect(stdout).toContain('bottleneck_log_digest');
+    expect(stdout).toContain('Source Manifest Path');
+    expect(stdout).toContain('| progress_update_digest | external_gate | progress_updates |');
+    expect(stdout).toContain('| bottleneck_log_digest | external_gate | bottleneck_log |');
     expect(stdout).toContain('## Package Script Handles');
     expect(stdout).toContain('corepack pnpm run report:progress-digest-readiness');
     expect(stdout).toContain('corepack pnpm run check:progress-digest-report');
@@ -82,17 +85,17 @@ describe('progress digest readiness report', () => {
     expect(payload.progress_digest.status).toBe('blocked');
     expect(payload.progress_digest.proof_type).toBe('progress_update_digest');
     expect(payload.progress_digest.update_count).toBeGreaterThanOrEqual(2);
-    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    expect(payload.progress_digest.current_phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE');
     expect(payload.progress_digest.target_matrix_count).toBeGreaterThanOrEqual(5);
     expect(payload.progress_digest.current_bottleneck).toMatch(/retained buyer artifacts|guarded deploy\/live proof/i);
     expect(payload.progress_updates.map((item: { phase: string }) => item.phase)).toEqual(expect.arrayContaining([
-      'CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE',
+      'CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE',
       'objective completion audit',
     ]));
 
     expect(payload.activities_remaining.status).toBe('blocked');
     expect(payload.activities_remaining.proof_type).toBe('activities_remaining_digest');
-    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-ADVERSARIAL-REVIEW-PUBLIC-HANDLE-LINEAGE');
+    expect(payload.activities_remaining.current_phase).toBe('CEIP-SAFE-FIX-PROGRESS-DIGEST-PUBLIC-HANDLE-LINEAGE');
     expect(payload.activities_remaining.current_phase_action_count).toBeGreaterThanOrEqual(7);
     expect(payload.activities_remaining.next_phase_action_count).toBeGreaterThanOrEqual(10);
     expect(payload.activities_remaining.completion_blocker_count).toBeGreaterThanOrEqual(4);
@@ -116,6 +119,8 @@ describe('progress digest readiness report', () => {
 
     expect(payload.public_status_handles.progress_update_digest.id).toBe('progress_update_digest');
     expect(payload.public_status_handles.bottleneck_log_digest.id).toBe('bottleneck_log_digest');
+    expect(payload.public_status_handles.progress_update_digest.sourceManifestPath).toBe('progress_updates');
+    expect(payload.public_status_handles.bottleneck_log_digest.sourceManifestPath).toBe('bottleneck_log');
     expect(payload.package_script_handles.report_progress_digest_readiness).toBe('corepack pnpm run report:progress-digest-readiness');
     expect(payload.package_script_handles.check_progress_digest_report).toBe('corepack pnpm run check:progress-digest-report');
     expect(payload.proof_boundary).toMatch(/does not complete pending work|clear blockers|contact buyers|approve branches|authorize Supabase|resolve evidence gaps|request owner approval|deploy|hosted\/live parity|commercial launch readiness/i);
