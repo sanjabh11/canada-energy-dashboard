@@ -6105,6 +6105,15 @@ const launchEvidenceSchemaPackageCheckFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const fixReportCommandOnlyChecksFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const launchManifestJsonAliasFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -6214,6 +6223,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...focusedLaunchReadinessSuitePackageHandlesFilesChanged,
   ...focusedLaunchReadinessSuiteBlockingGateHandlesFilesChanged,
   ...launchEvidenceSchemaPackageCheckFilesChanged,
+  ...fixReportCommandOnlyChecksFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
@@ -6381,6 +6391,18 @@ const launchEvidenceSchemaPackageCheckTestsRun = [
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
   'pnpm exec tsc -b --pretty false',
+];
+
+const fixReportCommandOnlyChecksTestsRun = [
+  'git diff --check',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'npm run check:progress-digest-report -- --skip-probes',
+  'npm run check:launch-evidence-manifest -- --skip-probes',
+  'npm run check:commercial-launch-readiness-report -- --skip-probes',
 ];
 
 const releasePreflightReportTestsRun = [
@@ -7251,6 +7273,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...focusedLaunchReadinessSuitePackageHandlesTestsRun,
   ...focusedLaunchReadinessSuiteBlockingGateHandlesTestsRun,
   ...launchEvidenceSchemaPackageCheckTestsRun,
+  ...fixReportCommandOnlyChecksTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
@@ -8340,6 +8363,19 @@ const safeFixImplementationDecisions = [
     reason: 'The manifest and aggregate suite already referenced schema validation, but the operator-facing required check still exposed a raw placeholder command with <manifest> instead of a repeatable package script that generates and validates the current manifest in one step.',
     proof_boundary: 'This record improves launch evidence schema validation command discoverability only; it does not make schema validation a commercial-ready claim, clear buyer evidence, clear source provenance, run release-readiness, approve branches, authorize Supabase, request or grant owner approval, run production deploy checks as clearance, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat check:launch-evidence-schema, validate_launch_evidence.py VALID output, temporary manifest generation, focused suite output, broad manifest validation, progress digest, commercial report validation, or this code optimization record as buyer acceptance, clean source provenance, release-readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS',
+    decision: 'Keep Fix Report current_required_checks as executable package or guarded command handles, not prose synthesis placeholders.',
+    acceptance_check: 'The launch manifest, focused progress digest, and commercial readiness report expose production approval and post-deploy focused report/check handles plus guarded release/deploy/live machine gates, while current_required_checks contains no prose-only synthesis entries.',
+    chosen_variant: 'minimal command-list cleanup with checker assertions',
+    repo_pattern_reused: 'Existing focused proof command constants, fix_report.current_required_checks, broad manifest checker, commercial readiness report checker, progress digest current-phase ratchet, and launch manifest unit contract.',
+    files_changed: fixReportCommandOnlyChecksFilesChanged,
+    tests_run: fixReportCommandOnlyChecksTestsRun,
+    proof: 'The patch removes three prose synthesis placeholders from fix_report.current_required_checks and strengthens broad/focused report checks so the required-check list remains repeatable command guidance while the ECC ledger may still record synthesis as process evidence. The tests_run list for this phase is limited to commands executed in the resumed command-only slice.',
+    reason: 'A required-check list should be machine-actionable; leaving literal synthesis labels beside package commands makes operator handoff and automation logs less precise even though focused production approval and post-deploy report/check handles already exist.',
+    proof_boundary: 'This record improves Fix Report command-list precision only; it does not execute required checks as clearance, clear source provenance, run release-readiness successfully, choose branch heads, authorize Supabase, contact buyers, request or grant owner approval, run production deploy checks as approval, push, deploy, mutate live services, run browser smoke, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat command-only required checks, focused report/check success, guarded raw gate visibility, manifest validation, progress digest, commercial report validation, or this code optimization record as buyer acceptance, clean source provenance, release-readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, hosted/live parity, launch-goal completion, or commercial-ready status.',
   },
 ];
 
@@ -10143,6 +10179,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Chaining more gates could look closer to launch completion, but would exceed this safe repo-side wrapper phase and risk unsupported readiness claims.',
     evidence: 'The launch evidence manifest remains blocked by buyer evidence, source provenance owner decision, release toolchain proof, branch review, Supabase advisor clearance, production approval, and post-deploy live proof gates.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS',
+    variant: 'Leave prose synthesis labels inside fix_report.current_required_checks.',
+    reason_rejected: 'The Fix Report required-check list is consumed as an operator command surface; prose-only items are process evidence, not repeatable package or guarded machine checks.',
+    tradeoff: 'No-code defer preserves historical wording but keeps automation and operator handoff less precise than adjacent package command rows.',
+    evidence: 'The list already includes report:production-approval-readiness, check:production-approval-report, report:post-deploy-live-proof-readiness, check:post-deploy-live-proof-report, check:production-deploy-request, and check:post-deploy-live.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS',
+    variant: 'Add a new queue synthesis report instead of reusing existing focused production approval and post-deploy reports.',
+    reason_rejected: 'Existing focused reports already render and validate production approval prerequisite/request packets and post-deploy live-proof gate queues.',
+    tradeoff: 'A new report could isolate queue synthesis text, but would duplicate manifest-backed queue parsing and add another command surface to maintain.',
+    evidence: 'scripts/report-production-approval-readiness.mjs and scripts/report-post-deploy-live-proof-readiness.mjs consume the manifest queue objects and have structural checkers.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS',
+    variant: 'Run production deploy request, post-deploy live proof, release-readiness, browser smoke, buyer validation, branch mutation, or Supabase advisor work while cleaning the required-check list.',
+    reason_rejected: 'Those are guarded or external evidence gates and must not be executed as a side effect of making a report command list machine-actionable.',
+    tradeoff: 'Running more gates could produce fresher failures, but would exceed this safe repo-side proof-contract phase and risk approval/live-readiness confusion.',
+    evidence: 'The manifest still marks source provenance, release toolchain, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof as blocked or manual-stop gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10851,6 +10908,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: launchEvidenceSchemaPackageCheckTestsRun,
     remaining_risk: 'The launch evidence schema package check proves generated-manifest schema shape only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change removes only three prose-only required-check entries and tightens existing broad/focused report assertions while correcting this phase tests_run list to commands run in the resumed slice, with no new dependency, no new report surface, no public status churn, no release-readiness execution, no production deploy request execution, no post-deploy live proof execution, no browser smoke execution, no external-account call, no source or branch mutation, no buyer contact, no owner approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: fixReportCommandOnlyChecksTestsRun,
+    remaining_risk: 'The command-only Fix Report list improves operator handoff precision only; launch readiness still depends on retained buyer evidence, explicit owner source decisions, Corepack-pinned release-readiness, read-only branch review and owner decisions, authorized Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -11266,9 +11332,6 @@ const manifest = {
       'corepack pnpm run check:release-readiness',
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
-      'production approval prerequisite queue synthesis',
-      'production approval request packet synthesis',
-      'post-deploy live proof gate queue synthesis',
       LAUNCH_EVIDENCE_SCHEMA_CHECK_COMMAND,
     ],
     unresolved_blockers: [

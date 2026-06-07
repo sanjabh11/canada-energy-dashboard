@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK', 'Manifest progress_updates must expose the latest launch evidence schema package-check ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS', 'Manifest progress_updates must expose the latest Fix Report command-only check ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest focused suite package-handle ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest Fix Report command-only ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -2695,6 +2695,14 @@ try {
     );
     assert(Array.isArray(manifest.fix_report.current_required_checks), 'Manifest fix_report.current_required_checks must be a list.');
     const currentRequiredChecks = manifest.fix_report.current_required_checks;
+    assert(
+      currentRequiredChecks.every((check) => typeof check === 'string' && check.startsWith('corepack pnpm run ')),
+      'Manifest fix_report.current_required_checks must be executable package or guarded Corepack command handles, not prose synthesis placeholders.',
+    );
+    assert(
+      !currentRequiredChecks.some((check) => /synthesis/i.test(check)),
+      'Manifest fix_report.current_required_checks must not include prose-only synthesis placeholders.',
+    );
     for (const requiredCheck of [
       'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
       'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
@@ -5049,7 +5057,68 @@ try {
 		        && launchEvidenceSchemaPackageCheckReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
 		      'Launch evidence schema package-check code optimization review must record wrapper, schema, focused suite, progress, manifest, commercial report, JSON, and TypeScript checks.',
 		    );
-		    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
+		    const fixReportCommandOnlyChecksDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS');
+		    assert(fixReportCommandOnlyChecksDecision, 'Manifest must record the Fix Report command-only checks implementation decision.');
+		    assert(
+		      fixReportCommandOnlyChecksDecision?.chosen_variant === 'minimal command-list cleanup with checker assertions',
+		      'Fix Report command-only checks decision must record the minimal command-list cleanup variant.',
+		    );
+		    assert(
+		      /current_required_checks contains no prose-only synthesis entries|command-list precision|command handles/i.test(fixReportCommandOnlyChecksDecision?.acceptance_check ?? ''),
+		      'Fix Report command-only checks decision must require command-only required checks.',
+		    );
+		    assert(
+		      Array.isArray(fixReportCommandOnlyChecksDecision?.files_changed)
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+		        && fixReportCommandOnlyChecksDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+		      'Fix Report command-only checks decision must record manifest, report checker, progress checker, commercial checker, and unit contract files.',
+		    );
+		    assert(
+		      Array.isArray(fixReportCommandOnlyChecksDecision?.tests_run)
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('git diff --check')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('node --check scripts/report-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('node --check scripts/check-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('node --check scripts/check-progress-digest-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('node --check scripts/check-commercial-launch-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksDecision.tests_run.some((check) => /progressDigestReadiness\.test\.ts tests\/unit\/launchEvidenceManifest\.test\.ts/.test(check))
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('npm run check:progress-digest-report -- --skip-probes')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('npm run check:launch-evidence-manifest -- --skip-probes')
+		        && fixReportCommandOnlyChecksDecision.tests_run.includes('npm run check:commercial-launch-readiness-report -- --skip-probes')
+		        && !fixReportCommandOnlyChecksDecision.tests_run.some((check) => /tsc -b/.test(check)),
+		      'Fix Report command-only checks decision must record only the resumed command-only slice checks actually run.',
+		    );
+		    assert(
+		      /does not execute required checks as clearance|clear source provenance|run release-readiness successfully|run production deploy checks as approval|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(fixReportCommandOnlyChecksDecision?.proof_boundary ?? ''),
+		      'Fix Report command-only checks decision must preserve no-clearance, no-release, no-deploy, no-live-proof, no-completion, and no-readiness boundaries.',
+		    );
+		    const fixReportCommandOnlyChecksReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS');
+		    assert(fixReportCommandOnlyChecksReview, 'Manifest must record the Fix Report command-only checks code optimization review.');
+		    assert(fixReportCommandOnlyChecksReview?.policy === 'strict', 'Fix Report command-only checks code optimization review must use strict policy.');
+		    assert(fixReportCommandOnlyChecksReview?.verdict === 'pass', 'Fix Report command-only checks code optimization review must pass.');
+		    assert(fixReportCommandOnlyChecksReview?.minimality_score >= 5, 'Fix Report command-only checks code optimization review must keep the strict minimality score.');
+		    assert(
+		      /removes only three prose-only|required-check entries|correcting this phase tests_run list|no new dependency|no new report surface|no public status churn|no launch-status change/i.test(fixReportCommandOnlyChecksReview?.evidence ?? ''),
+		      'Fix Report command-only checks code optimization review must prove minimal command-list cleanup and no broad launch changes.',
+		    );
+		    assert(
+		      Array.isArray(fixReportCommandOnlyChecksReview?.tests_or_checks)
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('git diff --check')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('node --check scripts/report-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('node --check scripts/check-launch-evidence-manifest.mjs')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('node --check scripts/check-progress-digest-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('node --check scripts/check-commercial-launch-readiness-report.mjs')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.some((check) => /progressDigestReadiness\.test\.ts tests\/unit\/launchEvidenceManifest\.test\.ts/.test(check))
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('npm run check:progress-digest-report -- --skip-probes')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('npm run check:launch-evidence-manifest -- --skip-probes')
+		        && fixReportCommandOnlyChecksReview.tests_or_checks.includes('npm run check:commercial-launch-readiness-report -- --skip-probes')
+		        && !fixReportCommandOnlyChecksReview.tests_or_checks.some((check) => /tsc -b/.test(check)),
+		      'Fix Report command-only checks code optimization review must record only the resumed command-only slice checks actually run.',
+		    );
+			    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
       'buyer evidence': 'buyer_evidence_adversarial_review',

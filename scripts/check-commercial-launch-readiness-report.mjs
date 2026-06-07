@@ -431,10 +431,10 @@ function assertReport(markdown, options = {}) {
   assert(/pre_request|owner_decision|post_deploy_boundary/i.test(productionApprovalRequestSection), 'Production approval request packet must separate pre-request, owner-decision, and post-deploy phases.');
   assert(/does not grant owner approval|run deploys|mutate branches|hosted\/live parity/i.test(productionApprovalRequestSection), 'Production approval request packet must preserve no-approval and no-live-proof boundaries.');
   assert(countDataRows(postDeployLiveProofSection) >= 6, 'Post-deploy live proof gate queue must include approval, deploy, metadata, static parity, hosted smoke, and parity-claim rows.');
-  for (const requiredCheck of [
-    'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
-    'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
-    'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report',
+	  for (const requiredCheck of [
+	    'corepack pnpm run report:source-provenance-readiness && corepack pnpm run check:source-provenance-report',
+	    'corepack pnpm run report:launch-evidence-validation-readiness && corepack pnpm run check:launch-evidence-validation-report',
+	    'corepack pnpm run report:launch-action-readiness && corepack pnpm run check:launch-action-report',
     'corepack pnpm run report:release-preflight && corepack pnpm run check:release-preflight-report && corepack pnpm run check:release-readiness',
     'corepack pnpm run report:branch-review-readiness && corepack pnpm run check:branch-review-report',
     'corepack pnpm run report:supabase-advisor-readiness && corepack pnpm run check:supabase-advisor-report',
@@ -444,11 +444,13 @@ function assertReport(markdown, options = {}) {
     'corepack pnpm run check:focused-launch-readiness-reports -- --skip-probes',
     'corepack pnpm run check:commercial-launch-readiness-report',
     'corepack pnpm run check:production-deploy-request',
-    'corepack pnpm run check:post-deploy-live',
-  ]) {
-    assert(fixReportSection.includes(requiredCheck), `Fix Report must include focused or guarded required check ${requiredCheck}.`);
-  }
-  const codeOptimizationSection = extractSection(markdown, 'Code Optimization Report');
+	    'corepack pnpm run check:post-deploy-live',
+	  ]) {
+	    assert(fixReportSection.includes(requiredCheck), `Fix Report must include focused or guarded required check ${requiredCheck}.`);
+	  }
+	  assert(!/production approval prerequisite queue synthesis|production approval request packet synthesis|post-deploy live proof gate queue synthesis/i.test(fixReportSection), 'Fix Report required checks must not include prose-only synthesis placeholders.');
+	  assert(/corepack pnpm run check:launch-evidence-schema/i.test(fixReportSection), 'Fix Report must keep the launch evidence schema command handle.');
+	  const codeOptimizationSection = extractSection(markdown, 'Code Optimization Report');
   assert(countDataRows(codeOptimizationSection) >= 3, 'Code optimization report must include implementation, rejected variant, and optimization review rows.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES'), 'Code optimization report must include the preview manifest TypeScript safe-fix task id.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-VALIDATION-CIRCULARITY'), 'Code optimization report must include the production approval validation circularity safe-fix task id.');
@@ -518,10 +520,13 @@ function assertReport(markdown, options = {}) {
 	  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-BLOCKING-GATE-HANDLES'), 'Code optimization report must record the focused launch-readiness suite blocking-gate handle task.');
 	  assert(codeOptimizationSection.includes('minimal separate blocking-gate handle digest'), 'Code optimization report must record the selected minimal separate blocking-gate handle digest.');
 	  assert(/blocking-gate handle discoverability only|does not execute blocking gate commands|clear source provenance|run release-readiness|choose canonical branch heads|authorize Supabase|contact buyers|create buyer proof|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve focused suite blocking-gate handle no-execution, no-clearance, no-release, no-branch, no-Supabase, no-buyer, no-approval, no-deploy, no-live-proof, no-completion, and no-readiness boundaries.');
-	  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK'), 'Code optimization report must record the launch evidence schema package-check task.');
-	  assert(codeOptimizationSection.includes('minimal validator wrapper package check'), 'Code optimization report must record the selected minimal validator wrapper package check.');
-	  assert(/schema validation command discoverability only|does not make schema validation a commercial-ready claim|clear buyer evidence|clear source provenance|run release-readiness|approve branches|authorize Supabase|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve launch evidence schema package-check no-readiness, no-clearance, no-release, no-branch, no-Supabase, no-approval, no-deploy, no-live-proof, no-completion boundaries.');
-	  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the post-deploy live-proof operator handoff packet safe-fix task id.');
+		  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-LAUNCH-EVIDENCE-SCHEMA-PACKAGE-CHECK'), 'Code optimization report must record the launch evidence schema package-check task.');
+		  assert(codeOptimizationSection.includes('minimal validator wrapper package check'), 'Code optimization report must record the selected minimal validator wrapper package check.');
+		  assert(/schema validation command discoverability only|does not make schema validation a commercial-ready claim|clear buyer evidence|clear source provenance|run release-readiness|approve branches|authorize Supabase|request or grant owner approval|run production deploy checks as clearance|push|deploy|mutate live services|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve launch evidence schema package-check no-readiness, no-clearance, no-release, no-branch, no-Supabase, no-approval, no-deploy, no-live-proof, no-completion boundaries.');
+		  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-FIX-REPORT-COMMAND-ONLY-CHECKS'), 'Code optimization report must record the Fix Report command-only checks task.');
+		  assert(codeOptimizationSection.includes('minimal command-list cleanup with checker assertions'), 'Code optimization report must record the selected minimal command-list cleanup patch.');
+		  assert(/command-list precision only|does not execute required checks as clearance|clear source provenance|run release-readiness successfully|request or grant owner approval|run production deploy checks as approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(codeOptimizationSection), 'Code optimization report must preserve Fix Report command-only no-clearance, no-release, no-approval, no-deploy, no-live-proof, no-completion, and no-readiness boundaries.');
+		  assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-POST-DEPLOY-LIVE-PROOF-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the post-deploy live-proof operator handoff packet safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal derived post-deploy live-proof operator handoff packet'), 'Code optimization report must include the selected minimal post-deploy live-proof operator handoff packet patch.');
   assert(codeOptimizationSection.includes('CEIP-SAFE-FIX-PRODUCTION-APPROVAL-OPERATOR-HANDOFF-PACKET'), 'Code optimization report must include the production approval operator handoff packet safe-fix task id.');
   assert(codeOptimizationSection.includes('minimal derived production approval operator handoff packet'), 'Code optimization report must include the selected minimal production approval operator handoff packet patch.');
