@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SUPABASE-ADVISOR-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest Supabase advisor public-handle digest ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest buyer evidence public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -4564,6 +4564,40 @@ try {
         && supabasePublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && supabasePublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Supabase advisor public-handle digest code optimization review must record Supabase, focused suite, progress, manifest, commercial report, and TypeScript checks.',
+    );
+    const buyerPublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST');
+    assert(buyerPublicHandlesDecision, 'Manifest must record the buyer evidence public-handle digest implementation decision.');
+    assert(
+      buyerPublicHandlesDecision?.chosen_variant === 'minimal focused buyer evidence handle digest',
+      'Buyer evidence public-handle digest decision must record the minimal focused buyer evidence handle digest variant.',
+    );
+    assert(
+      Array.isArray(buyerPublicHandlesDecision?.files_changed)
+        && buyerPublicHandlesDecision.files_changed.includes('scripts/report-buyer-evidence-gate-readiness.mjs')
+        && buyerPublicHandlesDecision.files_changed.includes('scripts/check-buyer-evidence-gate-readiness-report.mjs')
+        && buyerPublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && buyerPublicHandlesDecision.files_changed.includes('tests/unit/buyerEvidenceGateReadiness.test.ts')
+        && buyerPublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && buyerPublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Buyer evidence public-handle digest decision must record focused buyer evidence, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not contact buyers|send outreach|create accepted evidence|move confidence|attach retained artifacts|validate 95%|create buyer proof|claim buyer acceptance|request production approval|grant owner approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(buyerPublicHandlesDecision?.proof_boundary ?? ''),
+      'Buyer evidence public-handle digest decision must preserve no-contact, no-outreach, no-evidence-generation, no-retained-artifact, no-95-validation, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const buyerPublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST');
+    assert(buyerPublicHandlesReview, 'Manifest must record the buyer evidence public-handle digest code optimization review.');
+    assert(buyerPublicHandlesReview?.policy === 'strict', 'Buyer evidence public-handle digest code optimization review must use strict policy.');
+    assert(buyerPublicHandlesReview?.verdict === 'pass', 'Buyer evidence public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(buyerPublicHandlesReview?.tests_or_checks)
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report -- --skip-probes/.test(check))
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && buyerPublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Buyer evidence public-handle digest code optimization review must record buyer, focused suite, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

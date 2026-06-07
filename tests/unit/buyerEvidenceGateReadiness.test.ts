@@ -55,6 +55,15 @@ describe('buyer evidence gate readiness report', () => {
     expect(stdout).toContain('Launch Action Buyer Row');
     expect(stdout).toContain('Production Approval Buyer Prerequisite');
     expect(stdout).toContain('Production Approval Request Buyer Row');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('buyer_evidence_gate');
+    expect(stdout).toContain('buyer_evidence_hard_gate_deficit_ledger');
+    expect(stdout).toContain('buyer_evidence_acquisition_matrix');
+    expect(stdout).toContain('buyer_evidence_minimum_packet_handoff');
+    expect(stdout).toContain('buyer_evidence_remediation_queue');
+    expect(stdout).toContain('Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run report:buyer-evidence-gate-readiness');
+    expect(stdout).toContain('corepack pnpm run check:buyer-evidence-gate-report');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -120,6 +129,20 @@ describe('buyer evidence gate readiness report', () => {
     expect(payload.production_approval_request_buyer_row.prerequisite).toBe('Buyer evidence hard gate');
     expect(payload.production_approval_request_buyer_row.proof_command).toContain('report:buyer-evidence-gate-readiness');
     expect(payload.production_approval_request_buyer_row.proof_command).toContain('check:buyer-evidence-gate-report');
+    expect(payload.public_status_handles.buyer_evidence_gate.id).toBe('buyer_evidence_gate');
+    expect(payload.public_status_handles.buyer_evidence_hard_gate_deficit_ledger.id).toBe('buyer_evidence_hard_gate_deficit_ledger');
+    expect(payload.public_status_handles.buyer_evidence_acquisition_matrix.id).toBe('buyer_evidence_acquisition_matrix');
+    expect(payload.public_status_handles.buyer_evidence_minimum_packet_handoff.id).toBe('buyer_evidence_minimum_packet_handoff');
+    expect(payload.public_status_handles.buyer_evidence_remediation_queue.id).toBe('buyer_evidence_remediation_queue');
+    expect(payload.public_status_handles.buyer_evidence_gate.command).toContain('report:buyer-evidence-gate-readiness');
+    expect(payload.public_status_handles.buyer_evidence_gate.command).toContain('check:buyer-evidence-gate-report');
+    expect(payload.public_status_handles.buyer_evidence_minimum_packet_handoff.sourceManifestPath).toBe('buyer_evidence.minimum_evidence_packet');
+    expect(payload.public_status_handles.buyer_evidence_acquisition_matrix.sourceProofTypes).toContain('buyer_evidence_acquisition_matrix');
+    expect(payload.public_status_handles.buyer_evidence_minimum_packet_handoff.sourceProofTypes).toContain('buyer_evidence_minimum_packet_handoff');
+    expect(payload.package_script_handles.report_buyer_evidence_gate_readiness).toBe('corepack pnpm run report:buyer-evidence-gate-readiness');
+    expect(payload.package_script_handles.check_buyer_evidence_gate_report).toBe('corepack pnpm run check:buyer-evidence-gate-report');
+    expect(payload.package_script_handles.report_pilot_evidence_95).toBe('corepack pnpm run report:pilot-evidence-95');
+    expect(payload.package_script_handles.validate_pilot_evidence_require_95).toBe('corepack pnpm run validate:pilot-evidence -- --require-95');
     expect(payload.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95|grant production approval/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|buyer-proven evidence|commercial-ready status|hosted\/live parity/i);
   });

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -128,6 +128,16 @@ function findByName(items, key, value) {
   return (items ?? []).find((item) => item?.[key] === value) ?? null;
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function focusedPayload(manifest) {
   const buyer = manifest.buyer_evidence ?? {};
   const productionPrerequisiteRow = findByName(
@@ -156,6 +166,21 @@ function focusedPayload(manifest) {
     launch_action_buyer_row: launchActionRow,
     production_approval_buyer_prerequisite: productionPrerequisiteRow,
     production_approval_request_buyer_row: productionRequestRow,
+    public_status_handles: {
+      buyer_evidence_gate: readPublicStatusHandle('buyer_evidence_gate'),
+      buyer_evidence_hard_gate_deficit_ledger: readPublicStatusHandle('buyer_evidence_hard_gate_deficit_ledger'),
+      buyer_evidence_acquisition_matrix: readPublicStatusHandle('buyer_evidence_acquisition_matrix'),
+      buyer_evidence_minimum_packet_handoff: readPublicStatusHandle('buyer_evidence_minimum_packet_handoff'),
+      buyer_evidence_remediation_queue: readPublicStatusHandle('buyer_evidence_remediation_queue'),
+    },
+    package_script_handles: {
+      report_buyer_evidence_gate_readiness: 'corepack pnpm run report:buyer-evidence-gate-readiness',
+      check_buyer_evidence_gate_report: 'corepack pnpm run check:buyer-evidence-gate-report',
+      report_buyer_evidence_readiness: 'corepack pnpm run report:buyer-evidence-readiness',
+      report_pilot_evidence_95: 'corepack pnpm run report:pilot-evidence-95',
+      validate_pilot_evidence_require_95: 'corepack pnpm run validate:pilot-evidence -- --require-95',
+      plan_outreach_intake: 'corepack pnpm run plan:outreach-intake',
+    },
     proof_boundary: 'Focused buyer-evidence hard-gate evidence only; this report does not contact buyers, send outreach, create accepted evidence, move confidence, attach retained artifacts, validate 95%, create buyer proof, claim buyer acceptance, grant production approval, deploy, or prove hosted/live parity.',
     stop_gate: 'Do not treat this focused report, acquisition matrix, remediation queue, generated workspace, starter register, skipped probes, public status handle, or check pass as buyer-proven evidence, Phase F 95% validation, production approval, commercial-ready status, or hosted/live parity.',
   };
@@ -170,6 +195,21 @@ function renderMarkdown(payload) {
   const launchRow = payload.launch_action_buyer_row ?? {};
   const productionPrerequisite = payload.production_approval_buyer_prerequisite ?? {};
   const productionRequest = payload.production_approval_request_buyer_row ?? {};
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes)
+      ? item.sourceProofTypes.join(', ')
+      : item?.sourceProofType ?? '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
+  const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
+    name,
+    command,
+  ]);
 
   const deficitRows = (deficits.items ?? []).map((item) => [
     item.requirement,
@@ -330,6 +370,14 @@ function renderMarkdown(payload) {
     '## Production Approval Request Buyer Row',
     '',
     renderTable(['Prerequisite', 'Request Phase', 'Source Status', 'Status', 'Blocks Request', 'Evidence To Attach', 'Request Impact'], requestRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
+    '',
+    '## Package Script Handles',
+    '',
+    renderTable(['Handle', 'Command'], scriptRows),
   ].join('\n')}\n`;
 }
 

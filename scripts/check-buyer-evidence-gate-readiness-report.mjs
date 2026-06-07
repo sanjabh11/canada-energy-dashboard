@@ -102,6 +102,16 @@ if (failures.length === 0) {
     assertContains(stdout, '## Launch Action Buyer Row', 'Report must include the launch action buyer row.');
     assertContains(stdout, '## Production Approval Buyer Prerequisite', 'Report must include the production approval buyer prerequisite.');
     assertContains(stdout, '## Production Approval Request Buyer Row', 'Report must include the production approval request buyer row.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public buyer evidence handles.');
+    assertContains(stdout, 'buyer_evidence_gate', 'Report must include the buyer evidence gate public handle.');
+    assertContains(stdout, 'buyer_evidence_hard_gate_deficit_ledger', 'Report must include the buyer hard-gate deficit public handle.');
+    assertContains(stdout, 'buyer_evidence_acquisition_matrix', 'Report must include the buyer acquisition matrix public handle.');
+    assertContains(stdout, 'buyer_evidence_minimum_packet_handoff', 'Report must include the buyer minimum packet public handle.');
+    assertContains(stdout, 'buyer_evidence_remediation_queue', 'Report must include the buyer remediation queue public handle.');
+    assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
+    assertContains(stdout, 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Report must include the focused buyer evidence report package handle.');
+    assertContains(stdout, 'corepack pnpm run check:buyer-evidence-gate-report', 'Report must include the focused buyer evidence checker package handle.');
+    assertContains(stdout, 'corepack pnpm run validate:pilot-evidence -- --require-95', 'Report must include the hard 95% validation package handle.');
     assert(/does not[\s\S]{0,220}grant production approval/i.test(stdout), 'Report must preserve production approval boundary text.');
   }
 
@@ -146,6 +156,19 @@ if (failures.length === 0) {
     assert(payload.launch_action_buyer_row?.phase === 'buyer_evidence', 'Focused JSON must include the launch action buyer row.');
     assert(payload.production_approval_buyer_prerequisite?.prerequisite === 'Buyer evidence hard gate', 'Focused JSON must include the production approval buyer prerequisite.');
     assert(payload.production_approval_request_buyer_row?.prerequisite === 'Buyer evidence hard gate', 'Focused JSON must include the production approval request buyer row.');
+    assert(payload.public_status_handles?.buyer_evidence_gate?.id === 'buyer_evidence_gate', 'Focused JSON must include the buyer evidence gate public handle.');
+    assert(payload.public_status_handles?.buyer_evidence_hard_gate_deficit_ledger?.id === 'buyer_evidence_hard_gate_deficit_ledger', 'Focused JSON must include the buyer hard-gate deficit public handle.');
+    assert(payload.public_status_handles?.buyer_evidence_acquisition_matrix?.id === 'buyer_evidence_acquisition_matrix', 'Focused JSON must include the buyer acquisition matrix public handle.');
+    assert(payload.public_status_handles?.buyer_evidence_minimum_packet_handoff?.id === 'buyer_evidence_minimum_packet_handoff', 'Focused JSON must include the buyer minimum packet public handle.');
+    assert(payload.public_status_handles?.buyer_evidence_remediation_queue?.id === 'buyer_evidence_remediation_queue', 'Focused JSON must include the buyer remediation queue public handle.');
+    assert(/report:buyer-evidence-gate-readiness/.test(payload.public_status_handles?.buyer_evidence_gate?.command ?? '') && /check:buyer-evidence-gate-report/.test(payload.public_status_handles?.buyer_evidence_gate?.command ?? ''), 'Buyer evidence gate public handle must point at the focused buyer report/check.');
+    assert(/buyer_evidence\.minimum_evidence_packet/.test(payload.public_status_handles?.buyer_evidence_minimum_packet_handoff?.sourceManifestPath ?? ''), 'Buyer minimum packet public handle must point at buyer_evidence.minimum_evidence_packet.');
+    assert(Array.isArray(payload.public_status_handles?.buyer_evidence_acquisition_matrix?.sourceProofTypes) && payload.public_status_handles.buyer_evidence_acquisition_matrix.sourceProofTypes.includes('buyer_evidence_acquisition_matrix'), 'Buyer acquisition public handle must expose acquisition matrix lineage.');
+    assert(Array.isArray(payload.public_status_handles?.buyer_evidence_minimum_packet_handoff?.sourceProofTypes) && payload.public_status_handles.buyer_evidence_minimum_packet_handoff.sourceProofTypes.includes('buyer_evidence_minimum_packet_handoff'), 'Buyer minimum packet public handle must expose minimum packet lineage.');
+    assert(payload.package_script_handles?.report_buyer_evidence_gate_readiness === 'corepack pnpm run report:buyer-evidence-gate-readiness', 'Focused JSON must include the buyer evidence gate report package handle.');
+    assert(payload.package_script_handles?.check_buyer_evidence_gate_report === 'corepack pnpm run check:buyer-evidence-gate-report', 'Focused JSON must include the buyer evidence gate checker package handle.');
+    assert(payload.package_script_handles?.report_pilot_evidence_95 === 'corepack pnpm run report:pilot-evidence-95', 'Focused JSON must include the 95% report package handle.');
+    assert(payload.package_script_handles?.validate_pilot_evidence_require_95 === 'corepack pnpm run validate:pilot-evidence -- --require-95', 'Focused JSON must include the hard 95% validation package handle.');
     assert(
       /report:buyer-evidence-gate-readiness/.test(payload.launch_action_buyer_row?.proof_command ?? '')
         && /check:buyer-evidence-gate-report/.test(payload.launch_action_buyer_row?.proof_command ?? ''),

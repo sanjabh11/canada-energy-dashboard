@@ -5328,6 +5328,18 @@ const buyerEvidencePublicGateHandleFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const buyerEvidencePublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-buyer-evidence-gate-readiness.mjs',
+  'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/buyerEvidenceGateReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releasePreflightReportFilesChanged = [
   'package.json',
   'scripts/report-release-preflight-readiness.mjs',
@@ -5983,6 +5995,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...buyerEvidenceMinimumPacketHandoffFilesChanged,
   ...buyerEvidenceProofHandleFilesChanged,
   ...buyerEvidencePublicGateHandleFilesChanged,
+  ...buyerEvidencePublicHandlesDigestFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...releasePreflightPublicCheckHandleFilesChanged,
@@ -6114,6 +6127,24 @@ const buyerEvidencePublicGateHandleTestsRun = [
   'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+];
+
+const buyerEvidencePublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-buyer-evidence-gate-readiness.mjs',
+  'node --check scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/buyerEvidenceGateReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+  'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes --json',
+  'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
 ];
 
 const releasePreflightReportTestsRun = [
@@ -6835,6 +6866,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...buyerEvidenceMinimumPacketHandoffTestsRun,
   ...buyerEvidenceProofHandleTestsRun,
   ...buyerEvidencePublicGateHandleTestsRun,
+  ...buyerEvidencePublicHandlesDigestTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
@@ -7747,6 +7779,19 @@ const safeFixImplementationDecisions = [
     reason: 'Supabase advisor clearance is a blocked launch lane with public advisor handles already present, but the focused Supabase advisor report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, and progress digest reports.',
     proof_boundary: 'This record improves Supabase advisor handle discoverability only; it does not authorize connectors, access dashboards, rerun Security Advisor or Performance Advisor, mutate the database, run migrations, record secrets, clear advisor findings, request production approval, grant owner approval, deploy, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the focused Supabase advisor handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as Supabase advisor clearance, database security clearance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing buyer evidence public status handles and package script handles inside the focused buyer evidence hard-gate report.',
+    acceptance_check: 'report:buyer-evidence-gate-readiness renders Public Release Status Handles and Package Script Handles for buyer_evidence_gate, buyer_evidence_hard_gate_deficit_ledger, buyer_evidence_acquisition_matrix, buyer_evidence_minimum_packet_handoff, and buyer_evidence_remediation_queue; check:buyer-evidence-gate-report validates those handles while buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifacts, commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
+    chosen_variant: 'minimal focused buyer evidence handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json buyer evidence handles, focused source/release/branch/Supabase/progress report handle sections, buyer evidence gate report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: buyerEvidencePublicHandlesDigestFilesChanged,
+    tests_run: buyerEvidencePublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public buyer evidence handle rows into the focused buyer evidence JSON/Markdown payload and adds package handles for the focused buyer evidence report/check, buyer readiness report, hard 95% validator, 95% report, and outreach intake planning commands without changing public status JSON, contacting buyers, creating buyer rows, attaching artifacts, running retained-artifact validation, production approval, deploy state, or launch status.',
+    reason: 'Buyer evidence is a blocked launch lane with public buyer evidence handles already present, but the focused buyer evidence report did not show those handles or package commands in the same operator-facing form as source provenance, release preflight, branch review, Supabase advisor, and progress digest reports.',
+    proof_boundary: 'This record improves buyer evidence handle discoverability only; it does not contact buyers, send outreach, create accepted evidence, move confidence, attach retained artifacts, validate 95%, create buyer proof, claim buyer acceptance, request production approval, grant owner approval, deploy, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused buyer evidence handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as buyer-proven evidence, retained-artifact validation, Phase F 95% proof, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9277,6 +9322,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing real Supabase advisor work could reduce the blocker only after account access and explicit approvals are available, but would exceed the safe-fix boundary and risk unsupported advisor-clearance or readiness claims.',
     evidence: 'Supabase advisor stop gates require authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, and regenerated manifest evidence before any clearance, approval, migration, deploy, or readiness claim.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave buyer evidence public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused buyer evidence report is the operator artifact for the buyer blocker and should show the same handles during continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the buyer blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains buyer_evidence_gate, buyer_evidence_hard_gate_deficit_ledger, buyer_evidence_acquisition_matrix, buyer_evidence_minimum_packet_handoff, and buyer_evidence_remediation_queue handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status buyer evidence rows.',
+    reason_rejected: 'The needed public buyer evidence handles already exist; changing generated public status would add churn without improving the focused buyer evidence report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public buyer evidence rows already point at report:buyer-evidence-gate-readiness && check:buyer-evidence-gate-report and carry sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Contact buyers, send outreach, create accepted evidence, attach artifacts, run 95% validation, request approval, or deploy from the report phase.',
+    reason_rejected: 'Buyer contact, accepted evidence creation, retained artifact handling, final validation, approval, and deploy require real operator-owned inputs and are outside this repo-side report-contract phase.',
+    tradeoff: 'Executing real buyer evidence work could reduce the blocker only with real buyer-supplied rows and retained artifacts, but local generation would fabricate proof or exceed the safe-fix boundary.',
+    evidence: 'Buyer evidence stop gates require real anonymized accepted buyer rows, reviewer evidence, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 before any buyer confidence, approval, deploy, or readiness claim.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9867,6 +9933,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses existing public Supabase advisor handle data and existing Supabase advisor report/check/test contracts, with no new dependency, no generated public-status churn, no new advisor scanner, no connector authorization, no dashboard access, no Security Advisor or Performance Advisor rerun, no database mutation, no migration execution, no secret handling, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: supabaseAdvisorPublicHandlesDigestTestsRun,
     remaining_risk: 'The Supabase advisor handle digest remains operator guidance only; launch readiness still depends on authorized connector or dashboard access, current Security Advisor evidence, current Performance Advisor evidence, public-safe no-secret findings, clean source provenance, release-readiness, branch decisions, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public buyer evidence handle data and existing buyer evidence gate report/check/test contracts, with no new dependency, no generated public-status churn, no new buyer parser, no buyer contact, no outreach send, no evidence generation, no retained artifact mutation, no 95% validator execution, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: buyerEvidencePublicHandlesDigestTestsRun,
+    remaining_risk: 'The buyer evidence handle digest remains operator guidance only; launch readiness still depends on real anonymized accepted buyer rows, reviewer evidence, retained redacted artifact hashes, strong commercial signal evidence, validate:pilot-evidence --require-95, clean source provenance, release-readiness, branch decisions, Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 
