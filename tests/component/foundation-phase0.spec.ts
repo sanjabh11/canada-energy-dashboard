@@ -75,7 +75,7 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('production_approval.request_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('production_approval.operator_handoff_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('post_deploy_live_proof', { exact: true })).toBeVisible();
-    await expect(publicReleaseStatus.getByText('post_deploy_live_proof.gate_queue', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('post_deploy_live_proof.gate_queue', { exact: true })).toHaveCount(2);
     await expect(publicReleaseStatus.getByText('post_deploy_live_proof.operator_handoff_packet', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('completion_audit', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('adversarial_reviews', { exact: true })).toBeVisible();

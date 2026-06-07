@@ -19,11 +19,20 @@
     {
       "id": "deployed_artifact_live_parity",
       "label": "Last approved production artifact",
-      "status": "verified",
+      "status": "external_gate",
       "proofBucket": "hosted/live",
       "command": "pnpm run check:post-deploy-live",
-      "evidenceBoundary": "Only proves the deployed artifact checked during the latest approved deploy; it does not prove production parity for future source commits, which require an approved deploy and another live parity run.",
-      "nextAction": "Rerun after every approved production deploy before calling live parity current."
+      "evidenceBoundary": "Only a fresh Corepack-backed post-deploy live check proves the deployed artifact: live metadata, exact static dist parity, and hosted proof-pack smoke must all pass. Historical or partial hosted checks do not prove current artifact parity, and this row does not prove production parity for future source commits.",
+      "nextAction": "Restore Corepack and built dist prerequisites, rerun pnpm run check:post-deploy-live after every approved production deploy, and keep this as an external hosted/live refresh gate until the full command passes.",
+      "sourceManifestPath": "post_deploy_live_proof.gate_queue",
+      "sourceProofTypes": [
+        "manual_approval_gate",
+        "approved_deploy_execution",
+        "hosted_metadata_probe",
+        "hosted_static_parity_probe",
+        "hosted_browser_smoke",
+        "post_deploy_parity_claim"
+      ]
     },
     {
       "id": "current_source_live_parity",

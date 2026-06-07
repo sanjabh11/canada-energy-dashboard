@@ -53,10 +53,10 @@ export interface SupabaseAdvisorStatusCard {
 export const RELEASE_POSTURE: ReleasePostureItem[] = [
   {
     title: 'Last approved production artifact parity',
-    status: 'verified',
-    rating: '5.0/5',
-    evidence: 'The last approved production artifact passed remote metadata, hosted `/`, `/manifest.json`, `/schema-webapp.jsonld` static parity, and hosted proof-pack smoke for that deployed artifact only.',
-    nextAction: 'Preserve this as last-approved artifact evidence; do not treat a future source commit as live-proven until a new approved deploy passes `pnpm run check:post-deploy-live`.',
+    status: 'external_gate',
+    rating: '3.2/5',
+    evidence: 'Last-approved artifact parity is an external hosted/live refresh gate: remote metadata and hosted proof-pack smoke are partial signals, but exact static dist parity and the full Corepack-backed post-deploy command must pass before the artifact is treated as freshly verified.',
+    nextAction: 'Restore Corepack and built `dist/` prerequisites, rerun `pnpm run check:post-deploy-live`, and do not treat a future source commit as live-proven until a new approved deploy passes the full post-deploy live gate.',
   },
   {
     title: 'Current source live parity',
@@ -112,9 +112,18 @@ export const RELEASE_POSTURE: ReleasePostureItem[] = [
 export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   {
     label: 'Last verified production artifact',
-    status: 'verified',
+    status: 'external_gate',
     command: 'pnpm run check:post-deploy-live',
-    evidenceBoundary: 'The latest approved production deploy passed hosted metadata, exact static dist parity, and hosted proof-pack smoke for that deployed artifact only; future source changes require another approved deploy and post-deploy live check.',
+    evidenceBoundary: 'The latest approved production deploy is only freshly verified when hosted metadata, exact static dist parity, and hosted proof-pack smoke all pass through the Corepack-backed post-deploy live command; partial hosted checks or historical evidence do not refresh this row.',
+    sourceManifestPath: 'post_deploy_live_proof.gate_queue',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
     publicReference: {
       label: 'Netlify deploys',
       url: 'https://app.netlify.com/projects/canada-energy/deploys',
@@ -122,9 +131,18 @@ export const RELEASE_HEALTH_EVIDENCE: ReleaseHealthEvidenceItem[] = [
   },
   {
     label: 'Latest approved production parity',
-    status: 'verified',
+    status: 'external_gate',
     command: 'pnpm run check:post-deploy-live',
-    evidenceBoundary: 'The approved production artifact passed live metadata, exact static dist parity, and hosted proof-pack route smoke for that artifact only; this does not prove future source commits are deployed.',
+    evidenceBoundary: 'The approved production artifact requires a fresh full post-deploy live refresh: live metadata, exact static dist parity, and hosted proof-pack route smoke must all pass; this does not prove future source commits are deployed.',
+    sourceManifestPath: 'post_deploy_live_proof.gate_queue',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
   },
   {
     label: 'Current source live parity',

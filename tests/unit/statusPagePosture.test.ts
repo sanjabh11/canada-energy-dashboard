@@ -11,7 +11,7 @@ const SHARED_PUBLIC_RELEASE_EVIDENCE_CONTRACTS = [
   {
     publicId: 'deployed_artifact_live_parity',
     releaseHealthLabel: 'Latest approved production parity',
-    boundaryPatterns: [/future source commits/i],
+    boundaryPatterns: [/fresh.*post-deploy live/i, /future source commits/i],
   },
   {
     publicId: 'current_source_live_parity',
@@ -488,11 +488,14 @@ describe('status page release posture', () => {
     const currentSourceParity = RELEASE_POSTURE.find((item) => item.title === 'Current source live parity');
 
     expect(deployPosture).toBeTruthy();
-    expect(deployPosture?.status).toBe('verified');
-    expect(deployPosture?.rating).toBe('5.0/5');
-    expect(deployPosture?.evidence).toMatch(/last approved production artifact/i);
+    expect(deployPosture?.status).toBe('external_gate');
+    expect(deployPosture?.rating).toBe('3.2/5');
+    expect(deployPosture?.evidence).toMatch(/external hosted\/live refresh gate/i);
+    expect(deployPosture?.evidence).toMatch(/exact static dist parity/i);
     expect(deployPosture?.evidence).toMatch(/hosted proof-pack smoke/i);
+    expect(deployPosture?.evidence).toMatch(/Corepack-backed post-deploy command/i);
     expect(deployPosture?.nextAction).toMatch(/check:post-deploy-live/);
+    expect(deployPosture?.nextAction).toMatch(/Corepack/);
     expect(deployPosture?.nextAction).toMatch(/future source commit/i);
     expect(currentSourceParity?.status).toBe('external_gate');
     expect(currentSourceParity?.rating).toBe('2.0/5');
@@ -589,12 +592,32 @@ describe('status page release posture', () => {
     const supabaseAdvisorEvidence = RELEASE_HEALTH_EVIDENCE.find((item) => item.label === 'Supabase MCP advisors');
 
     expect(RELEASE_HEALTH_EVIDENCE).toHaveLength(44);
-    expect(deployEvidence?.status).toBe('verified');
+    expect(deployEvidence?.status).toBe('external_gate');
     expect(deployEvidence?.publicReference?.url).toContain('/deploys');
-    expect(deployEvidence?.evidenceBoundary).toMatch(/passed hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
-    expect(latestApprovedParityEvidence?.status).toBe('verified');
+    expect(deployEvidence?.evidenceBoundary).toMatch(/hosted metadata, exact static dist parity, and hosted proof-pack smoke/i);
+    expect(deployEvidence?.evidenceBoundary).toMatch(/partial hosted checks or historical evidence do not refresh/i);
+    expect(deployEvidence?.sourceManifestPath).toBe('post_deploy_live_proof.gate_queue');
+    expect(deployEvidence?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
+    expect(latestApprovedParityEvidence?.status).toBe('external_gate');
     expect(latestApprovedParityEvidence?.command).toContain('check:post-deploy-live');
+    expect(latestApprovedParityEvidence?.evidenceBoundary).toMatch(/fresh full post-deploy live refresh/i);
     expect(latestApprovedParityEvidence?.evidenceBoundary).toMatch(/does not prove future source commits/i);
+    expect(latestApprovedParityEvidence?.sourceManifestPath).toBe('post_deploy_live_proof.gate_queue');
+    expect(latestApprovedParityEvidence?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ]);
     expect(currentSourceParityEvidence?.status).toBe('external_gate');
     expect(currentSourceParityEvidence?.command).toContain('report:production-approval-packet');
     expect(currentSourceParityEvidence?.evidenceBoundary).toMatch(/launch evidence validation passes/i);
@@ -1247,6 +1270,7 @@ describe('status page release posture', () => {
 
   it('defines a public-safe release status manifest for the status page', () => {
     const itemIds = PUBLIC_RELEASE_STATUS_MANIFEST.items.map((item) => item.id);
+    const deployedArtifactGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'deployed_artifact_live_parity');
     const currentSourceParityGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_live_parity');
     const sourceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'current_source_release_gate');
     const provenanceGate = PUBLIC_RELEASE_STATUS_MANIFEST.items.find((item) => item.id === 'source_provenance');
@@ -1348,6 +1372,21 @@ describe('status page release posture', () => {
       'supabase_advisor_clearance_deficit_ledger',
       'supabase_advisor_operator_handoff_packet',
       'supabase_advisor_remediation_queue',
+    ]);
+    expect(deployedArtifactGate?.status).toBe('external_gate');
+    expect(deployedArtifactGate?.command).toContain('check:post-deploy-live');
+    expect(deployedArtifactGate?.evidenceBoundary).toMatch(/fresh Corepack-backed post-deploy live check/i);
+    expect(deployedArtifactGate?.evidenceBoundary).toMatch(/live metadata, exact static dist parity, and hosted proof-pack smoke/i);
+    expect(deployedArtifactGate?.evidenceBoundary).toMatch(/Historical or partial hosted checks do not prove current artifact parity/i);
+    expect(deployedArtifactGate?.nextAction).toMatch(/Corepack and built dist prerequisites/i);
+    expect(deployedArtifactGate?.sourceManifestPath).toBe('post_deploy_live_proof.gate_queue');
+    expect(deployedArtifactGate?.sourceProofTypes).toEqual([
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
     ]);
     expect(currentSourceParityGate?.status).toBe('external_gate');
     expect(currentSourceParityGate?.command).toContain('report:production-approval-packet');

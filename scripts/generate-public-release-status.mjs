@@ -21,7 +21,7 @@ const requiredRefreshCommands = [
 const requiredItemContracts = [
   {
     id: 'deployed_artifact_live_parity',
-    status: 'verified',
+    status: 'external_gate',
     proofBucket: 'hosted/live',
     command: 'pnpm run check:post-deploy-live',
   },
@@ -372,6 +372,21 @@ function validateManifest(manifest) {
     }
   }
 
+  const deployedArtifactLiveParity = itemById.get('deployed_artifact_live_parity') ?? {};
+  if (!/Corepack-backed post-deploy live check|live metadata|exact static dist parity|hosted proof-pack smoke|historical|partial hosted checks|future source commits/i.test(`${deployedArtifactLiveParity.evidenceBoundary ?? ''}\n${deployedArtifactLiveParity.nextAction ?? ''}`)) {
+    failures.push('deployed_artifact_live_parity must preserve the full live-proof refresh boundary and reject partial or historical proof.');
+  }
+  expectSourceLineage('deployed_artifact_live_parity', {
+    sourceManifestPath: 'post_deploy_live_proof.gate_queue',
+    sourceProofTypes: [
+      'manual_approval_gate',
+      'approved_deploy_execution',
+      'hosted_metadata_probe',
+      'hosted_static_parity_probe',
+      'hosted_browser_smoke',
+      'post_deploy_parity_claim',
+    ],
+  });
   expectSourceLineage('current_source_live_parity', {
     sourceManifestPath: 'post_deploy_live_proof',
     sourceProofTypes: [
