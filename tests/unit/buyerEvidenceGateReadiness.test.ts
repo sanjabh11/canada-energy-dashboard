@@ -139,9 +139,10 @@ describe('buyer evidence gate readiness report', () => {
     expect(payload.public_status_handles.buyer_evidence_minimum_packet_handoff.sourceManifestPath).toBe('buyer_evidence.minimum_evidence_packet');
     expect(payload.public_status_handles.buyer_evidence_acquisition_matrix.sourceProofTypes).toContain('buyer_evidence_acquisition_matrix');
     expect(payload.public_status_handles.buyer_evidence_minimum_packet_handoff.sourceProofTypes).toContain('buyer_evidence_minimum_packet_handoff');
-    expect(payload.package_script_handles.report_buyer_evidence_gate_readiness).toBe('corepack pnpm run report:buyer-evidence-gate-readiness');
-    expect(payload.package_script_handles.check_buyer_evidence_gate_report).toBe('corepack pnpm run check:buyer-evidence-gate-report');
-    expect(payload.package_script_handles.report_pilot_evidence_95).toBe('corepack pnpm run report:pilot-evidence-95');
+	    expect(payload.package_script_handles.report_buyer_evidence_gate_readiness).toBe('corepack pnpm run report:buyer-evidence-gate-readiness');
+	    expect(payload.package_script_handles.check_buyer_evidence_gate_report).toBe('corepack pnpm run check:buyer-evidence-gate-report');
+	    expect(payload.package_script_handles.check_buyer_evidence_readiness_report).toBe('corepack pnpm run check:buyer-evidence-readiness-report');
+	    expect(payload.package_script_handles.report_pilot_evidence_95).toBe('corepack pnpm run report:pilot-evidence-95');
     expect(payload.package_script_handles.validate_pilot_evidence_require_95).toBe('corepack pnpm run validate:pilot-evidence -- --require-95');
     expect(payload.proof_boundary).toMatch(/does not contact buyers|create accepted evidence|validate 95|grant production approval/i);
     expect(payload.stop_gate).toMatch(/Do not treat this focused report|buyer-proven evidence|commercial-ready status|hosted\/live parity/i);

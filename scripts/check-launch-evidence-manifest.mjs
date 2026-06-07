@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-UNMERGED-BRANCH-PACKAGE-HANDLES', 'Manifest progress_updates must expose the latest unmerged branch package-handle ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT', 'Manifest progress_updates must expose the latest buyer evidence readiness report-contract ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest unmerged branch package-handle ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest buyer evidence readiness report-contract ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4866,8 +4866,8 @@ try {
     assert(unmergedBranchPackageHandlesReview, 'Manifest must record the unmerged branch package-handle code optimization review.');
     assert(unmergedBranchPackageHandlesReview?.policy === 'strict', 'Unmerged branch package-handle code optimization review must use strict policy.');
     assert(unmergedBranchPackageHandlesReview?.verdict === 'pass', 'Unmerged branch package-handle code optimization review must pass.');
-    assert(
-      Array.isArray(unmergedBranchPackageHandlesReview?.tests_or_checks)
+	    assert(
+	      Array.isArray(unmergedBranchPackageHandlesReview?.tests_or_checks)
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /report:unmerged-branch-readiness -- --focus-risk high/.test(check))
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:unmerged-branch-readiness-report/.test(check))
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:branch-review-report -- --skip-probes/.test(check))
@@ -4876,9 +4876,52 @@ try {
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && unmergedBranchPackageHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
-      'Unmerged branch package-handle code optimization review must record unmerged branch, branch wrapper, progress, focused suite, manifest, commercial report, and TypeScript checks.',
-    );
-    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
+	      'Unmerged branch package-handle code optimization review must record unmerged branch, branch wrapper, progress, focused suite, manifest, commercial report, and TypeScript checks.',
+	    );
+	    const buyerEvidenceReadinessReportContractDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT');
+	    assert(buyerEvidenceReadinessReportContractDecision, 'Manifest must record the buyer evidence readiness report-contract implementation decision.');
+	    assert(
+	      buyerEvidenceReadinessReportContractDecision?.chosen_variant === 'minimal buyer evidence readiness report/check contract',
+	      'Buyer evidence readiness report-contract decision must record the minimal report/check contract variant.',
+	    );
+	    assert(
+	      Array.isArray(buyerEvidenceReadinessReportContractDecision?.files_changed)
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('package.json')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/report-buyer-evidence-readiness.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/check-buyer-evidence-readiness-report.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/report-buyer-evidence-gate-readiness.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/check-buyer-evidence-gate-readiness-report.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/report-launch-evidence-manifest.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/check-launch-evidence-manifest.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('scripts/check-commercial-launch-readiness-report.mjs')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('tests/unit/buyerEvidenceReadiness.test.ts')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('tests/unit/buyerEvidenceGateReadiness.test.ts')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+	        && buyerEvidenceReadinessReportContractDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+	      'Buyer evidence readiness report-contract decision must record buyer readiness, buyer gate, manifest, progress, commercial report, and unit contract files.',
+	    );
+	    assert(
+	      /readiness report\/check discoverability only|does not contact buyers|send outreach|create accepted evidence|create buyer proof|move confidence|attach retained artifacts|validate 95%|clear the buyer hard gate|request production approval|deploy|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(buyerEvidenceReadinessReportContractDecision?.proof_boundary ?? ''),
+	      'Buyer evidence readiness report-contract decision must preserve no-contact, no-outreach, no-proof, no-retained-artifact, no-95-validation, no-approval, no-deploy, no-live-proof, no-goal-completion, and no-readiness boundaries.',
+	    );
+	    const buyerEvidenceReadinessReportContractReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT');
+	    assert(buyerEvidenceReadinessReportContractReview, 'Manifest must record the buyer evidence readiness report-contract code optimization review.');
+	    assert(buyerEvidenceReadinessReportContractReview?.policy === 'strict', 'Buyer evidence readiness report-contract code optimization review must use strict policy.');
+	    assert(buyerEvidenceReadinessReportContractReview?.verdict === 'pass', 'Buyer evidence readiness report-contract code optimization review must pass.');
+	    assert(
+	      Array.isArray(buyerEvidenceReadinessReportContractReview?.tests_or_checks)
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /report:buyer-evidence-readiness/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:buyer-evidence-readiness-report/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:buyer-evidence-gate-report -- --skip-probes/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:focused-launch-readiness-reports -- --skip-probes/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+	        && buyerEvidenceReadinessReportContractReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+	      'Buyer evidence readiness report-contract code optimization review must record readiness, gate, progress, focused suite, manifest, commercial report, and TypeScript checks.',
+	    );
+	    assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');
     const adversarialProofTypesByLane = {
       'buyer evidence': 'buyer_evidence_adversarial_review',

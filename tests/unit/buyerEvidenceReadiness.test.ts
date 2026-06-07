@@ -5,6 +5,7 @@ import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 
 const readinessScriptPath = path.join(process.cwd(), 'scripts/report-buyer-evidence-readiness.mjs');
+const readinessCheckScriptPath = path.join(process.cwd(), 'scripts/check-buyer-evidence-readiness-report.mjs');
 const intakePacketScriptPath = path.join(process.cwd(), 'scripts/create-pilot-evidence-intake-packet.mjs');
 const tempRoots: string[] = [];
 
@@ -108,6 +109,14 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('corepack pnpm run report:phase-f-evidence-workspace -- --workspace-dir /tmp/ceip-phase-f-evidence --register-file /tmp/ceip-phase-f-evidence/phase-f-minimum-register-updated.csv');
     expect(result.stdout).toContain('Default bundle routes: /utility-demand-forecast (utility_forecast_planning_pack), /roi-calculator (tier_cfo_savings_pack), /utility-security (utility_security_procurement_pack).');
     expect(result.stdout).not.toContain('corepack pnpm run create:pilot-evidence-intake-packet -- --route /utility-security --output-dir /tmp/ceip-phase-f-utility-security');
+    expect(result.stdout).toContain('Package Script Handles');
+    expect(result.stdout).toContain('corepack pnpm run report:buyer-evidence-readiness');
+    expect(result.stdout).toContain('corepack pnpm run check:buyer-evidence-readiness-report');
+    expect(result.stdout).toContain('corepack pnpm run report:buyer-evidence-gate-readiness');
+    expect(result.stdout).toContain('corepack pnpm run check:buyer-evidence-gate-report');
+    expect(result.stdout).toContain('corepack pnpm run validate:pilot-evidence -- --require-95');
+    expect(result.stdout).toContain('corepack pnpm run report:pilot-evidence-95');
+    expect(result.stdout).toContain('operator handoffs only');
     expect(result.stdout).toContain('Start the all-in-one Phase F evidence workspace');
     expect(result.stdout).toContain('After `update:pilot-evidence-register-row` writes an updated candidate register inside the workspace');
     expect(result.stdout).toContain('Append only real, anonymized buyer activity rows');
@@ -257,5 +266,13 @@ describe('buyer evidence readiness report', () => {
     expect(result.stdout).toContain('Replace starter rows with real buyer-supplied, accepted, confidence-moving evidence');
     expect(result.stdout).toContain('Keep `confidence_delta=0` until buyer evidence includes reviewer acceptance');
     expect(result.stdout).not.toContain('Re-run with `--evidence-root path/to/redacted-artifacts` to test the retained-artifact 95% gate.');
+  });
+
+  it('validates the readiness report contract without requiring buyer evidence to pass', async () => {
+    const result = await runNodeScript(readinessCheckScriptPath, []);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe('');
+    expect(result.stdout).toContain('Buyer evidence readiness report check passed');
   });
 });

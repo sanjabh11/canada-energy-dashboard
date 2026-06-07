@@ -267,6 +267,27 @@ function phaseFEvidenceWorkspaceUpdatedRegisterReportCommand(
   return `${phaseFEvidenceWorkspaceReportCommand(workspaceDir)} --register-file ${registerFile}`;
 }
 
+const packageScriptHandles = [
+  ['report_buyer_evidence_readiness', pnpmRunCommand('report:buyer-evidence-readiness'), 'Readiness scan only; does not create buyer proof.'],
+  ['check_buyer_evidence_readiness_report', pnpmRunCommand('check:buyer-evidence-readiness-report'), 'Report contract check only; does not require buyer evidence to pass.'],
+  ['report_buyer_evidence_gate_readiness', pnpmRunCommand('report:buyer-evidence-gate-readiness'), 'Focused hard-gate report only; does not move confidence.'],
+  ['check_buyer_evidence_gate_report', pnpmRunCommand('check:buyer-evidence-gate-report'), 'Focused hard-gate contract check only.'],
+  ['create_phase_f_minimum_intake_bundle', phaseFMinimumBundleCommand(), 'Starter bundle generation only; generated rows remain zero-evidence.'],
+  ['check_phase_f_minimum_intake_bundle', pnpmRunCommand('check:phase-f-minimum-intake-bundle'), 'Template/bundle contract check only.'],
+  ['create_phase_f_evidence_workspace', phaseFEvidenceWorkspaceCommand(), 'Workspace scaffold only; does not contact buyers.'],
+  ['report_phase_f_evidence_workspace', phaseFEvidenceWorkspaceReportCommand(), 'Workspace validation report only.'],
+  ['report_phase_f_evidence_workspace_updated_register', phaseFEvidenceWorkspaceUpdatedRegisterReportCommand(), 'Candidate updated-register validation only.'],
+  ['check_phase_f_evidence_workspace', pnpmRunCommand('check:phase-f-evidence-workspace'), 'Workspace template contract check only.'],
+  ['validate_pilot_evidence_require_95', pnpmRunCommand('validate:pilot-evidence', '-- --require-95'), 'Final retained-artifact validator; requires real accepted buyer rows and evidence root.'],
+  ['report_pilot_evidence_95', pnpmRunCommand('report:pilot-evidence-95'), '95% validator report form; requires real register inputs to pass.'],
+  ['check_pilot_evidence_template', pnpmRunCommand('check:pilot-evidence-template'), 'Template check only; not buyer proof.'],
+  ['check_pilot_evidence_95_fixture_gate', pnpmRunCommand('check:pilot-evidence-95-fixture-gate'), 'Fixture boundary check only; not production evidence.'],
+  ['check_outreach_response_log_template', pnpmRunCommand('check:outreach-response-log-template'), 'Outreach template contract check only.'],
+  ['check_outreach_intake_plan_template', pnpmRunCommand('check:outreach-intake-plan-template'), 'Outreach plan template contract check only.'],
+  ['plan_outreach_intake', pnpmRunCommand('plan:outreach-intake'), 'Plans from real outreach logs only; does not send outreach.'],
+  ['append_outreach_response_log_row', pnpmRunCommand('append:outreach-response-log-row', '-- --log-file /tmp/ceip-phase-f-evidence/outreach/outreach-response-log.csv ...'), 'Operator-owned append command for real anonymized buyer activity only.'],
+];
+
 const acceptedReviewStatuses = new Set(['accepted', 'approved', 'signed']);
 const completeFeedbackStatuses = new Set(['accepted', 'approved', 'complete', 'signed']);
 const buyerSourceLabels = new Set(['buyer_supplied_anonymized', 'buyer_supplied_confidential']);
@@ -459,6 +480,17 @@ function printPhaseFMinimumEvidenceMap() {
   console.log('- The workspace wraps the outreach log, default minimum starter bundle, readiness report, and hard-gate blocker check without creating buyer proof.');
 }
 
+function printPackageScriptHandles() {
+  console.log('\n## Package Script Handles');
+  console.log('These package handles are operator handoffs only. They do not contact buyers, create accepted evidence, attach retained artifacts, move confidence, validate the 95% gate, approve production, deploy, or prove hosted/live parity by themselves.');
+  console.log('');
+  console.log('| Handle | Command | Boundary |');
+  console.log('|---|---|---|');
+  for (const [handle, command, boundary] of packageScriptHandles) {
+    console.log(`| ${handle} | ${command} | ${boundary} |`);
+  }
+}
+
 function summarizePilotRegister(filePath, rows) {
   const rowObjects = rowsToObjects(rows);
   const confidenceRows = rowObjects.filter((row) => Number(row.confidence_delta) > 0);
@@ -583,6 +615,7 @@ printHardGateDeficitLedger(pilotRegisters, {
   gate95Ran: Boolean(evidenceRoot && pilotRegisters.length > 0),
   passing95Gates,
 });
+printPackageScriptHandles();
 
 if (pilotRegisters.length > 0) {
   console.log('\n## Pilot Evidence Registers');

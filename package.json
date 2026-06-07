@@ -53,6 +53,7 @@
     "check:commercial-launch-readiness-report": "node scripts/check-commercial-launch-readiness-report.mjs",
     "check:unmerged-branch-readiness-report": "node scripts/check-unmerged-branch-readiness-report.mjs",
     "check:branch-review-report": "node scripts/check-branch-review-readiness-report.mjs",
+    "check:buyer-evidence-readiness-report": "node scripts/check-buyer-evidence-readiness-report.mjs",
     "check:buyer-evidence-gate-report": "node scripts/check-buyer-evidence-gate-readiness-report.mjs",
     "check:source-provenance-report": "node scripts/check-source-provenance-readiness-report.mjs",
     "check:supabase-advisor-report": "node scripts/check-supabase-advisor-readiness-report.mjs",

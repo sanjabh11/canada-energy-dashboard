@@ -5340,6 +5340,22 @@ const buyerEvidencePublicHandlesDigestFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const buyerEvidenceReadinessReportContractFilesChanged = [
+  'package.json',
+  'scripts/report-buyer-evidence-readiness.mjs',
+  'scripts/check-buyer-evidence-readiness-report.mjs',
+  'scripts/report-buyer-evidence-gate-readiness.mjs',
+  'scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/buyerEvidenceReadiness.test.ts',
+  'tests/unit/buyerEvidenceGateReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releasePreflightReportFilesChanged = [
   'package.json',
   'scripts/report-release-preflight-readiness.mjs',
@@ -6096,6 +6112,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...buyerEvidenceProofHandleFilesChanged,
   ...buyerEvidencePublicGateHandleFilesChanged,
   ...buyerEvidencePublicHandlesDigestFilesChanged,
+  ...buyerEvidenceReadinessReportContractFilesChanged,
   ...releasePreflightReportFilesChanged,
   ...releasePreflightSourceOfTruthHandleFilesChanged,
   ...releasePreflightPublicCheckHandleFilesChanged,
@@ -6252,6 +6269,27 @@ const buyerEvidencePublicHandlesDigestTestsRun = [
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
   'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
   'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const buyerEvidenceReadinessReportContractTestsRun = [
+  'node --check scripts/report-buyer-evidence-readiness.mjs',
+  'node --check scripts/check-buyer-evidence-readiness-report.mjs',
+  'node --check scripts/report-buyer-evidence-gate-readiness.mjs',
+  'node --check scripts/check-buyer-evidence-gate-readiness-report.mjs',
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/buyerEvidenceReadiness.test.ts tests/unit/buyerEvidenceGateReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:buyer-evidence-readiness',
+  'pnpm run check:buyer-evidence-readiness-report',
+  'pnpm run report:buyer-evidence-gate-readiness -- --skip-probes',
+  'pnpm run check:buyer-evidence-gate-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
   'pnpm exec tsc -b --pretty false',
 ];
 
@@ -7119,6 +7157,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...buyerEvidenceProofHandleTestsRun,
   ...buyerEvidencePublicGateHandleTestsRun,
   ...buyerEvidencePublicHandlesDigestTestsRun,
+  ...buyerEvidenceReadinessReportContractTestsRun,
   ...releasePreflightReportTestsRun,
   ...releasePreflightSourceOfTruthHandleTestsRun,
   ...releasePreflightPublicCheckHandleTestsRun,
@@ -8156,6 +8195,19 @@ const safeFixImplementationDecisions = [
     reason: 'The unmerged-branch report is the direct read-only inventory for local/origin split and stale branch risk, but unlike adjacent focused blocker reports it did not expose the exact package handles an operator should run next.',
     proof_boundary: 'This record improves unmerged-branch package-handle discoverability only; it does not checkout branches, merge branches, push branches, discard refs, select canonical heads, clear branch review, clear source provenance, run release-readiness as clearance, collect buyer evidence, contact buyers, authorize Supabase, request owner approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the unmerged-branch package-handle digest, read-only branch inventory, focused review commands, branch-review wrapper, skipped-probe report/check pass, manifest validation, focused suite pass, or this code optimization record as branch approval, canonical-head selection, source readiness, release readiness, Supabase advisor clearance, buyer acceptance, production approval, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
+    decision: 'Expose buyer evidence readiness package-script handles and a dedicated readiness report checker.',
+    acceptance_check: 'report:buyer-evidence-readiness renders Package Script Handles for the readiness report/check, focused buyer hard-gate report/check, Phase F workspace, retained-artifact 95% validator, and outreach/intake commands; check:buyer-evidence-readiness-report validates those handles while buyer evidence remains blocked until real anonymized accepted buyer rows, retained redacted artifacts, strong commercial signal evidence, and validate:pilot-evidence --require-95 actually pass.',
+    chosen_variant: 'minimal buyer evidence readiness report/check contract',
+    repo_pattern_reused: 'Existing buyer evidence readiness report, buyer evidence gate report package-handle pattern, focused report checker pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: buyerEvidenceReadinessReportContractFilesChanged,
+    tests_run: buyerEvidenceReadinessReportContractTestsRun,
+    proof: 'The patch adds package-handle rows and a structural readiness report checker without creating Phase F workspaces, sending outreach, creating buyer rows, attaching retained artifacts, running retained-artifact validation as clearance, requesting approval, deploying, proving hosted/live parity, clearing buyer evidence, or changing launch status.',
+    reason: 'The manifest points operators at report:buyer-evidence-readiness as the buyer evidence workspace next step, but that report previously exposed its commands only in narrative text and had no package-level checker equivalent to adjacent focused launch-readiness reports.',
+    proof_boundary: 'This record improves buyer evidence readiness report/check discoverability only; it does not contact buyers, send outreach, create accepted evidence, create buyer proof, move confidence, attach retained artifacts, validate 95%, clear the buyer hard gate, request production approval, grant owner approval, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the readiness report, readiness checker, package handles, focused buyer gate report/check, generated workspace commands, starter bundles, skipped-probe checks, manifest validation, focused suite pass, or this code optimization record as buyer-proven evidence, retained-artifact validation, Phase F 95% proof, production approval, deployment approval, hosted/live parity, commercial-ready status, or launch-goal completion.',
   },
 ];
 
@@ -9875,6 +9927,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'Executing downstream branch decisions could reduce blockers only after explicit owner review; doing it here would blur read-only inventory with branch mutation and launch readiness proof.',
     evidence: 'The unmerged-branch report decision boundary states that it does not merge, checkout, deploy, run migrations, contact buyers, or mutate branch state.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
+    variant: 'Leave buyer evidence readiness package handles implicit in narrative text and unit tests.',
+    reason_rejected: 'The readiness report is the manifest-listed buyer workspace next step, so operators need a machine-checkable report contract instead of only prose and unit coverage.',
+    tradeoff: 'No-code defer avoids a small checker and package script, but leaves the P0 buyer-evidence lane weaker than adjacent focused report/check surfaces.',
+    evidence: 'report:buyer-evidence-readiness already printed key commands but had no Package Script Handles table or check:buyer-evidence-readiness-report package entry.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
+    variant: 'Create Phase F workspaces, starter rows, retained artifacts, or buyer registers from the checker.',
+    reason_rejected: 'The checker must validate report structure only; workspace creation, buyer row updates, and retained artifacts are operator-owned actions that cannot be synthesized as proof.',
+    tradeoff: 'Generating artifacts could look more actionable, but it would fabricate or mutate evidence surfaces and blur starter scaffolding with buyer acceptance.',
+    evidence: 'Buyer evidence stop gates require real anonymized buyer rows, retained redacted artifacts, strong commercial evidence, and validate:pilot-evidence --require-95 before readiness changes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
+    variant: 'Treat readiness report/check success as buyer evidence clearance, Phase F 95% validation, production approval, deploy eligibility, or goal completion.',
+    reason_rejected: 'Report/check success proves only command discoverability and structure; actual buyer evidence remains a hard external evidence gate.',
+    tradeoff: 'Using a checker pass as clearance would simplify the dashboard but would be materially false and launch-risky.',
+    evidence: 'The readiness report still prints 10/10 hard-gate deficits when no real accepted buyer rows and retained artifacts are present.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -10547,6 +10620,15 @@ const safeFixCodeOptimizationReviews = [
     tests_or_checks: unmergedBranchPackageHandlesTestsRun,
     remaining_risk: 'The unmerged-branch package-handle digest remains operator guidance only; launch readiness still depends on owner canonical-head decisions, focused read-only branch review completion, clean source provenance, Corepack-pinned release-readiness, authorized Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
+  {
+    target_task: 'CEIP-SAFE-FIX-BUYER-EVIDENCE-READINESS-REPORT-CONTRACT',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses the existing readiness scanner, existing buyer gate wrapper, existing package-script naming, and current checker/test contracts, with no new dependency, no duplicate buyer parser, no generated workspace side effect, no buyer contact, no retained artifact mutation, no 95% validator execution as clearance, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: buyerEvidenceReadinessReportContractTestsRun,
+    remaining_risk: 'The readiness report contract remains operator guidance only; launch readiness still depends on real anonymized accepted buyer rows, retained redacted artifact hashes, strong commercial signal evidence, validate:pilot-evidence --require-95, clean source provenance, release-readiness, branch decisions, Supabase advisor clearance, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
 ];
 
 const launchReadinessPendingWork = 'Buyer evidence, source provenance, branch review, Supabase advisor clearance, release toolchain proof, production approval, and post-deploy live proof remain unresolved.';
@@ -10948,12 +11030,13 @@ const manifest = {
       RELEASE_READINESS_FOCUSED_PROOF_COMMAND,
       BRANCH_REVIEW_FOCUSED_PROOF_COMMAND,
       SUPABASE_ADVISOR_FOCUSED_PROOF_COMMAND,
-      BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
-      PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND,
-      POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND,
-      FOCUSED_LAUNCH_READINESS_REPORT_SUITE_CHECK_COMMAND,
-      'corepack pnpm run report:buyer-evidence-readiness',
-      'corepack pnpm run report:production-approval-packet',
+	      BUYER_EVIDENCE_GATE_FOCUSED_PROOF_COMMAND,
+	      PRODUCTION_APPROVAL_FOCUSED_PROOF_COMMAND,
+	      POST_DEPLOY_LIVE_PROOF_FOCUSED_PROOF_COMMAND,
+	      FOCUSED_LAUNCH_READINESS_REPORT_SUITE_CHECK_COMMAND,
+	      'corepack pnpm run report:buyer-evidence-readiness',
+	      'corepack pnpm run check:buyer-evidence-readiness-report',
+	      'corepack pnpm run report:production-approval-packet',
       'corepack pnpm run report:unmerged-branch-readiness',
       'corepack pnpm run report:unmerged-branch-readiness -- --focus-risk high',
       'corepack pnpm run check:launch-evidence-manifest',

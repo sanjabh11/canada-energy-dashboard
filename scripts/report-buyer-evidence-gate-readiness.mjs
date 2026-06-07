@@ -177,6 +177,7 @@ function focusedPayload(manifest) {
       report_buyer_evidence_gate_readiness: 'corepack pnpm run report:buyer-evidence-gate-readiness',
       check_buyer_evidence_gate_report: 'corepack pnpm run check:buyer-evidence-gate-report',
       report_buyer_evidence_readiness: 'corepack pnpm run report:buyer-evidence-readiness',
+      check_buyer_evidence_readiness_report: 'corepack pnpm run check:buyer-evidence-readiness-report',
       report_pilot_evidence_95: 'corepack pnpm run report:pilot-evidence-95',
       validate_pilot_evidence_require_95: 'corepack pnpm run validate:pilot-evidence -- --require-95',
       plan_outreach_intake: 'corepack pnpm run plan:outreach-intake',
