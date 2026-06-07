@@ -5870,6 +5870,16 @@ const adversarialReviewUnitContractFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const focusedLaunchReadinessReportSuiteFilesChanged = [
+  'package.json',
+  'scripts/check-focused-launch-readiness-reports.mjs',
+  'docs/COMMERCIAL_SOURCE_OF_TRUTH.md',
+  'scripts/report-launch-evidence-manifest.mjs',
+  'tests/unit/focusedLaunchReadinessReports.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+];
+
 const launchManifestJsonAliasFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/check-launch-evidence-manifest.mjs',
@@ -5960,6 +5970,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...objectiveCompletionAuditUnitContractFilesChanged,
   ...adversarialReviewFocusedReportFilesChanged,
   ...adversarialReviewUnitContractFilesChanged,
+  ...focusedLaunchReadinessReportSuiteFilesChanged,
   ...launchManifestJsonAliasFilesChanged,
   ...progressDigestLatestRatchetFilesChanged,
   ...progressTargetMatrixStructureFilesChanged,
@@ -6597,6 +6608,17 @@ const adversarialReviewUnitContractTestsRun = [
   'pnpm exec tsc -b --pretty false',
 ];
 
+const focusedLaunchReadinessReportSuiteTestsRun = [
+  'node --check scripts/check-focused-launch-readiness-reports.mjs',
+  'pnpm exec vitest run tests/unit/focusedLaunchReadinessReports.test.ts tests/unit/launchEvidenceManifest.test.ts tests/unit/progressDigestReadiness.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+  'pnpm run check:focused-launch-readiness-reports -- --skip-probes --json',
+  'pnpm run check:commercial-source',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
 const launchManifestJsonAliasTestsRun = [
   'node --check scripts/report-launch-evidence-manifest.mjs',
   'node --check scripts/check-launch-evidence-manifest.mjs',
@@ -6711,6 +6733,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...objectiveCompletionAuditUnitContractTestsRun,
   ...adversarialReviewFocusedReportTestsRun,
   ...adversarialReviewUnitContractTestsRun,
+  ...focusedLaunchReadinessReportSuiteTestsRun,
   ...launchManifestJsonAliasTestsRun,
   ...progressDigestLatestRatchetTestsRun,
   ...progressTargetMatrixStructureTestsRun,
@@ -7494,6 +7517,19 @@ const safeFixImplementationDecisions = [
     reason: 'The previous phase created a local-only proof-pack browser smoke command, but public status and source-of-truth docs did not expose a safe handle for operators to find that local evidence path while the Corepack release gate remained blocked.',
     proof_boundary: 'This record improves local browser smoke discoverability only; it does not satisfy Corepack-pinned release-readiness, run hosted proof-pack smoke, deploy, mutate Netlify, prove post-deploy live parity, clear source provenance, select canonical branches, authorize Supabase, contact buyers, create accepted buyer evidence, grant production approval, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the local proof-pack smoke public handle, public release status sync, source-of-truth docs, status posture tests, local preview output, skipped probes, or this code optimization record as production approval, release-readiness, hosted proof-pack smoke, deployment approval, hosted/live parity, buyer acceptance, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    decision: 'Add one aggregate checker for the existing focused launch-readiness report contracts.',
+    acceptance_check: 'check:focused-launch-readiness-reports runs the launch action, launch evidence validation, source provenance, release preflight, branch review, Supabase advisor, buyer evidence, production approval, post-deploy live proof, progress digest, objective completion audit, and adversarial review focused report checkers; the --skip-probes mode passes without claiming launch readiness.',
+    chosen_variant: 'minimal aggregate focused-report contract checker',
+    repo_pattern_reused: 'Existing focused report/check scripts, package command conventions, COMMERCIAL_SOURCE_OF_TRUTH command list, focused Vitest contract pattern, progress_updates latest-safe-fix derivation, and launch manifest code-optimization ledger.',
+    files_changed: focusedLaunchReadinessReportSuiteFilesChanged,
+    tests_run: focusedLaunchReadinessReportSuiteTestsRun,
+    proof: 'The patch adds a thin checker that shells through existing focused report contract checkers, emits Markdown/JSON summaries, documents the command, and validates the no-clearance/no-approval/no-deploy/no-live-parity boundary without creating a new source of truth or adding it to release-readiness.',
+    reason: 'Operators had individual focused report checkers but no single bounded command to refresh the complete focused launch-readiness wrapper suite before handoff or continuation.',
+    proof_boundary: 'This record improves focused report contract orchestration only; it does not clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the aggregate focused report suite, check pass, JSON output, skipped probes, generated manifests, public status handles, or this code optimization record as commercial-ready status, buyer acceptance, source readiness, branch approval, Supabase advisor clearance, production approval, deploy authorization, or current hosted/live proof.',
   },
 ];
 
@@ -8891,6 +8927,34 @@ const safeFixRejectedVariants = [
     tradeoff: 'A standalone runbook could be convenient, but it would increase drift risk and require extra lifecycle management across focused and commercial reports.',
     evidence: 'The focused launch action report already reads the manifest launch_action_queue object and can render the derived handoff packet without a new artifact.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    variant: 'Leave operators to run each focused report checker manually.',
+    reason_rejected: 'Manual execution proved the wrappers pass, but it does not give a durable package command for future handoff, continuation, or automation logs.',
+    tradeoff: 'No-code defer avoids a small script, but keeps the focused report suite harder to refresh consistently.',
+    evidence: 'The repo already has twelve focused report checkers, each of which can be invoked safely with --skip-probes for contract validation.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    variant: 'Add the aggregate checker to check:release-readiness or production approval gates.',
+    reason_rejected: 'The aggregate validates report contracts only and would increase release cost while making report-wrapper success look closer to release approval.',
+    tradeoff: 'Release-readiness inclusion would make the suite run automatically, but it would blur inspection-first evidence with guarded release execution.',
+    evidence: 'Focused report checks preserve blocked-boundary contracts; release-readiness still depends on Corepack, clean source provenance, full release checks, and owner approval.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    variant: 'Create a new public status item or separate runbook artifact for the suite.',
+    reason_rejected: 'Existing public status rows already expose each focused lane; a new public artifact would duplicate rather than improve source truth.',
+    tradeoff: 'A public suite item could be discoverable, but it adds another status surface and lifecycle without clearing any blocker.',
+    evidence: 'COMMERCIAL_SOURCE_OF_TRUTH and package.json are enough for an operator command, while the public status manifest already contains lane-specific handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    variant: 'Run source cleanup, release-readiness, branch operations, Supabase advisors, buyer outreach, approval requests, deploys, or live proof from the aggregate checker.',
+    reason_rejected: 'Those operations require owner decisions, external evidence, authorization, production approval, or live context outside this report-contract phase.',
+    tradeoff: 'Executing real gates could produce stronger evidence only when prerequisites are satisfied, but it would violate the aggregate checker boundary and risk unsupported readiness claims.',
+    evidence: 'The launch action queue still reports source provenance, release toolchain, branch review, Supabase advisor, buyer evidence, production approval, and post-deploy live proof as blocked or manual-stop gates.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9427,6 +9491,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing public release-status manifest, generated public JSON, RELEASE_HEALTH_EVIDENCE, source-of-truth docs, status posture tests, and launch evidence ledger, with no new dependency, no new report wrapper, no release-readiness execution, no hosted browser smoke, no live service mutation, no buyer contact, and no launch-status change.',
     tests_or_checks: localProofPackSmokePublicHandleTestsRun,
     remaining_risk: 'Local proof-pack smoke public visibility remains local/browser evidence only; launch readiness still depends on Corepack availability, clean source provenance, release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, hosted proof-pack smoke, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-REPORT-SUITE',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change adds one aggregate checker that reuses the existing focused report checkers and package/doc/test patterns, with no new dependency, no duplicate manifest parsing, no new public status item, no release-readiness inclusion, no external-account call, no source cleanup, no branch mutation, no buyer contact, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: focusedLaunchReadinessReportSuiteTestsRun,
+    remaining_risk: 'The aggregate focused report suite validates wrapper contracts only; launch readiness still depends on owner resolution of source provenance, Corepack-pinned release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

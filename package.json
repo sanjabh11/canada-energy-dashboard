@@ -78,6 +78,7 @@
     "check:progress-digest-report": "node scripts/check-progress-digest-readiness-report.mjs",
     "check:objective-completion-audit-report": "node scripts/check-objective-completion-audit-readiness-report.mjs",
     "check:adversarial-review-report": "node scripts/check-adversarial-review-readiness-report.mjs",
+    "check:focused-launch-readiness-reports": "node scripts/check-focused-launch-readiness-reports.mjs",
     "validate:pilot-evidence": "node scripts/validate-pilot-evidence-register.mjs",
     "validate:outreach-response-log": "node scripts/validate-outreach-response-log.mjs",
     "report:outreach-response-log": "node scripts/validate-outreach-response-log.mjs --report",
