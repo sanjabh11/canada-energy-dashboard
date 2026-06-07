@@ -525,6 +525,16 @@ function validateManifest(manifest) {
   if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval|does not.*create launch readiness|does not prove production approval/i.test(releaseToolchainApprovalDeficitLedger.evidenceBoundary ?? '')) {
     failures.push('release_toolchain_approval_deficit_ledger must preserve the non-execution, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('release_toolchain_approval_deficit_ledger', {
+    sourceManifestPath: 'release_preflight.items',
+    sourceProofTypes: [
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ],
+  });
   const releasePreflightQueue = itemById.get('release_preflight_remediation_queue') ?? {};
   if (!/Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|explicit owner production approval/i.test(`${releasePreflightQueue.evidenceBoundary ?? ''}\n${releasePreflightQueue.nextAction ?? ''}`)) {
     failures.push('release_preflight_remediation_queue must describe the release-preflight remediation sequence.');
@@ -535,6 +545,15 @@ function validateManifest(manifest) {
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*prove production approval/i.test(releasePreflightQueue.evidenceBoundary ?? '')) {
     failures.push('release_preflight_remediation_queue must preserve the non-execution and non-approval boundary.');
   }
+  expectSourceLineage('release_preflight_remediation_queue', {
+    sourceManifestPath: 'release_preflight.remediation_queue',
+    sourceProofTypes: [
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ],
+  });
   const releaseOperatorHandoffPacket = itemById.get('release_operator_handoff_packet') ?? {};
   if (!/release remediation rows|operator|owner|execution gates|toolchain_probe_first|after_corepack_git_lfs_and_clean_source|owner_source_decision_first|manual_stop_after_all_prerequisites|blocks_release_gate|can_execute_from_packet=false/i.test(`${releaseOperatorHandoffPacket.evidenceBoundary ?? ''}\n${releaseOperatorHandoffPacket.nextAction ?? ''}`)) {
     failures.push('release_operator_handoff_packet must describe release remediation rows, execution gates, blocking rows, and non-executable packet semantics.');
@@ -545,6 +564,16 @@ function validateManifest(manifest) {
   if (!/does not.*install Corepack|does not.*enable Corepack|does not.*install Git LFS|does not.*run release-readiness|does not.*clear source provenance|does not.*push|does not.*deploy|does not.*request production approval|does not.*grant owner approval|does not.*hosted\/live parity|does not.*prove production approval|does not.*create launch readiness/i.test(releaseOperatorHandoffPacket.evidenceBoundary ?? '')) {
     failures.push('release_operator_handoff_packet must preserve the no-install, no-release-execution, no-source-clearance, no-push, no-deploy, no-approval-request, no-owner-approval, no-live-proof, no-approval, and no-launch-readiness boundary.');
   }
+  expectSourceLineage('release_operator_handoff_packet', {
+    sourceManifestPath: 'release_preflight.operator_handoff_packet',
+    sourceProofTypes: [
+      'release_operator_handoff_packet',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ],
+  });
   const releasePreflightClearanceMatrix = itemById.get('release_preflight_clearance_matrix') ?? {};
   if (!/package-manager pin|Corepack pnpm resolver|release-readiness execution|Git LFS push-path proof|clean source provenance|explicit owner production approval/i.test(`${releasePreflightClearanceMatrix.evidenceBoundary ?? ''}\n${releasePreflightClearanceMatrix.nextAction ?? ''}`)) {
     failures.push('release_preflight_clearance_matrix must describe every release preflight clearance row.');
@@ -555,6 +584,17 @@ function validateManifest(manifest) {
   if (!/does not.*install tools|does not.*clear source provenance|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*hosted\/live parity|does not.*grant owner approval/i.test(releasePreflightClearanceMatrix.evidenceBoundary ?? '')) {
     failures.push('release_preflight_clearance_matrix must preserve the non-execution, no-live-proof, and no-approval boundary.');
   }
+  expectSourceLineage('release_preflight_clearance_matrix', {
+    sourceManifestPath: 'release_preflight.clearance_matrix',
+    sourceProofTypes: [
+      'release_preflight_clearance_matrix',
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ],
+  });
   const releaseToolchainProbeLedger = itemById.get('release_toolchain_probe_ledger') ?? {};
   if (!/Corepack pnpm resolver|Git LFS availability|git lfs/i.test(`${releaseToolchainProbeLedger.evidenceBoundary ?? ''}\n${releaseToolchainProbeLedger.nextAction ?? ''}`)) {
     failures.push('release_toolchain_probe_ledger must describe the Corepack and Git LFS toolchain probes.');
@@ -562,6 +602,13 @@ function validateManifest(manifest) {
   if (!/does not.*install tools|does not.*run release-readiness|does not.*push|does not.*deploy|does not.*clear source provenance|does not.*grant production approval|does not substitute/i.test(releaseToolchainProbeLedger.evidenceBoundary ?? '')) {
     failures.push('release_toolchain_probe_ledger must preserve the non-execution, non-substitution, and non-approval boundary.');
   }
+  expectSourceLineage('release_toolchain_probe_ledger', {
+    sourceManifestPath: 'release_preflight.toolchain_probe_ledger',
+    sourceProofTypes: [
+      'corepack_pnpm_toolchain_probe',
+      'git_lfs_push_path_probe',
+    ],
+  });
   const branchQueue = itemById.get('unmerged_branch_review_queue') ?? {};
   if (!/review-first packet/i.test(`${branchQueue.evidenceBoundary ?? ''}\n${branchQueue.nextAction ?? ''}`)) {
     failures.push('unmerged_branch_review_queue must describe review-first branch packets.');

@@ -178,7 +178,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
       "evidenceBoundary": "The release toolchain and approval deficit ledger maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval deficits, but it does not install tools, clear source provenance, run release-readiness, push, deploy, prove hosted/live parity, grant owner approval, or create launch readiness. It does not prove production approval.",
-      "nextAction": "Use the ledger to keep release-blocking deficits visible, expose Corepack and Git LFS in the release shell, resolve source provenance only through explicit owner decisions, and rerun guarded release-readiness before any deploy approval request."
+      "nextAction": "Use the ledger to keep release-blocking deficits visible, expose Corepack and Git LFS in the release shell, resolve source provenance only through explicit owner decisions, and rerun guarded release-readiness before any deploy approval request.",
+      "sourceManifestPath": "release_preflight.items",
+      "sourceProofTypes": [
+        "package_manager_pin",
+        "toolchain_probe",
+        "gated_release_command",
+        "source_provenance_decision",
+        "manual_approval"
+      ]
     },
     {
       "id": "release_preflight_remediation_queue",
@@ -187,7 +195,14 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
       "evidenceBoundary": "The release preflight remediation queue sequences Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, or deploy. It does not prove production approval.",
-      "nextAction": "Expose Corepack and Git LFS in the release shell, clean source provenance through explicit owner decisions, then rerun the guarded release-readiness path before any deploy approval request."
+      "nextAction": "Expose Corepack and Git LFS in the release shell, clean source provenance through explicit owner decisions, then rerun the guarded release-readiness path before any deploy approval request.",
+      "sourceManifestPath": "release_preflight.remediation_queue",
+      "sourceProofTypes": [
+        "toolchain_probe",
+        "gated_release_command",
+        "source_provenance_decision",
+        "manual_approval"
+      ]
     },
     {
       "id": "release_operator_handoff_packet",
@@ -196,7 +211,15 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
       "evidenceBoundary": "The release operator handoff packet maps release remediation rows into non-executable operator or owner execution gates, including toolchain_probe_first, after_corepack_git_lfs_and_clean_source, owner_source_decision_first, manual_stop_after_all_prerequisites, blocks_release_gate, and can_execute_from_packet=false. It does not install Corepack, enable Corepack, install Git LFS, run release-readiness, clear source provenance, push, deploy, request production approval, grant owner approval, or prove hosted/live parity. It does not prove production approval or create launch readiness.",
-      "nextAction": "Use this packet as a release-operator handoff only: expose Corepack in the release shell, keep Git LFS current, resolve source provenance by owner intent, and run each proof command separately before any deploy approval request."
+      "nextAction": "Use this packet as a release-operator handoff only: expose Corepack in the release shell, keep Git LFS current, resolve source provenance by owner intent, and run each proof command separately before any deploy approval request.",
+      "sourceManifestPath": "release_preflight.operator_handoff_packet",
+      "sourceProofTypes": [
+        "release_operator_handoff_packet",
+        "toolchain_probe",
+        "gated_release_command",
+        "source_provenance_decision",
+        "manual_approval"
+      ]
     },
     {
       "id": "release_preflight_clearance_matrix",
@@ -205,7 +228,16 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
       "evidenceBoundary": "The release preflight clearance matrix maps package-manager pin, Corepack pnpm resolver, release-readiness execution, Git LFS push-path proof, clean source provenance, and explicit owner production approval, but it does not install tools, clear source provenance, run release-readiness, push, deploy, or grant owner approval. It does not prove production approval or current hosted/live parity.",
-      "nextAction": "Use the matrix to keep release-blocking rows visible; fix Corepack and Git LFS in the release shell, resolve source provenance through explicit owner decisions, and rerun guarded release-readiness before any deploy approval request."
+      "nextAction": "Use the matrix to keep release-blocking rows visible; fix Corepack and Git LFS in the release shell, resolve source provenance through explicit owner decisions, and rerun guarded release-readiness before any deploy approval request.",
+      "sourceManifestPath": "release_preflight.clearance_matrix",
+      "sourceProofTypes": [
+        "release_preflight_clearance_matrix",
+        "package_manager_pin",
+        "toolchain_probe",
+        "gated_release_command",
+        "source_provenance_decision",
+        "manual_approval"
+      ]
     },
     {
       "id": "release_toolchain_probe_ledger",
@@ -214,7 +246,12 @@
       "proofBucket": "local/source",
       "command": "pnpm run report:release-preflight && pnpm run check:release-preflight-report",
       "evidenceBoundary": "The release toolchain probe ledger records current-shell Corepack pnpm resolver and Git LFS availability evidence, but it does not install tools, run release-readiness, push, deploy, clear source provenance, or grant production approval. It does not substitute for release-readiness or production approval.",
-      "nextAction": "Rerun the launch evidence manifest without --skip-probes in the intended release shell, fix Corepack or Git LFS PATH gaps, and keep release-readiness blocked until the guarded chain passes."
+      "nextAction": "Rerun the launch evidence manifest without --skip-probes in the intended release shell, fix Corepack or Git LFS PATH gaps, and keep release-readiness blocked until the guarded chain passes.",
+      "sourceManifestPath": "release_preflight.toolchain_probe_ledger",
+      "sourceProofTypes": [
+        "corepack_pnpm_toolchain_probe",
+        "git_lfs_push_path_probe"
+      ]
     },
     {
       "id": "launch_blocker_action_queue",

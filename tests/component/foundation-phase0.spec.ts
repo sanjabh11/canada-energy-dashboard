@@ -53,6 +53,11 @@ test.describe('Phase 0 foundation gating', () => {
     await expect(publicReleaseStatus.getByText('source_provenance.isolation_ledger', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.resolution_queue', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('source_provenance.owner_decision_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.items', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.remediation_queue', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.operator_handoff_packet', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.clearance_matrix', { exact: true })).toBeVisible();
+    await expect(publicReleaseStatus.getByText('release_preflight.toolchain_probe_ledger', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('buyer_evidence', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('buyer_evidence.hard_gate_deficits', { exact: true })).toBeVisible();
     await expect(publicReleaseStatus.getByText('buyer_evidence.acquisition_matrix', { exact: true })).toBeVisible();

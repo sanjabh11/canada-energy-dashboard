@@ -721,12 +721,27 @@ describe('status page release posture', () => {
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.evidenceBoundary).toMatch(/Git LFS push-path proof/i);
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releaseToolchainApprovalDeficitLedgerEvidence?.evidenceBoundary).toMatch(/does not prove production approval/i);
+    expect(releaseToolchainApprovalDeficitLedgerEvidence?.sourceManifestPath).toBe('release_preflight.items');
+    expect(releaseToolchainApprovalDeficitLedgerEvidence?.sourceProofTypes).toEqual([
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releasePreflightQueueEvidence?.status).toBe('external_gate');
     expect(releasePreflightQueueEvidence?.command).toContain('report:release-preflight');
     expect(releasePreflightQueueEvidence?.command).toContain('check:release-preflight-report');
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver, release-readiness execution/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/Git LFS push-path proof/i);
     expect(releasePreflightQueueEvidence?.evidenceBoundary).toMatch(/does not install tools, clear source provenance, run release-readiness/i);
+    expect(releasePreflightQueueEvidence?.sourceManifestPath).toBe('release_preflight.remediation_queue');
+    expect(releasePreflightQueueEvidence?.sourceProofTypes).toEqual([
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releaseOperatorHandoffPacketEvidence?.status).toBe('external_gate');
     expect(releaseOperatorHandoffPacketEvidence?.command).toContain('report:release-preflight');
     expect(releaseOperatorHandoffPacketEvidence?.command).toContain('check:release-preflight-report');
@@ -740,6 +755,14 @@ describe('status page release posture', () => {
     expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/does not install Corepack/i);
     expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/request production approval/i);
     expect(releaseOperatorHandoffPacketEvidence?.evidenceBoundary).toMatch(/hosted\/live parity/i);
+    expect(releaseOperatorHandoffPacketEvidence?.sourceManifestPath).toBe('release_preflight.operator_handoff_packet');
+    expect(releaseOperatorHandoffPacketEvidence?.sourceProofTypes).toEqual([
+      'release_operator_handoff_packet',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releasePreflightClearanceMatrixEvidence?.status).toBe('external_gate');
     expect(releasePreflightClearanceMatrixEvidence?.command).toContain('report:release-preflight');
     expect(releasePreflightClearanceMatrixEvidence?.command).toContain('check:release-preflight-report');
@@ -748,12 +771,26 @@ describe('status page release posture', () => {
     expect(releasePreflightClearanceMatrixEvidence?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releasePreflightClearanceMatrixEvidence?.evidenceBoundary).toMatch(/does not prove production approval or current hosted\/live parity/i);
     expect(releasePreflightClearanceMatrixEvidence?.evidenceBoundary).toMatch(/grant owner approval/i);
+    expect(releasePreflightClearanceMatrixEvidence?.sourceManifestPath).toBe('release_preflight.clearance_matrix');
+    expect(releasePreflightClearanceMatrixEvidence?.sourceProofTypes).toEqual([
+      'release_preflight_clearance_matrix',
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releaseToolchainProbeEvidence?.status).toBe('external_gate');
     expect(releaseToolchainProbeEvidence?.command).toContain('report:release-preflight');
     expect(releaseToolchainProbeEvidence?.command).toContain('check:release-preflight-report');
     expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/Corepack pnpm resolver and Git LFS availability/i);
     expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/does not install tools, run release-readiness, push, deploy/i);
     expect(releaseToolchainProbeEvidence?.evidenceBoundary).toMatch(/does not substitute for release-readiness or production approval/i);
+    expect(releaseToolchainProbeEvidence?.sourceManifestPath).toBe('release_preflight.toolchain_probe_ledger');
+    expect(releaseToolchainProbeEvidence?.sourceProofTypes).toEqual([
+      'corepack_pnpm_toolchain_probe',
+      'git_lfs_push_path_probe',
+    ]);
     expect(branchReviewEvidence?.status).toBe('external_gate');
     expect(branchReviewEvidence?.command).toContain('report:branch-review-readiness');
     expect(branchReviewEvidence?.command).toContain('check:branch-review-report');
@@ -1317,12 +1354,27 @@ describe('status page release posture', () => {
     expect(releaseToolchainApprovalDeficitLedgerGate?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releaseToolchainApprovalDeficitLedgerGate?.evidenceBoundary).toMatch(/hosted\/live parity/i);
     expect(releaseToolchainApprovalDeficitLedgerGate?.nextAction).toMatch(/release-blocking deficits visible/i);
+    expect(releaseToolchainApprovalDeficitLedgerGate?.sourceManifestPath).toBe('release_preflight.items');
+    expect(releaseToolchainApprovalDeficitLedgerGate?.sourceProofTypes).toEqual([
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releasePreflightQueueGate?.status).toBe('external_gate');
     expect(releasePreflightQueueGate?.command).toContain('report:release-preflight');
     expect(releasePreflightQueueGate?.command).toContain('check:release-preflight-report');
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/Corepack pnpm resolver/i);
     expect(releasePreflightQueueGate?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releasePreflightQueueGate?.nextAction).toMatch(/guarded release-readiness path/i);
+    expect(releasePreflightQueueGate?.sourceManifestPath).toBe('release_preflight.remediation_queue');
+    expect(releasePreflightQueueGate?.sourceProofTypes).toEqual([
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releaseOperatorHandoffPacketGate?.status).toBe('external_gate');
     expect(releaseOperatorHandoffPacketGate?.command).toContain('report:release-preflight');
     expect(releaseOperatorHandoffPacketGate?.command).toContain('check:release-preflight-report');
@@ -1338,6 +1390,14 @@ describe('status page release posture', () => {
     expect(releaseOperatorHandoffPacketGate?.evidenceBoundary).toMatch(/create launch readiness/i);
     expect(releaseOperatorHandoffPacketGate?.nextAction).toMatch(/release-operator handoff/i);
     expect(releaseOperatorHandoffPacketGate?.nextAction).toMatch(/each proof command separately/i);
+    expect(releaseOperatorHandoffPacketGate?.sourceManifestPath).toBe('release_preflight.operator_handoff_packet');
+    expect(releaseOperatorHandoffPacketGate?.sourceProofTypes).toEqual([
+      'release_operator_handoff_packet',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releasePreflightClearanceMatrixGate?.status).toBe('external_gate');
     expect(releasePreflightClearanceMatrixGate?.command).toContain('report:release-preflight');
     expect(releasePreflightClearanceMatrixGate?.command).toContain('check:release-preflight-report');
@@ -1346,6 +1406,15 @@ describe('status page release posture', () => {
     expect(releasePreflightClearanceMatrixGate?.evidenceBoundary).toMatch(/does not install tools/i);
     expect(releasePreflightClearanceMatrixGate?.evidenceBoundary).toMatch(/grant owner approval/i);
     expect(releasePreflightClearanceMatrixGate?.nextAction).toMatch(/release-blocking rows visible/i);
+    expect(releasePreflightClearanceMatrixGate?.sourceManifestPath).toBe('release_preflight.clearance_matrix');
+    expect(releasePreflightClearanceMatrixGate?.sourceProofTypes).toEqual([
+      'release_preflight_clearance_matrix',
+      'package_manager_pin',
+      'toolchain_probe',
+      'gated_release_command',
+      'source_provenance_decision',
+      'manual_approval',
+    ]);
     expect(releaseToolchainProbeGate?.status).toBe('external_gate');
     expect(releaseToolchainProbeGate?.command).toContain('report:release-preflight');
     expect(releaseToolchainProbeGate?.command).toContain('check:release-preflight-report');
@@ -1353,6 +1422,11 @@ describe('status page release posture', () => {
     expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/does not install tools, run release-readiness, push, deploy/i);
     expect(releaseToolchainProbeGate?.evidenceBoundary).toMatch(/does not substitute for release-readiness or production approval/i);
     expect(releaseToolchainProbeGate?.nextAction).toMatch(/without --skip-probes/i);
+    expect(releaseToolchainProbeGate?.sourceManifestPath).toBe('release_preflight.toolchain_probe_ledger');
+    expect(releaseToolchainProbeGate?.sourceProofTypes).toEqual([
+      'corepack_pnpm_toolchain_probe',
+      'git_lfs_push_path_probe',
+    ]);
     expect(launchQueueGate?.status).toBe('external_gate');
     expect(launchQueueGate?.command).toContain('report:launch-action-readiness');
     expect(launchQueueGate?.command).toContain('check:launch-action-report');
