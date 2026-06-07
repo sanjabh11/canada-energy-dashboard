@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 
 const repoRoot = process.cwd();
@@ -108,6 +108,16 @@ function runManifest() {
   }
 }
 
+function readPublicStatusHandle(id) {
+  try {
+    const publicManifestPath = path.join(repoRoot, 'src/lib/publicReleaseStatusManifest.json');
+    const publicManifest = JSON.parse(readFileSync(publicManifestPath, 'utf8'));
+    return (publicManifest.items ?? []).find((item) => item?.id === id) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 function cell(value) {
   const text = String(value ?? '-')
     .replace(/\r?\n/g, ' ')
@@ -170,6 +180,19 @@ function focusedPayload(manifest) {
     release_preflight_source_row: releaseSourceRow,
     production_approval_source_prerequisite: productionPrerequisiteRow,
     production_approval_request_source_row: productionRequestRow,
+    public_status_handles: {
+      source_provenance: readPublicStatusHandle('source_provenance'),
+      source_provenance_isolation_ledger: readPublicStatusHandle('source_provenance_isolation_ledger'),
+      source_provenance_resolution_queue: readPublicStatusHandle('source_provenance_resolution_queue'),
+      source_owner_decision_packet: readPublicStatusHandle('source_owner_decision_packet'),
+    },
+    package_script_handles: {
+      report_source_provenance_readiness: 'corepack pnpm run report:source-provenance-readiness',
+      check_source_provenance_report: 'corepack pnpm run check:source-provenance-report',
+      report_launch_evidence_manifest: 'corepack pnpm run report:launch-evidence-manifest',
+      check_launch_evidence_manifest: 'corepack pnpm run check:launch-evidence-manifest',
+      report_production_approval_packet: 'corepack pnpm run report:production-approval-packet',
+    },
     proof_boundary: 'Focused source-provenance evidence only; this report does not commit, unstage, stash, revert, delete, rename, move, clear source provenance, run release-readiness, push, deploy, grant owner approval, or prove hosted/live parity. It does not clear source provenance or production approval.',
     stop_gate: 'Do not treat this focused report, skipped probes, dirty-path classification, isolation ledgers, or resolution queues as clean source provenance, release-readiness, production approval, or current hosted/live parity.',
   };
@@ -280,6 +303,19 @@ function renderMarkdown(payload) {
     productionRequest.evidence_to_attach,
     productionRequest.request_impact,
   ]] : [];
+  const publicRows = Object.entries(payload.public_status_handles ?? {}).map(([id, item]) => [
+    id,
+    item?.status,
+    item?.command,
+    item?.sourceManifestPath,
+    Array.isArray(item?.sourceProofTypes) ? item.sourceProofTypes.join(', ') : '',
+    item?.evidenceBoundary,
+    item?.nextAction,
+  ]);
+  const scriptRows = Object.entries(payload.package_script_handles ?? {}).map(([name, command]) => [
+    name,
+    command,
+  ]);
 
   return `${[
     '# CEIP Source Provenance Readiness Report',
@@ -353,6 +389,14 @@ function renderMarkdown(payload) {
     '## Production Approval Request Source Row',
     '',
     renderTable(['Prerequisite', 'Request Phase', 'Source Status', 'Status', 'Blocks Request', 'Evidence To Attach', 'Request Impact'], requestRows),
+    '',
+    '## Public Release Status Handles',
+    '',
+    renderTable(['Handle', 'Status', 'Command', 'Source Manifest Path', 'Source Proof Types', 'Evidence Boundary', 'Next Action'], publicRows),
+    '',
+    '## Package Script Handles',
+    '',
+    renderTable(['Handle', 'Command'], scriptRows),
   ].join('\n')}\n`;
 }
 

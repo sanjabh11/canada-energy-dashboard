@@ -52,6 +52,12 @@ describe('source provenance readiness report', () => {
     expect(stdout).toContain('Production Approval Source Prerequisite');
     expect(stdout).toContain('Production Approval Request Source Row');
     expect(stdout).toContain('| Clean source provenance |');
+    expect(stdout).toContain('Public Release Status Handles');
+    expect(stdout).toContain('source_provenance_resolution_queue');
+    expect(stdout).toContain('source_owner_decision_packet');
+    expect(stdout).toContain('Package Script Handles');
+    expect(stdout).toContain('corepack pnpm run report:source-provenance-readiness');
+    expect(stdout).toContain('corepack pnpm run check:source-provenance-report');
     expect(readFileSync(reportPath, 'utf8')).toBe(stdout);
   });
 
@@ -85,6 +91,16 @@ describe('source provenance readiness report', () => {
     expect(payload.release_preflight_source_row.requirement).toBe('Clean source provenance');
     expect(payload.production_approval_source_prerequisite.prerequisite).toBe('Clean source provenance');
     expect(payload.production_approval_request_source_row.prerequisite).toBe('Clean source provenance');
+    expect(payload.public_status_handles.source_provenance.id).toBe('source_provenance');
+    expect(payload.public_status_handles.source_provenance_isolation_ledger.id).toBe('source_provenance_isolation_ledger');
+    expect(payload.public_status_handles.source_provenance_resolution_queue.id).toBe('source_provenance_resolution_queue');
+    expect(payload.public_status_handles.source_owner_decision_packet.id).toBe('source_owner_decision_packet');
+    expect(payload.public_status_handles.source_owner_decision_packet.command).toContain('report:source-provenance-readiness');
+    expect(payload.public_status_handles.source_owner_decision_packet.command).toContain('check:source-provenance-report');
+    expect(payload.public_status_handles.source_owner_decision_packet.sourceManifestPath).toBe('source_provenance.owner_decision_packet');
+    expect(payload.package_script_handles.report_source_provenance_readiness).toBe('corepack pnpm run report:source-provenance-readiness');
+    expect(payload.package_script_handles.check_source_provenance_report).toBe('corepack pnpm run check:source-provenance-report');
+    expect(payload.package_script_handles.report_production_approval_packet).toBe('corepack pnpm run report:production-approval-packet');
     if (payload.source_provenance.resolution_queue.items.length > 0) {
       expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('report:source-provenance-readiness');
       expect(payload.source_provenance.resolution_queue.items[0].proof_command).toContain('check:source-provenance-report');

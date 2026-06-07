@@ -2636,7 +2636,7 @@ try {
     assert(completionItemsByRequirement.get('Branch canonical review gate')?.status === 'blocked', 'Completion audit must keep branch canonical review blocked.');
     assert(Array.isArray(manifest.progress_updates), 'Manifest progress_updates must be a list for the current launch-evidence schema.');
     assert(manifest.progress_updates.length >= 2, 'Manifest progress_updates must record the latest safe-fix phase and the objective-completion audit phase.');
-    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES', 'Manifest progress_updates must expose the latest focused launch-readiness suite handoff-surface ratchet as the current row.');
+    assert(manifest.progress_updates[0]?.phase === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST', 'Manifest progress_updates must expose the latest source-provenance public-handle digest ratchet as the current row.');
     assert(
       targetMatrixHasLane(manifest.progress_updates[0]?.target_matrix, 'Safe Fix Lane', (item) => (
         item.target_percent === 10
@@ -2651,7 +2651,7 @@ try {
         ))
         && typeof manifest.progress_updates[0].bottleneck === 'string'
         && manifest.progress_updates[0].bottleneck.includes('retained buyer artifacts'),
-      'Manifest current progress row must describe the latest focused launch-readiness suite handoff-surface ratchet and remaining evidence gates.',
+      'Manifest current progress row must describe the latest source-provenance public-handle digest ratchet and remaining evidence gates.',
     );
     assert(manifest.progress_updates.some((item) => (
       item
@@ -4429,6 +4429,39 @@ try {
         && focusedSuiteHandoffReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
         && focusedSuiteHandoffReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
       'Focused launch-readiness suite handoff code optimization review must record aggregate, manifest, commercial report, and TypeScript checks.',
+    );
+    const sourcePublicHandlesDecision = manifest.implementation_decisions.find((item) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST');
+    assert(sourcePublicHandlesDecision, 'Manifest must record the source provenance public-handle digest implementation decision.');
+    assert(
+      sourcePublicHandlesDecision?.chosen_variant === 'minimal focused source handle digest',
+      'Source provenance public-handle digest decision must record the minimal focused source handle digest variant.',
+    );
+    assert(
+      Array.isArray(sourcePublicHandlesDecision?.files_changed)
+        && sourcePublicHandlesDecision.files_changed.includes('scripts/report-source-provenance-readiness.mjs')
+        && sourcePublicHandlesDecision.files_changed.includes('scripts/check-source-provenance-readiness-report.mjs')
+        && sourcePublicHandlesDecision.files_changed.includes('scripts/check-progress-digest-readiness-report.mjs')
+        && sourcePublicHandlesDecision.files_changed.includes('tests/unit/sourceProvenanceReadiness.test.ts')
+        && sourcePublicHandlesDecision.files_changed.includes('tests/unit/progressDigestReadiness.test.ts')
+        && sourcePublicHandlesDecision.files_changed.includes('tests/unit/launchEvidenceManifest.test.ts'),
+      'Source provenance public-handle digest decision must record focused source, progress, and launch manifest contract files.',
+    );
+    assert(
+      /handle discoverability only|does not commit|unstage|stash|revert|delete|rename|move|choose owner intent|clear source provenance|run release-readiness|push|deploy|request production approval|grant owner approval|hosted\/live parity|mark the launch goal complete|raise launch status/i.test(sourcePublicHandlesDecision?.proof_boundary ?? ''),
+      'Source provenance public-handle digest decision must preserve no-mutation, no-clearance, no-approval, no-deploy, no-live-proof, and no-readiness boundaries.',
+    );
+    const sourcePublicHandlesReview = manifest.code_optimization_reviews.find((item) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST');
+    assert(sourcePublicHandlesReview, 'Manifest must record the source provenance public-handle digest code optimization review.');
+    assert(sourcePublicHandlesReview?.policy === 'strict', 'Source provenance public-handle digest code optimization review must use strict policy.');
+    assert(sourcePublicHandlesReview?.verdict === 'pass', 'Source provenance public-handle digest code optimization review must pass.');
+    assert(
+      Array.isArray(sourcePublicHandlesReview?.tests_or_checks)
+        && sourcePublicHandlesReview.tests_or_checks.some((check) => /check:source-provenance-report -- --skip-probes/.test(check))
+        && sourcePublicHandlesReview.tests_or_checks.some((check) => /check:progress-digest-report -- --skip-probes/.test(check))
+        && sourcePublicHandlesReview.tests_or_checks.some((check) => /check:launch-evidence-manifest -- --skip-probes/.test(check))
+        && sourcePublicHandlesReview.tests_or_checks.some((check) => /check:commercial-launch-readiness-report -- --skip-probes/.test(check))
+        && sourcePublicHandlesReview.tests_or_checks.some((check) => /tsc -b --pretty false/.test(check)),
+      'Source provenance public-handle digest code optimization review must record source, progress, manifest, commercial report, and TypeScript checks.',
     );
     assert(Array.isArray(manifest.adversarial_reviews), 'Manifest adversarial_reviews must be a list.');
     assert(manifest.adversarial_reviews.length >= 5, 'Manifest adversarial_reviews must include the core launch review lanes.');

@@ -5453,6 +5453,18 @@ const sourceOwnerDecisionPacketFilesChanged = [
   'tests/unit/launchEvidenceManifest.test.ts',
 ];
 
+const sourceProvenancePublicHandlesDigestFilesChanged = [
+  'scripts/report-launch-evidence-manifest.mjs',
+  'scripts/report-source-provenance-readiness.mjs',
+  'scripts/check-source-provenance-readiness-report.mjs',
+  'scripts/check-launch-evidence-manifest.mjs',
+  'scripts/check-progress-digest-readiness-report.mjs',
+  'scripts/check-commercial-launch-readiness-report.mjs',
+  'tests/unit/sourceProvenanceReadiness.test.ts',
+  'tests/unit/progressDigestReadiness.test.ts',
+  'tests/unit/launchEvidenceManifest.test.ts',
+];
+
 const releaseOperatorHandoffPacketFilesChanged = [
   'scripts/report-launch-evidence-manifest.mjs',
   'scripts/report-release-preflight-readiness.mjs',
@@ -5946,6 +5958,7 @@ const currentSafeFixFilesChanged = Array.from(new Set([
   ...sourceProvenanceProofHandleFilesChanged,
   ...sourceProvenanceRenameSummaryFilesChanged,
   ...sourceOwnerDecisionPacketFilesChanged,
+  ...sourceProvenancePublicHandlesDigestFilesChanged,
   ...releaseOperatorHandoffPacketFilesChanged,
   ...branchOperatorHandoffPacketFilesChanged,
   ...releaseToolchainProofHandleFilesChanged,
@@ -6177,6 +6190,23 @@ const sourceOwnerDecisionPacketTestsRun = [
   'node --check scripts/check-commercial-launch-readiness-report.mjs',
   'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=120000 --no-file-parallelism --maxWorkers=1',
   'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run check:source-provenance-report -- --skip-probes',
+  'pnpm run check:progress-digest-report -- --skip-probes',
+  'pnpm run check:launch-evidence-manifest -- --skip-probes',
+  'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+  'pnpm exec tsc -b --pretty false',
+];
+
+const sourceProvenancePublicHandlesDigestTestsRun = [
+  'node --check scripts/report-launch-evidence-manifest.mjs',
+  'node --check scripts/report-source-provenance-readiness.mjs',
+  'node --check scripts/check-source-provenance-readiness-report.mjs',
+  'node --check scripts/check-launch-evidence-manifest.mjs',
+  'node --check scripts/check-progress-digest-readiness-report.mjs',
+  'node --check scripts/check-commercial-launch-readiness-report.mjs',
+  'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+  'pnpm run report:source-provenance-readiness -- --skip-probes',
+  'pnpm run report:source-provenance-readiness -- --skip-probes --json',
   'pnpm run check:source-provenance-report -- --skip-probes',
   'pnpm run check:progress-digest-report -- --skip-probes',
   'pnpm run check:launch-evidence-manifest -- --skip-probes',
@@ -6723,6 +6753,7 @@ const currentSafeFixTestsRun = Array.from(new Set([
   ...sourceProvenanceProofHandleTestsRun,
   ...sourceProvenanceRenameSummaryTestsRun,
   ...sourceOwnerDecisionPacketTestsRun,
+  ...sourceProvenancePublicHandlesDigestTestsRun,
   ...releaseOperatorHandoffPacketTestsRun,
   ...branchOperatorHandoffPacketTestsRun,
   ...releaseToolchainProofHandleTestsRun,
@@ -7568,6 +7599,19 @@ const safeFixImplementationDecisions = [
     reason: 'The aggregate checker existed and passed, but the structured handoff still omitted it from the repo artifact bucket and current required checks, making future continuations more likely to miss the suite.',
     proof_boundary: 'This record improves handoff discoverability only; it does not run focused reports as clearance, clear source provenance, run release-readiness, choose canonical branch heads, authorize Supabase, contact buyers, request or grant owner approval, push, deploy, mutate live services, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
     stop_gate: 'Do not treat the aggregate focused report suite handoff entry, required-check listing, skipped-probe check pass, manifest validation, commercial report validation, or this code optimization record as buyer evidence, source readiness, branch approval, Supabase advisor clearance, release-readiness, production approval, deploy authorization, hosted/live parity, or commercial-ready status.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    decision: 'Expose existing source-provenance public status handles and package script handles inside the focused source-provenance report.',
+    acceptance_check: 'report:source-provenance-readiness renders Public Release Status Handles and Package Script Handles for source_provenance, source_provenance_isolation_ledger, source_provenance_resolution_queue, and source_owner_decision_packet; check:source-provenance-report validates those handles while source status remains blocked when dirty paths exist.',
+    chosen_variant: 'minimal focused source handle digest',
+    repo_pattern_reused: 'Existing src/lib/publicReleaseStatusManifest.json source handles, focused progress/objective report handle sections, source-provenance report/check pattern, progress digest current-phase ratchet, broad manifest checker, commercial report checker, and launch manifest unit contract.',
+    files_changed: sourceProvenancePublicHandlesDigestFilesChanged,
+    tests_run: sourceProvenancePublicHandlesDigestTestsRun,
+    proof: 'The patch reads existing public status handle rows into the focused source-provenance JSON/Markdown payload and adds package handles for the focused source report/check plus downstream launch evidence and production approval packet commands without changing public status JSON, dirty-path state, source resolution, release gates, or launch status.',
+    reason: 'The first launch blocker is source provenance, and the public source handles already existed, but the focused source report did not show those handles or package commands in the same operator-facing form as newer focused reports.',
+    proof_boundary: 'This record improves source-provenance handle discoverability only; it does not commit, unstage, stash, revert, delete, rename, move, choose owner intent, clear source provenance, run release-readiness, push, deploy, request production approval, grant owner approval, prove hosted/live parity, mark the launch goal complete, or raise launch status.',
+    stop_gate: 'Do not treat the focused source handle digest, public status handles, package handles, skipped-probe report/check pass, manifest validation, or this code optimization record as owner approval, source cleanup, clean source provenance, release-readiness, production approval, deployment, hosted/live parity, or commercial-ready status.',
   },
 ];
 
@@ -9014,6 +9058,27 @@ const safeFixRejectedVariants = [
     tradeoff: 'A public row could be easier to notice, but existing lane-specific public handles already expose the individual focused checks.',
     evidence: 'The report suite is an aggregate of existing focused lane checkers, not a new buyer, release, approval, deploy, or live-proof evidence lane.',
   },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Leave source public handles discoverable only through public release status and source-of-truth docs.',
+    reason_rejected: 'Those surfaces exist, but the focused source-provenance report is the first-blocker operator artifact and should show the same handles when used during a continuation.',
+    tradeoff: 'No-code defer avoids small report/check updates, but preserves a gap between the source blocker report and the public handle inventory that already exists.',
+    evidence: 'src/lib/publicReleaseStatusManifest.json already contains source_provenance, source_provenance_isolation_ledger, source_provenance_resolution_queue, and source_owner_decision_packet handles.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Regenerate or add new public release-status source rows.',
+    reason_rejected: 'The needed public source handles already exist; changing public status would add churn without improving the first-blocker report itself.',
+    tradeoff: 'Public status changes could appear more visible, but they would increase the touched surface and generated artifact risk for a report-local discovery gap.',
+    evidence: 'The existing public source rows already point at report:source-provenance-readiness && check:source-provenance-report and carry sourceManifestPath/sourceProofTypes.',
+  },
+  {
+    task_id: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    variant: 'Resolve the staged workflow rename by committing, unstaging, stashing, reverting, or moving it from the report phase.',
+    reason_rejected: 'The staged rename is an owner-decision source-provenance blocker and unrelated work must not be mutated without explicit owner intent.',
+    tradeoff: 'Mutating the staged rename could reduce the first blocker, but it would violate the safe-fix boundary and dirty-worktree policy.',
+    evidence: 'git status and the source owner decision packet classify .windsurf/workflows/master.md -> .devin/workflows/master.md as a staged-only source_rename_decision requiring owner intent.',
+  },
 ];
 
 const safeFixCodeOptimizationReviews = [
@@ -9568,6 +9633,15 @@ const safeFixCodeOptimizationReviews = [
     evidence: 'The selected change reuses the existing aggregate checker, repo artifact bucket, Fix Report required-check list, latest-phase progress digest consumer, broad manifest checker, progress digest checker, commercial report checker, and launch/progress unit contracts, with no new dependency, no public status churn, no release-readiness inclusion, no external-account call, no source mutation, no branch mutation, no buyer contact, no approval request, no deploy execution, and no launch-status change.',
     tests_or_checks: focusedLaunchReadinessSuiteHandoffSurfacesTestsRun,
     remaining_risk: 'The aggregate suite handoff surface remains report-contract guidance only; launch readiness still depends on owner resolution of source provenance, Corepack-pinned release-readiness, branch owner decisions, Supabase advisor clearance, retained buyer evidence, explicit owner approval, guarded deployment, and post-deploy live proof.',
+  },
+  {
+    target_task: 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    policy: 'strict',
+    verdict: 'pass',
+    minimality_score: 5,
+    evidence: 'The selected change reuses existing public source handle data and existing source report/check/test contracts, with no new dependency, no generated public-status churn, no new source parser, no source mutation, no branch mutation, no release-readiness execution, no approval request, no deploy execution, and no launch-status change.',
+    tests_or_checks: sourceProvenancePublicHandlesDigestTestsRun,
+    remaining_risk: 'The source handle digest remains operator guidance only; launch readiness still depends on explicit owner resolution of the staged workflow rename, a clean source-provenance rerun, branch decisions, Supabase advisor clearance, retained buyer evidence, Corepack-pinned release-readiness, explicit owner approval, guarded deployment, and post-deploy live proof.',
   },
 ];
 

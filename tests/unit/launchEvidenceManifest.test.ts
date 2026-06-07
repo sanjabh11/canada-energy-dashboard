@@ -169,7 +169,7 @@ describe('launch evidence manifest report', () => {
     expect(manifest.branch_review.operator_handoff_packet.proof_boundary).toMatch(/read-only planning evidence only|does not checkout|merge|push|discard|delete|select canonical heads|run migrations|mutate Supabase|deploy|hosted\/live parity/i);
     expect(manifest.branch_review.operator_handoff_packet.stop_gate).toMatch(/Do not mark branch review clear|select canonical heads|merge|push|discard|delete|deploy|request production approval/i);
     expect(manifest.progress_updates).toHaveLength(2);
-    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-FOCUSED-LAUNCH-READINESS-SUITE-HANDOFF-SURFACES');
+    expect(manifest.progress_updates[0].phase).toBe('CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST');
     expect(manifest.progress_updates[0].accomplished).toContain('Completed safe-fix phase');
     const currentProgressMatrix = targetMatrixByLane(manifest.progress_updates[0]);
     expect(currentProgressMatrix.get('Safe Fix Lane')).toMatchObject({
@@ -1226,9 +1226,9 @@ describe('launch evidence manifest report', () => {
       'corepack pnpm run check:production-deploy-request',
       'corepack pnpm run check:post-deploy-live',
     ]));
-    expect(manifest.implementation_decisions).toHaveLength(60);
+    expect(manifest.implementation_decisions).toHaveLength(61);
     expect(manifest.rejected_variants.length).toBeGreaterThanOrEqual(3);
-    expect(manifest.code_optimization_reviews).toHaveLength(60);
+    expect(manifest.code_optimization_reviews).toHaveLength(61);
     const safeFixDecision = manifest.implementation_decisions.find(
       (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-PREVIEW-MANIFEST-TYPES',
     );
@@ -2247,6 +2247,36 @@ describe('launch evidence manifest report', () => {
       'node --check scripts/check-commercial-launch-readiness-report.mjs',
       'pnpm exec vitest run tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
       'pnpm run check:focused-launch-readiness-reports -- --skip-probes',
+      'pnpm run check:progress-digest-report -- --skip-probes',
+      'pnpm run check:launch-evidence-manifest -- --skip-probes',
+      'pnpm run check:commercial-launch-readiness-report -- --skip-probes',
+      'pnpm exec tsc -b --pretty false',
+    ]));
+    const sourceProvenancePublicHandleDigestDecision = manifest.implementation_decisions.find(
+      (item: { task_id?: string }) => item.task_id === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(sourceProvenancePublicHandleDigestDecision).toBeTruthy();
+    expect(sourceProvenancePublicHandleDigestDecision.chosen_variant).toBe('minimal focused source handle digest');
+    expect(sourceProvenancePublicHandleDigestDecision.files_changed).toEqual(expect.arrayContaining([
+      'scripts/report-source-provenance-readiness.mjs',
+      'scripts/check-source-provenance-readiness-report.mjs',
+      'scripts/check-progress-digest-readiness-report.mjs',
+      'tests/unit/sourceProvenanceReadiness.test.ts',
+      'tests/unit/progressDigestReadiness.test.ts',
+      'tests/unit/launchEvidenceManifest.test.ts',
+    ]));
+    expect(sourceProvenancePublicHandleDigestDecision.proof_boundary).toMatch(/handle discoverability only|does not commit|unstage|stash|revert|delete|rename|move|choose owner intent|clear source provenance|run release-readiness|push|deploy|request production approval|grant owner approval|hosted\/live parity|mark the launch goal complete|raise launch status/i);
+    const sourceProvenancePublicHandleDigestReview = manifest.code_optimization_reviews.find(
+      (item: { target_task?: string }) => item.target_task === 'CEIP-SAFE-FIX-SOURCE-PROVENANCE-PUBLIC-HANDLE-DIGEST',
+    );
+    expect(sourceProvenancePublicHandleDigestReview).toBeTruthy();
+    expect(sourceProvenancePublicHandleDigestReview.policy).toBe('strict');
+    expect(sourceProvenancePublicHandleDigestReview.tests_or_checks).toEqual(expect.arrayContaining([
+      'node --check scripts/report-source-provenance-readiness.mjs',
+      'node --check scripts/check-source-provenance-readiness-report.mjs',
+      'pnpm exec vitest run tests/unit/sourceProvenanceReadiness.test.ts tests/unit/progressDigestReadiness.test.ts tests/unit/launchEvidenceManifest.test.ts --testTimeout=300000 --no-file-parallelism --maxWorkers=1',
+      'pnpm run report:source-provenance-readiness -- --skip-probes --json',
+      'pnpm run check:source-provenance-report -- --skip-probes',
       'pnpm run check:progress-digest-report -- --skip-probes',
       'pnpm run check:launch-evidence-manifest -- --skip-probes',
       'pnpm run check:commercial-launch-readiness-report -- --skip-probes',

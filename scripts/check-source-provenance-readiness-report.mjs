@@ -100,6 +100,12 @@ if (failures.length === 0) {
     assertContains(stdout, '## Production Approval Source Prerequisite', 'Report must include the production approval source prerequisite.');
     assertContains(stdout, '## Production Approval Request Source Row', 'Report must include the production approval request source row.');
     assertContains(stdout, 'does not clear source provenance or production approval', 'Report must preserve no-clearance language.');
+    assertContains(stdout, '## Public Release Status Handles', 'Report must include public source-provenance handles.');
+    assertContains(stdout, 'source_provenance_resolution_queue', 'Report must include the source provenance resolution queue public handle.');
+    assertContains(stdout, 'source_owner_decision_packet', 'Report must include the source owner decision packet public handle.');
+    assertContains(stdout, '## Package Script Handles', 'Report must include package script handles.');
+    assertContains(stdout, 'corepack pnpm run report:source-provenance-readiness', 'Report must include the focused source provenance package report handle.');
+    assertContains(stdout, 'corepack pnpm run check:source-provenance-report', 'Report must include the focused source provenance package check handle.');
   }
 
   if (payload) {
@@ -158,6 +164,15 @@ if (failures.length === 0) {
     assert(payload.release_preflight_source_row?.requirement === 'Clean source provenance', 'Focused JSON must include the release preflight clean-source row.');
     assert(payload.production_approval_source_prerequisite?.prerequisite === 'Clean source provenance', 'Focused JSON must include the production approval clean-source prerequisite.');
     assert(payload.production_approval_request_source_row?.prerequisite === 'Clean source provenance', 'Focused JSON must include the production approval request clean-source row.');
+    assert(payload.public_status_handles?.source_provenance?.id === 'source_provenance', 'Focused JSON must include the source provenance public handle.');
+    assert(payload.public_status_handles?.source_provenance_isolation_ledger?.id === 'source_provenance_isolation_ledger', 'Focused JSON must include the source provenance isolation public handle.');
+    assert(payload.public_status_handles?.source_provenance_resolution_queue?.id === 'source_provenance_resolution_queue', 'Focused JSON must include the source provenance resolution queue public handle.');
+    assert(payload.public_status_handles?.source_owner_decision_packet?.id === 'source_owner_decision_packet', 'Focused JSON must include the source owner decision packet public handle.');
+    assert(/report:source-provenance-readiness/.test(payload.public_status_handles?.source_owner_decision_packet?.command ?? '') && /check:source-provenance-report/.test(payload.public_status_handles?.source_owner_decision_packet?.command ?? ''), 'Source owner decision packet public handle must point at the focused source report/check.');
+    assert(/source_provenance\.owner_decision_packet/.test(payload.public_status_handles?.source_owner_decision_packet?.sourceManifestPath ?? ''), 'Source owner decision packet public handle must point at source_provenance.owner_decision_packet.');
+    assert(payload.package_script_handles?.report_source_provenance_readiness === 'corepack pnpm run report:source-provenance-readiness', 'Focused JSON must include the source provenance report package handle.');
+    assert(payload.package_script_handles?.check_source_provenance_report === 'corepack pnpm run check:source-provenance-report', 'Focused JSON must include the source provenance checker package handle.');
+    assert(payload.package_script_handles?.report_production_approval_packet === 'corepack pnpm run report:production-approval-packet', 'Focused JSON must include the production approval packet package handle for the downstream source gate.');
     assert(/report:source-provenance-readiness/.test(payload.release_preflight_source_row?.proof_command ?? '') && /check:source-provenance-report/.test(payload.release_preflight_source_row?.proof_command ?? ''), 'Release preflight clean-source row must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(payload.production_approval_source_prerequisite?.proof_command ?? '') && /check:source-provenance-report/.test(payload.production_approval_source_prerequisite?.proof_command ?? ''), 'Production approval source prerequisite must point to the focused source provenance report/check.');
     assert(/report:source-provenance-readiness/.test(payload.production_approval_request_source_row?.proof_command ?? '') && /check:source-provenance-report/.test(payload.production_approval_request_source_row?.proof_command ?? ''), 'Production approval request source row must point to the focused source provenance report/check.');
